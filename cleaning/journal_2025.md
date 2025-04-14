@@ -4,67 +4,68 @@
 
 ### Saturday, January 11th, 2025
 
->"haha you got me there; although be warned that i might take this as permission
->to let my corniest side out"
->
->"Please yes"
->
->"you've become my favourite notification"
->
->"now stop making me smile like this"
+>soffiafdz > `haha you got me there; although be warned that i might take
+>this as permission to let my corniest side out`
+
+>clarabelais > `Please yes`
+
+>soffiafdz > `you've become my favourite notification`
+
+>clarabelais > `now stop making me smile like this`
+
+***
 
 I was sitting in the waiting area by my gate on the Philadelphia airport. After
 barely sleeping on my red-eye flight, I felt melancholic, nostalgic, and easily
 irritated. I looked at my phone screen as Clara's notifications kept appearing
-one-by-one, on which she was thanking me by the playlist I made for her titled
-Heartbreak hits for middle-aged women doing house chores.
+one-by-one. She thanked me for the playlist I made for her titled
+_Heartbreak hits for middle-aged women doing house chores_.
 
-```
-i hope you have (had?) a nice trip back!
-also are you free friday night?
-```
+clarabelais > `i hope you have (had?) a nice trip back!`\
+clarabelais > `also are you free friday night?`
 
-I made to Montréal after three—or was it four?—weeks in México. Passing by
+I made it to Montréal after three—or was it four?—weeks in México. Passing by
 immigration, instead of just waving me in like other years, they sent me to the
-"immigration 1" room. It was not the same one where I had to present myself
+_Immigration 1_ room. It was not the same one where I had to present myself
 4 years ago in order to defend my application for a study permit. It took me
-around an hour and a half of waiting and explaining to the officer how in a PhD
-I don't take courses nor have grades.
+around an hour and a half between waiting and explaining to the officer how in
+a PhD I don't take courses nor have grades.
 
 Exhausted, not long after arriving to my—thankfully already—place, I succumbed
 unto my bed and put an end to a long two-sided day.
 
-I decided not to go to the office and stay home. I had to call the bank to
-solve the issue about the mistakenly disputed charges that lead them to
-blocking my credit card; call to the Wellness Hub to schedule an appointment
-with Dr Franck to renew my soon-to-expire prescription; call the Biron lab to
+I decided not to go to the office and stay home. I called the bank to solve the
+issue about the mistakenly disputed charges that lead them to blocking my
+credit card; then I called the Wellness Hub to schedule an appointment with Dr
+Franck to renew my soon-to-expire prescription; finally, I called Biron lab to
 schedule an appointment to get my blood drawn since apparently there are no
 more phlebotomists at McGill until further notice.
 
-I solved all of those issues, before discovering an unforeseen one. As I tried
+I solved all of those issues before discovering an unforeseen one. When I tried
 to schedule my follow-up appointment with Dr Perera, the woman on the other
-line informed me that Dr Perera had taken her maternity leave. A different
-doctor would be taking over my medical needs in the meantime, or, if needed,
-you will refer to somebody externally.
+line informed me that Dr Perera had taken a maternity leave. A different
+doctor would be taking over _my medical needs_ in the meantime, or, if needed,
+refer me to somebody externally.
 
-I remembered when I learned that from the four doctors that work at McGill,
-only the absent Hashana was willing to see over HRT of trans patients.
+I thought back to when I learned that, from the four doctors that work at
+McGill, only the absent Hashana was willing to oversee the HRT of trans
+patients.
 
 I had my rescheduled meeting with Louis and talked about the plans for the
 following weeks.
 
 Clara had proposed me two options for plans for last night. The first one was
-a chill night at a games pub where we could drink some beers. The second one
-was a readaptation of the one I had proposed before our departure, a night of
-wine, pizza and winter socks.
+a chill night at a games pub where we could play and drink some beers. The
+second one was a readaptation of the one I had proposed before our departure:
+a night of wine, pizza and winter socks.
 
 I met her, again, at the exit of Station Jarry. This time, as a bookend of her
 good-bye kiss outside my apartment back in December, I went to kiss her mouth
 before hugging her. We walked back to my place talking about my adventure in
 the airport.
 
-She brought me two bottles of wine, one red and one white, and a fridge magnet
-of Rouen.
+She brought two bottles of wine, one red and one white, and a fridge magnet
+from Rouen.
 
 We spent most of the night lying down on my couch, in a close conversation
 interrupting the mix of songs that kept playing in front of us by Youtube. As
@@ -72,45 +73,48 @@ the night went on and we kept refilling our glasses, we got closer to each
 other. By midnight, she was fully reclined on my chest, wrapping the arm of the
 hand that caressed her thigh with hers as if they were snakes.
 
-"Obviously you can stay the night," I offered her, after several times through
-the night I flinched as she started talking, fearing she would let me know of
-her departure.
+"Obviously you can stay the night," I offered her. Several times throughout
+the night I would flinch as she started talking, fearing she would let me know
+it was her time to leave.
 
-We did not move to my bed until after 2H.
+We did not move to my bed until after 2h.
 
-Clara asked me if I had a side of the bed. After I answered, she picked the one
+Clara asked me if I had a side of the bed. After I said no, she picked the one
 facing the window.
 
 We changed in front of each other without modesty nor desire. I noticed her
-tattoos on her arms and thigh, and that she was not wearing a bra under her
-sleeveless gray undershirt. O lend her the white leggings that I bought in my
-last trip.
+tattoos on her arms and thigh and that she was not wearing a bra under her
+sleeveless gray undershirt. I lend her the white leggings that I bought on my
+last trip home.
 
 Under the covers I continued reaching out to hold her. We both fell asleep
 without kissing a second time in the night.
 
-Around 4H, I got up and went to the toilette. Not much later, she echoed my
+Around 4h, I got up and went to the toilette. Coming back, she echoed my
 actions. I heard her hit the couch in the darkness and asked her if she was
-alright as she got under her covers again. I invited her in my arms again.
-I started by kissing her cheek. Maybe it was two times. I reached her face and
-pulled it to mine. I kissed her lips. The first one lead to the second which
-lead to the third; with each new one being charged with intention and desire.
-I repositioned myself on top of her. We were kissing almost desperately before
-I asked her if I could take her clothes off.
+alright as she joined me under the covers. I invited her in my arms again.
+I started by kissing her cheek. Maybe it was two times. I reached out to her
+face and pulled it to mine. I kissed her lips. The first one lead to the second
+which lead to the third; each new one charged with intention and desire.
+I repositioned myself on top of her. She received me by grabbing me by the
+waist and opening her legs. We were kissing almost desperately when I asked
+her if I could take off her clothes.
 
-In the morning, I heard her whisper, "Sofi." I woke up and looked towards her.
+In the morning, I heard her whisper, _Sofi._ I woke up and my eyes searched for
+her.
 
 She informed me that she would be leaving in 10 minutes. She sit up with her
-back on the headrest, I moved with her placing my head above her left breast.
-She continued holding me and pulling lone curls of my hear as I slept for the
+back on the headrest. I moved up and placed my head above her left breast.
+She held me while she played pulling lone curls of my hair as I slept for the
 remaining time I had with her.
 
-The alarm clock started sounding and she used that as a signal for her leaving.
-I walked her to the door of my apartment. I returned to bed and slept for
-almost all of the remaning daylight.
+The alarm clock started beeping and she used its singing as a signal for her
+leaving. I walked her to the door of my apartment, accompanying her as she took
+her stuff, then kissing her goodbye. I returned to bed and slept for almost all
+of the remaning daylight.
 
-I went to pick-up the traveller's notebook I ordered yesterday. I passed by
-Metro to get some groceries.
+I went to pick-up the traveller's notebook I ordered yesterday. Then I passed
+by Metro to get some groceries.
 
 I might be getting sick.
 
