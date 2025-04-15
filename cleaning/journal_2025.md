@@ -120,44 +120,49 @@ I might be getting sick.
 
 ### Sunday, January 12th, 2025
 
-"well fuck"it gets even worse"  I ate the last slice of margheritta pizza with
-two servings of undercooked pasta. I refilled the half-drunk glass of red wine
-to sit down and write.
+>soffiafdz > `well fuck`\
+>soffiafdz > `it gets even worse`
+
+***
+
+I ate the last slice of margheritta pizza with two servings of undercooked
+pasta. I refilled the half-drunk glass of red wine to sit down and write.
 
 It was an exhausting weekend in several ways.
 
-I woke up relatively early from the sunlight coming through the opened drapes.
+I woke up relatively early from the sunlight coming through the open drapes.
 I grabbed the alarm clock and turned it off 25 minutes before it was supposed
 to start. My first project of the day was to try to open up the malfunctioning
 olympus pen that Miguel bought for me. The winding mechanism stopped working
-correctly the first couple of days after I put in the first roll of Kodak Gold
-200. I remember trying it out in the small plaza when my mom asked me to buy
-her some nachos while we were both waiting for Les to have her psychiatrist
+correctly the first couple of days after putting in the first roll of Kodak
+Gold 200. I tried it out in the small plaza when my mom asked me to buy her
+some nachos while we were both waiting for Les to have her psychiatrist
 appointment. I got stuck when I couldn't open up the lens. It turns out I do
 need a lens wrench. It should be arriving tomorrow. For now, all the pieces are
 organizedly scattered on my desktop, waiting.
 
-The second chore was to do laundry. I washed the sheets—both the ones I took
-off a month ago the weekend before my departure when Clara was supposed to come
-visit, and the other set on which we both slept this weekend after I came back.
-I washed also the full laundry basket that got filled with the clothes I could
-not wash in Tijuana since the washer, like my camera, stopped working.
+The second chore was laundry. I washed the sheets—both the ones I took off
+a month ago the weekend before my departure when Clara was first supposed to
+come over and the second set we both slept on this weekend after I came back.
+I also washed the contents of the full laundry basket filled with the clothes
+I could not wash in Tijuana since the washer, like my camera, stopped working.
 
 A recurring theme in my recent therapy sessions is the anxiety of not being
 able to access my HRT. The plan ahead was fairly straightforward; Dr Perera
 would give me a year-long prescription to bridge the period before my referral
-to endocrinology. Today I saw a story from transpatients in instagram. The
+to endocrinology. Today I saw a story from transpatients in Instagram. The
 first one I saw was a response stating that the only physician offering trans
 care was going to be absent soon. I did not realize that it was a response to
 their 1-day old post talking about Dr Perera's maternity leave.
 
-"As of late Dec 2024, Dr. Perera is on leave until Jan 2026. Dr Perera is the
-only doctor at the McGill Student Wellness Hub providing hormone replacement
-therapy and surgery recommendation letters to patients. The TPU is very
-disappointed that while Dr. Perera is on leave, there will be no doctors at the
-Hub supervising HRT, and that instead her patients will be referred to the
-Hygea endocrinology clinic. The Hub has dozens of doctors, yet none of them are
-willing to provide HRT. In Quebec, any general practitioner can supervise HRT."
+>_As of late Dec 2024, Dr. Perera is on leave until Jan 2026. Dr Perera is the
+>only doctor at the McGill Student Wellness Hub providing hormone replacement
+>therapy and surgery recommendation letters to patients. The TPU is very
+>disappointed that while Dr. Perera is on leave, there will be no doctors at
+>the Hub supervising HRT, and that instead her patients will be referred to the
+>Hygea endocrinology clinic. The Hub has dozens of doctors, yet none of them
+>are willing to provide HRT. In Quebec, any general practitioner can supervise
+>HRT._
 
 There was a comment under the post, from one of the patients affected by this.
 They mentioned that when they called the Hyega clinic to make an appointment,
@@ -165,21 +170,21 @@ they were informed that because of the long waitlist, the closest available day
 was in November. I won't be a student by then anymore.
 
 This weekend I started researching about monotherapy with injectable oestrogen.
-A single vial that can last around a year cost between 65 and 85 USD. There is
+A single vial that can last around a year costs between 65 and 85 USD. There is
 a store that ships from the US. A vial of estrogen cypionate, including the
 shipping to Canada would cost me 115 USD. There is a small risk of it being
 intercepted and held at customs. I thought about ordering several vials to my
 father's PO box. I could pay a week-long round trip to pick it up. Maybe pay
 for Miguel's or Sonny's visit if they bring them to me. I thought about my mom,
 but I don't think she would be able to get here without speaking English nor
-French, not again.
+French—not again.
 
 Moments ago, while I was venting to Majo, I shared with her how if my first try
 of getting the vial delivered to Canada fails, I'll order 2 or 3 to San Diego.
 I'll travel in March to pick them up, and hopefully, if the Vienna conference
 is confirmed, I might be able to get to pay for my flight from San Diego to
-Europe one or two weeks before April. I have around 5 pills of spiro left,
-before I refill my last 30-day prescription. I'll have spiro until mid
+Europe one or two weeks before April. I have around 5 pills of spyro left,
+before I refill my last 30-day prescription. I'll have spyro until mid
 February, and a couple more days of estradiol pills. I remembered the unused
 anticonceptive injection I have in my stash. It won't expire until April, so
 that gives me another week. The longest I would have to go without hormones
@@ -187,15 +192,18 @@ would be one month, if everything goes badly.
 
 ### Thursday, January 16th, 2025
 
-"Why what's happening ?"  I had no idea and at the same time it was no surprise
-at all.
+>clarabelais > `Why what's happening ?`
 
-The last time I masturbated back in my old bed, the mattress ended up soiled,
-like it used to get many years ago. I lost weight without trying. Maybe that is
-why people tended to perceive me male, because for the past few weeks I have
-been one again.
+***
 
-Monday I went to the office. We had a lab meeting where we talked about Louis
+I had no idea and at the same time it was no surprise at all.
+
+The last time I masturbated back in my old bed the mattress ended up
+soiled—like it used to get many years ago. I lost weight without trying. Maybe
+that is partly why people tended to perceive me male, because for the past few
+weeks I have been one again.
+
+Monday I went to the office. We had a lab meeting where we talked about Louis'
 grant. He mentioned how he had picked it up during the winter break and was
 really happy about it; hopeful even. Any moment now until the end of the month
 he would be receiving a response and reviews. If needed, we would all gather
@@ -205,71 +213,76 @@ We have all been receiving bad news this week.
 
 After the meeting, I met with Alda at Thomson. We might have not lasted a full
 minute before we decided to move to another bar where we would be more private.
-I told her about my Friday date with Clara, and then I vented about the problem
-that I might have with the doctors and looking for hormones. I ate a mexican
+I first told her about my Friday date with Clara. Then I vented about the
+problem that I might have with the doctors and my hormones. I ate a mexican
 sandwich and she herself got a burger. I had only one pint of beer for the
 whole afternoon. By the end of it, I had almost no voice left.
 
-The next morning I woke up incapable of speak at all. I went like that to the
-laboratory where the drew my blood. There was no issue. The phlebotomist was
-a kind lady who had patience with my french. She told me the results would be
-ready by the end of the afternoon.
+The next morning I woke up completely incapable of speaking. I went like that
+to the laboratory where the drew my blood. There was no issue. The phlebotomist
+was a kind lady who had patience with my french and lack of voice. She told me
+the results would be ready by the end of the afternoon.
 
-I came home and drank one or two mugs of hot tea trying to calm my throat by
-the second half of the morning when I would have my session with Fabiola.
-I asked Sonny if she believed that Fabiola would be willing to have my session
-with me writing on the Zoom's chat.
+I came home and drank one or two mugs of hot tea trying to calm my angry
+throat. I asked Sonny if she believed that Fabiola would be willing to have my
+session with me writing on the Zoom's chat. She did not know.
 
 At 11h when I logged into the call, I had a bit of voice enough to explain the
-situation to her. She asked me what I wanted to do and offered me to
+situation to Fabiola. She asked me what I wanted to do and offered me to
 reschedule. Without saying that I really needed that day's session, I declined
 her offer.
 
 On the very last minutes, moments before my voice finally failed exhausted, she
 asked me how was everything making me feel. I shrugged and smiled. Slowly, my
-smile started fading and I started crying. Quiet whimpers turned into full
-sobs. I covered my face as if I had not just showed her a bit of my worst inner
+smile faded as I started to cry. Quiet whimpers turned into full sobs.
+I covered my face as if I had not just showed her a bit of my worst inner
 worries.
 
 I don't remember if it was that night or the one before. My mom replied to my
 texts saying that Lupita, Hector's wife, my childhood physician, had told her
-that they did not know anyone who performed that kind of surgery. I started
-feeling frustrated and impotent. I remembered how the Urologist I had consulted
-years ago in Mexico City, as he was explaining to me the procedure, mentioned
-that it was so simple that any general surgeon would perform it for a lower
-price than an urologist.
+that they did not know anyone who performed _that kind of surgery_. I started
+feeling frustrated and impotent. I thought back about the urologist I had
+consulted years ago in Mexico City. As he explained to me the procedure, he
+mentioned that it was so simple that any general surgeon would perform it for
+a lower price than an urologist.
 
-I was able to make an account with Biron. I lied about my sex at birth. My
+I decided to make an account with Biron. I lied about my sex at birth. My
 results were indeed ready before the evening. I logged in and checked the
-mostly green-coloured data numbers. The ones that interested me the most were
-at the bottom. One, green, a bit higher than expected, and the other one,
-orange, much worse than I could imagine.
+mostly green-coloured data numbers one-by-one. The ones that interested me the
+most were at the bottom. The first, green, a bit higher than expected; the
+second, orange, much worse than I could imagine.
 
 My body is and feels male.
 
-It has been like these for the past few weeks. I was not aware of it, or not
+It has been like these for the past few weeks. I was not aware of it—or not
 consciously. Now there is nothing I can do about it.
 
-The transpatientsunion account posted an about later in the week about how the
-wait times at Hyega are even longer than Perera's leave of absence. I called at
-the Wellness Hub and they gave me an appointment—after putting me on hold for
-2-3 minutes—for next Friday. I bought crypto and placed the order for the vial
-of estrogen. Tomorrow or maybe the day after I will call to refill my last
-prescription for hormones in the near future.
+The transpatientsunion account had a post about how the wait times at Hyega are
+even longer than Perera's leave of absence. I called at the Wellness Hub and
+they gave me an appointment with another physician—after putting me on hold for
+2-3 minutes to speak to someone off the call—for next Friday. This same
+afternoon I bought crypto and placed the order for the vial of estrogen.
+Tomorrow or maybe the day after I will call to refill my last prescription for
+hormones in the near future.
 
 Even if Dr Perera cautiously extended my prescription before the holidays, even
 if the new faceless and probably transphobic MD accepts to give me a bridging
-prescription, I think I will start injecting myself with the estrogen.
+prescription, I think I will start injecting myself with the homebrewed
+estrogen.
 
-If I  do receive it, of course.
+If I do end up receiving it, of course.
 
 ### Friday, January 17th, 2025
 
-"hey cee, what would you prefer to do?"  I was, and continue to be, exhausted.
+>soffiafdz > `hey cee, what would you prefer to do?`
 
-I stay in bed for all morning. I do not remember if I put an alarm at all.
-I fell back in that dangerous habit of starting my weekend after my meeting
-with Louis.
+***
+
+I was, and continue to be, exhausted.
+
+I stayed in bed for all morning. I do not remember if I put an alarm at all.
+I fell back in that dangerous habit of starting my weekend right after my
+meeting with Louis.
 
 Yesterday it was different. I finished the CFA for the cognitive domains and
 even made some tables with unexpected and interesting results. Louis thought
@@ -281,7 +294,7 @@ I woke up this morning with close to a dozen emails in my McGill's inbox. Some
 of them were Louis'. He sent me some information about his search for the HC
 labels by Jenn's team. Another one was a thread confirming a meeting next week
 with Mallar to talk about my results. Last night, Majo told me that Mallar had
-postponed the second candidacy of Houssein, since he had a family emergency.
+postponed the second candidacy of Houssein since he had a family emergency.
 
 Majo must be on the air right now. She told me she would be arriving at
 midnight in Montréal. It is weird how much I have missed her texts this
@@ -294,44 +307,46 @@ it to Sunday. Oscar, her colombian friend is in Montréal for the weekend and
 she wanted to see him before his departure on Sunday.
 
 Yesterday I superficially summarized my situation related to the hormones to
-Clara. She had seen the message by the time I had woken up, but not replie to
+Clara. She had seen the message by the time I had woken up, but not replied to
 it. I was midway through my cup of coffee when I decided to text her again
-bringing up the idea of seeing each other again. I asked her which would prefer
+bringing up the idea of seeing each other. I asked her which would prefer
 between my original idea of going somewhere nice as a late birthday dinner or
 staying casual and watching either Before Sunrise or Princess Mononoke.
 
-You haven't seen it?, she asked last week after she undressed and I saw the
-tatoo of the dagger in her thigh, we are watching it right now!
+_You haven't seen it?_, she asked last week after she undressed and I saw the
+tatoo of the dagger in her thigh. _We are watching it right now!_
 
-"no se me han quitado las ganas ahogadas de llorar desde el fin de semana,"
+soffiafdz > `no se me han quitado las ganas ahogadas de llorar desde el fin de
+semana`
+
 I wrote in Sonny's WhatsApp conversation.
 
-Earlier today I was worrying of a rejection test. Maybe her lack of response
-was a hesitance born from our night together. Perhaps she just wanted ot have
-sex with me and have completed her objective, or the sex was so disappointed
-that it had been enough to put her off the idea of continuing seeing me.
+Earlier today I was worrying about a rejection text. Maybe her lack of response
+was a hesitance born from our night together; or she just wanted to have
+sex with me and has, now, completed her objective. Perhaps the sex was so
+disappointing that it was enough to put her off the idea of seeing me again.
 
-Clara's time to answer is not anything new. That is not it. I feel insecure.
-I keep looking at myself in the full-body mirror that I finally got after
-living here without one for more than a year. I search for more hints of
-maleness. Signs of the dreaded chemicals that my body stubbornly produces and
+Clara's time to answer is not anything new; that is not it. I feel insecure.
+I keep looking at myself in the full-body mirror that I finally bought after
+living without one for more than a year. I search for more hints of maleness:
+signs of the dreaded chemicals that my body stubbornly produces and
 poisons my mind with. I told Majo about the last time that my Testosterone
-levels were this high—how even if look at the pictures of that year, it is
-impossible the pinpoint which ones are from the period of time where my body
-was again male.
+levels were this high—how even when looking at the pictures of that year, it is
+impossible for me the pinpoint which ones are from that period of time when my
+body was temporarily male again.
 
-A couple of hours ago Clara replied saying she was sorry that it was happening
-and asking if there was a fair chance that it would not need to occur. The
+A couple of hours ago Clara replied saying she was sorry it was happening
+and asked me if there was a fair chance that it would not need to occur. The
 second text was not a response to my two-choice question. She said that the
 idea sounded nice, but warned me that she is busy and feeling out of place. She
 is moving in two weeks—I suppose by the end of January—and showing her room
-this weekend. She asked me when was I thinking for my idea.
+this weekend. She finished by asking when was I thinking about for my ideas.
 
 My white coffee travel cup that I brought from Mexico when I started my PhD
 broke this week. Trying to handle it together with the electric kettle
 I dropped it and broke the little piece of the lid cover. I don't feel
 comfortable anymore putting it in the backpack since now it can spill. I bought
-another one from Amazon this afternoon. It is red and larger, it is supposed to
+another one from Amazon this afternoon. It is red and larger. It is supposed to
 arrive some time tomorrow. I do not think I'll have any reason to get out of
 the house, so I will be here to receive it.
 
@@ -340,24 +355,27 @@ seeing María.
 
 ### Saturday, January 18th, 2025
 
-According to Dr. Perera, other Wellness Hub doctors  should  know to refer
-patients seeking HRT to Hygea, and to refill the existing prescriptions of any
-patients worried about running out while on the Hygea wait list.
+>According to Dr. Perera, other Wellness Hub doctors **should know** to refer
+>patients seeking HRT to Hygea, and to refill the existing prescriptions of any
+>patients worried about running out while on the Hygea wait list.
+>
+>Patients should remember that they can ask for a copy of their endocrinology
+>referral and submit it to any endo clinic, public or private. If patients ask
+>for a general referral for HRT they can use it at any Montréal clinic with
+>providers willing to prescribe HRT.
 
-Patients should remember that they can ask for a copy of their endocrinology
-referral and submit it to any endo clinic, public or private. If patients ask
-for a general referral for HRT they can use it at any Montréal clinic with
-providers willing to prescribe HRT.   Was it today or yesterday that I scanned
-the latest two film rolls?
+***
+
+Was it today or yesterday that I scanned the latest two film rolls?
 
 I woke up before noon, despite being the weekend. I had no plans and no reason
-to shower or get out of the apartment. I had messages from Majo and Sonny.
+to shower or get out of the apartment. I had messages from both Majo and Sonny.
 
 This morning I made my coffee iced for the first time since I've been back.
 
 I called the pharmacy to renew my prescription for hormones. I have only one
-spiro pill left for tomorrow morning. Like the past few times, I pressed 1 to
-continue with the options in French that I have memorized. This time, after
+spyro pill left for tomorrow morning. Like the past few times, I pressed 1 to
+continue with the options in French that I have by now memorized. This time, after
 typing the code of the first bottle, I got back a different notice informing me
 that my prescription was coming to an end and mentioning something about
 calling my doctor for an appointment that I only half understood. I panicked
@@ -371,74 +389,77 @@ letting me know that this would be the last refill and to schedule an
 appointment with the Dr in order to not run out of my medications. I continued
 with the process and chose a pick-up time for tomorrow noon.
 
-I texted Majo, to tell her what I had just done, and a share a glimpse of the
-newly awaken anxiety that it had caused me. Not even 5 minutes later, I got
-a call from the pharmacy. I picked it up and started in French. It was the
+I texted Majo to tell her what I had just done and share with her a glimpse of
+the newly awaken anxiety that it had caused me. Not even 5 minutes later I got
+a call from the pharmacy. I picked it up and replied in French. It was the
 pharmacist—or maybe an assistant—informing me that they had just gotten the
 request and wanted to confirm that I had already scheduled an appointment with
 my Dr. I answered with a half-truth saying that I would see them next Friday.
-That seemed to appease them and mentioned something about the pharmacist. We
-hung up.
+That seemed to appease them. They mentioned something else about the
+pharmacist. We hung up.
 
-All day I was hoping for a text of Clara telling me that she could come tonight
-if I were free.
+All day I hoped for a text from Clara telling me that she could come over
+tonight if I were free.
 
-"but if you need to sort your living situation out, don’t feel pressured. as
-much as i wanna see you or in need of a hug, i can wait"
+soffiafdz > `but if you need to sort your living situation out, don’t feel
+pressured. as much as i wanna see you or in need of a hug, i can wait`
 
-Was I lying, or why is it so difficult to be patient?
+Was I lying or why is it so difficult to be patient?
 
-Her latest message she liked she warned me that she was feeling upset about her
-moving and having to show her room this weekend. She still did not reject the
+On her latest message she warned me that she was feeling upset about her
+moving and having to show her room this weekend. She did not reject the
 ideas and instead asked me for a time. Maybe I should have proposed a day.
 
-I thought some time today about how I am nervous—is it fear or anxiety?—of
-having the conversation about what we expect from each other. I can sense that
-our interest is unbalanced. The expectations that I carelessly let grow will
-most probably not be met.
+I thought today how I am nervous—is it fear or anxiety?—of having that
+particular conversation about what do we expect from each other. I can sense
+that our interest is unbalanced. The expectations that I carelessly let grow
+will most probably not be met.
 
-Yet, she did not shut down the idea of buying the ticket. She was not eager to
-have sex with me, since it was me who reached out to her after we both had
-already given up on the night by falling asleep. She did bring her toothbrush
-in her totebag, planning to stay the night. We have been going at it slowly.
+Yet, she did not shut down the idea of buying the ticket for the concert. She
+was not eager to have sex with me, since it was me who reached out to her after
+we both had already given up on the night by falling asleep. She did bring her
+toothbrush in her totebag, planning to stay the night. We have been going at it
+slowly.
 
 I do not know how to read her. I should not try to guess.
 
-incluso si se acabara hoy mismo, es lo mejor que me ha ido en todo lo que llevo
-en Mtl.
+soffiafdz > `incluso si se acabara hoy mismo, es lo mejor que me ha ido en todo lo que llevo
+en Mtl.`
 
 I chatted with Paty tonight. She had posted some stories with tall glasses of
 cocktails. The last one I commented was her losing count on the
-probably-1lt-tall cups around the fourth or fifth.
+probably-1L-tall cups around the fourth or fifth.
 
-"weeeyyy sigues viva"
+soffiafdz > `weeeyyy sigues viva`
 
-"No. Gracias por preguntar."
+urfuckii.supreme > `No. Gracias por preguntar.`
 
-"para eso estamos"
+soffiafdz > `para eso estamos`
 
-"No me digas wey. Soy tu futura esposa."
+urfuckii.supreme > `No me digas wey. Soy tu futura esposa.`
 
 ### Sunday, January 19th, 2025
 
-The snow was falling faintly through the universe and faintly falling on all
-the living and the dead.
+>The snow was falling faintly through the universe and faintly falling on all
+>the living and the dead.
+>
+—The Room Next Door, 2024.
 
--The Room Next Door, 2024.   I first thought about writing today were my only
-plans of the whole week, but that is not entirely true. Earlier this week,
-I met with Alda and had early dinner and a pint.
+***
+
+Earlier this week, I met with Alda and had early dinner and a pint.
 
 I grabbed my phone like every other morning looking at the new notifications.
 I had posted another post-midnight story before falling asleep. It was one of
 the two shots I took at the metro station in Mexico City before being apprached
 by the security guard to inform me that I needed a permit from the city to take
-pictures of the metro. This was the failed shot. Unplanned and hurried, with
+pictures of the metro. This was the failed shot; unplanned and hurried, with
 a trembling hand. Blurried and unfocused.
 
-En el murmullo de venas eléctricas,  el movimiento nos desdibuja.  Nombres se
-desvanecen,  anhelos dispersos como luces en los rieles.  Aquí, entre reflejos
-y sombras,  nos cruzamos sin mirarnos, sin saber siquiera  si seguimos siendo
-nosotras.
+>_En el murmullo de venas eléctricas,  el movimiento nos desdibuja.
+>Nombres se desvanecen, anhelos dispersos como luces en los rieles.
+>Aquí, entre reflejos y sombras, nos cruzamos sin mirarnos, sin saber siquiera
+>si seguimos siendo nosotras._
 
 I texted with Majo early in the morning before getting out of bed. Our original
 plan was to meet at Jarry station at noon. She confessed that she had not
@@ -446,54 +467,54 @@ showered already and proposed instead to meet an hour later.
 
 I remained in bed making use of the fact that her way to me was much longer
 than mine. I showered and got ready with plenty of time to spare despite
-getting out of bed at 11h. My room feels emptier and spacier just by the fact
-that I've cleaned my closet and by the addition of this new full body mirror.
+getting out of bed at 11h. My room feels emptier and spacier by the fact
+that I've cleaned my closet and the addition of this new full body mirror.
 
 I waited for Majo at the same spot that I've waited twice for Clara. She made
 no mention of noticing that it was the second time that I've put on perfume.
 I had completely forgotten it until Majo mentioned going first to the pharmacy
 before stopping at the café. It was uneventful. I asked for my meds and paid
-for them. 30 more days.
+for them. 30 more days of hormones.
 
-We sat down downstairs at Ouis mais non. We talked about the elephant that
+We sat down downstairs at _Ouis mais non_. We talked about the elephant that
 Sonny and I bought for Majo. I told her about my weekend with Clara. We chatted
 about her friendship with Aliza.
 
-We took the 55 bus towards Le Plateau and got off at Prince Arthur. The plan
-was to go see the newest movie of Pedro Almodóvar. She brought it up as of
-sharing a thought outloud. I mentioned that I had just seen it at the timesheet
-of cinéma du parc, and offered her to go together. My plans with Majo tend to
-be like those with Alda, spontaneously born like a sudden rain in summer.
+We took the 55 bus towards _Le Plateau_ and got off at Prince Arthur. The plan
+was to go see the newest movie of Pedro Almodóvar. She had brought it up as if
+sharing a thought outloud. I mentioned I had just seen it at the timesheet
+of _Cinéma du parc_, and offered her to go together. My plans with Majo tend to
+be like those with Alda: spontaneously born like a sudden rain in summer.
 
-We got to La cité with an hour to spare. We looked for places to eat and
-settled on the noodle place in front of the theater. She got sour chicken,
-I got fried rice.
+We got to _La cité_ with an hour to spare. We looked for places to eat and
+settled on the noodle place in front of the entrance to the theater. She got
+sour chicken, I got fried rice.
 
-The movie was nothing special. As we were walking to the metro, we both
-mentioned how it might have been that some of the emotion was lost in language.
-Online I read that this might be Pedro's first English movie.
+The movie was nothing special. On our walk to the metro we both mentioned how
+it might have been that some of the emotion was lost in language. Online I read
+that this might be Pedro's first English movie.
 
-When the movie first ended and we were sitting still in the darkness as the
+When the movie ended and we were sitting still inside the darkness and the
 credits rolled, we thought about other of his films that we have enjoyed. She
-mentioned Volver and La piel que habito. I brought up Todo sobre mi madre and
-Malas educaciones. I think it was her who mentioned doing a marathon of his
-movies. Before the movie started, it was also her who mentioned once going to
-the movies by inviting Clara. At that moment I confessed how, despite me really
-liking the idea of bringing her, could not imagine Clara doing the same for me
-with her friends. Her world seems far away and restricted for me.
+mentioned _Volver_ and _La piel que habito_. I brought up _Todo sobre mi madre_
+and _Malas educaciones_. I think it was her who mentioned doing a marathon of
+his movies. Before the movie started, it was also her who mentioned once going
+to the movies together and inviting Clara. I confessed how, despite me really
+liking the idea of bringing her with us, I could not imagine Clara doing the
+same for me with her friends. Her world seems far away and out of reach.
 
 I had been waiting all weekend for a response of hers. When I started to write
 I was just thinking that I would not mind if I did not hear from her before
-Tuesday that I would bring up her name and the night we spent together in my
-session with Fabiola. Another confession to Majo was how the idea that our
-future together has an expiration date scares me.
+Tuesday when I would bring up her name and the night we spent together in my
+session with Fabiola. Another confession to Majo was how the idea of our
+future together having an expiration date scares me.
 
-This time I saw her name in a notification in my computer. In her first text
-she asked me about the reason why I am changing Drs; in her second she
+This time I saw her name in a notification on my computer. In her first text
+she asked me for the reason why I am changing Drs. In her second, she
 apologized in case she were being intrusive.
 
-You could never be intrusive, I wanted to tell her. Since the night we met
-I wanted to tell you all of my secrets.
+_You could never be intrusive_, I wanted to tell her. _Since the night we met
+I wanted to tell you all of my secrets._
 
 ## February, 2025
 
