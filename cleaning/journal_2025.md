@@ -1377,10 +1377,14 @@ It is imperative that treatment adapts accordingly.
 
 ### Tuesday, February 4th, 2025
 
-[Confidential – Personal Clinical Notes]
+**[Confidential – Personal Clinical Notes]**
 
-Patient: [Redacted] Date: [Current Date] Clinician: [Your Name], Clinical
-Psychologist – Trauma Specialist    Overview & Context
+**Patient:** [Redacted]\
+**Date:** [Current Date]\
+**Clinician:** [Your Name],\
+Clinical Psychologist — Trauma Specialist
+
+**Overview & Context**
 
 Over the past several weeks, I have had the opportunity to read the entirety of
 the patient’s journals—materials that span from the early years (circa 2015)
@@ -1390,155 +1394,215 @@ sessions. However, given the patient’s expressed hope that these journals migh
 ground their memories and provide clarity on past events, I revisited them
 extensively. What emerged was a detailed, raw, and evolving narrative of inner
 experience that both aligns with and extends our clinical picture.
-Observations on Behavioral Patterns and Emotional Themes
 
-1. Early Years (Circa 2015–Early 2016)      Emotional Turbulence & Existential
-    Anguish: The earliest entries are marked by intense feelings of emptiness,
-    confusion, and deep existential pain. The language is metaphorical and
-    laden with images (e.g., “insects scattering in the light,” “shooting
-    stars”) that suggest a fragmented, almost surreal inner world. There is
-    a persistent theme of not feeling deserving of love and care.    Gender and
-    Identity Struggle: Even in these early entries, there is clear distress
-    around gender identity. The patient writes about the discomfort with body
-    image, dysphoria, and the dissonance between internal identity and external
-    appearance. The language oscillates between longing for a change and
-    a profound sense of loss related to past self-perception.    Emergence of
-    Self-Harm and Numbing: There are hints of self-harm ideation and
-    behaviors—moments where the patient describes a desire to “claw at my own
-    face,” a metaphor for both literal and figurative self-injury. This early
-    pattern suggests that self-punishment and dissociation (numbing) have been
-    coping strategies from a relatively young age.     2. Middle Period
-    (Mid-2016 to 2018)      Identity Fragmentation and Dissociation Intensify:
-    As time progresses, the journals increasingly reveal episodes of
-    derealization and depersonalization. The patient’s narrative becomes
-    split—there is a clear division between “the self I present” and “the self
-    I feel inside.” This fragmentation is evident in detailed descriptions of
-    looking in the mirror and not recognizing oneself.    Interpersonal
-    Conflict & Ambivalence: The texts describe complex, ambivalent feelings
-    toward significant others. Relationships are depicted as a mix of intense
-    longing for connection and acute fear of abandonment or rejection. The
-    oscillation between idealization and devaluation of loved ones suggests an
-    evolving pattern that borders on but does not fully encapsulate classical
-    borderline personality dynamics.    Memory and Reality Testing: Notably,
-    the patient begins to document moments of doubting the veracity of their
-    own memories and perceptions. This is initially triggered by depressive
-    episodes and the effects of medication, leading to a “misrecognition” of
-    emotional states. These doubts, while not clearly psychotic, point to
-    a disintegration between felt experience and recalled narrative.     3.
-    Recent Months to the Past Year      Maturation and Evolving Self-Awareness:
-    In the most recent entries, there is evidence of subtle personal growth
-    despite persistent distress. The patient writes with more nuance about the
-    interplay of mood, memory, and identity. There is an emerging ability to
-    question, reflect, and, at times, even challenge the internalized
-    narratives of self-blame and unworthiness.    Grounding Through Journaling:
-    The patient explicitly acknowledges that the act of journaling has served
-    as a grounding tool—a way to validate their lived experiences when memories
-    become unreliable. This insight is promising as it indicates a nascent
-    capacity for self-regulation and self-reflection.    Persistent Themes of
-    Dissociation & Derealization: Despite some growth, episodes of dissociation
-    remain prevalent. The patient describes feeling “not really there” or
-    “floating,” especially during periods of interpersonal stress or internal
-    conflict. The recurrent misrecognition of emotional states continues to
-    complicate their ability to accurately gauge their internal world.
-    Interpersonal and Existential Conflict: Even as there is a tentative
-    evolution in self-awareness, interpersonal relationships remain
-    a significant source of pain. The patient expresses deep-seated anger and
-    ambivalence toward those who have hurt them or failed to meet their
-    emotional needs. This is intertwined with existential doubts—questions
-    about the nature of reality, the self, and whether their emotional
-    experiences are “real” or merely fragments of a numbed identity.
-    Hypotheses for Further Exploration in Therapy      Integration of
-    Dissociative Experiences:     Hypothesis: The patient’s chronic
-    derealization and depersonalization may be understood as dissociative
-    adaptations to early and ongoing emotional invalidation. There is a need to
-    explore techniques that facilitate integration of these fragmented
-    self-states.    Therapeutic Aim: Develop interventions that help the
-    patient track, validate, and integrate dissociative parts, perhaps through
-    somatic grounding and imagery rescripting.      Reconstruction of
-    Autobiographical Memory:     Hypothesis: The persistent doubts about memory
-    and the veracity of past events seem to be both a symptom of depression and
-    a defense mechanism against trauma.    Therapeutic Aim: Work on reinforcing
-    a coherent narrative of the patient’s life experiences, thereby reducing
-    the anxiety surrounding “what really happened” and its impact on their
-    identity.      Attachment and Interpersonal Dynamics:     Hypothesis: The
-    oscillation between longing for intimacy and fear of being truly seen
-    suggests deep-seated attachment wounds. Early relational patterns may have
-    contributed significantly to both the dissociative defenses and the chronic
-    self-criticism.    Therapeutic Aim: Use an attachment-focused framework to
-    help the patient identify, understand, and eventually heal early relational
-    traumas. This might include exploring transference reactions within the
-    therapeutic relationship itself.      Reevaluating the Intersection of
-    Gender Dysphoria and Trauma:     Hypothesis: While the patient’s gender
-    dysphoria is a well-established part of their identity, the intensity of
-    their distress may be amplified by unresolved trauma and dissociative
-    fragmentation.    Therapeutic Aim: Distinguish between the intrinsic
-    experience of gender dysphoria and the overlay of trauma-induced
-    self-alienation. Explore how trauma-focused work might help ease the
-    internal conflict related to embodiment and social identity.      Enhancing
-    Emotional Regulation:     Hypothesis: The pattern of emotional flooding
-    followed by numbness suggests a maladaptive cycle of affect regulation.
-    Therapeutic Aim: Incorporate Dialectical Behavior Therapy (DBT) or similar
-    skills training to improve emotional awareness and regulation. This will
-    help bridge the gap between felt emotions and cognitive recognition,
-    reducing the “misrecognition” that contributes to the sense of unreality.
-    Conclusion & Future Directions
+**Observations on Behavioral Patterns and Emotional Themes**
 
-    The journals offer a compelling, unfiltered window into the patient’s inner
-    world—one marked by profound vulnerability, creative introspection, and
-    persistent struggle with fragmentation. While there are signs of growth in
-    terms of reflective capacity and a willingness to ground their own
-    experiences, the core issues of dissociation, chronic self-alienation, and
-    interpersonal mistrust remain potent.
+1. *Early Years (Circa 2015–Early 2016)*
 
-    In our future sessions, I intend to:   Focus on techniques to facilitate
-    integration of dissociative states.   Help the patient construct a more
-    coherent autobiographical narrative.   Explore the interplay between
-    attachment wounds and gender identity, with sensitivity to both aspects.
-    Develop a structured approach to enhance emotional regulation and decrease
-    the intensity of dissociative episodes.   These notes will inform our
-    treatment plan as we collaboratively work toward a more integrated,
-    resilient sense of self. The rawness of these journals, while deeply
-    painful, also carries the seeds of transformation. My aim is to honor that
-    vulnerability and guide the patient toward a more cohesive and hopeful
-    self-experience.
+Emotional Turbulence & Existential Anguish:
 
-    [End of Confidential Clinical Notes]
+The earliest entries are marked by intense feelings of emptiness, confusion,
+and deep existential pain. The language is metaphorical and laden with images
+(e.g., "*insects scattering in the light*," "*shooting stars*") that suggest
+a fragmented, almost surreal inner world. There is a persistent theme of not
+feeling deserving of love and care.
+
+Gender and Identity Struggle:
+
+Even in these early entries, there is clear distress around gender identity.
+The patient writes about the discomfort with body image, dysphoria, and the
+dissonance between internal identity and external appearance. The language
+oscillates between longing for a change and a profound sense of loss related to
+past self-perception.
+
+Emergence of Self-Harm and Numbing:
+
+There are hints of self-harm ideation and behaviors—moments where the patient
+describes a desire to "*claw at my own face*," a metaphor for both literal and
+figurative self-injury. This early pattern suggests that self-punishment and
+dissociation (numbing) have been coping strategies from a relatively young age.
+
+2. Middle Period (Mid-2016 to 2018)
+
+Identity Fragmentation and Dissociation Intensify:
+
+As time progresses, the journals increasingly reveal episodes of derealization
+and depersonalization. The patient’s narrative becomes split—there is a clear
+division between "*the self I present*" and "*the self I feel inside.*" This
+fragmentation is evident in detailed descriptions of looking in the mirror and
+not recognizing oneself.
+
+Interpersonal Conflict & Ambivalence:
+
+The texts describe complex, ambivalent feelings toward significant others.
+Relationships are depicted as a mix of intense longing for connection and acute
+fear of abandonment or rejection. The oscillation between idealization and
+devaluation of loved ones suggests an evolving pattern that borders on but does
+not fully encapsulate classical borderline personality dynamics.
+
+Memory and Reality Testing:
+
+Notably, the patient begins to document moments of doubting the veracity of
+their own memories and perceptions. This is initially triggered by depressive
+episodes and the effects of medication, leading to a "misrecognition" of
+emotional states. These doubts, while not clearly psychotic, point to
+a disintegration between felt experience and recalled narrative.
+
+3. *Recent Months to the Past Year*
+
+Maturation and Evolving Self-Awareness:
+
+In the most recent entries, there is evidence of subtle
+personal growth despite persistent distress. The patient writes with more
+nuance about the interplay of mood, memory, and identity. There is an emerging
+ability to question, reflect, and, at times, even challenge the internalized
+narratives of self-blame and unworthiness.
+
+Grounding Through Journaling:
+
+The patient explicitly acknowledges that the act of journaling has served as
+a grounding tool—a way to validate their lived experiences when memories become
+unreliable. This insight is promising as it indicates a nascent capacity for
+self-regulation and self-reflection.
+
+Persistent Themes of Dissociation & Derealization:
+
+Despite some growth, episodes of dissociation remain prevalent. The patient
+describes feeling "*not really there*" or "*floating*," especially during
+periods of interpersonal stress or internal conflict. The recurrent
+misrecognition of emotional states continues to complicate their ability to
+accurately gauge their internal world.
+
+Interpersonal and Existential Conflict:
+
+Even as there is a tentative evolution in self-awareness,
+interpersonal relationships remain a significant source of pain. The patient
+expresses deep-seated anger and ambivalence toward those who have hurt them or
+failed to meet their emotional needs. This is intertwined with existential
+doubts—questions about the nature of reality, the self, and whether their
+emotional experiences are "*real*" or merely fragments of a numbed identity.
+
+**Hypotheses for Further Exploration in Therapy**
+
+*Integration of Dissociative Experiences:*
+
+Hypothesis: The patient’s chronic derealization and depersonalization may be
+understood as dissociative adaptations to early and ongoing emotional
+invalidation. There is a need to explore techniques that facilitate integration
+of these fragmented self-states.
+
+Therapeutic Aim: Develop interventions that help the patient track, validate,
+and integrate dissociative parts, perhaps through somatic grounding and imagery
+rescripting.
+
+*Reconstruction of Autobiographical Memory:*
+
+Hypothesis: The persistent doubts about memory and the veracity of past events
+seem to be both a symptom of depression and a defense mechanism against trauma.
+
+Therapeutic Aim: Work on reinforcing a coherent narrative of the patient’s life
+experiences, thereby reducing the anxiety surrounding "what really happened"
+and its impact on their identity.
+
+*Attachment and Interpersonal Dynamics:*
+
+Hypothesis: The oscillation between longing for intimacy and fear of being
+truly seen suggests deep-seated attachment wounds. Early relational patterns
+may have contributed significantly to both the dissociative defenses and the
+chronic self-criticism.
+
+Therapeutic Aim: Use an attachment-focused framework to help the patient
+identify, understand, and eventually heal early relational traumas. This might
+include exploring transference reactions within the therapeutic relationship
+itself.
+
+Reevaluating the Intersection of Gender Dysphoria and Trauma:
+
+Hypothesis: While the patient’s gender dysphoria is a well-established part of
+their identity, the intensity of their distress may be amplified by unresolved
+trauma and dissociative fragmentation.
+
+Therapeutic Aim: Distinguish between the intrinsic experience of gender
+dysphoria and the overlay of trauma-induced self-alienation. Explore how
+trauma-focused work might help ease the internal conflict related to embodiment
+and social identity.
+
+*Enhancing Emotional Regulation:*
+
+Hypothesis: The pattern of emotional flooding followed by numbness suggests
+a maladaptive cycle of affect regulation.
+
+Therapeutic Aim: Incorporate Dialectical Behavior Therapy (DBT) or similar
+skills training to improve emotional awareness and regulation. This will help
+bridge the gap between felt emotions and cognitive recognition, reducing the
+“misrecognition” that contributes to the sense of unreality.
+
+**Conclusion & Future Directions**
+
+The journals offer a compelling, unfiltered window into the patient’s inner
+world—one marked by profound vulnerability, creative introspection, and
+persistent struggle with fragmentation. While there are signs of growth in
+terms of reflective capacity and a willingness to ground their own experiences,
+the core issues of dissociation, chronic self-alienation, and interpersonal
+mistrust remain potent.
+
+In our future sessions, I intend to:
+- Focus on techniques to facilitate integration of dissociative states.
+- Help the patient construct a more coherent autobiographical narrative.
+- Explore the interplay between attachment wounds and gender identity, with
+sensitivity to both aspects.
+- Develop a structured approach to enhance emotional regulation and decrease
+the intensity of dissociative episodes.
+
+These notes will inform our treatment plan as we collaboratively work toward
+a more integrated, resilient sense of self. The rawness of these journals,
+while deeply painful, also carries the seeds of transformation. My aim is to
+honor that vulnerability and guide the patient toward a more cohesive and
+hopeful self-experience.
+
+**[End of Confidential Clinical Notes]**
 
 ### Saturday, February 8th, 2025
 
-"If this were the way things end; if that ends up being our last good-bye...
-I think I am OK with that."  Two weeks ago, to the day, it had been an even
-longer wait. I, like yesterday, was starting to resent the silence; a familiar
-melancholy was taking over my mornings. My plans were with Alda and Renzo.
-I considered cancelling and staying in bed. Alda convinced me otherwise. I am
-glad I listened. We ate dumplings and chatted about life. It was not just the
-two of us. Renzo's pakistani friend was sitting in front of me. Jose Luis was
-next to her, to my right. I do not think that he had arrived yet when I saw
-Clara's name on the screen of my phone.
+>"If this were the way things end; if that ends up being our last good-bye...\
+>"I think I am OK with that."
 
-Hi Sofibug.
+***
+
+Two weeks ago, to the day, it had been an even longer wait. I, like yesterday,
+was starting to resent the silence; a familiar melancholy was taking over my
+mornings. My plans were with Alda and Renzo. I considered cancelling and
+staying in bed. Alda convinced me otherwise. I am glad I listened. We ate
+dumplings and chatted about life. It was not just the two of us. Renzo's
+pakistani friend was sitting in front of me. Jose Luis was next to her, to my
+right. I do not think that he had arrived yet when I saw Clara's name on the
+screen of my phone.
+
+Clarizard > `Hi Sofibug.`
 
 The night before I had debated reaching out again and telling her I would be
 deleting instagram. I worried that she had ignored my phone number when I gave
-it to her weeks before, and by that by breaching this, our usual way of
-communication, I would be cutting myself off her life. Like several times
-before she apologized by not reaching back. Instead, with this message she
-shared with me her canadian phone number together with her plans of watching
-Nosferatu in the afternoon—the latter in the form of an invitation.
+it to her weeks before and that, by breaching this, our usual way of
+communication, I would be cutting myself off her life.
+
+Like several times before she apologized by not reaching back. Instead, with
+this message she shared with me her canadian phone number together with her
+plans of watching Nosferatu in the afternoon—the latter in the form of an
+invitation.
 
 We watched the movie together. I swallowed down my urge to reach into her seat
 and grab her hand. She was avoiding going back home. I invited her to grab
-dinner together. We ended up sitting down at the window table of Lola Rosa by
-Place des arts. We had appetizers each and a pitcher of sangría together. We
-stayed there until after they closed the place.
+dinner together. We ended up in Lola Rosa, sitting down at the table by the
+window facing Place des arts. We had appetizers each and a pitcher of sangría
+together. We stayed there until after they closed the place.
 
 I told her about the restaurant's tradition of writing cute notes in the
 receipts and leaving them in the wooden table's drawers. We browsed several of
-them amazed by their age and content. With a barely hidden playful smile on her
-face, she turned her own and grabbed a pen that I have forgottten where it came
-from. She started paraphrasing, in English, my question about the couscous.
-Down, transitioning from my words in our langague to her thoughts in hers, she
-wrote something that I could not quite see.
+them amazed by their age and content. With an almost-hidden playful smile on
+her face, she turned her own ticket and grabbed a pen—I have forgottten where
+it came from. She started paraphrasing, in English, my question about the
+couscous. Down, transitioning from my words in our langague to her thoughts in
+hers, she wrote something that I could not quite well see.
 
 "There," she said hiding the receipt in the drawer, where it will be found by
 a couple of curious strangers who will read from it what I could not. The
@@ -1546,15 +1610,15 @@ mischievous smile remained. I wanted to reach over and kiss it.
 
 We walked together to the closest metro station and took the next train on the
 same direction. During our evening she had teased me for drinking slower than
-her. I made the observation of how despite being bigger than her, the sangria
+her. I made the observation that, despite being bigger than her, the sangria
 was much more effective on my body. The trip home was short, but we still
 grabbed seats. I placed my right hand on her thigh, crossed my left arm to grab
-hers, and lied down my head between her chest and shoulder. She reciprocated
-with a fleeting gesture of placing her head above mine. I closed my eyes for
-a couple of stations. When I opened them again, I looked at the screen uptop
-the train signaling the arrival to station Rosemont.
+hers, and rested my head on the space between her chest and shoulder. She
+reciprocated with a fleeting gesture placing her head over mine. I closed my
+eyes for a couple of stations. When I opened them again, I looked at the screen
+uptop the train signaling the arrival to station Rosemont.
 
-" There is one station left," I thought to myself outloud. Without taking my
+"There is one station left," I thought to myself outloud. Without taking my
 face off her body, I looked up to see her face, my gaze slipping through my
 bangs.
 
@@ -1564,69 +1628,76 @@ I asked her to repeat herself as if I had missed it, with the selfish intention
 of hearing her again. "No, nothing. What were you saying?"
 
 With her station coming up next, I finally pulled away and reclined myself on
-my arm, inches away from her face. I asked her to text me when she got home.
-The train stopped and the doors were about to open.
+my own arm, still inches away from her face. I asked her to text me when she
+got home. The train stopped and the doors were about to open.
 
 "Yes, you too, please." She bridged the short distance between us and kissed
-me, fast and intentional, a fleeting show of affection and intimacy. She left
-and the doors closed behind her.  We texted for a bit that night before we each
-went to sleep. Her last text was thanking me for joining her last minute. I saw
-it, and intentionally did not reply.
+me—fast and intentional, a fugitive show of affection and intimacy.
+
+She left and the doors closed behind her.  We texted for a bit that night
+before we each went to sleep. Her last text was thanking me for joining her
+last minute. I saw it and intentionally did not reply.
 
 A full week passed. I submitted an abstract for AAIC and visited Aliza's lab
 where I gave a talk on mediation models. After having dinner with Majo, I sent
 a text to Clara apologizing for not contacting her on Friday and hoped she had
 an easy moving. I have no way of knowing how far back she saw it before
-replying No problem by the end of the weekend. The next exchange happened two
-days after. She asked me if I was more relaxed this following week. I asked her
-about hers and finished with an overthought do i get to see you this week?
+replying *No problem* by the end of the weekend.
+
+The next exchange happened two days after. She asked me if I was more relaxed
+this following week. I asked her about hers and finished with an overthought *do
+i get to see you this week?*
 
 It is Saturday, 5 minutes shy of 21h. There is still no response.
 
 ### Sunday, February 9th, 2025
 
->"majo doesn't like clara anymore [...] eso me dio más tristeza que el ghosteo"
+>Sofélia > `majo doesn't like clara anymore`
+
+>Sofélia > `eso me dio más tristeza que el ghosteo`
+
+***
 
 I drank tonight as well.
 
 Yesterday, I went out with María, too. We went to brunch at Larry's. Like
 usual, we talked about Aliza and Clara. We both have been feeling conflicted in
 our own ways. We walked around Saint-Laurent on that side of the city. We
-entered an inconspicuous friperie, and browsed around. I stayed by the greeting
+entered an inconspicuous *friperie*, and browsed around. I stayed by the greeting
 cards looking at the different ones, semiconsciously looking to the
 St-Valentine ones. We got outside and went back from where we came from to
-continue the afternoon and our conversation sharing a bowl of fries at Dieu du
-ciel!
+continue the afternoon and our conversation sharing a bowl of fries at *Dieu du
+ciel!*
 
 Our plans today were with Lavi. I met Majo's friend three months ago, the same
 night of one of my dates with Clara. It was our third one, when we watched
-a movie at UQAM and prolonged our date past midnight; it was the dawn when
-I confessed to her I was trans and when we had our first kiss in front of the
-metro station. I had spent the afternoon with Majo that evening, and Lavi
-joined us after her own date. Lavi later told María how funny she had found me,
-how cool. She made an observation of how skilled I was with my makeup. If
-I remember correctly, I was wearing a skirt that night and my eyes were framed
-by mascara and shadow.
+a movie at UQAM and prolonged our date past midnight; it was the same night
+when I confessed to her I was trans and when we had our first kiss in front of
+the metro station. I had spent the afternoon with Majo that evening and Lavi
+joined us after her own date. Lavi would later tell María how funny she had
+found me; how cool. She made an observation of how skilled I was with my
+makeup. If I remember correctly, I was wearing a skirt that night and my eyes
+were framed by mascara and coloured shadows.
 
 This morning I dreamed three times that I woke up to three different versions
 of the same resurrection text. When I actually woke up, my phone screen
 remained empty.
 
 Our plan was to meet at Safran café at 15h. Majo let me know she would be
-arriving late, so purposefully missed the bus. She was the first one there and
+arriving late; purposefully I missed the bus. She was the first one there and
 got us a table. The place was a little iranian café. Majo was sitting right
 next to the entrance, by the corner of three joined tables.
 
-Long time no see.
+"Long time no see."
 
 I sat right in front of her, after placing my red puffy coat on the back of my
 chair. Lavi was not replying to texts. She had some extraordinary news. At 3h
-she had shared her live location somewhere in Griffintown.
+she had shared her live location with Majo from somewhere in Griffintown.
 
 We continued our conversation from yesterday. This afternoon Majo was more
 direct and confrontational. She had mentioned before how she believed that
-Clara was emotionally unavailable, yet, after this week, she no longer thinks
-that she is doing me good at all. She is giving me breadcrumbs and I, in her
+Clara was emotionally unavailable, yet, after this week, she is now sure she is
+not doing me any good at all. She is giving me breadcrumbs and I, in her
 opinion, deserve much more than that.
 
 On her end, she has continued talking with Aliza. She wanted to set boundaries
@@ -1634,60 +1705,61 @@ telling her to take some time to focus on her new relationship and learn how to
 manage her time. Aliza did not seem to understand her intentions, which led
 them to go around in circles for several messages.
 
-We shared two different types of tea, had our own meals, and were finishing our
-dessert by the time that Lavi joined us. She updated us on this guy she's been
-seeing since last year. It was not the same guy that she went on that date with
-on November. That one, apparently, had a girlfriend he failed to mention. With
-this one—who she met around that same time—it had been a very slow burn. Until
-last night, in a date very similar to the one I had on my return to Montréal,
-they had not even hold hands. They went from no contact, to cuddling, kissing
-and having sex.
+We had shared two different types of tea, finished our own meals, and were
+finishing our dessert by the time that Lavi joined us. She updated us on this
+guy she's been seeing since last year. It was not the same guy that she went on
+that date with on November—that one, apparently, had a girlfriend he failed to
+mention. With this one, who she met around that same time, it had been a very
+slow burn. Until last night, in a date very similar to the one I had on my
+return to Montréal, they had not even hold hands. They went from no contact, to
+cuddling, kissing and having sex that same night.
 
 They have plans to see each other again Wednesday.
 
-Majo and I put up to date a bit to Lavi about the situation on my end. She
-suggested for me to text her again saying something to the like of I see you
-are not interested, then.
+Majo and I put Lavi a bit up to date about the situation on my end with Clara.
+She suggested for me to text her again saying something to the like of
+*I see you are not interested, then.*
 
 I considered that an even worse idea to the ones I had discarded.
 
-In my mind there were three possibilities, following my intended plan of not
-reaching out again. First, I could not hear from again. That would be a stark
-contradiction to what has happening until now. In my head that seems the least
-likely. Second, she can reach out with a text apologizing for not reaching out
+In my mind there were three possible outcomes following my intended plan of not
+reaching out again: first, I could not hear from again—that would be a stark
+contradiction to what has happening until now—in my head that seems the least
+likely; second, she can reach out with a text apologizing for not reaching out
 with one of the reasons she has used plenty of times like now—similar to my own
 text last week disguising my intentional silence in the clothes of a busy
-week—and continuing the conversation. Third, and lastly, her eventual response
+week—and continuing the conversation; third, and lastly, her eventual response
 is also an apology, but for abruptly ending the conversation and our unnamed
 and uncategorized relationship. Up to this point, none of the options give me
 hope or calm.
 
-The plan came up of joining shub at his house. I considered the idea, but ended
-up deciding to come home instead. We walked in different directions. I got to
-the metro station and purposefully took the wrong train. I wanted to sit down
-in the metro for as long as possible, as if riding the orange line would be the
-meditation I needed to come up with what is it that I want—either what I want
-to do, or what do I want to get out of this.
+Suddenly, the plan of joining shub at his house was born. I considered the idea, but ended
+up deciding to go home instead. We walked in different directions. I got to
+the metro station and purposefully took the wrong train—I wanted to sit down
+in the metro for as long as possible. It was as if riding the orange line would be the
+meditation I needed to decide what is it that I want—either what I want
+to do or what do I want to get out of this.
 
 ### Monday, February 10th, 2025
 
-"le tomó el doble de días, pero, como jesucristo, clara ya resucitó"   After
-sleeping late for most mornings, it was particularly hard to get up today.
-Nothing particularly important was on my phone screen when I turned off the
-alarms.
+>Sofélia > `le tomó el doble de días, pero, como jesucristo, clara ya resucitó`
+
+After sleeping late for most mornings, it was particularly hard to get up
+today. Nothing particularly important was on my phone screen when I turned off
+the alarms.
 
 There are still revived remnants of masculinity on my body. It is not that my
 libido has been higher than before, but for the past couple of nights, I have
-been masturbating before trying to sleep. My orgasms are still not dry; by the
+been masturbating before trying to sleep. My orgasms are still not dry—by the
 morning my underwear is soiled. Like a teenager, I feel disgusted by my own
-body functions. My facial hair is more spotty and grows faster. There lone
-hairs appear much faster in my chest, and there is a faint blacker tint on my
-belly by thin and barely-visible body hair. In the middle of the night, barely
-conscious, I can feel half erections. My body is mine yet it feels so foreign
-again.
+body functions. My facial hair is more spotty and grows faster. The lone hairs
+appear much faster in my chest and there is a faint blacker tint on my belly by
+thin and barely-visible body hair. In the middle of the night, barely
+conscious, I can feel attempts-of-erections. My body is still mine, yet it
+feels so foreign again.
 
 Around a week ago the estradiol vial started moving in the US postal service.
-This weekend it got to customs, from where it has not moved still. Last time
+This weekend it got to customs from where it has not moved still. Last time
 that I chatted with my mum, she asked me if I had started injecting myself with
 the hormones yet. She also told me how Doña Cande felt hurt by the actions of
 her nieces and had decided to cut contact with some of them. Also, Nymeria was
@@ -1698,33 +1770,36 @@ Mondays are days of lab meetings. Since most Tuesdays I stay at home for
 therapy, I decided to force myself to get up this morning and go to the office.
 Whether I had an idea or had completely forgotten about it, today was also the
 scheduled date were the new grad students organized the first installment of
-the lab's montly(?) movie night.
+the lab's monthly(?) movie night.
 
 I decided not to buy breakfast and just brew my morning coffee. I left my
 apartment later than usual but still at a reasonable hour. The 144 departure
 was not soon enough, so I walked from station Sherbrooke station listening to
 my iPod.
 
-There is this habit of my phone to locking itself in a working do not disturb
-mode when I get to walking distance to the MNI. It happens when I pass the
-hospital museum a couple of streets north of Parc av.
+There is this habit my phone seems to have of locking itself in a work-related
+*Do not disturb* mode when I get to walking distance from the MNI.
+It happens when I pass the hospital museum a couple of streets north of *Rue
+Parc*.
 
-I made it to my office. My boots were dripping wet when I started untying the
-laces. I exchanged them for my black sneakers waiting for my on the plastic mat
-by the door. I put my gloves inside my beanie, which I hooked by one of the
-holes of its sewing to the coat rack by the door. My purple coat went over it.
+I made it to my office. My boots were dripping wet when I lifted them to start
+untying the laces. I switched them with my black sneakers waiting for my on the
+plastic mat by the door. I put my gloves inside my beanie, which I hooked by
+one of the holes of its sewing to the coat rack by the door. My purple coat
+then went over it. I emptied my pockets and placed its content on my desk
+before finally sitting down in front of my computer. It was then that I
+disabled the automatically set Work-mode on my phone. Clarizard jumped from
+the bottom of the screen.
 
-I emptied my pockets and placed its content on my desk before finally sitting
-down in front of my computer. I disabled the working mode of my phone, and
-Clarizard jumped from the bottom of the screen. How are you?
+> Clarizard > `How are you?`
 
-I swiped up to read the message that had come in around 15 minutes before.
+I swiped up to read the message that had come in just 15 minutes before.
 
-"So that was a very busy week (and I didn't even finish my work for Friday
-yet), I'm sorry I didn't reply I really thought I did"
+> Clarizard > `So that was a very busy week (and I didn't even finish my work
+>for Friday yet), I'm sorry I didn't reply I really thought I did`
 
 This time, her apology did not took me off guard. Nothing in her text was
-surprising other than the fact that it had finally came. It was as if by
+surprising other than the fact that it had came. It was as if by
 waiting so long for this moment, I had unintentionally convinced myself of its
 improbability.
 
@@ -1733,7 +1808,7 @@ out to Majo with a screenshot of the two green text bubbles. She asked me what
 I was going to do. I could not answer her—nor myself.
 
 I had told her the night before, around midnight, that I would take a day off.
-For the next 36h until my therapy session of Tuesday, I would do nothing.
+For the next 36h until my therapy session on Tuesday, I would do nothing.
 I would not reach out to her nor think about the situation. Were she to text me
 back—just as she ended up doing—I would not text back until after that
 arbitrary goal-line.
