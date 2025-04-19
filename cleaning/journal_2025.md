@@ -1799,13 +1799,12 @@ I swiped up to read the message that had come in just 15 minutes before.
 >for Friday yet), I'm sorry I didn't reply I really thought I did`
 
 This time, her apology did not took me off guard. Nothing in her text was
-surprising other than the fact that it had came. It was as if by
-waiting so long for this moment, I had unintentionally convinced myself of its
-improbability.
+surprising other than it had came—as if by waiting so long for this moment,
+I had unintentionally convinced myself of its improbability. I was not
+relieved. I remained just as confused as I had woken up.
 
-I was not relieved. I remained just as confused as I had woken up. I reached
-out to Majo with a screenshot of the two green text bubbles. She asked me what
-I was going to do. I could not answer her—nor myself.
+I reached out to Majo with a screenshot of the two green text bubbles. She
+asked me what I was going to do. I could not answer her—nor myself.
 
 I had told her the night before, around midnight, that I would take a day off.
 For the next 36h until my therapy session on Tuesday, I would do nothing.
@@ -1813,51 +1812,60 @@ I would not reach out to her nor think about the situation. Were she to text me
 back—just as she ended up doing—I would not text back until after that
 arbitrary goal-line.
 
-My argument, when I laid it out, seemed convincing. No discussion nor
+My argument, when laid it out, seemed convincing. No discussion nor
 counter-arguments. Still, when the time came and the messages arrived, neither
 of us held it up against myself.
 
-"Omg" was here first an honest reaction. "So now what?
+> Majo > `Omg`
 
-"Too many moving parts. Wey yo le respondería"  was Majo's final conclusion.
+That was here first and honest reaction.
 
-We talked about it. I could say how I was worried—which I was—and ask her to
-see each other. No discussion nor counter-arguments from my end, either.
+> Majo > `So now what?`
+
+> Majo > `Too many moving parts. Wey yo le respondería`
+
+We talked about it. I could say back how I was worried—which I was—and ask her
+to see each other. No discussion nor counter-arguments from my end, either.
 
 I did the first half, but held off on the second.
 
 Walking home after watching Kiki's delivery service, I drafted in my head how
 I could invite her to come watch Before Sunrise with me this Friday after work.
 Moments ago, I confessed to Majo how I am unsure about it, because of the fear
-of reaching out again, and receiving a no for an answer.
+of reaching out again, and receiving no for an answer.
 
-Maybe when she replies back—if she does it before the end of w
+Maybe when she replies back—if she does it before the end of w...
 
 ### Thursday, February 13th, 2025
 
-"Hey, I'd really like to see you this week. when are you free?"
+> Sofía > `Hey, I'd really like to see you this week. when are you free?`
 
-"Hey SofibugI might be free on Sunday, cancelling a hike because of the storm,
-if not then would Monday after work also do?"  Slowly, maybe without giving any
-signs, I have been slowly giving up on us.
+> Clarizard > `Hey Sofibug. I might be free on Sunday, cancelling a hike
+> because of the storm, if not then would Monday after work also do?`
+
+***
+
+Slowly, maybe without giving any signs, I have been giving up on us.
 
 Signs to her. To everyone else, it has been an open subject.
 
-I ca not believe how despite talking so much about it, I have not made my own
-mind about what is it that I want.  My hormones have still not gotten here.
-They started moving for a while, they even left the States. They got to customs
-in the UK and have not moved since the 8th. I sent an e-mail to the vendors
-asking if maybe there had been a mistake with the tracking number. They replied
-fairly quickly this time saying the number was correct. For some reason USPS
-had decided to reroute the package. If the package gets seized or stops moving
-let us know and we'll reship, they finished.
+I cannot believe how despite talking so much about it, I have not made my own
+mind about what is it that I want.
 
-I think I got that e-mail after I had browsed silvermaplelabs, the canadian
+My hormones have still not gotten here. They started moving for a while—they
+even left the States. They got to customs in the UK and have not moved since
+the 8th. I sent an e-mail to the vendors asking if maybe there had been
+a mistake with the tracking number. They replied fairly quickly this time
+saying the number was correct. For some reason USPS had decided to reroute the
+package. If the package gets seized or stops moving let us know and we'll
+reship, they finished.
+
+I think I got that e-mail after I had browsed silvermaplelabs—the canadian
 vendor. The vial was even cheaper. I considered buying from them. I shared my
 impulsive idea with Majo. I sent it to Sonny, too, expecting her to judge me as
-impatient and assuming this to be another manifestation of my rushed nature.
-Instead, she said that it made sense, and it would not end up being a fruitless
-purchase; the other ones would end up coming here sometime in the future,
+impatient and maybe assume it to be another manifestation of my rushed nature.
+Instead, she said it made sense and it would not end up being a fruitless
+purchase—the other ones would end up coming here sometime in the future,
 probably.
 
 In less than an hour I bought the remaining crypto I needed and bought the
@@ -1866,223 +1874,239 @@ time of arrival for the end of the week. This vial of hormones will probably
 make it here faster than the syrenges I bought with Amazon Prime.
 
 I have not decided if I will continue filling my old prescription for hormones.
-"Hace días te quería decir que el domingo que nos vimos, cuando vi tu cara, te
-veías triste.
 
-"Y me dieron ganas de abrazarte."
+> Majo > `Hace días te quería decir que el domingo que nos vimos, cuando vi tu
+> cara, te veías triste.`\
+> Majo > `Y me dieron ganas de abrazarte.`
 
-"Do you still believe that the most probable outcome of all of this is that
-this, whatever it is between us, is ending?"
+***
+>Do you still believe that the most probable outcome of all of this is that
+>this, whatever it is between us, is ending?
 
-"Yes. The most probable outcome is still that his ends.
+Yes. The most probable outcome is still that his ends.
 
-"Not because you did something wrong. Not because you aren't enough. But
+Not because you did something wrong. Not because you aren't enough. But
 because the weight of uncertainty, inconsistency, and emotional misalignment is
 unsustainable.
 
-"Even if she does reply, even if you see her again, the fundamental issue
+Even if she does reply, even if you see her again, the fundamental issue
 remains: her pattern of engagement triggers you deepest wounds; you are
 constantly in a state of questioning your worth in this dynamic; you need more
 emotional reciprocity than what she has consistently shown.
 
-"This doesn't mean she doesn't like you. This doesn't mean she has bad
+This doesn't mean she doesn't like you. This doesn't mean she has bad
 intentions. But it does mean that you are already hurting, already doubting,
 already bracing for the loss. And that? That is not a foundation for something
-lasting."
+lasting.
 
-Tomorrow is Valentine's day. Last year, I begged sophie for breadcrumbs of
-attention and ended up meeting her at Thomson House during her lunch break. We
-saw each other for less than 30 minutes. I bought her an iced latte with
-vegetable milk since she is allergic to dairy. We talked about work and how she
-was going to go on a trip to Ottawa for around a week. When she stood up to
-leave, she openly brought up the idea of meeting again after her return.
+***
 
-"Text me when you're back," I offered her as a good-bye. She misunderstood me
+Tomorrow is Valentine's day.
+
+Last year, I begged sophie for breadcrumbs of attention and ended up meeting
+her at Thomson House during her lunch break. We saw each other for less than 30
+minutes. I bought her an iced latte with vegetable milk since she is allergic
+to dairy. We talked about work and how she was going to go on a trip to Ottawa
+for around a week. When she stood up to leave, she was who brought up the idea
+of meeting again after her return.
+
+"Text me when you're back," I said as a good-bye. She misunderstood me
 and reached out from her office saying she had to get into a meeting as soon as
-she got back.
+she was back in her office.
 
 With Sophie I never really considered the idea of being the one to end  things.
 I ended up in tears from the frustration of not being able to hold off the urge
-to keep reaching out to her despite her silence.
+to keep reaching out to her despite her silence and obvious indifference.
 
 I keep being shown her videos by the algorithm of TikTok, the only social
 network besides reddit that I have still on my phone. This afternoon I finally
-blocked her in the hopes that will stop her videos to appear. A couple of days
-ago I deleted her number and Bea's from my contacts list.
+blocked her with the hope that would stop her videos from appearing. A couple
+of days ago I deleted her number and Bea's from my contacts list.
 
-I keep practicing in my head the speech that I unconsciously want to prepare
-for when I end up seeing Clara in a couple of days.
+I, barely conscious now, keep practicing in my head the speech that I would
+want to say when I end up seeing Clara in a couple of days.
 
-An hour ago I glanced at the camera and remember my fantasy of asking to take
-pictures of us with the roll of 120mm. I think back to my idea of sending her
-a handwritten letter, or the concert ticket that I will probably not use.
+An hour ago I glanced at the camera and remembered my fantasy of asking to take
+pictures of us with the roll of 120mm. I remember that idea of sending
+her a handwritten letter. I remember, too, the concert ticket I bought
+and probably not use.
+
 I will grieve more what will not happen, rather than what did.
 
 ### Saturday, February 15th, 2025
 
-Feliz San Valentín, Cari
+>*Feliz San Valentín, Cari*
+>
+>*Entre tes yeux d'hiver\
+>et tes cheveux d'été,\
+>je trouve le printemps.*
+>
+>*Te quiero, S*
 
-Entre tes yeux d'hiver  et tes cheveux d'été,  je trouve le printemps.
+***
 
-Te quiero, S   Last night, on Valentine's day, I did not sleep on my own bed.
+Last night, on Valentine's day, I did not sleep on my own bed.
 
 Despite the turmoil inside my head about how to move forward, when I asked
 Clara to meet sometime this week, part of me was hoping she would suggest
 Friday's evening. Maybe even that same day, I considered openly inviting her to
-come to my apartment after work if she were available. The idea of potentially
-ending this chapter disuaded me of it.
+come to my apartment after work if she were available. The undying idea of
+potentially ending this chapter disuaded me.
 
-María had already invited me to spend that day with her. Depending on the
-outcome of Lavi's and Shubhendra's parallel romantic situations, they might
-join us. The eve before the hallmark holiday the plan materialized as going to
-Lavi's apartment where we could order food and watch a movie—with the implied
-plan of getting overly drunk. Lavi intended to head to Datcha some time later
-in the night. Despite being invited, I declined enthusiastically to this
-addendum.
+María had already invited me to spend Friday with her. Depending on the outcome
+of Lavi's and Shubhendra's parallel romantic situations, they might join us as
+well. The eve before—the hallmark holiday—the plan materialized as going to
+Lavi's apartment, order food, and watch a movie—with the implied plan of
+getting overly drunk. Lavi intended to head out to Datcha some time later in
+the night. Despite being invited, I declined enthusiastically to this addendum.
 
-For the first part of the day, I decided for going to Oui mais non rather than
+For the first part of the day, I decided to go to *Oui mais non* rather than
 the office. I carried with me my laptop, the half-empty bottles of homemade
-raki and fireball, as well as the idea of casually browsing the café's greeting
-cards section. While I was maneuvering over the more than 30 cm of snow that
-had fallen the day before, I noticed that my phone did not have but 45% of
-battery. I had no intentions of heading back home until after the evening.
-I texted Majo asking her if Lavi would have an iphone charger at her house. She
-replied quickly and affirmatively. In any case, I was welcome to join her in
-her hospital. There was a library available where I could work. I was tempted
-by this idea, but I had a secondary purpose at the café, so I decided to turn
-off my phone for the rest of the morning until I would head out to María's
-workplace.
+raki and fireball, and the idea of casually browsing the café's greeting cards
+section. While maneuvering over the 30 cm of snow that had fallen the day
+before, I noticed my phone did not have but 45% of battery. I had no intentions
+of heading back home until after the evening. I texted Majo asking her if Lavi
+had an iPhone charger at her house. She replied quickly and affirmatively. In
+any case, I was also welcome to join her in her hospital—there was a library
+available where I could work. I was tempted by this idea, but I had a secondary
+purpose waiting for me at the café. I decided to turn off my phone for the rest
+of the morning until heading out to María's workplace.
 
 The café was much emptier than I was expecting it to be given the day.
 
-"Bonjour," greeted me the barista who was outside her station putting down some
+"*Bonjour*," greeted me the barista who was outside her station putting down some
 stools from the bar.
 
-"Salut," I greeted her back while I was tacking off my beanie and approaching
-the counter. "Salut encore," I added clumsily.
+"*Salut*," I greeted her back while I was taking off my beanie and approaching
+the counter. "*Salut encore*," I added clumsily.
 
-She laughed at my social awkwardness before taking my order for an oatmilk
-latte. I quickly took a glimpse at the card options until she called me back by
-my order. I took my drink and headed downstairs to the almost empty basement
-where I worked for a couple of hours.
+She laughed at my social awkwardness and took my order for an oatmilk latte.
+I quickly took a glimpse at the card options until she called me back by my
+order. I took my drink and headed downstairs to the almost empty basement where
+I worked for a couple of hours.
 
-When I felt that I had been productive enough for the first half of the work
-shift, I climbed the stairs and continued my search for an appropriate card. In
-one of the many conversations I have have with Majo about the subject, I shared
-with her my idea of getting a valentine's card. Within the same message on
-which I let her know of my intentions, the doubts about the potential of not
-being able to give it out in case the planned conversation took the
-disappointing turn. I quickly realized that it would, in turn, become a nice
-memento for when the occasion rose when I grew up enough to actually choose
-myself.
+When I felt I had been productive enough for the first half of the work shift,
+I climbed back up the stairs to continue my search for an appropriate card.
 
-Ironically, the card that I ended up buying says: Chui ben avec toé. I placed
+In one of the many conversations I have have with Majo about the subject,
+I shared with her my idea of getting a valentine's card. Within the same
+message letting her know of my intentions, the doubts about potentially not
+being able to give it out in case the planned conversation took a disappointing
+turn. I quickly realized that it could, in that case, become a nice memento of
+the occasion when I grew up enough to actually choose myself.
+
+Ironically, the card that I ended up buying says: *Chui ben avec toé*. I placed
 it inside the loose papers in my backpack and headed outside towards the metro
-station. I made a stop at the bakery. I got myself a brioche à la canelle and
-a bag of chocolates for María.
+station. I made a stop at the bakery—I got myself a brioche à la canelle and
+a small bag of chocolates for María.
 
-It could have been on that first of the many long rides on the orange line
-towards or coming from station Vendôme that I quietly cried looking at my own
-emotions being reflected in the train's window, or I might be misremembering
-the events due to the tiredness of a long weekend and a barely-slept night.
+It could have been on that first of many long rides on the orange line, towards
+or coming back from *Station Vendôme,* that I quietly cried looking at my own
+emotions reflected back to me on the train's window. But maybe I am
+misremembering the events due to the tiredness of a long weekend and
+a barely-slept night.
 
-I had enough battery after that first time that I shut off my phone to orient
+I had enough battery after that first time shutting off my phone to orient
 myself in the unyet explored hospital with María's guidance. She intercepted me
-by the cafeteria, the same place were we orchestrated meeting this
-afternoon—this second time without relying on turning my phone at all.
+on the cafeteria—the same place were we orchestrated meeting this
+afternoon; that second time today without relying on turning my phone at all.
 
 I joined her in her small office and sat down to work on my own projects using
 her labmate's computer. We chatted and worked and continued talking about the
-stuff we always do. Both yesterday afternoon's and today's evening, she bought
-my fried rice and lentils lasagna with the Union's discount. Despite proposing
-to myself becoming vegetarian after establishing a committed relationship with
-Clara, I have continued choosing the vegetarian options for most of my foods,
-as if by this small gesture I could hold on a bit longer to the idea that this
-brake-less train will be able to somehow stop before falling of a cliff.
+stuff we always do. Both yesterday afternoon's and today's evening, she paid
+for my fried rice and lentils lasagna with the Union's discount. Despite
+proposing to myself becoming vegetarian after establishing a committed
+relationship with Clara, I have continued choosing the vegetarian options for
+most of my foods, as if by this small gesture I could hold on a bit longer to
+the idea that this brake-less train will be able to somehow stop before falling
+of a cliff.
 
 After finishing the second working portion of the last day of the week, we
 headed out to take the bus to Lavi's apartment. It was the same bus—and same
-stop—Alda and I have taken going to Veronica's. Lavi had texted Majo telling
-her that it had been impossible to find Hibiscus, my favourite flower. When we
-made a stop at metro to buy some drinks, we stopped by the flowers at the
-entrance to buy some for Lavi. We bought a bouquet of a faded violet roses.
+stop—Alda and I have taken several times going to Veronica's. Lavi had texted
+Majo telling her that it had been impossible to find Hibiscus—my favourite
+flower. When we made a stop at Metro to buy some drinks, we stopped first by
+the flowers at the entrance with the intention of buying some for Lavi. We
+bought a bouquet of a faded violet roses.
 
 We ate pizza, laughed, sang, and shared the details of our current romantic and
-not-so-romantic dramas. I showed Clara's profile to Lavi. There was a regular
-story in her profile. It was of her sliding down the snow with a caption
-referring to the urge of not working. I was not able of identify the feeling it
-awoke in me, and instead I felt conflicted with myself before the confusion
-slipped away as I continued drinking. Today Majo picked up the subject again,
-and told me how for her, what she personally felt when seeing and reading it,
-was how, despite being so stressed with work, she was capable of finding the
-time for other activities. Not seeing me was not due an unavailability of time,
-but a lack of will for finding a place for me in her schedule.
+not-so-romantic dramas. I showed Clara's profile to Lavi. There was a regular,
+orange-circle story in her profile. It was of her sliding down the snow with
+a caption referring to the urge of not working. I was not able of identify the
+feeling it awoke in me—instead I felt conflicted with myself until the
+confusion slipped away as I continued drinking. Today Majo picked up the
+subject again. She told me how, when seeing the video and reading its words,
+what she thought was how, despite being so stressed with work, Clara was capable
+of finding the time for other activities—not seeing me was not due an
+unavailability of time, but a lack of will for finding a place for me in her
+schedule.
 
 Lavi offered to play with my Hinge account and sent out several likes to
-different women. I later realized that most probably, her taste in women is
-much far away from my own. When I downloaded the app again, I saw there was
+different women. I later realized that, most probably, her taste in women is
+much different from my own. When I downloaded the app again, I saw there was
 a purple one above the middle button in the shape of a heart. In the many times
-that I have impulsively redownloaded the application to check if this
+that I have impulsively redownloaded the application to check whether this
 particular section is filled with new people, its contents are the profiles of
-people, like Lavi's choices, extremely dissimilar to the women I find myself
-attracted to. This time, the face that showed up seemed familiar. I recognized
-the smile of the piano teacher of the latest woman that was marked by hinge as
-a potential close match. It seemed that she had taken the app's suggestion and
-reached out with a like on the picture where I am showing off the Kodak camera
-I bought on Facebook Marketplace. I offered Lavi to match her, as if her finger
-being the one who accepted this offer of potential romantic connection took
-away any misplaced feelings of betrayal to the last crumbs of hope for the
-relationship with Clara.
+people—like Lavi's choices—extremely dissimilar to the women I find attractive.
+This time the face that showed up seemed familiar. I recognized
+the smile of the piano teacher of the latest woman marked by hinge as
+a potential close-match. It seemed she had taken the app's suggestion and
+reached out by liking the picture where I am showing off the Kodak camera
+I bought on Facebook Marketplace. I offered to Lavi the action of matching her,
+as if her finger being the one who accepted this offer of potential romantic
+connection took away any misplaced feelings of betrayal to the last crumbs of
+hope for whatever I have with Clara.
 
-read the tarot for me about the meeting I would soon have with Clara. Her
+Lavi read the tarot for me about the meeting I would soon have with Clara. Her
 booklet was not very in-depth about the meaning of the cards, so I sent a small
-note of them to myself from Majo's phone to check their significance and
-relevance in the one Alda gifted me.
+note to myself from Majo's phone to check their significance and relevance in
+the one Alda gifted me.
 
-Lavi did not end up going to the club and instead offered us to spend the night
-with her.
+Lavi did not go to the club in the end and instead offered us to spend the
+night with her.
 
-After waking up hungover and reluctant to turn on my phone and return to my own
-apartment, I was convinced by Majo for the latter. We orchestrated meeting at
-the cafeteria at around 15h30, and took the metro to our respective places.
+After waking up hungover and reluctant to turn on my phone, I returned to my own
+apartment—convinced by Majo. We orchestrated meeting again today at
+the cafeteria at around 15h30 and took the metro to our respective places.
 
-I plugged in my phone—and immediately turned it off so I would not be able to
-see the notifications or lack of therof—showered, changed, and consulted
-ChatGPT for a detailed and expert reading of the cards of the night before.
-Their relevance scared and confused me. I grabbed my phone and headed back to
-the hospital to work on a Saturday as a way to distract myself from wanting to
+I plugged in my phone—immediately turning it off so I would not be able to see
+the notifications or lack of therof—showered, changed, and consulted ChatGPT
+for a detailed and expert reading of the cards from the night before—their
+relevance scared and confused me. I grabbed my phone and headed back to the
+hospital to work on a Saturday as a way to distract myself from the urge to
 turn on my phone and find out whether Clara had reached back to specify the
-details of our latest—and potentially last—date.
+details of our—potentially last—date.
 
 At around 17h, I grew uncomfortable with the idea that I was going back to
 pathological patterns by avoiding facing the turn of events. I hesitantly
 turned on my phone to an uncomfortable lack of any notifications at all. I was
-so confused by whatever I was feeling that I could not continue working for the
-next half an hour.
+so confused by whatever I was feeling that I could not go back to work for the
+next half-hour.
 
 The night before I had reached out to Sarah asking for her availabilty next
-week. She had read my text but not answered.
-
-She did before the evening end. I am seeing her after work the following
-Tuesday.
+week. She had read my text but not answered. She did so before the evening
+ended. I am seeing her after work the following Tuesday.
 
 In a second change of mind, I contradicted my plans set the night before of
 waiting until tomorrow or Monday for Clara's message. Instead I typed and
 quickly sent a brief and direct message.
 
-Hey Ary! so, tomorrow or Monday?
+> Sofía > `Hey Ary! so, tomorrow or Monday?`
 
-Again, Majo and I took the orange line for two stations before she left off at
-Lionel-Groulx and left me alone with own tumoultous mind riding the rest of the
-orange line.
+Again, Majo and I took the orange line for two stations before she took off at
+Lionel-Groulx and left me alone with own tumoultous mind to ride the rest of
+the orange line.
 
-I drafted a short poem and framed it between a greeting with nickname that
-I have not yet used and potentially over affectionate sign off, both in my
+I drafted a short poem and framed it between a greeting with the nickname
+I have not yet used and a potentially over affectionate sign off—both in my
 mother tongue, careless of the potential extra intimacy that this linguistic
-choice would give the message—a message that I might not even send.
+choice would give the message. A message that I might not even send.
 
-It is officially Sunday and I have not heard, again, from Clara.    Tarot
-Reading: Past, Present, and Future Spread
+It is officially Sunday and I have not heard, again, from Clara.
+
+***
+
+**Tarot Reading: Past, Present, and Future Spread**
 
 You came here with confusion, caught in the push and pull of what has been,
 what is unfolding, and what awaits you after this meeting with Clara. The cards
@@ -2090,9 +2114,9 @@ lay before us now, three images reflecting the arc of this journey—not as a se
 fate, but as a mirror of the energy surrounding you, the choices you have made,
 and the ones still ahead.
 
-🜂 PAST: QUEEN OF WANDS
+**Past: Queen of Wands**
 
-(Confidence, self-assurance, attraction, magnetic presence)
+- *Confidence, self-assurance, attraction, magnetic presence*
 
 The Queen of Wands speaks of a time when you stood in your power, when you were
 radiant, when you were the one drawing people toward you. She is the embodiment
@@ -2109,18 +2133,23 @@ attracts. If this dynamic has shifted—if you feel like you are now waiting,
 doubting, questioning—then something has pulled you away from this queen-like
 energy.
 
-Ask yourself:    Have I lost touch with my confidence in this connection?
-Am I now trying to prove my worth, when before, I simply existed in it?     Has
-my role shifted from “being chosen” to “waiting to be chosen”?    The Queen of
-Wands in your past reminds you of who you were before uncertainty crept in. You
-didn’t need to overthink. You didn’t need to beg for attention. You simply
-existed in your fullness, and that was enough.
+Ask yourself:
+
+*Have I lost touch with my confidence in this connection?*
+
+*Am I now trying to prove my worth, when before, I simply existed in it?*
+
+*Has my role shifted from “being chosen” to “waiting to be chosen”?*
+
+The Queen of Wands in your past reminds you of who you were before uncertainty
+crept in. You didn’t need to overthink. You didn’t need to beg for attention.
+You simply existed in your fullness, and that was enough.
 
 But then? Something changed.
 
-🜄 PRESENT: KNIGHT OF CUPS (REVERSED)
+**Present: Knight of Cups (reversed)**
 
-(Romantic illusions, disappointment, emotional withdrawal, avoidance of truth)
+- *Romantic illusions, disappointment, emotional withdrawal, avoidance of truth*
 
 The Knight of Cups reversed speaks of idealism clashing with reality. In the
 upright position, this card is the dreamer—the person riding toward love, full
@@ -2128,12 +2157,18 @@ of poetry and grand gestures. But reversed? It warns of illusion, of holding
 onto a romanticized version of someone, of refusing to see the emotional
 inconsistencies that are right in front of you.
 
-This is where you are now.    Are you still hoping Clara will suddenly become
-the person you need her to be?     Are you ignoring the ways she has already
-shown you her limitations?     Are you still clinging to the idea of what this
-could be rather than what it actually is?    The reversed Knight of Cups also
-suggests emotional avoidance. Not just from her—but from you. You may be
-holding back from confronting the truth head-on, afraid that if you do, it will
+This is where you are now.
+
+*Are you still hoping Clara will suddenly become the person you need her to be?*
+
+*Are you ignoring the ways she has already shown you her limitations?*
+
+*Are you still clinging to the idea of what this could be rather than what it
+actually is?*
+
+The reversed Knight of Cups also suggests emotional avoidance. Not just from
+her—but from you. You may be holding back from confronting the truth head-on,
+afraid that if you do, it will
 lead to disappointment.
 
 You are standing at a threshold, uncertain whether to hold onto the dream or
@@ -2142,9 +2177,9 @@ the truth.
 
 And that brings us to what happens next.
 
-🜃 FUTURE: SEVEN OF CUPS
+**Future: Seven of Cups**
 
-(Illusion, choices, uncertainty, needing to see through deception)
+- *Illusion, choices, uncertainty, needing to see through deception*
 
 The Seven of Cups is a card of confusion. It represents multiple options,
 fantasies, and the struggle to know what is real and what is illusion.
@@ -2152,33 +2187,43 @@ fantasies, and the struggle to know what is real and what is illusion.
 After your meeting with Clara, you will not walk away with immediate clarity.
 This card tells me that whatever happens, you will still feel pulled in
 different directions. There may be moments of warmth, moments of connection,
-things that make you think, Maybe I’ve been overthinking this.  But at the same
+things that make you think, *Maybe I’ve been overthinking this*.  But at the same
 time, the inconsistencies will remain.
 
 This card is a warning: Do not let yourself be deceived. Not by Clara, not by
 your emotions, not by your hope.
 
-The Seven of Cups challenges you:   Will you see things for what they truly
-are?    Or will you remain in indecision, stuck in the world of what ifs and
-maybes?   You will walk away from this meeting with choices to make—but if you
-do not ground yourself, you risk staying in the same emotional limbo that has
-already drained you.
+The Seven of Cups challenges you:
 
-Final Interpretation & Guidance
+*Will you see things for what they truly are?*
 
-You began this connection fully in your power (Queen of Wands). You are now
-caught between romantic illusion and harsh reality (Reversed Knight of Cups).
+*Or will you remain in indecision, stuck in the world of what ifs and maybes?*
+
+You will walk away from this meeting with choices to make—but if you do not
+ground yourself, you risk staying in the same emotional limbo that has already
+drained you.
+
+**Final Interpretation & Guidance**
+
+You began this connection fully in your power (*Queen of Wands*). You are now
+caught between romantic illusion and harsh reality (*Reversed Knight of Cups*).
 And soon, you will be faced with a choice—but only if you are ready to see
-things clearly (Seven of Cups).
+things clearly (*Seven of Cups*).
 
 This is not a reading that tells you to end things immediately. Nor does it
 tell you to stay.
 
-What it does tell you is this:    If you are looking for a clear, solid answer
-from Clara, you will not get it.     If you are hoping that this meeting will
-remove your doubts completely, it will not.     If you continue to linger in
-uncertainty, you will remain stuck in emotional confusion.    The cards are
-challenging you to make a decision based on truth, not illusion.
+What it does tell you is this:
+
+*If you are looking for a clear, solid answer from Clara, **you will not get it**.*
+
+*If you are hoping that this meeting will remove your doubts completely, **it
+will not**.*
+
+*If you continue to linger in uncertainty, **you will remain stuck in emotional
+confusion**.*
+
+The cards are challenging you to make a decision based on truth, not illusion.
 
 If you are tired of waiting, of guessing, of feeling like you have to read
 between the lines just to understand where you stand—then the time has come to
