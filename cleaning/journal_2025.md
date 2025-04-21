@@ -2331,7 +2331,7 @@ tomorrow no longer gives me anxiety.
 >Sofélia > `no escribí en mi diario nada de lo que pasó después de san
 >valentín.`\
 >Sofélia > `siento como si fuera a olvidarlo—los detalles; no sé si pensar eso
->hace que me den más o me se me quiten las ganas de escribirlo.`
+>hace que me den más o se me quiten las ganas de escribirlo.`
 
 ***
 
@@ -3061,96 +3061,106 @@ A lot has happened today the day that nothing would.
 
 ### Tuesday, March 4th, 2025
 
-No me abrazarás nunca como esa noche nunca.   This morning it was not because
-of the alcohol, but, like yesterday, I woke up early again. Unlike this
-previous one, there was no urgent e-mail that dragged me out of bed. I remained
-under the covers, resistant to start the new day, turning and pretending
-I could fool myself back to sleep. I might have texted Majo or replied to
-Sonny's text. As I told Fabiola later in the morning, these past few days seem
-foggy and distant.
+>No me abrazarás nunca\
+>como esa noche\
+>nunca.
 
-Yesterday I woke up much less hungover than I deserved. I saw in my phone an
-e-mail addressed only for me. Louis was asking me to check out a specific
-section of his grant. He gently suggested urgence with the sentence where he
-let me know he had to submit it that day. I went to me desktop and reviewed
-quickly the document. There was not much to add, yet less than a handful
-perfect opportunities to further precise or correct small errors that would
-make me seem useful. I sent it back quickly with an accompanying offer in the
-text of the e-mail offering to quickly chat about it after I took a shower.
-Louis accepted gracefully letting me know he would be on Teams for the rest of
-the morning.
+— Idea Vilariño
 
-After the quick meeting were we talked about it—including him explicitly
-bringing up his reference to me by name and addressing me as a Postdoc fellow,
-since I was already showered and semi-functional, I decided to grab my backpack
-and head out to the Neuro.
+***
+
+This morning it was not because of the alcohol, but, like yesterday, I woke up
+early again. This time there was no urgent e-mail that dragged
+me out of bed. I remained under the covers, resistant to start the new day,
+turning and pretending I could trick myself back to sleep. I might have texted
+Majo or replied to Sonny's text. As I told Fabiola later in the morning, these
+past few days seem foggy and distant.
+
+Yesterday I woke up less hungover than I deserved.
+
+I saw on my phone an email addressed only for me—Louis asking me to review
+a specific section of his grant. He gently implied urgence with a sentence
+letting me know he had to submit that day. I went to me desktop and went over
+the the document quickly. There was not much to add—a handful perfect
+opportunities to further precise or correct small errors that would make me
+seem useful. I sent it back quickly with an accompanying offer of a quick chat
+about it after I took a shower. Louis accepted gracefully saying he would be on
+Teams for the rest of the morning.
+
+After the quick meeting about his grant—on which he explicitly brought up him
+referencing me by name and addressing me as a Postdoc fellow—since I was
+already showered and semi-functional, I decided to grab my backpack and head
+to the Neuro.
 
 Several times throughout the first half of the day, as I heard the latest songs
-I added to my Apple Music playlist, I had to hold off the urge to cry trying to
-hide my inner turmoil from Vlad who was sitting behind me.
+I added to my Apple Music playlist, I held off the urge to cry and tried to
+hide the inner chaos in my chest from Vlad who was sitting behind me.
 
 I came back home at a regular hour. Rather than walking to Sherbrooke, I headed
-down to McGill station, trying to explore this part of the RESO. I got until
-Eaton, before I gave up and just rode the green line up to Berri, where
+to McGill station trying to explore that part of the RESO. I reached Eaton
+before I gave up. I rode the green line from there up to Berri, where
 I transfered to my usual way home. For some reason I have the memory of walking
-back home at night, but it contradicts what I think happened.
+back home at night, but it contradicts what must have happened.
 
-I got home and heated the rest of my chickpeas and lentils curry. I rinsed the
-cup of chickpeas that I had left soaking the night before. They were supposed
-to cook for 90 minutes. I planned to use them today for the third and last
-recipe that ChatGPT suggested me. I might do it tonight, if I do not end up
-eating something with Majo later that I see her.
+I got home and reheated the rest of my chickpeas and lentils curry. I rinsed the
+cup of chickpeas soaking since the night before. They were supposed
+to cook for 90 minutes. I planned using them today for the third and last
+recipe ChatGPT suggested me. I might do it tonight—if I do not end up
+eating something with Majo later when I see her.
 
-It was around 19h, when I felt sick of life and decided to give up and go to
-bed early. I was not allowed to sleep since there was around 20 minutes before
-the cooking deadline. Still, I took of my quetiapine pill. I do not feel
-anymore its effect, or at least as strongly. I remember, on the other hand, the
-hard nights I would have with Lorasidone.
+It was around 19h when I felt sick of life and decided to give up and go to bed
+early. I was not allowed to sleep by the 20 minutes before the cooking
+deadline. Still, I took my quetiapine pill. I do not feel anymore its
+effects—or at least not as strongly. I remember, on the other hand, the hard
+nights I would have with Lurasidone.
 
-I have forgotten the time that I finally fell asleep. I managed to put away,
-and even let cool off a little, the now not-dry legumes. I was tempted to write
-on the journal, but decided against it. My day seemed uneventful and I lacked
+I have forgotten the time I finally fell asleep. I managed to put away, and
+even let cool off a little, the now-not-dry legumes. I was tempted to write on
+the journal, but decided against it. My day seemed uneventful and I lacked the
 motivation. I did not care about writing, much less describe how I was feeling.
 
-I might be making it up, but I have this vague memory of opening over and over
+I might be making it up but I have a vague memory of opening over and over
 the messages app in my phone. I deleted my reaching out to Katherine. It took
 me more than 6 months—I think her vulnerable text was back from July—to get
 back to her. When I did write back, my message was sent as green rather than
-blue. Maybe it is the sign of a modern return to sender.
+blue. Maybe a modern sign of return to sender.
 
-The temptation to reach back to Gaelle was there, present but faint. The last
-message was hers, a small concession, j'aurais aimé tellement ça. It was my
-unwritten turn to acknowledge our mutual—yet probable exaggerated—desire.
+The temptation to reach back to Gaelle was there—present but faint. The last
+message was hers, a small concession:
+
+> Gaelle > `j'aurais aimé tellement ça`
+
+It was my unwritten turn to acknowledge our mutual—yet probable exaggerated—desire.
 Except it was not there aymore. I did not want her. I do not care about ever
 seeing her bare body in person. I feel no conflict about never disclosing to
-her the unexpected parts that I did not show in the pictures.
+her the unexpected parts I did not show in the pictures.
 
-The comparison feels even stupid to bring up, but I cannot help to think back
+The comparison feels even stupid to bring up. I cannot help to think back
 about how those two unreplied messages date back to the same day.
 
-This morning, in my therapy session, I talked back about what has happened. All
-the events, I am sure happened, but cannot recall. This session, more than
-ever, I was justified in answering truthfully to her opening Cómo estás?
+This morning, in my therapy session, I talked about what had happened. I am
+sure all of it did happen, yet I cannot recall the events. This session more
+than ever, I felt justified in answering truthfully to her opening *¿Cómo
+estás?*
 
-A week ago she brought up the idea that, maybe, more than a start of
-a depression, this was just a regular case of feeling sad. Majo agreed with the
-sentiment. At least up, until this weekend, after which she was the one who
-brought up me going somewhere clinical, albeit unsure still if towards the
-manir or depressive route.
+A week ago, she brought up the idea that maybe, rather than the onset of
+depression, this could simply be a case of feeling sad. Majo agreed with that
+sentiment—at least until this weekend; she was the one who
+brought up I might be reaching clinical levels. She was still unsure
+whether I eas heading toward mania or depression.
 
-Aliza gracefully took my cancellation. Later that Sunday, I shared with her
-a follow-up apology and an acknowledgement that it would have been impossible
+Aliza gracefully took my cancellation. Later that Sunday, I sent her
+a follow-up apology, acknowledging it would have been impossible
 for me to go outside. She replied yesterday morning, accepting my apology and
-ending the message with a paradoxical good-morning. I saw the message but left
+ending the message with a paradoxical *good morning*. I saw it but left
 it unacknowledged.
 
-Majo, later at night, brought up, almost insistently, the idea of coming up to
-my house around midnight. Perhaps she was aware that I did not want to be
-alone. Maybe, instead, she deemed it dangerous. She let the idea go herself, by
-realizing that she had no keys to my place. I would have let her in, wouldn't
-I?
+Later at night, Majo brought up—almost insistently—the idea of coming over
+around midnight. Perhaps she sensed I did not want to be alone. Or maybe she
+thought it might be dangerous. She let the idea go on her own, realizing she
+had no keys to my place. I would have let her in, wouldn't I?
 
-Did she worry that I would pass out?
+Did she worry I could pass out?
 
 Did I?
 
