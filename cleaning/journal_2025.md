@@ -3779,14 +3779,16 @@ do it?
 Was it conscious, too, or was I forced to not attend the Neuro meeting?
 
 Like the week before, I woke up and grabbed the phone waiting for an email,
-a notice that there was—or preferably, not—the meeting that we had been
-postponing or cancelling. There was something, but not what I was hoping. Louis
+a notice—or preferably lack of it—for the meeting that we had been
+postponing or cancelling. There was something, but not what I hoped. Louis
 sent out a reminder to meet us that afternoon. It was a follow-up to Daniel's
-original e-mail stating that the plans for that meeting would be to update
-everyone on the status of our research and projects. I read it and felt the
+original email stating that the plans for that meeting would be to update
+everyone on the status of our research and projects.
+
+I read it and felt the
 heaviness of life pushing me down. It was much stronger than the motivation the
 night before that had led me to put an alarm early to have plenty of time to
-get to the office. I sent out a reply to all, letting them know that I was not
+get to the office. I sent out a reply to all letting them know that I was not
 feeling well. Rather than depression, the cause I used was the half-truth of my
 sore throat during the weekend. To them, I said that it had developed into
 a full flu. I was going to stay home for the next few days, so I would try—big
@@ -3795,14 +3797,16 @@ emphasis on the lack of commitment—to connect on Teams.
 Defeated, I went back to bed.
 
 I had plenty of time to sleep a little more and get up to my desk to join the
-meeting. I was not able.
+meeting.
 
-Around 13h, I got another email. Or perhaps it was a direct message on Teams.
+I was not able to do it.
+
+Around 13h, I got another email—or perhaps it was a direct message on Teams.
 Louis wanted to let me know they were all ready and I could connect whenever
-I wanted. I had barely the energy to text out an apology that I started feeling
-much worse and would have to skip the meeting. Louis used an outlook feature
-that I am unfamiliar with to react to whatever was it the medium I sent it on
-with a thumbs up emoji. I am not sure how much I slept.
+I wanted. I had barely the energy to text out an apology explaining I started
+feeling much worse and would have to skip the meeting. Louis used an outlook
+feature that I am unfamiliar with to react on whatever was it the medium I sent
+it with a thumbs up emoji. I am not sure how much I slept afterwards.
 
 For some reason I do not feel like continuing writing about yesterday. It is
 hard to even think about what was it that happened. I am sure it was an
@@ -3810,110 +3814,117 @@ uneventful day, yet there is still this nagging feeling that I am forgetting
 something.
 
 I could not fall asleep. Midnight came and went. I took the pill at an
-appropriate hour. I masturbated thinking that would ease my nerves and calm me
+appropriate hour. I masturbated hoping it would ease my nerves and calm me
 down. By 2h and 3h, I was still turning fighting my own mind and body.
 I decided to get up and continue working on whatever I was doing for the paper
-I still have not finished correcting. I lasted around two hours, before I was
-too tired to concentrate, albeit still not sleepy. I do not know how long it
-turn me to finally fall asleep.
+I still have not finished correcting. I worked for around two hours before I
+I got too tired to concentrate, but still not sleepy. I do not know how long it
+was until I could finally fall asleep.
 
 I might have put an alarm, but if I did, it was useless. After the Daylight
 Saving Time, my therapy session was an hour later at noon. Even having that
-extra hour, I got out of bed with only enough time to dampening my hair to tame
-the curls and fake a fresh out of the shower look.
+extra hour, I got out of bed with only enough time for dampening my hair to
+tame the curls and fake a fresh-out-of-the-shower look.
 
-I think it was yesterday, when Sonny asked me how I was doing and I confessed
+I think it was yesterday when Sonny asked me how I was doing and I confessed
 that not very well.
 
-"Let her go," was the only thing she said; maybe the only thing there was to
-say.
+> Maykol > `Let her go`
+
+That was the only thing she said; maybe the only thing there was to say.
 
 This morning I received a notification from my messaging app. It was Yuval, he
-started by reminding me who he was, and continued letting me know that he would
-need to come over sometime to give me the notice of lease renewal and a bottle
+started by reminding me who he was and letting me know he would
+need to come over to give me the Notice of Lease Renewal and a bottle
 of champagne. He was going to be around the building cleaning the shared areas
-so, if I were to come back, I could find him. I could have replied that I was
+so, if I were to come back, I could find him. I could have replied I was
 in and he could knock and come anytime. I was not about to leave until the
-early evening. I had plenty of time; it would have been the best for both of
+early evening. I had plenty of time. It would have been the best for both of
 us. Why did I decide against it?
 
-In my therapy I mentioned my mood swings. I referred back the Sunday before
-last. I talkde how that same Tuesday when we had our last session, I met with
-Majo and Emily. That evening after she left, Majo and I remained there and she
-brought it up asking how normal those episodes were for me. She wondered how
-concerned she should be about it happening again. Or even it happening at all.
+In therapy I mentioned my mood swings. I referred back to the Sunday before
+last. I talked about meeting with Majo and Emily that same Tuesday of our last
+session. That evening after Emily left, Majo asked me how normal were those
+kind of episodes for me. She wondered how concerned she should be of it
+happening again—or even that it happened at all.
 
-I brought up how I have been more intentional about keeping track of my daily
+I brought up that I have been more intentional about keeping track of my daily
 life in the traveller's notebook. I mentioned the night I did not sleep at all
 and the euphoria and energy I had the full day. I talked about Friday and how
 Majo and I came back to my place to watch a movie, only to be interrupted by
-that text that neither of us were expecting.
+a text that neither of us expected to arrive.
 
 Did I talk too much about that message? Did I approach the subject in depth
-about the confusion and mixture of emotions I felt after reading those
-sentences? I for sure said nothing about the double space after the comma.
-I most probably did not mention either that the same sentences have had several
-different meanings depending on the day I reread them. I definitely did not say
-that I deleted the whole conversation to keep it away from my mind, only to
-recover them back from the almost-oblivion.
+about the confusion and mixed of emotions I felt after reading it? I for sure
+made no mention of the double space on the first line.
+I most probably did not talk either about the same sentences changing meaning
+depending on the day I reread them. I definitely did not say that I deleted the
+whole conversation to keep it away from my mind, only to
+recover it back from the almost-oblivion.
 
 Fabiola asked me what was it that I wanted from Clara.
 
 Did I mention the message that I was waiting to send back?
 
-Clarity, was what I replied. A clear answer, was how I further explained it.
+*Clarity*, was what I replied. *A clear answer*, was how I further explained
+it.
 
-She brought up that, from what she remembers, last time we met Clara let me
+She brought up that, from what she remembers, last time we met, Clara let me
 know she was not ready nor wanted to have anything more serious, nothing more
 committed, or even just consistent;  she openly stated that she would not be
-able to even change her ways of communicating. Fabiola continued how, these two
-weeks of silence and the further week of waiting before replying to my text are
-further evidence of that I already knew.
+able to even change her ways of communicating. Fabiola continued explaining how
+these two weeks of silence and the further week of waiting before
+her eventual reply were further evidence for what I already knew.
 
-"A mí me parece bastante claro."
+"*A mí me parece bastante claro.*"
 
-Somewhen during the weekend Alda had reached out to me in the morning asking me
-for my plans for the day. Later, when I was fully awake I replied back with
+Alda had reached out to me one morning of the weekend asking me
+for my plans for the day. Later, when I was fully awake, I replied with
 whatever was it that I was going to do. She continued that she had thought
-about asking me to do something, but since then realized that it was her second
-day of her period and thus would rather do it some other time. That other time
-was this evening.
+about asking me to do something, but by then she had realized it was her second
+day of her period and thus would rather do it some other time.
 
-We had talked about coming here to Oui mais non. When we confirmed the idea of
-a café, Alda worried that there would not be many options open that would be
-open in the evening. I thought about velours and remember one date I had in the
-late afternoon. She was blonde and we spoke French. She worked at Marché
-Jean-Talon in a tea shop—was it hers? I brought up that Ouis mais non opens
-until around 22h, so it would be perfect for meeting at around 18h.
+That other time was this evening.
 
-In the morning I saw that the weather today was not only above 0°, but around
-9°. It would be a missed opportunity to stay inside and not make use of it.
-Rather than wearing my red puffy coat, I grabbed the black denim jacket that
-I have not worn since last year. I took the laptop that Vlad gave me, the next
-book that I need to finish and return to the library by the end of the month,
-and headed out to the library. I worried a little that Yuval would see me and
-intercept me on the way. He did not.
+We had talked about coming here to *Oui mais non*. When we confirmed the idea of
+a café, Alda worried that there would not be many options open in the evening.
+I thought about Velours and remembered one date I had in the late afternoon.
+She was blonde and we spoke French; she worked at Marché Jean-Talon in a tea
+shop—was it hers? I brought up that *Ouis mais non* opens until around 22h. It
+would be perfect for meeting around 18h.
 
-I did not stay long at the library by the time that Alda replied to my text
-letting her know of my plans and giving her the option of meeting at La graine
-brûlée. Instead, she proposed going somewhere to eat. Neither of us felt like
-searching for new available options. After wondering a bit, we ended up
-deciding to go to La Taverne Atlantic. It was the place of that terrasse that
-her, Sonny, and I, ended up at after wandering through Little Italy. We had
-forgotten its name and lost track of it, barely remember the terrasse and the
-feeling of wanting to go back. Months ago, while I was looking for places,
-I hunted for it. I forgot how, but I ended up finding it and saving it on my
-maps.
+The weather today was not only above 0°, but around 9°. It would be a missed
+opportunity to stay inside and not make use of it. Rather than wearing my red
+puffy coat, I grabbed the black denim jacket I have not worn since last
+year. I took the laptop that Vlad gave me, the next book that I need to finish
+and return to the library by the end of the month, and headed out to the
+library.
+
+I worried a little that Yuval would see me and intercept me on the
+way. He did not.
+
+I did not stay long at the library before Alda replied to my text
+letting her know my whereabouts and giving her the alternative of meeting at
+La graine brûlée. Instead, she proposed going somewhere to eat.
+
+Neither of us felt like searching for new available options. After wondering
+a bit, we ended up deciding to go to La Taverne Atlantic.
+
+It was the place with that terrasse where she, Sonny, and I ended up one day
+after wandering through Little Italy. We had forgotten its name and lost track
+of it, barely remembering its terrasse and the feeling of wanting to return.
+Months ago, while I was looking for places, I thought back to it and decided to
+hunt it down. I forgot how, but I ended up finding it and saving it on my maps.
 
 We talked about doing something, perhaps, next Monday for St-Patrick's. Both
 Alda and Majo seem to agree with the idea of meeting the three of us together
 again.
 
 I took the 480 bus with the plan of transferring to the 193 that leaves me one
-or two blocks away of my house. It was still sunny outside by the time we left
-the bar. Instead I decided to come to Ouis mais non by myself and write here.
-The extra five dollars I would spend for this cup of tea seemed to be worthing
-not being by myself for one or two more hours.
+or two blocks away from my house. It was still sunny outside when we left
+the bar. Last minute, I decided to come to *Ouis mais non* by myself and write
+here. The extra five dollars I would spend for this cup of tea seemed to be
+worth not being by myself for one or two more hours.
 
 ### Wednesday, March 12th, 2025
 
