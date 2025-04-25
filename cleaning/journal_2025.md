@@ -3928,19 +3928,23 @@ worth not being by myself for one or two more hours.
 
 ### Wednesday, March 12th, 2025
 
-Hey Clara, I don't know what is going on, but I sincerely hope things are well
-with you. I really wanted this to work, but this way of communicating has
-gotten very hurtful and is no longer working for me. I am sorry. I wish you the
-best. No need to text back.   The caption under the image of the text written
-down in Notes rather as a draft in Messages says I am almost there.
+>*Hey Clara, I don't know what is going on, but I sincerely hope things are well
+>with you. I really wanted this to work, but this way of communicating has
+>gotten very hurtful and is no longer working for me. I am sorry. I wish you
+>the best. No need to text back.*
 
-I had decided to stop working and head to bed. I realized that I had not
-written today and I turned the computer back on.
+***
 
-Yuval was supposed to come over today. I felt pressured in the morning to get
+The caption under the image of the text written down in Notes rather as a draft
+in Messages says I am almost there.
+
+I had decided to stop working and go to bed. I realized I had not
+written today. I turned the computer back on.
+
+Yuval was supposed to come over. I felt pressured in the morning to get
 out of bed and be somewhat ready whenever I heard the knocking on my door.
 I pushed back the alarm when I woke up at 9h. Perhaps I did stand up at 10h,
-but probably did not do it until 11h.
+but I probably did not do it until 11h.
 
 I brewed my coffee and sat down on the computer. I decided not to shower. Noon
 came and went. Neither Yuval nor hunger ever knocked on my door.
@@ -3951,148 +3955,159 @@ was still damp by the time I went out to meet Miriam who arrived punctually.
 
 Before I showered, one of the times I absentmindedly opened instagram, a green
 halo over Clara's orange-tinted picture was the first one on the row of stories
-to the left of al the people I no longer care about. A quiet but strong impulse
-to click on it made my hand tremble. I held it off. I went to get ready
+to the left of all the people I no longer care about. A quiet but strong
+impulse to click on it made my hand tremble. I held it off. I got ready
 instead.
 
-I was changed on my outdoor clothes when I lied down on my bed and consciously
-saw the video. There was picture of a newspaper with Trump's face on it. On
-top, half covering the headline in French. Salut je cherche des recommandations
-pour BD/roman graphics (pas sombres, pas en série). Below, there was a box for
-answers captioned with a preemptive Merci and a text heart like the one she
-signed on the ticket that I stole from Lola Rosa.
+I was changed on my outdoor clothes when I lied down on my bed and
+intentionally opened the video. There was picture of a newspaper with Trump's
+face on it. On top, half covering the headline in French: *Salut je cherche des
+recommandations pour BD/roman graphics (pas sombres, pas en série)*. Below,
+there was a box for answers captioned with a preemptive *Merci* and a text
+heart just like the one she signed on the receipt I stole from Lola Rosa.
 
-I thought back to my own favourite graphic novels, probably trying to hunt down
+I thought back to my own favourite graphic novels—probably trying to hunt down
 a reason that I could use as an excuse to reach back. Most of the books I like
-are dark. I could not think of a single one that could fill her criteria. Years
-ago, when I met *, we went somewhere on Saint-Henri, or perhaps Verdun, for
-brunch. She studied or taught English literaure, so I asked her for
-a recommendation. She mentioned Fun Home, from the queer artist Alice Bechdel
+are dark. I could not think of a single one which could fill her criteria.
+Years ago, when I met *, we went somewhere on Saint-Henri, or perhaps Verdun,
+for brunch. She studied or taught English literaure, so I asked her for
+a recommendation. She mentioned *Fun Home*, from the queer artist Alice Bechdel
 famous for her eponymous movie test. I bought it and read it. I went to my
-living room and looked for it, as if I considered sending a picture rather than
-its name.
+living room and looked for it, as if I were considering sending a picture
+rather than its name.
 
 I sent nothing and left to the pastry place with Miriam.
 
 We sat down and ate our desserts. We continued there the small-talk that had
-started in her car after she picked me up. We talked about our job, my plans
-for the future. Half-way through our friends' date, I brought up as a fun fact
-how I have started being vegetarian. We talked about how that is going for me,
-after I hopped around the details of how my motivation for that started. When
+started in her car after she picked me up. We talked about our jobs, my plans
+for the future. Half-way through our friends' date, I brought up, as a fun
+fact, how I have started being vegetarian. We talked about how that is going
+for me. I hopped around the details of my motivations behind it. When
 I mentioned going out with two people who were vegetarian or vegan, she asked
-if one of them was the french one.
+if one of them was *The French One*.
 
 By the end, I did end up giving her a brief summary of how my 3-4 month
-whatever had come to a practical end. Like Majo, she suggested me to end
-things. She explained how, as a society, we have fallen to the trick of
+*whatever* had come to a practical end. Like Majo, she suggested me to end
+things. She explained how, as a society, we have fallen to the bad habit of
 self-censoring our emotions with therapy talk and the pretense of being
-emotional intelligent.
+emotionally intelligent.
 
-"A veces un chinga tu madre, es bien merecido y hasta necesario."
+"*A veces un chinga tu madre es bien merecido y hasta necesario.*"
 
 Unlike María, close to the end of our conversation, she asked me if I was going
 to text her, sincerely curious of my answer, aware that I would probably opt
-for something else entirely.
+for ignoring advice and doing something else entirely.
 
 When I sent the draft to Majo, she texted back an old poem we had talked about
 before:
 
-Orpheus and Eurydicus
-
-Every day I send you an e-mail, in it I write  my news, every time I end with
-a request: if
-
-you're there and you're well,  don't write back.
+>**Orpheus and Eurydicus**
+>
+>Every day I send you an e-mail, in it I write\
+>my news, every time I end with a request: if
+>
+>you're there and you're well,\
+>don't write back.
 
 ### Thursday, March 13th, 2025
 
-"Sometimes the thought of skipping my meds flirts  with me. It's mornings like
-this, when I somehow do not need to sleep. The sun rises and I welcome it—still
-tireless. I get up from my unused bed. It feels like nothing can go wrong now.
-The world is safe. It's mine alone. I fear nothing. I can do anything. I don't
-need anyone."  It happened again. This time, although the energy is  still here
-now almost 36h of no sleeping, the euphoria vanished much much quicker.
+>Sometimes the thought of skipping my meds flirts  with me. It's mornings like
+>this, when I somehow do not need to sleep. The sun rises and I welcome
+>it—still tireless. I get up from my unused bed. It feels like nothing can go
+>wrong now. The world is safe. It's mine alone. I fear nothing. I can do
+>anything. I don't need anyone.
 
-I don't remember how it was—how it was started. Last week—was it just last
-week?—it was after coming back from dinning with Majo after I was reluctant to
+***
+
+It happened again. This time, although the energy is still here now almost 36h
+of no sleep, the euphoria vanished much much quicker.
+
+I don't remember how it was, how it was started. Last week—was it just last
+week?—it was after coming back from dinning with Majo when I was reluctant to
 return to an empty house. I went to bed without realizing I had skipped a dose.
-By the time I had realized it was already 3h and I feared that taking it so
-late would make it impossible to get up early enough. I have narrated already
-how my mood changed abruptly as the night came and left. Yesternight, I don't
-believe it was like that.
+By the time I remembered it was already 3h and I feared that taking it so
+late would make it impossible to get up early. I have narrated already
+how my mood changed abruptly as the night came and left. I don't
+believe last night was like that.
 
-I filled back my instagram, chose some of the pictures that I had, perhaps
-forehandedly, securely saved away in the archive rather than delete them.
-Changed my name and profile picture. Was that an incoscious way of making my
+I filled back my Instagram; I picked only some of the pictures I had—perhaps
+forehandedly—securely saved away in the archive rather than delete them.
+I changed my name and profile picture. Was that an incoscious way of making my
 profile irrecognazible to careless viewers?
 
-As I turned off the computer and reopened the closed windows Brave, there were
+I turned on the computer and reopened the closed windows Brave. There were
 a couple tabs of the asofterworld webcomic.
 
-I used to say I missed you after just a weekend, like a child learning to talk,
-who calls every cat a tiger.
+>I used to say I missed you after just a weekend,\
+>like a child learning to talk,\
+>who calls every cat a tiger.
 
 That was not the first one I sent Majo. I thought back to this comic after
 I shared with her an old dream I had when I was a teenager.
 
-"una vez sí soñé, que mi papá nos avisaba en la mesa, a la cena, que esa noche
-iba a morir, que en unas horas tenía que salir por esa puerta y no volvería
-nunca. Y yo me paraba y le rogaba que no se fuera."
+>Sofélia > `una vez sí soñé, que mi papá nos avisaba en la mesa, a la cena, que
+>esa noche iba a morir, que en unas horas tenía que salir por esa puerta y no
+>volvería nunca. Y yo me paraba y le rogaba que no se fuera.`
 
 We have had this conversation before. I cannot imagine grieving the death of my
 parents. Last night I added how I only dream about my dog dying.
 
-"Me desmorono y me caigo al piso. Se me van las fuerzas de las piernas y no
-puedo dejar de llorar."
+>Sofélia > `Me desmorono y me caigo al piso. Se me van las fuerzas de las
+>piernas y no puedo dejar de llorar.`
 
-That is how I thought back to asofterworld. I remembered that old favourite of
+That is how I thought back to asofterworld. I remembered an old favourite of
 mine:
 
-I have this dream where my sister is taking my picture and I keep saying don't
-go on the plane and she says say cheese.
+>I have this dream where my sister is taking my picture\
+>and I keep saying don't go on the plane\
+>and she says say cheese.
 
 I have lost count by now of the times that I have desperately sobbed today.
 
 The first story I posted on instagram was short and precise.
 
-Lista para irme. Y volví.
+>Lista para irme.
+>
+>Y volví.
 
 Two hours later, I posted another webcomic:
 
-I meant to suicide but the warm water was your voice and I touched myself
-instead.
+>I meant to suicide\
+>but the warm water was your voice\
+>and I touched myself instead.
 
 Finally, two hours later, I posted the third and last one. This was reserved to
 the only selected two dozen of people whom I did not mind knowing about my
 diagnosis.
 
-How aware was it of the underlying intention of having evidence that Clara is
+How aware was I of the underlying intention of having evidence that Clara is
 still aware of my existence? Was I unconsciouly recreating the circumstances
 last week that could have led her to reach back?
 
-Majo seemed to think so. I had left my apartment before the sun rose. I was one
-of the first people to arrive to the BIC. I texted her much earlier than when
-we usually talk. I bluffed saying that I was considering blocking her. She
-called it, as anyone who has gotten to know my by now would.
+Majo seemed to think so.
 
-I worked by myself in calm silence for a couple of hours before Neda arrived
-startling me. On the open instagram website I have in another window I just
-checked that she had not seen my story a coupld of hours old by then. She was
-not aware that I had not slept at all.
+I left my apartment before the sun rose. I was one of the first people to
+arrive to the BIC. I texted Majo much earlier than when we usually talk.
+I bluffed saying I was considering blocking Clara. She called me on it, as
+anyone who has gotten to know me by now would.
 
-Alda reached out. She did see it—she was the only one who reacted to it.
+I worked by myself in calm silence for a couple of hours before Neda opened the
+door startling me. On the open Instagram website I have in another window
+I just checked that Neda had not seen my story a couple of hours old by then.
+She is not aware I have not slept at all.
 
-No, that is not true. Misael reached out, too. He sent me a link to a song that
-he was reminded of as he read it.
+Alda reached out. She did see the story—she was the only one who reacted to it.
+
+No, that is not true. Misael reached out, too. He sent me a link to a song he
+was reminded of when he read me.
 
 Alda asked me if I wanted to do something. I met with her after my meeting with
-Louis. I think how the chaos was starting to unsettle inside of me as I walked
-to Eaton. But as I write this now, I can picture it as well on my morning walk
-to the metro.
+Louis. I think of how the chaos was starting to unsettle inside of me as I walked to Eaton. But as I write this now, I remember it just as well on my morning
+walk to the metro.
 
-At this exact moment, the clock marks my 36h of being awake. I will go to bed.
+At this exact moment, the clock marks 36h of being awake. I will go to bed.
 
-I will not take tonight's pill.
+But I will not take tonight's pill.
 
 ### Friday, March 14th, 2025
 
