@@ -1840,8 +1840,9 @@ Maybe when she replies back—if she does it before the end of w...
 
 > Sofía > `Hey, I'd really like to see you this week. when are you free?`
 
-> Clarizard > `Hey Sofibug. I might be free on Sunday, cancelling a hike
-> because of the storm, if not then would Monday after work also do?`
+> Clarizard > `Hey Sofibug`\
+> `I might be free on Sunday, cancelling a hike because of the storm, if not
+> then would Monday after work also do?`
 
 ***
 
@@ -2886,7 +2887,7 @@ memorize as a joke.
 >por qué ni cómo nunca\
 >ni si era de verdad\
 >lo que dijiste que era\
->ni quién fuiste.\
+>ni quién fuiste\
 >ni qué fui para ti\
 >ni cómo hubiera sido\
 >vivir juntos\
@@ -3220,209 +3221,223 @@ and wait for Majo.
 
 ### Wednesday, March 5th, 2025
 
-No llegaré a saber por qué ni cómo nunca ni si era de verdad lo que dijiste que
-era   It was around 2h, or maybe 3h, when I realized I had not taken my
-antipsychotics. It was not until that quick and innocent realization that
-I became overly aware of the thumb ring on my right hand. A missed signal.
+>No llegaré a saber\
+>por qué ni cómo nunca\
+>ni si era de verdad\
+>lo que dijiste que era\
 
-Hours before, the night started. I was already in bed, feeling the full weight
-of the night on my chest.
+— Idea Vilariño
 
-"I'm not ready to let her go," I wrote to Majo, fully knowing that the
-confession would go unread until after the sunrise.
+***
 
-I cannot start today's entry at the morning. This day began much much earlier.
+It was around 2h, or maybe 3h, when I realized I forgot taking my
+antipsychotics. It was not until that sudden realization that
+I became overly aware of the ring on my right thumb: a missed signal.
+
+Hours before, the night started. I was already in bed, feeling its full weight
+over my chest.
+
+I wrote to Majo,
+
+>Sofélia > `I'm not ready to let her go`
+
+knowing that the confession would go unread until after sunrise.
+
+I cannot start with the morning. This day began much much earlier.
 
 I finished writing at the library. I had done enough to feel sufficiently
-productive and leave. Majo was at the Neuro. She told me we could met at
+productive. Majo was at the Neuro. She told me we could meet at
 Thomson at around 17h or 18h. If I left just then, I could get early to
 Thomson, sit down somewhere and read alone until Majo would arrive to join me.
-That seemed as a viable plan. I took my stuff and left.
+That seemed as a viable plan. I took my stuff and went on my way.
 
 I took the 24 bus and walked uphill to the graduate's house. I got inside and
 searched for a place to sit. Without realizing it, I chose the same room where
-Majo and Emily had beend seating for quite a while. I recognized María, but was
-unsure how busy or available she was for me. I waited for her invitation to
-join them. Still, I approached them slow and cautious, as if they were savage
-animals ready to devour me.
+Majo and Emily had been talking for quite a while. I recognized María, but
+I was unsure how busy or available she was for me. I waited for her invitation
+to join them. I still approached them slow and cautious, as if they were
+savage animals ready to devour me.
 
-We stayed at that table for much longer than I had imagined I would. When
-I planned my solitude reading, I considered ordering me a small glass of cider.
-I thought back to my crisis this past Sunday, and realized that would not be
-the best idea. One of the first words that the pair of friends addressed at me
+We stayed at that table for much longer than I had imagined I would. My plan of
+solitude reading included a small glass of cider.
+I thought back of my crisis last Sunday and realized that drinking might not be
+the best idea. One of the first things the pair of friends shared with me
 was the missing context of how they were celebrating Emily's candidacy exam.
-That should not have been enough, yet it convinced me to step up and start the
+That should not have been enough, but it convinced me to stand up and start the
 journey to the bar and get myself a moscow mule to fully join them.
 
 I am unsure how long Emily stayed making us three at the table. I remember it
-was more than what I would have wanted. There was something about her that
-I found exhausting at first, and outright annoying as the night progressed.
+being more than what I would have wanted. There was something about her that
+I found exhausting at first and outright annoying as the night progressed.
 
-"me recordó a la actitud de muchos hombres that put me off of having male
-friends."
+>Sofélia > `Me recordó a la actitud de muchos hombres that put me off of having
+>male friends.`
 
-After Emily finally left, Majo and I remained. We talked about Sunday, how
-normal it was for me, how worried she should have been. We kept the
+Emily finally left; Majo and I remained. We talked about Sunday. She asked me
+how normal it was for me—how worried she should have been. We kept the
 conversation about the possibility of me starting a clinical episode. She
-brought up my erratical behaviour recently; reaching out to Kath after longs
-months of silence; the exchange of nudes with Gaelle; my recent outbursts of
-irritability.
+brought up my erratical behaviour recently: reaching out to Kath after longs
+months of silence, the exchange of nudes with Gaelle, and my recent outbursts
+of irritability.
 
-The night carried on around us, until the waiter came first to let us know the
-kitchen was closing, then to cry out the last call, and eventually, to
-passive-agressively tell us, the only remaining two people sitting, that they
+The night carried on around us. The waiter came first to let us know the
+kitchen was closing, then to cry out the last call, and, finally, to
+passive-agressively tell us—the only remaining two people sitting—that they
 had closed.
 
-I was not ready to get back home. Just as we entered Peel metro station,
+But I was not ready to get back home. As we entered Peel metro station,
 I asked Majo if she had eaten. Her last meal had been a basket of mediocre
-wedges. I do not remember if I had eaten anything at all myself.
+wedges, she said. I do not remember if I had eaten anything at all.
 
-We realized that the number of places open was quite limited it being a Tuesday
-night appraching 22h. She humored me, and we eached looked for potential dinner
+The number of places open was quite limited it being a Tuesday
+night appraching 22h. She humored me and we eached looked for potential dinner
 spots in our own phones. We ended up going at Greenspot. I continued my
 vegetarian streak by getting a poutine and she got a much-larger-than-expected
 hot-dog.
 
 We entered accompanied by a worry of being unwelcome due to their imminent
-closing. We still left before 23h, marking what I thought would be the end to
+closing. We left before 23h, marking what I thought would be the end to
 my long day.
 
-At 1H, I missed Clara. Deeply, achingly; with a much larger magnitude than what
-would be appropriate for such a short time—talking about the silence and the
-potential total of days we saw each other.
+At 1h, I missed Clara. Deeply, achingly; with a much larger magnitude than what
+would be appropriate for such a short time—regarding both the days of silence
+and the number of times we have seen each other.
 
-After realizing my missed dose of psychotropics and the conscious decision of
-skipping it, I lowered down my pajama pants with the intention of aid my sleep
-with masturbation. There was also the second, indirect purpose of confirming
-that my new dose of E2 is working. I struggled to complete my first goal,
-paradoxically achieving the second.
+After I had missed my psychotropic dose and choosing to skipping it, I lowered
+down my pajama pants, taking the task of falling asleep into my own hands.
+I also wanted, indirectly, to verify that my new estradiol dose was
+working. I struggled to complete my first goal paradoxically achieving the
+second.
 
-By 3h, I opened instagram and decided to read all of the message we exchanged
-on them after the night Clara and I met each other. I suspected it was a bad
-decision. I expected it to further press down the bleeding knot in my chest.
-What it happened took me off guard.
+By 3h I opened Instagram and decided to read all of the message between Clara
+and I since the night we met each other. I suspected it was a bad decision—I
+expected it to tighten the bleeding knot inside my chest. What happened took me
+off guard.
 
-Around 4h30, or maybe 5h, I was starting to realize that I would probbaly not
-sleep at all. There was a newfound sense of euphoria. It was a fresh calm, but
-not of resignation; it was content and satisfaction. Out of nowhere, I read the
-messages that we exchanged over the new year; those subtle nudges of affection,
-awkward gestures of reaching out, gentle questions about planning. I did not
-find any potential point where the could have evaporated. There was no sign of
-when it all went downhill. I thought about our second to last date, the
-laughter at the diner, the hug in the metro, the fleeting uninvited kiss. How
-could I worry that I would never see her again? Who could really believe that
+Around 4h30, or maybe 5h, it was becoming apparent that I would not
+sleep at all. There was a newfound sense of euphoria—a fresh calm, but
+not of resignation; I was content and satisfied. Out of nowhere, I read our
+messages over the new year, the subtle nudges of affection,
+the awkward gestures of reaching out and the gentle questions about planning. I did not
+find any potential point where the interest could have evaporated; no sign of
+when all could have gone downhill. I thought about our second to last date: the
+laughter at the diner, the hug on the metro, the fleeting uninvited kiss. How
+could I worry about never seeing her again? How could anyone believe
 this was the end?
 
-And, even if it were. Even if she grew uneasy by my clumsy approaches to the
-talk about commitment, by my rough yet vulnerable sharing of my hurt and
-disappointment, it was her loss. It would be her who foolishly be throwing away
-something glorious and beautiful, deeming her unworthy; both of it and of my
-melancholy.
+Even if this was really the end—if my awkward talk of commitment had triggered
+her or my vulnerable confession of hurt had driven her away—it would have been
+her loss. She would be the throwing away something tender and beautiful,
+deeming herself unworthy—of it, of us, and the melancholy I have been carrying.
 
-I stood up, with all the energy of somebody who had slept, not just anything,
-but a full night. I washed the dishes, I showered and changed my clothes, took
-my stuff and went to the office at the Neuro. There was nobody at 7h30 when
-I opened the door and let myself in. There was nobody still at 17h40 when
-I closed it and left after finally starting to feel the weight, physical and
-emotional, of what has happened in both this energetic day and this past gloomy
-week.
+I rose as if I'd slept a full, uninterrupted nght. I washed the dishes,
+showered, changed, grabbed my stuff, and headed to the Neuro. At 7h30 it was
+silent and empty. Silent again it was at 17h40 when I finally left. The day's
+buoyant energy fading and giving its place to the weight of the week's shadows.
 
 ### Thursday, March 6th, 2025
 
-Savoir qu'on n'écrit pas pour l'autre, savoir que ces choses que je vais écrire
-ne me feront jamais aimer de qui j'aime, savoir que l'écriture ne compense
-rien, ne sublime rien, qu'elle est précisément là où tu n'es pas — c'est le
-commencement de l'écriture.
+>Savoir qu'on n'écrit pas pour l'autre, savoir que ces choses que je vais
+>écrire ne me feront jamais aimer de qui j'aime, savoir que l'écriture ne
+>compense rien, ne sublime rien, qu'elle est précisément là où tu n'es
+>pas—c'est le commencement de l'écriture.
 
-— Fragments d'un discours amoureux. Barthes.  Thirty-five minutes have passed
-since I posted it. Eight people, close friends, have seen it—three have reached
-out. When I first thought about making a private, intimate group, I considered
-making Clara the only member. This time I thought about removing her, very
-well-aware that part of the fundamental reason of posting this is for it to
-reach her eyes.
+— Fragments d'un discours amoureux. Roland Barthes.
+
+***
+
+Thirty-five minutes have passed since I posted it. Eight people—close
+friends—have seen it; three have reached out. When I first thought about making
+a private, intimate group, I considered making Clara the only member. This time
+I thought about removing her, aware that part of the fundamental
+reason behind this post was for it to reach her eyes.
 
 How many times will I almost-compulsively check my phone looking for her name?
 
-Forty minutes—still the same eight.
+*Forty minutes—still the same eight people.*
 
 Last night I went to bed at a reasonable hour, not overly early due to
-exhaustion, nor so late again to signal a clinical worry. Sometime before
+exhaustion nor so late again to signal a clinical worry: sometime before
 midnight. I woke up in the mid of the morning, well after the sun had already
 risen. I saw Louis' email warning us that he'd be taking a day off due to his
-now full flu. All meetings were cancelled. I went back to sleep.
+now-full flu. All meetings were cancelled. I went back to sleep.
 
 I got up a couple of minutes before noon. I brewed coffee and cooked some eggs.
 I snapped a picture to send my mom later. Now that she knows I am vegetarian,
 I imagine she will be more worried about me having full meals. I did not send
-it today.
+the picture today.
 
-Two days ago, after joyfully declaring my close friends—real ones, not the
+Two days ago, after joyfully declaring to my close friends—real ones, not the
 artificial private group of instagram—that I was feeling completely better,
 I rescheduled Sunday's platonic date with Aliza. I saw her a couple of hours to
-eat ramen and catch up with the latest details of our lives.
+eat ramen and catch up regarding the latest details of our lives.
 
-Last night, way before going to bed, I proposed to María to buy her ticket to
+Last night, way before going to bed, I proposed María to buy her ticket to
 the concert on April 9th if she agreed to join me.
 
-"ya lo pagué, si quiero irpero a veces sus canciones me hacen llorar y si voy
-sola es muy probable que llore y/o muy probable que no me la pase bn"
+> Sofélia > `ya lo pagué, si quiero ir`\
+>`pero a veces sus canciones me hacen llorar y si voy sola es muy probable que
+>llore y/o muy probable que no me la pase bn`
 
-I thought privately, weeks from now, of reaching to Clara asking her about what
-was going to happen with that concert. Now that Majo agreed to it, there is no
-point for that.
+I thought privately, weeks from now, I could reach out to Clara asking her
+about what was going to happen regarding the concert. Now that Majo agreed to
+it, there is no point for that.
 
-Fifty-two minutes. Cris is the ninth expectator.
+*Fifty-two minutes. Cris is the ninth expectator.*
 
 This morning, a couple of minutes after I finished my vegetarian breakfast
-tacos, I received a call from Sonny. I picked it up and we chatted a little
-bit. She told me to invite her over and pay for her ticket. I told her to
-search online for the fares. She shared her screen and I suggested looking for
-tomorrow. It would be way too expensive was her first thought and what she
-replied. Instead, it was around 1,400, so cheap, I did not mind paying for it.
+tacos, I received a call from Sonny. I picked it up and we chatted for a bit.
+She told me to invite her to come over and pay for her ticket. I told her to
+search online for the fares. She shared her screen and I proposed to start the
+search with tomorrow's date. It would be way too expensive, was her first
+thought and what she replied. Instead, it was around 1,400—so cheap, I did not
+mind paying for it.
 
-Seventy-five minutes. Antonija and Lavi made it rise to eleven.
+*Seventy-five minutes. Antonija and Lavi made the count rise to eleven.*
 
 I went to my bed to continue my phone call under the covers. I told Sonny the
 details I had not send over about my last dates with Clara. It was really hard
 to contain my tears. Fortunately, that was not the case later in the day when
-I told them in person to Aliza, while I was the only one with a veggie ramen
+I told them in person to Aliza while I was the only one with a veggie ramen
 bowl in front of her.
 
 I sent an e-mail to Majo about Sonny's surprise and imminent arrival. She was
 so excited that she called me. She would be willing to give over some money to
-bring her. She had 100 usd she had received as a gift.
+bring her. She had 100USD she had received as a gift.
 
-When I came back, halfway through this words, I thought back how my travels
+When I came back, halfway through these words, I thought back how my travels
 through the US are much more affordable. That awoke the feeling of it being too
-good to be true. I went online to the aircanada website. It was not really
-a surprise, but I still was overly disappointed when I confirmed my worries
-that the one-way tickets from Mexico City to Montréal are now around 2k
+good to be true. I went online to the Air Canada website. Not really
+a surprise, I still was overwhelmed by disappointment when I confirmed my
+worries that the one-way tickets from Mexico City to Montréal are around 2k
 canadian dollars.
 
 I first share the news with Majo, then Sonny. I think it is impossible to
 really know who is the most disappointed of us three.
 
-Somewhen during the day, I redownloaded tinder and saw that the number of
-people who had liked my profile, rather than increased went down to 29.
+Somewhen during the day, I redownloaded Tinder and saw that the number of
+people who had liked my profile, rather than increasing, went down to 29.
 I opened the screen of matches and conversations. It was empty.
 
 Days ago, I noticed that Gaelle was a regular user of Telegram. She was uptop
-on the list of contacts ordered by their last time online. I had not-really
+on the list of contacts ordered by their last time online. I had a not-really
 impulsive idea.
 
-"hey, j;ai vu que t'es plus dans mon tinder; ça veut dire que t'en as assez de
-moi ?"
+>Sofélia > `hey, j;ai vu que t'es plus dans mon tinder;
+>ça veut dire que t'en as assez de moi ?`
 
 I muted the conversation and discarded to the archives.
 
-Eighty-four minutes. No changes.
+*Eighty-four minutes. No changes.*
 
 When I came back, I resucitated the conversation and noticed two checkmarks
-under it. There was something weird. Under the woman's name, it said that her
-last time online was long ago, which contradicted the main reason I sent it.
+under it. But there was something weird. Under the woman's name, it said that
+her last time online was long ago, which contradicted the main reason I sent
+it.
 
-I asked Majo to block me for 30s in order to test my hypothesis. The scientific
-method triumphed again. Idea, hypothesis, experiment, results, conclusion.
+I asked Majo to block me for 30 seconds in order to test my hypothesis. The
+scientific method triumphed again. Idea, hypothesis, experiment, results,
+conclusion.
 
 Earlier, already showered but still not ready to leave, I texted Miriam
 apologizing for not reaching out weeks—or was it even months ago? We scheduled
@@ -3434,61 +3449,66 @@ That and the other eventful things I might have missed these past days since
 I concluded again that I should make a bigger effort to keep a consistent use
 of it.
 
-It's precisely midnight. Ninety minutes. Clara did not appear.
+It's precisely midnight: *Ninety minutes. Clara did not appear.*
 
 ### Saturday, March 8th, 2025
 
-Ya dime si quieres estar conmigo o si mejor me voy.  Tus besos dicen que tú sí
-me quieres, pero tus palabras no.  Y, al chile, yo hasta moriría por ti, pero
-dices que no.  No eres directa, neta, ya me estás cansando; sé concreta, por
-favor.
+>Ya dime si quieres estar conmigo o si mejor me voy.\
+>Tus besos dicen que tú sí me quieres, pero tus palabras no.\
+>Y, al chile, yo hasta moriría por ti, pero dices que no.\
+>No eres directa, neta, ya me estás cansando; sé concreta, por favor.
 
-Fuentes de Ortiz. Ed Maverick.  Unexpectedly, the main question of the night
-turned out to be whether to write or not to write.
+—*Fuentes de Ortiz.* Ed Maverick.
 
-I decided not to write, in here. Instead, I went to bed.
+***
+
+Unexpectedly, the main question of the night turned out to be whether to write
+or not to write.
+
+I decided not to write in here. Instead, I went to bed.
 
 I do not remember how the day started.
 
 Going to the library was at the top of the plans for the day. Online, the
 conclusion of my research, stated that it was forbidden to drink or eat at the
-BAnQ. That should have led me to drink my coffee at home; perhaps I spend some
+BAnQ. That means I should have drunk my coffee at home; perhaps I spend some
 of the morning working at my own computer.
 
-I did end up going outside. I grabbed my stuff and head outside. Coming out, as
-I stepped off the entrance of my building, the faint image of the lettering
+I did end up going outside. I grabbed my stuff and headed outside. Coming out,
+as I stepped off the entrance of my building, the faint image of the lettering
 uptop the 30 bus appeared far ahead into the street. I hopped briskly towards
-the bus stop just a couple meters ahead. Midway, I raised my left hand,
+the bus stop just a couple meters ahead. Midway, I raised my left hand
 signaling the bus driver of my intentions. I caught the bus and rode it until
-the library, around 30 slow bus stops on the way.
+the library, around 30 slow stops on the way.
 
 The tables at the BAnQ were mostly full. This time, rather than the stairs,
 I used the elevator to climb to the highest floor. I found one on the very end
 of building, where I put my stuff and sat down to work.
 
-The plan was for having dinner at the Glen's cafeteria. María was to text me
-whenever I could go join her. It was around 16h30 when she send the green
-light. I asked for a couple more minutes to finish whatever I was doing.
+The plan was for having dinner at the Glen's cafeteria. María was going to text
+me whenever I could go join her. It was around 16h30 when she sent the green
+light. I asked her for a couple more minutes to finish whatever I was doing.
+
 Earlier that morning, Reza sent us an email offering himself to turn off and
 unplug our computers due to the generator tests this morning. He was going to
 leave at around 17h30. There was that deadline in my head, given I knew I would
 probably not go to the office this weekend to turn it back on.
 
 I remember now how my day started. I grabbed the phone and looked at the story
-I had posted for my newborn close friends group. It might have been around the
-12h mark, maybe a bit more. I've forgotten the number of expectators, but Clara
-was at the top, just below those who had reacted to them. I did not mention
-this to Majo until we were leaving the hospital much later in the day. As
-I talked then during our metro ride home, my feelings about it were mixed. The
-night before, as I was writing this, I kept checking that list hoping to see
-her name among them. But what difference would it make? It was not as if
-I expected that image to push her to reach out of her silent exile from my
-life. As I could have predicted had I given it more reflection, when I did see
-her name and reddish portrait, there was no sense of relief nor accomplishment.
-I had proof that she still remembers I exist, but nothing more. It was not even
-a sign of active search, as I had reflected many years ago with Kate, how you
-can swipe mindlessly through the stories that instagram throws at you without
-necessarily giving them any attention.
+I had posted only to my newborn close friends group. It might have been around
+the story's 12h mark, maybe a bit more. I have forgotten the number of
+expectators, but Clara was at the top, just below those who had reacted to
+them—I did not mention this detail to Majo until we were leaving the hospital,
+much later in the day. As I told her during our metro ride home, my feelings
+about it were mixed. The night before, as I was writing this, I kept checking
+that list hoping to see her name among them. But what difference would it make?
+It was not as if I expected that image to push her to come out from her silent
+exile from my life. As I could have predicted had I given it more reflection,
+when I finally saw her name and reddish portrait, there was no sense of relief
+nor accomplishment. I had proof that she still remembers I exist, but nothing
+more. It was not even a sign of active search: as I had reflected many years
+ago with Kate, you can swipe mindlessly through all of the stories that
+Instagram throws at you without necessarily giving them any attention at all.
 
 I walked to the RI. María came to the entrance to let me in. She had suggested
 me to wait for her at the cafeteria, but then asked me if I wanted instead to
@@ -3497,238 +3517,264 @@ leave my stuff at her office. We ended up doing that.
 Both food options for Union at the cafeteria included meat. Previously, I had
 dropped my vegetarian intentions for the event of a cheap meal. This time
 instead, I opted to grab a larger portion of soup and the small coffee. Majo
-chose the chicken fried rice, but ended up leaving most of it. I pushed away
-the chicken pieces I could find and ate her carrots.
+chose the chicken fried rice, but ended up leaving most of it. When she offered
+it to me, I pushed away the chicken pieces and ate her carrots.
 
 During dinner, we talked about her latest annoyances with her labmates. Seline
-and Shub ambushing her by inviting a personan non-grata behind her back to an
-indian dinner. She keeps avoiding Lavi's calls. A couple of days before she
+and Shub ambushing her by inviting a *persona non-grata* behind her back to an
+indian dinner. She keeps avoiding Lavi's calls. A couple of days before, she
 told me about Joseph, the Filipino postdoc in her lab.
 
-Just typing the word postdoc brought me a cold shudder, born in my stomach and
-crawling all through my spine. Next month I will be hearing about the results
+Just typing the word postdoc brought me a cold shudder; born in my stomach, it
+crawled all through my spine. Next month I will be hearing about the results
 of my funds application. Deep down I know the most probable outcome is going to
 be a rejection. My publications are few and irrelevant. While the proposal is
 sound, the methods might be either too complicated—as it was the case in
-Louis'—or too basic to warrant a 3 year support, like Mahsa observed.
+Louis'—or too basic to warrant a 3 year support like Mahsa observed.
 
-I am halfly expecting to be rejected. It's as if I convince myself that
-I disappointment is the most likely outcome, I can prepare myself to stand more
+I am halfly expecting to be rejected. It is as if by convincing myself
+disappointment is the most likely outcome, I can prepare myself to stand more
 readily the blow. My plans all surround the less desirable outcome. To get out
 the publications that are in the way, to continue my production of studies that
 are the base of what I had proposed, to reach out to Louis talking about the
 possibility of moving to France, after the end of the year under Sylvia's
-supervision. Even to justify my lack of searching for a new apartment in
-Verdun, all of this depends on me not getting what I want.
+supervision; even to justify my lack of searching for a new apartment in
+Verdun: all of this depends on me not getting what I want.
 
-It might have been a bit before we left the hospital that I told her about
+It might have been a bit before we left the hospital when I told Majo about
 posting the picture of the tables inside the brewery in NYC and the heartfelt
 confession about feeling tempted to head back to instagram and the dilemma of
 whether this false sense of connection was enough to betray my own values.
-I told her that I considered taking Clara out of the selected group of people
+I told her, too, I considered taking Clara out of the selected group of people
 the image would reach. I ignore how conscious I was about the falsehood of that
-idea and about the real intention of posting something in there that would get
-to her; not only that, but something that would show as a green circle,
-something accompanied by this symbolic promotion to a special status of
-acquaintance, of closeness.
+idea and about the real intention behind posting something that would get
+to her, something that would appear to her as a green circle, this symbolic
+promotion to a special status of closeness.
 
-Would she wonder, as I did back in December, how long ago and for what reasons,
+Would she wonder—as I did back in December—how long ago and for what reasons
 did I choose her to be in this group?
 
-On the metro ride, I stated how there was no perfect outcome that I could even
-just imagine, much less hope for. Even the almost impossible idea of her
-reaching out, saying | miss you, I am sorry, I want you, would not be
-relieving. They would be tainted by the realization that this can never work.
-So, what did I want? Did I prefer the silence that would seal our last
-good-bye? Or maybe I wanted a rejection text, something like Sophie's or Bea's
-resurrection with a half-truth explanation of why she is deciding not to see me
-again?
+On the metro ride, I came to the conclusion that there was no perfect outcome
+I could imagine, much less hope for. Even the almost impossible idea of her
+reaching out, saying *I miss you*, *I am sorry*, *I want you*, would not be
+relieving. Any of them would be tainted by the realization that this, us, can
+never work.
 
-In the past week since I had sent that last message, I thought about reaching
-out asking about the logistics of the concert, to buy the print she would ever
-make of our double-exposures, to get back the negatives I gave her, eventually,
-used or not. Last morning, I woke up and thought about sending if this is your
-way of saying good-bye, it is really painful. I think I deserve better.
+So, what did I want? Did I prefer the silence that would seal our last
+good-bye? Or maybe it was a rejection text what I hoped for—something like
+Sophie's or Bea's resurrections with a half-truth explanation for the decision
+of never seeing me again.
+
+In the past week since the last message I sent, I have thought about reaching
+out to ask her about the logistics of the concert, to buy the print she
+proposed to make out of our double-exposures, to get back the negatives I gave
+her for this same purpose, used or not. Last morning, I considered sending
+*If this is your way of saying good-bye, it is really painful. I think
+I deserve better.*
 
 María and I got to Jarry. We stepped off the metro station and made our first
-stop at SAQ. I grabbed a bottle of fireball. We continued walking through Jarry
-street. The second stop was the larger depanneur. She grabbed the salt and
-vinegar chips. I went for the can of Arizona spiked half tea and half lemonade.
-The last and final stop was the depanneur next to my house; we grabbed a can of
-thai tea and a bottle of jamaican ginger beer.
+stop at SAQ. I grabbed a bottle of Fireball. We continued walking through Jarry
+street. The second stop was the larger depanneur. She grabbed a bag of salt and
+vinegar chips, I went for the can of Arizona spiked half-tea and half-lemonade.
+The last and final stop before my place was the depanneur next-door. We grabbed
+a can of thai tea and a bottle of Jamaican ginger beer.
 
 We finally entered my building. I opened the door for Majo to enter first. As
-I opened the inside door, I showed her the single key that I use to enter
-saying how we have to make only a single copy for her to have. For my
-apartment, I opened the door and entered in front of her. We put away the stuff
-we bought first. I place my phone face up next to the drinks, before moving on
-to leave the backpack on the table and take off my coat and shoes. I was
-standing in the middle of the apartment, on my socks, when I saw the screen
-light up and unconsciously recognized the name and/or videocamera emoji. I felt
-a sense of urgent anguish. I did not know where to move, what to do.
+I opened the inside door, I showed her the single key that I use to enter and
+told her how we need a single copy of one key to give her access. I opened the
+door and entered my apartment in front of her. We put away the stuff we bought
+first. I placed my phone face up next to the drinks, before moving on to leave
+the backpack on the table, and take off my coat and shoes. I was standing in
+the middle of the apartment, on my socks, mid-work, when I saw the screen light
+up and unconsciously recognized its senders, either by the name or the
+videocamera emoji next to it. I drowned in a sense of urgent anguish. I did not
+know where to move nor what to do.
 
-"She just texted," I let out robotically and showed her. Majo was as surprised
-as I was. I had only read the first line or two that was available in the
-notification. miss you too. sorry. not an amazin period of time. I desperately
-and with meaningless words tried to ask Majo to read it with me, maybe even
-read it first. I felt lost in my own apartment.
+"She just texted," I let out robotically and showed her my phone. Majo was as surprised
+as I was. I had read only the first line or two available on the
+notification. *miss you too*, *sorry*. *not an amazing period of time*. I desperately
+and with almost-meaningless words tried to ask Majo to read it with me—maybe even
+in my place.
 
-When my senses came back to me, I sat down at the couch and read it.
+I felt lost in my own apartment.
 
-"Hey," it started. No name, no cute nickname, but rather two whitespaces before
-continuing, "miss you too." I could see in my head the green bubble surrounding
-the hey. i miss you that should be above, but that I had just that morning
-deleted.
+When my senses came back to me, I sat down and read it myself.
 
-"Sorry this is not an amazing periof of time right now I hope you don't hate me
-too much. And that things are good despite life being life." If the message
-would have ended here, I would have seen it only as a way of apologizing for
-the silence. Halfly accepting blame and recognizing she must have hurt me.
-Setting the reasoning for not continuing further, subtly marking an end. But,
-it did not end there.
+`Hey,` it started. No name, no cute nickname, but rather two whitespaces before
+continuing, `miss you too.` I could see in my head the green bubble surrounding
+the `hey. i miss you` that should be above, had I not deleted that same
+morning.
 
-"I saw you were back on insta how do you feel?" She referenced the post I made,
+>Clarizard > `Hey,  miss you too.`\
+>`Sorry this is not an amazing periof of time right now I hope you don't hate
+>me too much. And that things are good despite life being life. I saw you were
+>back on insta how do you feel?`
+
+If the message were just one sentene shorter, I would have read it as her way
+of apologizing for the silence, half-accepting blame and recognizing she must
+have hurt me; setting the reasoning for not continuing further—subtly marking
+an end.
+
+But there was that last sentence. She referenced the post I made
 acknowledging her presence in the list of viewers. Perhaps, without realizing,
-letting out how the reminder of my existance was the push she needed to step
-out of the quietness. Like many messages before since we met, she ended it with
-a question, a gesture to continue, and invitation to reply back.
+also letting out how the reminder of my existance was the push she needed to step
+out of the quietness.
 
-Like many times now since I met her, I felt confused. I stated out loud that we
-were now going to watch the movie and not think about it. Both Majo and I were
+Like many messages before it, she ended with a question—a subtle gesture to
+continue the conversation, an invitation to reply back.
+
+And like many times before, I felt confused. I stated out loud that we
+were now going to watch the movie we came to see and not think about this message nor Clara. Both Majo and I were
 too distracted by this unexpected turn of events to pay too much attention to
-the movie I was supposed to be watching on that couch with Clara rather than
-her.
+the same movie I was supposed watch on that same couch with Clara instead.
 
-We did finish the movie, after many interruptions commentating both it, and
-this message. Majo did not like it.
+We did finish the movie—after many interruptions for comments, both about the
+movie and the message we were not going to talk about. Majo did not like it.
+Neither of them.
 
-After we finished it, Majo suggested we ask the tarot deck that Alda gave me
-for signs about whether I should reply back or not. Like last time, I use
-chatGPT as a reference of how to read the cards. It suggested The Crossroads
-Spread, a spread designed for moments of uncertainty, hesitation, and emotional
-conflict. It consisted in five cards, The Root, to find out what is driving me
-to text back; Paths A & B, the two choices of whether saying nothing or
-answering back; The Hidden Influence, for the subconscious belief shaping my
-decision; and, lastly, The Final Outcome, what action will bring me the most
+Majo then suggested we ask the tarot deck Alda gave to me for signs about
+whether I should reply back to Clara or not. Like last time, I used
+chatGPT as a reference for interpreting the cards.
+
+It suggested us
+*The Crossroads Spread*, a spread designed for moments of uncertainty, hesitation, and emotional
+conflict. It consisted in five cards: *The Root*, to find out what is driving me
+to text back; *Paths A & B*, the two choices of whether saying nothing or
+answering back; *The Hidden Influence*, for the subconscious belief shaping my
+decision; and, lastly, *The Final Outcome*, what action will bring me the most
 peace.
 
 The summary of the reading was the following:
 
-1. The Lovers (The Root) → You are standing at the edge of something that has
-   already ended, still searching for a choice that no longer exists.
+>1. **The Lovers (*The Root*)** → You are standing at the edge of something
+>that has already ended, still searching for a choice that no longer exists.
+>
+>2. **King of Pentacles (Reversed) (*Ignoring the Message*)** → You fear that
+>doing nothing means losing control, that silence is surrender rather than
+>strength.
+>
+>3. **9 of Cups (Reversed) (*Responding to the Message*)** → Reaching out will
+>not bring satisfaction—only more longing, more emptiness, more proof that this
+>is already gone.
+>
+>4. **Temperance (*The Hidden Influence*)** → You are not searching for
+>Clara—you are searching for balance, for inner peace, for relief from the
+>discomfort of unspoken endings.
+>
+>5. **The High Priestess (*The Final Outcome*)** → You already know what to do.
+>Trust yourself. The only action left is no action at all.
 
-   2. King of Pentacles (Reversed) (Ignoring the Message) → You fear that doing
-   nothing means losing control, that silence is surrender rather than
-   strength.
+María left. I asked her to text me when she got back. I went to bed without
+replying to Clara, but unconvinced I would remain in silence.
 
-   3. 9 of Cups (Reversed) (Responding to the Message) → Reaching out will not
-   bring satisfaction—only more longing, more emptiness, more proof that this
-   is already gone.
+This morning I gave myself my injection. Later, in the afternoon, I sent out a
+reply.
 
-   4. Temperance (The Hidden Influence) → You are not searching for Clara—you
-   are searching for balance, for inner peace, for relief from the discomfort
-   of unspoken endings.
+>Sofía > `idk if I'm back just yet, guess i was just sharing the thought out
+>loud with a few people. I'm not too bad. I don't hate you, but i did notice
+>the silence. How are you? is everything okay?`
 
-   5. The High Priestess (The Final Outcome) → You already know what to do.
-   Trust yourself. The only action left is no action at all.
-
-   María left. I asked her to text me when she got back. I went to bed without
-   replying, but unconvinced that I would remain in silence.
-
-   This morning I gave myself my injection. Later, in the afternoon, I sent my
-   reply.
-
-   "idk if I'm back just yet, guess i was just sharing the thought out loud
-   with a few people. I'm not too bad. I don't hate you, but i did notice the
-   silence. How are you? is everything okay?"
-
-   For some reason, I do not feel now the same uneasiness about how long is
-   going to take before getting an answer back.
+For some reason, I do not feel now the same uneasiness about how long it is
+going to take before getting an answer back.
 
 ### Sunday, March 9th, 2025
 
-"Creo que no es sorpresa  "Es como wtf  "Pensé que era más ajustada a la
-realidad [...]"Pero regresó y me da vibes that she's definitely not okay
-[...]"This could get toxic"Espero que me esté equivocando"   This morning time
-changed. We lost an hour. I got up later without having slept any more.
+>Majo > `Creo que no es sorpresa`\
+>Majo > `Es como wtf`\
+>Majo > `Pensé que era más ajustada a la realidad`\
+>[...]\
+>Majo > `Pero regresó y me da vibes that she's definitely not okay`\
+>[...]\
+>Majo > `This could get toxic`\
+>Majo > `Espero que me esté equivocando`
 
-Like weeks ago, I grabbed my phone looking for a specific notification. Instead
-I texted with Majo. I told her how I had not gotten up. I shared that I have
-not washed my sheets and they are starting to smell.
+***
+
+This morning time changed. We lost an hour. I got up later without having slept
+more.
+
+Like weeks ago, I grabbed my phone looking for a specific notification.
+I texted with Majo instead. I told her how I could not get out of bed.
+I confessed I have not washed my sheets and they are starting to smell.
 
 I did get up eventually. I showered and got ready. The deadline to return the
 Barthes book was today. It was impossible to delay the return, thus I spent
-most of the afternoon yesterday finishing it.
+most of the yesterday's afternoon finishing it.
 
 By the time I was ready to leave the house, it was already past noon despite me
-running on an hour behind since my mark of reference were the unchanged alarm
-clock in my room and microwave clock in my kitchen. Brewing coffee was no
+having an hour of advantage since my marks of reference were the unchanged
+alarm clock in my room and the microwave in my kitchen. Brewing coffee was no
 longer an option. I did take the long way and made a stop at the bakery.
 
 The first stop was the library at Berri. I could have returned the book at
 those machines without having to enter the library. There were four more days
-available to postpone picking up the other Despentes book the have reserved for
-me. My plan was to take the metro back to Sherbrooke and wait for the 144 bus.
-The wait for the bus could be anything between a couple of minutes to
-half-an-hour. I went inside and looked for the same code that I have looked for
-a handful of times this past month.
+available to postpone picking up the other Despentes book the have been
+reserved for me. My plan was to take the metro back to Sherbrooke and wait
+there for the 144 bus. The wait for the bus could be anything between a couple
+of minutes to half-an-hour. I went inside and looked for the same code that
+I have looked for a handful of times this past month.
 
-When I got back to the metro, mistakenly I took the same way that I had come
-from. I did not realize the error of my way until the robotic voice warned us
-about a slowing before getting to the next station. Since I had positioned
-myself close to the door, I could easily get off at Champ de mars to return to
-the right way. The opposite train arrived as I was halfway through my way on
-the opposite platform.
+When I got back to the metro station, I mistakenly took the same way that I had
+came from. I did not realize my error until the robotic voice warned us about
+a slowing before approaching the next station. Since I had positioned myself
+close to the door, I could easily get off at *Champ de Mars* to head back the
+right way. The correct train arrived as I was halfway through my way on the
+opposite platform.
 
 The wait for the bus at Sherbrooke was only 15 minutes. I managed to read the
 first chapter inside the metro station as the countdown on the screen above
-went closer and closer to  zero. I stepped outside and continued reading for
-the last 3 minutes of wait. The man who had exited to wait at bus stop before
-me looked at me, then at the book in my hands, and smiled. He started talking
-but the music of my earphones made it impossible for me to understand. I took
-the right bud and moved my head suggesting him to start over. He spoke too
-quickly and too québécois for me to be sure what he said. It was a comment
-about how it had been long since he had seen it. I was amazed that
-a middle-aged men had made a comment about the queer feminist manifesto in my
-hands, until I caught up with the possibility he was just talking about
-referenced King Kong.
+went closer and closer to zero. I stepped outside and continued reading for the
+last 3 minutes behind the departure. The man who had exited to wait at the stop
+moments before looked at me, then at the book in my hands, and smiled. He
+started talking but the music of my earbuds made it impossible for me to
+understand. I took the right one out and tilted my head suggesting him to start
+over. He spoke too quickly and too québécois for me to be completely sure of
+what he said. It was a comment about how it had been long since he had seen it.
+I was amazed that a middle-aged men had made a comment about the queer feminist
+manifesto in my hands, until I caught up with the possibility he might have
+just been talking about the referenced King Kong.
 
 I arrived to the Neuro and walked into my office. By plugging in my work
-computer I finished with the second of the three goals for my second half of
-the weekend. I left my stuff and decided to use the two elevators to get to the
+computer I completed the second of the three goals for my second half of the
+weekend. I left my stuff and decided to use the two elevators to get to the
 cafeteria. The way there was calm and solitary. The door of the cafeteria was
-closed, making easy to see the opening hours and realizing that I had been an
+closed, making easy to notice the opening hours and realize I had been just an
 hour too late.
 
-Defeated, I took the first elevator back and entered the room in front with the
-vending machines. I was outraged by the fact that a starbucks coffee beverage
-was 6 CAD. My last hope was the vending machine in front of the second
-elevator. It took me around 10 minutes figuring out how to use the app and
-putting funds into it to buy a 2.5 CAD mediocre latte.
+Defeated, I took the first elevator back down and went into the room in front
+with the vending machines. I was outraged by the fact that a bottle of
+starbucks' coffee drink was 6 CAD. My last hope was the vending machine back
+down to the Imaging Centre, in front of the second elevator. It took me around
+10 minutes to figure out how to use the app and put the funds necessary to buy
+a 2.5 CAD mediocre latte.
 
-I worked until the sun set and there was no more use of the daylight savings
-time.
+I worked until the sun set and there was no more benefit from the daylight
+savings time.
 
-I exited through the stadium. There was still a lot of ice on the park area
+I went out through the stadium. There was still a lot of ice on the park area
 outside the gymnaseum. I slipped on the last stretch, scratching my knee and
-bending my right leg. The pain is gone by now.
+bending my right leg. The pain is mostly gone by now.
 
-I stopped at metro to buy some groseries. Although I had only plan to buy
+I stopped at Metro to buy some groceries. Although I had only planned to buy
 a salad and hummus, I ended up spending around 50 CAD on a bunch of other stuff
 including plant-based deli meat and sausages.
 
-After getting home, I prepared a cup of rice and heated the last of the bean
-dish I had made earlier this week.
+After getting home, I cooked a cup of rice and heated the last of the bean-dish
+I had prepared earlier this week.
 
 While I definitely should, I am unsure I will go to the lab tomorrow.
 
 ### Tuesday, March 11th, 2025
 
-Y, ¿de qué sirve hablar? No te quiero ver.¿De qué sirve verte si no te puedo
-tener aquí?Y verte así.
+>¿De qué sirve hablar? No te quiero ver.\
+>¿De qué sirve verte si no te puedo tener aquí y verte así?
 
-Nadie va a pensar en ti mejor que yo. Ed Maverick.  Was it a conscious decision
-not to write yesterday or did I just decide not to do it?
+—*nadie va a pensar en ti mejor que yo*. Ed Maverick.
+
+***
+
+Was it a conscious decision not to write yesterday or did I just decide not to
+do it?
 
 Was it conscious, too, or was I forced to not attend the Neuro meeting?
 
