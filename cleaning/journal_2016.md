@@ -1,6 +1,8 @@
-# 2016
+# 2016 — 23 years old
 
-## 2016-01-01
+## January, 2016
+
+### 2016-01-01
 
 The little white boxes, the date up here, everything looks white and empty.
 
@@ -53,7 +55,7 @@ I feel lonely, I wouldn't let myself live with the idea of isolating myself agai
 
 I have to try. Even if it keeps killing me from the inside and makes the void bigger and darker.
 
-## 2016-01-02
+### 2016-01-02
 
 I didn't took my pill today.
 
@@ -95,7 +97,7 @@ I feel lonely. I feel isolated. I am scared of asking for help.
 
 Sure, it would be if I knew who they were.
 
-## 2016-01-03
+### 2016-01-03
 
 I was tempted to climb out of bed resigned and come here to type the words of today.
 
@@ -153,7 +155,7 @@ I tried them on and liked them. They are more ambiguous than my usual shirts.
 
 Will I call? Will he answer? Will I dare to speak? To the doctor? my father? Luis?
 
-## 2016-01-04
+### 2016-01-04
 
 "You area away in a trip. I know you won't see this soon, I don't expect you to answer. I know I've been an asshole. It's not your fault. Everything will be normal when you're back. I am sorry."
 
@@ -190,7 +192,7 @@ Will I tomorrow? Will I ever?
 
 Is it really easier staying this way than to face my fears?
 
-## 2016-01-05
+### 2016-01-05
 
 Catherine asked me in the morning if I could go with her to do her driving test. She would come pick me up at 8 in the morning. My mother and Luis would be getting ready too for their appointment for their passport. At the end, we postponed it to tomorrow. Tomorrow will be sixth of january. King's day. I'll go to Paola's house. I haven't decided what I'll wear. Everybody but my father will be at home. Do I care?
 
@@ -233,7 +235,7 @@ What is it that I fear?
 How can I fight it if I'm blind? How can I ask for help if I'm mute?
 
 
-## 2016-01-06
+### 2016-01-06
 
 I woke up at 2:42am. I decided to sent Catherine a text message responding hers. I had asked about what to wear. I wanted to wear something feminine and I thought it would be easier to wear it today than tomorrow. I doubted because of Paola. When I woke up I was worked up in fears and expectations. I was angry of how ready I was to do anything. Late at night I feel reckless: I can tell my dad, I could go upstairs and wake him up and tell him. I could tell Luis about me and don't care about the consequences, it'll happen what will happen.
 
@@ -287,7 +289,7 @@ What did I do wrong? Where did I fail? When?
 
 What can I do? I can't take this anymore.
 
-## 2016-01-07
+### 2016-01-07
 
 "You are a very special person. You have the ability to smile despite all the difficult things that have happened"
 
@@ -357,7 +359,7 @@ What if he's not enough? What if I'm denied because he's not a psychiatrist? He 
 
 Do I doubt of convincing him or convincing myself?
 
-## 2016-01-08
+### 2016-01-08
 
 "My name is Ivan, and I'm so macho"
 
@@ -405,7 +407,7 @@ What am I waiting for? What am I scared of?
 
 Which would be easier? Telling I am trans or telling I will do something about it?
 
-## 2016-01-09
+### 2016-01-09
 
 I look around and see all the things in the wrong places. Several times I've tried to gain the motivation to actually clean up my room. I have counted the number of places where I need to order everything. The little box in the bookcase, the one where I have the prescription and money. The upper side I use as a shelf. The shelf over it. The three on the wall from the other side. My desk.
 
@@ -443,7 +445,7 @@ Or was the realization of me the one that killed that mask?
 
 Am I a savior or a executioner?
 
-## 2016-01-10
+### 2016-01-10
 
 "Ivan, you are Sofia, right?"
 
@@ -477,7 +479,7 @@ The day after that I have to tell Rene about my appointment. Ask him about his a
 
 I am scared of his reaction just like I am scared of my dad's.
 
-## 2016-01-11
+### 2016-01-11
 
 "Thank you, my beautiful girl"
 
@@ -519,7 +521,7 @@ I love her. She's the person that I fear the most about losing.
 
 I wouldn't be here without her help. I can't even imagine where I'd be without her.
 
-## 2016-01-12
+### 2016-01-12
 
 Esta vez no es SofÃ­a quien escribe las palabras, soy yo, Catherine, su novia. Es tentador revisar dias anteriores, no sÃ© porque si ya he leido fragmentos de su diario, dias en especifico que ella me deja ver. Me dijo podia hacer trampa, o dejarle un mensaje. Me parecio buena idea, pero ahora no se que escribirle.
 Hace casi un aÃ±o que empece a hablar contigo Sofi, veo hacia atras y parecen aÃ±os, es tan largo y tan corto al mismo tiempo. Hace un aÃ±o ni siquiera imaginaba que mi vida seria asi. Que me llamaria tu novia, que te diria a ti mi novia, que hubiese tanta confianza entre nosotras como para caminar desnuda delante de ti, para que vieras mi relacion con muÃ±eca, para que me vieras estallar como lo hice ayer en mi carro. Me encanta estar a tu lado, no encientro otra palabra, simplemente me encanta, disfruto tu compaÃ±ia, me encanta cada aspecto de nuestra relaciÃ³n, me gusta hablar de temas complicados, temas que nos sobrepasan como todos los que estamos viviendo en este momento. Me gusta hablar de nada y solo abrazarte, sentirte cerca. Me gusta tontear, tener nuestras curas. Me gusta que me sigues la corriente y a veces me toca a mi seguirte la corriente, me gusta cuando me sorprendes como hoy en el caminito de CECUT. Te quiero tanto, a veces no se que responder cuando me preguntas por que te quiero. Quisiera abrirte mi cabeza y vieras lo que pasa ahi dentro cuando te veo, cuando me tocas, me besas, cuando puedo oler tu cabello, al sentir que tu mano busca la mia y entrelazamos los dedos.
@@ -533,7 +535,7 @@ Me gustas, me gustas mucho, me gusta tu cabello, esos chinos me vuelven un poqui
 Hace dias pensÃ© preguntarte, como sabes cuando amas a una persona, que se siente, que es diferente entre querer y amar, porque jamas me habia sentido asi con alguien, jamas habia sentido, pensado, deseado asi a alguien.
 Te quiero, te adoro Sofia.
 
-## 2016-01-13
+### 2016-01-13
 
 "I'm angry, no, upset..., angry, I don't know. I guess I am something with you. Because I can't pinpoint it, but no matter what, since lately, I don't feel like I flow with you two"
 
@@ -574,7 +576,7 @@ When I got home and moved it again to park it in the pick up's place I noticed i
 I have two weeks to make a choice. I have two weeks to tell everybody in time.
 
 
-## 2016-01-14
+### 2016-01-14
 
 What is this that I'm feeling?
 
@@ -637,7 +639,7 @@ Will it be easier to talk about if I'm angry instead of scared?
 
 Would it be easier to scream it than confess it in tears?
 
-## 2016-01-15
+### 2016-01-15
 
 "I have sad eyes, expressive ones. My eyes tattle me, they betray me. Will I get to the point to want to take them out?"
 
@@ -701,7 +703,7 @@ And again I write the same nonsense all over again, as if romanticizing my cowar
 
 
 
-## 2016-01-16
+### 2016-01-16
 
 "Mum, is it hard to take lipstick off?"
 "If you tell me you're asking me because you're going to put it on, I'll slap you across the face"
@@ -758,7 +760,7 @@ What is it that I lack? What do I need?
 
 Do I need their support or is it something to be nervous in which unload my anxiousness?
 
-## 2016-01-17
+### 2016-01-17
 
 "You are a woman" "So?"
 "I've already seen that picture, you're with Catherine in front of a mirror looking at the camera and making a duckface"
@@ -797,7 +799,7 @@ After that I came to appreciate being called Ivan. Now, most people called me th
 
 for now, I guess.
 
-## 2016-01-18
+### 2016-01-18
 
 "Ivan, the technician will come at 10 or 11, can you wait for him?"
 
@@ -841,7 +843,7 @@ I have to do it. I have to get up. This week they're supposed to schedule a meet
 
 It doesn't matter. I have enough to do and worry to think about a stupid job.
 
-## 2016-01-19
+### 2016-01-19
 
 I'm wearing new glasses. I picked them up today. My father gave me the money yesterday. I paid them and the pills. I didn't ask him for that money. Did I lose that chance? Can I ask him anyway? It's not about the money, it's the excuse. Why do I need an excuse?
 
@@ -881,7 +883,7 @@ I have my glasses and I see clearer.
 
 Can I see things clearer, too? Can I have a more realist perception of my future and situation now? Or will I just get accustomed to this new perspective and things will start to get blurred again?
 
-## 2016-01-20
+### 2016-01-20
 
 "You are a free and independent woman who is not anybody's property"
 
@@ -927,7 +929,7 @@ It's as if I had to earned it. I have to fool everybody first. They have to be m
 Do I think about the world or myself when I make up that encounter? Maybe the real in-congruence lies between what I see and what I feel. That is whom I really want to convince?
 
 
-## 2016-01-21
+### 2016-01-21
 
 "I need my husband, can you get him?" "I can't." "I need to talk to my husband, and I need to hold my husband. Can you at least try?" "I'm sorry."
 
@@ -969,7 +971,7 @@ We went to wal mart and saw things. We bought condoms and I found her mascara. I
 After the movie we bought two planners. Like the one she had seen and one similar. I might try to fill it.
 
 
-## 2016-01-22
+### 2016-01-22
 
 "I was furious when I read the posts asking for interns with a pay of 1000 pesos the week"
 "Have you started your social service? Do you know of somebody looking for a place?"
@@ -1023,7 +1025,7 @@ Why does it hurt me? Why does it make me uncomfortable?
 
 
 
-## 2016-01-23
+### 2016-01-23
 
 My father asked me if I wanted to go to the United States yesterday after they arrived from the party.
 
@@ -1074,7 +1076,7 @@ It was a peculiar feeling. I felt alive, awake, I was doing something, thinking 
 
 I love that instant. In that instant I don't worry, nor I fear, nor I suffer. In that instant I don't am.
 
-## 2016-01-24
+### 2016-01-24
 
 There are no quotes today. I've done nothing important at all.
 
@@ -1120,7 +1122,7 @@ He hasn't make any comments or other actions. A lot of people use female charact
 
 Is that another reason to be scared of telling him about me?
 
-## 2016-01-25
+### 2016-01-25
 
 Hay dias donde no soporto el dolor de la soledad.
 
@@ -1162,7 +1164,7 @@ Am I that to the world?
 
 Or am I that to myself when Catherine is not here to change my mind?
 
-## 2016-01-26
+### 2016-01-26
 
 "I hate you. I hate you so much I could resuscitate you from fear"
 
@@ -1219,7 +1221,7 @@ Will I spent the next weeks until my appointment writing that sentences here ins
 
 "Mom, could you tell my dad I am trans?" Or will I end doing that?
 
-## 2016-01-27
+### 2016-01-27
 
 "Did he see me? That one time, months ago, in the movie theater. Did he see me? Did he ask you something? Have you told anyone?"
 
@@ -1263,7 +1265,7 @@ Tomorrow I'll see RenÃ© and take the mmpi results to him.
 
 Of what could I talk?
 
-## 2016-01-28
+### 2016-01-28
 
 "I thought about leaving therapy, talk about that with Lilli. How would she charge me if I return and that stuff."
 
@@ -1318,7 +1320,7 @@ I could had let him stay. He could had read about my body, my father. He doesn't
 
 I threw him out instead. Because it makes me uncomfortable to be open, to be vulnerable and being read. I want him to know, I want all of them to know but I throw them out.
 
-## 2016-01-29
+### 2016-01-29
 
 "And for the lady?"
 
@@ -1372,7 +1374,7 @@ No. No. I won't take this from me. Not today.
 
 For him I was a lady.
 
-## 2016-01-30
+### 2016-01-30
 
 I feel just like that other time weeks ago when the father and his baby saw me outside Rene's office. "Look at the girl", he told his baby. I repeated his words to myself when I was in bed.
 
@@ -1410,7 +1412,7 @@ I have like 10 sessions with Rene before going. Will I tell my parents before th
 
 
 
-## 2016-01-31
+### 2016-01-31
 
 "When will you take the suit to the tailor? The person might have a busy schedule, you must go soon."
 
@@ -1453,9 +1455,9 @@ With the hispanic terms, it's like I have to tell them about my genitals. They h
 
 They should not care. It's nobody's business but mine.
 
+## February, 2016
 
-
-## 2016-02-01
+### 2016-02-01
 
 I followed Paola in Twitter. Yesterday I did it impulsively. It didn't work and I tried again. It did nothing. I left the phone and went to bed. I was talking to Catherine, I remember. I think so. She fell asleep before I did. In those moments of loneliness I grabbed the phone again and tried once more. This time I clicked the little oval of my face and a green checkmark appeared under it. I clicked accept. It was done.
 
@@ -1513,7 +1515,7 @@ Could I just tell my mom about the doctor and ask her to tell my dad?
 
 Why does it feel forbidden? Who forbade it?
 
-## 2016-02-02
+### 2016-02-02
 
 "I was downtown and she came up to me. 'Hi, do you remember me?' 'Uh, yeah' 'I know you are angry with me, but I wanted to explain myself. I know Ivan is upset, too.' 'Sofia' 'That's what I wanted to explain, that's what won't understood. I had a puppy called Sofia, that's why I can't call her that, not yet.' "
 
@@ -1555,7 +1557,7 @@ Yeah, if they would had given me that option "leave you hair grow but wear the g
 
 
 
-## 2016-02-03
+### 2016-02-03
 
 I'm still sick. I am tired and exhausted.
 
@@ -1599,7 +1601,7 @@ And yet, I expected to. I wore the clothes and stepped outside and faced the wor
 
 I still do.
 
-## 2016-02-04
+### 2016-02-04
 
 "I will tell you three things, but only one of them will be true: I still think about you when I masturbate; I always remember you when I listen to this song called 'I hate you', I grabbed all of your gifts and pictures and mementos and threw them out"
 
@@ -1647,7 +1649,7 @@ Catherine will arrive monday. I could buy her a cake for when I meet her at the 
 
 
 
-## 2016-02-05
+### 2016-02-05
 
 I remember that time I made Luis feel like crap. The time I screamed at him and could see his face full of guilt and shame.
 
@@ -1690,7 +1692,7 @@ If my parents knew I could talk about it with them. Do I want to talk with them 
 
 I need their support. Why is it so difficult to even fantasize about asking for their help?
 
-## 2016-02-06
+### 2016-02-06
 
 I lied on the bed shortly after writing yesterday's words. By 7 and a half I was already asleep. I remember dreaming but not what they were about. One of them was a nightmare. It came now. I was in my own bed with my arms over my stomach, hands crossed. I remember noticing myself, my own position, and thinking how it was a feminine one. One hand was grabbing the other just under my chest and the other way lower over my crotch. Yeah, there were two pair of hands and I realized the impossibility of being alone. I freaked out when the extra arms started grabbing and pulling me.
 
@@ -1732,7 +1734,7 @@ A woman? A man?
 
 What do they want and what can I offer them?
 
-## 2016-02-07
+### 2016-02-07
 
 I finished Interstellar. I started where I left that other day, like 20 minutes from the beginning.
 
@@ -1768,7 +1770,7 @@ There still is a mismatch between my self and my reflection. My mental image and
 
 Which am I? Which is real and to be known?
 
-## 2016-02-08
+### 2016-02-08
 
 One hundred.
 
@@ -1815,7 +1817,7 @@ Should I use my phone or my computer?
 
 Should I think in other way or should I just do it?
 
-## 2016-02-09
+### 2016-02-09
 
 "Have you chosen your suit already?" "Or a dress?" "Do you know how will you do your hair?" "Will you just tie it up? - Leave him, alone".
 
@@ -1853,7 +1855,7 @@ Tomorrow we will see Paola.
 
 Yesterday I told Paola. Did I write about that, too?
 
-## 2016-02-10
+### 2016-02-10
 
 "She is Sofia"
 
@@ -1912,7 +1914,7 @@ Although, with that phrase, when they don't, it will hurt me even more.
 
 
 
-## 2016-02-11
+### 2016-02-11
 
 Tomorrow I'll go to Tecate. It's the last city which we haven't gone together. I've already visited in, what was it, new year's? It was when my uncle asked us to pick a couple of bottles of wine for him from a friend of his. Tomorrow Catherine will pick me up from home and will drive us to school. There will be a bus waiting for us. We will see Hilda, too. Miguel, also. They will give us an award for our results in the test. My father will go, too. He will be looking for me. He'll be there and see how they recognize me. They say out loud the name my parents put on me and I'll stand and walk and shake some hands and receive something. Paolas know about me but my parents don't. They know how I feel and how I'm called. Chevo and Jessica have seen me in make up and dressed. My parents don't.
 
@@ -1944,7 +1946,7 @@ Like for instance, take anybody's initiative to ask me how I want to be called. 
 
 
 
-## 2016-02-12
+### 2016-02-12
 
 "Did you see the whole conversation?... 'Sophie: baby steps'. "
 
@@ -1985,7 +1987,7 @@ Why would you send her the picture of her contacts? Yeah, you have me as... No, 
 
 
 
-## 2016-02-13
+### 2016-02-13
 
 I was in bed when the idea struck me. There will be a congress in Sinaloa, Mazatlan. A "national" congress of psychology. I saw the names of the conferences and they were simple stuff. Nothing new. Again, the same about autism and children. The role of schools and teacher. There was one that caught my attention, maybe the only one I would actually be tempted to attend. "I accept myself, others accept me - sexual diversity" It's almost sure that it would be presented by someone who barely knows what they're talking about. A so called "expert" like my teacher of Sexuality in college.
 
@@ -2021,7 +2023,7 @@ Why isn't the sample of the study society itself or parents and family? Why don'
 
 I don't care about knowing about me. I want to know what will everybody else think and feel about me.
 
-## 2016-02-14
+### 2016-02-14
 
 "Shy the girl... oh yeah, she didn't want to see the dad, but the daughter?"
 
@@ -2055,7 +2057,7 @@ I love you, I adore you, I want you, Sofia. You are my friend, my girlfriend, my
 
 
 
-## 2016-02-15
+### 2016-02-15
 
 Now I do think about it. It's like this silly fantasize which I am embarrassed to admit. I'm there with you, and we're both standing in front of each other. We both look beautiful in our dresses and we're both smiling and happy, around us are the people close to us, the ones who always knew since the beginning and those who went learning it as time went by. People who accept us and love us. People who've seen our growing.
 
@@ -2100,7 +2102,7 @@ I was excited, motivated. I want my future to be like that. I want my life to be
 
 Am I capable of it?
 
-## 2016-02-16
+### 2016-02-16
 
 I was just thinking about starting to send the curriculum. Initiating the search and lookout. Sending myself out there. Stop waiting for when the dr finally gives us our results. I don't know when will that be. Maybe it would be even after my own graduation. Maybe I would keep waiting and time would catch up and...
 the message of Catherine brought me out of that thought. "The Dr has our results we can pick them up Wednesdays from 12 through 2."
@@ -2151,7 +2153,7 @@ I want to stop hiding anymore.
 
 But... but, I am still scared of being seen.
 
-## 2016-02-17
+### 2016-02-17
 
 "you mentioned something just now, that: "ambiguity'"
 
@@ -2202,7 +2204,7 @@ Would we wear two of those?
 
 "Sometime we'll do the shopping and make up and all of this together".
 
-## 2016-02-18
+### 2016-02-18
 
 "You don't look like this. Do you have an id? It's ok, you gained some weight, didn't you?"
 
@@ -2259,7 +2261,7 @@ The day wasn't fulfilled until a person addressed us as ladies.
 
 I wasn't seen until I confirmed that somebody really saw me.
 
-## 2016-02-19
+### 2016-02-19
 
 My head hurts. I have a headache. What's the difference between those two statements?
 In one I separate my head as in a part of my body from myself. The head hurts. It's a separate entity from me and the whole action that causes discomfort is caused and effected on it. In the second, I take responsibility for my pain. I see myself as a whole entity, a complete system.
@@ -2311,7 +2313,7 @@ Or will I? He will be graduating in July. I have my appointment in April. My par
 
 It feels as if I did something wrong. As if I did it behind their backs and I should confess a crime. Is that another reason why I am scared?
 
-## 2016-02-20
+### 2016-02-20
 
 The graduation is close. I told my parents I have almost everything for the process of the license. I just have to pay for the honorific mention and buy two or three tickets for the raffle. Yesterday, was it yesterday?, I saw again the job postulation asking for someone to contact and treat the patients. Register their treatment and process. I am a perfect fit for it. They haven't filled the position in one month. There must not be a lot of competition. It was new, less than a day of age.
 
@@ -2364,7 +2366,7 @@ Am I scared of them laughing at what I like? Am I scared of people taking them a
 
 Am I scared of them not reacting? To them seeing them like a normal picture. Seeing Ivan in them.
 
-## 2016-02-21
+### 2016-02-21
 
 "I don't want to talk right now. Can we chat in the evening?"
 
@@ -2408,7 +2410,7 @@ They won't come if I don't invite them. They won't come after a whole life of se
 
 I need their help.
 
-## 2016-02-22
+### 2016-02-22
 
 I dreamed with Monica once again. She sent me a text message in whatsapp. There was this weird question that surfaced as soon as I saw her name in the notification. "What's the cause?" Why would she contact me? Is it my birthday, hers? We didn't talk in new year's nor christmas. I read the message and kept wondering about that: "Why?"
 
@@ -2452,7 +2454,7 @@ I have to do it. I can't let it be just an idea.
 
 This is what I'm meant to do.
 
-## 2016-02-23
+### 2016-02-23
 
 Yesterday I thought again about the possible projects of research I could do. Would I do a personal pencil and paper survey or an online one? Could I send the form to all the psychologists in Mexico? I could use it and disperse it by Facebook by the help of the contacts I have. I could send it by email to the psychologists in the lists of psychotherapists of the different schools.
 
@@ -2490,7 +2492,7 @@ I get irritated by what they do or say and yet I can't say anything myself. What
 
 If I stay shelled in my own secrecy I will rot.
 
-## 2016-02-24
+### 2016-02-24
 
 Today there was no confirmation.
 
@@ -2547,7 +2549,7 @@ I am tired, too.
 
 
 
-## 2016-02-25
+### 2016-02-25
 
 "In that one you don't look like a woman. But yo do in this one" "I'm bisexual, no, trisexual: I am a man, a woman and a swagger"
 
@@ -2591,7 +2593,7 @@ Why?
 
 
 
-## 2016-02-26
+### 2016-02-26
 
 I can't stop thinking about that fucking question.
 
@@ -2632,7 +2634,7 @@ Do the strangers lie or they address me with kindness?
 
 Will I escape the people who knows my past to surround me with strangers so that I can live with my persona hidden in a secret?
 
-## 2016-02-27
+### 2016-02-27
 
 It's almost midnight and I'm in bed. I have the phone next to my pillow. I'm not talking with Catherine, not tonight. In the computer I had the whatsapp site open. I looked for Monica's conversation and typed the damned question. I hesitated to click enter. I went to bed with that day's conversation still in mind. I have the question typed in Monica's conversation in my phone. I want to push enter. I want her to read it. I know she's online and won't see it until tomorrow, I don't care. I want to know. I want to know if he saw me. I want to know if I was recognized. His reaction won't be camouflaged in kindness. He hates me. I know how my friends react, people who love me, or claimed to, do. The reaction of someone who loathes me is invaluable, unbiased.
 
@@ -2666,7 +2668,7 @@ I had no internet so I didn't.
 
 I smiled with Anahi's response. It seemed honest and clumsy and sincere. And yet, was she really saying the truth? Can I really trust in the people who care?
 
-## 2016-02-28
+### 2016-02-28
 
 I'm full of energy and anxiety. My leg is restless and agitated. There is music in my ears but it doesn't calm me.
 
@@ -2700,7 +2702,7 @@ Will this desperation make me tell them even earlier?
 
 
 
-## 2016-02-29
+### 2016-02-29
 
 "What did you do today?" "Nothing"
 
@@ -2736,7 +2738,10 @@ One, the recent, the first I sent, said I was a boy with a 99.9% of certainty. I
 
 The other ones said female with a more than 90% certainty. I didn't believe them either.
 
-## 2016-03-01
+
+## March, 2016
+
+### 2016-03-01
 
 "Excited? ... Make use of it. I know you don't like being who you are not. I'm not telling you to enjoy when they call you Ivan, but, being honest, Ivan deserves a lot of things, too. I believe, from my humble opinion, a good bye?
 And when you tell me I get a excited. When you say it's your last party that they'll celebrate with Ivan, I get excited about you, Sofia. "
@@ -2771,7 +2776,7 @@ But will I take it? It's like a safety net. I could stay here. Study some more. 
 
 For that I have to have first to courage to say my name out loud.
 
-## 2016-03-02
+### 2016-03-02
 
 "Sofia has a face of not knowing"
 
@@ -2825,7 +2830,7 @@ Today. Today's feelings should had been difference enough. Is it really that I d
 
 I am fear materialized.
 
-## 2016-03-03
+### 2016-03-03
 
 There was something strange in today's morning sounds. I could hear my mother's voice at the same time of my dad's, Miguel and Luis were talking at the same time. The four of them were in the same room. Why was I awake? Did I dream something? I remember this weird sensation in my body. My head busy sorting thoughts. Separating fantasy from reality. Every morning is like a review of what has really happened and what has just been fiction.
 
@@ -2865,7 +2870,7 @@ I should interpret the tests, make the report. I've had a headache all day. I ju
 
 Let it pass, let it end.
 
-## 2016-03-04
+### 2016-03-04
 
 "I have to go now. Sorry about my first message after all this time being about this, but I really wanted to know. I don't know how you are about me and everything that happened. You can talk to me if you want, or not. However, I understand. I hope you are all right."
 
@@ -2907,7 +2912,7 @@ Catherine arrived. TOmorrow I will contine.
 
 Sorry, this will end here.
 
-## 2016-03-05
+### 2016-03-05
 
 Sorry I'l have to cheat again.
 
@@ -2953,7 +2958,7 @@ After my mistake she saw it but said nothing.
 
 Now I did archived her conversation. I won't make the same mistake and I can stop looking at her picture if the silence returns.
 
-## 2016-03-06
+### 2016-03-06
 
 It's done. It's over. I'm finished with school. Well, not really, I mean, I still have to go and actually do the procedure to get my license. But, I gave my parents their party. I wore the tuxedo. I went and took the picture with them. I danced with Catherine. I laughed and drank with my friends.
 
@@ -3009,7 +3014,7 @@ We had sex and my foreskin got stuck. Catherine would hear the sounds of the bed
 
 Now there is no reason to not tell my parents. If I hadn't gone, I actually think I would had done it.
 
-## 2016-03-07
+### 2016-03-07
 
 The gas dispatcher welcomed us in the feminine form. He didn't correct himself after, but then again I don't know what he saw. If it wasn't for his word I would never had known anyway.
 
@@ -3053,7 +3058,7 @@ It feels weak, poorly supported. Maybe my whole thing about doing everything per
 
 At least I hope I will get paid.
 
-## 2016-03-08
+### 2016-03-08
 
 Since last week that I saw the patient I have not written in the journal. The last time that I attempted to fill a notebook was with the university's planner that I bought in the gift shop. I used it for a couple of months and then forgot about it. Left it there, grouping blank days.
 
@@ -3097,7 +3102,7 @@ It wasn't any bigot. It was Nicolai. Jaime Nicolai from grade school. I didn't t
 
 What does he have to do with my fear of judgement? With my frustration of not being able to wake up from this nightmare?
 
-## 2016-03-09
+### 2016-03-09
 
 I haven't started.
 
@@ -3141,7 +3146,7 @@ I didn't know what else I said. She had told me about how I kept playing with jh
 
 "I want to have... ok, adopt, little babies", with a playful, childish and almost unconscious smile.
 
-## 2016-03-10
+### 2016-03-10
 
 Today we had sex. A thousand times I've said that I won't be able to have children. Yesterday we talked about how I said in a drunken state of consciousness how I'd be willing to have, or, more like, adopt children with her.
 
@@ -3177,7 +3182,7 @@ We did what we had to. She took the pill. Now we just have to wait. Let her peri
 
 Two weeks and I can stop worrying about that. Two weeks after that and I'll worry about going to my appointment.
 
-## 2016-03-11
+### 2016-03-11
 
 I asked Cahterine to go to the university today. I could had gone alone. Nothing impeded me. Why didn't I go by myself? I stayed in bed. I slept the hours I lacked yesterday. I enjoyed my free time in bed, the warm between my sheets, the softness of my pillows, the rest in my muted thoughts.
 
@@ -3217,7 +3222,7 @@ Will I lie?
 
 Will I ever be able to stop lying?
 
-## 2016-03-12
+### 2016-03-12
 
 Tomorrow I'll run a 5km race. It will be like the first date I went with Catherine three years ago. Now, everyone of us but Anahi will be there. Colors, water, running. I have the clothes ready in my bed. I asked Luis for a white t-shirt.
 
@@ -3263,7 +3268,7 @@ Because I don't like how I look with facial hair. I don't like looking like a ma
 
 And then just take the jump. Close my eyes and take that leap of faith. In the air, it doesn't matter the coldness of the water or the frozen punch of the fall. There's nothing left to do but embrace it.
 
-## 2016-03-13
+### 2016-03-13
 
 My eyes are heavy and tired. They are aching for closing and rest. My whole body is restless. I turn and see my bed and I'm filled with this sense of longing. The desire to crawl to there, hid under the sheets and turn off the lights is almost unbearable.
 
@@ -3295,7 +3300,7 @@ Why do I feel this, uh, pressure? Why is it hard for me to just send her a text 
 
 Will I actually call tomorrow to set the appointment? Will I hesitate as I hesitated the day before my birthday? Will I ever tell my parents about any of those two appointments?
 
-## 2016-03-14
+### 2016-03-14
 
 I said I would wait and I did not. Just before starting typing I unplugged the headphones from the laptop and connected them to my phone. The little buzzes of the touches crawled like bugs from the cushions on my ears. There were three recordings in the screen. The top one was from this afternoon. I was narrating to myself, in some kind of journal entry way, how Anahi was talking to me about her crush asking her out.
 
@@ -3342,7 +3347,7 @@ I didn't make the appointment with the laser place. I didn't mention it to my pa
 
 For being one who whines about waiting a lot, I really do not know what is it for that I make myself wait before telling my parents.
 
-## 2016-03-15
+### 2016-03-15
 
 There were a lot of messages when I grabbed my phone in the early morning. There had not passed more than half an hour since my mom and Luis left the house. Anahi, Catherine, and the conversation with the two of them. Anahi sent me several messages just to me. Her crush had asked her about a date. What could she do? What could she answer?
 
@@ -3393,7 +3398,7 @@ It's more hard than I thought it would be.
 
 Even pretending, even rehearsing, I can't do it.
 
-## 2016-03-16
+### 2016-03-16
 
 I was supposed to wear something neutral today. I woke up and answered Catherine text messages. I had to turn off the alarms because I had no energy to wake up. I swallowed the two last pills in a dry gulp. I painted my face. I showered and shaved. I'm wearing black jeans and a red sweater. I walked the same path of every wednesday. I stopped in the Oxxo and bought a lemon beverage so I could break a 100 note. The cashier just looked at me and smiled politely. Nobody said anything. I looked at myself in the reflection of the building and it was nothing out of the ordinary.
 
@@ -3445,7 +3450,7 @@ We'll see jhonny's show.
 
 
 
-## 2016-03-17
+### 2016-03-17
 
 Anahi sent a post to the group of the seven team. The one where we are all signed up from years ago. We all were in the school. We all went to the congress. It was fourth semester. Before Anahi dropped out, before Paola got pregnant and dropped out, too, before Catherine and me went out of the country. It was before I broke up with Monica and before everything of mine came up.
 
@@ -3485,7 +3490,7 @@ I'm scared of telling my parents. Was Catherine right when she asked if it scare
 
 No. I'm scared of not being the only one. Of being blamed.
 
-## 2016-03-18
+### 2016-03-18
 
 In a couple of hours Catherine will arrive for me. We will eat and then watch a Tango concert in the CECUT. We bought the tickets the day before yesterday before Miguel arrived to watch Jhonny's show. Yesterday I couldn't decide what to wear today. I thought about the leggings and a blouse. Catherine proposed me to wear the blue one I wore in the pride. Two days ago I asked her if I could wear a dress. Why did I want to wear one? I haven't worn the gray one I bought since we went to the beach months ago. Was it last year?
 
@@ -3521,7 +3526,7 @@ Ever since the shower I've felt my heart rush. Is it the medication, maybe? I've
 
 If I don't say it, soon, I fear I'll be betrayed by my own unconscious self.
 
-## 2016-03-19
+### 2016-03-19
 
 There were dreams today but I've already forgotten.
 
@@ -3569,7 +3574,7 @@ I felt sad and wanted to hug her and apologize.
 
 We will print a picture of ours to Catherine.
 
-## 2016-03-20
+### 2016-03-20
 
 It's just barely past midnight and yet I got this urge to write. Why? It's the earliest I've written yet.
 
@@ -3626,7 +3631,7 @@ But where? I don't have chest hair, except I do.
 
 I am not a woman, except I am.
 
-## 2016-03-21
+### 2016-03-21
 
 I don't know what I have done wrong.
 
@@ -3666,7 +3671,7 @@ Tomorrow I won't have make up on my eyes. I can cry tomorrow. Tell everything to
 
 Catherine's period came today. I was supposed to be relieved. I feel all but tranquility.
 
-## 2016-03-22
+### 2016-03-22
 
 It's really weird to type with my ears uncovered. I actually miss the pressure of the headphones on my temples.
 
@@ -3714,7 +3719,7 @@ I will tell my father, and then so what? And then wait to the endo? And then, wh
 
 Who cares if I finally look like one and the whole world sees me as one if the only person who could see the real me before is not here anymore?
 
-## 2016-03-23
+### 2016-03-23
 
 My mother and father just arrived from their meeting in the hospital. I think I should had cheated today again. Maybe I should had just let the days pass and the streak to break. I can start again when I take the pills.
 
@@ -3756,11 +3761,11 @@ I cant' keep going. I can't...
 
 I can't... I can't...
 
-## 2016-03-24
+### 2016-03-24
 
 Universal Studios
 
-## 2016-03-25
+### 2016-03-25
 
 Dad, can I talk with you? I've been meaning to tell you something since a long time ago. It's really hard. It's about my therapy. You know I'm taking antidepressants. It was hard to tell you even that. I didn't tell you why, though. I don't like my body. I've been depressed since I was little. It's been getting worse by time. I don't like how I look. I don't like being a man. I don't like looking and sounding like one. It literally hurts me. That's why I keep going to therapy even though I graduated. That's why I'm depressed and I've been taking antidepressants for almost a year. They help, but not completely. You see, I am trans. I am a woman, something like that.
 
@@ -3799,7 +3804,7 @@ She loves me.
 
 She told me but I can't to my dad.
 
-## 2016-03-26
+### 2016-03-26
 
 The washing machine is now functional. We are not in Mexicali. The technician finished in the afternoon so we decided to stay.
 
@@ -3844,7 +3849,7 @@ I know this might seem rush and I'm really sorry about that, but it's not to me.
 
 
 
-## 2016-03-27
+### 2016-03-27
 
 My parents and Miguel went to the movies. Luis is here, home, with me. Right now he's playing with the Xbox. He made himself some chicken and a pot of soup. We shared the soup. The ice cream that my father bought in the weekend is mostly cream. I served myself a cup and he filled a glass for himself.
 
@@ -3878,7 +3883,7 @@ Why don't I just go to him?
 
 "I want to talk with you about something".
 
-## 2016-03-28
+### 2016-03-28
 
 "It makes me nervous you telling your dad ... It makes me nervous thinking about telling my parents"
 
@@ -3928,7 +3933,7 @@ I'm not ready. I'm not ready to tell him, to defend myself.
 
 I can't stand more time living like this but I'm not strong enough to fight for what I want.
 
-## 2016-03-29
+### 2016-03-29
 
 5o again.
 
@@ -3974,7 +3979,7 @@ I am not Ivan. I don't want to keep saying it. I feel trapped in my own lie.
 
 It would had been better if her parents would had never known me as her boyfriend.
 
-## 2016-03-30
+### 2016-03-30
 
 This week I will tell my dad. This week I'll make an appointment to the laser place on monday. I want to start. I need to start.
 
@@ -4010,7 +4015,7 @@ I picked Anahi up from the Burger King and drove her to Catherine's. We stopped 
 
 We saw Paper towns in Catherine's bed. Anahi told us about her date. Tonight won't be the time I tell my dad. Maybe tomorrow. I have a week.
 
-## 2016-03-31
+### 2016-03-31
 
 Days keep passing by. I told Anahi about my plans with the laser. Everyone wants to get rid of hairs. They don't have to deal with a beard. Nobody sees them like men.
 
@@ -4064,7 +4069,9 @@ Now it really is just one week. I'm nervous. I really am.
 
 But I'm even more excited.
 
-## 2016-04-01
+## April, 2016
+
+### 2016-04-01
 
 I actually believed for a minute that I would have told my father today. I guess this will be another missed day.
 
@@ -4103,7 +4110,7 @@ Miguel came in and I dropped the will of blurting it.
 Right now I have the words inside of me. I promised Catherine I would write a letter. I might just give it to him. I should
 start writing it.
 
-## 2016-04-02
+### 2016-04-02
 
 I'm right here in the same couch of my uncle's house. We are all gathered in this sort of living room or meeting room with the tv on. There is always a movie playing and being ignored. Everyone is talking with somebody. I'm here with my words. There is a smell of popcorn in the air.
 
@@ -4141,7 +4148,7 @@ So there at night the idea came up again. There was a box in the shelf over the 
 
 I fell asleep thinking about that idea. Today I will sleep in this house, hundreds of kilometers away from both the plaque, the unwritten note and the room in which I've imagined telling them all these nights.
 
-## 2016-04-03
+### 2016-04-03
 
 I took the plaque out. It's here besides me in the desk. We've arrived from the United States. My stomach is upside-down. I feel my heart beating in my throat. I want to tell them now. Everyone is in their bedroom. I just help putting the cover to the iron board. I feel like the air I'm breathing is not enough. I have this words inside of me and their burning, poisoning me.
 
@@ -4189,7 +4196,7 @@ And now I will have them, too.
 She hesitated on some pronouns by half of her talk. I still won't ask her yet. Luis and Miguel will be a piece of cake from now.
 Everything from here seems so easy. The changes are now welcome.
 
-## 2016-04-04
+### 2016-04-04
 
 "Yesterday I told my dad. I'm fine. I'll see you this Wednesday. Will I pay you something extra for the report?"
 
@@ -4235,7 +4242,7 @@ I won't create a new Facebook until I take the first pill. I have decided that. 
 
 If I change the name, would Monica notice? Would I sent her a message still?
 
-## 2016-04-05
+### 2016-04-05
 
 "Confirming today's appointment at 1"
 
@@ -4269,7 +4276,7 @@ I... I feel fine. And yet my leg is restless.
 
 And my thoughts bouncing from here to there. I keep thinking of tomorrow's session and Catherine's house. Then it's finally three months after my birthday. The day I waited for so much. The day is closer than ever.
 
-## 2016-04-06
+### 2016-04-06
 
 I received a message from Johanna. I remember my picture and the changed name. I know that maybe not in every phone it will appear the change. Did it in hers? Has she noticed? I scanned through her words for a mention of it and yet nothing appeared. I read it superficially and ignored it.
 
@@ -4315,7 +4322,7 @@ I fear not being able to get up in the morning and yet I think I won't be even a
 Thoughts keep spinning and spinning inside of my head. I feared not telling my dad and that is done. I was scared of Rene not giving me my report. I have it in my bag, ready and signed. The appointment has come. The only thing left is waiting. Going and facing him.
 Wait and see.
 
-## 2016-04-07
+### 2016-04-07
 
 I was drowning in nervousness. Three alarms were set in my cellphone. The first one woke me at 6 in the morning. I stayed awake until minutes before the second one. The first rays of sunlight ignited my anxiety. Today was going to be the day which I had waited for all year. What would happen today?
 
@@ -4372,7 +4379,7 @@ My next appointment is the 15th. It will be in the morning. The hour is pending.
 
 That actually might be the date. I don't know which of those days, tomorrow or the 15th, scares me the most.
 
-## 2016-04-08
+### 2016-04-08
 
 I have high cholesterol and and a high level of blood glucose. My linfocites are a bit high, too, but almost insignificant.
 
@@ -4422,7 +4429,7 @@ And there it was, my name, by birthdate and my gender.
 
 The card with my name will always be attached to that information. I will always be masculine. It doesn't matter what I put in my body or the changes I will experience. To them I was, and always be, the man with a female's name. I am the man named Sofia and that is what's been hurting me the most.
 
-## 2016-04-09
+### 2016-04-09
 
 I wrote my words early yesterday. It was in the early afternoon, 5 o'clock, I think. I wanted them to be done so I could stop worrying about it and just go to sleep. And so I did. I talked about what were on my mind, the initial shock about seeing the sex marked as masculine just besides my name. It was confusion. I would had put it anyway. Even if asked I would not had lied to them. Even if put female I would had corrected them. So what was it really the thing that made me upset?
 
@@ -4454,7 +4461,7 @@ I am terrified of staying the same. It doesn't matter how much I lose weight I k
 
 I have my new glasses on. They're smaller and clearer. I actually like them unlike the pair I chose here.
 
-## 2016-04-10
+### 2016-04-10
 
 The day before I had slept more than I should. Yesterday I woke up early to go to the United States. Was it really yesterday? Yes, today is Sunday, the last day of the week. I went to bed but could not fall asleep. I was chatting with Catherine on the phone. Around midnight I stopped answering her texts and turn around. I needed to sleep, otherwise I would wake up late and fall into another insomnia cycle.
 
@@ -4492,7 +4499,7 @@ She wasn't expecting that question.
 
 The more I think about that moment, the more I let myself be excited I get nervous and paranoid somebody is planning something to take it away from me.
 
-## 2016-04-11
+### 2016-04-11
 
 Days keep coming and going. Yesterday I lamented the hollowness of my days and the difficulty of waiting for empty days to end.
 
@@ -4519,7 +4526,7 @@ I'll have tomorrow's session to talk about, too...
 What will happen? Will I endure the pain?
 
 
-## 2016-04-12
+### 2016-04-12
 
 "why didn't you use the doorbell?"
 
@@ -4557,7 +4564,7 @@ This morning Jessica answered the text I sent both to them about Catherine. It m
 "Hi, hi, I've been asking about her health and even apologized for not going yet. But yes, the problem was that the four of us could not agree on a time, nonetheless we will go just the two of us.
 About her loneliness I think it goes deeper than just the company, but it's not my business so I won't get into that. As soon as we go, we'll tell you, ok? ;)"
 
-## 2016-04-13
+### 2016-04-13
 
 I saw Rene today. There wasn't much new that I learned this session.
 
@@ -4601,7 +4608,7 @@ We touched each other. We kissed. The house was alone after her uncle finished e
 
 There is just one episode left of the series we are watching. I think about it, me lying my head on her stomach. She surrounds me with her arm and strokes my back. We're both watching, focused. The emotions of the characters, I can feel them. I can sympathize. It's not just understanding, I can sense his loneliness and pain. It's something new for me. I love sharing this with Catherine.
 
-## 2016-04-14
+### 2016-04-14
 
 Catherine wrote a letter. It was not really a letter but a long heartfelt message. She wrote the feelings she's been hoarding for herself towards him. This idea of being lonely, the lack of reciprocity to organizing and moving plans to go see someone.
 
@@ -4635,7 +4642,7 @@ Will tomorrow start the counter again? I don't want to wait for them, expect the
 
 But I want them, and I expect them, even if I don't want to admit it to myself.
 
-## 2016-04-15
+### 2016-04-15
 
 I, again, was nervous waiting to enter and meet him. My appointment was at 1pm. I woke up and showered. Yesterday I wore my long curly hair in a masculine bun. Green pants I haven't worn in a year and a shirt, was the attire I chose. I hadn't shaved either. My beard was days long. It was more than a stubble. Naturally Liliana kept calling me boy and guy. Ivan. There was a situation with the mother and my contact information.
 
@@ -4677,7 +4684,7 @@ I told them about my analysis. Jessica asked directly what they were for and I l
 
 I could had told her. I decided not to. It's my decision, but even then, why do I feel guilty?
 
-## 2016-04-16
+### 2016-04-16
 
 I picked up the results. The alarm was set for 8 in the morning and then every thirty minutes. My father came home late at night with Luis and I assume he went even later to pick Miguel up from his party. It was naÃ¯ve to think I would had needed to race for the bathroom.
 
@@ -4721,7 +4728,7 @@ I felt this cold slap again. An electric pulse from the tip of my toes crawling 
 
 
 
-## 2016-04-17
+### 2016-04-17
 
 What was it that brought me down today?
 
@@ -4773,7 +4780,7 @@ But, but... I don't know.
 
 And I feel I am free falling with nowhere to grasp myself.
 
-## 2016-04-18
+### 2016-04-18
 
 He is not ignoring me. He is not abandoning me as a patient. A couple of non responded messages don't mean I will never see him again.
 
@@ -4833,7 +4840,7 @@ I wanted to tell him how I had started already. I haven't. I told him I felt bet
 
 A whole day stands between now and then.
 
-## 2016-04-19
+### 2016-04-19
 
 I called again today. The clock in the phone said 8 in the morning when I was fully awake. I just awaited for the right time. Maybe somebody would be there. Maybe they would not open until later in the morning. I waited still.
 
@@ -4871,7 +4878,7 @@ Yesterday my dad called home. Everyone who calls always asks who is the one spea
 
 
 
-## 2016-04-20
+### 2016-04-20
 
 Tomorrow I will go to the endocrinologist. He sent me for another blood test. The blood test marks everything normal. Rene asked me too about the results. He said those were fine. "Do you think he will start you tomorrow?" I don't know. I honestly don;t know.
 
@@ -4907,7 +4914,7 @@ What if she needs something else? What if she can't? Will I be able to live my o
 
 Will I be able to finally live?
 
-## 2016-04-21
+### 2016-04-21
 
 I feel my nails long and awkward. I have been having them likes this since a long time, more than I week. Why is it until now that they started to bother me?
 
@@ -4951,7 +4958,7 @@ I should trust him. Just trust him and wait.
 
 Will I do the new Facebook page as I said?
 
-## 2016-04-22
+### 2016-04-22
 
 I woke up with the same 2 days old pain in the abs. It was early. I had put the alarm clock to wake me by 9 in the morning. I opened my eyes without its work. Today no sounds came from it. It was not needed. The exercise of today consisted in chest, push ups, three different kinds. Two circuits of three types of push ups, 7 each. 21 each circuit, 42 in total.
 
@@ -4989,7 +4996,7 @@ I might not be wasting that much time.
 
 Just one day at a time. Thing about a thing at a time. It's 8 weeks until I can do something. I might just wait and enjoy this bursts of calmness that I sometimes get.
 
-## 2016-04-23
+### 2016-04-23
 
 Days keep passing by but nothing new has happened. I woke up today in the same bed with the same mood. If we had gone to the United States I might have bought the pill organizer. Will I keep forgetting to take the pills?
 
@@ -5037,7 +5044,7 @@ I can modulate my voice, I can be called by the feminine in the pharmacy when wa
 
 
 
-## 2016-04-24
+### 2016-04-24
 
 I am tired, still. I woke up early today, too. Did I had an erection in the night? It's almost usual to feel a little turned on in the first hours of the day, hiding in that semiconscious state of the mind. Was I conscious enough to miss it?
 
@@ -5079,7 +5086,7 @@ I can't blame her. I am scared of her telling them about me. Her father is nice 
 
 But yet, I am neither her firend nor gay.
 
-## 2016-04-25
+### 2016-04-25
 
 And I saw her cry like I had years before in her own car after a chat. She turned and looked straight at me, an innocent smile, like a child who's confessing his crime. She's about the let it out, I can see it in her face. It's like containing all of it inside is tiring her. She explodes like a full dam, the whole river comes.
 
@@ -5117,7 +5124,7 @@ No. That was a month ago.
 
 I have an app to take count of the days since I started hormones and since I last masturbated, but her? I guess now I really don't care.
 
-## 2016-04-26
+### 2016-04-26
 
 I woke up earlier than usual. It was near 4 in the morning when I stepped up from bed with a stomachache and full bladder. Yesterday I had set up the pillows in that comfortable and cozy way I discovered last year. This was supposed to be a recuperating and restful slumber. After the bathroom trip I returned and came back to my sleepy state. For a couple hours I rested.
 
@@ -5159,7 +5166,7 @@ I still have to print the tests I will apply to my patient. Tomorrow I'll see Re
 
 I will be both a patient and a psychologist in the same day.
 
-## 2016-04-27
+### 2016-04-27
 
 I had a session today. I started to feel this strange thought of not having anything else to tell. What could I talk about? I had what happened with Catherine in her house the Thursday after I took the first pills. That talk about not wanting to leave home, not knowing what to do of her education.
 
@@ -5209,7 +5216,7 @@ What if being a man they tell me that I can't buy the medicines of that prescrip
 
 It might hurt a little to say that, but it would be the truth.
 
-## 2016-04-28
+### 2016-04-28
 
 It's been a long time since I've lied down here in bed over my stomach with the laptop where my pillow should be. I am used to typing these words in the other keyboard, and using the television as a monitor. It's weird hearing the music from the laptop speakers instead of hearing the whispers of it through the headphones that compress my ears.
 
@@ -5241,7 +5248,7 @@ How was my hair, how much different did I look? I was hesitating with the idea o
 
 They will see me with a suit and maybe a tie. They will see the Ivan they've always known. My mother will be the only... no, both of my parents will now the secret under the man suit.
 
-## 2016-04-29
+### 2016-04-29
 
 It's done. I was in front, for the first time, standing in the podium with a theater full of people and students and family. I spoke the words I had prepared. The rector of the university applauded me standing. The Dr besides me smiled and said it was a nice speech. Several of the people with which I shook hands congratulate me back. One of them, maybe one of the postgraduate ones told me he like my speech, too.
 
@@ -5289,7 +5296,7 @@ In two weeks I have the next laser session. Two weeks after that I'll go the Jal
 
 Will Anahi come with us this year? I'd like that, although I don't mind sharing it again with just Catherine. Maybe now they might see us as the lesbian couple we really are.
 
-## 2016-04-30
+### 2016-04-30
 
 Another month now. 18 days until I finished the two hundredth consecutive day.
 
@@ -5339,7 +5346,9 @@ Will they ever be able to see me like one? Do the people who call me by my name 
 
 Do I actually see me as myself?
 
-## 2016-05-01
+## May, 2016
+
+### 2016-05-01
 
 I've finished making the spreadsheet for the ISRA test. I love doing this kind of things. I should had studied Computer Science or Software Developing. I mean, I love that this calculations offer me the information I need to actually make a diagnosis of the psychological profile of a subject.
 
@@ -5379,7 +5388,7 @@ I could ask Chevo for help. I could do it all by myself. It's just a side work. 
 
 I could keep procrastinating. That is always an option.
 
-## 2016-05-02
+### 2016-05-02
 
 Honestly, I don't feel like writing. It's been more than 180 continuing days that I've finished this thing of writing my thoughts unedited, just let out what I feel and think for a couple of minutes in semi-coherent sentences that I probably won't read again.
 
@@ -5423,7 +5432,7 @@ Should I tell Luis? It's idiotic to think about waiting until he asks.
 
 Will I tell him?
 
-## 2016-05-03
+### 2016-05-03
 
 It was hard to get up form bed. Again I slipped my hand into my trousers, inside my pants and grabbed, touched, explored. I though I would have to reinitiate the counter on my app where I crudely tagged it "Days since I cum". The number is still the same.
 
@@ -5479,7 +5488,7 @@ Does she think of me, does she hate me?
 
 Will I stop some day remembering her?
 
-## 2016-05-04
+### 2016-05-04
 
 I'm home. My phone was dead. As I grabbed it from my purse, I could see a red light flashing on the microphone. It vibrated a couple of times through the bag. Luis was seating by my right and Catherine by my left.
 
@@ -5521,7 +5530,7 @@ Would I show them my pills? Would anyone ask? Would I answer?
 
 
 
-## 2016-05-05
+### 2016-05-05
 
 Another day of applying tests. I'm done with the tedious part of giving questionnaires and waiting. Next week I'll attend the session about the results.
 
@@ -5575,7 +5584,7 @@ Do they really see me like that?
 
 Or are we all just kidding myself?
 
-## 2016-05-06
+### 2016-05-06
 
 I have already finished grading the Raven test. It was annoying looking again for a norm. It was the opposite this time. With Luis I wanted to give him a lower score so he wouldn't brag later of his abnormal intelligence. With my patient, even yesterday that I gave the test to him, I was surprised with the time he finished. He was done in less than a half an hour. Luis lasted almost the hour. The patient, even with two years more of age than Luis, got a score of 7 points below. His discordance points, both of them, were in the correct range. He barely got into the 50th percentile. He's barely average.
 
@@ -5621,7 +5630,7 @@ That's who I will be. Who I was supposed to be. How will I pick the diploma a ye
 
 Do I hope for it or not?
 
-## 2016-05-07
+### 2016-05-07
 
 I haven't filled the agenda. It lies there, unopened with the answered tests of my patient over it. Today I left the house, I wore the same clothes I always use, but presented in a completely different way. I didn't wear a bright red lipstick or an intense eyeliner. I didn't wear a really feminine blouse or filled my bra with anything.
 
@@ -5669,7 +5678,7 @@ Are we ready to live together?
 
 She's a little nervous and I am very excited.
 
-## 2016-05-08
+### 2016-05-08
 
 Two days before my father's birthday and mother's day.
 
@@ -5713,7 +5722,7 @@ While I be alone in this month's travel, too?
 
 Will I travel again next year to Mexico city again? Will I be alone or along my loved one?
 
-## 2016-05-09
+### 2016-05-09
 
 For the first time I'll write here in my phone. There has been more than a handful of times that I published my words from here. But it's always about an emergency, maybe I'm in mexicali,or I'm in Disneyland and there is no Internet. How did I do it when we went to Universal studios?
 
@@ -5767,7 +5776,7 @@ But is that what I really want? Just avoiding it and not going because I'm not w
 
 
 
-## 2016-05-10
+### 2016-05-10
 
  I might have to cheat again. I'm on my mother's phone. I dont think I have the time to type the seven hundred words now, in here.
 
@@ -5787,7 +5796,7 @@ Fucking autocorrector doesnt change i, but it does change fucking.
 Fuck this.
 
 
-## 2016-05-11
+### 2016-05-11
 
 So close, so fucking close.
 
@@ -5837,7 +5846,7 @@ Tomorrow I'll have my second laser session, and my second picking up of Luis and
 
 I, again, haven't finished the report for tomorrow.
 
-## 2016-05-12
+### 2016-05-12
 
 I'm a little tired. My face is neither swollen nor sore. I'm fine. I gave my second patient his results. I could see his reaction of how it was on -point. Even outside school after graduation, I feel lost without a guide. I can't give therapy.
 
@@ -5885,7 +5894,7 @@ Today was my first day without hormones. Three more days. Just three more.
 
 I feel so tired.
 
-## 2016-05-13
+### 2016-05-13
 
 I feel down. There is this heavy sadness that surrounds me and embraces me. I feel so little and fragile and weak. Every single blow of wind can break me. This is the second day with just three pills. Can that be a real reason for this? Maybe this is all in my head, too. I told Catherine how I woke up really late and unrested. O feel drowsy and tired. Could I send the dr a message? He told me that I could and should text him with any symptom that presented as an effect of the medication.
 
@@ -5927,7 +5936,7 @@ My body hasn't even started changing. I still have the dark, bold hairs of yeste
 
 I'm worrying about what I will wear tomorrow and deep down I well know that they'll see me the same anyway.
 
-## 2016-05-14
+### 2016-05-14
 
 Today is Xennia's birthday. She was the first girl I liked. Will I remember Monica's birthday? I will remember Catherine's. Will she be the last whom I'll love?
 
@@ -5970,7 +5979,7 @@ Catherine told me she could go with me before then. Is that really true?
 Am I ready?
 
 
-## 2016-05-15
+### 2016-05-15
 
 I have a headache and a dull pain in my abdomen. I was going to start hte words and yet Catherine just answered my telling her about what possible thing could happen my next endo session. "What are the Tanner stages?"
 
@@ -6029,7 +6038,7 @@ I am the ugly princess.
 
 The princess who was born a prince.
 
-## 2016-05-16
+### 2016-05-16
 
 It's been more than 30 days of doing exercise and today I've recovered the routine. I weighted myself with nervousness. I didn't know what to expect. Would a bigger number come? How much? What if now I'd be worse than when I started?
 
@@ -6074,7 +6083,7 @@ I could wait those couple of weeks until the trip. Let her pride herself with th
 
 
 
-## 2016-05-17
+### 2016-05-17
 
 Do the days go faster now that they are a really lower number?
 
@@ -6125,7 +6134,7 @@ I sat by myself in the corner of the hall. At first, when I got in, I sat behind
 
 I felt invisible and hidden. And at the same time, I felt a combination. Androgynous clothes in an androgynous body.
 
-## 2016-05-18
+### 2016-05-18
 
 Today I was going to go out with Catherine. We did.
 
@@ -6173,7 +6182,7 @@ Nobody mentioned my outfit nor face. Not even Luis when he entered my room befor
 
 Do they know? Are they blind? Am I invisible?
 
-## 2016-05-19
+### 2016-05-19
 
 "I miss you already. Where is it that you are going to the master?... Do you know about the one they're going to open here in Cetys?" "No, I prefer going to the capital. For me it is best going there."
 
@@ -6225,7 +6234,7 @@ Even now, I can't even tell you this."
 
 Just as I can't tell my brothers and I couldn't tell my parents.
 
-## 2016-05-20
+### 2016-05-20
 
 Yesterday I read a comic about a transgender woman. Today I finished it until the latest post. I finished another one of a chilean one. They keep mentioning Santiago, and how the gay marriage in that country was still illegal and how the treat of her german friend was Palta.
 
@@ -6277,7 +6286,7 @@ In the bathroom I remember the pictures, today's leggings. Did I took hormones w
 
 Tomorrow it'll be exactly a month. 21st of April was the day I started. Would that be my second birthday? Am I one month old?
 
-## 2016-05-21
+### 2016-05-21
 
 I think I just said the wrong thing.
 
@@ -6319,7 +6328,7 @@ I didn't know. I had thunk about it. I hesitated.
 
 I guess I was alright. I hope I am.
 
-## 2016-05-22
+### 2016-05-22
 
 It hurts me to live a fragmented life.
 
@@ -6358,7 +6367,7 @@ Time keep passing. In a week I'll be in another city, boarding a plane to anothe
 
 I don't know. There is still time until then. There should be other things in my mind.
 
-## 2016-05-23
+### 2016-05-23
 
 I woke up like any other day. I don't remember dreams. Yesterday I narrated the last one just before sleeping. The lift nad running in a suit. As it climbed the floors it went narrower and narrower. Jessica was with me. I carried a luggage.
 
@@ -6398,7 +6407,7 @@ Why am I nervous? Nothing bad should happen. I will wear feminine clothes but no
 
 
 
-## 2016-05-24
+### 2016-05-24
 
 I'm home. I've taken my pills and refilled the organized with the missing ones that Catherine bought with her card.
 
@@ -6443,7 +6452,7 @@ I am not a girl nor a boy, I'm a chimera.
 
 
 
-## 2016-05-25
+### 2016-05-25
 
 I cried a little on the way home. I almost cried in the start of my session.
 
@@ -6479,7 +6488,7 @@ Have I done enough?
 
 When will I accept myself?
 
-## 2016-05-26
+### 2016-05-26
 
 Look at me, come on. Come, enter, see me. I'm showing you, I'm exhibiting myself. I'm naked. Why don't you notice me?
 
@@ -6519,7 +6528,7 @@ I got 200 pesos from the interview today. I received 8 bills of 50, and left fou
 
 I might not even eat any tonight.
 
-## 2016-05-27
+### 2016-05-27
 
 I almost forgot to take my pills. I remember how when I started with the antidepressants it was such impossible to even imagine the day I would forget to take them. Weeks later I would leave them here in a trip to Mexicali or remember to take them late at night.
 This was the first time that I didn't take the hormones as soon as I finished breakfast.
@@ -6554,7 +6563,7 @@ I don't want to see him in the mirror.
 
 I don't care anymore. I want everybody to stop seeing me like that. I don't want myself to ever see me like that.
 
-## 2016-05-28
+### 2016-05-28
 
 I haven't filled the agenda since I can't remember when. This will be the last night until the trip. Tomorrow will be the last event I had anticipated.
 
@@ -6595,7 +6604,7 @@ Tomorrow I'll leave. I'll be back the day before my session with Rene.
 
 I can talk about whatever happens with him. I hope I don't miss the words again.
 
-## 2016-05-29
+### 2016-05-29
 
 The day is here. I'm all bather and changed and ready. I hear the sounds of the fork and plate of Luis eating his breakfast. Was I rude when I denied my grandmother "even one little taco"? I feel in a bad mood.
 
@@ -6639,7 +6648,7 @@ If I am not as afraid as I deny to be, why do I keep hiding in my room after cha
 
 Everybody here has seen me already in these pants. The shirt is man's. Why am I scared of being seen almost as much as staying invisible?
 
-## 2016-05-30
+### 2016-05-30
 
 I'm in the Telmex auditorium. I'm sitting here in the place where is stamped my name. I've been chatting with Catherine. Yesterday, since the University I've been talking and being with both Hilda and Anna. I was dressed pretty androgynously. I had the jeggings and a tank top with the white and gray sweater over. When Catherine picked me up and took me to breakfast, the waiter welcomed us as ladies.
 
@@ -6687,7 +6696,7 @@ It appears to be starting.
 
 
 
-## 2016-05-31
+### 2016-05-31
 
 Fuck me. It would had happen again had I not returned to try again.
 
@@ -6765,7 +6774,9 @@ I forgot the black sweater in my uncles' house. I decided not to return. It's th
 
 I don't know what I'll do tomorrow. Or wear.
 
-## 2016-06-01
+## June, 2016
+
+### 2016-06-01
 
 I've been sitting here for several minutes and I haven't started the words until just now.
 
@@ -6807,7 +6818,7 @@ We had sex. We talked.
 
 I hurt her. She had thunk about it, too, last week with Anahi's comment. She can't say she supports me if she's not able to tell her parents.
 
-## 2016-06-02
+### 2016-06-02
 
 I had a patient again. I didn't shave. I showered and combed my hair. I didn't use mousse.
 
@@ -6848,7 +6859,7 @@ And I'll look into your eyes and in the softest and most caring voice I will tel
 
 Time will pass and you'll stop being little. Then you will stop being sad. Finally, you will be Ivan no more, and the light will bright again.
 
-## 2016-06-03
+### 2016-06-03
 
 I paid in Gusher a little less than 200 pesos for 28 pills of antidepressants. A supply that lasts me 2 weeks. I told my mother a couple weeks ago about looking at the prices of the medication in the pharmacy of Costco. Those weeks I would be going out in the evenings so there was no point in asking of going. I wanted to make use of the opportunity. I could ask them, show them the prescriptions, telling them that I'm taking those medications, letting them pay for them.
 
@@ -6888,7 +6899,7 @@ Tomorrow we'll go to the United States.
 
 
 
-## 2016-06-04
+### 2016-06-04
 
 I started reading again. I am almost by the fifth chapter in a novel of 20. This book is lots better than the last two I've read. This is less science-fiction-y. I'm glad I didn't start reading the back cover with the synopsis. I knew nothing about it besides that the protagonist was called Shadow. He was in prison for 3 years, he described his wife and anxiety about leaving. That known feeling I've experienced of knowing something wrong is going to happen. I read how he was called to the main office three days before his leaving. I read when they gave him the news about his wife's death.
 
@@ -6922,7 +6933,7 @@ He worries about me.
 
 Will he worry, will he love me as much still?
 
-## 2016-06-05
+### 2016-06-05
 
 Why is it harder now to keep with my streaks? It's twice as hard to do the exercises. I'm tired of typing and thinking about what to write.
 Today were elections. Miguel woke up early in the morning and I heard his steps and the words he exchanged with my grandmother. Yesterday, before I went to sleep, I saw the clothes I had put in the washing machine moved to the drying machine. Somebody moved them. Who was it, Miguel or my grandma? I thought about one of them taking them out now in the morning. Early today I remembered but was so tired that I stayed in bed. Later in the morning, when I checked, the clothes stayed there.
@@ -6963,7 +6974,7 @@ I didn't talk about that with Catherine. No. It was something else. I want to le
 
 I am resigned of never being truly free here. They know, both of my parents know about me. Luis and Miguel might know, too, soon enough. But will that change anything? Will they accept it and change their idea of me as I do? Or will they also be like the memories from the distant past that will haunt me forever?
 
-## 2016-06-06
+### 2016-06-06
 
 I came to start the words. There was a 1 in parenthesis next to the Facebook tap in the browser. I clicked it thinking it was my male profile. I was wrong. The notification wasn't a text message or an advice of something new in the wall. It was a new friend request. Orozko Consultoria, the Human Resources professor. He added me. Was it a notification of "you might know this person"? Maybe he didn't recognize me and just added me because I was maybe another of his students. Maybe he did know. The picture is there and clear as day. Am I nervous? I added him, accepted him.
 
@@ -7008,7 +7019,7 @@ I am mending a mistake.
 
 But whose?
 
-## 2016-06-07
+### 2016-06-07
 
 I'll start the words early today. It's a little after noon. I was supposed to go out today. I am changed and showered but still home. I know Miguel showered, too, and he might be in the living room waiting for me to go out and ask me if I can give him a ride to the gym. Why am I irritated? It wouldn't change a thing. I am going downtown anyway, the gym is on my way there. I would not deviate at all. It's not like last time that I went and picked him up, doing four trips that I hadn't needed to do.
 
@@ -7036,7 +7047,7 @@ I fried myself an egg and heated some of the food of yesterday. I took the pills
 
 I'm sad and disappointed. I'm tired and sick. I'm dirty. I'm walking through a wreck. I'm crushed.
 
-## 2016-06-08
+### 2016-06-08
 
 "It's Ivan, did he change sex? And all those times I was passive?" He joked. I told Catherine about the phone and my voice. "I don't know what to do or say" and then she sent me the screencap of the incoming messages she was receiving.
 
@@ -7089,7 +7100,7 @@ I talked about that in session. Rene asked me about the medication, the doses, d
 
 
 
-## 2016-06-09
+### 2016-06-09
 
 I saw the patient again. I have hiccups. Twice since I started typing. The third time hasn't come. I returned from the restroom. My phimosis is still there. Is there a point in going and getting it fixed? I hadn't really given it any thought. Once I saw it mentioned in reddit. Trans women who preferred it so they would not see their glans exposed. Would it be different for me to see it that different way? Rene was the one who mentioned it months ago. It was kind of a big clitoris always covered. I remember the shock and surprise when one of those first times using the condom and penetrating and I took it off and saw the glans exposed. Yeah I attributed the discomfort to the extra sensitivity, but I was scared even before it touched my thigh.
 
@@ -7129,7 +7140,7 @@ Saturday I'll see Catherine. My parents will leave. What if they leave after Cat
 
 I can worry about that then, or even tomorrow.
 
-## 2016-06-10
+### 2016-06-10
 
 I was already in bed with the turns turned off and the sheets covering me almost to my face. I've read and tried watching netflix. I took Miguel to his school and showered and made exercise and walked to threw the bag of clothes I had in the feet of my bed for months and half of my closet.
 
@@ -7184,7 +7195,7 @@ Why do I want to bring her down, too?
 
 There is a myth that misery is less painful when it's shared.
 
-## 2016-06-11
+### 2016-06-11
 
 There are lots of pictures in my phone. Some of me alone, other of me besides Catherine, there are a couple of my friends and even others with all of us.
 
@@ -7252,7 +7263,7 @@ I'll never be able to be a mother either. I'll never be able to be a parent.
 
 I got my wish, I guess.
 
-## 2016-06-12
+### 2016-06-12
 
 Two months ago I was nervous thinking about waking up early and going by myself to the lab to get my blood drawn. Tomorrow I'll wake up again, fasting, to go and get my blood drawn. Tomorrow I'll get the results in the evening, telling me how I am regarding my health. What are the levels of my hormones. Is the estradiol high? low? Where is it located in relation to other people my age, both male and female. Will my Testosterone have lowered? Will it be low enough? Have the antiandrogens made an effect this time?
 
@@ -7306,7 +7317,7 @@ I am one of the even fewer, the more alienated. Would people make lines for me, 
 
 
 
-## 2016-06-13
+### 2016-06-13
 
 I saw you today. I realize now I'm still scared of you. I see your ghost several times each month. Sometimes when I'm driving, I turn towards the empty seat and you're there, like you used to; others I imagine you signing in and a little pop up with a notification of a new message next to the picture of you. In the morning, driving from the lab to pick Catherine, my girlfriend, I passed next to your house. For a moment I thought what would be like seeing you in your patio doing something, being seen by you. Knowing you recognized my car and saw me in a dress. I picked Cath up and went on with my day. Several things happened that you would not care. You don't care about my life, my worries and fears. It's ok. You're no longer my girlfriend. You are not even my friend anymore.
 
@@ -7346,7 +7357,7 @@ They corrected it. Someone changed it. Saw the masculine in there and considered
 
 I felt happy. And again, for a moment, I forgot about everything else.
 
-## 2016-06-14
+### 2016-06-14
 
 "I forgot what I came to ask you. Oh, yeah, if I'm chosen to give the speech in my graduation would you help me?"
 
@@ -7398,7 +7409,7 @@ Maybe that's why I keep practicing. The moment is getting closer.
 
 
 
-## 2016-06-16
+### 2016-06-16
 
 I forgot. Again.
 
@@ -7462,7 +7473,7 @@ She could not come with me, again, to the endo. I needed her. I need her.
 
 I don't feel the right to ask those things from her. Am I entitled then to feel bad because of them?
 
-## 2016-06-17
+### 2016-06-17
 
 My estrogen comes from horse piss. Pregnant marine urine: premarin.
 
@@ -7502,7 +7513,7 @@ Vania answered Catherine back about her situation and messages. She didn't know 
 
 Catherine filled her journal and mine stays now right besides the tests I should had interpreted by now.
 
-## 2016-06-18
+### 2016-06-18
 
 Have I written the words in my tablet before? Will this be the first time? Should I write with just one finger? Or maybe use both hands.
 
@@ -7564,7 +7575,7 @@ Is this saved?
 
 Yup.
 
-## 2016-06-19
+### 2016-06-19
 
 Three day streak. Yesterday I did not make any exercise. We went to Mexicali. I could had not gone and it would not had made any difference. The people, the chatting and their voices, all the noise and tumult irritated me. I sat in a chair next to the dinning table between the living room and the tv room where everybody was. Karla was with her boyfriend sitting in one of the sofas. She did't introduced him to me. Maybe she didn't realize. I was just in the middle, I was the break of the two segments in which she separated the turns of meeting.
 
@@ -7606,7 +7617,7 @@ It's sunday, it's father's day.
 
 Today I'll rest.
 
-## 2016-06-20
+### 2016-06-20
 
 Today I'm again a penguin.
 
@@ -7653,7 +7664,7 @@ Will the hormones change this about me? They'll with modify my body and state of
 Will I ever let anybody see the real me without fear?
 
 
-## 2016-06-21
+### 2016-06-21
 
 I spent the whole day messing with Excel. The projective test of the human figure was interpreted in less than an hour, the four drawings and the two stories, even the symbolism. Everything was done. What was supposed to be the easy and enjoyable part ended up swallowing my whole afternoon.
 
@@ -7697,7 +7708,7 @@ Is that his way of being here for me? Would he get uncomfortable at that intimat
 
 
 
-## 2016-06-22
+### 2016-06-22
 
 I went to therapy. Again I dreamed. Something like an episode of How I met your mother. Except I don't remember any episode that had a similar narrative. It was surreal by nature. I was in the place of Barney. There were different places of a house. Certain symbolic clues. I realized they had to do with my real self and not the persona I was in there. Subtext of feminization, closets, clothes hidden.
 
@@ -7734,7 +7745,7 @@ But that's the thing, I have started transitioning. I started laser and I starte
 
 
 
-## 2016-06-23
+### 2016-06-23
 
 I did the dishes. I actually surprised myself with that one. What was it? I didn't want to do the report. What about it scares me? There is not my fault, the test throw those results. They're not from the projective tests, they're textual questions she answer and admitted herself. I ran the program with the different possible erroneous answers. They are invalid. The results are valid. They all are interpreted, what scares me is making the integration, putting my own words and signing them.
 
@@ -7788,7 +7799,7 @@ When I talked with Hilda and she didn't recognize me proving my theory right, I 
 
 It's easy trying to analyze the meaning of the necklace and the relationship with kept being seen as what I was before.
 
-## 2016-06-24
+### 2016-06-24
 
 Luis is right beside me. We're joking about Magikarp. He tried throwing me my own pillow while I'm typing. "Magikarp, I choose you".
 He continued with the joke about Professor Oak, "are you a boy or a girl?".
@@ -7839,7 +7850,7 @@ I would wear it in front of Catherine's parents and the world.
 
 I am indeed changing.
 
-## 2016-06-25
+### 2016-06-25
 
 I don't know why, but right now I feel like lying in bed and closing my eyes and let myself drift into slumber. Why am I so tired?
 
@@ -7897,7 +7908,7 @@ I am not a drag queen. It's not that I am not trans either.
 
 I'm just a coward.
 
-## 2016-06-26
+### 2016-06-26
 
 Why am I feeling like crap? I did it, I went to the United States and bought all those clothes. I tried them on yesterday and I didn't look awful. They fit, I guess.
 
@@ -7946,7 +7957,7 @@ Before that I have to tell Luis.
 
 We both know he knows already. Why are those words stuck in my throat?
 
-## 2016-06-27
+### 2016-06-27
 
 After finishing yesterday's words I could not stop crying. The text Catherine received from me said that I had finished and was already lying in bed. I can't remember the theme of conversation. She said something, talked about something. Was it a question? I stated how I was crying. Tears kept coming and coming, sorrows getting stuck in my throat, the pain flowering from my stomach all the way to my mouth and nose and eyes. I closed my eyes, but it kept leaking, flowing out like a river falling in a waterfall.
 
@@ -7996,7 +8007,7 @@ Yeah, I've been changing. I've been going outside in female attires and being se
 
 Not like here, where I have to hide in my own secret.
 
-## 2016-06-28
+### 2016-06-28
 
 Little things do I hate more than having the hiccups.
 
@@ -8036,7 +8047,7 @@ It doesn't matter if the've known for a week or a year. The impact of seeing me 
 
 I avoided the mirror for months. What did I think and feel when I finally dared to see?
 
-## 2016-06-29
+### 2016-06-29
 
 I know I dreamed something today. I had to wake up so I could go to the bathroom. I was in a movie theater. The halls were full, and showing different movies. Was I with my family or alone? No, I was with some people. The whole day I hadn't thought about it. I was running down the flights of stairs. I got into a bathroom. I stood in front of the urinal, the flyer of my pants open. Did I think about which one to use? Did I consider the clothes I was wearing or how I was presenting?
 
@@ -8074,7 +8085,7 @@ The other one will always be gone.
 
 She's the only one who have rejected me. Why does that hurt more than having several people denying me?
 
-## 2016-06-30
+### 2016-06-30
 
 I'm not out of home. I didn't get out of the city or went to an amusement park. I'm here, I'm in my room. I'll type them here in the phone. The lights are out, but the sun still illuminates the room besides mine. The tablet is playing a son of the son of John Lennon.
 
@@ -8121,7 +8132,7 @@ I'll never stop being Ivan the cowardly boy.
 Las time I wrote here it didn't saved. I hope this won't be like that.
 
 
-## 2016-07-01
+### 2016-07-01
 
 I didn't realize a new month had just begun.
 
@@ -8183,7 +8194,10 @@ He knows even more than my parents. He knows the name, he has seen pictures. He 
 
 There is still tomorrow to deal with.
 
-## 2016-07-02
+
+## July, 2016
+
+### 2016-07-02
 
 The tickers for Pride in two weeks are now printed. They were the first impressions of the new printer that just came up in the mail. Finally Miguel accused me of being the one who disconnected the other printer and making it break again. He said in the Denny's dinner when they were talking about Luis. "Who are you saying disconnected it? It wasn't him. It was Ivan."
 
@@ -8239,7 +8253,7 @@ I am afraid and scared.
 
 
 
-## 2016-07-03
+### 2016-07-03
 
 Yesterday I could leave the room. I heard steps and the sound of the microwave. My father was downstairs. Someone was playing Xbox, I thought it was Miguel, but later heard their voices. Catherine had left her home, she was on her way. I waited for my father to go upstairs, to leave. I could just tell Luis that I'd be leaving and to tell my parents I was gone.
 
@@ -8275,7 +8289,7 @@ When I was a child I discovered something that seems simple and obvious enough b
 
 I'll send it to him.
 
-## 2016-07-04
+### 2016-07-04
 
 My head hurts. Luis is right besides me talking. He is talking with me. Miguel is in the dinning room watching the Captain America movie that I was watching. Why do I feel weird?
 
@@ -8326,7 +8340,7 @@ Will I tell her? Am I scared of her reaction? She might be understanding, she mi
 I won't hide from her. I won't hide anymore. Not in this house, not this wednesday.
 
 
-## 2016-07-05
+### 2016-07-05
 
 "Can I call you Luis-broad?"
 "No, can I call you Ivan-belly?" "No" "...Sofia-belly?"
@@ -8381,7 +8395,7 @@ The three or four people that now know me since last week besides my brother had
 
 I can just admit it and prove to myself I am not ashamed anymore.
 
-## 2016-07-06
+### 2016-07-06
 
 I spent the night with her, like before. The guilt of a forbidden relationship was with me when we drove the school. We met Catherine. The class started and shit happened. We met outside and drove again, this time the three of us in the same car. We stopped outside my old house in Otay. She had vomit on her mouth and was unconscious. I wanted to wake her up so I called her name. "Mona" I said, "Mona"... But she wasn't Monica, she was Xennia.
 
@@ -8409,7 +8423,7 @@ Rene didn't say anything but I could sense he's not a fan of the idea. Earlier s
 
 Who cares about me?
 
-## 2016-07-07
+### 2016-07-07
 
 I feel full, my stomach is filled with food. I ate the sandwich in the friday's, the restaurant that my family always chooses. Outside my room is my mother making a preachment about why she wants Luis to read his speech for her so she can record him and post it on Facebook. I, in his place, would hate that. I would hate my grandmother making the same questions over and over: "did you threw the paper of the speech? Did you? Uh? Did you threw it, son? Huh?"
 
@@ -8450,7 +8464,7 @@ Go fuck yourselves.
 
 
 
-## 2016-07-08
+### 2016-07-08
 
 A white sheet was floating in front of the open window. An illusion made by the current of wind, I thought. Its moves were elegant and rhythmic. It floated there, dancing in the empty air. A musical ghost. It died and fell to the floor as if someone had flicked the switch cutting its life support. The air must had stopped. Suddenly it revived and kept dancing a little far from its starting position. It moved faster and more energetic. The distance between us was getting shorter. It wasn't the air.
 
@@ -8486,7 +8500,7 @@ Do I push her away from the fear of telling her and being rejected?
 
 Is that what I do with everyone?
 
-## 2016-07-09
+### 2016-07-09
 
 I just ate and have no energy for doing the exercises. It's a quarter before 8 and I'm tired. I've spent most of t the day either in bed or in the couch. I slept with both my eyes open and shut. My brain has stayed both quiet and numb.
 
@@ -8536,7 +8550,7 @@ I want people to see me. I can wait for them to recognize me or look for me or I
 
 How can I shout if I don't even dare to whisper to the people who share a roof with me?
 
-## 2016-07-10
+### 2016-07-10
 
 Liliana called me first thing in the morning. My pits smell. I did the exercise and showered at noon. I guess the hormones have not changes my body odor yet. I went to the bathroom and put deodorant. As I took my shirt I glimpsed at my body. It's flabby and chubby. I was supposed to be losing weight.
 
@@ -8580,7 +8594,7 @@ I gave up on her and she came back.
 
 She came back.
 
-## 2016-07-11
+### 2016-07-11
 
 I had the session, the last one with the last patient. We sat in a room the four of us, Liliana by my side and the patient and her mother in front of us. I was nervous. I printed the report since yesterday. It was stapled over my desk waiting.
 
@@ -8626,7 +8640,7 @@ Did he say that on purpose referring to mine or was he making a point about the 
 
 Sometimes I think I overestimate him.
 
-## 2016-07-12
+### 2016-07-12
 
 There is a lot of shit in my bed. Lots and lots of mementos and cards and bags and stuff. I took down everything from the shelves and the upper side of the bookcase and the boxes from over my closet. There is a white bag filled with trash. I took pictures from jr highschool and threw them away. I took the pages off the notebook of signatures from grade school. All the box of childhood memories is inside the bag of jr high school pictures. I put lots of the memories of university in a box and left it for later to clean. As I took the childhood memories I shared what was inside with Catherine. Snapshots of the pictures, and the toys and audios of me narrating the days from when I was seven years old.
 
@@ -8672,7 +8686,7 @@ Is that why I am scared of my parents? I took her lover away. What will happen w
 
 Is that why I can't deal with them seeing me?
 
-## 2016-07-13
+### 2016-07-13
 
 Catherine's new profile picture is an hour old and has 18 likes. 18 people have seen it and clicked a button to express their approval. It means nothing, it's worth nothing. It's not something material, just an abstract quantification, a number.
 
@@ -8725,7 +8739,7 @@ I'll be totally alone in a place where absolutely not a single person will know 
 
 Isn't that what I want?
 
-## 2016-07-14
+### 2016-07-14
 
 I cried yesterday like I've not cried in years. Tears drowned my face, the sorrow wrapped my throat and held me to bed.
 
@@ -8765,7 +8779,7 @@ I kept the items as if there is still a chance of seeing her again.
 
 Am I optimistic or just a fool?
 
-## 2016-07-15
+### 2016-07-15
 
 30 days again.
 
@@ -8823,7 +8837,7 @@ I am trans and should not be ashamed.
 
 I hope some day I get to feel proud.
 
-## 2016-07-16
+### 2016-07-16
 
 Okay let's try this I've written the words before in both my tablet and my phone now I'm not writing at all I'm dictating the words and my tablet is writing them down this is supposed to be faster than other ways I think I'm getting the hang of it no nevermind I keep saying words and words and sure the tablet writes them down but it's mistaken several times it's a chore going back and correcting it myself sure I mean my laptop is updating to a new software I was going to write them down on this tablet and I thought about trying this new software and here I am lying in my bed saying words and seeing them appearing into white screen today was Pride Catherine was with me the whole day it was fun I enjoy it mostly I'm really tired I guess I should begin writing now it was a nice exercise to realize how good my pronunciation in English is.
 
@@ -8878,7 +8892,7 @@ Was it a victory or a disappointment?
 
 
 
-## 2016-07-17
+### 2016-07-17
 
 I am not going to do any exercise today. Yesterday I walked close to 10 kilometers. My shoulders are red and furious. My face is reddened and sore. Even raising my arm constricts the swollen skin on the shoulder and it screams in pain. Lying on my side is excruciating, stomach-down, I tend to use my arms as a support to my head, so unconsciously lifting them is a source of discomfort. Sleeping on my back is my least favorite way to rest and now my only option.
 
@@ -8928,7 +8942,7 @@ How will I react when I hear that name, when I'm referred mistakenly?
 
 Do I have a right to be upset when even in my own home I'm unknown?
 
-## 2016-07-18
+### 2016-07-18
 
 I was mistaken for my mother in the phone again. This time it was laughed about and shared with my grandmother later on the phone as I passed it. Minutes later she would tell my mom about it. "What was it that she said to you? 'Hello, lady"? " She did not such thing. She said hello in a knowing sing-y tone and I asked with whom she wanted to speak. Then she realized I was not Laura.
 
@@ -8972,7 +8986,7 @@ Will I be ready to present myself as who I really am? Will they respect me? Will
 
 I know how I look, and that's why the urgency of saying it. But I don't know how I'm seen or how I will be."
 
-## 2016-07-19
+### 2016-07-19
 
 There are red tiny little dots in my upper arms. It's not a stinging pain, just an uncomfortable reminder of my sun poisoning. It's fading, I guess.
 
@@ -9012,7 +9026,7 @@ Is that why I want to tell everyone?
 
 Where would I draw the line. From whom do I want to keep the information? Why? Why do I feel like hiding it still?
 
-## 2016-07-20
+### 2016-07-20
 
 "Your mouth looks very red", she was just coming down the stairs and stopped in the opening mid-floor just behind the television. I had my legs crossed under me in the sofa and was sitting next to Luis. Silently I nodded my head with shyness. Everyone in the house had seen me before. My father came outside to move the pick-up after Miguel opened the curtains and saw me park. Luis was sitting in the couch and Miguel at the table. Nobody said anything.
 
@@ -9052,7 +9066,7 @@ I think this is the first time I might actually believe I'm not ashamed anymore.
 
 
 
-## 2016-07-21
+### 2016-07-21
 
 I'm thinking about posting it. Making it public, coming out in all the senses of the word. I'm really thinking about it, considering, seeing all the consequences and possibles outcomes, both positive and negative.
 
@@ -9096,7 +9110,7 @@ My mind suddenly went blank. From what thought did I try to escape?
 
 Why do I always keep either hiding or running?
 
-## 2016-07-22
+### 2016-07-22
 
 I'm dressed again, the same blue dress, make up and hair. All done and worn. I'm again in my room with the closed door. Am I stuck again? Why don't I open the door? Luis has seen me this way, both in pictures and in person. It's 4 o'clock in the afternoon. Catherine yesterday said she would pick me up in half an hour. Her car is failing. Her dad would check it. That was a couple of minutes ago and she hasn't answered yet. I was supposed to post it. I thought about it. I want to. People seeing, knowing. This whole house knows and yet everything is the same. I am nervous about my clothes and face. I've been changing.
 
@@ -9154,7 +9168,7 @@ Catherine is not here yet. I've posted it. It's done. No more hesitation or doub
 I am going to open the door.
 
 
-## 2016-07-23
+### 2016-07-23
 
 I did publish it. I left home and got into Catherine's car. I showed her the picture of the notification about the post I was tagged in from Ivan. The notifications started appearing. Even though I had signed out of Ivan's profile, the little boxes kept telling me people commented on a post I was tagged in, and others about the friend requests. I turned off the notifications, of both Facebook and the e-mail.
 
@@ -9204,7 +9218,7 @@ I'm really sorry. I'm sorry if I hurt you in any way. It was never my intention 
 
 PS I have your hairpins and the stamp and box with your name. They're not mine and never were meant for me to have them. I feel wrong keeping them and thought you might want them back.
 
-## 2016-07-24
+### 2016-07-24
 
 I did not sent the letter to Monica. In hindsight I am thankful I took that choice. It was the right one. It was another ill-attempt to ease my own conscience attributing all blame to myself and exonerating her from every sin in a begging attempt to not being rejected. It was pathetic.
 
@@ -9244,7 +9258,7 @@ Should I cancel the request? Or should it die of age in her screen like a white 
 
 
 
-## 2016-07-25
+### 2016-07-25
 
 Why can't I last more than a fucking week without crying?
 
@@ -9300,7 +9314,7 @@ Can I ask her to take her phantom back? Can I let her know about it?
 
 Can it be killed?
 
-## 2016-07-26
+### 2016-07-26
 
 It was a hard night indeed. I wrote the words after Monica's messages. "You were like an asshole to me".
 
@@ -9353,7 +9367,7 @@ I apologized -Sofia"
 
 
 
-## 2016-07-27
+### 2016-07-27
 
 Almost forgot to write today's words. I was already lying in bed and put my pillow over my eyes. I'm tired.
 
@@ -9397,7 +9411,7 @@ Luis told me it's possible that my grandma might come friday. Will she say somet
 
 Will she call me Sofia? This Saturday my mom will go with my godmother to the vineyard. Will I dare to ask her what she said? Why would I want to know?
 
-## 2016-07-28
+### 2016-07-28
 
 I should start the words now. I don't know what to talk about. My grandmother came from Mexicali. My parents left to pick her up from the bus station. I was playing Mario Kart with Luis. I was in the bathroom, drowning in sweat, when they return. For a moment I didn't know what to expect. They asked for me but said Ivan. I came down and she hugged and kissed me. She told me my aunt sent me a hug, too. Was it because of my post? They have not forgotten.
 
@@ -9445,7 +9459,7 @@ Maybe tomorrow, maybe next week.
 
 Perhaps.
 
-## 2016-07-29
+### 2016-07-29
 
 I was in bed chatting with Catherine. We talked about tomorrow, were we going to go sell, would we go in the evening? Should we take a uber or should I ask my dad for a ride? Luis got in the room and sat in my chair, the conversation was showing in the monitor. Somehow the conversation turned into a different path.
 
@@ -9497,7 +9511,7 @@ It was when she liked Ivan. She liked him like that. I looked good.
 
 "We made a cute straight couple, just as we make a cute lesbian one now"
 
-## 2016-07-30
+### 2016-07-30
 
 I was with Catherine, sitting in the stand she put herself in front of the house that lends her the space. The clothes were lying on the floor over two sheets extended. There were some coats and dresses hung. Besides most of the clothes were the masculine clothes I took. Besides them a filled suitcase with the cheapest of all.
 
@@ -9526,7 +9540,7 @@ And I thought I smiled like an idiot when the gas dispatcher called me "miss" tw
 
 I should be getting ready to this night out.
 
-## 2016-07-31
+### 2016-07-31
 
 I left the room just like that other time. Miguel and Luis were downstairs like the last one. I hid my legs behind the kitchen counter, although my torso and face were completely visible. I opened my red lips and asked him if we were going to pick up my mom. He replied with the question of what time I had accorded of meeting my friends.
 
@@ -9572,7 +9586,9 @@ And I thought for a long time I had no reason to cry.
 
 How do things change.
 
-## 2016-08-01
+## August, 2016
+
+### 2016-08-01
 
 Today came upon me as a heavy rock pushing me towards bed.
 
@@ -9607,7 +9623,7 @@ Why would she not come with me? Would she be hurt that I'd prefer going with Cat
 
 Would I be comfortable? Why not?
 
-## 2016-08-02
+### 2016-08-02
 
 It's come again. I feel it right here over me, a dull and gray cloud dropping dry droplets of smoke.
 
@@ -9655,7 +9671,7 @@ Every time I've said it, it has been easier. But it has never been painless. The
 
 I stand there, with my mouth bleeding and my heart exposed, handed to them, and my eyes begging for mercy.
 
-## 2016-08-03
+### 2016-08-03
 
 "Sofi", my mom called me from outside my room, her voice coming from the kitchen. I went from my bed and faced her. She asked me to open her bottle of white wine. She drank half of a little glass and I three quarters of a small beer glass. My grandmother asked just two sips in a shot glass. She was the last one to finish it. I took the last gulp like I did them in Spain. I feel like when I was in there, except that I don't. I am trans, I am Sofia, a woman. I like who I am. I don't need to hide, anymore.
 
@@ -9687,7 +9703,7 @@ She printed a picture of me with my name under it. The first profile picture I p
 
 Why? For what?
 
-## 2016-08-04
+### 2016-08-04
 
 The same familiar pain in the back is here again. Did I write about it yesterday?
 
@@ -9736,7 +9752,7 @@ I walked with Luis to the Oxxo, today. I caught several pokemon that he couldn't
 I preferred writing about the woman in the pharmacy rather than the guy outside the oxxo. Why do I prefer to remember the things that make me sad?
 
 
-## 2016-08-05
+### 2016-08-05
 
 "Take this, you will go to the Mall, if you see something you like, you can buy it", she handed me several folded bills. It was 25 hundred pesos.
 
@@ -9776,7 +9792,7 @@ I remember the idea of someone else doing or saying something, but I can't recal
 
 At least I know I was seen as a girl. At least by some people.
 
-## 2016-08-06
+### 2016-08-06
 
 I'm home. I've eaten already. I finished the burrito with everyone but Luis in the table. "Do you want some sauce, m'son?". It's like getting a gentle slap to the forehead. They might not be enough to really hurt me, but they caught my attention and interrupt my thoughts, I get stopped and confused. One is just a little inconvenience, several might make me go insane.
 
@@ -9832,7 +9848,7 @@ I took pictures of the clothes and shared them with Catherine.
 Now I have options and things to wear. I won't feel like a picture or a caricature. I hope.
 
 
-## 2016-08-07
+### 2016-08-07
 
 I'll see Catherine tomorrow. Yesterday I bought almost a new wardrobe. My mother helped me, she gave it to me. She paid for it.
 
@@ -9872,7 +9888,7 @@ She saw it and told my mom she could do something similar. "I don't like dresses
 
 
 
-## 2016-08-08
+### 2016-08-08
 
 I got up and got ready. Everything was set. I postponed the alarmed and then disarmed it before it could start. Catherine was already in school. I was going to be leaving home by noon. We would meet crossing the border. She asked me if I could leave home an hour earlier. She thought she might go for the pass in her free hour. Someone was in the bathroom. I didn't think I could make it. It was my grandmother. Did she know? My mother said she might want to accompany us. Ans she did. The three of us left a couple of minutes after eleven. I wore the pants that look like jeans and the Mickey Tshirt. I told my mother I would exchange a fifteen hundred. She gave me two hundred dollars in return. In the way there, my mom told me how she was talking with my godmother. She said that it was good that she now has someone to tell her what she can and can't wear. And the four of us can go shopping now.
 
@@ -9902,7 +9918,7 @@ I was angry at myself every time I confronted my own emotions.
 
 Even now, I don't know where all this anger comes from and to whom it's directed.
 
-## 2016-08-09
+### 2016-08-09
 
 Tomorrow I'm supposed to see Rene for my session. What has happened this week?
 
@@ -9952,7 +9968,7 @@ Today, my grandmother did not say Ivan once. It was always Sofi.
 
 Why was it not enough? What more do I want?
 
-## 2016-08-10
+### 2016-08-10
 
 How long has it been since the last time I was at Catherine's home?
 
@@ -9996,7 +10012,7 @@ We visited the tomb of his brother and then went home. Her dog didn't recognized
 
 Everyone told him my name wrong. Will he grow and get used to that wrong name as almost all of Catherine's family?
 
-## 2016-08-11
+### 2016-08-11
 
 "Good afternoon, brave! How's your life in this your renew life? I hope your surroundings are more supportive and tolerant than what I've seen in Spain on occasions"
 
@@ -10039,7 +10055,7 @@ Maybe I wasn't as ready as I thought.
 
 No. It had to be done. I would had never been ready enough.
 
-## 2016-08-12
+### 2016-08-12
 
 "Write about me today"
 
@@ -10077,7 +10093,7 @@ She has grown in my eyes. I look at her and see beauty. I love her caring eyes a
 
 We would go late at night after class and sat in the reclined seats of her car. The windows frosted. There was coldness in those times. We talked and talked and the words would cover us and entertain us. Our hands would meet between us. Her fingers would end up being entwined between mine. Even in the coldness of the nights I always found warmth with her.
 
-## 2016-08-13
+### 2016-08-13
 
 The clothes are all set and put in big bags. Several of the jeans my mom is discarding are 14 in size. I thought about Catherine's size. Would they fit? I decided not to say anything, if they did, maybe she would take them.
 
@@ -10123,7 +10139,7 @@ Do my clothes define me now?
 
 
 
-## 2016-08-14
+### 2016-08-14
 
 It is a tiring day. I'm exhausted. Again I was the second person to get up from bed. I might had been the first one to wake.
 
@@ -10169,7 +10185,7 @@ She felt bad when I asked. And I said I feel bad every time I hear it.
 
 She saw them but said nothing. She might be asleep just now.
 
-## 2016-08-15
+### 2016-08-15
 
 The night is heavy and warmth. It's been a long and hot day. Today's biggest moments were unexpected.
 
@@ -10217,7 +10233,7 @@ Aidee talked to me today. She started the conversation and I apologized for not 
 
 I'll see her by the end of this month, the next day of the saturday I'll meet with the gang by Catherine's.
 
-## 2016-08-16
+### 2016-08-16
 
 She talked about all the pressures she has. It all started because of a proposal. If we return early from the United States, can we go to Argana?
 
@@ -10268,7 +10284,7 @@ The marching band surrounded us and passed us by. Inside them, we smiled.
 
 "Do we have a class now?" "Yeah, in a couple of minutes", she answered as if it was a rational question. "We should go now, then" I said before I extended my hand and we left, who knows where to do who knows what.
 
-## 2016-08-17
+### 2016-08-17
 
 Tomorrow I won't be going to the United States after all. I asked Catherine, if she wanted to go just a couple of hours before we return early, but she said it was better to go another day.
 
@@ -10324,7 +10340,7 @@ Should I take the chair before they talk to me in my new seat? Should I seat in 
 
 Why do I worry about it, if this is something I wouldn't bear to actually do?
 
-## 2016-08-18
+### 2016-08-18
 
 I'm home. This is my family. I congratulated my mom for her birthday. I sent her a simple message and a picture on her Facebook. We went to dinner. I wore the blue dress that Catherine so much likes.
 
@@ -10366,7 +10382,7 @@ The next dream was different. It was an office, maybe in the same building. Ther
 
 What was I doing in there?
 
-## 2016-08-19
+### 2016-08-19
 
 Let's do this.
 
@@ -10406,7 +10422,7 @@ The conversation was how she had it in her for so long, why did Miguel not say s
 
 There are more and more mother and daughter conversations lately. Is this how it feels to have a real connection with your family? Is this how support feels like?
 
-## 2016-08-20
+### 2016-08-20
 
 I took my mother's advice. I'm home, already changed and I'm wearing a different set of sandals and other shorts that are not Ivan's. Even though I am in pajamas now, I still have the bra on. The shirt that I took from Catherine is what I have on top. We did go to the United States. I did not ask to Ross nor mentioned the wedding.
 
@@ -10426,7 +10442,7 @@ Yesterday in the school, when we were waiting for the letter from the principal 
 
 I found the shorts and chose two. I'll wear them in Mexicali with Catherine. The day after tomorrow we'll leave the city. We'll be together for a week. From monday until friday, like we used to be in school. Except we'll share the nights as well. It's amazing specially because of the nights and the mornings.
 
-## 2016-08-21
+### 2016-08-21
 
 The baggage is almost ready. The clothes and underwear and towel and shoes are all in there. In the box that Luis gave me I put under lock the condoms, the bottle of lubricant and the vibrator. It's almost full. The bag with toiletries is the only thing that's left to put. Just now as I turn towards my bed, the thought of not going to sleep here after today for a week hit me. Will I take the pillow with me? Will it fit?
 
@@ -10456,7 +10472,7 @@ Then she said: "And how is the planning going?" Wait, what? Oh. She thought I wa
 
 It's not the first time I've been mistaken as my mother. Why did this feel different? Why was this so reassuring and comforting?
 
-## 2016-08-22
+### 2016-08-22
 
 I waited for you under the rain two hours, a thousand hours, like a dog. When you arrived, you looked at me and told me "Crazy, I don't love you anymore".
 
@@ -10500,7 +10516,7 @@ She brought us home, and my grandma welcomed us. We walked towards the school an
 
 
 
-## 2016-08-23
+### 2016-08-23
 
 This was the second day of the course. We're home now. The door was open, Edgar was waiting for us.
 
@@ -10536,7 +10552,7 @@ We decided to go eat dinner. In the university she was starving. We walked aroun
 
 "How do you feel with being out?", she asked me once while we ate. I forget about it, and that's the best thing of all. I can just forget that I have something to worry about. I, finally, just enjoy being me while being with her.
 
-## 2016-08-24
+### 2016-08-24
 
 I'm sitting at the table right now. Catherine is eating her instant soup and we both have a glass of beer with clam juice.
 
@@ -10580,7 +10596,7 @@ And yet I said:
 
 I was happier to hear the her, than the appreciation to my correct answer.
 
-## 2016-08-25
+### 2016-08-25
 
 We laughed in bed, we laughed out loud, those times when you can't stop, and your stomach hurts and you even cry a little. We were trying of thinking of names for a pet. I said that I had thought about Luria, the last name of the father of modern neuropsychology. I remember about Paulino, one of my classmates in Salamanca, he has a cat. His name is either Freud or Sigmund. I think it's Freud. I could name my dog Luria. We tried to recall the series and books we like. Game of thrones? What about Khalessi... No, I'd prefer Daenerys. Hodor?
 
@@ -10608,7 +10624,7 @@ So this time I was hesitant to even acknowledge the want of staying with the lit
 
 Maybe I will ask my aunt to the chance of staying with her and name her.
 
-## 2016-08-26
+### 2016-08-26
 
 We are home once again. This is the last night we're going to sleep together in my grandma's bed. This is the end of our short practice as living partners. I try to recall the many things we did and visited and I can't help to smile. She is right behind me snooping like many of the last nights. I don't mind her eyes. I don't have to worry about her judging me.
 
@@ -10645,7 +10661,7 @@ Do I pass? Can I be comfortable now presenting outside, going to the restroom?
 Can I keep my guard down and let myself be? What more do I need?
 
 
-## 2016-08-27
+### 2016-08-27
 
 I'm home and yet I feel homesick. The feeling that cursed me when I returned from Spain, that unfamiliarity and strangeness that stank the bed that was supposed to welcome me. I see the bed all made and clean, waiting for me to rest in it, my comfortable pillows and used-to mattress. I thought I would miss it. I miss Catherine now.
 
@@ -10675,7 +10691,7 @@ Weeks ago she was changing the way she referred to me and now she was correcting
 
 Why did I feel sick? Why did I wanted the earth to swallow me whole and return me to Mexicali or somewhere else where I would freely forget about my incongruence?
 
-## 2016-08-28
+### 2016-08-28
 
 I went and returned from Aidee's. I met her son. At first he was peacefully asleep on his grandparents bed. I sat in front of the mirror and paid attention to what she explained to me.
 
@@ -10713,7 +10729,7 @@ I took a picture and sent it to Catherine, the end result. I told Aidee how I li
 
 Tomorrow I'll see her. Maybe I'll buy something.
 
-## 2016-08-29
+### 2016-08-29
 
 Finally the day arrived when I could go to the United States, several times we had to cancel and postpone it. This week is the graduation. I woke up early in the morning. Not by four like I had considered, but near 6. I'd be leaving home with my mother, after 8 I'd take the bus to the border and cross to meet Catherine at her school. I got up and showered. I even shaved a little with the razor and brush. In the late night I felt discomfort in my sleep. This concern about turning, this uneasiness in my stomach. I worried while in the shower. I got out of it and stood in front of the toilet. I finally threw up. A brown sugary mixture of donuts and milk and meatballs splashed the water. An electrical tingle crawled through my arms. My legs felt weak and broken, the strong nauseous smell scratched my nostrils. The half digested food came again. I flushed the muddy water and returned to the shower.
 
@@ -10737,7 +10753,7 @@ I trembled and cried in bed. After my mom and dad left somewhere I asked my gran
 
 I am still a little scared. About the doctor, about the week and the clothes and the rush, about throwing up again and feel the weakness crush me to bed once again.
 
-## 2016-08-30
+### 2016-08-30
 
 I know Xennia since we were both 4 years old. I learn to write and read with her. I think I remember that she was the first girl I kiss. I innocently walked towards her and planted a childish kiss on her cheek. She wiped her face and nothing happened. Today she knew about me.
 
@@ -10783,7 +10799,7 @@ I knew them, met them when I was just a child. When would I imagine that little 
 
 Aren't we supposed to be abnormal?
 
-## 2016-08-31
+### 2016-08-31
 
 A year ago the talk about her parents wedding started. I remember it well, being in the car when she told me the date. "Next year by September. I'm planning on inviting everybody, you know?" The thought crossed both of our minds. Lots of time until that date, who knows what could happen. By then it wasn't the gang's graduation yet, I knew I'd be wearing a tux to that, that's why the doubt of my attendance was another theme of conversation. Maybe by march both of out parents would know, maybe I wouldn't need to be wearing a suit and tie to that. "Who knows, maybe by that time everybody knows about me, maybe I'd be already changing and I'd attend as me, can you imagine it?"
 
@@ -10805,9 +10821,9 @@ I must not think about failing, I haven't even tried. I should get prepared. I s
 
 I sent the text message to my aunt about the name of the puppy. I don't know if she received it or not. I hope she did. I hope she keeps it and we can pick it up. I hope the little dog can get to know me and I will be able to care for her.
 
+## September, 2016
 
-
-## 2016-09-01
+### 2016-09-01
 
 What happened this morning? I was going to take my grandma to the store. Yesterday I said to them how there was a crafts shop in the plaza near the 5 & 10 down the neighborhood. We could go there. Later, talking with Catherine I came to realize it wasn't here in the plaza, but in the mall near her house. I could go pick her up and take my grandma to that store. After returning home, we could stay a little until going to jhonny's.
 
@@ -10837,7 +10853,7 @@ We drove to Playas. We went to argana and was welcomed by new waitresses. They s
 
 Before Catherine got out of my car, we tried the lipsticks we bought. The wedding is close. The graduation party, the first party I'll go as Sofia is closer.
 
-## 2016-09-02
+### 2016-09-02
 
 "Im tired.
 
@@ -10873,7 +10889,7 @@ Luis is not home. He's in school in his camp for the first night of the weekend.
 
 I miss him a little.
 
-## 2016-09-03
+### 2016-09-03
 
 The day has come. The dress is hanged on my closet. The shoes are still in their box. My nails are painted but I'm still in my shorts and blouse. It's 20 minutes until 5 in the afternoon. In a little more than two hours Catherine is going to come. I feel tired and a strangeness in my stomach. I woke up early, not as early as Catherine, but before my mom and grandma. I got up and was the first one to open the paper bag that my father brought. I ate my biscuit and left the other one. Did I return to bed? No, I was on the couch. Is it nervousness or something else?
 
@@ -10907,7 +10923,7 @@ This time there won't be an after party. This time I won't sleep besides Catheri
 
 This time I won't need to drown in alcohol to bare the suit. This time there is not going to be a suit. That is change enough.
 
-## 2016-09-04
+### 2016-09-04
 
 I feel this urge against writing the words. It's been 80 days of continuous writing. Why is this so tiring? Is it that I am running out of things to say? More than four months of hormones and changes, yesterday was the graduation of jhonny and my first evening in a long gown. It's not that I have nothing to say, just that I feel this defense against it.
 
@@ -10937,7 +10953,7 @@ Today, the boyfriend of Gabriela, Antonio, added me on Facebook, and sent me a m
 
 "It feels really different wearing a dress to a suit" "You look different, you look more happy... No, you just look happy"
 
-## 2016-09-05
+### 2016-09-05
 
 More than a 12 hours of sleep, a mid afternoon nap and I'm still tired.
 
@@ -10973,7 +10989,7 @@ I am scared of leaving them unfinished. Of failing.
 
 Maybe that's why continuing with this is more and more tiring.
 
-## 2016-09-06
+### 2016-09-06
 
 I'm in bed. I'm not as sick as a week or two ago, when I threw up, and had to cancel my going out with Catherine. I haven't cancelled anything. The symptoms started today. It was after waking up. I don't remember dreaming anything or getting up in the middle of the night. I can't remember most of the night. My father and mother were arguing outside, in te living room where the printer is. Some paper sheet must had gotten stuck in the tray. My mother asked for my father's help. His actions were not precise enough. She warned him he would end up breaking the thing. "I don't know what else to do. I don't know about any secure or level to move. If you do, show me, but I don't."
 
@@ -11001,7 +11017,7 @@ My mother asked me how I was feeling. I told her the truth. My father would go t
 
 Tomorrow I'll see RenÃ©. I could go to the pharmacy after my session.
 
-## 2016-09-07
+### 2016-09-07
 
 It''s actually very early. My stomach is again twisted in a knot and I feel the food that I haven't really eaten stuck in my throat.
 
@@ -11039,7 +11055,7 @@ I can deal with this pain and suffering. I don't want them to go through this. W
 
 
 
-## 2016-09-08
+### 2016-09-08
 
 "3 ways you can know if you're falling for with someone" "How can you know if you're trans"
 
@@ -11081,7 +11097,7 @@ She came and picked up my grandma's gifts to her mom.
 
 I told her about Alan's suicide attempt, and when she answered, her voice broke. I asked her naively. "He was your best friend and tried to commit suicide... I thought when my best friend considered it, too"
 
-## 2016-09-09
+### 2016-09-09
 
 Tomorrow I'll get the puppy. "She's really anxious to get her new owner".
 
@@ -11125,7 +11141,7 @@ In argana we talked about movies and relationships. We smoked and ate.
 
 We stayed a couple of minutes in the park and continued our chat. Tomorrow we'll go to get the puppy. I am as nervous as I am excited.
 
-## 2016-09-10
+### 2016-09-10
 
 We're in Mexicali, I'm sitting in my uncle and aunt's couch. We saw the final of the woman's championship of tennis. A Czech and a German. After the match and the victory of the German, the adults went to buy food.
 
@@ -11177,7 +11193,7 @@ We're still here with my uncle. The cat came and lied besides my leg. Edgar came
 
 In an hour we'll go to get the dog.
 
-## 2016-09-11
+### 2016-09-11
 
 Nymeria is by my side. She's in the carton box sleeping peacefully over her red daisy flower cushion. I made the words in Mexicali, we were in my uncle and aunts house. I was nervous about being with them, being welcomed. Not that I would not be accepted in their home, but how would they do it? Would there be comments or questions? Would their kids say something or do something?
 
@@ -11215,7 +11231,7 @@ And, I guess until now, I never fully understood the meaning of being a "minorit
 
 
 
-## 2016-09-12
+### 2016-09-12
 
 "Sofia's is pretty"
 
@@ -11259,7 +11275,7 @@ It was, hard. Something clicked and repulsed me. How could I act like a mom? I c
 
 And now, years later, I feel this heartache that I, actually, could never be a mom.
 
-## 2016-09-13
+### 2016-09-13
 
 I heard her screeches near three in the morning. I turned on the lights, did she have her belled collar? I can hear when she scratches how the little bell jingles. She moved and peed in the mat. I turned the lights off again hoping she returned and went to sleep. The next time I woke was a little after seven. This time she did not return to her bed. I was lying in mine and turned the lights hoping she'd return, but she didn't. I turned them again and stayed with her. Did I take her outside? It was cold. We returned. We stayed playing and doing stuff until she fell asleep a couple of hours later. I took the opportunity and caught some shut eye.
 
@@ -11292,7 +11308,7 @@ Tomorrow I might paint my nails. I will send the picture I saved to Aidee and se
 
 Time do passes really fast.
 
-## 2016-09-14
+### 2016-09-14
 
 It is tiring having Nymeria here. She's licking my toes and I feel her moistened warm tongue strokes. Just now I changed her beds.
 
@@ -11334,7 +11350,7 @@ I thought my fingers would look huge and ugly, but I like seeing the color on it
 
 Let's see if Rene makes a mention of them tomorrow.
 
-## 2016-09-15
+### 2016-09-15
 
 Nymeria is asleep in her box. I moved it next to my bed. She's peacefully lying besides the little fluffy dog that Luis owned when he was a baby.
 
@@ -11378,7 +11394,7 @@ My grandma mentioned again what she said in the morning. "I told her that she ne
 
 On its time. On its time.
 
-## 2016-09-16
+### 2016-09-16
 
 "Why don't you read Ivan's?"
 
@@ -11426,11 +11442,11 @@ Tomorrow is the wedding, less than 24 hours from now.
 
 I stepped on Nymeria's shit. I hope it will the first and last time. I don't know how I'll do it with the food. I don't know how I'll do with lots of things.
 
-## 2016-09-17
+### 2016-09-17
 
 Wedding.
 
-## 2016-09-18
+### 2016-09-18
 
  Nymeria is right here by my side. She's confused because I went to get her food but haven't given it to her. Yesterday she only ate twice. Once in the morning and a second time in the late afternoon. We went to the wedding. I almost forgot to write those words. I am exhausted. I don't feel with energy enough to sit and write. I've been here for a couple of minutes now and I've gotten up twice. The first time I went for Nym's food. The second I got soda in my mason jar cup. I never really thought I would be drinking diet coke. When I was little I used to drink coke. It was sugary, sure, but I liked it. The taste of the diet one was weird. Then, when I grew, I stopped drinking soda altogether. Why is it that now I crave it?
 
@@ -11516,7 +11532,7 @@ Yesterday in his words, I caught a glimpse of his doubts if he loves her or just
 
 Huh, I did finish twice of the quota. At least I have a reason to not feel bad about something.
 
-## 2016-09-19
+### 2016-09-19
 
 Half of the test is scored. The scores are all put into the table, just the sums are left. Nymeria is here by my feet.
 
@@ -11558,7 +11574,7 @@ Jhonny asked me when could we see him. This friday will be his show. Catherine t
 
 She had to cancel our plans for wednesday. It's Vania's birthday. It's the dinner at which I am not invited. It hurt a little more because of that.
 
-## 2016-09-20
+### 2016-09-20
 
 Nymeris is right here by my side. She's so small, like a little rat, indeed. I remember seeing MuÃ±eca as a little dog. Today that I entered Catherine's house and was received by her, she seemed huge, almost enormous. I guess I've grown accustomed to the petite figure of Nymeria's body.
 
@@ -11598,7 +11614,7 @@ Rene confirmed our session of tomorrow by 1.
 
 Do I have something to talk about?
 
-## 2016-09-21
+### 2016-09-21
 
 "Are you angry with me?"
 
@@ -11648,7 +11664,7 @@ Catherine answered my denial of anger saying Vania is. She did not go to her mee
 
 None of us had continued the conversation. Anahi didn't reply about her proposal of going to Las Vegas on New Year's.
 
-## 2016-09-22
+### 2016-09-22
 
 I feel different. The cloud seems familiar, but there is something peculiar, odd. It's not like I'm used to.
 
@@ -11684,7 +11700,7 @@ Do I want to talk? Will it help?
 
 I feel like I've made myself this question thousands of time before. Why can't I remember its answer?
 
-## 2016-09-23
+### 2016-09-23
 
 I had another opportunity to call Yolanda and ask about the position. This morning I could sleep more than usual. Nymeria didn't wake up until 5 in the morning. Once again at 8, when it was time for her to eat. This time it was different. After her meal and me putting her on the mat, I brought her again to her box and both of us returned to sleep.
 
@@ -11724,7 +11740,7 @@ Catherine sent me a picture that I had seen before:
 
 Someone graduated at 22 and got a job at 27; another one graduated at 27 and already had a job. There is somebody who is still single and has a child. Some, married, had to wait 10 years until being parents. There are who have a partner and love another, and there are who are lovers but nothing else, and others who are still looking for love. All works according to our personal clock. People can only live by their own rhythm. It might look like your friends are ahead of you, or behind; but they are in their moment and you in yours. Live with patience, be strong and believe in yourself. It's not late, you are not early. You are on your time.
 
-## 2016-09-24
+### 2016-09-24
 
 The 100th day came without notice. I didn't realize until today that I turned on the computer and saw the number. Was the last longest streak almost 200 or 300?
 
@@ -11766,7 +11782,7 @@ Is hope a bad idea?
 
 
 
-## 2016-09-25
+### 2016-09-25
 
 I really am trying not to cry. I am doing my best.
 
@@ -11804,7 +11820,7 @@ I think about sending her another text message, one telling her to contact me as
 
 She does love me. She probably feels awful right now. She doesn't need my help to share this pain.
 
-## 2016-09-26
+### 2016-09-26
 
 I am home. Today I did go out. Catherine picked me up by 2, just like she said yesterday after coming from her job.
 
@@ -11846,7 +11862,7 @@ Before Argana we stopped by WalMart where she bought the mason jar with the S fo
 
 Argana was so hot that we change tables and sat outside. There was two women beside us and a group of three teenagers by the wall. She took me home. Nymeria is seated on my lap again. She was asleep most of the time that I wrote this.
 
-## 2016-09-27
+### 2016-09-27
 
 Nymeria is on my legs and standing on her back legs trying to reach the desk. I decided to put her down.
 
@@ -11893,7 +11909,7 @@ Did she? I feel melancholy when I hear it, but isn't that the point?
 Who would be Penelope? I or she?
 
 
-## 2016-09-28
+### 2016-09-28
 
 Monica Gonzalez's 23rd birthday, Tomorrow
 
@@ -11928,7 +11944,7 @@ Nymeria woke in a scream. I turned to see and she started shaking and trembling.
 
 I am not alone. I have her. That's the reason I wanted her, didn't I?
 
-## 2016-09-29
+### 2016-09-29
 
 Catherine is on her way home. Tomorrow she'll work as well. She read her schedule wrong. She's in by 8 so her out time would be somewhere around one or two. She asked me to accompany her home tomorrow and stay to watch movies or something. She wants to cry. She completed a full shift of 8 hours today.
 
@@ -11966,7 +11982,7 @@ I answered Jessica's message asking for the textbooks. I invited her home and sh
 
 Catherine will be home soon. Nymeria is asleep between my feet.
 
-## 2016-09-30
+### 2016-09-30
 
 I have a headache and not much intentions of writing and finishing the words. Nymeria is biting the lining of my boxspring under the bed. I cam home and cleaned the shit and urine outside of the mat. I fed her and she almost shat again on the same place. Nymeria now is quiet after barking at me because I didn't let her bite anymore.
 
@@ -11996,7 +12012,9 @@ We ate chinese food and watched the first episode of Luke Cage. The first minute
 
 I liked today. I love her and love seeing her. She had her first paycheck today.
 
-## 2016-10-01
+## October, 2016
+
+### 2016-10-01
 
 Nymeria is on the floor. She's still with her fore legs on mine although she has just fallen from my lap. I've returned from Catherine's car outside the private. This time we didn't go out, nor she brought me home from her house. I accompanied her outside after spending the afternoon here. We were talking about Mexico. I opened up, "I'm nervous about everything that's ahead". What can I do? How can I do it? I showed her the status before when we were in the couch. Someone posted in Reddit if it counted as discrimination when he was denied information about an apartment because the building was a "family place", of mom, dad and children. He referred as his Significant Other as partner instead of girlfriend, so he assumed that the landlord took the presupposed sexual orientation as the cause of denial.
 
@@ -12044,7 +12062,7 @@ I love her. Why do I keep trying to hurt the people I love?
 
 
 
-## 2016-10-02
+### 2016-10-02
 
 I almost forgot to write today's words. I was just coming to my room after watching TV lying on the couch. Nymeria was resting on her flower by my side. I called her to come to bed and asked Luis to turn the lights. I was just about to get onto it, when I saw the computer and remembered.
 
@@ -12096,7 +12114,7 @@ It doesn't matter that I move to a foreign city. I'll have to take a new id ther
 
 Everyone will know. I'll be visible, exposed. It'll be the same as here. Except I'll be alone and vulnerable.
 
-## 2016-10-03
+### 2016-10-03
 
 "Sofia Way"marks the souvenir that Catherine holds in the picture she just sent me.
 
@@ -12138,7 +12156,7 @@ I used to fantasize how years later would we reunite and we'd be so much differe
 
 Will it ever come a time when I will feel the same way when I stumble upon a Monica's picture?
 
-## 2016-10-04
+### 2016-10-04
 
 The days keep running. Today is October fourth. When was it that I checked the updates of the feeds of webcomics? Was it more than three days ago?
 
@@ -12180,7 +12198,7 @@ Lots of things to go through, lots of steps. High, difficult and painful steps.
 
 Will freedom finally come after everything?
 
-## 2016-10-05
+### 2016-10-05
 
 I'll start the words early. I'm in the living room seeing Nymeria biting and pushing her flower pillow around. Is she playing or is she just as frustrated as I am?
 
@@ -12222,7 +12240,7 @@ Still, I didn't get to mention it in session, but I just remembered that even in
 
 Where, where in this world will I ever be?
 
-## 2016-10-06
+### 2016-10-06
 
 I am afraid I'm having suicide ideation again.
 
@@ -12281,7 +12299,7 @@ Do I? Do I really prefer to die?
 
 Will that be the only option before being homeless and turning to prostitution?
 
-## 2016-10-07
+### 2016-10-07
 
 What is it of these last days? I did not send the e-mail to the editor who asked for freelancer writers.
 
@@ -12316,7 +12334,7 @@ Catherine has her permit now. She went to do her test and passed it on her first
 Andrea will be invited, will she say something?
 
 
-## 2016-10-09
+### 2016-10-09
 
 Yesterday I cheated. I maybe could had done them, but decided not to. The last plan was that Catherine would come pick me up and we would return in her car or I could take a uber if I'd prefer to stay.
 
@@ -12402,7 +12420,7 @@ The little red balls on my feet are itching. The rash I had on my elbow is dry n
 
 Will I heal?
 
-## 2016-10-10
+### 2016-10-10
 
 Nymeria is under me, she's playing with her snake. I am watching South Park on the tv in the living room. The episode right now is the one where the gang is on a school news show and is being cancelled because of a more popular show. I've seen it already. I can focus on writing and just hear the conversations of the first half that I didn't see.
 
@@ -12446,7 +12464,7 @@ She brought the formats and tests. I can sort them according to their type and p
 
 
 
-## 2016-10-11
+### 2016-10-11
 
 Am I in an endless nightmare?
 
@@ -12496,7 +12514,7 @@ I thought about breaking up. Fifteen minutes later she sent another message:
 
 Half an hour later I answered back that I loved her and another half hour later I dreamed again with the ex that left me.
 
-## 2016-10-12
+### 2016-10-12
 
 My grandmother asked me if I have a picture of Nymeria when she was small and I just bought the flower cushion. I searched in my phone and actually have one from the day I bought the cushion. She's lying on the center, her tiny body barely covering the yellow circle. She was over almost the whole cushion. She's grown. She's changing color, from a recently born white to a cinnamon brown tint.
 
@@ -12542,7 +12560,7 @@ Why am I worried, then? Why do I keep doubting about which one to choose? Will t
 
 I have this month to decide.
 
-## 2016-10-13
+### 2016-10-13
 
 I got an answer about yesterday. I told Catherine last night to wake me up with her and don't let me fall asleep again, nor let me get to when she'd leave for job without sending the e-mails.
 
@@ -12584,7 +12602,7 @@ I don't know. I don't know.
 
 
 
-## 2016-10-14
+### 2016-10-14
 
 Three trans women have been killed in Mexico in the last two weeks. Two were in Mexico City and another inside the country. Just now I read the news about a fourth one. It's just a status update on Facebook, shared on the Trans Forum. I tried to ignore it. Not ignored, but stay skeptical. It could be a false alarm, it said it in the message itself.
 
@@ -12628,7 +12646,7 @@ She said nothing but :/
 
 
 
-## 2016-10-15
+### 2016-10-15
 
 "Have you heard the song? Joaquin Sabina, he has a song called "Black tights", like yours", it was a little awkward but I found it charming. I knew the song, of course. That might have to do with it. I'm hearing it right now. Did I know it because of my ex?
 
@@ -12674,7 +12692,7 @@ Well, yes, but not totally.
 
 I hope.
 
-## 2016-10-16
+### 2016-10-16
 
 I have things to do again. My to-do list doesn't have to be empty anymore. Last week, I just remembered, I filled some entries on Wunderlist. Haven't I done anything or did I just forgot?
 
@@ -12710,7 +12728,7 @@ I picked the Mickey t-shirt and the long black cardigan.
 
 In Galerias I looked around thinking I'd see somebody. My mother was the one who saw three different known people.
 
-## 2016-10-17
+### 2016-10-17
 
 Today was a long day of nothing.
 
@@ -12748,7 +12766,7 @@ Every time she answers my whining with an advice I feel how she doesn't understa
 
 Why worry about facing work discrimination and being a vulnerable minority looking for a job? I can just suck it up to people and be fine.
 
-## 2016-10-18
+### 2016-10-18
 
 Two more vaccines in a single application next week and her vaccines are done. A reinforcement three months later and then yearly. I guess it's gonna be alright that Nymi can stay in Catherine's house for the weekend. I don't really know why the idea excites me. She staying with her, befriending MuÃ±eca.
 
@@ -12772,7 +12790,7 @@ We walked on the beach and talked. On our way home we sang to the tunes of the s
 
 Tomorrow I'll go to the meeting at work and my session and then to the library. Will I register myself finally on the system?
 
-## 2016-10-19
+### 2016-10-19
 
 I can't remember the last time I wrote the words out of my house. Was I in Mexicali? Maybe I wrote them in the phone somewhere... Right now I'm sitting in the top floor of the library. I came here to have some free and quiet time dedicated just to study. I guessed that being here would force me to focus and do only the thing I came to do.
 
@@ -12810,7 +12828,7 @@ We returned to my room and I put an alarm for an hour later. I didn't make use o
 
 Maybe now that I've finished today's words I won't have to go late to bed.
 
-## 2016-10-20
+### 2016-10-20
 
 Today was another day of emptiness. I woke up early than usual, was it me or was it Nymeria? I fed her and took her outside. I tried to sleep again, but couldn't. Maybe for some minutes, but nothing significant. I'm sitting on the couch typing the words. Legends of Tomorrow is playing on the television. The protagonist of Suits is wearing a superhero costume. In a couple of minutes the second episodes of Supernatural will start. I watched the first one in the morning after growing tired of South Park.
 
@@ -12848,7 +12866,7 @@ I mean, I still have cravings for that food, but I don't want to go with her.
 
 Is that the reason why I want to stay on the party after her leaving, or even go without her?
 
-## 2016-10-21
+### 2016-10-21
 
 "Are you mad at me?"
 
@@ -12896,7 +12914,7 @@ Because it's my future.
 
 I wasn't able to imagine me now. Maybe that's why I am scared. Because I am wandering blind.
 
-## 2016-10-22
+### 2016-10-22
 
 Catherine is out with her parents celebreting her mom's birthday. They are on a Chinese food buffet. She sent me some messages a couple of minutes ago. We didn't talk much today.
 
@@ -12927,7 +12945,7 @@ I hadn't said nothing to my mother and the month is almost over. I would benefit
 
 Oh, because it means using the phone and introducing myself as Ivan again.
 
-## 2016-10-23
+### 2016-10-23
 
 I don't feel much like typing, writing. My mind feels blank. I haven't slept since waking up in the morning. Nymeria wakes me for breakfast and stays active the first couple of hours of the day. After that, she fells into this kind of tired and slow state. She lets herself down on my legs or her cushion or sometimes even the floor. I envy her and resent her a bit.
 
@@ -12973,7 +12991,7 @@ Why don't I go and sit with him.
 
 Is he scared, too?
 
-## 2016-10-24
+### 2016-10-24
 
 I remember always having a computer. Since before I could write there has always been a computer in my house. I was an only child in pre-school when I would enter into the "lil room" and play that game of a skiing man running away from a Yeti. It was always that end, when the Yeti appears and eats you and it's a sudden death. Game Over. That's it.
 
@@ -13001,7 +13019,7 @@ My life is immensely different to what I could had imagined. Lots of changes and
 
 And even now, after all that's happened, after living in Europe and finishing college, having a girlfriend and knowing the pain of a broken heart, being dumped and breaking up a relationship, juggling the hearts of two people, transitioning and coming out, being in a lesbian relationship... Even now I can't imagine what's going to happen next.
 
-## 2016-10-25
+### 2016-10-25
 
 I am worse than I thought. I am home with Luis by my side and Nymeria between my feet.
 
@@ -13051,7 +13069,7 @@ I don't know if I'll go tomorrow to the party.
 
 I don't know what's wrong with me.
 
-## 2016-10-26
+### 2016-10-26
 
 I haven't gone still to the pharmacy. I have until Saturday to buy the pills. I should be starting grading the tests or studying for the tests. Should I mention to them my application to the masters? I saw them. I went. Catherine did as well.
 
@@ -13091,7 +13109,7 @@ I am just six months on hormones. And from here on, I will be changing more and 
 
 Time will pass.
 
-## 2016-10-27
+### 2016-10-27
 
 So today. Since yesterday I've known that I would take Miguel to his school. I woke up by six in the morning to feed Nymeria. I took her outside like all of the mornings. My mom was still upstair getting ready. Only females were in the house. Do I count myself? I hesitated before writing the sentence. Nymeria and me, my mother and grandmother.
 
@@ -13143,7 +13161,7 @@ Am I repeating myself?
 
 Am I trapped in yet another cycle of anxious rumination?
 
-## 2016-10-28
+### 2016-10-28
 
 I think it was a week ago, when Catherine first told me she had thought about going out today. Yesterday I think I wrote how my grandma called me "son" like 20 times. There was something that made me feel like shit as the day began. Nymeria barked at me and the lights were still off, the Sun itself was still off. It was too early still to feed her, yet I had not the patience and fed her anyway. Even I ate and took my pills.
 
@@ -13175,7 +13193,7 @@ In the movie theater, getting up the escalator I watched a woman climbing the st
 
 
 
-## 2016-10-29
+### 2016-10-29
 
 I don't remember the last time I sat here in my desk and typed the words. Is it more than a week?
 
@@ -13207,7 +13225,7 @@ This is the picture of me at 6 months of hormones. This is me.
 
 And even as I type this, I can't help but smile again.
 
-## 2016-10-30
+### 2016-10-30
 
 And so another day is close to ending. Just one day for one more month to pass. Two more and the year is over. A week after its beginning did I finally call to make the hormones appointment. Here I am thinking, planning, preparing for the next step of my life. My master, my change of name are the things that are ahead.
 
@@ -13245,7 +13263,7 @@ I agreed with her and told her I was in.
 
 Would this actually lead to something? Or will it be like those patients that say they're interesting but I never heard of them?
 
-## 2016-10-31
+### 2016-10-31
 
 I'm all dressed up and ready. I should go upstairs and tell my parents I'm about to leave. We're going to Macroplaza to get a coffee or drink something. Maybe TGI Friday's or Applebees or something like that. Why am I nervous? I won't have to go through Customs border nor any CBP officers. Nobody is going to judge my appearance.
 
@@ -13285,8 +13303,9 @@ I wish Catherine wouldn't have to work, that she could had come with us since th
 It is still early. I know where will we be going but I don't know what we're going to do. It's hard going out the three of us because I worry that ANahi is not having a good time. I don't know what she wants to do and she doesn't give options. When we decide and do something I don't know if she's enjoying herself. Maybe I am a little nervous because of that. It's going to be just the two of us for a while.
 
 
+## November, 2016
 
-## 2016-11-01
+### 2016-11-01
 
 For a minute here I thought yesterday's words had not been saved. I saw the last empty box below the month of October and my heart skipped a beat. Could it be again that I would lose unintentionally the streak of more than a hundred days? Again all this effort thrown away, even after all I went through yesterday, cheating and then working up to the quota in the time before my parting.
 
@@ -13320,7 +13339,7 @@ Tomorrow I'll see Rene before the meeting.
 
 There is the pain again. I'm tired.
 
-## 2016-11-02
+### 2016-11-02
 
 Day of the Dead. I met with Rene earlier than usual. He sent me a text yesterday afternoon telling me how they had just told him that the building would close at noon and ask me if he could set my appointment at 10 in the morning instead. I agreed. I would go out anyway, I had a meeting today in the office. "Office"... it's not an office, it's a clinic, a private clinic where I am a consultant, a freelancing evaluator.
 
@@ -13351,7 +13370,7 @@ Isn't that what I wanted? Having things to do?
 How is it that now I just want to lie down and rest. Even after I slept most of the afternoon?
 
 
-## 2016-11-03
+### 2016-11-03
 
 We were sitting in a stone bench outside the Burger King, in front of the Bol-Bol, the bowling place where we had planned about going but didn't. I had my phone in my hands and in its screen appeared a news article that I noticed from Facebook. 9 trans murders in Tijuana, was titled. In it, several sentences proclaimed the same idea: Men that transition from men to women. Trans women are men. They are seen by men by the police and the journalist keep referring to them, to us, as just that.
 
@@ -13373,7 +13392,7 @@ We played mini-golf and actually had lots of fun. We even bought some tokens and
 
 Tomorrow she'll bring MuÃ±eca here and we'll take the dogs outside to meet each other. She'll take Nymeria home and care for her for the weekend. Will I miss her? How will I do? How will she?
 
-## 2016-11-04
+### 2016-11-04
 
 Catherine has Nymeria by now. I woke up half an hour before the time I feed her. I saw the watch but ignored Nymeria's cries. It was early. I turned off the lights and fell asleep for another 30 minutes. She stayed quiet as well, maybe she slept, too. I fed her and took her outside. There was a nice chilly wind. It's frustrating how the cold just last a couple of hours in the morning and then the Sun comes by noon and makes everything hot and uncomfortable. The switching temperatures give my allergies another opportunity to bother me.
 
@@ -13405,7 +13424,7 @@ Having this much make up makes me uncomfortable. I'm afraid about looking like a
 
 I don't want no one to remember that name.
 
-## 2016-11-05
+### 2016-11-05
 
 Since the last words, nothing has changed. Or, more correctly, everything is the same again. I'm sitting in the same chair and Nymeria is running in my room.
 
@@ -13443,7 +13462,7 @@ I feel anxious and restless. I feel like screaming.
 
 Just now I feel like crying.
 
-## 2016-11-06
+### 2016-11-06
 
 Last night in was the daytime change. Is that how it's written? We delayed the clocks an hour. It's not something new, it's done every year.
 
@@ -13463,7 +13482,7 @@ The journalist was something related to Monica. That part I skipped to Catherine
 
 "So, your wife, she was Sofia" was the revelation that would culminate in the dream. Except it didn't got to that. I woke up. That reality, that story, that tale came to a finish and it extinguished leaving nothing but fractured and expiring memories that are cursed to fade away.
 
-## 2016-11-08
+### 2016-11-08
 
 It's been several days now that I waited for these elections today. It's not my country, I don't live there. Although I live in the border, in the near future I probably will be moving further away from this neighbor nation. Why am I this worried? Yeah, neither of both candidates were optimal. Both had their deficiencies. I'm glad I didn't have to cast a vote to either of them. Yet, everything on play is important to me, to people like me.
 
@@ -13492,7 +13511,7 @@ I feel like I reek. I don't remember the last time I showered. These last few da
 
 What is wrong with me? Why can't I bare to be happy?
 
-## 2016-11-09
+### 2016-11-09
 
 I did not notice the empty white square in the upper side of the blank page. I had finished already when I accessed to the statistics page that I finally see the lacking number of continuous days. A sudden explosion of panic made me move from my chair. Didn't I write the words the day before? I looked around in the archive that is my memory, as if I were looking for a misplaced file. "I know it's here, it has to be around here, somewhere". Something had to be wrong. There must had been a mistake. I replayed the day before on my mind, I graded the tests, I used excel, I was tired. Didn't I write them? I didn't, did I?
 
@@ -13530,7 +13549,7 @@ I'll be alone, completely alone and vulnerable.
 
 Maybe it's not sadness I feel, but fear.
 
-## 2016-11-10
+### 2016-11-10
 
 "I see you very cheery and joyful, how are you?"
 
@@ -13568,7 +13587,7 @@ I told him that I work there and that made us talk about psychology. His mom has
 
 
 
-## 2016-11-11
+### 2016-11-11
 
 Nymeria bites me. She does it over and over, almost every time that I hold her in my arms. Is it intentional? Does she try to hurt me? I don't think so. Just now she is almost inside her food plate biting it. Her teeth hurt, they're growing. She's teething. That's how is called in children.
 
@@ -13606,7 +13625,7 @@ I guess Liliana is right. It changes nothing. Everything is alright. I am a grea
 
 I hope.
 
-## 2016-11-12
+### 2016-11-12
 
 The evaluation is done. I won't see the next patient until next friday. I have this whole week to myself and time to study. Tomorrow I'll use to rest. I don't have no plans of going out or having any sort of meeting. It will be just me time.
 
@@ -13642,7 +13661,7 @@ In the end I showered and convinced her to go. It was nice, I liked it and felt 
 
 I guess I am not as lonely as I think.
 
-## 2016-11-13
+### 2016-11-13
 
 Yesterday I read about an indie game which was having a discount. Its price was lowered to zero because of Trump's winning of the presidency in the United States. The theme of the game was about lesbians, I think. I downloaded, maybe today or later I could play it. Since yesterday I've had the plans of not doing nothing today. Leaving this Sunday as a last day of leisure. Not like the rest of days in which I do nothing ignoring the things I must do. This day was free of any things to be done.
 
@@ -13678,7 +13697,7 @@ I have reasons not to get nervous about it. In the car I told Catherine about th
 
 Procrastinating about my getting ready will just push me further away from there.
 
-## 2016-11-14
+### 2016-11-14
 
 Yesterday was a day of justified leisure. Today I did nothing without having permission to not do it. I slept, a lot. I woke up early in the morning, an hour before Nymeria's time. It was six o'clock. I went back to sleep and I opened my eyes again at 7:40. Nymeria had already shat in the mat so there was no point in taking her outside. My grandma called me son and he again but I ignored her. The pain was still there, though. I sat and ate the two tacos that were in the red towel over the kitchen counter. My mother came down from her room. There was another towel on the table so I assumed mine were the ones I took. My mother was fooled as well. There was nothing on the table and the tacos I was eating were hers. She left and I stayed in the living room for a little more than an hour. I saw the latest episode of Westworld. Last night, when my father was walking upstairs to his room, he asked both Miguel and me, although his eyes were locked with mine, if we had seen the last episode of it. Apparently it was a really good one.
 
@@ -13710,7 +13729,7 @@ I don't have to go out until Wednesday. There will be a meeting with Lili and my
 
 Friday I'll see Itaye. I have to send her the location. Am I more or less nervous about me knowing her?
 
-## 2016-11-15
+### 2016-11-15
 
 I put on Catherine's dress like when we were just going out. I turned immediately to the mirror to look at myself. I am no longer scared of my reflection.
 
@@ -13744,7 +13763,7 @@ I love her, I really do.
 
 With her and my future, why do I keep dreaming about a past that I don't want to revive?
 
-## 2016-11-16
+### 2016-11-16
 
 It's don. Months ago, or was it years?, I saw it. I sensed it and noticed it and feared it. It was just a worry that later became a real threat. I got into some messages that wasn't meant for my eyes. My fears were confirmed in a cryptic confession saying he was a trans girl. I haven't slept easily since then.
 
@@ -13780,7 +13799,7 @@ I don't want to go through it again.
 
 I can't.
 
-## 2016-11-17
+### 2016-11-17
 
 This Saturday will be Luis' school's festival. Is it winter already? School will be out in less than a month. I should be studying for the upcoming test and the procedure of admittance of the master. Will I be entering school, too, this next year?
 
@@ -13820,7 +13839,7 @@ Would I be able to convince myself?
 
 Am I able to convince myself?
 
-## 2016-11-18
+### 2016-11-18
 
 Yesterday we took the car to the shop. I drove the jetta and my dad accompanied me in his job's pick up to bring me back home after. I wrote how he woke me and I waited him to enter the door. This morning he sent me a text message saying the car was done and he would pick me up around nine in the afternoon to pick it up. I woke up sickish with my head hurting and my nose running. I took Nym outside and return to sleep again. I know I dreamed several things. I remember nothing.
 
@@ -13848,7 +13867,7 @@ We went to see the movie of Fantastic beasts. The continuation of the Harry Pott
 
 We all have a past, I guess.
 
-## 2016-11-19
+### 2016-11-19
 
 I thought Catherine would not go to then think she would, again doubting she'd make it and finally receiving her, again, inside my old elementary school.
 
@@ -13872,7 +13891,7 @@ Selfishly I don't want to go through what I went through again. I don't want to 
 
 How can it not be my fault?
 
-## 2016-11-20
+### 2016-11-20
 
 Days keep passing by like shooting cars on a highway or raindrops falling on the window in a rainy night. After not being able to sleep I took my phone and opened the photos app. I went back to the beginnings of the year and looked at the pictures of me. Month by month I reviewed my face and expressions. Seeing when and what clothes I bought. The first times I wore them and the smiles in the pictures I took. I could see the subtle changes on both my appearance and apparent mood. I see the most recent ones and compared to the first ones, I am different. I have changed.
 
@@ -13896,7 +13915,7 @@ Now, I am. I live in the second most dangerous country for trans people. The nor
 
 People might come and flirt with me and then turn hostile when they realize why I am not interested. Even walking around holding the hand of the woman I know is something that infuriates lots of people. Our relationship is not natural in their eyes. We are a menace to their values and families. My own existence is a burden and disgrace to them. They don't know me, they haven't seen me nor heard my name. And yet, I am hated.
 
-## 2016-11-21
+### 2016-11-21
 
 I saw my patient, Itayee. She's the first patient that I get by myself. I charged her my fee and attended her by my own. I feel fine. I guess...
 
@@ -13928,7 +13947,7 @@ I had thought about going into the D'volada and buy a cup of chai tea. When I go
 
 Maybe Wednesday I'll just see Rene. Maybe I will see Catherine. Who knows...
 
-## 2016-11-22
+### 2016-11-22
 
 "Has Luis eaten?" "No, he's upstairs. We talked on our way here, and when we arrived he got into bed" I sensed what that was about and stayed quiet while sitting in front of my computer at the same table. My dad went somewhere, maybe the kitchen, maybe upstairs. He left. My mother turned to me and felt the need to update me. "I asked him about his discomfort, since when it began. He said it's been around four months, since the changes started, the hair and... the puberty changes... What do you think? Should I take him to a sexologist?"
 
@@ -13970,7 +13989,7 @@ I am the thinks that. I am the one who blames myself.
 
 I thought about going to the beach after session. Having some time to myself in some coffee place to think or not-feel.
 
-## 2016-11-23
+### 2016-11-23
 
 I agreed with Catherine to go out today. She had said that she didn't really feel like going somewhere. She did want to see me, but the idea of going out, I guess it was tiring to her. I told her my plans of visiting the beach, even if I had to go alone. I had to leave my home, I could not stay here. Before falling asleep she told me she could accompany me. Later we confirmed. Today we could set the plan.
 
@@ -14004,7 +14023,7 @@ We made a stop in the coffee near the beach and we talked and chatted as we did 
 
 I agreed of having a drink with Paola tomorrow. A coffee, more than a drink. I'll explain and give her tutorship about the MMPI. I'm a little excited about it. Maybe we could talk and plan the course before my next departure.
 
-## 2016-11-24
+### 2016-11-24
 
 Even after the insight and both self and given interpretation I could not get out of bed. I woke up, again, before my mother had left. I ate while Nymeria did as well. I took her outside and return to my pills and the rest of my meal. I had agreed to meet Paola in the Starbucks of the Galerias plaza an hour after noon.
 
@@ -14036,7 +14055,7 @@ When I went to the bathroom I think I heard her vomit. After coming downstairs s
 
 This is almost as hard as before that I had opened up about me.
 
-## 2016-11-25
+### 2016-11-25
 
 I remember as if it were yesterday how I missed a day and lost the hundreds streak. Now I've finished almost three weeks since then, almost a fifth of a hundred. Time's running, blindingly fast. It's nauseating. Yesterday I finished the words at an early hour and went to bed just entering the night. Even I was surprised that I could sleep that early. It wasn't even ten o'clock when I told Catherine I would try to sleep. I know I dreamed something but I can't remember its contents.
 
@@ -14078,7 +14097,7 @@ I am really scared. I want her to come with me, I don't want to do this alone. I
 
 But I can't ask her. Less now that I know she doesn't want to.
 
-## 2016-11-26
+### 2016-11-26
 
 Nymeria is lying on her new bed by my side. The little couch-like mattress is right besides the desk. I was thinking about putting it next to my bed, but hers is almost wider than half of the free space between the bookcase and the bed. She looks small lying on there. I like seeing her biting it and turning around and then resigning herself to lying and resting.
 
@@ -14114,7 +14133,7 @@ I want people to see me. I don't want to defend who I am, just be. Why can't I j
 
 
 
-## 2016-11-27
+### 2016-11-27
 
 I moved the bed back next to mine. Every time I turned off the lights, Nymeria would get off hers and calmly waltz over mine and climb to my side. After the third time I moved the bed to just push her out. She spent the night in there. It passed silently.
 
@@ -14154,7 +14173,7 @@ This Wednesday I'll see Catherine when we'll go to Lili's meeting. It's next wee
 
 
 
-## 2016-11-28
+### 2016-11-28
 
 I woke up half an hour before it was time to get up. I can't remember if I tried covering myself again with the green blanket. If I did, I should had woken up in the middle of the night drowning in sweat and took it off. I slept the time until 7. In my dreams I was in some kind of school, was it the same building that I told Catherine I keep visiting in the nights when I sleep? I looked for a place to sit and realized I was wearing a school skirt. It was weird and unfamiliar having to worry about keeping my legs closed in a class setting. Something happened in it, maybe the classmates, maybe the teacher, I just remember the dread of worrying if they could notice I was different.
 
@@ -14190,7 +14209,7 @@ She said she looked at the info and was a little excited at first before she saw
 
 I never stopped feeling nervous and anxious.
 
-## 2016-11-29
+### 2016-11-29
 
 I waited before returning to bed and sleeping again.
 
@@ -14234,7 +14253,7 @@ That's the thing, though, I would reply later with tears in my eyes.
 
 I want to, but feel sick and guilty, because I can't.
 
-## 2016-11-30
+### 2016-11-30
 
 I'm almost finished with Trigonometry. Two more themes and I'm done. I could continue with Statistics and actually review something that will be in the test. 4th of February. As I told Catherine over tea, I ought to talk with my parents as soon as possible about what am I , are we, going to do next year.
 
@@ -14258,7 +14277,9 @@ We ate in Hornero, a kind of fancy pizza place next to El Cafe del Mundo. From t
 
 Maybe later.
 
-## 2016-12-01
+## December, 2016
+
+### 2016-12-01
 
 I am in front of the computer, just after returning from talking with both my grandma and my mother. I was in the couch watching the new episode of The Big Bang Theory when I eavesdropped on their conversation. My mom has now the number of the sexologist. She is not the one her therapist had mentioned. The first mentioned one was a male, a homosexual man who knew since he was a child. Karla Minguela. I've heard that name before. She teaches Sexuality in the Faculty. People love her and recommend her. I guess I am fine with that decision. She mentioned another name, another recommendation, this was for a family constellation. As I heard that I told her not to go to those kind of things.
 
@@ -14282,7 +14303,7 @@ Just two months.
 
 Less than ten weeks before I am there, before I leave.
 
-## 2016-12-02
+### 2016-12-02
 
 I'm home. This morning I didn't have the opportunity to return to bed and sleep some more. I'm exhausted and so tired I could just forget about the words and rest about reality, about everything. I showered as soon as I finished the two tacos my grandma made me and swallowed my pills. For a minute I doubted that my mom would shower as well and someone of us would be late. When I climbed the stairs I saw her in her room already changed. I got in and got ready. When I got out she had already left and I had time left.
 
@@ -14316,7 +14337,7 @@ I didn't know if I would finish the words. I guess I just did.
 
 It's not even time for Nymeria's dinner and I want to lie on the bed.
 
-## 2016-12-03
+### 2016-12-03
 
 I have the Khan page of Stattistics in another window just playing the video in the background. At least I can hear the things and concepts that I supposedly already know. For instance, the first video about what questions are statistical and which aren't.
 
@@ -14346,7 +14367,7 @@ In Target I bought a blouse and a dark red hoodie. Luis bought a Pokemon X game,
 
 That was really nice.
 
-## 2016-12-04
+### 2016-12-04
 
 It's been more than a week, has it reached the month?, since I met with Paola for coffee. We talked then about the shop, the course I could offer. The one she proposed on the spot for the next day did not materialize into nothing. She told me to make the poster and start offering on the social pages. Today it's done. She has it now and will upload it in any moment. I feel like when I was in high school and had just finished a flyer or some project, drunk with pride and creativity.
 
@@ -14368,7 +14389,7 @@ I tried changing the name, the picture, anything, but the app didn't let me. I t
 
 My father gave me the money for the week and my mom the one for the month's therapy and 500 extra. I should go tomorrow to River plaza to make a deposit in the bank and buy the pill cutter. My pill organizer is empty. I should fill it.
 
-## 2016-12-05
+### 2016-12-05
 
 I found it extremely difficult to get out of bed in the afternoon. I've been taking the upped dosage of antidepressants and yet I don't think I've noticed a significant difference. I did get up in the morning to take my pills and eat breakfast and feed Nymi and take her outside. I, eagerly, returned to bed and let her climb to my side. Maybe an hour or an hour and a half passed before I actually fell asleep. I know I dreamed something. I dreamed lots of things. Lots of vivid and complicated narratives of a fictional reality.
 
@@ -14391,13 +14412,13 @@ I started to get excited again.
 I saw I* for the last session of applications. She spent most of the hour answering the MMPI. Tomorrow will be the party of the office. I won't see Catherine until then. I can still go early to the bank and do the things I have to. I don't know what I'm going to wear. This Friday is the Christmas party of the gang. I have to buy the ingredients and make the potato salad I promised. Wednesday I'll make the list.
 
 
-## 2016-12-06
+### 2016-12-06
 
 I don't know if I'll be here before midnight. If I have to cheat, tomorrow I'll write double.
 
 Party.
 
-## 2016-12-07
+### 2016-12-07
 
 So I cheated. I don't really remember the last time I didn't truthfully wrote the seven hundred words. Yesterday I didn't get up until later in the afternoon. I went to shower and to the bank. I did not wear make up the first trip out like on Monday. The trip to the bank was infuriating and annoying. Since realizing the day before that I had gone to the wrong bank I looked for the location of the right one. I noticed how there weren't any in the plaza where I had gone Monday nor in the Galerias one. There was one, however, on the neighborhood two streets to the right.
 
@@ -14435,7 +14456,7 @@ In the morning I made public the flyer of the course. More than twenty people ha
 
 Maybe it will be a success. Maybe I will get some money. Maybe I am not really that useless. Maybe I can survive.
 
-## 2016-12-08
+### 2016-12-08
 
 After the missing day, I am again at one month. 30 days. My parents are not home. They left maybe an hour ago. My dad came before my mother and he entered with a roses in his hands. When my mom arrived, they agreed to going to the movies. They will probably are going to have sex. If I were in their place I would not really go to the movies, I would go to a nice motel and enjoy the company of my wife.
 
@@ -14461,7 +14482,7 @@ Why did Paola not invite her boyfriend? A thought cross my mind. How would it fe
 
 Is that really that possible? Enough to even think about it?
 
-## 2016-12-09
+### 2016-12-09
 
 Today is the day of the party, the Christmas party. I woke up un the early morning as usual. I had put an alarm to wake me up by 7, but I think I did not need it. I feed the dog and took her outside. My grandma told me there was a plate of eggs for me in the kitchen. I ate and took my pills. I was awake before my mother left. She told me to put the camera to charge. I did and the tiny yellow light next to the battery started flashing as I plugged the cable in. I let it there and went to get ready. I shaved part of my legs and body without shaving cream. I shaved my face but now I have some black spots around my mouth.
 
@@ -14487,7 +14508,7 @@ I ran. I didn't want to know, not today.
 
 For now I guess I'll sleep an hour before getting ready and leaving.
 
-## 2016-12-10
+### 2016-12-10
 
 The day after tomorrow I'll have to give the report of the evaluation to my patient and, before that, meet and start the evaluation with the new patient. She, is her a she?, is the trans patient that Lili told me so long about. Am I nervous about her? Lili talked me about her and asked me if I was ready. And yet, all the other patients are the one that have been harder.
 
@@ -14519,7 +14540,7 @@ We cleaned up and waited for the uber to pick us up. Chevica waited with us. I g
 
 In the morning Luis came to my room and asked me if I was going to the United States. I didn't even think about it before I declined. I think they bought some of the Christmas gifts. Grandma went as well. It's just less than a month that my sentri is valid. Just until my 24th birthday.
 
-## 2016-12-11
+### 2016-12-11
 
 Again I almost forgot about doing the words. Just now I'm returning from an open Excel workshop where I'm editing the appearance of the spreadsheet to interpret the psych tests. The flyer of the course is still online and I am still receiving some likes. People are interested but they don't pay or ask for the inscription. I am thinking about setting up some sort of offer. It's the Holidays. I could offer 20% off until the end of this year. That is an incentive to actually pay. There is a benefit for doing it before a certain date. And once you have made a payment, you force yourself to actually attend.
 
@@ -14551,7 +14572,7 @@ I like having the songs on my ipod.
 
 The book is still unread. I have progressed more than as I used to with the other one, but it's not enough.
 
-## 2016-12-12
+### 2016-12-12
 
 All but three files have been downloaded. There is just one who's still not achievable, the other two are just incomplete.
 
@@ -14587,7 +14608,7 @@ Is it that I don't want to, or that I don't dare to?
 
 My grandma has come downstairs and sat with her. They're whispering. Is it that?
 
-## 2016-12-13
+### 2016-12-13
 
 Even after years, I never finished passing the journal I kept on my phone to the notebook. I think the last days I have are from my trip to Portugal. When I used to write manually the journal of when I was in high school, and meeting Monica, every time I would get caught up un the mood I had writing the text. Passing the scripts caused me numerous arguments and fights with my ex.
 
@@ -14614,7 +14635,7 @@ Why am I nervous?
 The year is ending. Time is faster than ever.
 
 
-## 2016-12-15
+### 2016-12-15
 
 I cheated again in the words. Yesterday I was at the bar, sitting besides Catherine when I grabbed the phone from my purse and copy/pasted the word "cheat" while Jhonny was singing. Or was he still backstage and we were waiting?
 
@@ -14646,7 +14667,7 @@ Tomorrow I'll se both the endo and then my patient.
 
 I am scared and nervous. Will I explain my plans to him?
 
-## 2016-12-16
+### 2016-12-16
 
 I'm lying on my bed under the covers. I have already changed clothes into my black and cozier pajamas. The lights are off and Nymeria is asleep on her bed out in the living room. I'm tired and sleepy.
 
@@ -14686,7 +14707,7 @@ I thought I could wait for Catherine to see her patient and then let her took me
 
 She told me why was she upset that Luis hadn't told her themselves, "I asked him, he said 'because I didn't want you to think I was a cheap copy of Sofia"
 
-## 2016-12-17
+### 2016-12-17
 
 Today will mark the 50 continues day again. Though, do I really deserve to be proud about that accomplishment? I cheated a couple of nights ago. Last times I considered doing double the words the next day to compensate, maybe that would be fair and enough. This time I didn't. I continued writing but stopped halfway. Yesterday was it that I did the words in my bed under the sheets with the intention of not having to get up later and being able to fall asleep right there and then.
 
@@ -14713,7 +14734,7 @@ Time keeps running as fast as ever. I should be starting to redact the letter of
 I'm nervous, and a little scared
 
 
-## 2016-12-18
+### 2016-12-18
 
 I bought a set of pajama pants red of Gryffindor. When I saw them I immediately thought of Catherine. We haven't chatted much today.
 
@@ -14743,7 +14764,7 @@ I took a picture of me while I waited for Nymeria to shit. I should clean her fe
 
 My father gave me the money of the week. Maybe I'll get the extra one from the sessions, if I don't postpone them.
 
-## 2016-12-19
+### 2016-12-19
 
 Today is the day of the first session of Luis. I don't know what happened in there, I don't know what was said or what new has developed. What happened besides that today?
 
@@ -14768,7 +14789,7 @@ I told 11 I would be going the day of their birthday. I had mentioned yesterday,
 
 Will they, all of them, really miss me? Who will miss whom the most?
 
-## 2016-12-20
+### 2016-12-20
 
 Catherine came and went. Yesterday we agreed of meeting today, we could do something cheap without paying anything. She came with the idea of coming home, but rectified herself saying she knows how I am not really comfortable staying home. It was yesterday in fact that I passed several weeks to the agenda, just that same week or couple of days of cancelled meetings and gatherings and postponed plans and void days. It was like a confirmation of that reaffirmed memories. I don't feel the same way. I told her it was fine. Today after showering I told Luis about moving the wii downstairs, maybe we could all play together.
 
@@ -14790,7 +14811,7 @@ Four days until Christmas. Tomorrow is twenty-first, Thursday and Friday and we'
 
 I still have to decide what am I going to wear to see both of my patients and Catherine. I should try to look pretty for her. Looking pretty, when would I ever imagine that I would be worrying about that, or even enunciating those words?
 
-## 2016-12-21
+### 2016-12-21
 
 This was supposed to be an unworthy day where nothing would happen and I'd do nothing. I wore for the firs time the artesanal sweater Catherine's parents brought me from their holidays in Zacatecas. As soon as I put it on I realized it wasn't such a good idea. The weather for today wasn't as windy nor cold as the past few days. Before that, a little after eating the three tacos my grandma had prepared me, I was still in pajamas when my mother said that Miguel had just sent her a message asking if she could go pick him up. My father said something yesterday about leaving the pick up and taking with him the Mitsubishi as the brake plates were squeaking and really worn down.
 
@@ -14814,7 +14835,7 @@ Why am I watching this?
 
 
 
-## 2016-12-22
+### 2016-12-22
 
 I left today for my session with Rene. I know I had several dreams. Again they had something to do with school, with a class. Was I wearing a skirt in them? I remember the sensation of having to seat and be careful of the opening of my legs. It's so bizarre having experiences of what I should had experience as a child in my dreams. I recall as well, the image of myself having my hair tied in a high ponytail with a red colored hairband.
 
@@ -14840,7 +14861,7 @@ Tomorrow I'll see both of them and then, later in the afternoon I'll see Catheri
 
 I love the feeling of being more excited about seeing her than knowing what she got for me.
 
-## 2016-12-23
+### 2016-12-23
 
 I already had around a hundred words in this fucking page. Just now, after returning from the tab of Facebook where Anahi is spamming my Timeline the window was not framed correctly. I refreshed the site and my whole progress just deleted. To think that just some time ago I was seeing the posts in Catherine's page and felt jealousy of them.
 
@@ -14878,19 +14899,19 @@ Those are stupid reasons and not valid, how can I say them out loud, how can I t
 
 They are irrational, but they are.
 
-## 2016-12-24
+### 2016-12-24
 
 Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas
 
 
 
-## 2016-12-25
+### 2016-12-25
 
 Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas Christmas
 
 I cried today. I don't feel like writing. Merry Christmas.
 
-## 2016-12-26
+### 2016-12-26
 
 I'm home again after the Christmas holidays. It's been three long days. The first one, two nights ago, before we even left. My mother woke me up around 6 in the morning opening the door of my room to tell me that Carlos had arrived earlier, he was already at the airport. "Do you want to go?" "No, not really". I told her truthfully. I'm not sure if it's regret what I'm feeling. It'd would be nice seeing a reaction, something. I don't think I want to tell him myself, though. They returned one or two hours later. Nymeria didn't want to eat. The food was still in her plate.
 
@@ -14928,7 +14949,8 @@ When we finally got home, I changed into my sleep attire, set the bed with my ea
 
 Today we came home. I bought the ticket to the capital. It's bought, it's set. The date is finally set in stone. It hurts putting a different name, an old and forbidden one. Will there be any trouble in the airport when I show my id? I hope not. Will I hide in fear in male clothing?
 
-## 2016-12-27
+
+### 2016-12-27
 
 My aunt and uncle are here in my living room. They came as they said they would in Christmas. In a couple of hours we'll cross the border to give a ride to my cousin to the airport. He'll take a flight to Portland to visit his long distance girlfriend. Just a couple of minutes ago I saw the message from Iris. In it she asks me where did I change my pesos to euros. And if there was an issue withdrawing money from the ATM if the account is in pesos. She, as well, will go and meet his long distance boyfriend next month. Some day of January I think.
 
@@ -14962,7 +14984,7 @@ I used one of the pictures that my mother uploaded from Christmas as my new prof
 
 There are days when I looked at some pictures of mine or even my own reflection and I don't understand how anyone would ever gender me female. I see my face and can't blame my relatives or my father for keep using an outdated name. There are others, though, when I see that face, and specially that smile, and I get it. I get it why I did it. How I decided to get this way, to fight for what I want, for who I am.
 
-## 2016-12-28
+### 2016-12-28
 
 How can I type my words and eat cheetos at the same time? Is it even possible?
 
@@ -14992,7 +15014,7 @@ Ivan left a long time ago. I'm going to Mexico to finally erase him. To move on,
 
 Today my mother made the deposit to my account. I have money, some. I still don't feel ready.
 
-## 2016-12-29
+### 2016-12-29
 
 I'm ready to leave. I guess I should finish the words before asking for the ride. "Interpsique party" was written for yesterday in the agenda. When I transcripted the important dates to the notebook I got into it. The date was wrong. The party is today's Thursday instead of Wednesday. Catherine said she was not able to go because she'd be out of the city, so it was moved to today.
 
@@ -15031,4 +15053,3 @@ I remember seeing her and wondering if she was mad with me. I saw my phone and s
 But it hasn't. We haven't talked. We won't.
 
 I'll go to a party and drink.
-
