@@ -3,7 +3,7 @@
 **Private writing archive and manuscript workspace.**
 
 This repository contains the archival, curatorial, and editorial infrastructure
-for an ongoing hybrid memoir project currently titled .
+for an ongoing hybrid memoir project currently titled _What wasn't said_.
 It is built atop more than a decade of daily journals (2015–present)
 and is being shaped into a book-length manuscript that blends autobiographical
 fragments, personal essay, and autofiction.
