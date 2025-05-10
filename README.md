@@ -56,7 +56,7 @@ format conversions and editorial tracking.
 - `junegunn/goyo.vim`
 
 **External tools:**
-- `ripgrep`, `fd`, `bat, make`, `pandoc`, `xelatex`, `python3`
+- `ripgrep`, `fd`, `make`, `pandoc`, `xelatex`, `python3`
 
 ---
 
@@ -100,7 +100,6 @@ Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)**
 license.
 
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
-
 This means you may not use, share, or build upon this work without explicit
 permission.
 
