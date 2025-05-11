@@ -62,7 +62,9 @@ format conversions and editorial tracking.
 
 ## Keyboard Shortcuts (Vim)
 
-- `<Leader>ww` → Open `wiki/index.md`
+- `<Leader>ww` → Open main page `wiki/index.md`
+- `<Leader>wi` → Open log index `wiki/log/index.md`
+- `<Leader>w<Leader>w` → Open current day log entry
 - `<Leader>f` → Telescope picker for any wiki file
 - `<Leader>v` → Telescope picker for `vignettes/`
 - `<Leader>g` → Live-grep inside wiki
@@ -102,6 +104,3 @@ license.
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 This means you may not use, share, or build upon this work without explicit
 permission.
-
----
-
