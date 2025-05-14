@@ -10,6 +10,7 @@ dependencies:
   - pyyaml
   - pip
   - pandoc=2.19
+  - textstat
 
   # nvim
   - pynvim
