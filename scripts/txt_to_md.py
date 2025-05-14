@@ -13,11 +13,19 @@ import sys
 import os
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import ftfy
 import textstat
 
+
+# Project-root discovery
+SCRIPT_PATH  = Path(__file__).resolve()
+PROJECT_ROOT = SCRIPT_PATH.parent
+MD_ROOT      = PROJECT_ROOT / "journal" / "md"
+
+
+# Entry markers
 ENTRY_MARKER_1 = "------ ENTRY ------"
 ENTRY_MARKER_2 = "===== ENTRY ====="
 
@@ -249,27 +257,32 @@ def main() -> None:
     )
     p.add_argument(
         "-i", "--input", required=True,
-        help="path to pre-cleaned .txt file"
+        help="Path to pre-cleaned .txt file"
     )
     p.add_argument(
-        "-o", "--output", required=True,
-        help="root directory under which to write <year>/YYYY-MM-DD.md"
+        "-o", "--outdir",
+        default=str(MD_ROOT),
+        help=f"Root dir for output (default: {MD_ROOT})"
     )
     p.add_argument(
-        "-v", "--verbose", action="store_true",
-        help="print progress messages"
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging"
     )
     p.add_argument(
-        "-f", "--clobber", action="store_true",
-        help="overwrite existing markdown files (default: error if file exists)"
+        "-f", "--clobber",
+        action="store_true",
+        help="Overwrite existing markdown files (quiet skip otherwise)"
     )
     args = p.parse_args()
 
-    in_path = Path(args.input)
-    out_root = Path(args.output)
-    if args.verbose:
-        print(f"Reading input file: {in_path}")
-        print(f"Output root directory: {out_root}")
+    in_path  = Path(args.input)
+    out_root = Path(args.outdir)
+    verbose  = args.verbose
+    if verbose:
+        print(f"Project root:    {PROJECT_ROOT}")
+        print(f"Reading from:    {in_path}")
+        print(f"Writing to root: {out_root}")
 
 
     # --- FAILSAFES ---
@@ -289,17 +302,16 @@ def main() -> None:
         sys.exit(1)
 
     # --- PROCESS ---
-    if args.verbose:
+    if verbose:
         print("Cleaning text and splitting into entries...")
-
     raw: str = ftfy.fix_text(in_path.read_text(encoding="utf-8"))
     entries: List[List[str]] = split_entries(raw.splitlines())
-    if args.verbose:
-        print(f"Found {len(entries)} entries")
+    if verbose:
+        print(f"Found {len(entries)} entries in {in_path.name}")
 
     for entry_block in entries:
         parsed: ParsedEntry = extract_date_and_body(entry_block)
-        if args.verbose:
+        if verbose:
             print(f"Processing entry dated {parsed.date.isoformat()}")
 
         if parsed.date is None:
@@ -361,10 +373,10 @@ def main() -> None:
         out_file: Path = year_dir / f"{iso}.md"
 
         if out_file.exists() and not args.clobber:
-            sys.stderr.write(f"Warning: {out_file} already exists, skipping\n")
+            sys.stderr.write(f"Warning: {out_file} exists, skipping\n")
             continue
 
-        if args.verbose:
+        if verbose:
             action = "Overwriting" if out_file.exists() else "Writing"
             print(f"{action} file: {out_file}")
 
