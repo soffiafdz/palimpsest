@@ -1,0 +1,19 @@
+name: palimpsest
+channels:
+  - conda-forge
+dependencies:
+  # Stable version of Python
+  - python=3.10
+
+  # core runtime
+  - ftfy
+  - pyyaml
+  - pip
+  - pandoc=2.19
+
+  # nvim
+  - pynvim
+
+  # pip installs
+  - pip:
+    - pypandoc
