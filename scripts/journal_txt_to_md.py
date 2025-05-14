@@ -213,7 +213,7 @@ def reflow_para(paragraph: List[str], width: int = 80) -> List[str]:
     wrapper = textwrap.TextWrapper(
         width=width,
         replace_whitespace=False,
-        drop_whitespace=False,
+        drop_whitespace=True,
     )
     return wrapper.wrap(text)
 
@@ -227,7 +227,7 @@ def compute_metrics(text: str) -> EntryMetrics:
         - flesch_reading_ease: float, reading difficulty
     """
     wc: int = textstat.lexicon_count(text, removepunct=True)
-    rt: float = textstat.reading_time(text)
+    rt: float = textstat.reading_time(text, ms_per_char=14.69)
     fe: float = textstat.flesch_reading_ease(text)
     return EntryMetrics(wc, rt, fe)
 
@@ -254,6 +254,10 @@ def main() -> None:
     p.add_argument(
         "-o", "--output", required=True,
         help="root directory under which to write <year>/YYYY-MM-DD.md"
+    )
+    p.add_argument(
+        "-f", "--clobber", action="store_true",
+        help="overwrite existing markdown files (default: error if file exists)"
     )
     args = p.parse_args()
 
@@ -300,9 +304,10 @@ def main() -> None:
         word_count: {metrics.word_count}
         reading_time: {metrics.reading_time_min:.1f}
         reading_ease: {metrics.flesch_reading_ease:.1f}
-        status: draft
-        characters:
+        status: source
+        people:
         tags:
+        ---
         """).rstrip()
 
         # Format and reflow body
@@ -319,6 +324,7 @@ def main() -> None:
 
         md_lines: List[str] = []
         md_lines.append(fm)
+        md_lines.append("")
         md_lines.append(f"## {parsed.header}")
         md_lines.append("")
 
@@ -332,16 +338,21 @@ def main() -> None:
                 md_lines.extend(reflow_para(para))
             md_lines.append("")  # blank line after each paragraph
 
-    # --- OUTPUT ---
-    # Write to {}out_root}/<year>/YYYY-MM-DD.md
-    year_dir: Path = out_root / str(parsed.date.year)
-    year_dir.mkdir(exist_ok=True)
-    out_file: Path = year_dir / f"{iso}.md"
-    try:
-        out_file.write_text("\n".join(md_lines), encoding="utf-8")
-    except Exception as e:
-        sys.stderr.write(f"Error writing to {out_file}: {e}\n")
-        sys.exit(1)
+        # --- OUTPUT ---
+        # Write to {}out_root}/<year>/YYYY-MM-DD.md
+        year_dir: Path = out_root / str(parsed.date.year)
+        year_dir.mkdir(exist_ok=True)
+        out_file: Path = year_dir / f"{iso}.md"
+
+        if out_file.exists() and not args.clobber:
+            sys.stderr.write(f"Warning: {out_file} already exists, skipping\n")
+            continue
+
+        try:
+            out_file.write_text("\n".join(md_lines), encoding="utf-8")
+        except Exception as e:
+            sys.stderr.write(f"Error writing to {out_file}: {e}\n")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
