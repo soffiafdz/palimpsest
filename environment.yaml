@@ -5,6 +5,9 @@ dependencies:
   # Stable version of Python
   - python=3.10
 
+  # Recent version of make
+  - make=4.3
+
   # core runtime
   - ftfy
   - pyyaml
