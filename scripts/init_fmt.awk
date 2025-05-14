@@ -1,6 +1,6 @@
 #!/usr/bin/awk -f
 #
-# quick_fmt.awk — remove leading space, mark paragraphs on >2 spaces
+# init_fmt.awk — remove leading space, mark paragraphs on >2 spaces
 # and on sentence-ending + capital-start rules; preserve existing blanks.
 
 BEGIN {
