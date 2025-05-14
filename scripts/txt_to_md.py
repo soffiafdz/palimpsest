@@ -256,6 +256,10 @@ def main() -> None:
         help="root directory under which to write <year>/YYYY-MM-DD.md"
     )
     p.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="print progress messages"
+    )
+    p.add_argument(
         "-f", "--clobber", action="store_true",
         help="overwrite existing markdown files (default: error if file exists)"
     )
@@ -263,6 +267,10 @@ def main() -> None:
 
     in_path = Path(args.input)
     out_root = Path(args.output)
+    if args.verbose:
+        print(f"Reading input file: {in_path}")
+        print(f"Output root directory: {out_root}")
+
 
     # --- FAILSAFES ---
     if not in_path.exists():
@@ -281,11 +289,19 @@ def main() -> None:
         sys.exit(1)
 
     # --- PROCESS ---
+    if args.verbose:
+        print("Cleaning text and splitting into entries...")
+
     raw: str = ftfy.fix_text(in_path.read_text(encoding="utf-8"))
     entries: List[List[str]] = split_entries(raw.splitlines())
+    if args.verbose:
+        print(f"Found {len(entries)} entries")
 
     for entry_block in entries:
         parsed: ParsedEntry = extract_date_and_body(entry_block)
+        if args.verbose:
+            print(f"Processing entry dated {parsed.date.isoformat()}")
+
         if parsed.date is None:
             sys.stderr.write("Warning: skipping entry with no date\n")
             continue
@@ -347,6 +363,10 @@ def main() -> None:
         if out_file.exists() and not args.clobber:
             sys.stderr.write(f"Warning: {out_file} already exists, skipping\n")
             continue
+
+        if args.verbose:
+            action = "Overwriting" if out_file.exists() else "Writing"
+            print(f"{action} file: {out_file}")
 
         try:
             out_file.write_text("\n".join(md_lines), encoding="utf-8")
