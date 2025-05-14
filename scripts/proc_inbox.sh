@@ -14,7 +14,7 @@ ROOT=~/Documents/palimpsest
 ARCHIVE=${ROOT}/journal/archive
 INBOX=${ROOT}/journal/inbox
 TXTS=${ROOT}/journal/txt
-FORMAT_SCRIPT=${ROOT}/scripts/init_fmt.awk
+FORMAT_SCRIPT=${ROOT}/scripts/init_format.awk
 
 # centralized printf formats
 INFO_FMT="→ %s\n"
@@ -44,8 +44,14 @@ rename_file() {
     local year="${BASH_REMATCH[1]}"
     local month="${BASH_REMATCH[2]}"
     local new_name="journal_${year}_${month}.txt"
-    printf "$INFO_FMT" "renaming '$base' → '$new_name'"
-    mv -- "$file" "$INBOX/$new_name"
+    local dest="$INBOX/$new_name"
+
+    if [[ "$file" != "$dest" ]]
+    then
+      printf "$INFO_FMT" "renaming '$base' → '$new_name'"
+      mv -- "$file" "$dest"
+    fi
+
     # accumulate per-year list (newline-separated)
     year_files_map["$year"]+="$new_name"$'\n'
   else
@@ -62,10 +68,13 @@ process_year() {
   mkdir -p "$year_dir"
 
   # read the newline-separated list into an array
+  # strip final "\n" and save into an array
+  files_list="${files_list%$'\n'}"
   mapfile -t files <<< "$files_list"
 
   printf "$INFO_FMT" "processing ${#files[@]} month(s) for year $year"
   for fname in "${files[@]}"; do
+    [[ -z "$fname" ]] && continue
     local infile="$INBOX/$fname"
     local month="${fname##*_}"
     month="${month%.txt}"
@@ -74,7 +83,7 @@ process_year() {
   done
 
   local archive="$ARCHIVE/$year.zip"
-  [[ -f $archive]] && local action="updating" || local action="creating"
+  [[ -f $archive ]] && local action="updating" || local action="creating"
   printf "$INFO_FMT" "'$action' archive '$(basename "$archive")'"
   (cd "$INBOX" && zip -qu "$archive" "${files[@]}" && rm -- "${files[@]}")
 }
@@ -87,7 +96,7 @@ done
 if (( ${#year_files_map[@]} )); then
   # list of years to update
   years=("${!year_files_map[@]}")
-  printf "$INFO_FMT" "updating year(s): ${years[*]}"
+  printf "$INFO_FMT" "updating year(s): ${years[*]//$'\n'/ }"
   for yr in "${years[@]}"; do
     process_year "$yr" "${year_files_map[$yr]}"
   done
