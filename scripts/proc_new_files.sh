@@ -76,7 +76,7 @@ process_year() {
   local archive="$ARCHIVE/$year.zip"
   [[ -f $archive]] && local action="updating" || local action="creating"
   printf "$INFO_FMT" "'$action' archive '$(basename "$archive")'"
-  (cd "$INBOX" && zip -qu "$archive" "${files[@]}")
+  (cd "$INBOX" && zip -qu "$archive" "${files[@]}" && rm -- "${files[@]}")
 }
 
 # ─── MAIN ──────────────────────────────────────────────────────────────────────
