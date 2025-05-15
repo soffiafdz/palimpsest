@@ -8,14 +8,17 @@ Generate both a clean PDF and a review-notes PDF for a given year.
 import argparse
 import sys
 import tempfile
+import re
+import calendar
 from pathlib import Path
+from collections import defaultdict
 from typing import List, Sequence
 
 import pypandoc
 
 # Determine project root relative to /scripts
 SCRIPT_PATH = Path(__file__).resolve()
-PROJECT_ROOT = SCRIPT_PATH.parent
+PROJECT_ROOT = SCRIPT_PATH.parent.parent
 
 # Default locations under project root
 MD_ROOT = PROJECT_ROOT / "journal" / "md"
@@ -50,6 +53,7 @@ def write_temp_md(
     files: Sequence[Path],
     tmp_path: Path,
     year: str,
+    notes: bool = False,
     verbose: bool = False
 ) -> None:
     """
@@ -57,6 +61,7 @@ def write_temp_md(
         files: sequence of Paths to per-entry Markdown files
         tmp_path: Path to a temporary .md file to write
         year: the target year string for title
+        notes: if the markdown file will be used for the notes version
         verbose: if True, print progress messages
     output:
         None (writes concatenated Markdown to tmp_path)
@@ -67,15 +72,55 @@ def write_temp_md(
     """
     if verbose:
         print(f"Writing concatenated Markdown to {tmp_path}")
+
+    # Group daily files by month
+    months: dict[str, list[Path]] = defaultdict(list)
+    for md in sorted(files):
+        parts = md.stem.split("-")
+        if len(parts) < 2:
+            # Not viable YYYY-MM-DD format; skip
+            continue
+        _, month_str, *_ = parts
+        months[month_str].append(md)
+
     with tmp_path.open("w", encoding="utf-8") as tmp:
-        # Title page and TOC
-        tmp.write(f"% Journal Entries — {year}\n")
-        tmp.write("\\tableofcontents\n\n")
-        # Entries, each on its own page
-        for md_file in files:
+        # Per-month chapters
+        for month_str in sorted(months.keys(), key=lambda m: int(m)):
+            month_name = calendar.month_name[int(month_str)]
+
             tmp.write("\\newpage\n\n")
-            tmp.write(md_file.read_text(encoding="utf-8"))
-            tmp.write("\n\n")
+            if notes:
+                tmp.write("\\nolinenumbers\n")
+            tmp.write(f"# {month_name}, {year}\n\n")  # level-1 CH heading
+
+            # dump each daily entry in that month
+            for md_file in months[month_str]:
+                content = md_file.read_text(encoding="utf-8")
+
+                if notes:
+                    lines = content.splitlines()
+                    updated_lines = []
+                    inserted = False
+
+                    for line in lines:
+                        if line.startswith("##") and not inserted:
+                            updated_lines.append("\\nolinenumbers")
+                            updated_lines.append(line)
+                            updated_lines.append("\\setcounter{linenumber}{1}")
+                            updated_lines.append("\\linenumbers")
+                            inserted = True
+                        else:
+                            updated_lines.append(line)
+
+                    tmp.write("\n".join(updated_lines))
+                else:
+                    tmp.write(content)
+                tmp.write("\n\n")
+
+        tmp.write("\\newpage\n\n")
+        if notes:
+            tmp.write("\\nolinenumbers\n")
+        tmp.write("\\tableofcontents\n")
 
 
 def run_pandoc(
@@ -196,36 +241,59 @@ def main() -> None:
         print(f"Found {len(files)} files")
 
     # Build a temporary concatenated Markdown
-    tmp_file = Path(
-        tempfile.NamedTemporaryFile(suffix=".md", delete=False).name
-    )
-    write_temp_md(files, tmp_file, year)
-
     # Common Pandoc args: TOC, margins, font size
     extra_common = [
-        "--toc", "--toc-depth", "2",
+        "--metadata", f"title: Palimpsest — {year}",
+        "--metadata", "author: Sofía Fernández",
+        "--metadata", "date:",
         "--variable", "geometry:margin=1in",
         "--variable", "fontsize:11pt",
     ]
 
-        # 1) Clean PDF
+    # 1) Clean PDF
     if preamble_clean.is_file():
+        tmp_file_clean = Path(
+            tempfile.NamedTemporaryFile(suffix=".md", delete=False).name
+        )
+        write_temp_md(files, tmp_file_clean, year, False, verbose)
         clean_pdf: Path = pdf_root / f"{year}.pdf"
-        run_pandoc(tmp_file, clean_pdf, preamble_clean, extra_common)
+        run_pandoc(
+            tmp_file_clean,
+            clean_pdf,
+            preamble_clean,
+            extra_common,
+            verbose
+        )
         print(f"→ Clean PDF: {clean_pdf}")
 
     # 2) Review-notes PDF
     if preamble_notes.is_file():
+        tmp_file_notes = Path(
+            tempfile.NamedTemporaryFile(suffix=".md", delete=False).name
+        )
+        write_temp_md(files, tmp_file_notes, year, True, verbose)
         notes_pdf: Path = pdf_root / f"{year}-notes.pdf"
         extra_notes = extra_common + ["--variable", "geometry:margin=1.25in"]
-        run_pandoc(tmp_file, notes_pdf, preamble_notes, extra_notes)
+        run_pandoc(
+            tmp_file_notes,
+            notes_pdf,
+            preamble_notes,
+            extra_notes,
+            verbose
+        )
         print(f"→ Review PDF: {notes_pdf}")
 
     # Clean up temporary file
     try:
-        tmp_file.unlink()
-        if verbose:
-            print(f"[verbose] Removed temporary file {tmp_file}")
+        if tmp_file_clean.is_file():
+            tmp_file_clean.unlink()
+            if verbose:
+                print(f"Removed temporary file {tmp_file_clean}")
+
+        if tmp_file_notes.is_file():
+            tmp_file_notes.unlink()
+            if verbose:
+                print(f"Removed temporary file {tmp_file_notes}")
     except Exception:
         pass
 

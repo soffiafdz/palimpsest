@@ -34,9 +34,9 @@ YEAR_PDFS :=                                  \
 .PHONY: all inbox clean-md clean-pdf help $(YEARS)
 
 # ─── Per-year PDF targets ────────────────────────────────────────────────────
-$(YEARS): %:          \
-    $(PDF_DIR)/$@.pdf \
-    $(PDF_DIR)/$@-notes.pdf
+$(YEARS): %:         \
+    $(PDF_DIR)/%.pdf \
+    $(PDF_DIR)/%-notes.pdf
 
 # ─── Default: build everything ───────────────────────────────────────────────
 all: inbox $(YEAR_PDFS)
