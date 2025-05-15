@@ -33,13 +33,13 @@ YEAR_PDFS :=                                  \
 # ─── Phony targets ───────────────────────────────────────────────────────────
 .PHONY: all inbox clean-md clean-pdf help $(YEARS)
 
+# ─── Default: build everything ───────────────────────────────────────────────
+all: inbox $(YEAR_PDFS)
+
 # ─── Per-year PDF targets ────────────────────────────────────────────────────
 $(YEARS): %:         \
     $(PDF_DIR)/%.pdf \
     $(PDF_DIR)/%-notes.pdf
-
-# ─── Default: build everything ───────────────────────────────────────────────
-all: inbox $(YEAR_PDFS)
 
 # ─── 1) import new months from inbox ─────────────────────────────────────────
 inbox:

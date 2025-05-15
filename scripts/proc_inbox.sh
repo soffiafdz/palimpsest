@@ -25,7 +25,11 @@ mkdir -p "$ARCHIVE" "$TXTS"
 shopt -s nullglob
 
 printf "$INFO_FMT" "looking for new files in '$INBOX'"
-mapfile -t src_files < <(printf '%s\n' "$INBOX"/*.txt)
+src_files=()
+for f in "$INBOX"/*.txt
+do
+  [[ -e "$f" ]] && src_files+=("$f")
+done
 
 if (( ${#src_files[@]} == 0 )); then
   printf "$INFO_FMT" "'$INBOX' is empty. Nothing to update."
