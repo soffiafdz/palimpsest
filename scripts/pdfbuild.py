@@ -127,7 +127,8 @@ def run_pandoc(
     src_md: Path,
     dest_pdf: Path,
     preamble: Path,
-    extra_args_base: Sequence[str],
+    metadata: Sequence[str],
+    extra_args: Sequence[str],
     verbose: bool = False
 ) -> None:
     """
@@ -135,7 +136,8 @@ def run_pandoc(
         src_md: Path to the source Markdown file
         dest_pdf: Path where the PDF should be written
         preamble: Path to a LaTeX preamble file to include
-        extra_args_base: list of additional Pandoc arguments
+        metadata: List with title, author, date
+        extra_args: list of additional Pandoc arguments
             (e.g. ["--toc", "--toc-depth", "2"])
         verbose: if True, print progress messages
     output:
@@ -148,7 +150,8 @@ def run_pandoc(
         "--from", "markdown",
         "--pdf-engine", "xelatex",
         "--include-in-header", str(preamble),
-    ] + list(extra_args_base)
+        "--variable", "documentclass:extarticle"
+    ] + list(metadata) + list(extra_args)
     if verbose:
         cmd_str = "pandoc " + " ".join(args) + f" {src_md} -o {dest_pdf}"
         print(f"Running Pandoc command:\n  {cmd_str}")
@@ -242,12 +245,18 @@ def main() -> None:
 
     # Build a temporary concatenated Markdown
     # Common Pandoc args: TOC, margins, font size
-    extra_common = [
-        "--metadata", f"title: Palimpsest — {year}",
-        "--metadata", "author: Sofía Fernández",
-        "--metadata", "date:",
-        "--variable", "geometry:margin=1in",
-        "--variable", "fontsize:11pt",
+    metadata = [
+        "--metadata", "title: Palimpsest",
+        "--metadata", f"date: {year} — {int(year) - 1993} years old",
+        "--metadata", "author: Sofía F."
+    ]
+
+    extra_clean = [
+        "--variable", "fontsize:12pt",
+    ]
+
+    extra_notes = [
+        "--variable", "fontsize:14pt",
     ]
 
     # 1) Clean PDF
@@ -261,7 +270,8 @@ def main() -> None:
             tmp_file_clean,
             clean_pdf,
             preamble_clean,
-            extra_common,
+            metadata,
+            extra_clean,
             verbose
         )
         print(f"→ Clean PDF: {clean_pdf}")
@@ -273,11 +283,11 @@ def main() -> None:
         )
         write_temp_md(files, tmp_file_notes, year, True, verbose)
         notes_pdf: Path = pdf_root / f"{year}-notes.pdf"
-        extra_notes = extra_common + ["--variable", "geometry:margin=1.25in"]
         run_pandoc(
             tmp_file_notes,
             notes_pdf,
             preamble_notes,
+            metadata,
             extra_notes,
             verbose
         )
