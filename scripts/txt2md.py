@@ -47,11 +47,9 @@ class EntryMetrics:
     """
     word_count: count of words in the entry
     reading_time_min: estimated reading time in minutes
-    flesch_reading_ease: Flesch Reading Ease score (Easy: >80; Diff: <49)
     """
     word_count: int
     reading_time_min: float
-    flesch_reading_ease: float
 
 
 def ordinal(n: int) -> str:
@@ -232,12 +230,12 @@ def compute_metrics(text: str) -> EntryMetrics:
     output: EntryMetrics
         - word_count: int, number of words
         - reading_time_min: float, minutes to read
-        - flesch_reading_ease: float, reading difficulty
     """
     wc: int = textstat.lexicon_count(text, removepunct=True)
-    rt: float = textstat.reading_time(text, ms_per_char=14.69)
-    fe: float = textstat.flesch_reading_ease(text)
-    return EntryMetrics(wc, rt, fe)
+    # texstat.reading_time gives inflated result.
+    # Calculate manually with 260 WPM
+    rt: float = int / 260
+    return EntryMetrics(wc, rt)
 
 
 def main() -> None:
@@ -324,18 +322,36 @@ def main() -> None:
 
         # Build YAML front-matter
         iso: str = parsed.date.isoformat()
-        weekday: str = parsed.date.strftime("%A")
+        # Metadata:
+        # textmetrics:      word-count & reading time (self-explanatory)
+        # status:
+        #   unreviewed:     self-explanatory
+        #   discard:        not usable
+        #   reference:      important events, but content unusable
+        #   fragments:      potentially useful lines/snippets
+        #   source:         content will be rewritten
+        #   quote:          (some) content will be adapted as is
+        #   curated:        has been adapted already
+        # excerpted:        content has been pulled into manuscript draft
+        # people:           list of people referenced (besides narrator)
+        # themes:           self-explanatory
+        # tags:             self-explanatory
+        # manuscript_link:  where has been utilised on
+        # notes:            reviewer notes
         fm: str = textwrap.dedent(f"""\
-        ---
-        date: {iso}
-        day_of_week: {weekday}
-        word_count: {metrics.word_count}
-        reading_time: {metrics.reading_time_min:.1f}
-        reading_ease: {metrics.flesch_reading_ease:.1f}
-        status: source
-        people:
-        tags:
-        ---
+            ---
+            date: {iso}
+            word_count: {metrics.word_count}
+            reading_time: {metrics.reading_time_min:.1f}
+            status: source
+            excerpted: false
+            people: []
+            themes: []
+            tags: []
+            manuscript_link:
+              -
+            notes: |
+            ---
         """).rstrip()
 
         # Format and reflow body
@@ -359,8 +375,7 @@ def main() -> None:
         for para in paras:
             # if any line ends with '\' → emit raw for hard-breaks
             if any(l.endswith("\\") for l in para):
-                for l in para:
-                    md_lines.extend(para)
+                md_lines.extend(para)
             else:
                 # normal prose → wrap to 80 cols
                 md_lines.extend(reflow_para(para))
