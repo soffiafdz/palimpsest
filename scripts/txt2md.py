@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 """
-journal_txt_to_md.py
+txt2md.py
+-------------------
+Scan pre-cleaned 750words .txt (monthly) exports.
+Generate daily Markdown files for Vimwiki reference and PDF generation.
 
-Convert pre-cleaned 750words .txt exports (monthly) into per-entry Markdown
-files under source/<year>/ with rich metadata front-matter.
+    journal/
+    ├── txt/
+    │   └── <YYYY>
+    │       └── <YYYY-MM>.md
+    └── md/
+        └── <YYYY>
+            └── <YYYY-MM-DD>.md
+Notes
+==============
+- Manages two types of 750w metadata entry formats.
+- Adds YAML front-matter metadata entries to be filled after review.
 """
 import argparse
 import re
@@ -14,22 +26,26 @@ import os
 from pathlib import Path
 from dataclasses import dataclass
 from typing import List, Optional, Sequence
+from textstat import lexicon_count
 
 import ftfy
-import textstat
 
 
-# Project-root discovery
-SCRIPT_PATH  = Path(__file__).resolve()
-PROJECT_ROOT = SCRIPT_PATH.parent
-MD_ROOT      = PROJECT_ROOT / "journal" / "md"
+# ------------------------------------------------------------------------
+# Config
+# ------------------------------------------------------------------------
+# TODO: Check that these are correct
+ROOT: Path    = Path(__file__).resolve().parents[2]
+MD_ROOT: Path = ROOT / "journal" / "md"
+
+# 750w Entry markers
+MARKER1: str  = "------ ENTRY ------"
+MARKER2: str  = "===== ENTRY ====="
 
 
-# Entry markers
-ENTRY_MARKER_1 = "------ ENTRY ------"
-ENTRY_MARKER_2 = "===== ENTRY ====="
-
-
+# ------------------------------------------------------------------------
+# Dataclasses
+# ------------------------------------------------------------------------
 @dataclass
 class ParsedEntry:
     """
@@ -52,6 +68,9 @@ class EntryMetrics:
     reading_time_min: float
 
 
+# ------------------------------------------------------------------------
+# Ordinal dates
+# ------------------------------------------------------------------------
 def ordinal(n: int) -> str:
     """
     input: n, an integer day of month
@@ -69,6 +88,9 @@ def ordinal(n: int) -> str:
     return "th"
 
 
+# ------------------------------------------------------------------------
+# Month -> Daily entries
+# ------------------------------------------------------------------------
 def split_entries(lines: List[str]) -> List[List[str]]:
     """
     input: lines, a list of strings (each raw line from the .txt)
@@ -78,8 +100,8 @@ def split_entries(lines: List[str]) -> List[List[str]]:
     """
     entries: List[List[str]] = []
     cur: List[str] = []
-    marker = re.compile(
-        rf"^(?:{re.escape(ENTRY_MARKER_1)}|{re.escape(ENTRY_MARKER_2)})\s*$"
+    marker: str = re.compile(
+        rf"^(?:{re.escape(MARKER1)}|{re.escape(MARKER2)})\s*$"
     )
     for ln in lines:
         if marker.match(ln):
@@ -93,6 +115,9 @@ def split_entries(lines: List[str]) -> List[List[str]]:
     return entries
 
 
+# ------------------------------------------------------------------------
+# Parse Entry metadata
+# ------------------------------------------------------------------------
 def extract_date_and_body(entry: List[str]) -> ParsedEntry:
     """
     input: entry, a list of lines belonging to one journal entry
@@ -175,6 +200,9 @@ def extract_date_and_body(entry: List[str]) -> ParsedEntry:
     return ParsedEntry(header_text, body_lines, date_obj)
 
 
+# ------------------------------------------------------------------------
+# Clean Entry
+# ------------------------------------------------------------------------
 def format_body(lines: List[str]) -> List[str]:
     """
     input: lines, list of raw body lines (strings)
@@ -209,6 +237,9 @@ def format_body(lines: List[str]) -> List[str]:
     return out
 
 
+# ------------------------------------------------------------------------
+# Wrap entry -> <80characters
+# ------------------------------------------------------------------------
 def reflow_para(paragraph: List[str], width: int = 80) -> List[str]:
     """
     input: paragraph, a list of lines (strings) without blank lines
@@ -224,6 +255,9 @@ def reflow_para(paragraph: List[str], width: int = 80) -> List[str]:
     return wrapper.wrap(text)
 
 
+# ------------------------------------------------------------------------
+# Word-count and calculate approx reading time
+# ------------------------------------------------------------------------
 def compute_metrics(text: str) -> EntryMetrics:
     """
     input: str, complete text for the entry
@@ -231,13 +265,55 @@ def compute_metrics(text: str) -> EntryMetrics:
         - word_count: int, number of words
         - reading_time_min: float, minutes to read
     """
-    wc: int = textstat.lexicon_count(text, removepunct=True)
+    wc: int = lexicon_count(text, removepunct=True)
     # texstat.reading_time gives inflated result.
     # Calculate manually with 260 WPM
     rt: float = int / 260
     return EntryMetrics(wc, rt)
 
 
+# ----------------------------------------------------------------------
+# CLI
+# ----------------------------------------------------------------------
+def parse_args() -> argparse.Namespace:
+    """
+    Arguments:
+        - input: Pre-cleaned monthly .txt export.
+        - outdir: Directory to save the yearly directory with Markdown entries.
+        - verbose: Logging.
+        - clobber: Overwrite existing files.
+    """
+    p = argparse.ArgumentParser(
+        description="Convert pre-cleaned .txt into per-entry Markdown files"
+    )
+
+    # --- ARGUMENTS ---
+    p.add_argument(
+        "-i", "--input", required=True,
+        help="Path to pre-cleaned .txt file"
+    )
+    p.add_argument(
+        "-o", "--outdir",
+        default=str(MD_ROOT),
+        help=f"Root dir for output (default: {MD_ROOT})"
+    )
+    p.add_argument(
+        "-f", "--clobber",
+        action="store_true",
+        help="Overwrite existing markdown files (quiet skip otherwise)"
+    )
+    p.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging"
+    )
+
+    return p.parse_args()
+
+
+# ----------------------------------------------------------------------
+# Main
+# ----------------------------------------------------------------------
 def main() -> None:
     """
     CLI entrypoint:
@@ -249,36 +325,12 @@ def main() -> None:
       - calculates metadata
       - writes the resulting Markdown to output
     """
-    # --- ARGUMENTS ---
-    p = argparse.ArgumentParser(
-        description="Convert pre-cleaned .txt into per-entry Markdown files"
-    )
-    p.add_argument(
-        "-i", "--input", required=True,
-        help="Path to pre-cleaned .txt file"
-    )
-    p.add_argument(
-        "-o", "--outdir",
-        default=str(MD_ROOT),
-        help=f"Root dir for output (default: {MD_ROOT})"
-    )
-    p.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
-    )
-    p.add_argument(
-        "-f", "--clobber",
-        action="store_true",
-        help="Overwrite existing markdown files (quiet skip otherwise)"
-    )
-    args = p.parse_args()
-
+    args = parse_args()
     in_path  = Path(args.input)
     out_root = Path(args.outdir)
     verbose  = args.verbose
     if verbose:
-        print(f"Project root:    {PROJECT_ROOT}")
+        print(f"Project root:    {ROOT}")
         print(f"Reading from:    {in_path}")
         print(f"Writing to root: {out_root}")
 
@@ -400,7 +452,6 @@ def main() -> None:
         except Exception as e:
             sys.stderr.write(f"Error writing to {out_file}: {e}\n")
             sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
