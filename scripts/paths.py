@@ -5,9 +5,9 @@ paths.py
 Set of pathlib Paths to be loaded by the modules.
 Generate daily Markdown files for Vimwiki reference and PDF generation.
 
-    ├── bin
 ├── journal
 │   ├── archive
+│   ├── bin
 │   ├── inbox
 │   ├── latex
 │   ├── md
@@ -48,25 +48,25 @@ Notes
 from pathlib import Path
 
 # Project directory
-ROOT: Path = Path(__file__).resolve().parents[2]
+ROOT: Path = Path(__file__).resolve().parents[1]
 
 # Scripts directories
 TXT2MD_DIR: Path = ROOT / "scripts" / "txt2md"
 MD2WIKI_DIR: Path = ROOT / "scripts" / "md2wiki"
 
 # Journal directories
-ARCHIVE_DIR: PATH = ROOT / "journal" / "archive"
+ARCHIVE_DIR: Path = ROOT / "journal" / "archive"
 INBOX_DIR: Path = ROOT / "journal" / "inbox"
 LATEX_DIR: Path = ROOT / "journal" / "latex"
-MD_DIR: PATH = ROOT / "journal" / "md"
-TXT_DIR: PATH = ROOT / "journal" / "txt"
-PDF_DIR: PATH = ROOT / "journal" / "pdf"
+MD_DIR: Path = ROOT / "journal" / "md"
+TXT_DIR: Path = ROOT / "journal" / "txt"
+PDF_DIR: Path = ROOT / "journal" / "pdf"
 
 # Wiki directories
-WIKI_DIR: PATH = ROOT / "wiki"
-INVENTORY_DIR: PATH = WIKI_DIR / "inventory"
-PEOPLE_DIR: PATH = WIKI_DIR / "people"
-SNIPPETS_DIR: PATH = WIKI_DIR / "snippets"
+WIKI_DIR: Path = ROOT / "wiki"
+INVENTORY_DIR: Path = WIKI_DIR / "inventory"
+PEOPLE_DIR: Path = WIKI_DIR / "people"
+SNIPPETS_DIR: Path = WIKI_DIR / "snippets"
 
 # Vignettes
 VIGNETTES_DIR: Path = ROOT / "vignettes"
