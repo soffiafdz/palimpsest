@@ -13,8 +13,7 @@ BEGIN {
     sub(/^[ \t]+/, "", line)
     sub(/[ \t]+$/, "", line)
 
-    # 2) skipe metadata header
-    # 1a) skip metadata lines entirely
+    # 2) skip metadata lines entirely
      if ( line ~ /^(Date|Words|Minutes):/ ) {
          print line
          prev = line

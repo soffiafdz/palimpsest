@@ -14,7 +14,7 @@ ROOT=~/Documents/palimpsest
 ARCHIVE=${ROOT}/journal/archive
 INBOX=${ROOT}/journal/inbox
 TXTS=${ROOT}/journal/txt
-FORMAT_SCRIPT=${ROOT}/scripts/init_format.awk
+FORMAT_SCRIPT=${ROOT}/bin/init_format.awk
 
 # centralized printf formats
 INFO_FMT="→ %s\n"
