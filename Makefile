@@ -14,9 +14,9 @@ endif
 
 # ─── Variables ────────────────────────────────────────────────────────────────
 PYTHON    := python3
-TXT2MD    := scripts/txt2md.py
-BUILD_PDF := scripts/pdfbuild.py
-PROC_INBX := scripts/proc_inbox.sh
+TXT2MD    := scripts/txt2md/txt2md.py
+MD2PDF    := scripts/md2pdf/md2pdf.py
+PROC_INBX := bin/proc_inbox.sh
 
 TXT_DIR   := journal/txt
 MD_DIR    := journal/md
@@ -43,14 +43,15 @@ $(YEARS): %:         \
 
 # ─── 1) import new months from inbox ─────────────────────────────────────────
 inbox:
-	$(Q)echo "→ processing inbox"
+	$(Q)echo "→  processing inbox"
 	$(Q)bash $(PROC_INBX)
 
 # ─── 2) month‐to‐daily conversion + stamp ────────────────────────────────────
 # journal/md/<y>/<y>_<m>.stamp depends on journal/txt/<y>/<y>_<m>.txt
 $(MD_DIR)/%.stamp: $(TXT_DIR)/%.txt
-	$(Q)echo "→ converting month $*"
+	$(Q)echo "→  converting month $*"
 	$(Q)mkdir -p $(dir $@)
+	$(Q)PYTHONPATH=$(PWD) \
 	$(Q)$(PYTHON) $(TXT2MD) --input $< --outdir $(MD_DIR) $(PY_VERBOSE)
 	$(Q)touch $@
 
@@ -59,9 +60,10 @@ define BUILD_YEAR_PDF
 $(PDF_DIR)/$(1).pdf $(PDF_DIR)/$(1)-notes.pdf &:  \
 	$(patsubst $(TXT_DIR)/%.txt,$(MD_DIR)/%.stamp,\
 		$(wildcard $(TXT_DIR)/$(1)/*.txt))
-	$(Q)echo "→ building PDF for year $(1)"
+	$(Q)echo "→  building PDF for year $(1)"
 	$(Q)mkdir -p $(PDF_DIR)
-	$(Q)$(PYTHON) $(BUILD_PDF) $(1)               \
+	$(Q)PYTHONPATH=$(PWD)                         \
+	$(Q)$(PYTHON) $(MD2PDF) $(1)                  \
 		--indir $(MD_DIR)                         \
 		--outdir $(PDF_DIR)                       \
 		$(PY_VERBOSE)
@@ -73,11 +75,11 @@ $(foreach Y,$(YEARS),$(eval $(call BUILD_YEAR_PDF,$Y)))
 # ─── Cleaning ────────────────────────────────────────────────────────────────
 # Remove ONLY the markdown or ONLY the PDFs (won’t touch the other)
 clean-md:
-	$(Q)echo "→ cleaning generated Markdown"
+	$(Q)echo "→  cleaning generated Markdown"
 	$(Q)rm -rf $(MD_DIR)
 
 clean-pdf:
-	$(Q)echo "→ cleaning generated PDFs"
+	$(Q)echo "→  cleaning generated PDFs"
 	$(Q)rm -rf $(PDF_DIR)
 
 # ─── Help ────────────────────────────────────────────────────────────────────
