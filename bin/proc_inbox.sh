@@ -17,8 +17,8 @@ TXTS=${ROOT}/journal/txt
 FORMAT_SCRIPT=${ROOT}/bin/init_format.awk
 
 # centralized printf formats
-INFO_FMT="→ %s\n"
-COUNT_FMT="→ %d %s\n"
+INFO_FMT="→  %s\n"
+COUNT_FMT="→  %d %s\n"
 
 # ─── PREPARE ─────────────────────────────────────────────────────────────────
 mkdir -p "$ARCHIVE" "$TXTS"
