@@ -6,35 +6,39 @@ Set of pathlib Paths to be loaded by the modules.
 Generate daily Markdown files for Vimwiki reference and PDF generation.
 
 ├── journal
-│   ├── archive
-│   ├── bin
-│   ├── inbox
-│   ├── latex
-│   ├── md
-│   │   ├── 2015
-│   │   ├── 2016
-│   │   ├── 2017
-│   │   ├── 2018
-│   │   ├── 2019
-│   │   ├── 2021
-│   │   ├── 2022
-│   │   ├── 2023
-│   │   ├── 2024
-│   │   └── 2025
-│   ├── pdf
-│   └── txt
-│       ├── 2015
-│       ├── 2016
-│       ├── 2017
-│       ├── 2018
-│       ├── 2019
-│       ├── 2021
-│       ├── 2022
-│       ├── 2023
-│       ├── 2024
-│       └── 2025
+│   ├── archive
+│   ├── bin
+│   ├── inbox
+│   ├── latex
+│   ├── md
+│   │   ├── 2015
+│   │   ├── 2016
+│   │   ├── 2017
+│   │   ├── 2018
+│   │   ├── 2019
+│   │   ├── 2021
+│   │   ├── 2022
+│   │   ├── 2023
+│   │   ├── 2024
+│   │   └── 2025
+│   ├── pdf
+│   ├── txt
+│   │   ├── 2015
+│   │   ├── 2016
+│   │   ├── 2017
+│   │   ├── 2018
+│   │   ├── 2019
+│   │   ├── 2021
+│   │   ├── 2022
+│   │   ├── 2023
+│   │   ├── 2024
+│   │   └── 2025
+│   └── metadata.json
 ├── scripts
-│   └── md2wiki
+│   ├── md2json
+│   ├── md2pdf
+│   ├── md2wiki
+│   └── txt2md
 ├── vignettes
 └── wiki
     ├── log
@@ -61,6 +65,9 @@ LATEX_DIR: Path = ROOT / "journal" / "latex"
 MD_DIR: Path = ROOT / "journal" / "md"
 TXT_DIR: Path = ROOT / "journal" / "txt"
 PDF_DIR: Path = ROOT / "journal" / "pdf"
+
+# Metadata JSON
+METADATA_JSON: Path = ROOT / "journal" / "metadata.json"
 
 # Wiki directories
 WIKI_DIR: Path = ROOT / "wiki"

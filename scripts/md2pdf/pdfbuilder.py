@@ -33,7 +33,7 @@ import tempfile
 import warnings
 from collections import defaultdict
 from pathlib import Path
-from typing import Sequence, Optional
+from typing import Dict, List, Sequence, Optional
 
 # --- Third party ---
 from pypandoc import convert_file
@@ -53,7 +53,9 @@ class PdfBuilder:
         preamble_notes (Path, optional):
             Path to the LaTeX preamble file for notes.
         verbose (bool, optional): If True, print progress messages.
-        clobber (bool, optional): If True, overwrite existing PDFs.
+        clobber (bool, optional):
+            If True, overwrite existing notes PDF.
+            Regular PDF is always overwritten.
 
     Methods:
         gather_md():
@@ -169,7 +171,7 @@ class PdfBuilder:
             print(
                 f"[PdfBuilder] →  Concatenating {len(files)} files"
             )
-        months: dict[str, list[Path]] = defaultdict(list)
+        months: Dict[str, List[Path]] = defaultdict(list)
         for md in sorted(files):
             parts = md.stem.split("-")
             if len(parts) < 2:
@@ -192,6 +194,21 @@ class PdfBuilder:
                 f"[PdfBuilder] →  Writing Markdown file on {str(tmp_path)}"
             )
 
+        annotations_preamble: List[str] = [
+            "",
+            "- **Status**: discard | reference | fragments | source | quote",
+            "- **People**: "
+" __________________________________________________________________________",
+            "- **Tags**: "
+" ____________________________________________________________________________",
+            "- **Themes**: "
+" _________________________________________________________________________",
+            "- **Epigraph**: "
+" ________________________________________________________________________",
+            "",
+            "---",
+            "",
+        ]
         with tmp_path.open("w", encoding="utf-8") as tmp:
             # Per-month chapters
             for month_str in sorted(months.keys(), key=lambda m: int(m)):
@@ -204,6 +221,7 @@ class PdfBuilder:
                 tmp.write(f"# {month_name}, {self.year}\n\n")
 
                 # dump each daily entry in that month
+                first_day = True
                 for md_file in months[month_str]:
                     content = md_file.read_text(encoding="utf-8")
 
@@ -214,13 +232,19 @@ class PdfBuilder:
 
                         for ln in lines:
                             if ln.startswith("##") and not inserted:
+                                if not first_day:
+                                    updated_lines.append("\\newpage")
                                 updated_lines.extend([
                                     "\\nolinenumbers",
-                                    ln,
+                                    ln
+                                ])
+                                updated_lines.extend(annotations_preamble)
+                                updated_lines.extend([
                                     "\\setcounter{linenumber}{1}",
                                     "\\linenumbers"
                                 ])
                                 inserted = True
+                                first_day = False
                             else:
                                 updated_lines.append(ln)
 
@@ -344,7 +368,8 @@ class PdfBuilder:
         ]
 
         extra_notes = [
-            "--variable", "fontsize:14pt",
+            "--variable", "fontsize:12pt",
+            "--variable", "linestretch:1.9"
         ]
 
         # Gather Markdown files
@@ -357,33 +382,34 @@ class PdfBuilder:
         # 1) Clean PDF
         clean_pdf: Path = self.pdf_dir / f"{self.year}.pdf"
         if self.preamble.is_file():
-            if clean_pdf.exists() and not self.clobber:
-                 warnings.warn(
-                    "Clean PDF already exists and clobber is not set: "
-                    f"{clean_pdf}. Skipping.",
+            if clean_pdf.exists():
+                warnings.warn(
+                    f"Warning: Clean PDF already exists: {clean_pdf}. "
+                    "Overwritting it.",
                     UserWarning
                 )
-            else:
-                tmp_file_clean = Path(
-                    tempfile.NamedTemporaryFile(suffix=".md", delete=False).name
-                )
-                self.write_temp_md(files, tmp_file_clean)
-                self.run_pandoc(
-                    in_md=tmp_file_clean,
-                    out_pdf=clean_pdf,
-                    preamble=self.preamble,
-                    metadata=metadata,
-                    extra_args=extra_clean
-                )
-                if self.verbose:
-                    print(f"[PdfBuilder] →  Clean PDF: {str(clean_pdf)}")
+                clean_pdf.unlink()
+
+            tmp_file_clean = Path(
+                tempfile.NamedTemporaryFile(suffix=".md", delete=False).name
+            )
+            self.write_temp_md(files, tmp_file_clean)
+            self.run_pandoc(
+                in_md=tmp_file_clean,
+                out_pdf=clean_pdf,
+                preamble=self.preamble,
+                metadata=metadata,
+                extra_args=extra_clean
+            )
+            if self.verbose:
+                print(f"[PdfBuilder] →  Clean PDF: {str(clean_pdf)}")
 
         # 2) Review-notes PDF
         notes_pdf: Path = self.pdf_dir / f"{self.year}-notes.pdf"
         if self.preamble_notes.is_file():
             if notes_pdf.exists() and not self.clobber:
                  warnings.warn(
-                    "Notes PDF already exists and clobber is not set: "
+                    "Warning: Notes PDF already exists and clobber is not set: "
                     f"{notes_pdf}. Skipping.",
                     UserWarning
                 )
