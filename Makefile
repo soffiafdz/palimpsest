@@ -4,16 +4,18 @@
 # make          → quiet
 # make V=1      → verbose
 V ?= 0
-ifeq ($(V),1)
-  Q :=
-  PY_VERBOSE = -v
+ifeq ($(V),2)
+    Q :=
+    PY_VERBOSE = -v
+else ifeq ($(V),1)
+    Q := @
+    PY_VERBOSE = -v
 else
-  Q := @
-  PY_VERBOSE =
+    Q := @
+    PY_VERBOSE =
 endif
 
 # ─── Variables ────────────────────────────────────────────────────────────────
-PYTHON    := python3
 TXT2MD    := scripts/txt2md/txt2md.py
 MD2PDF    := scripts/md2pdf/md2pdf.py
 PROC_INBX := bin/proc_inbox.sh
@@ -52,7 +54,7 @@ $(MD_DIR)/%.stamp: $(TXT_DIR)/%.txt
 	$(Q)echo "→  converting month $*"
 	$(Q)mkdir -p $(dir $@)
 	$(Q)PYTHONPATH=$(PWD) \
-	$(Q)$(PYTHON) $(TXT2MD) --input $< --outdir $(MD_DIR) $(PY_VERBOSE)
+	python3 $(TXT2MD) --input $< --outdir $(MD_DIR) $(PY_VERBOSE)
 	$(Q)touch $@
 
 # ─── 3) yearly‐PDF builds ────────────────────────────────────────────────────
@@ -63,7 +65,7 @@ $(PDF_DIR)/$(1).pdf $(PDF_DIR)/$(1)-notes.pdf &:  \
 	$(Q)echo "→  building PDF for year $(1)"
 	$(Q)mkdir -p $(PDF_DIR)
 	$(Q)PYTHONPATH=$(PWD)                         \
-	$(Q)$(PYTHON) $(MD2PDF) $(1)                  \
+	python3 $(MD2PDF) $(1)                        \
 		--indir $(MD_DIR)                         \
 		--outdir $(PDF_DIR)                       \
 		$(PY_VERBOSE)
