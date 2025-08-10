@@ -58,6 +58,7 @@ class TxtEntry:
             - excerpted (bool): Whether content has been used on manuscript.
             - epigraph (str): If/type of epigraph utilised.
             - people (Set[str]): Names of referenced people (besides narrator).
+            - references (Set[str]): Dates/events referenced in the entry.
             - themes (Set[str]): Thematic tags for the entry.
             - tags (Set[str]): Additional tags or keywords.
             - manuscript_links (Set[str]): Link(s) to manuscript usage.
@@ -181,8 +182,8 @@ class TxtEntry:
         Including a YAML front-matter with the metadata:
             date:             self-explanatory
             word_count:       self-explanatory
-            reading_time      calculated reading time in minutes
-            status:
+            reading_time:     calculated reading time in minutes
+            status
               unreviewed:     self-explanatory
               discard:        not usable
               reference:      important events, but content unusable
@@ -190,15 +191,16 @@ class TxtEntry:
               source:         content will be rewritten
               quote:          (some) content will be adapted as is
             excerpted:        content has been pulled into manuscript draft
-            epigraph:
+            epigraph
               reference:      fragment of a book|song|movie|tv series
               quote:          a quotation from someone in real life
               intention:      something that I planned/intended to say
               poem:           a poem
             people:           list of people referenced (besides narrator)
+            references:       list of dates/events referenced (incl. same day)
             themes:           self-explanatory
             tags:             self-explanatory
-            manuscript_links:  where has been utilised on
+            manuscript_links: where has been utilised on
             notes:            reviewer notes
         """
         def yaml_block_list(items):
@@ -208,6 +210,7 @@ class TxtEntry:
             return "\n" + "\n".join(f"  - {item}" for item in items)
 
         people_yaml = yaml_block_list(self.metadata.get("people", []))
+        references_yaml = yaml_block_list(self.metadata.get("references", []))
         themes_yaml = yaml_block_list(self.metadata.get("themes", []))
         tags_yaml = yaml_block_list(self.metadata.get("tags", []))
         links_yaml = yaml_block_list(self.metadata.get("manuscript_links", []))
@@ -232,6 +235,7 @@ class TxtEntry:
             excerpted: {excerpted_yaml}
             epigraph: {self.metadata.get('epigraph', '')}
             people: {people_yaml}
+            references: {references_yaml}
             themes: {themes_yaml}
             tags: {tags_yaml}
             manuscript_links: {links_yaml}

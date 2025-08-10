@@ -32,23 +32,24 @@ class MetaEntry(TypedDict, total=False):
         word_count (int): Total word count of the entry.
         reading_time (float): Estimated reading time in minutes.
         status (str): Curation status:
-            unreviewed:     self-explanatory
-            discard:        not usable
-            reference:      important events, but content unusable
-            fragments:      potentially useful lines/snippets
-            source:         content will be rewritten
-            quote:          (some) content will be adapted as is
-        excerpted (bool): Whether content has been excerpted for manuscript.
-        epigraph (str): If/what type of epigraph is used:
-            reference:      fragment of a book|song|movie|tv series
-            quote:          a quotation from someone in real life
-            intention:      something that I planned/intended to say
-            poem:           a poem
-        people (Set[str]): Names of referenced people (besides narrator).
-        themes (Set[str]): Thematic tags for the entry.
-        tags (Set[str]): Additional tags or keywords.
-        manuscript_links (Set[str]): Link(s) or identifier(s) to manuscript usage.
-        notes (str): Reviewer notes or curation comments.
+            unreviewed:         self-explanatory
+            discard:            not usable
+            reference:          important events, but content unusable
+            fragments:          potentially useful lines/snippets
+            source:             content will be rewritten
+            quote:              (some) content will be adapted as is
+        excerpted (bool):       Whether content will be used for manuscript.
+        epigraph (str):         If/what type of epigraph is used:
+            reference:          fragment of a book|song|movie|tv series
+            quote:              a quotation from someone in real life
+            intention:          something that I planned/intended to say
+            poem:               a poem
+        people (Set[str]):      Names of referenced people (besides narrator).
+        references (Set[str]):  Dates/Events references (including that day).
+        themes (Set[str]):      Thematic tags for the entry.
+        tags (Set[str]):        Additional tags or keywords.
+        manuscript_links (Set[str]): Link(s) or identifier(s) to final usage.
+        notes (str):            Reviewer notes or curation comments.
     """
     date: str
     word_count: int
@@ -57,6 +58,7 @@ class MetaEntry(TypedDict, total=False):
     excerpted: bool
     epigraph: str
     people: Set[str]
+    references: Set[str]
     themes: Set[str]
     tags: Set[str]
     manuscript_links: Set[str]
@@ -86,8 +88,8 @@ class MetadataRegistry:
         all(): Return the full metadata mapping.
 
     Static methods:
-        serialize_metaentry(MetaEntry): Converts sets -> lists
-        deserialize_metaenry(Dict[str], Any):Converts (back) lists -> sets
+        serialize_metaentry(MetaEntry):         Converts sets -> lists
+        deserialize_metaenry(Dict[str], Any):   Converts (back) lists -> sets
     """
     def __init__(self, path: Path):
         """
@@ -158,7 +160,7 @@ class MetadataRegistry:
         Convert lists back to sets for set fields after loading from JSON.
         """
         fields_as_sets: Set[str] = {
-            "people", "themes", "tags", "manuscript_links"
+            "people", "references", "themes", "tags", "manuscript_links"
         }
         return {
             k: set(v) if k in fields_as_sets and isinstance(v, list) else v
@@ -234,6 +236,7 @@ class MetadataValidator:
             "excerpted": False,
             "epigraph": "",
             "people": set(),
+            "references": set(),
             "themes": set(),
             "tags": set(),
             "manuscript_links": set(),
@@ -285,6 +288,7 @@ class MetadataValidator:
             "excerpted": bool,
             "epigraph": str,
             "people": (set, list),
+            "references": (set, list),
             "themes": (set, list),
             "tags": (set, list),
             "manuscript_links": (set, list),
