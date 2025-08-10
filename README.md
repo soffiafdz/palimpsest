@@ -29,18 +29,24 @@ format conversions and editorial tracking.
 
 ## Directory Structure
 
+- `bin/` - Standalone scripts/utilities
 - `journal/` - Source material (personal journal)
-  - `raw-txt/` – Original 750words daily text exports
-  - `proto-md/` – Yearly Markdown files generated via `txt2md.py`
-  - `yearly-pdf/` – Build target: printable/annotatable PDFs
+  - `annotations/` - Marked PDFs
+  - `archive/` - Compressed original 750words daily text exports
+  - `inbox/` - Where to download 750words exports to be processed
+  - `latex/` - Preamble style LaTeX files for compiling PDFs
+  - `md/` – Markdown files generated via `txt2md.py` containing Metadata.
+  - `pdf/` – Printable/annotatable PDFs
+  - `txt/` – Pre-cleaned text exports by year
+- `Makefile` – Custom build system for txt→md→pdf, plus tagging and cleaning
+- `scripts/` – Conversion and inventory scaffolding tools
 - `vignettes/` – Curated, rewritten excerpts for potential manuscript inclusion
 - `wiki/` – Internal documentation and planning:
   - `index.md` – Dashboard hub
   - `inventory.md` – Checklist of reviewed entries
+  - `log\{YYYY-MM-DD.md}` - Log entries
   - `structure.md` – Book outline (sections → chapters → vignettes)
   - `themes.md`, `tags.md`, `people.md`, `timeline.md` – Supporting documents
-- `scripts/` – Conversion and inventory scaffolding tools
-- `Makefile` – Custom build system for txt→md→pdf, plus tagging and cleaning
 
 ---
 
@@ -75,14 +81,12 @@ format conversions and editorial tracking.
 
 ## Usage Overview
 
-1. `make proto` → Convert raw text to Markdown.
-2. `make pdf` → Generate yearly PDFs for reading/annotation.
-3. Annotate on tablet or desktop; update `inventory.md`.
-4. Curate fragments into `vignettes/`, tag and outline structure.
-5. Iterate on narrative arc, rewrite vignettes, typeset manuscript.
+1. `make {YEAR}` → Convert raw text to Markdown/PDF.
+2. Annotate on tablet or desktop; update `inventory.md`.
+3. Curate fragments into `vignettes/`, tag and outline structure.
+4. Iterate on narrative arc, rewrite vignettes, typeset manuscript.
 
-Optional tasks: create final Typst file, build CI integration, select image
-inserts.
+Optional tasks: create final Typst file, build CI integration, select image inserts.
 
 ---
 
