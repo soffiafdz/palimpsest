@@ -31,6 +31,7 @@ class Entry(WikiEntity):
 
     Used to compute presence, extract themes, and feed into wiki population logic.
     """
+
 @dataclass
 class Entry(WikiEntity):
     """
@@ -38,7 +39,7 @@ class Entry(WikiEntity):
     - stem:   Stem (basename)
     - year:   <YYYY>
     - month:  Name of the month
-    - status: <unreviewed/discard|reference|fragments|source|quote|curated>
+    - status: <unreviewed/discard|reference|fragments|source|quote>
     - people: People involved/mentioned (besides narrator)
     - tags:   Tags
     - themes: Themes
