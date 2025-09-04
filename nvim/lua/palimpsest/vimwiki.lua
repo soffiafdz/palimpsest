@@ -19,6 +19,8 @@ function M.setup()
 	else
 		vim.g.vimwiki_list = { palimpsest_wiki }
 	end
+	vim.cmd("unlet g:vimwiki_syntaxlocal_vars")
+	vim.cmd([[call vimwiki#vars#init()]])
 end
 
 return M
