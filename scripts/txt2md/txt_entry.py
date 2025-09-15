@@ -87,17 +87,16 @@ class TxtEntry:
     def from_lines(
         cls,
         lines: List[str],
-        # TODO: Change this JSON implementation to SQLite/SQLAlchemy
-        # metadata_registry: Optional[MetadataRegistry] = None,
+        metadata_registry: Optional[MetadataRegistry] = None,
         verbose: bool = False,
     ) -> "TxtEntry":
         if verbose:
             print("[TxtEntry] →  Parsing single entry lines...")
 
         # Parse entry
-        date, header, raw_body = cls._parse_entry(lines)
+        date_obj, header, raw_body = cls._parse_entry(lines)
         if verbose:
-            print(f"[TxtEntry] →  Header: {header}, Date: {date}")
+            print(f"[TxtEntry] →  Header: {header}, Date: {date_obj}")
 
         # Format and reflow body
         raw_body = format_body(raw_body)
@@ -109,7 +108,21 @@ class TxtEntry:
         if verbose:
             print(f"[TxtEntry] →  Entry is {wc} words long; ~{rt} min reading time")
 
-        metadata: MetaEntry = {"word_count": wc, "reading_time": rt}
+        if metadata_registry and date_obj:
+            key = date_obj.isoformat()
+            meta = metadata_registry.get(key)
+            if verbose:
+                if meta:
+                    print(f"[TxtEntry] →  Found metadata in registry for {key}")
+                else:
+                    print(
+                        "[TxtEntry] →  No metadata found in registry for "
+                        f"{key}, creating new"
+                    )
+            meta["word_count"] = wc
+            meta["reading_time"] = rt
+        else:
+            meta: MetaEntry = {"word_count": wc, "reading_time": rt}
 
         paragraphs: List[List[Tuple[str, bool]]] = []
         buffer: List[Tuple[str, bool]] = []
@@ -133,7 +146,7 @@ class TxtEntry:
         if verbose:
             print(f"[TxtEntry] →  Paragraphs processed: {len(paragraphs)}")
 
-        return cls(header=header, date=date, body=body, metadata=metadata)
+        return cls(header=header, date=date_obj, body=body, metadata=meta)
 
     # -- Outer --
     @classmethod

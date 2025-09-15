@@ -50,29 +50,28 @@ def parse_args() -> argparse.Namespace:
     )
 
     # --- ARGUMENTS ---
+    p.add_argument("-i", "--input", required=True, help="Path to pre-cleaned .txt file")
     p.add_argument(
-        "-i", "--input", required=True,
-        help="Path to pre-cleaned .txt file"
-    )
-    p.add_argument(
-        "-o", "--outdir",
+        "-o",
+        "--outdir",
         default=str(MD_DIR),
-        help=f"Root dir for output (default: {str(MD_DIR)})"
+        help=f"Root dir for output (default: {str(MD_DIR)})",
     )
     p.add_argument(
-        "-m", "--metadata",
+        "-m",
+        "--metadata",
         default=str(METADATA_JSON),
-        help=f"Path for metadata JSON file (default: {str(METADATA_JSON)})"
+        help=f"Path for metadata JSON file (default: {str(METADATA_JSON)})",
     )
     p.add_argument(
-        "-f", "--force", "--clobber",
+        "-f",
+        "--force",
+        "--clobber",
         action="store_true",
-        help="Overwrite existing markdown files (quiet skip otherwise)"
+        help="Overwrite existing markdown files (quiet skip otherwise)",
     )
     p.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
     return p.parse_args()
 
@@ -91,17 +90,16 @@ def main() -> None:
       - writes the resulting Markdown to output
     """
     try:
-        args    = parse_args()
-        input   = Path(args.input)
-        meta    = Path(args.metadata)
-        outdir  = Path(args.outdir)
+        args = parse_args()
+        input = Path(args.input)
+        meta = Path(args.metadata)
+        outdir = Path(args.outdir)
         verbose = args.verbose
         if verbose:
-            print(f"→  Project root:    {str(ROOT)}")
-            print(f"→  Reading from:    {str(input)}")
-            print(f"→  Metadata from:   {str(meta)}")
-            print(f"→  Writing to root: {str(outdir)}")
-
+            print(f"[TxtEntry] →  Project root:    {str(ROOT)}")
+            print(f"[TxtEntry] →  Reading from:    {str(input)}")
+            print(f"[TxtEntry] →  Metadata from:   {str(meta)}")
+            print(f"[TxtEntry] →  Writing to root: {str(outdir)}")
 
         # --- Failsafes ---
         if not input.exists():
@@ -120,33 +118,30 @@ def main() -> None:
 
         # --- Process ---
         if verbose:
-            print("→  Cleaning text and splitting into entries...")
+            print("[TxtEntry] → Cleaning text and splitting into entries...")
+
+        registry: MetadataRegistry | None = None
+        if meta is not None:
+            registry = MetadataRegistry(meta)
+            if registry and verbose:
+                print(f"[TxtEntry] →  Metadata file loaded from {str(meta)}")
 
         txt_entries: List[TxtEntry] = TxtEntry.from_file(
-            input,
-            metadata_registry=meta,
-            verbose=verbose
+            input, metadata_registry=registry, verbose=verbose
         )
 
         if verbose:
-            print(f"→  Found {len(txt_entries)} entries in {input.name}")
-
-        registry = None
-        if meta:
-            registry = MetadataRegistry(meta)
-            if registry and verbose:
-                print(f"→  Metadata will be loaded from {str(meta)}")
+            print(f"[TxtEntry] →  Found {len(txt_entries)} entries in {input.name}")
 
         for txt_entry in txt_entries:
             if txt_entry.date is None:
-                warnings.warn(
-                    "Warning: skipping entry with no date",
-                    UserWarning
-                )
+                warnings.warn("Warning: skipping entry with no date", UserWarning)
                 continue
 
             if verbose:
-                print(f"→  Processing entry dated {txt_entry.date.isoformat()}")
+                print(
+                    f"[TxtEntry] →  Processing entry dated {txt_entry.date.isoformat()}"
+                )
 
             # Load metadata from JSON registry
             if registry:
@@ -163,15 +158,12 @@ def main() -> None:
             out_file: Path = year_dir / f"{txt_entry.date.isoformat()}.md"
 
             if out_file.exists() and not args.force:
-                warnings.warn(
-                    f"Warning: {out_file.name} exists, skipping",
-                    UserWarning
-                )
+                warnings.warn(f"Warning: {out_file.name} exists, skipping", UserWarning)
                 continue
 
             if verbose:
                 action = "Overwriting" if out_file.exists() else "Writing"
-                print(f"→  {action} file: {out_file.name}")
+                print(f"[TxtEntry] →  {action} file: {out_file.name}")
 
             try:
                 out_file.write_text(txt_entry.to_markdown(), encoding="utf-8")
