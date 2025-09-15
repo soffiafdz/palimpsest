@@ -51,6 +51,7 @@ class MetaEntry(TypedDict, total=False):
         manuscript_links (Set[str]): Link(s) or identifier(s) to final usage.
         notes (str):            Reviewer notes or curation comments.
     """
+
     date: str
     word_count: int
     reading_time: float
@@ -91,6 +92,7 @@ class MetadataRegistry:
         serialize_metaentry(MetaEntry):         Converts sets -> lists
         deserialize_metaenry(Dict[str], Any):   Converts (back) lists -> sets
     """
+
     def __init__(self, path: Path):
         """
         Initialize and (if possible) load the registry from file.
@@ -98,7 +100,6 @@ class MetadataRegistry:
         self.path = path
         self.validator = MetadataValidator()
         self.load()
-
 
     def load(self) -> None:
         """
@@ -112,17 +113,14 @@ class MetadataRegistry:
         try:
             with self.path.open("r", encoding="utf-8") as f:
                 raw = json.load(f)
-            self._data = {
-                k: self.deserialize_metaentry(v) for k, v in raw.items()
-            }
+            self._data = {k: self.deserialize_metaentry(v) for k, v in raw.items()}
         except Exception as e:
             warnings.warn(
                 f"[MetadataRegistry] Could not load {str(self.path)}: {e}\n"
                 "Metadata will be initialized as empty.",
-                UserWarning
+                UserWarning,
             )
             self._data = {}
-
 
     def save(self) -> None:
         """
@@ -139,7 +137,6 @@ class MetadataRegistry:
                 f"[MetadataRegistry] Could not save to {str(self.path)}: {e}"
             ) from e
 
-
     @staticmethod
     def serialize_metaentry(entry: MetaEntry) -> Dict[str, Any]:
         """
@@ -153,20 +150,22 @@ class MetadataRegistry:
                 result[k] = v
         return result
 
-
     @staticmethod
     def deserialize_metaentry(entry: Dict[str, Any]) -> MetaEntry:
         """
         Convert lists back to sets for set fields after loading from JSON.
         """
         fields_as_sets: Set[str] = {
-            "people", "references", "themes", "tags", "manuscript_links"
+            "people",
+            "references",
+            "themes",
+            "tags",
+            "manuscript_links",
         }
         return {
             k: set(v) if k in fields_as_sets and isinstance(v, list) else v
             for k, v in entry.itmes()
         }
-
 
     def get(self, key: str) -> MetaEntry:
         """
@@ -174,7 +173,6 @@ class MetadataRegistry:
         Returns {} if not found.
         """
         return self._data.get(key, self.validator.normalize({}))
-
 
     def update(self, key: str, new_data: Dict[str, Any]) -> None:
         """
@@ -188,7 +186,6 @@ class MetadataRegistry:
                     v = set(v)
                 old[k] = v
         self._data[key] = old
-
 
     def all(self) -> Dict[str, MetaEntry]:
         """
@@ -228,6 +225,7 @@ class MetadataValidator:
         - extract_yaml_frontmatter(md_file):
             Extractr metadata from a MD file.
     """
+
     def __init__(self):
         self.defaults = {
             "word_count": 0,
@@ -242,7 +240,6 @@ class MetadataValidator:
             "manuscript_links": set(),
             "notes": "",
         }
-
 
     def normalize(self, meta: Dict[str, Any]) -> MetaEntry:
         """
@@ -260,7 +257,6 @@ class MetadataValidator:
                 meta[k] = v
         return meta  # type: ignore
 
-
     def is_default(self, meta: Dict[str, Any]) -> bool:
         """
         Return True if all values (except id fields) are defaults.
@@ -274,7 +270,6 @@ class MetadataValidator:
                 if val != default_val:
                     return False
         return True
-
 
     def validate(self, meta: Dict[str, Any]) -> bool:
         """
@@ -296,21 +291,20 @@ class MetadataValidator:
         }
         ok = True
         # for k, T in required_fields.items():
-            # if k not in meta or not isinstance(meta[k], T):
-                # warnings.warn(
-                    # f"Warning: missing or invalid required field '{k}'",
-                    # UserWarning
-                # )
-                # ok = False
+        # if k not in meta or not isinstance(meta[k], T):
+        # warnings.warn(
+        # f"Warning: missing or invalid required field '{k}'",
+        # UserWarning
+        # )
+        # ok = False
         for k, T in field_types.items():
             if k in meta and not isinstance(meta[k], T):
                 warnings.warn(
                     f"Warning: field '{k}' has wrong type ({type(meta[k])})",
-                    UserWarning
+                    UserWarning,
                 )
                 ok = False
         return ok
-
 
     @staticmethod
     def extract_yaml_frontmatter(md_path: Path) -> Dict[str, Any]:
@@ -338,6 +332,6 @@ class MetadataValidator:
             warnings.warn(
                 "Warning: Could not parse YAML frontmatter from "
                 f"{str(md_path)}: {k}'",
-                UserWarning
+                UserWarning,
             )
             return {}
