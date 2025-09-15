@@ -19,21 +19,23 @@ This class is used exclusively within the txt2md pipeline.
 from __future__ import annotations
 
 # --- Standard library imports ---
-import json
 import re
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, List, Optional
+from typing import cast, List, Match, Optional, Tuple
 
 # --- Third party ---
-from ftfy import fix_text
+from ftfy import fix_text  # type: ignore
 
 # --- Local imports ---
 from scripts.metadata import MetadataRegistry, MetaEntry
 from scripts.txt2md.txt_utils import (
-    ordinal, format_body, reflow_paragraph, compute_metrics
+    ordinal,
+    format_body,
+    reflow_paragraph,
+    compute_metrics,
 )
 
 
@@ -72,22 +74,22 @@ class TxtEntry:
         to_markdown(self) -> str:
             Returns the joined Markdown-formatted lines.
     """
+
     # ---- Attributes ----
-    # TODO: Make this not optional. If not date, TxtEntry should not exist.
-    date: Optional[date]
+    date: date
     header: str
     body: List[str]
-    metadata: MetaEntry = field(default_factory=dict)
-
+    metadata: MetaEntry = field(default_factory=lambda: cast(MetaEntry, {}))
 
     # ---- Public constructors ----
     # -- Inner --
     @classmethod
     def from_lines(
-            cls,
-            lines: List[str],
-            metadata_registry: Optional[MetadataRegistry] = None,
-            verbose: bool = False
+        cls,
+        lines: List[str],
+        # TODO: Change this JSON implementation to SQLite/SQLAlchemy
+        # metadata_registry: Optional[MetadataRegistry] = None,
+        verbose: bool = False,
     ) -> "TxtEntry":
         if verbose:
             print("[TxtEntry] →  Parsing single entry lines...")
@@ -102,42 +104,44 @@ class TxtEntry:
         if verbose:
             print(f"[TxtEntry] →  Body lines formatted: {len(raw_body)} lines")
 
-        paragraphs: List[List[str]] = []
-        buffer: List[str] = []
-        for ln in raw_body + [""]:
+        plain_lines = [txt for txt, _ in raw_body]
+        wc, rt = compute_metrics(plain_lines)
+        if verbose:
+            print(f"[TxtEntry] →  Entry is {wc} words long; ~{rt} min reading time")
+
+        metadata: MetaEntry = {"word_count": wc, "reading_time": rt}
+
+        paragraphs: List[List[Tuple[str, bool]]] = []
+        buffer: List[Tuple[str, bool]] = []
+        for ln, soft in raw_body + [("", False)]:
             if ln == "":
                 if buffer:
                     paragraphs.append(buffer)
                     buffer = []
             else:
-                buffer.append(ln)
+                buffer.append((ln, soft))
 
         body: List[str] = []
+
         for paragraph in paragraphs:
-            # if any line ends with '\' -> emit raw for hard-breaks
-            if any(ln.endswith("\\") for ln in paragraph):
-                body.extend(paragraph)
+            if any(soft for _, soft in paragraph):
+                body.extend([txt for txt, _ in paragraph])
             else:
-                body.extend(reflow_paragraph(paragraph))
-            body.append("") # blank line after each paragraph
+                body.extend(reflow_paragraph([txt for txt, _ in paragraph]))
+            body.append("")  # blank line after each paragraph
 
         if verbose:
             print(f"[TxtEntry] →  Paragraphs processed: {len(paragraphs)}")
 
-        return cls(
-            header=header,
-            date=date,
-            body=body,
-            metadata={}
-        )
-
+        return cls(header=header, date=date, body=body, metadata=metadata)
 
     # -- Outer --
     @classmethod
     def from_file(
-        cls, path: Path,
+        cls,
+        path: Path,
         metadata_registry: Optional[MetadataRegistry] = None,
-        verbose: bool = False
+        verbose: bool = False,
     ) -> List["TxtEntry"]:
         """
         Parse a single .txt monthly compilation. Generate a list of Entries
@@ -147,7 +151,7 @@ class TxtEntry:
 
         try:
             all_lines = path.read_text(encoding="utf-8")
-        except Exception as e:
+        except Exception:
             raise OSError(f"Cannot read input file: {str(path)}")
 
         # Use ftfy to fix text before any processing is done
@@ -169,10 +173,9 @@ class TxtEntry:
             if verbose:
                 print(f"[TxtEntry] →  Parsing entry {idx + 1}/{len(entries)}")
             txt_entries.append(
-                cls.from_lines(entry, metadata_registry, verbose=verbose)
+                cls.from_lines(entry, metadata_registry, verbose=verbose)  # type: ignore
             )
         return txt_entries
-
 
     # ---- Serialization ----
     # -- Inner --
@@ -196,21 +199,26 @@ class TxtEntry:
               quote:          a quotation from someone in real life
               intention:      something that I planned/intended to say
               poem:           a poem
+            location:         geographical location(s) (City, Country)
             people:           list of people referenced (besides narrator)
-            references:       list of dates/events referenced (incl. same day)
+            references:       list of dates referenced (incl. same day)
+            events:           list of events (arcs/phases) referenced
             themes:           self-explanatory
             tags:             self-explanatory
             manuscript_links: where has been utilised on
             notes:            reviewer notes
         """
+
         def yaml_block_list(items):
             items = sorted(items) if isinstance(items, (set, list)) else []
             if not items:
                 return "[]"
             return "\n" + "\n".join(f"  - {item}" for item in items)
 
+        location_yaml = yaml_block_list(self.metadata.get("location", []))
         people_yaml = yaml_block_list(self.metadata.get("people", []))
         references_yaml = yaml_block_list(self.metadata.get("references", []))
+        events_yaml = yaml_block_list(self.metadata.get("events", []))
         themes_yaml = yaml_block_list(self.metadata.get("themes", []))
         tags_yaml = yaml_block_list(self.metadata.get("tags", []))
         links_yaml = yaml_block_list(self.metadata.get("manuscript_links", []))
@@ -222,11 +230,12 @@ class TxtEntry:
         else:
             notes_yaml = '""'
 
-        excerpted_val = self.metadata.get('excerpted', False)
+        excerpted_val = self.metadata.get("excerpted", False)
         excerpted_yaml = "true" if excerpted_val else "false"
 
         # Front-matter
-        fm: str = dedent(f"""\
+        fm = dedent(
+            f"""\
             ---
             date: {self.date.isoformat()}
             word_count: {self.metadata.get('word_count', 0)} words
@@ -234,31 +243,30 @@ class TxtEntry:
             status: {self.metadata.get('status', 'unreviewed')}
             excerpted: {excerpted_yaml}
             epigraph: {self.metadata.get('epigraph', '')}
+            location: {location_yaml}
             people: {people_yaml}
             references: {references_yaml}
+            events: {events_yaml}
             themes: {themes_yaml}
             tags: {tags_yaml}
             manuscript_links: {links_yaml}
             notes: {notes_yaml}
             ---
-        """).rstrip()
+        """
+        ).rstrip()
 
-        md_lines: List[str] = [fm, "", f"## {self.header}", ""]
+        md_lines: List[str] = [fm, "", f"# {self.header}", ""]
         md_lines.extend(self.body)
         return md_lines
-
 
     # -- Outer --
     def to_markdown(self) -> str:
         """Generate the final Markdown text."""
         return "\n".join(self.markdown_lines())
 
-
     # ---- Metadata loading ----
     def load_metadata(
-            self,
-            registry: Optional[MetadataRegistry],
-            verbose: bool = False
+        self, registry: Optional[MetadataRegistry], verbose: bool = False
     ) -> None:
         """Loads metadata for this entry from the registry if available."""
         if registry and self.date:
@@ -270,7 +278,6 @@ class TxtEntry:
                 self.metadata.update(meta)  # merges in loaded metadata
             elif verbose:
                 print(f"[TxtEntry] →  Metadata for entry ({key}) not found")
-
 
     # ---- Parser helpers ----
     # -- Entry splitter --
@@ -285,9 +292,7 @@ class TxtEntry:
         entries: List[List[str]] = []
         cur: List[str] = []
 
-        marker = re.compile(
-            rf"^(?:{'|'.join(re.escape(m) for m in markers)})\s*$"
-        )
+        marker = re.compile(rf"^(?:{'|'.join(re.escape(m) for m in markers)})\s*$")
 
         for ln in lines:
             if marker.match(ln):
@@ -302,12 +307,9 @@ class TxtEntry:
 
         return entries
 
-
     # -- Metadata extracter --
     @staticmethod
-    def _parse_entry(
-            entry: List[str]
-    ) -> Tuple[Optional[date], str, List[str]]:
+    def _parse_entry(entry: List[str]) -> Tuple[date, str, List[str]]:
         """
         input: Entry, a list of lines belonging to a single journal entry
         output: a Tuple with
@@ -324,70 +326,70 @@ class TxtEntry:
             * Formats header_text: TITLE if present, else “Day, DDth Month, YYYY”
         """
         header_text: str
-        date_obj: Optional[date] = None
         body_lines: List[str]
 
         title: Optional[str] = None
+        date_obj: Optional[date] = None
         date_idx: Optional[int] = None
         body_start: Optional[int] = None
 
-
+        m: Optional[Match[str]]
         for i, ln in enumerate(entry):
             # `= TITLE =` marker
-            m: str = re.match(r"^===\s*TITLE:\s*(.+?)\s*===", ln)
+            m = re.match(r"^===\s*TITLE:\s*(.+?)\s*===", ln)
             if m and title is None:
-                title: str = m.group(1).strip()
+                title = m.group(1).strip()
                 continue
 
             # `Title:` marker
-            m: str = re.match(r"^Title:\s*(.+)$", ln)
+            m = re.match(r"^Title:\s*(.+)$", ln)
             if m and title is None:
-                title: str = m.group(1).strip()
+                title = m.group(1).strip()
                 continue
 
             #  `= DATE =` marker
-            m: str = re.match(r"^===\s*DATE:\s*(\d{4}-\d{2}-\d{2})\s*===", ln)
+            m = re.match(r"^===\s*DATE:\s*(\d{4}-\d{2}-\d{2})\s*===", ln)
             if m and date_obj is None:
-                date_obj: date = date.fromisoformat(m.group(1))
-                date_idx: int = i
+                date_obj = date.fromisoformat(m.group(1))
+                date_idx = i
                 continue
 
             # `Date:` marker
-            m: str = re.match(r"^Date:\s*(\d{4}-\d{2}-\d{2})$", ln)
+            m = re.match(r"^Date:\s*(\d{4}-\d{2}-\d{2})$", ln)
             if m and date_obj is None:
-                date_obj: date = date.fromisoformat(m.group(1))
-                date_idx: int = i
+                date_obj = date.fromisoformat(m.group(1))
+                date_idx = i
                 continue
 
             # explicit BODY marker
             if ln.strip() == "=== BODY ===":
-                body_start: int = i + 1
+                body_start = i + 1
                 break
 
         # if no BODY marker, find first blank line after medatada block
         if body_start is None and date_idx is not None:
             for j in range(date_idx + 1, len(entry)):
                 if entry[j].strip() == "":
-                    body_start: int = j + 1
+                    body_start = j + 1
                     break
 
         # FALLBACK:
         # If no blankline, both legacy and new --- format ---:
         # have only `Words:` and `Minutes:` after the `Date:`
         if body_start is None:
-            body_start: int = (date_idx + 3) if date_idx is not None else 0
+            body_start = (date_idx + 3) if date_idx is not None else 0
+
+        assert date_obj is not None, "Entry does not contain a valid date"
 
         # build header
         if title:
             header_text = title
-        elif date_obj:
+        else:
             header_text = (
                 f"{date_obj.strftime('%A')}, "
                 f"{date_obj.strftime('%B')} {ordinal(date_obj.day)}, "
                 f"{date_obj.year}"
             )
-        else:
-            header_text = "Unknown Date"
 
         body_lines = entry[body_start:]
 

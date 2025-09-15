@@ -17,15 +17,15 @@ exported by the 750words website and used in the Palimpsest project.
 
 Intended to be imported by the txt2md workflow.
 """
+
 from __future__ import annotations
 
 # --- Standard library imports ---
-import re
 from textwrap import TextWrapper
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 # --- Third-party library imports ---
-from textstat import lexicon_count
+from textstat import lexicon_count  # type: ignore
 
 
 # ------------------------------------------------------------------------
@@ -51,10 +51,10 @@ def ordinal(n: int) -> str:
 # ------------------------------------------------------------------------
 # Format body of text
 # ------------------------------------------------------------------------
-def format_body(lines: List[str]) -> List[str]:
+def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
     """
     input: lines, list of raw body lines (strings)
-    output: list of formatted lines with:
+    output: list of (line_text, is_soft_break) tuples.
       - leading/trailing whitespace stripped
       - soft-break lines (ending in '\\') preserved verbatim
       - blank lines preserved
@@ -64,28 +64,27 @@ def format_body(lines: List[str]) -> List[str]:
       * Otherwise, trim spaces/tabs on both ends
       * Pass through blank lines and content lines for later paragraphing
     """
-    out: List[str] = []
+    out: List[Tuple[str, bool]] = []
     prev_blank: bool = False
 
     for raw in lines:
         ln: str = raw.rstrip("\n")
 
         # soft-break marker (single backslash)
-        if ln.endswith("\\"):
-            out.append(ln)
-            continue
+        soft_break: bool = ln.rstrip().endswith("\\")
+        if soft_break:
+            ln = ln.rstrip()[:-1].rstrip()
 
         # trim whitespace
-        ln: str = re.sub(r"^[ \t]+", "", ln)
-        ln: str = re.sub(r"[ \t]+$", "", ln)
+        ln = ln.strip()
 
         # blank line
         if ln == "":
             if not prev_blank:
-                out.append("")
+                out.append(("", False))
                 prev_blank = True
         else:
-            out.append(ln)
+            out.append((ln, soft_break))
             prev_blank = False
     return out
 
@@ -111,13 +110,14 @@ def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
 # ------------------------------------------------------------------------
 # Word-count and calculate approx reading time
 # ------------------------------------------------------------------------
-def compute_metrics(text: str) -> Tuple[int, float]:
+def compute_metrics(lines: List[str]) -> Tuple[int, float]:
     """
     input: str, complete text for the entry
     output: EntryMetrics
         - word_count: int, number of words
         - reading_time_min: float, minutes to read
     """
+    text = " ".join(line.strip() for line in lines)
     wc: int = lexicon_count(text, removepunct=True)
     # texstat.reading_time gives inflated result.
     # Calculate manually with 260 WPM
