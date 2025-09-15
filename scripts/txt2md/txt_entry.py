@@ -63,7 +63,6 @@ class TxtEntry:
             - references (Set[str]): Dates/events referenced in the entry.
             - themes (Set[str]): Thematic tags for the entry.
             - tags (Set[str]): Additional tags or keywords.
-            - manuscript_links (Set[str]): Link(s) to manuscript usage.
             - notes (str): Reviewer notes or curation comments.
 
     Methods:
@@ -218,7 +217,6 @@ class TxtEntry:
             events:           list of events (arcs/phases) referenced
             themes:           self-explanatory
             tags:             self-explanatory
-            manuscript_links: where has been utilised on
             notes:            reviewer notes
         """
 
@@ -234,7 +232,6 @@ class TxtEntry:
         events_yaml = yaml_block_list(self.metadata.get("events", []))
         themes_yaml = yaml_block_list(self.metadata.get("themes", []))
         tags_yaml = yaml_block_list(self.metadata.get("tags", []))
-        links_yaml = yaml_block_list(self.metadata.get("manuscript_links", []))
 
         notes = self.metadata.get("notes", "")
         if notes:
@@ -262,7 +259,6 @@ class TxtEntry:
             events: {events_yaml}
             themes: {themes_yaml}
             tags: {tags_yaml}
-            manuscript_links: {links_yaml}
             notes: {notes_yaml}
             ---
         """
