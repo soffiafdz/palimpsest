@@ -39,7 +39,7 @@ from scripts.txt2md.txt_utils import (
 )
 
 
-# ----- Entry markers-----
+# ----- Entry markers -----
 MARKERS: List[str] = ["------ ENTRY ------", "===== ENTRY ====="]
 
 
