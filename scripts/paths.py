@@ -66,8 +66,9 @@ MD_DIR: Path = ROOT / "journal" / "md"
 TXT_DIR: Path = ROOT / "journal" / "txt"
 PDF_DIR: Path = ROOT / "journal" / "pdf"
 
-# Metadata JSON
-METADATA_JSON: Path = ROOT / "journal" / "metadata.json"
+# Metadata DB
+METADATA_DB: Path = ROOT / "palimpsest.db"
+METADATA_ALEMBIC: Path = ROOT / "alembic"
 
 # Wiki directories
 WIKI_DIR: Path = ROOT / "wiki"
