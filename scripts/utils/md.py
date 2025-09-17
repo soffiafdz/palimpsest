@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+
+def parse_markdown_metadata(self, file_path: str) -> Dict[str, Any]:
+    """Extract YAML metadata from markdown file"""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        if content.startswith("---\n"):
+            end_marker = content.find("\n---\n", 4)
+            if end_marker != -1:
+                yaml_content = content[4:end_marker]
+                metadata = yaml.safe_load(yaml_content)
+                return metadata or {}
+    except Exception as e:
+        print(f"Error parsing {file_path}: {e}")
+    return {}
+
+
+def update_markdown_file(self, file_path: str, metadata: Dict[str, Any]) -> bool:
+    """Update markdown file with new metadata"""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        if content.startswith("---\n"):
+            end_marker = content.find("\n---\n", 4)
+            if end_marker != -1:
+                body_content = content[end_marker + 5 :]
+            else:
+                body_content = content[4:]
+        else:
+            body_content = content
+
+        yaml_content = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
+        new_content = f"---\n{yaml_content}---\n{body_content}"
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+
+        return True
+    except Exception as e:
+        print(f"Error updating {file_path}: {e}")
+        return False
+
+
+@staticmethod
+def _extract_number(value: Any) -> float:
+    """
+    Extract numeric value from a string or number.
+
+    Examples:
+        "150 words" -> 150
+        "2.5 min"   -> 2.5
+
+    Args:
+        value (Any): Input string or number.
+
+    Returns:
+        float: Extracted numeric value.
+    """
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        import re
+
+        match = re.search(r"(\d+(?:\.\d+)?)", value)
+        if match:
+            return float(match.group(1))
+    return 0.0
