@@ -31,7 +31,7 @@ from ftfy import fix_text  # type: ignore
 
 # --- Local imports ---
 # from scripts.metadata import MetadataRegistry, MetaEntry
-from scripts.txt2md.txt_utils import (
+from scripts.utils.txt import (
     ordinal,
     format_body,
     reflow_paragraph,
