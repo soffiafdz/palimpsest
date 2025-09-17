@@ -51,7 +51,7 @@ import sys
 from pathlib import Path
 
 # --- Local imports ---
-from scripts.paths import LATEX_DIR, MD_DIR, PDF_DIR, ROOT
+from scripts.paths import LATEX_DIR, MD_DIR, PDF_DIR
 from scripts.md2pdf.pdfbuilder import PdfBuilder
 
 
@@ -72,42 +72,34 @@ def parse_args() -> argparse.Namespace:
     )
 
     # --- ARGUMENTS ---
+    p.add_argument("year", help="Four-digit year to build (e.g. 2025)")
     p.add_argument(
-        "year",
-        help="Four-digit year to build (e.g. 2025)"
+        "-i", "--indir", default=MD_DIR, help="Root directory of Markdown files"
     )
     p.add_argument(
-        "-i", "--indir",
-        default=MD_DIR,
-        help="Root directory of Markdown files"
-    )
-    p.add_argument(
-        "-o", "--outdir",
-        default=PDF_DIR,
-        help="Directory to write PDFs into"
+        "-o", "--outdir", default=PDF_DIR, help="Directory to write PDFs into"
     )
     p.add_argument(
         "--preamble",
         default=LATEX_DIR / "preamble.tex",
-        help="Path to LaTeX preamble for clean PDF"
+        help="Path to LaTeX preamble for clean PDF",
     )
     p.add_argument(
         "--preamble-notes",
         default=LATEX_DIR / "preamble_notes.tex",
-        help="Path to LaTeX preamble for review-notes PDF"
+        help="Path to LaTeX preamble for review-notes PDF",
     )
     p.add_argument(
-        "-f", "--force", "--clobber",
+        "-f",
+        "--force",
+        "--clobber",
         action="store_true",
-        help="Overwrite existing output PDFs (quiet skip otherwise)"
+        help="Overwrite existing output PDFs (quiet skip otherwise)",
     )
-    p.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose output"
-    )
+    p.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
 
     return p.parse_args()
+
 
 # ----- Main -----
 def main() -> None:
@@ -125,7 +117,6 @@ def main() -> None:
     clean_pdf: Path = Path(args.outdir) / f"{args.year}.pdf"
     notes_pdf: Path = Path(args.outdir) / f"{args.year}-notes.pdf"
 
-
     builder = PdfBuilder(
         year=args.year,
         md_dir=Path(args.indir),
@@ -133,7 +124,7 @@ def main() -> None:
         preamble=Path(args.preamble),
         preamble_notes=Path(args.preamble_notes),
         verbose=args.verbose,
-        clobber=args.force
+        clobber=args.force,
     )
 
     try:

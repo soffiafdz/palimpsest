@@ -30,7 +30,7 @@ from typing import cast, List, Match, Optional, Tuple
 from ftfy import fix_text  # type: ignore
 
 # --- Local imports ---
-from scripts.metadata import MetadataRegistry, MetaEntry
+# from scripts.metadata import MetadataRegistry, MetaEntry
 from scripts.txt2md.txt_utils import (
     ordinal,
     format_body,
@@ -39,7 +39,7 @@ from scripts.txt2md.txt_utils import (
 )
 
 
-# ----- Entry markers -----
+# ----- Entry markers-----
 MARKERS: List[str] = ["------ ENTRY ------", "===== ENTRY ====="]
 
 
@@ -78,7 +78,8 @@ class TxtEntry:
     date: date
     header: str
     body: List[str]
-    metadata: MetaEntry = field(default_factory=lambda: cast(MetaEntry, {}))
+    # metadata: MetaEntry = field(default_factory=lambda: cast(MetaEntry, {}))
+    metadata: dict
 
     # ---- Public constructors ----
     # -- Inner --
@@ -86,7 +87,7 @@ class TxtEntry:
     def from_lines(
         cls,
         lines: List[str],
-        metadata_registry: Optional[MetadataRegistry] = None,
+        metadata_registry=None,
         verbose: bool = False,
     ) -> "TxtEntry":
         if verbose:
@@ -121,7 +122,7 @@ class TxtEntry:
             meta["word_count"] = wc
             meta["reading_time"] = rt
         else:
-            meta: MetaEntry = {"word_count": wc, "reading_time": rt}
+            meta = {"word_count": wc, "reading_time": rt}
 
         paragraphs: List[List[Tuple[str, bool]]] = []
         buffer: List[Tuple[str, bool]] = []
@@ -152,7 +153,7 @@ class TxtEntry:
     def from_file(
         cls,
         path: Path,
-        metadata_registry: Optional[MetadataRegistry] = None,
+        metadata_registry=None,
         verbose: bool = False,
     ) -> List["TxtEntry"]:
         """
@@ -274,9 +275,7 @@ class TxtEntry:
         return "\n".join(self.markdown_lines())
 
     # ---- Metadata loading ----
-    def load_metadata(
-        self, registry: Optional[MetadataRegistry], verbose: bool = False
-    ) -> None:
+    def load_metadata(self, registry, verbose: bool = False) -> None:
         """Loads metadata for this entry from the registry if available."""
         if registry and self.date:
             key = self.date.isoformat()

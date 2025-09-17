@@ -31,8 +31,7 @@ from pathlib import Path
 from typing import List
 
 # --- Local imports ---
-from scripts.metadata import MetadataRegistry
-from scripts.paths import ROOT, MD_DIR, METADATA_JSON
+from scripts.paths import ROOT, MD_DIR
 from scripts.txt2md.txt_entry import TxtEntry
 
 
@@ -57,12 +56,12 @@ def parse_args() -> argparse.Namespace:
         default=str(MD_DIR),
         help=f"Root dir for output (default: {str(MD_DIR)})",
     )
-    p.add_argument(
-        "-m",
-        "--metadata",
-        default=str(METADATA_JSON),
-        help=f"Path for metadata JSON file (default: {str(METADATA_JSON)})",
-    )
+    # p.add_argument(
+    #     "-m",
+    #     "--metadata",
+    # default=str(METADATA_JSON),
+    #     help=f"Path for metadata JSON file (default: {str(METADATA_JSON)})",
+    # )
     p.add_argument(
         "-f",
         "--force",
@@ -92,13 +91,13 @@ def main() -> None:
     try:
         args = parse_args()
         input = Path(args.input)
-        meta = Path(args.metadata)
+        # meta = Path(args.metadata)
         outdir = Path(args.outdir)
         verbose = args.verbose
         if verbose:
             print(f"[TxtEntry] →  Project root:    {str(ROOT)}")
             print(f"[TxtEntry] →  Reading from:    {str(input)}")
-            print(f"[TxtEntry] →  Metadata from:   {str(meta)}")
+            # print(f"[TxtEntry] →  Metadata from:   {str(meta)}")
             print(f"[TxtEntry] →  Writing to root: {str(outdir)}")
 
         # --- Failsafes ---
@@ -106,9 +105,9 @@ def main() -> None:
             raise FileNotFoundError(f"Input not found: {str(input)}")
         if not input.is_file() or not os.access(str(input), os.R_OK):
             raise OSError(f"Cannot read input file: {str(input)}")
-        if not meta.is_file() or not os.access(str(meta), os.R_OK):
-            warnings.warn("Warning: metadata file not found", UserWarning)
-            meta = None
+        # if not meta.is_file() or not os.access(str(meta), os.R_OK):
+        #     warnings.warn("Warning: metadata file not found", UserWarning)
+        #     meta = None
         try:
             outdir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
@@ -120,14 +119,17 @@ def main() -> None:
         if verbose:
             print("[TxtEntry] → Cleaning text and splitting into entries...")
 
-        registry: MetadataRegistry | None = None
-        if meta is not None:
-            registry = MetadataRegistry(meta)
-            if registry and verbose:
-                print(f"[TxtEntry] →  Metadata file loaded from {str(meta)}")
+        # registry: MetadataRegistry | None = None
+        # if meta is not None:
+        #     registry = MetadataRegistry(meta)
+        #     if registry and verbose:
+        #         print(f"[TxtEntry] →  Metadata file loaded from {str(meta)}")
 
         txt_entries: List[TxtEntry] = TxtEntry.from_file(
-            input, metadata_registry=registry, verbose=verbose
+            # input, metadata_registry=registry, verbose=verbose
+            input,
+            metadata_registry=None,
+            verbose=verbose,
         )
 
         if verbose:
@@ -144,8 +146,8 @@ def main() -> None:
                 )
 
             # Load metadata from JSON registry
-            if registry:
-                txt_entry.load_metadata(registry, verbose=verbose)
+            # if registry:
+            #     txt_entry.load_metadata(registry, verbose=verbose)
 
             # --- OUTPUT ---
             # Write to {outdir}/<year>/YYYY-MM-DD.md
