@@ -214,11 +214,11 @@ class Entry(Base):
         id (int):           Primary key.
         date (date):        Date of the journal entry.
         file_path (str)     Path to the Markdown file.
+        file_hash (str):    Hash of the file content.
         word_count (int)
         reading_time (float)
         epigraph (str):
         notes (str)
-        file_hash (str):    Hash of the file content.
         created_at (datetime)
         updated_at (datetime)
 
@@ -231,12 +231,11 @@ class Entry(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     file_path: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    file_hash: Mapped[Optional[str]] = mapped_column(String, nullable=False)
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     reading_time: Mapped[float] = mapped_column(Float, default=0.0)
-    excerpted: Mapped[bool] = mapped_column(Boolean, default=False)
     epigraph: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
-    file_hash: Mapped[Optional[str]] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -367,6 +366,7 @@ class Reference(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    author: Mapped[str] = mapped_column(String)
     content: Mapped[Optional[str]] = mapped_column(Text)
     type_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("reference_types.id")
@@ -455,6 +455,7 @@ class PoemVersion(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     poem_id: Mapped[int] = mapped_column(ForeignKey("poems.id"), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    version_hash: Mapped[Optional[str]] = mapped_column(String)
     revision_date: Mapped[Optional[date]] = mapped_column(Date)  # optional
     notes: Mapped[Optional[str]] = mapped_column(Text)
 

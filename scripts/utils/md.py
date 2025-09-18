@@ -78,3 +78,35 @@ def _extract_number(value: Any) -> float:
         if match:
             return float(match.group(1))
     return 0.0
+
+
+# --- helpers ---
+def parse_date(value: str | date | None) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    try:
+        return datetime.strptime(value.strip(), "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def safe_int(value: Any) -> int | None:
+    try:
+        return int(value) if value not in (None, "", " ") else None
+    except ValueError:
+        return None
+
+
+def safe_float(value: Any) -> float | None:
+    try:
+        return float(value) if value not in (None, "", " ") else None
+    except ValueError:
+        return None
+
+
+def normalize_str(value: Any) -> str | None:
+    if not value or not str(value).strip():
+        return None
+    return str(value).strip()

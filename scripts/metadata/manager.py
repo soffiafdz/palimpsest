@@ -42,6 +42,7 @@ from alembic.runtime.migration import MigrationContext
 # from alembic.operations import Operations
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql import func
 
 # --- Local imports ---
 from scripts.metadata.models import (
@@ -49,7 +50,6 @@ from scripts.metadata.models import (
     Entry,
     # MentionedDate,
     Location,
-    MentionedDate,
     Person,
     Reference,
     ReferenceType,
@@ -75,7 +75,7 @@ from scripts.metadata.models import (
 # )
 # from sqlalchemy.ext.declarative import declarative_base
 # from sqlalchemy.orm import sessionmaker, relationship, Session
-# from sqlalchemy.sql import func
+
 # import os
 # import json
 # from typing import Dict, List, Any, Optional, Tuple
@@ -451,6 +451,292 @@ class PalimpsestDB:
 
         entry_list.append(obj)
 
+    # --- Entry Management ---
+    def create_entry(self, session: Session, metadata: Dict[str, Any]) -> Entry:
+        """
+        Create a new Entry in the database with its associated relationships.
+
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - date (str | datetime.date)
+                    - file_path (str)
+                    - file_hash (str)
+                Optional keys:
+                    - word_count (int | str)
+                    - reading_time (float | str)
+                    - epigraph (str)
+                    - notes (str)
+                Relationship keys:
+                    - dates (List[dates], optional)
+                    - people (List[str], optional)
+                    - tags (List[str], optional)
+                    - locations (List[str or dict], optional)
+                    - events (List[str or dict], optional)
+                    - references (List[str or dict], optional)
+
+        Returns:
+            Entry: The newly created Entry ORM object.
+
+        Raises:
+            ValueError: if required fields are missing or invalid
+        """
+        entry = Entry(
+            date=self._parse_date(metadata.get("date")),
+            file_path=metadata["file_path"],
+            file_hash=metadata["file_hash"],
+            word_count=self._safe_int(metadata.get("word_count")),
+            reading_time=self._safe_float(metadata.get("reading_time")),
+            epigraph=self._normalize_str(metadata.get("epigraph")),
+            notes=self._normalize_str(metadata.get("notes")),
+        )
+        # --- Required fields ---
+        if "file_path" not in metadata or not metadata["file_path"]:
+            raise ValueError("Entry creation requires 'file_path'")
+
+        if "file_hash" not in metadata or not metadata["file_hash"]:
+            raise ValueError("Entry creation requires 'file_hash'")
+
+        if "date" not in metadata or not metadata["date"]:
+            raise ValueError("Entry creation requires 'date'")
+
+        parsed_date = self._parse_date(metadata["date"])
+        if parsed_date is None:
+            raise ValueError(f"Invalid 'date' value: {metadata['date']}")
+
+        # --- Core entry data ---
+        entry = Entry(
+            date=parsed_date,
+            file_path=metadata["file_path"],
+            file_hash=metadata["file_hash"],
+            word_count=self._safe_int(metadata.get("word_count")),
+            reading_time=self._safe_float(metadata.get("reading_time")),
+            epigraph=self._normalize_str(metadata.get("epigraph")),
+            notes=self._normalize_str(metadata.get("notes")),
+        )
+        session.add(entry)
+
+        # --- Relationships ---
+        self.update_entry_relationships(session, entry, metadata)
+
+        # --- Commit ---
+        session.commit()
+        return entry
+
+        with self.get_session() as session:
+            entry_data = {
+                "date": metadata["date"],
+                "word_count": metadata.get("word_count", 0),
+                "reading_time": metadata.get("reading_time", 0.0),
+                "status": metadata.get("status", "unreviewed"),
+                "excerpted": metadata.get("excerpted", False),
+                "epigraph": metadata.get("epigraph"),
+                "notes": metadata.get("notes"),
+                "file_hash": file_hash,
+            }
+            entry = Entry(**entry_data)
+            session.add(entry)
+            session.flush()  # assign ID for relationships
+
+            # Add relationships
+            self.update_entry_relationships(session, entry, metadata)
+            session.commit()
+            return entry
+
+    def update_entry(
+        self, entry: Entry, metadata: Dict[str, Any], file_hash: str
+    ) -> Entry:
+        """
+        Update an existing Entry in the database and refresh its relationships.
+
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
+
+        Args:
+            entry (Entry): Existing Entry ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+            file_hash (str): Updated hash of the source file.
+
+        Returns:
+            Entry: Updated Entry ORM object.
+        """
+        with self.get_session() as session:
+            # Attach the entry to the session
+            entry = session.merge(entry)
+
+            # Update core fields
+            for key in [
+                "date",
+                "word_count",
+                "reading_time",
+                "status",
+                "excerpted",
+                "epigraph",
+                "notes",
+            ]:
+                if key in metadata:
+                    setattr(entry, key, metadata[key])
+            entry.file_hash = file_hash
+
+            # Clear old relationships
+            entry.people.clear()
+            entry.tags.clear()
+            entry.locations.clear()
+            entry.events.clear()
+            entry.references.clear()
+            if hasattr(entry, "themes"):
+                entry.themes.clear()
+
+            # Update relationships with new metadata
+            self.update_entry_relationships(session, entry, metadata)
+
+            session.commit()
+            return entry
+
+    def update_entry_relationships(
+        self, session: Session, entry: Entry, normalized_metadata: Dict[str, Any]
+    ) -> None:
+        """
+        Update all many-to-many relationships for an Entry using normalized metadata.
+
+        This function handles relationships only. No I/O or Markdown parsing.
+        Prevents duplicates and ensures lookup tables are updated.
+
+        Args:
+            session (Session): Active SQLAlchemy session.
+            entry (Entry): Entry ORM object to update relationships for.
+            normalized_metadata (Dict[str, Any]): Normalized metadata containing:
+                - people (List[str])
+                - tags (List[str])
+                - locations (List[str or dict])
+                - events (List[str or dict])
+                - references (List[str or dict])
+                - themes (List[str])  # optional, manuscript-specific
+
+        Returns:
+            None
+        """
+        # People
+        for person_name in normalized_metadata.get("people", []):
+            if person_name:
+                self._append_lookup(
+                    session, entry.people, Person, {"name": person_name}
+                )
+
+        # Tags
+        for tag_name in normalized_metadata.get("tags", []):
+            if tag_name:
+                self._append_lookup(session, entry.tags, Tag, {"name": tag_name})
+
+        # Locations
+        for loc in normalized_metadata.get("locations", []):
+            if isinstance(loc, str):
+                self._append_lookup(session, entry.locations, Location, {"name": loc})
+            elif isinstance(loc, dict):
+                name = loc.get("name")
+                if name:
+                    extra_fields = {
+                        k: loc.get(k)
+                        for k in [
+                            "full_name",
+                            "coordinates",
+                            "parent_location",
+                            "location_type",
+                        ]
+                        if loc.get(k)
+                    }
+                    self._append_lookup(
+                        session, entry.locations, Location, {"name": name}, extra_fields
+                    )
+
+        # Events
+        for evt in normalized_metadata.get("events", []):
+            if isinstance(evt, str):
+                self._append_lookup(session, entry.events, Event, {"name": evt})
+            elif isinstance(evt, dict):
+                name = evt.get("name")
+                if name:
+                    extra_fields = {
+                        k: evt.get(k) for k in ["category", "notes"] if evt.get(k)
+                    }
+                    self._append_lookup(
+                        session, entry.events, Event, {"name": name}, extra_fields
+                    )
+
+        # References
+        for ref in normalized_metadata.get("references", []):
+            if isinstance(ref, str):
+                self._append_lookup(session, entry.references, Reference, {"name": ref})
+            elif isinstance(ref, dict):
+                name = ref.get("name") or ref.get("content")
+                if name:
+                    extra_fields = {}
+                    if ref.get("type"):
+                        ref_type = self._get_or_create_lookup_item(
+                            session, ReferenceType, {"name": ref["type"]}
+                        )
+                        extra_fields["type_id"] = ref_type.id
+                    extra_fields.update(
+                        {k: ref.get(k) for k in ["url", "metadata"] if ref.get(k)}
+                    )
+                    self._append_lookup(
+                        session,
+                        entry.references,
+                        Reference,
+                        {"name": name},
+                        extra_fields,
+                    )
+
+        def create_manuscript_entry(
+            self,
+            entry_id: int,
+            status: ManuscriptStatus,
+            edited: bool = False,
+            themes: list[str] | None = None,
+        ):
+            """
+            Create a ManuscriptEntry record tied to an existing Entry.
+
+            Args:
+                entry_id (int): ID of the Entry to include in manuscript.
+                status (ManuscriptStatus): Initial manuscript status (draft, final, etc.).
+                edited (bool): Whether the entry text has been edited for the manuscript.
+                themes (list[str]): Optional list of themes to associate.
+
+            Returns:
+                ManuscriptEntry
+            """
+
+        def update_manuscript_entry(
+            self,
+            manuscript_id: int,
+            status: ManuscriptStatus | None = None,
+            edited: bool | None = None,
+            themes: list[str] | None = None,
+        ):
+            """
+            Update fields of a ManuscriptEntry.
+
+            Args:
+                manuscript_id (int): ID of the ManuscriptEntry.
+                status (Optional[ManuscriptStatus]): Update status.
+                edited (Optional[bool]): Update edited flag.
+                themes (Optional[list[str]]): Replace associated themes.
+
+            Returns:
+                ManuscriptEntry
+            """
+
+        def get_manuscript_entry(self, entry_id: int):
+            """
+            Fetch the ManuscriptEntry tied to a given Entry (if it exists).
+            """
+
     # --- CRUD / Query ---
     def get_entry_metadata(self, file_path: str) -> Dict[str, Any]:
         """Get metadata for a specific entry"""
@@ -502,7 +788,6 @@ class PalimpsestDB:
             # Basic counts
             stats["entries"] = session.query(Entry).count()
             stats["people"] = session.query(Person).count()
-            stats["themes"] = session.query(Theme).count()
             stats["tags"] = session.query(Tag).count()
             stats["locations"] = session.query(Location).count()
             stats["events"] = session.query(Event).count()
@@ -520,213 +805,12 @@ class PalimpsestDB:
                 session.query(Entry).filter(Entry.updated_at >= week_ago).count()
             )
 
-            # Status breakdown
-            status_counts = (
-                session.query(Entry.status, func.count(Entry.id))
-                .group_by(Entry.status)
-                .all()
-            )
-            stats["status_breakdown"] = dict(status_counts)
+            # # Status breakdown
+            # status_counts = (
+            #     session.query(Entry.status, func.count(Entry.id))
+            #     .group_by(Entry.status)
+            #     .all()
+            # )
+            # stats["status_breakdown"] = dict(status_counts)
 
             return stats
-
-    def _update_entry_relationships(
-        self, session: Session, entry: Entry, metadata: Dict[str, Any]
-    ) -> None:
-        """
-        Update all many-to-many relationships for a given entry_list
-        based on its Markdown metadata.
-
-        Handles both simple string entries and dictionaries with extra fields.
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            entry (Entry): The database Entry object to update
-            metadata (Dict[str, Any]): Parsed metadata from Markdown file
-
-        Relationships updated:
-            Mentioned dates, locations, people, references, events, poems, tags
-
-        Returns:
-            None
-
-        Raises:
-            Any exception raised during session operations
-            Exceptions will propagate unless handled by the calling function
-        """
-        # MentionedDates
-        for date_val in metadata.get("mentioned_dates", []):
-            if isinstance(date_val, str) and date_val.strip():
-                try:
-                    dt: date = datetime.strptime(date_val.strip(), "%Y-%m-%d").date()
-                    date_obj = self._get_or_create_lookup_item(
-                        session, MentionedDate, dt, column_name="dates"
-                    )
-                    self._append_lookup()
-                except ValueError:
-                    warnings.warn(f"Invalid date format: {date_str}")
-                    continue
-            elif isinstance(date_str, date):
-                parsed_date = date_str
-            else:
-                continue
-
-            self._append_lookup(
-                session, entry.dates, MentionedDate, parsed_date, column_name="date"
-            )
-
-        # People
-        for person_name in metadata.get("people", []):
-            if isinstance(person_name, str) and person_name.strip():
-                self._append_lookup(session, entry.people, Person, person_name)
-
-        # Tags
-        for tag_name in metadata.get("tags", []):
-            if isinstance(tag_name, str) and tag_name.strip():
-                self._append_lookup(session, entry.tags, Tag, tag_name)
-
-        # Locations
-        for location_data in metadata.get("location", []):
-            if isinstance(location_data, str) and location_data.strip():
-                location = self._get_or_create_lookup_item(
-                    session, Location, location_data.strip()
-                )
-                entry.locations.append(location)
-            elif isinstance(location_data, dict):
-                name = location_data.get("name", "").strip()
-                if name:
-                    extra_fields = {
-                        "canonical_name": location_data.get("canonical_name"),
-                        "parent_location": location_data.get("parent_location"),
-                        "location_type": location_data.get("location_type"),
-                        "coordinates": location_data.get("coordinates"),
-                    }
-                    location = self._get_or_create_lookup_item(
-                        session, Location, name, **extra_fields
-                    )
-                    entry.locations.append(location)
-
-        # Events
-        for event_data in metadata.get("events", []):
-            if isinstance(event_data, str) and event_data.strip():
-                event = self._get_or_create_lookup_item(
-                    session, Event, event_data.strip()
-                )
-                entry.events.append(event)
-            elif isinstance(event_data, dict):
-                name = event_data.get("name", "").strip()
-                if name:
-                    extra_fields = {
-                        "category": event_data.get("category"),
-                        "notes": event_data.get("notes"),
-                    }
-                    event = self._get_or_create_lookup_item(
-                        session, Event, name, **extra_fields
-                    )
-                    entry.events.append(event)
-
-        # References
-        for ref_data in metadata.get("references", []):
-            if isinstance(ref_data, str) and ref_data.strip():
-                reference = self._get_or_create_lookup_item(
-                    session, Reference, ref_data.strip()
-                )
-                entry.references.append(reference)
-            elif isinstance(ref_data, dict):
-                content = ref_data.get("content", "").strip()
-                if content:
-                    ref_type = None
-                    if ref_data.get("type"):
-                        ref_type = self._get_or_create_lookup_item(
-                            session, ReferenceType, ref_data["type"]
-                        )
-
-                    extra_fields = {
-                        "type_id": ref_type.id if ref_type else None,
-                        "metadata": (
-                            json.dumps(ref_data.get("metadata", {}))
-                            if ref_data.get("metadata")
-                            else None
-                        ),
-                        "url": ref_data.get("url"),
-                    }
-                    reference = self._get_or_create_lookup_item(
-                        session, Reference, content, **extra_fields
-                    )
-                    entry.references.append(reference)
-
-    def update_entry_from_file(self, file_path: str) -> bool:
-        """
-        Insert or update an Entry in the database from a Markdown file.
-
-        - Parse YAML/md metadata from file
-        - Compute the file hash to detect changes
-        - If no changes, skip
-        - Insert/update Entry rown and its related lookup tables
-            Dates, Locations, People, References, Events, Poems, Tags
-        - Commit the transaction
-
-        Args:
-            file_path (str | Path): Path to the markdown file
-
-        Returns:
-            bool:
-                True if entry was created/updated
-                False if skipped due to no changes or parsing failure
-
-        Raises:
-            Prints and rolls back on any SQLAlchemy/database exception
-        """
-        metadata = self.parse_markdown_metadata(file_path)
-        if not metadata:
-            return False
-
-        # TODO: fix this broken reference
-        file_hash = self._get_file_hash(file_path)
-
-        with self.get_session() as session:
-            try:
-                existing_entry = (
-                    session.query(Entry).filter_by(file_path=file_path).first()
-                )
-
-                if existing_entry and existing_entry.file_hash == file_hash:
-                    return False
-
-                entry_data = {
-                    "file_path": file_path,
-                    "date": metadata.get("date", ""),
-                    "word_count": self._extract_number(metadata.get("word_count", 0)),
-                    "reading_time": float(
-                        self._extract_number(metadata.get("reading_time", 0.0))
-                    ),
-                    "status": metadata.get("status", "unreviewed"),
-                    "excerpted": metadata.get("excerpted", False),
-                    "epigraph": metadata.get("epigraph", ""),
-                    "notes": metadata.get("notes", ""),
-                    "file_hash": file_hash,
-                }
-
-                if existing_entry:
-                    for key, value in entry_data.items():
-                        setattr(existing_entry, key, value)
-                    entry = existing_entry
-                else:
-                    entry = Entry(**entry_data)
-                    session.add(entry)
-
-                if existing_entry:
-                    entry.people.clear()
-                    entry.tags.clear()
-                    entry.locations.clear()
-                    entry.events.clear()
-                    entry.references.clear()
-
-                self._update_entry_relationships(session, entry, metadata)
-                session.commit()
-                return True
-
-            except Exception as e:
-                session.rollback()
-                print(f"Error updating entry {file_path}: {e}")
-                return False
