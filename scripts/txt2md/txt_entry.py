@@ -56,14 +56,15 @@ class TxtEntry:
         metadata (dict): Metadata with the following keys:
             - word_count (int): Number of words in the entry.
             - reading_time_min (float): Estimated reading time in minutes.
-            - status (str): Curation status ('source', 'quote', 'curated', ...).
-            - excerpted (bool): Whether content has been used on manuscript.
             - epigraph (str): If/type of epigraph utilised.
-            - people (Set[str]): Names of referenced people (besides narrator).
-            - references (Set[str]): Dates/events referenced in the entry.
-            - themes (Set[str]): Thematic tags for the entry.
-            - tags (Set[str]): Additional tags or keywords.
             - notes (str): Reviewer notes or curation comments.
+            - dates (List[date]): Set of dates referenced in the entry.
+            - locations (Set[str]): geographical location(s).
+            - people (Set[str]): Names of referenced people (besides narrator).
+            - references (Set[str]): External references mentioned.
+            - events (Set[str]): Main narrative events related to the entry.
+            - poems (Set[str]): Poems written in the entry (title).
+            - tags (Set[str]): Additional tags or keywords.
 
     Methods:
         from_txt(cls, path: Path) -> List["TxtEntry"]:
@@ -199,25 +200,18 @@ class TxtEntry:
             date:             self-explanatory
             word_count:       self-explanatory
             reading_time:     calculated reading time in minutes
-            status
-              unreviewed:     self-explanatory
-              discard:        not usable
-              reference:      important events, but content unusable
-              fragments:      potentially useful lines/snippets
-              source:         content will be rewritten
-              quote:          (some) content will be adapted as is
-            excerpted:        content has been pulled into manuscript draft
             epigraph
               reference:      fragment of a book|song|movie|tv series
               quote:          a quotation from someone in real life
               intention:      something that I planned/intended to say
               poem:           a poem
+            dates:            dates referenced in text
             location:         geographical location(s) (City, Country)
             people:           list of people referenced (besides narrator)
-            references:       list of dates referenced (incl. same day)
+            references:       external pop-culture references
             events:           list of events (arcs/phases) referenced
-            themes:           self-explanatory
             tags:             self-explanatory
+            poems:            poems in the entry (title)
             notes:            reviewer notes
         """
 
@@ -227,6 +221,7 @@ class TxtEntry:
                 return "[]"
             return "\n" + "\n".join(f"  - {item}" for item in items)
 
+        # TODO: Update these
         location_yaml = yaml_block_list(self.metadata.get("location", []))
         people_yaml = yaml_block_list(self.metadata.get("people", []))
         references_yaml = yaml_block_list(self.metadata.get("references", []))
@@ -245,6 +240,7 @@ class TxtEntry:
         excerpted_yaml = "true" if excerpted_val else "false"
 
         # Front-matter
+        # TODO: Update these
         fm = dedent(
             f"""\
             ---
