@@ -20,6 +20,7 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 from typing import List, Optional
+from enum import Enum
 
 # --- Third party ---
 from sqlalchemy import (
@@ -55,6 +56,15 @@ entry_themes = Table(
 )
 
 
+# ----- Status Enum -----
+class ManuscriptStatus(str, Enum):
+    UNSPECIFIED = "unspecified"
+    REFERENCE = "reference"
+    QUOTE = "quote"
+    FRAGMENTS = "fragments"
+    SOURCE = "source"
+
+
 # ----- Models -----
 class ManuscriptEntry(Base):
     """Represents an Entry excerpted to be incl/ref in the manuscript."""
@@ -63,7 +73,9 @@ class ManuscriptEntry(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     entry_id: Mapped[int] = mapped_column(ForeignKey("entry.id"), unique=True)
-    status: Mapped[str] = mapped_column(String, default="unspecified", index=True)
+    status: Mapped[ManuscriptStatus] = mapped_column(
+        String, default=ManuscriptStatus.UNSPECIFIED.value, index=True
+    )
     edited: Mapped[bool] = mapped_column(Boolean, default=False)
     themes: Mapped[List[Theme]] = relationship("Theme", secondary=entry_themes)
 
