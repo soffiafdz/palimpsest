@@ -24,15 +24,16 @@ from __future__ import annotations
 # --- Standard library imports ---
 # import json
 # import hashlib
+import warnings
 import shutil
 
 # from datetime import date, datetime, timezone
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 # --- Third party ---
-import yaml
+# import yaml
 from alembic.config import Config
 from alembic import command
 
@@ -46,6 +47,16 @@ from sqlalchemy.orm import Session, sessionmaker
 from scripts.metadata.models import (
     Base,
     Entry,
+    # MentionedDate,
+    Location,
+    MentionedDate,
+    Person,
+    Reference,
+    ReferenceType,
+    Event,
+    # Poem,
+    # PoemVersion,
+    Tag,
 )
 
 # from sqlalchemy import (
@@ -68,6 +79,7 @@ from scripts.metadata.models import (
 # import os
 # import json
 # from typing import Dict, List, Any, Optional, Tuple
+
 
 T = TypeVar("T", bound=Base)
 
@@ -98,6 +110,7 @@ class PalimpsestDB:
             entries = db.get_all_entries(session)
     """
 
+    # --- Initialization ---
     def __init__(
         self, db_path: Union[str, Path], alembic_dir: Union[str, Path]
     ) -> None:
@@ -211,41 +224,6 @@ class PalimpsestDB:
             env_path.write_text(updated_content, encoding="utf-8")
             print("Updated alembic/env.py to use journal models")
 
-    # --- Init DB ---
-    def init_database(self) -> None:
-        """
-        Initialize database - create tables if needed and run migrations.
-
-        Actions:
-            Checks if the database is fresh (no tables)
-            If fresh,
-                creates all tables from the ORM models
-                stamps the Alembic revision to head
-            If not,
-                runs pending migrations to update schema
-
-        Returns:
-            None
-        """
-        # Check if this is a fresh database
-        with self.get_session() as _:
-            inspector = self.engine.dialect.get_table_names(self.engine.connect())
-            is_fresh_db: bool = len(inspector) == 0
-
-        if is_fresh_db:
-            # Create all tables for fresh database
-            Base.metadata.create_all(bind=self.engine)
-
-            # Stamp with current revision (so Alembic knows the current state)
-            try:
-                command.stamp(self.alembic_cfg, "head")
-                print("Fresh database created and stamped with current revision")
-            except Exception as e:
-                print(f"Note: Could not stamp database (run init_alembic first): {e}")
-        else:
-            # Run pending migrations
-            self.upgrade_database()
-
     # --- Migrations ---
     def create_migration(self, message: str) -> None:
         """
@@ -332,21 +310,42 @@ class PalimpsestDB:
         except Exception as e:
             return {"error": str(e)}
 
-    # --- CRUD and Query methods ---
-    def add_entry(self, entry: Entry) -> None:
+    # --- Init DB ---
+    def init_database(self) -> None:
         """
-        Add a new Entry to the databse.
+        Initialize database - create tables if needed and run migrations.
 
-        Args:
-            entry (Entry): The Entry instance to add.
+        Actions:
+            Checks if the database is fresh (no tables)
+            If fresh,
+                creates all tables from the ORM models
+                stamps the Alembic revision to head
+            If not,
+                runs pending migrations to update schema
+
+        Returns:
+            None
         """
-        with self.session() as session:
-            session.add(entry)
-            session.commit()
+        # Check if this is a fresh database
+        with self.get_session() as _:
+            inspector = self.engine.dialect.get_table_names(self.engine.connect())
+            is_fresh_db: bool = len(inspector) == 0
 
-    # ---------------------------
-    # Backup utilities
-    # ---------------------------
+        if is_fresh_db:
+            # Create all tables for fresh database
+            Base.metadata.create_all(bind=self.engine)
+
+            # Stamp with current revision (so Alembic knows the current state)
+            try:
+                command.stamp(self.alembic_cfg, "head")
+                print("Fresh database created and stamped with current revision")
+            except Exception as e:
+                print(f"Note: Could not stamp database (run init_alembic first): {e}")
+        else:
+            # Run pending migrations
+            self.upgrade_database()
+
+    # --- Backup ---
     def backup_database(self, backup_suffix: Optional[str] = None) -> str:
         """
         Create a backup copy of the database.
@@ -365,148 +364,226 @@ class PalimpsestDB:
         print(f"[Backup] Database backed up to: {backup_path}")
         return backup_path
 
-    # ---------------------------
-    # Markdown file helpers
-    # ---------------------------
-    @staticmethod
-    def parse_markdown_metadata(file_path: str) -> Dict[str, Any]:
-        """
-        Extract YAML frontmatter metadata from a Markdown file.
-
-        Args:
-            file_path (str): Path to the Markdown file.
-
-        Returns:
-            Dict[str, Any]: Parsed metadata dictionary.
-        """
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-
-            if content.startswith("---\n"):
-                end_marker = content.find("\n---\n", 4)
-                if end_marker != -1:
-                    yaml_content = content[4:end_marker]
-                    metadata = yaml.safe_load(yaml_content)
-                    return metadata or {}
-
-        except Exception as e:
-            print(f"[Markdown Parse Error] {file_path}: {e}")
-
-        return {}
-
-    @staticmethod
-    def _get_file_hash(file_path: str) -> str:
-        """
-        Compute MD5 hash of a file for change detection.
-
-        Args:
-            file_path (str): Path to the file.
-
-        Returns:
-            str: Hexadecimal MD5 hash.
-        """
-        try:
-            with open(file_path, "rb") as f:
-                return hashlib.md5(f.read()).hexdigest()
-        except FileNotFoundError:
-            return ""
-
+    # --- Lookup helpers ---
     def _get_or_create_lookup_item(
-        self, session: Session, model_class, name: str, **extra_fields
-    ):
-        """Get existing item or create new one in lookup tables"""
-        item = session.query(model_class).filter_by(name=name).first()
-        if not item:
-            item_data = {"name": name}
-            item_data.update(extra_fields)
-            item = model_class(**item_data)
-            session.add(item)
-            session.flush()
-        return item
+        self,
+        session: Session,
+        model_class: Type[T],
+        lookup_fields: Dict[str, Any],
+        extra_fields: Optional[Dict[str, Any]] = None,
+    ) -> T:
+        """
+        Get an existing item from a lookup table, or create it if it doesn't exist.
 
-    def update_entry_from_file(self, file_path: str) -> bool:
-        """Update database entry from markdown file"""
-        metadata = self.parse_markdown_metadata(file_path)
-        if not metadata:
-            return False
+        Args:
+            session (Session): SQLAlchemy session.
+            model_class (type[Base]): ORM models class to query or create.
+            lookup_fields: Dictionary of field_name: value to filter/create.
+            extra_fielts: Additional fields for new object creation.
 
-        # TODO: fix this broken reference
-        file_hash = self._get_file_hash(file_path)
+        Returns:
+            ORM instance of the same type of the one being queried
 
+        Notes:
+            For string-based columns, `value` should be a str
+            For dates or other types, pass the appropriate Python types
+            The new object is added to the session and flushed immediately
+        """
+        query = session.query(model_class).filter_by(**lookup_fields)
+        obj = query.first()
+        if obj:
+            return obj
+
+        # Prepare fields for creation
+        fields = lookup_fields.copy()
+        if extra_fields:
+            fields.update(extra_fields)
+
+        # Create object
+        obj = model_class(**fields)
+        session.add(obj)
+        session.flush()
+        return obj
+
+    def _append_lookup(
+        self,
+        session: Session,
+        entry_list: List[T],
+        model_class: Type[T],
+        lookup_fields: Dict[str, Any],
+        extra_fields: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Retrieve or create a lookup object and append it to a relationship list.
+
+        Prevents duplicate entries in the relationship.
+
+        Args:
+            session (Session): Active SQLAlchemy session.
+            entry_list (List[T]): Relationship list to append the object to.
+            model_class (Type[T]): The lookup table class (e.g., Person, Theme, Tag).
+            lookup_fields: Dictionary of field_name: value to filter/create.
+            extra_fields: Additional fields for new object creation.
+
+        Behaviour:
+            Skips appending if:
+                any value in lookup_fields is None
+                an object with the same lookup_fields exists in entry_list
+            Gets or creates the object and appends it
+            extra_fields are only applied when creating a new object
+
+        Returns:
+            None
+        """
+        if any(value is None for value in lookup_fields.values()):
+            return
+
+        for obj in entry_list:
+            if all(getattr(obj, k) == v for k, v in lookup_fields.items()):
+                return
+
+        if extra_fields is None:
+            extra_fields = {}
+
+        obj = self._get_or_create_lookup_item(
+            session, model_class, lookup_fields, extra_fields
+        )
+
+        entry_list.append(obj)
+
+    # --- CRUD / Query ---
+    def get_entry_metadata(self, file_path: str) -> Dict[str, Any]:
+        """Get metadata for a specific entry"""
         with self.get_session() as session:
-            try:
-                existing_entry = (
-                    session.query(Entry).filter_by(file_path=file_path).first()
+            entry = session.query(Entry).filter_by(file_path=file_path).first()
+            if not entry:
+                return {}
+
+            return {
+                "date": entry.date,
+                "word_count": entry.word_count,
+                "reading_time": entry.reading_time,
+                "excerpted": entry.excerpted,
+                "epigraph": entry.epigraph or "",
+                "notes": entry.notes or "",
+                "people": [person.name for person in entry.people],
+                "tags": [tag.name for tag in entry.tags],
+                "location": [location.name for location in entry.locations],
+                "events": [event.name for event in entry.events],
+                "references": [ref.content for ref in entry.references],
+            }
+
+    def get_all_values(self, field: str) -> List[str]:
+        """Get all unique values for a field (for autocomplete)"""
+        model_map = {
+            "people": Person,
+            "tags": Tag,
+            "locations": Location,
+            "events": Event,
+            "reference_types": ReferenceType,
+        }
+
+        if field in model_map:
+            with self.get_session() as session:
+                items = (
+                    session.query(model_map[field])
+                    .order_by(model_map[field].name)
+                    .all()
                 )
+                return [item.name for item in items]
 
-                if existing_entry and existing_entry.file_hash == file_hash:
-                    return False
+        return []
 
-                entry_data = {
-                    "file_path": file_path,
-                    "date": metadata.get("date", ""),
-                    "word_count": self._extract_number(metadata.get("word_count", 0)),
-                    "reading_time": float(
-                        self._extract_number(metadata.get("reading_time", 0.0))
-                    ),
-                    "status": metadata.get("status", "unreviewed"),
-                    "excerpted": metadata.get("excerpted", False),
-                    "epigraph": metadata.get("epigraph", ""),
-                    "notes": metadata.get("notes", ""),
-                    "file_hash": file_hash,
-                }
+    def get_database_stats(self) -> Dict[str, Any]:
+        """Get database statistics"""
+        with self.get_session() as session:
+            stats = {}
 
-                if existing_entry:
-                    for key, value in entry_data.items():
-                        setattr(existing_entry, key, value)
-                    entry = existing_entry
-                else:
-                    entry = Entry(**entry_data)
-                    session.add(entry)
+            # Basic counts
+            stats["entries"] = session.query(Entry).count()
+            stats["people"] = session.query(Person).count()
+            stats["themes"] = session.query(Theme).count()
+            stats["tags"] = session.query(Tag).count()
+            stats["locations"] = session.query(Location).count()
+            stats["events"] = session.query(Event).count()
+            stats["references"] = session.query(Reference).count()
 
-                if existing_entry:
-                    entry.people.clear()
-                    entry.themes.clear()
-                    entry.tags.clear()
-                    entry.locations.clear()
-                    entry.events.clear()
-                    entry.references.clear()
+            # Migration info
+            migration_info = self.get_migration_history()
+            stats["migration_status"] = migration_info
 
-                self._update_entry_relationships(session, entry, metadata)
-                session.commit()
-                return True
+            # Recent activity
+            from datetime import timedelta
 
-            except Exception as e:
-                session.rollback()
-                print(f"Error updating entry {file_path}: {e}")
-                return False
+            week_ago = datetime.now() - timedelta(days=7)
+            stats["entries_updated_last_7_days"] = (
+                session.query(Entry).filter(Entry.updated_at >= week_ago).count()
+            )
+
+            # Status breakdown
+            status_counts = (
+                session.query(Entry.status, func.count(Entry.id))
+                .group_by(Entry.status)
+                .all()
+            )
+            stats["status_breakdown"] = dict(status_counts)
+
+            return stats
 
     def _update_entry_relationships(
         self, session: Session, entry: Entry, metadata: Dict[str, Any]
-    ):
-        """Update all relationships for an entry"""
+    ) -> None:
+        """
+        Update all many-to-many relationships for a given entry_list
+        based on its Markdown metadata.
+
+        Handles both simple string entries and dictionaries with extra fields.
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            entry (Entry): The database Entry object to update
+            metadata (Dict[str, Any]): Parsed metadata from Markdown file
+
+        Relationships updated:
+            Mentioned dates, locations, people, references, events, poems, tags
+
+        Returns:
+            None
+
+        Raises:
+            Any exception raised during session operations
+            Exceptions will propagate unless handled by the calling function
+        """
+        # MentionedDates
+        for date_val in metadata.get("mentioned_dates", []):
+            if isinstance(date_val, str) and date_val.strip():
+                try:
+                    dt: date = datetime.strptime(date_val.strip(), "%Y-%m-%d").date()
+                    date_obj = self._get_or_create_lookup_item(
+                        session, MentionedDate, dt, column_name="dates"
+                    )
+                    self._append_lookup()
+                except ValueError:
+                    warnings.warn(f"Invalid date format: {date_str}")
+                    continue
+            elif isinstance(date_str, date):
+                parsed_date = date_str
+            else:
+                continue
+
+            self._append_lookup(
+                session, entry.dates, MentionedDate, parsed_date, column_name="date"
+            )
+
         # People
         for person_name in metadata.get("people", []):
             if isinstance(person_name, str) and person_name.strip():
-                person = self._get_or_create_lookup_item(
-                    session, Person, person_name.strip()
-                )
-                entry.people.append(person)
-
-        # Themes
-        for theme_name in metadata.get("themes", []):
-            if isinstance(theme_name, str) and theme_name.strip():
-                theme = self._get_or_create_lookup_item(
-                    session, Theme, theme_name.strip()
-                )
-                entry.themes.append(theme)
+                self._append_lookup(session, entry.people, Person, person_name)
 
         # Tags
         for tag_name in metadata.get("tags", []):
             if isinstance(tag_name, str) and tag_name.strip():
-                tag = self._get_or_create_lookup_item(session, Tag, tag_name.strip())
-                entry.tags.append(tag)
+                self._append_lookup(session, entry.tags, Tag, tag_name)
 
         # Locations
         for location_data in metadata.get("location", []):
@@ -578,83 +655,78 @@ class PalimpsestDB:
                     )
                     entry.references.append(reference)
 
-    def get_entry_metadata(self, file_path: str) -> Dict[str, Any]:
-        """Get metadata for a specific entry"""
+    def update_entry_from_file(self, file_path: str) -> bool:
+        """
+        Insert or update an Entry in the database from a Markdown file.
+
+        - Parse YAML/md metadata from file
+        - Compute the file hash to detect changes
+        - If no changes, skip
+        - Insert/update Entry rown and its related lookup tables
+            Dates, Locations, People, References, Events, Poems, Tags
+        - Commit the transaction
+
+        Args:
+            file_path (str | Path): Path to the markdown file
+
+        Returns:
+            bool:
+                True if entry was created/updated
+                False if skipped due to no changes or parsing failure
+
+        Raises:
+            Prints and rolls back on any SQLAlchemy/database exception
+        """
+        metadata = self.parse_markdown_metadata(file_path)
+        if not metadata:
+            return False
+
+        # TODO: fix this broken reference
+        file_hash = self._get_file_hash(file_path)
+
         with self.get_session() as session:
-            entry = session.query(Entry).filter_by(file_path=file_path).first()
-            if not entry:
-                return {}
-
-            return {
-                "date": entry.date,
-                "word_count": entry.word_count,
-                "reading_time": entry.reading_time,
-                "status": entry.status,
-                "excerpted": entry.excerpted,
-                "epigraph": entry.epigraph or "",
-                "notes": entry.notes or "",
-                "people": [person.name for person in entry.people],
-                "themes": [theme.name for theme in entry.themes],
-                "tags": [tag.name for tag in entry.tags],
-                "location": [location.name for location in entry.locations],
-                "events": [event.name for event in entry.events],
-                "references": [ref.content for ref in entry.references],
-            }
-
-    def get_all_values(self, field: str) -> List[str]:
-        """Get all unique values for a field (for autocomplete)"""
-        model_map = {
-            "people": Person,
-            "themes": Theme,
-            "tags": Tag,
-            "locations": Location,
-            "events": Event,
-            "reference_types": ReferenceType,
-        }
-
-        if field in model_map:
-            with self.get_session() as session:
-                items = (
-                    session.query(model_map[field])
-                    .order_by(model_map[field].name)
-                    .all()
+            try:
+                existing_entry = (
+                    session.query(Entry).filter_by(file_path=file_path).first()
                 )
-                return [item.name for item in items]
 
-        return []
+                if existing_entry and existing_entry.file_hash == file_hash:
+                    return False
 
-    def get_database_stats(self) -> Dict[str, Any]:
-        """Get database statistics"""
-        with self.get_session() as session:
-            stats = {}
+                entry_data = {
+                    "file_path": file_path,
+                    "date": metadata.get("date", ""),
+                    "word_count": self._extract_number(metadata.get("word_count", 0)),
+                    "reading_time": float(
+                        self._extract_number(metadata.get("reading_time", 0.0))
+                    ),
+                    "status": metadata.get("status", "unreviewed"),
+                    "excerpted": metadata.get("excerpted", False),
+                    "epigraph": metadata.get("epigraph", ""),
+                    "notes": metadata.get("notes", ""),
+                    "file_hash": file_hash,
+                }
 
-            # Basic counts
-            stats["entries"] = session.query(Entry).count()
-            stats["people"] = session.query(Person).count()
-            stats["themes"] = session.query(Theme).count()
-            stats["tags"] = session.query(Tag).count()
-            stats["locations"] = session.query(Location).count()
-            stats["events"] = session.query(Event).count()
-            stats["references"] = session.query(Reference).count()
+                if existing_entry:
+                    for key, value in entry_data.items():
+                        setattr(existing_entry, key, value)
+                    entry = existing_entry
+                else:
+                    entry = Entry(**entry_data)
+                    session.add(entry)
 
-            # Migration info
-            migration_info = self.get_migration_history()
-            stats["migration_status"] = migration_info
+                if existing_entry:
+                    entry.people.clear()
+                    entry.tags.clear()
+                    entry.locations.clear()
+                    entry.events.clear()
+                    entry.references.clear()
 
-            # Recent activity
-            from datetime import timedelta
+                self._update_entry_relationships(session, entry, metadata)
+                session.commit()
+                return True
 
-            week_ago = datetime.now() - timedelta(days=7)
-            stats["entries_updated_last_7_days"] = (
-                session.query(Entry).filter(Entry.updated_at >= week_ago).count()
-            )
-
-            # Status breakdown
-            status_counts = (
-                session.query(Entry.status, func.count(Entry.id))
-                .group_by(Entry.status)
-                .all()
-            )
-            stats["status_breakdown"] = dict(status_counts)
-
-            return stats
+            except Exception as e:
+                session.rollback()
+                print(f"Error updating entry {file_path}: {e}")
+                return False
