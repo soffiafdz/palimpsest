@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
 
-def _get_file_hash(self, file_path: str) -> str:
-    """Generate hash of file content for change detection"""
+@staticmethod
+def _get_file_hash(file_path: str) -> str:
+    """
+    Compute MD5 hash of a file for change detection.
+
+    Args:
+        file_path (str): Path to the file.
+
+    Returns:
+        str: Hexadecimal MD5 hash.
+    """
     try:
         with open(file_path, "rb") as f:
             return hashlib.md5(f.read()).hexdigest()

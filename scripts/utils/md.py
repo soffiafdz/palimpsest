@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
+@staticmethod
+def parse_markdown_metadata(file_path: str) -> Dict[str, Any]:
+    """
+    Extract YAML frontmatter metadata from a Markdown file.
 
+    Args:
+        file_path (str): Path to the Markdown file.
 
-def parse_markdown_metadata(self, file_path: str) -> Dict[str, Any]:
-    """Extract YAML metadata from markdown file"""
+    Returns:
+        Dict[str, Any]: Parsed metadata dictionary.
+    """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -13,8 +20,10 @@ def parse_markdown_metadata(self, file_path: str) -> Dict[str, Any]:
                 yaml_content = content[4:end_marker]
                 metadata = yaml.safe_load(yaml_content)
                 return metadata or {}
+
     except Exception as e:
-        print(f"Error parsing {file_path}: {e}")
+        print(f"[Markdown Parse Error] {file_path}: {e}")
+
     return {}
 
 
