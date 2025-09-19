@@ -32,7 +32,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 # --- Third party ---
 from sqlalchemy import (
-    Boolean,
+    # Boolean,
     Column,
     Date,
     DateTime,
@@ -318,8 +318,7 @@ class Person(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, index=True)
     full_name: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
-    type_relationship: Mapped[Optional[str]] = mapped_column(String)
-    pseudonym: Mapped[Optional[str]] = mapped_column(String)
+    relation_type: Mapped[Optional[str]] = mapped_column(String)
 
     # Relationships
     aliases: Mapped[List[Alias]] = relationship(
