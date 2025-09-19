@@ -3,15 +3,6 @@ txt_utils.py
 -------------------
 Set of utilities for parsing, formatting, and modifying text documents.
 
-This module provides functions to:
-# TODO: Update this after finishing
-# - extract Markdown sections based on header names and levels
-# - parse bullet list items
-# - read YAML front-matter blocks
-# - compute relative links between files
-# - compute absolute links back from relative
-# - update or locate sections within a document by header
-
 It is designed to work with the txt compilation documents
 exported by the 750words website and used in the Palimpsest project.
 
@@ -28,9 +19,7 @@ from typing import List, Tuple
 from textstat import lexicon_count  # type: ignore
 
 
-# ------------------------------------------------------------------------
-# Ordinal dates
-# ------------------------------------------------------------------------
+# ----- Ordinal dates -----
 def ordinal(n: int) -> str:
     """
     input: n, an integer day of month
@@ -48,9 +37,7 @@ def ordinal(n: int) -> str:
     return f"{n}th"
 
 
-# ------------------------------------------------------------------------
-# Format body of text
-# ------------------------------------------------------------------------
+# ----- Format body of text -----
 def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
     """
     input: lines, list of raw body lines (strings)
@@ -89,9 +76,7 @@ def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
     return out
 
 
-# ------------------------------------------------------------------------
-# Wrap entry -> <80characters
-# ------------------------------------------------------------------------
+# ----- Wrap entry -> <80 chars -----
 def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
     """
     input: paragraph, a list of lines (strings) without blank lines
@@ -107,9 +92,7 @@ def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
     return wrapper.wrap(text)
 
 
-# ------------------------------------------------------------------------
-# Word-count and calculate approx reading time
-# ------------------------------------------------------------------------
+# ----- Word-count & ~reading time -----
 def compute_metrics(lines: List[str]) -> Tuple[int, float]:
     """
     input: str, complete text for the entry

@@ -1,61 +1,99 @@
 #!/usr/bin/env python3
-@staticmethod
-def parse_markdown_metadata(file_path: str) -> Dict[str, Any]:
+"""
+md.py
+-------------------
+Set of utilities for dealing with Markdown documents.
+
+It is designed to work with metadata and vimwiki integration.
+
+Intended to be imported by the md2wiki and metadata workflow.
+"""
+from __future__ import annotations
+
+# --- Standard library imports ---
+import hashlib
+import re
+from datetime import date, datetime
+from typing import Any
+
+# --- Third-party library imports ---
+# import yaml
+
+
+# TODO: Work on this
+# # ----- Parse metadata from Markdown -----
+# def parse_markdown_metadata(file_path: str) -> Dict[str, Any]:
+#     """
+#     Extract YAML frontmatter metadata from a Markdown file.
+#
+#     Args:
+#         file_path (str): Path to the Markdown file.
+#
+#     Returns:
+#         Dict[str, Any]: Parsed metadata dictionary.
+#     """
+#     try:
+#         with open(file_path, "r", encoding="utf-8") as f:
+#             content = f.read()
+#
+#         if content.startswith("---\n"):
+#             end_marker = content.find("\n---\n", 4)
+#             if end_marker != -1:
+#                 yaml_content = content[4:end_marker]
+#                 metadata = yaml.safe_load(yaml_content)
+#                 return metadata or {}
+#
+#     except Exception as e:
+#         print(f"[Markdown Parse Error] {file_path}: {e}")
+#
+#     return {}
+
+
+# TODO: Work on this
+# # ----- Update Markdown file -----
+# def update_markdown_file(file_path: str, metadata: Dict[str, Any]) -> bool:
+#     """Update markdown file with new metadata"""
+#     try:
+#         with open(file_path, "r", encoding="utf-8") as f:
+#             content = f.read()
+#
+#         if content.startswith("---\n"):
+#             end_marker = content.find("\n---\n", 4)
+#             if end_marker != -1:
+#                 body_content = content[end_marker + 5 :]
+#             else:
+#                 body_content = content[4:]
+#         else:
+#             body_content = content
+#
+#         yaml_content = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
+#         new_content = f"---\n{yaml_content}---\n{body_content}"
+#
+#         with open(file_path, "w", encoding="utf-8") as f:
+#             f.write(new_content)
+#
+#         return True
+#     except Exception as e:
+#         print(f"Error updating {file_path}: {e}")
+#         return False
+
+
+# ----- text hash -----
+def get_text_hash(text: str) -> str:
     """
-    Extract YAML frontmatter metadata from a Markdown file.
+    Compute MD5 hash of a string, useful for detecting changes in content.
 
     Args:
-        file_path (str): Path to the Markdown file.
+        text (str): Input string to hash.
 
     Returns:
-        Dict[str, Any]: Parsed metadata dictionary.
+        str: Hexadecimal MD5 hash.
     """
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        if content.startswith("---\n"):
-            end_marker = content.find("\n---\n", 4)
-            if end_marker != -1:
-                yaml_content = content[4:end_marker]
-                metadata = yaml.safe_load(yaml_content)
-                return metadata or {}
-
-    except Exception as e:
-        print(f"[Markdown Parse Error] {file_path}: {e}")
-
-    return {}
+    return hashlib.md5(text.encode("utf-8")).hexdigest()
 
 
-def update_markdown_file(self, file_path: str, metadata: Dict[str, Any]) -> bool:
-    """Update markdown file with new metadata"""
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        if content.startswith("---\n"):
-            end_marker = content.find("\n---\n", 4)
-            if end_marker != -1:
-                body_content = content[end_marker + 5 :]
-            else:
-                body_content = content[4:]
-        else:
-            body_content = content
-
-        yaml_content = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
-        new_content = f"---\n{yaml_content}---\n{body_content}"
-
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(new_content)
-
-        return True
-    except Exception as e:
-        print(f"Error updating {file_path}: {e}")
-        return False
-
-
-@staticmethod
-def _extract_number(value: Any) -> float:
+# ----- Extract number from string -----
+def extract_number(value: Any) -> float:
     """
     Extract numeric value from a string or number.
 
@@ -72,15 +110,13 @@ def _extract_number(value: Any) -> float:
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
-        import re
-
         match = re.search(r"(\d+(?:\.\d+)?)", value)
         if match:
             return float(match.group(1))
     return 0.0
 
 
-# --- helpers ---
+# ----- Failsafe obj handling -----
 def parse_date(value: str | date | None) -> date | None:
     if value is None:
         return None
