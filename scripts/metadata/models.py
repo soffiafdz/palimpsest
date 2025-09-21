@@ -316,7 +316,7 @@ class Person(Base):
     __tablename__ = "people"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
     full_name: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
     relation_type: Mapped[Optional[str]] = mapped_column(String)
 
@@ -365,7 +365,7 @@ class Reference(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    author: Mapped[str] = mapped_column(String)
+    author: Mapped[Optional[str]] = mapped_column(String)
     content: Mapped[Optional[str]] = mapped_column(Text)
     type_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("reference_types.id")
@@ -475,7 +475,7 @@ class Tag(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    tag: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     # Relationships
     entries: Mapped[List[Entry]] = relationship(
@@ -484,4 +484,4 @@ class Tag(Base):
 
     # Call
     def __repr__(self):
-        return f"<Tag(name='{self.name}')>"
+        return f"<Tag(name='{self.tag}')>"

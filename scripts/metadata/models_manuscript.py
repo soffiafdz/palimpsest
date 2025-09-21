@@ -77,6 +77,7 @@ class ManuscriptEntry(Base):
         String, default=ManuscriptStatus.UNSPECIFIED.value, index=True
     )
     edited: Mapped[bool] = mapped_column(Boolean, default=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
     themes: Mapped[List[Theme]] = relationship("Theme", secondary=entry_themes)
 
     # Relationships
@@ -94,7 +95,7 @@ class ManuscriptPerson(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     person_id: Mapped[int] = mapped_column(ForeignKey("person.id"), unique=True)
-    character: Mapped[String] = mapped_column(String, nullable=False, index=True)
+    character: Mapped[str] = mapped_column(String, nullable=False, index=True)
 
     # Relationships
     person: Mapped[Person] = relationship("Person", back_populates="manuscript")
@@ -113,15 +114,31 @@ class ManuscriptEvent(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     event_id: Mapped[int] = mapped_column(ForeignKey("event.id"), unique=True)
-    arc: Mapped[String] = mapped_column(String, nullable=False)
+    arc_id: Mapped[Optional[int]] = mapped_column(ForeignKey("arcs.id"))
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Relationships
     event: Mapped[Event] = relationship("Event", back_populates="manuscript")
+    arc: Mapped[Optional[Arc]] = relationship("Arc", back_populates="events")
 
     # Call
     def __repr__(self):
-        return f"<ManuscriptEvent(event='{self.event}', arc='{self.arc}')>"
+        return f"<ManuscriptEvent(event='{self.event}')>"
+
+
+class Arc(Base):
+    __tablename__ = "arcs"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    arc: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    # Relationships
+    events: Mapped[List["ManuscriptEvent"]] = relationship(
+        "ManuscriptEvent", back_populates="arc"
+    )
+
+    # Call
+    def __repr__(self):
+        return f"<Arc(arc='{self.arc}')>"
 
 
 class Theme(Base):
@@ -130,13 +147,13 @@ class Theme(Base):
     __tablename__ = "themes"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    theme: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     # Relationships
-    entries: Mapped[List[Entry]] = relationship(
-        "Entry", secondary=entry_themes, back_populates="themes"
+    entries: Mapped[List[ManuscriptEntry]] = relationship(
+        "ManuscriptEntry", secondary=entry_themes, back_populates="themes"
     )
 
     # Call
     def __repr__(self):
-        return f"<Theme(name='{self.name}')>"
+        return f"<Theme(name='{self.theme}')>"
