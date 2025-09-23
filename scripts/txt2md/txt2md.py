@@ -155,7 +155,7 @@ def main() -> None:
                 year_dir: Path = outdir / str(txt_entry.date.year)
                 year_dir.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                raise OSError(f"Error writing {str(year_dir)}: {e}")
+                raise OSError(f"Error writing {txt_entry.date.year} dir: {e}")
 
             out_file: Path = year_dir / f"{txt_entry.date.isoformat()}.md"
 
