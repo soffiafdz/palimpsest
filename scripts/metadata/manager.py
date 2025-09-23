@@ -25,6 +25,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 from contextlib import contextmanager
 import logging
+import traceback
 import shutil
 
 # from contextlib import contextmanager
@@ -59,6 +60,7 @@ from sqlalchemy.orm import Mapped, Session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 # --- Local imports ---
+from scripts.paths import ROOT
 from scripts.utils import md, fs
 from scripts.metadata.models import (
     Base,
@@ -93,6 +95,11 @@ T = TypeVar("T", bound=HasId)
 C = TypeVar("C", bound=HasId)
 
 # ----- Logging -----
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 logger = logging.getLogger(__name__)
 
 
@@ -408,14 +415,17 @@ class PalimpsestDB:
             db_path (str | Path): Path to the SQLite  file.
             alembic_dir (str | Path): Path to the Alembic directory.
         """
+        logger.info("Setting up PalimpsestDB...")
         self.db_path: Path = Path(db_path).expanduser().resolve()
         self.alembic_dir = Path(alembic_dir).expanduser().resolve()
 
         try:
+            logger.info("Creating Engine...")
             self.engine: Engine = create_engine(
                 f"sqlite:///{db_path}", echo=False, future=True, pool_pre_ping=True
             )
 
+            logger.info("Setting up sessionmaker...")
             self.SessionLocal: sessionmaker = sessionmaker(
                 bind=self.engine,
                 autoflush=True,
@@ -425,7 +435,9 @@ class PalimpsestDB:
 
             # Initialize
             self.alembic_cfg: Config = self._setup_alembic()
+            logger.info("Initiating database...")
             self.init_database()
+            logger.info("PalimpsestDB properly set up.")
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise DatabaseError(f"Database initialization failed: {e}")
@@ -448,6 +460,125 @@ class PalimpsestDB:
     def get_session(self) -> Session:
         """Create and return a new SQLAlchemy session."""
         return self.SessionLocal()
+
+    # ---- Alembic ----
+    def _setup_alembic(self) -> Config:
+        """Setup Alembic configuration with error handling."""
+        try:
+            logger.info("Setting up Alembic configuration...")
+            alembic_cfg: Config = Config(str(ROOT / "alembic.ini"))
+            alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
+            alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
+            alembic_cfg.set_main_option(
+                "file_template",
+                "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
+            )
+            logger.info("Alembic configuration setup")
+            return alembic_cfg
+        except Exception as e:
+            logger.error(f"Failed to setup Alembic: {e}")
+            raise DatabaseError(f"Alembic configuration failed: {e}")
+
+    @handle_db_errors
+    def init_alembic(self) -> None:
+        """
+        Initialize Alembic in the project directory.
+
+        Actions:
+            Creates Alembic directory with standard structure
+            Updates alembic/env.py to import Palimpsest Base metadata
+            Prints instructions for first migration
+
+        Returns:
+            None
+        """
+        try:
+            if not self.alembic_dir.is_dir():
+                logger.info(f"Initializing Alembic in {self.alembic_dir}...")
+                command.init(self.alembic_cfg, str(self.alembic_dir))
+
+                # Update the generated alembic/env.py to use models
+                logger.info("Updating alembic env.py...")
+                self._update_alembic_env()
+
+                logger.info("Alembic initialized successfully")
+                logger.info("You can now create your first migration with:")
+                logger.info("python your_script.py create_migration 'Initial schema'")
+            else:
+                logger.info(f"Alembic already initialized in {self.alembic_dir}")
+        except Exception as e:
+            logger.error(f"Failed to initialize Alembic: {e}")
+            logger.error("".join(traceback.format_exception(None, e, e.__traceback__)))
+            raise DatabaseError(f"Alembic initialization failed: {e}")
+
+    def _update_alembic_env(self) -> None:
+        """
+        Update the generated alembic/env.py to import Palimpsest models.
+
+        Returns:
+            None
+        """
+        env_path = self.alembic_dir / "env.py"
+
+        try:
+            if env_path.exists():
+                content = env_path.read_text(encoding="utf-8")
+
+                import_line = "from scripts.metadata.models import Base\n"
+                target_metadata_line = "target_metadata = Base.metadata"
+
+                # Replace the target_metadata = None line
+                if "target_metadata = None" not in content:
+                    logger.warning(
+                        "No 'target_metadata = None' "
+                        "line found in env.py, skipping update"
+                    )
+                else:
+                    updated_content = content.replace(
+                        "target_metadata = None",
+                        f"{import_line}\n{target_metadata_line}",
+                    )
+                    env_path.write_text(updated_content, encoding="utf-8")
+                    logger.info("Updated alembic/env.py to use Palimpsest models")
+        except Exception as e:
+            logger.error(f"Failed to update alembic/env.py: {e}")
+            raise DatabaseError(f"Could not update Alembic environment: {e}")
+
+    @handle_db_errors
+    def init_database(self) -> None:
+        """
+        Initialize database - create tables if needed and run migrations.
+
+        Actions:
+            Checks if the database is fresh (no tables)
+            If fresh,
+                creates all tables from the ORM models
+                stamps the Alembic revision to head
+            If not,
+                runs pending migrations to update schema
+
+        Returns:
+            None
+        """
+        try:
+            with self.engine.connect() as conn:
+                inspector = self.engine.dialect.get_table_names(conn)
+                is_fresh_db: bool = len(inspector) == 0
+
+            if is_fresh_db:
+                Base.metadata.create_all(bind=self.engine)
+                try:
+                    command.stamp(self.alembic_cfg, "head")
+                    logger.info("Fresh database created and stamped")
+                except Exception as e:
+                    logger.warning(f"Could not stamp database: {e}")
+            else:
+                self.upgrade_database()
+                logger.info("Database initialized with migrations")
+
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            raise DatabaseError(f"Could not initialize database: {e}")
 
     # ---- Model helpers ----
     @staticmethod
@@ -1843,117 +1974,6 @@ class PalimpsestDB:
         except Exception as e:
             logger.error(f"Cleanup failed: {e}")
             raise DatabaseError(f"Cleanup operation failed: {e}")
-
-    # ---- Alembic ----
-    def _setup_alembic(self) -> Config:
-        """Setup Alembic configuration with error handling."""
-        try:
-            alembic_cfg: Config = Config()
-            alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
-            alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
-            alembic_cfg.set_main_option(
-                "file_template",
-                "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
-            )
-            return alembic_cfg
-        except Exception as e:
-            logger.error(f"Failed to setup Alembic: {e}")
-            raise DatabaseError(f"Alembic configuration failed: {e}")
-
-    @handle_db_errors
-    def init_alembic(self) -> None:
-        """
-        Initialize Alembic in the project directory.
-
-        Actions:
-            Creates Alembic directory with standard structure
-            Updates alembic/eng.py to import Palimpsest Base metadata
-            Prints instructions for first migration
-
-        Returns:
-            None
-        """
-        try:
-            if not self.alembic_dir.is_dir():
-                logger.info(f"Initializing Alembic in {self.alembic_dir}...")
-                command.init(self.alembic_cfg, str(self.alembic_dir))
-
-                # Update the generated alembic/env.py to use models
-                self._update_alembic_env()
-
-                logger.info("Alembic initialized successfully")
-                logger.info("You can now create your first migration with:")
-                logger.info("python your_script.py create_migration 'Initial schema'")
-            else:
-                logger.info(f"Alembic already initialized in {self.alembic_dir}")
-        except Exception as e:
-            logger.error(f"Failed to initialize Alembic: {e}")
-            raise DatabaseError(f"Alembic initialization failed: {e}")
-
-    def _update_alembic_env(self) -> None:
-        """
-        Update the generated alembic/env.py to import Palimpsest models.
-
-        Returns:
-            None
-        """
-        env_path = self.alembic_dir / "env.py"
-
-        try:
-            if env_path.exists():
-                content = env_path.read_text(encoding="utf-8")
-
-                import_line = "from models import Base\n"
-                target_metadata_line = "target_metadata = Base.metadata"
-
-                # Replace the target_medatara = None line
-                updated_content: str = content.replace(
-                    "target_metadata = None",
-                    f"{import_line}\n{target_metadata_line}",
-                )
-
-                # Write the updated file back
-                env_path.write_text(updated_content, encoding="utf-8")
-                logger.info("Updated alembic/env.py to use Palimpsest models")
-        except Exception as e:
-            logger.error(f"Failed to update alembic/env.py: {e}")
-            raise DatabaseError(f"Could not update Alembic environment: {e}")
-
-    @handle_db_errors
-    def init_database(self) -> None:
-        """
-        Initialize database - create tables if needed and run migrations.
-
-        Actions:
-            Checks if the database is fresh (no tables)
-            If fresh,
-                creates all tables from the ORM models
-                stamps the Alembic revision to head
-            If not,
-                runs pending migrations to update schema
-
-        Returns:
-            None
-        """
-        try:
-            with self.engine.connect() as conn:
-                inspector = self.engine.dialect.get_table_names(conn)
-                is_fresh_db: bool = len(inspector) == 0
-
-            if is_fresh_db:
-                Base.metadata.create_all(bind=self.engine)
-                try:
-                    command.stamp(self.alembic_cfg, "head")
-                    logger.info("Fresh database created and stamped")
-                except Exception as e:
-                    logger.warning(f"Could not stamp database: {e}")
-            else:
-                self.upgrade_database()
-                logger.info("Database initialized with migrations")
-
-        except Exception as e:
-            logger.error(f"Database initialization failed: {e}")
-            raise DatabaseError(f"Could not initialize database: {e}")
 
     # ---- Migrations ----
     @handle_db_errors
