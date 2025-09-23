@@ -231,9 +231,9 @@ class Entry(Base):
 
     __tablename__ = "entries"
     __table_args__ = (
+        CheckConstraint("file_path != ''", name="ck_entry_non_empty_file_path"),
         CheckConstraint("word_count >= 0", name="positive_entry_word_count"),
         CheckConstraint("reading_time >= 0.0", name="positive_entry_reading_time"),
-        CheckConstraint("file_path != ''", name="ck_entry_non_empty_file_path"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -489,7 +489,7 @@ class Location(Base):
     """Represents a location associated with entries."""
 
     __tablename__ = "locations"
-    __table_args__ = CheckConstraint("name != ''", name="ck_location_non_empty_name")
+    __table_args__ = (CheckConstraint("name != ''", name="ck_location_non_empty_name"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
@@ -564,7 +564,7 @@ class Person(Base, SoftDeleteMixin):
     """Represents a person mentioned in journal entries."""
 
     __tablename__ = "people"
-    __table_args__ = CheckConstraint("name != ''", name="ck_person_non_empty_name")
+    __table_args__ = (CheckConstraint("name != ''", name="ck_person_non_empty_name"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
@@ -671,7 +671,7 @@ class Alias(Base):
     """Represents the multiple aliases for people."""
 
     __tablename__ = "aliases"
-    __table_args__ = CheckConstraint("alias != ''", name="ck_non_empty_alias")
+    __table_args__ = (CheckConstraint("alias != ''", name="ck_non_empty_alias"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     alias: Mapped[str] = mapped_column(String, nullable=False, index=True)
@@ -694,8 +694,8 @@ class Reference(Base):
     """Represents an (external) reference associated with entries."""
 
     __tablename__ = "references"
-    __table_args__ = CheckConstraint(
-        "content != ''", name="check_reference_non_empty_content"
+    __table_args__ = (
+        CheckConstraint("content != ''", name="check_reference_non_empty_content"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -792,7 +792,7 @@ class Event(Base, SoftDeleteMixin):
     """
 
     __tablename__ = "events"
-    __table_args__ = CheckConstraint("event != ''", name="ck_non_empty_event")
+    __table_args__ = (CheckConstraint("event != ''", name="ck_non_empty_event"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     event: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
@@ -883,7 +883,7 @@ class Event(Base, SoftDeleteMixin):
 
 class Poem(Base):
     __tablename__ = "poems"
-    __table_args__ = CheckConstraint("title != ''", name="ck_poem_non_empty_title")
+    __table_args__ = (CheckConstraint("title != ''", name="ck_poem_non_empty_title"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String, nullable=False, index=True)
@@ -903,8 +903,8 @@ class Poem(Base):
 
 class PoemVersion(Base):
     __tablename__ = "poem_versions"
-    __table_args__ = CheckConstraint(
-        "content != ''", name="ck_poem_version_non_empty_content"
+    __table_args__ = (
+        CheckConstraint("content != ''", name="ck_poem_version_non_empty_content"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -942,7 +942,7 @@ class Tag(Base):
     """Represents a keyword/tag associated with entries."""
 
     __tablename__ = "tags"
-    __table_args__ = CheckConstraint("tag != ''", name="ck_non_empty_tag")
+    __table_args__ = (CheckConstraint("tag != ''", name="ck_non_empty_tag"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     tag: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)

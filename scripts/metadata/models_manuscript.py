@@ -153,8 +153,10 @@ class ManuscriptPerson(Base, SoftDeleteMixin):
     """Represents a Person from whom a character will be based."""
 
     __tablename__ = "manuscript_people"
-    __table_args__ = CheckConstraint(
-        "character != ''", name="ck_manuscript_person_non_empty_character"
+    __table_args__ = (
+        CheckConstraint(
+            "character != ''", name="ck_manuscript_person_non_empty_character"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -233,10 +235,9 @@ class Arc(Base, SoftDeleteMixin):
     """Represents an Arc encompassing several narrative manuscriptEvents."""
 
     __tablename__ = "arcs"
-    __table_args__ = CheckConstraint(
-        "arc != ''", name="ck_manuscript_arc_non_empty_arc"
+    __table_args__ = (
+        CheckConstraint("arc != ''", name="ck_manuscript_arc_non_empty_arc"),
     )
-
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     arc: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
 
@@ -292,8 +293,8 @@ class Theme(Base, SoftDeleteMixin):
     """Represents a theme/tag associated with entries."""
 
     __tablename__ = "themes"
-    __table_args__ = CheckConstraint(
-        "theme != ''", name="ck_manuscript_non_empty_theme"
+    __table_args__ = (
+        CheckConstraint("theme != ''", name="ck_manuscript_non_empty_theme"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
