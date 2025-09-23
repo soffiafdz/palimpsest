@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+manager.py
 -------------------
 Database manager for the Palimpsest medatata system.
 
