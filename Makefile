@@ -18,7 +18,7 @@ endif
 # ─── Variables ────────────────────────────────────────────────────────────────
 TXT2MD    := scripts/txt2md/txt2md.py
 MD2PDF    := scripts/md2pdf/md2pdf.py
-PROC_INBX := bin/proc_inbox.sh
+PROC_INBX := bin/proc_inbox
 
 TXT_DIR   := journal/txt
 MD_DIR    := journal/md

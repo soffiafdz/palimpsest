@@ -14,29 +14,24 @@ ROOT=~/Documents/palimpsest
 ARCHIVE=${ROOT}/journal/archive
 INBOX=${ROOT}/journal/inbox
 TXTS=${ROOT}/journal/txt
-FORMAT_SCRIPT=${ROOT}/bin/init_format.awk
-
-# centralized printf formats
-INFO_FMT="→  %s\n"
-COUNT_FMT="→  %d %s\n"
+FORMAT_SCRIPT=${ROOT}/bin/init_format
 
 # ─── PREPARE ─────────────────────────────────────────────────────────────────
 mkdir -p "$ARCHIVE" "$TXTS"
 shopt -s nullglob
 
-printf "$INFO_FMT" "looking for new files in '$INBOX'"
+printf "[proc_inbox] →  looking for new files in %s\n" "$INBOX"
 src_files=()
-for f in "$INBOX"/*.txt
-do
+for f in "$INBOX"/*.txt; do
   [[ -e "$f" ]] && src_files+=("$f")
 done
 
-if (( ${#src_files[@]} == 0 )); then
-  printf "$INFO_FMT" "'$INBOX' is empty. Nothing to update."
+if ((${#src_files[@]} == 0)); then
+  printf "[proc_inbox] →  %s is empty. Nothing to update\n" "$INBOX"
   exit 0
 fi
 
-printf "$COUNT_FMT" "${#src_files[@]}" "new files found in '$INBOX'"
+printf "[proc_inbox] →  %d new files found in '%s'\n" "$COUNT_FMT" "$INBOX"
 
 # ─── FUNCTIONS ───────────────────────────────────────────────────────────────
 declare -A year_files_map
@@ -50,16 +45,15 @@ rename_file() {
     local new_name="journal_${year}_${month}.txt"
     local dest="$INBOX/$new_name"
 
-    if [[ "$file" != "$dest" ]]
-    then
-      printf "$INFO_FMT" "renaming '$base' → '$new_name'"
+    if [[ "$file" != "$dest" ]]; then
+      printf "[proc_inbox] →  renaming '%s' → '%s'\n" "$base" "$new_name"
       mv -- "$file" "$dest"
     fi
 
     # accumulate per-year list (newline-separated)
     year_files_map["$year"]+="$new_name"$'\n'
   else
-    printf "$INFO_FMT" "skipping unrecognized file '$base'"
+    printf "[proc_inbox] →  skipping unrecognized file '%s'\n" "$base"
   fi
 }
 
@@ -74,21 +68,25 @@ process_year() {
   # read the newline-separated list into an array
   # strip final "\n" and save into an array
   files_list="${files_list%$'\n'}"
-  mapfile -t files <<< "$files_list"
+  mapfile -t files <<<"$files_list"
 
-  printf "$INFO_FMT" "processing ${#files[@]} month(s) for year $year"
+  printf "[proc_inbox] →  processing %s month(s) for year %s\n" "${#files[@]}" "$year"
   for fname in "${files[@]}"; do
     [[ -z "$fname" ]] && continue
     local infile="$INBOX/$fname"
     local month="${fname##*_}"
     month="${month%.txt}"
-    printf "$INFO_FMT" "formatting month '$month' → '$year-$month.txt'"
-    "$FORMAT_SCRIPT" "$infile" > "$year_dir/$year-$month.txt"
+    printf "[proc_inbox] →  formatting month '%s' → '%s-%s.txt'\n" "$month" "$year" "$month"
+    "$FORMAT_SCRIPT" "$infile" >"$year_dir/$year-$month.txt"
   done
 
   local archive="$ARCHIVE/$year.zip"
-  [[ -f $archive ]] && local action="updating" || local action="creating"
-  printf "$INFO_FMT" "'$action' archive '$(basename "$archive")'"
+  if [[ -f $archive ]]; then
+    local action="updating"
+  else
+    local action="creating"
+  fi
+  printf "[proc_inbox] →  '%s' archive '%s'\n" "$action" "$(basename "$archive")"
   (cd "$INBOX" && zip -qu "$archive" "${files[@]}" && rm -- "${files[@]}")
 }
 
@@ -97,10 +95,10 @@ for file in "${src_files[@]}"; do
   rename_file "$file"
 done
 
-if (( ${#year_files_map[@]} )); then
+if ((${#year_files_map[@]})); then
   # list of years to update
   years=("${!year_files_map[@]}")
-  printf "$INFO_FMT" "updating year(s): ${years[*]//$'\n'/ }"
+  printf "[proc_inbox] →  updating year(s): %s\n" "${years[*]//$'\n'/ }"
   for yr in "${years[@]}"; do
     process_year "$yr" "${year_files_map[$yr]}"
   done
