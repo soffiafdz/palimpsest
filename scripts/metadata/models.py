@@ -8,14 +8,18 @@ Each class represents a table in the SQLite database.
 Relationships and many-to-many association tables are defined here.
 
 Tables:
-    - SchemaInfo    schema version control
-    - Entry:        journal entry metadata (from Markdown frontmatter)
-    - Location:     geographic placement of the entries
-    - Person:       people mentioned in the entries
-    - Reference:    dates referenced in the entries
-    - Event:        overarching thematic arcs/phases
-    - Poem:         poems written in the journal
-    - Tag:          simple tags
+    - SchemaInfo        schema version control
+    - Entry:            journal entry metadata (from Markdown frontmatter)
+    - MentionedDate:    set of dates referenced in an Entry
+    - Location:         geographic placement of the entries
+    - Person:           people mentioned in the entries
+    - Alias:            aliases for people
+    - Reference:        outside references in text
+    - ReferenceSource:  source of the references
+    - Event:            overarching thematic arcs/phases
+    - Poem:             poems written in the journal
+    - PoemVersion:      specific version related to entries
+    - Tag:              simple tags
 
 Notes
 ==============
@@ -249,7 +253,7 @@ class Entry(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # Relationships
+    # Relationships many-to-many
     dates: Mapped[List[MentionedDate]] = relationship(
         "MentionedDate", secondary=entry_dates, back_populates="entries"
     )
@@ -259,17 +263,19 @@ class Entry(Base):
     people: Mapped[List[Person]] = relationship(
         "Person", secondary=entry_people, back_populates="entries"
     )
-    references: Mapped[List[Reference]] = relationship(
-        "Reference", back_populates="entry", cascade="all, delete-orphan"
-    )
     events: Mapped[List[Event]] = relationship(
         "Event", secondary=entry_events, back_populates="entries"
     )
-    poems: Mapped[List[PoemVersion]] = relationship(
-        "PoemVersion", back_populates="entry", cascade="all, delete-orphan"
-    )
     tags: Mapped[List[Tag]] = relationship(
         "Tag", secondary=entry_tags, back_populates="entries"
+    )
+
+    # Relationships one-to-many
+    references: Mapped[List[Reference]] = relationship(
+        "Reference", back_populates="entry", cascade="all, delete-orphan"
+    )
+    poems: Mapped[List[PoemVersion]] = relationship(
+        "PoemVersion", back_populates="entry", cascade="all, delete-orphan"
     )
 
     # Manuscript
@@ -701,29 +707,14 @@ class Reference(Base):
         Integer, ForeignKey("entries.id"), nullable=False
     )
     entry: Mapped[Entry] = relationship("Entry", back_populates="references")
-    source_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("reference_sources.id"), nullable=False
+    source_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("reference_sources.id")
     )
-    source: Mapped[ReferenceSource] = relationship(
+    source: Mapped[Optional[ReferenceSource]] = relationship(
         "ReferenceSource", back_populates="references"
     )
 
     # Utilities
-    @property
-    def type(self) -> str:
-        """Get the type of the Source material"""
-        return self.source.type
-
-    @property
-    def title(self) -> str:
-        """Get the title of the Source material"""
-        return self.source.title
-
-    @property
-    def author(self) -> Optional[str]:
-        """Get the author of the Source material"""
-        return self.source.author
-
     @property
     def content_preview(self) -> str:
         """Get truncated content for display."""
@@ -734,10 +725,13 @@ class Reference(Base):
         return f"<Reference(id={self.id}, content={self.content})>"
 
     def __str__(self) -> str:
-        return (
-            f"Reference '{self.content_preview}' "
-            f"({self.title}, {self.type}; {self.entry.date_formatted})"
-        )
+        if self.source:
+            return (
+                f"Reference '{self.content_preview}' "
+                f"({self.source.title}, {self.source.type}; "
+                f"{self.entry.date_formatted})"
+            )
+        return f"Reference '{self.content_preview}'"
 
 
 class ReferenceSource(Base):
@@ -783,7 +777,7 @@ class ReferenceSource(Base):
 
     # Call
     def __repr__(self):
-        return "<ReferenceSource(id={self.id}, title={self.title}, type={self.type})>"
+        return f"<ReferenceSource(id={self.id}, title={self.title}, type={self.type})>"
 
     def __str__(self) -> str:
         return (
@@ -815,7 +809,7 @@ class Event(Base, SoftDeleteMixin):
 
     # Manuscript
     manuscript: Mapped[Optional[ManuscriptEvent]] = relationship(
-        "ManuscriptEvent", uselist=False, back_populates="entry"
+        "ManuscriptEvent", uselist=False, back_populates="event"
     )
 
     # Utilities
@@ -875,7 +869,7 @@ class Event(Base, SoftDeleteMixin):
         return self.manuscript is not None
 
     @property
-    def get_chronological_entries(self) -> List[Entry]:
+    def chronological_entries(self) -> List[Entry]:
         """Get entries for this event in chronological order."""
         return sorted(self.entries, key=lambda e: e.date)
 
@@ -910,7 +904,7 @@ class Poem(Base):
 class PoemVersion(Base):
     __tablename__ = "poem_versions"
     __table_args__ = CheckConstraint(
-        "text != ''", name="ck_poem_version_non_empty_text"
+        "content != ''", name="ck_poem_version_non_empty_content"
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -919,12 +913,13 @@ class PoemVersion(Base):
     )
     entry_id: Mapped[int] = mapped_column(Integer, ForeignKey("entries.id"))
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    revision_date: Mapped[date] = mapped_column(Date, index=True)
     version_hash: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Relationships
     poem: Mapped[Poem] = relationship("Poem", back_populates="versions")
-    entry: Mapped[Entry] = relationship("Entry", back_populates="poems")
+    entry: Mapped[Optional[Entry]] = relationship("Entry", back_populates="poems")
 
     # Utilities
     @property
@@ -937,7 +932,10 @@ class PoemVersion(Base):
         return f"<PoemVersion(content={self.content})>"
 
     def __str__(self) -> str:
-        return f"PoemVersion ({self.poem.title}, {self.entry.date_formatted})"
+        if self.entry:
+            return f"PoemVersion ({self.poem.title}, {self.entry.date_formatted})"
+        else:
+            return f"PoemVersion {self.content_preview} ({self.poem.title})"
 
 
 class Tag(Base):

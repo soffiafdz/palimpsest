@@ -8,9 +8,11 @@ Each class represents a table in the SQLite database.
 Relationships and many-to-many association tables are defined here.
 
 Tables:
-    - Entry
-    - ...
-    - Theme:        thematic tags
+    - ManuscriptEntry
+    - ManuscriptPerson
+    - ManuscriptEvent
+    - Arc
+    - Theme
 
 Notes
 ==============
@@ -179,7 +181,7 @@ class ManuscriptPerson(Base, SoftDeleteMixin):
 
     def __str__(self) -> str:
         person_name = self.display_name
-        return f"ManuscriptPerson {person_name} → {self.character}"
+        return f"ManuscriptPerson {person_name} -> {self.character}"
 
 
 class ManuscriptEvent(Base, SoftDeleteMixin):

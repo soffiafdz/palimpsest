@@ -22,23 +22,40 @@ Notes
 from __future__ import annotations
 
 # --- Standard library imports ---
+from contextlib import contextmanager
+import logging
 import shutil
 
-# from datetime import date, datetime, timezone
-from datetime import date, datetime
+# from contextlib import contextmanager
+# from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    # Set,
+    Type,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 # --- Third party ---
 # import yaml
 from alembic.config import Config
 from alembic import command
-
 from alembic.runtime.migration import MigrationContext
 
 # from alembic.operations import Operations
+
 from sqlalchemy import create_engine, Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Mapped, Session, sessionmaker
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 # --- Local imports ---
 from scripts.utils import md, fs
@@ -50,7 +67,7 @@ from scripts.metadata.models import (
     Person,
     Alias,
     Reference,
-    ReferenceType,
+    ReferenceSource,
     Event,
     Poem,
     PoemVersion,
@@ -65,10 +82,295 @@ from scripts.metadata.models_manuscript import (
     Theme,
 )
 
-T = TypeVar("T", bound=Base)
+
+@runtime_checkable
+class HasId(Protocol):
+    id: Mapped[int]
 
 
-# ----- Manager -----
+T = TypeVar("T", bound=HasId)
+C = TypeVar("C", bound=HasId)
+
+# ----- Logging -----
+logger = logging.getLogger(__name__)
+
+
+class DatabaseError(Exception):
+    """Custom exception for database-related errors."""
+
+    pass
+
+
+class ValidationError(Exception):
+    """Custom exception for validation errors."""
+
+    pass
+
+
+def validate_metadata(required_fields: List[str]):
+    """Decorator to validate metadata dictionaries before processing."""
+
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(self, session: Session, *args, **kwargs):
+            # Assume metadata is the last positional arg or in kwargs
+            metadata = args[-1] if args else kwargs.get("metadata", {})
+
+            if not isinstance(metadata, dict):
+                raise ValidationError(f"Expected metadata dict, got {type(metadata)}")
+
+            for field in required_fields:
+                if field not in metadata or not metadata[field]:
+                    raise ValidationError(f"Required field '{field}' missing or empty")
+
+            return func(self, session, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def handle_db_errors(func: Callable) -> Callable:
+    """Decorator to handle common database errors."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except IntegrityError as e:
+            logger.error(f"Database integrity error in {func.__name__}: {e}")
+            raise DatabaseError(f"Data integrity violation: {e}")
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in {func.__name__}: {e}")
+            raise DatabaseError(f"Database operation failed: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error in {func.__name__}: {e}")
+            raise
+
+    return wrapper
+
+
+# ----- Relationships -----
+class RelationshipManager:
+    """Handles generic relationship updates: one-to-one, one-to-many and many-to-many."""
+
+    @staticmethod
+    def update_one_to_one(
+        session: Session,
+        parent_obj: HasId,
+        relationship_name: str,
+        model_class: Type[C],
+        foreign_key_attr: str,
+        child_data: Dict[str, Any] = {},
+        delete: bool = False,
+    ) -> Optional[C]:
+        """
+        Update a one-to-one relationship.
+
+        Args:
+            session: a SQLAlchemy session
+            parent_obj: The parent object (e.g., Entry)
+            relationship_name: name of the relationship column.
+            model_class: The child model class (e.g., ManuscriptEntry)
+            child_data: Data to update/create the child object
+            foreign_key_attr: Foreign key attribute name on child (e.g., 'entry_id')
+            delete: Whether to delete an existing relationship
+
+        Returns:
+            The child object or None if deleted/not created
+        """
+        if parent_obj.id is None:
+            raise ValueError(
+                f"{parent_obj.__class__.__name__} must be persisted before linking"
+            )
+
+        existing_child: Optional[C] = getattr(parent_obj, relationship_name, None)
+
+        if existing_child:
+            # -- Deletion request --
+            if delete:
+                session.delete(existing_child)
+                session.flush()
+                return None
+            # -- Update --
+            if child_data:
+                for key, value in child_data.items():
+                    if hasattr(existing_child, key):
+                        setattr(existing_child, key, value)
+                session.flush()
+            return existing_child
+
+        # -- Create --
+        child_data[foreign_key_attr] = parent_obj.id
+        child_obj = model_class(**child_data)
+        session.add(child_obj)
+        session.flush()
+        return child_obj
+
+    @staticmethod
+    def update_one_to_many(
+        session: Session,
+        parent_obj: HasId,
+        items: List[Union[C, int, Dict[str, Any]]],
+        model_class: Type[C],
+        foreign_key_attr: str,
+        incremental: bool = True,
+        remove_items: Optional[List[Union[T, int]]] = None,
+    ) -> bool:
+        """
+        Generic one-to-many relationship updater.
+
+        For one-to-many relationships where the child objects belong to only one parent.
+        This updates the foreign key on the child objects rather than using collections.
+
+        Args:
+            session: a SQLAlchemy session
+            parent_obj: The parent object (e.g., Entry)
+            items: List of child objects, IDs, or creation data
+            model_class: The child model class (e.g., Poem, Reference)
+            foreign_key_attr: The foreign key attribute name on the child (e.g., 'entry_id')
+            incremental: If False, removes all existing children first
+            remove_items: Items to explicitly remove (incremental mode only)
+
+        Returns:
+            bool: True if any changes were made
+        """
+        if parent_obj.id is None:
+            raise ValueError(
+                f"{parent_obj.__class__.__name__} must be persisted before linking"
+            )
+
+        changed = False
+
+        # Get existing children
+        existing_children = (
+            session.query(model_class)
+            .filter(getattr(model_class, foreign_key_attr) == parent_obj.id)
+            .all()
+        )
+        existing_ids = {child.id for child in existing_children}
+
+        # Clear all existing if not incremental
+        if not incremental:
+            for child in existing_children:
+                setattr(child, foreign_key_attr, None)
+                changed = True
+
+        # Process new items
+        for item in items:
+            if isinstance(item, dict):
+                # Create new object from metadata
+                child_obj = model_class(**item)
+                session.add(child_obj)
+                session.flush()  # Get the ID
+                setattr(child_obj, foreign_key_attr, parent_obj.id)
+                changed = True
+            else:
+                # Resolve existing object
+                child_obj = RelationshipManager._resolve_object(
+                    session, item, model_class
+                )
+                current_parent_id = getattr(child_obj, foreign_key_attr)
+
+                if current_parent_id != parent_obj.id:
+                    setattr(child_obj, foreign_key_attr, parent_obj.id)
+                    changed = True
+
+        # Remove specified items (incremental mode only)
+        if incremental and remove_items:
+            for item in remove_items:
+                child_obj = RelationshipManager._resolve_object(
+                    session, item, model_class
+                )
+                if child_obj.id in existing_ids:
+                    setattr(child_obj, foreign_key_attr, None)
+                    changed = True
+
+        if changed:
+            session.flush()
+
+        return changed
+
+    @staticmethod
+    def update_many_to_many(
+        session: Session,
+        parent_obj: HasId,
+        relationship_name: str,
+        items: List[Union[C, int]],
+        model_class: Type[C],
+        incremental: bool = True,
+        remove_items: Optional[List[Union[C, int]]] = None,
+    ) -> bool:
+        """
+        Generic many-to-many relationship updater.
+
+        Args:
+            session: a SQLAlchemy session
+            parent_obj: The parent object (e.g., Entry)
+            relationship_name: name of the relationship column.
+            items: List of child objects, IDs, or creation data
+            model_class: The child model class (e.g., Poem, Reference)
+            incremental: If False, removes all existing children first
+            remove_items: Items to explicitly remove (incremental mode only)
+
+        Returns:
+            bool: True if any changes were made
+        """
+        if parent_obj.id is None:
+            raise ValueError(
+                f"{parent_obj.__class__.__name__} must be persisted before linking"
+            )
+
+        relationship = getattr(parent_obj, relationship_name)
+        existing_ids = {obj.id for obj in relationship}
+        changed = False
+
+        # Clear all if not incremental
+        if not incremental:
+            relationship.clear()
+            changed = True
+
+        # Add new items
+        for item in items:
+            obj = RelationshipManager._resolve_object(session, item, model_class)
+            if obj.id not in existing_ids:
+                relationship.append(obj)
+                changed = True
+
+        # Remove specified items (incremental mode only)
+        if incremental and remove_items:
+            for item in remove_items:
+                obj = RelationshipManager._resolve_object(session, item, model_class)
+                if obj.id in existing_ids:
+                    relationship.remove(obj)
+                    changed = True
+
+        if changed:
+            session.flush()
+
+        return changed
+
+    @staticmethod
+    def _resolve_object(
+        session: Session, item: Union[T, int], model_class: Type[T]
+    ) -> T:
+        """Resolve an item to an ORM object."""
+        if isinstance(item, model_class):
+            if item.id is None:
+                raise ValueError(f"{model_class.__name__} instance must be persisted")
+            return item
+        elif isinstance(item, int):
+            obj = session.get(model_class, item)
+            if obj is None:
+                raise ValueError(f"No {model_class.__name__} found with id: {item}")
+            return obj
+        else:
+            raise TypeError(
+                f"Expected {model_class.__name__} instance or int, got {type(item)}"
+            )
+
+
+# ----- Database Manager -----
 class PalimpsestDB:
     """
     Main database manager for the Palimpsest metadata database.
@@ -94,7 +396,7 @@ class PalimpsestDB:
             entries = db.get_all_entries(session)
     """
 
-    # --- Initialization ---
+    # ---- Initialization ----
     def __init__(
         self, db_path: Union[str, Path], alembic_dir: Union[str, Path]
     ) -> None:
@@ -107,290 +409,66 @@ class PalimpsestDB:
         """
         self.db_path: Path = Path(db_path).expanduser().resolve()
         self.alembic_dir = Path(alembic_dir).expanduser().resolve()
-        self.engine: Engine = create_engine(
-            f"sqlite:///{db_path}",
-            echo=False,
-            future=True,
-        )
-        self.SessionLocal: sessionmaker = sessionmaker(
-            bind=self.engine,
-            autoflush=True,
-            expire_on_commit=False,
-            future=True,
-        )
 
-        # Initialize Alembic configuration
-        self.alembic_cfg: Config = self._setup_alembic()
-
-        # Initialize databse
-        self.init_database()
-
-    # --- Session / connection utils ---
-    def get_session(self) -> Session:
-        """
-        Create and return a new SQLAlchemy session.
-
-        Returns:
-            Session: A new database session.
-        """
-        return self.SessionLocal()
-
-    # --- Alembic ---
-    def _setup_alembic(self) -> Config:
-        """
-        Setup Alembic configuration
-
-        Returns:
-            Config
-        """
-        alembic_cfg: Config = Config()
-
-        # Set the script location (where migration files are stored)
-        alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
-
-        # Set the database URL
-        alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
-
-        # Configure logging
-        alembic_cfg.set_main_option(
-            "file_template",
-            "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
-        )
-
-        return alembic_cfg
-
-    def init_alembic(self) -> None:
-        """
-        Initialize Alembic in the project directory.
-
-        Actions:
-            Creates Alembic directory with standard structure
-            Updates alembic/eng.py to import Palimpsest Base metadata
-            Prints instructions for first migration
-
-        Returns:
-            None
-        """
-        if not self.alembic_dir.is_dir():
-            print(f"Initializing Alembic in {self.alembic_dir}...")
-            command.init(self.alembic_cfg, str(self.alembic_dir))
-
-            # Update the generated alembic/env.py to use models
-            self._update_alembic_env()
-
-            # TODO: This won't be here. Figure out where it goes.
-            print("Alembic initialized. You can now create your first migration.")
-            print("Run: python journal_db.py create_migration 'Initial schema'")
-        else:
-            print(f"Alembic already initialized in {self.alembic_dir}")
-
-    def _update_alembic_env(self) -> None:
-        """
-        Update the generated alembic/env.py to import Palimpsest models.
-
-        Returns:
-            None
-        """
-        env_path: Path = self.alembic_dir / "env.py"
-
-        if env_path.exists():
-            content: str = env_path.read_text(encoding="utf-8")
-
-            import_line = "from models import Base\n"
-            target_metadata_line = "target_metadata = Base.metadata"
-
-            # Replace the target_medatara = None line
-            updated_content: str = content.replace(
-                "target_metadata = None",
-                f"{import_line}\n{target_metadata_line}",
+        try:
+            self.engine: Engine = create_engine(
+                f"sqlite:///{db_path}", echo=False, future=True, pool_pre_ping=True
             )
 
-            # Write the updated file back
-            env_path.write_text(updated_content, encoding="utf-8")
-            print("Updated alembic/env.py to use journal models")
+            self.SessionLocal: sessionmaker = sessionmaker(
+                bind=self.engine,
+                autoflush=True,
+                expire_on_commit=False,
+                future=True,
+            )
 
-    # --- Migrations ---
-    def create_migration(self, message: str) -> None:
-        """
-        Create a new Alembic migration file for the current database schema.
-
-        Args:
-            message (str): Description of the migration.
-
-        Raises:
-            Prints an error message if migration creation fails.
-
-        Returns:
-            None
-        """
-        try:
-            command.revision(self.alembic_cfg, message=message, autogenerate=True)
-            print(f"Created migration: {message}")
+            # Initialize
+            self.alembic_cfg: Config = self._setup_alembic()
+            self.init_database()
         except Exception as e:
-            print(f"Error creating migration: {e}")
+            logger.error(f"Failed to initialize database: {e}")
+            raise DatabaseError(f"Database initialization failed: {e}")
 
-    def upgrade_database(self, revision: str = "head") -> None:
-        """
-        Upgrade the database schema to the specified Alembic revision.
-
-        Args:
-            revision (str, optional):
-                The target revision to upgrade to.
-                Defaults to 'head' (latest revision).
-
-        Raises:
-            Prints an error message if the upgrade fails.
-
-        Returns:
-            None
-        """
+    # ---- Session / connection utils ----
+    @contextmanager
+    def session_scope(self):
+        """Provide a transactional scope around operations."""
+        session = self.SessionLocal()
         try:
-            command.upgrade(self.alembic_cfg, revision)
-            print(f"Database upgraded to {revision}")
+            yield session
+            session.commit()
         except Exception as e:
-            print(f"Error upgrading database: {e}")
+            session.rollback()
+            logger.error(f"Session rollback due to error: {e}")
+            raise
+        finally:
+            session.close()
 
-    def downgrade_database(self, revision: str) -> None:
-        """
-        Downgrade the database schema to a specified Alembic revision.
+    def get_session(self) -> Session:
+        """Create and return a new SQLAlchemy session."""
+        return self.SessionLocal()
 
-        Args:
-            revision (str): The target revision to downgrade to.
-
-        Raises:
-            Prints an error message if the downgrade fails.
-
-        Returns:
-            None
-        """
-        try:
-            command.downgrade(self.alembic_cfg, revision)
-            print(f"Database downgraded to {revision}")
-        except Exception as e:
-            print(f"Error downgrading database: {e}")
-
-    def get_migration_history(self) -> Dict[str, Optional[str]]:
-        """
-        Get the current migration status of the database.
-
-        Returns:
-            Dictionary with keys:
-                - 'current_revision' (str | None):
-                  Current Alembic revision of the database.
-                - 'status' (str):
-                  Either 'up_to_date' or 'needs_migration'.
-                - 'error' (str, optional):
-                  Present if an exception occurred.
-        """
-        try:
-            # Get current revision
-            with self.engine.connect() as conn:
-                context = MigrationContext.configure(conn)
-                current_rev = context.get_current_revision()
-
-            return {
-                "current_revision": current_rev,
-                "status": "up_to_date" if current_rev else "needs_migration",
-            }
-        except Exception as e:
-            return {"error": str(e)}
-
-    # --- Init DB ---
-    def init_database(self) -> None:
-        """
-        Initialize database - create tables if needed and run migrations.
-
-        Actions:
-            Checks if the database is fresh (no tables)
-            If fresh,
-                creates all tables from the ORM models
-                stamps the Alembic revision to head
-            If not,
-                runs pending migrations to update schema
-
-        Returns:
-            None
-        """
-        # Check if this is a fresh database
-        with self.get_session() as _:
-            inspector = self.engine.dialect.get_table_names(self.engine.connect())
-            is_fresh_db: bool = len(inspector) == 0
-
-        if is_fresh_db:
-            # Create all tables for fresh database
-            Base.metadata.create_all(bind=self.engine)
-
-            # Stamp with current revision (so Alembic knows the current state)
-            try:
-                command.stamp(self.alembic_cfg, "head")
-                print("Fresh database created and stamped with current revision")
-            except Exception as e:
-                print(
-                    "Note: Could not stamp database ", f"(run init_alembic first): {e}"
-                )
-        else:
-            # Run pending migrations
-            self.upgrade_database()
-
-    # --- Backup ---
-    def backup_database(self, backup_suffix: Optional[str] = None) -> str:
-        """
-        Create a backup copy of the database.
-
-        Args:
-            backup_suffix (Optional[str]): Suffix to append to the backup file.
-
-        Returns:
-            str: Path to the backup database file.
-        """
-        if backup_suffix is None:
-            backup_suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        backup_path = f"{self.db_path}.backup_{backup_suffix}"
-        shutil.copy2(self.db_path, backup_path)
-        print(f"[Backup] Database backed up to: {backup_path}")
-        return backup_path
-
-    # --- Clear everything ---
-    def clear_entries(self):
-        """Clear all entry data."""
-        with self.get_session() as session:
-            try:
-                session.query(Entry).delete()
-                session.commit()
-                print("Cleared existing entries for repopulation.")
-            except Exception as e:
-                session.rollback()
-                print(f"Error clearing entries: {e}")
-
-    # --- Lookup helpers ---
-    def _get_lookup_item(
-        self,
-        session: Session,
-        model_class: Type[T],
-        lookup_fields: Dict[str, Any],
-    ) -> Optional[T]:
-        """
-        Get an existing item from a lookup table.
-
-        Args:
-            session (Session): SQLAlchemy session.
-            model_class (type[Base]): ORM models class to query.
-            lookup_fields: Dictionary of field_name: value to filter.
-
-        Returns:
-            ORM instance of the same type of the one being queried
-
-        Notes:
-            For string-based columns, `value` should be a str
-            For dates or other types, pass the appropriate Python types
-        """
-        query = session.query(model_class).filter_by(**lookup_fields)
-        obj = query.first()
-        if obj:
+    # ---- Model helpers ----
+    @staticmethod
+    def _resolve_object(
+        session: Session, item: Union[T, int], model_class: Type[T]
+    ) -> T:
+        """Resolve an item to an ORM object."""
+        if isinstance(item, model_class):
+            if item.id is None:
+                raise ValueError(f"{model_class.__name__} instance must be persisted")
+            return item
+        elif isinstance(item, int):
+            obj = session.get(model_class, item)
+            if obj is None:
+                raise ValueError(f"No {model_class.__name__} found with id: {item}")
             return obj
-        return None
+        else:
+            raise TypeError(
+                f"Expected {model_class.__name__} instance or int, got {type(item)}"
+            )
 
+    @handle_db_errors
     def _get_or_create_lookup_item(
         self,
         session: Session,
@@ -416,67 +494,32 @@ class PalimpsestDB:
             For dates or other types, pass the appropriate Python types
             The new object is added to the session and flushed immediately
         """
-        obj: Optional[T] = self._get_lookup_item(session, model_class, lookup_fields)
+        # Try to get existing first
+        obj = session.query(model_class).filter_by(**lookup_fields).first()
         if obj:
             return obj
 
-        # Prepare fields for creation
+        # Create new object
         fields = lookup_fields.copy()
         if extra_fields:
             fields.update(extra_fields)
 
-        # Create object
-        obj = model_class(**fields)
-        session.add(obj)
-        session.flush()
-        return obj
-
-    def _remove_lookup_item(
-        self,
-        session: Session,
-        model_class: Type[T],
-        obj: Optional[T] = None,
-        id: Optional[int] = None,
-        lookup_fields: Optional[Dict[str, Any]] = None,
-    ) -> bool:
-        """
-        Remove an item from a lookup table.
-
-        Args:
-            session (Session): Active SQLAlchemy session.
-            model_class (Type[Base]): ORM model class.
-            obj (Optional[T]): The ORM object to remove.
-                If provided, removal uses this directly.
-            id (Optional[int]): Primary key ID of the object to remove.
-                Used if `obj` not provided.
-            lookup_fields (Optional[Dict[str, Any]]):
-                Dictionary of field_name: value to locate the object.
-
-        Returns:
-            bool: True if an object was found and removed, False otherwise.
-
-        Behavior:
-            - Requires at least one of obj, id, or lookup_fields.
-            - If multiple identifiers are provided,
-              obj takes precedence, then id, then lookup_fields.
-            - Flushes the session immediately after removal.
-        """
-        if obj is None:
-            if id is not None:
-                obj = session.get(model_class, id)
-            elif lookup_fields:
-                obj = self._get_lookup_item(session, model_class, lookup_fields)
-            else:
-                raise ValueError("Must provide obj, id, or lookup_fields to remove.")
-
-        if obj:
-            session.delete(obj)
+        try:
+            obj = model_class(**fields)
+            session.add(obj)
             session.flush()
-            return True
+            return obj
+        except IntegrityError:
+            # Handle race condition - another process might have created it
+            session.rollback()
+            obj = session.query(model_class).filter_by(**lookup_fields).first()
+            if obj:
+                return obj
+            raise
 
-        return False
-
-    # --- Tables creation ---
+    # ---- Entry ----
+    @validate_metadata(["date", "file_path"])
+    @handle_db_errors
     def create_entry(self, session: Session, metadata: Dict[str, Any]) -> Entry:
         """
         Create a new Entry in the database with its associated relationships.
@@ -507,31 +550,27 @@ class PalimpsestDB:
                     - tags (List[str])
         Returns:
             Entry: The newly created Entry ORM object.
-
-        Raises:
-            ValueError: if required fields are missing or invalid
         """
         # --- Required fields ---
-        if "date" not in metadata or not metadata["date"]:
-            raise ValueError("Entry creation requires 'date'")
-
-        if "file_path" not in metadata or not metadata["file_path"]:
-            raise ValueError("Entry creation requires 'file_path'")
-
         parsed_date = md.parse_date(metadata["date"])
         if not parsed_date:
-            raise ValueError(f"Invalid 'date' value: {metadata['date']}")
+            raise ValueError(f"Invalid date format: {metadata['date']}")
 
         file_path = md.normalize_str(metadata.get("file_path"))
         if not file_path:
-            raise ValueError(f"Invalid 'file_path' value: {metadata['file_path']}")
+            raise ValueError(f"Invalid file_path: {metadata['file_path']}")
 
-        # --- If hash doesn't exist, create it --
+        # --- file_path uniqueness check ---
+        existing = session.query(Entry).filter_by(file_path=file_path).first()
+        if existing:
+            raise ValidationError(f"Entry already exists for file_path: {file_path}")
+
+        # --- If hash doesn't exist, create it ---
         file_hash = md.normalize_str(metadata.get("file_hash"))
         if not file_hash:
             file_hash = fs.get_file_hash(file_path)
 
-        # --- Core entry data ---
+        # --- Create Entry ---
         entry = Entry(
             date=parsed_date,
             file_path=file_path,
@@ -544,299 +583,145 @@ class PalimpsestDB:
         session.add(entry)
         session.flush()
 
-        # --- Tags ---
-        tags = metadata.get("tags")
-        if tags:
-            self.update_entry_tags(session, entry, tags)
-
         # --- Relationships ---
-        self.update_entry_relationships(session, entry, metadata)
+        self._update_entry_relationships(session, entry, metadata)
         return entry
 
-    def create_location(self, session: Session, metadata: Dict[str, Any]) -> Location:
-        """
-        Create a new Location in the database with its associated relationships.
-
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required key:
-                    - name (str)
-                Optional key:
-                    - full_name (str)
-                Relationship key:
-                    - entries (List[str|date|dict|Entry], optional)
-
-        Returns:
-            Location: The newly created Location ORM object.
-
-        Raises:
-            ValueError: if required field is missing or invalid
-        """
-        # --- Required fields ---
-        if "name" not in metadata or not metadata["name"]:
-            raise ValueError("Entry creation requires 'file_path'")
-
-        name = md.normalize_str(metadata["name"])
-        if name is None:
-            raise ValueError(f"Invalid 'name' value: {metadata['name']}")
-
-        # --- Core location data ---
-        loc = Location(
-            name=name,
-            full_name=md.normalize_str(metadata.get("full_name")),
-        )
-        session.add(loc)
-        session.flush()
-        return loc
-
-    def create_person(self, session: Session, metadata: Dict[str, Any]) -> Person:
-        """
-        Create a new Person in the db with its associated relationships.
-
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required keys:
-                    - name (str)
-                Optional keys:
-                    - full_name (str)
-                    - relation_type (str)
-                Relationship keys:
-                    - aliases (List[str], optional)
-                    - events (List[str|Event], optional)
-                    - entries (List[str|date|Entry], optional)
-
-        Returns:
-            Person: The newly created Person ORM object.
-
-        Raises:
-            ValueError: if required field is missing or invalid
-        """
-        # --- Required fields ---
-        if "name" not in metadata or not metadata["name"]:
-            raise ValueError("Entry creation requires 'name'")
-
-        name = md.normalize_str(metadata["name"])
-        if name is None:
-            raise ValueError(f"Invalid 'name' value: {metadata['name']}")
-
-        # --- Core location data ---
-        person = Person(
-            name=name,
-            full_name=md.normalize_str(metadata.get("full_name")),
-            relation_type=md.normalize_str(metadata.get("relation_type")),
-        )
-
-        session.add(person)
-        session.flush()
-
-        # --- Aliases ---
-        aliases = metadata.get("aliases")
-        if aliases:
-            self.update_person_aliases(session, person, aliases, incremental=False)
-
-        # --- Relationships ---
-        self.update_person_relationships(session, person, metadata)
-        return person
-
-    def create_reference(self, session: Session, metadata: Dict[str, Any]) -> Reference:
-        """
-        Create a new Reference in the db with its associated relationships.
-
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required keys:
-                    - name (str)
-                Optional keys:
-                    - author (str)
-                    - content (str)
-
-        Returns:
-            Reference: The newly created Reference ORM object.
-
-        Raises:
-            ValueError: if required field is missing or invalid
-        """
-        # --- Required fields ---
-        if "name" not in metadata or not metadata["name"]:
-            raise ValueError("Entry creation requires 'name'")
-
-        name = md.normalize_str(metadata["name"])
-        if name is None:
-            raise ValueError(f"Invalid 'name' value: {metadata['name']}")
-
-        # Handle reference type first
-        ref_type: Optional[ReferenceType] = None
-        if ref_type_name := metadata.get("reference_type"):
-            ref_type = self._get_or_create_lookup_item(
-                session, ReferenceType, {"name": ref_type_name}
-            )
-
-        # --- Core reference data ---
-        ref = Reference(
-            name=name,
-            author=md.normalize_str(metadata.get("author")),
-            content=md.normalize_str(metadata.get("content")),
-            reference_type=ref_type,
-        )
-        session.add(ref)
-        session.flush()
-        return ref
-
-    def create_event(self, session: Session, metadata: Dict[str, Any]) -> Event:
-        """
-        Create a new Event in the db with its associated relationships.
-
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required keys:
-                    - name (str)
-                Optional keys:
-                    - title (str)
-                    - description (str)
-                Relationship keys:
-                    - entries (List[str|date|dict|Entry], optional)
-                    - people (List[str|dict|Person], optional)
-
-        Returns:
-            Event: The newly created Event ORM object.
-
-        Raises:
-            ValueError: if required field is missing or invalid
-        """
-        # --- Required fields ---
-        if "name" not in metadata or not metadata["name"]:
-            raise ValueError("Entry creation requires 'name'")
-
-        name = md.normalize_str(metadata["name"])
-        if name is None:
-            raise ValueError(f"Invalid 'name' value: {metadata['name']}")
-
-        # --- Core event data ---
-        event = Event(
-            name=name,
-            title=md.normalize_str(metadata.get("title")),
-            description=md.normalize_str(metadata.get("description")),
-        )
-        session.add(event)
-        session.flush()
-
-        # --- Relationships ---
-        self.update_event_relationships(session, event, metadata)
-        return event
-
-    def create_or_update_poem_version(
+    def _update_entry_relationships(
         self,
         session: Session,
-        poem_data: Dict[str, Any],
-        entry: Optional[Entry],
-    ) -> PoemVersion:
+        entry: Entry,
+        metadata: Dict[str, Any],
+        incremental: bool = True,
+    ) -> None:
         """
-        Create or update a PoemVersion for a given Poem.
-        Optinally link it to an Entry.
+        Update relationships for a Entry object in the database.
+
+        Supports both incremental updates (defualt) and full overwrite.
+        This function handles relationships only. No I/O or Markdown parsing.
+        Prevents duplicates and ensures lookup tables are updated.
 
         Args:
             session (Session): Active SQLAlchemy session.
-            poem_data (Dict[str, Any]): Poem metadata, expected keys:
-                - 'title' (str): The title of the Poem (required)
-                - 'text' (str): The text of the PoemVersion (required)
-                - 'version_hash' (str, optional): Hash for version deduplication
-                - 'revision_date' (date, optional)
-                - 'notes' (str, optional)
-            entry (Entry | None): Optional Entry to associate the version with.
+            person (Person): Entry ORM object to update relationships for.
+            metadata (Dict[str, Any]): Normalized metadata containing:
+                Expected keys (optional):
+                    - dates (List[MentionedDate or id])
+                    - locations (List[Location or id])
+                    - people (List[Person or id])
+                    - references (List[Reference or id])
+                    - events (List[Event or id])
+                    - poems (List[Poem or id])
+                Removal keys (optional):
+                    - remove_dates (List[MentionedDate or id])
+                    - remove_locations (List[Location or id])
+                    - remove_people (List[Person or id])
+                    - remove_references (List[Reference or id])
+                    - remove_events (List[Event or id])
+                    - remove_poems (List[Poem or id])
+
+        Behavior:
+            - Incremental mode:
+                adds new relationships and/or removes explicitly listed items.
+            - Overwrite mode:
+                clears all existing relationships before adding new ones.
+            - Calls session.flush() only if any changes were made
 
         Returns:
-            PoemVersion: The created or updated PoemVersion instance.
-
-        Notes:
-            - If 'entry' is None, the version will exist independently.
-            - Deduplication occurs based on version_hash or text.
-            - Commit is left to the caller for batch operations.
+            None
         """
-        # --- Required fields ---
-        if "title" not in poem_data or not poem_data["title"]:
-            raise ValueError("Poem creation requires 'title'")
 
-        if "text" not in poem_data or not poem_data["text"]:
-            raise ValueError("Poem creation requires 'text'")
+        # --- Many to many ---
+        many_to_many_configs = [
+            ("dates", "dates", MentionedDate),
+            ("locations", "locations", Location),
+            ("people", "people", Person),
+            ("events", "events", Event),
+        ]
 
-        poem_title: Optional[str] = md.normalize_str(poem_data.get("title"))
-        if not poem_title:
-            raise ValueError(f"Invalid 'poem_title' value: {poem_data['title']}")
+        for rel_name, meta_key, model_class in many_to_many_configs:
+            if meta_key in metadata:
+                RelationshipManager.update_many_to_many(
+                    session=session,
+                    parent_obj=entry,
+                    relationship_name=rel_name,
+                    items=metadata[meta_key],
+                    model_class=model_class,
+                    incremental=incremental,
+                    remove_items=metadata.get(f"remove_{meta_key}", []),
+                )
 
-        poem_text: Optional[str] = md.normalize_str(poem_data.get("text"))
-        if not poem_text:
-            raise ValueError(f"Invalid 'poem_text' value: {poem_data['text']}")
+        # --- One to many ---
+        one_to_many_configs = [
+            ("references", Reference, "entry_id"),
+            ("poems", PoemVersion, "entry_id"),
+        ]
 
-        # --- Lookup / Creation ---
-        poem: Poem = self._get_or_create_lookup_item(
-            session, Poem, {"title": poem_title}
-        )
+        for meta_key, model_class, foreign_key_attr in one_to_many_configs:
+            if meta_key in metadata:
+                RelationshipManager.update_one_to_many(
+                    session=session,
+                    parent_obj=entry,
+                    items=metadata[meta_key],
+                    model_class=model_class,
+                    foreign_key_attr=foreign_key_attr,
+                    incremental=incremental,
+                    remove_items=metadata.get(f"remove_{meta_key}", []),
+                )
 
-        # --- Deduplication ---
-        version_hash = md.normalize_str(poem_data.get("version_hash"))
-        if not version_hash:
-            version_hash = md.get_text_hash(poem_text)
+        # --- Tags ---
+        # They're strings, not objects
+        if "tags" in metadata:
+            self._update_entry_tags(session, entry, metadata["tags"], incremental)
 
-        existing_version = None
-        for v in poem.versions:
-            if version_hash and v.version_hash == version_hash:
-                existing_version = v
-                break
-            elif v.text == poem_text:
-                existing_version = v
-                break
+    def _update_entry_tags(
+        self,
+        session: Session,
+        entry: Entry,
+        tags: List[str],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update Tags for an Entry from metadata.
 
-        rev_date = md.parse_date(poem_data.get("revision_date"))
-        rev_notes = md.normalize_str(poem_data.get("notes"))
+        Args:
+            session (Session): Active SQLAlchemy session.
+            entry (Entry): Entry object whose tags are to be updated.
+            tags (List[str]): List of tags (strings).
+            incremental (bool): Whether incremental/overwrite mode.
 
-        if existing_version:
-            # Update fields if needed
-            existing_version.text = poem_text
-            existing_version.revision_date = (
-                rev_date if rev_date else existing_version.revision_date
-            )
-            existing_version.notes = rev_notes if rev_notes else existing_version.notes
-            poem_version = existing_version
-        else:
-            # Create new PoemVersion
-            poem_version = PoemVersion(
-                poem=poem,
-                text=poem_text,
-                version_hash=version_hash,
-                revision_date=rev_date,
-                notes=rev_notes,
-            )
-            session.add(poem_version)
+        Behavior:
+            - Incremental mode:
+                adds new relationships and/or removes explicitly listed items.
+            - Overwrite mode:
+                clears all existing relationships before adding new ones.
+            - Calls session.flush() only if any changes were made
+
+        Returns:
+            None
+        """
+        # --- Failsafe ---
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before linking tags")
+
+        # --- Normalize incoming tags --
+        norm_tags = {md.normalize_str(t) for t in tags if md.normalize_str(t)}
+
+        if not incremental:
+            entry.tags.clear()
             session.flush()
 
-        # --- Link to Entry ---
-        if entry and poem_version not in entry.poems:
-            entry.poems.append(poem_version)
+        existing_tags = {tag.tag for tag in entry.tags}
+
+        # Add new tags
+        for tag_name in norm_tags - existing_tags:
+            tag_obj = self._get_or_create_lookup_item(session, Tag, {"tag": tag_name})
+            entry.tags.append(tag_obj)
+
+        if norm_tags - existing_tags:
             session.flush()
 
-        return poem_version
-
-    # --- Tables updates ---
+    @handle_db_errors
     def update_entry(
         self, session: Session, entry: Entry, metadata: Dict[str, Any]
     ) -> Entry:
@@ -852,329 +737,196 @@ class PalimpsestDB:
             metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
                 Keys may include:
                     - Core fields:
-                      date, file_path, file_hash,
+                      date, file_path,
                       word_count, reading_time, epigraph, notes
                     - Relationship keys:
                       dates, locations, people, references, events, poems, tags
 
         Returns:
             Entry: The updated Entry ORM object (still attached to session).
+
+        Notes: version_hash is automatically updated if content changes
         """
-        # --- Failsafe ---
+        # --- Ensure existance ---
         db_entry = session.get(Entry, entry.id)
         if db_entry is None:
-            raise ValueError(
-                f"Entry with id={entry.id} does not exist in the database."
-            )
+            raise ValueError(f"Entry with id={entry.id} does not exist")
 
         # --- Attach to session ---
         entry = session.merge(db_entry)
 
-        # --- Check & update fields ---
-        # -- date --
-        if "date" in metadata:
-            entry_date: Optional[date] = md.parse_date(metadata["date"])
-            if entry_date is None:
-                raise ValueError(
-                    "Expected str|date for Entry.date, ",
-                    f"got {type(metadata['date'])}",
-                )
-            entry.date = entry_date
+        # --- Update scalar fields ---
+        field_updates = {
+            "date": lambda x: md.parse_date(x),
+            "file_path": lambda x: md.normalize_str(x),
+            "file_hash": lambda x: md.normalize_str(x),
+            "word_count": lambda x: md.safe_int(x),
+            "reading_time": lambda x: md.safe_float(x),
+            "epigraph": lambda x: md.normalize_str(x),
+            "notes": lambda x: md.normalize_str(x),
+        }
 
-        # -- file_path --
-        if "file_path" in metadata:
-            file_path: Optional[str] = md.normalize_str(metadata["file_path"])
-            if file_path is None:
-                raise ValueError(
-                    "Expected str for Entry.file_path,",
-                    f"got {type(metadata['file_path'])}",
-                )
-            entry.file_path = file_path
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field in ["epigraph", "notes"]:
+                    if field == "file_path" and value is not None:
+                        file_hash = fs.get_file_hash(value)
+                        setattr(entry, "file_hash", file_hash)
+                    setattr(entry, field, value)
 
-        # -- word_count --
-        if "word_count" in metadata:
-            word_count: Optional[int] = md.safe_int(metadata["word_count"])
-            if word_count is None:
-                raise ValueError(
-                    "Expected int for Entry.word_count, ",
-                    f"got {type(metadata['word_count'])}",
-                )
-            entry.word_count = word_count
-
-        # -- reading_time --
-        if "reading_time" in metadata:
-            reading_time: Optional[float] = md.safe_float(metadata["reading_time"])
-            if reading_time is None:
-                raise ValueError(
-                    "Expected float for Entry.reading_time, ",
-                    f"got {type(metadata['reading_time'])}",
-                )
-            entry.reading_time = reading_time
-
-        # -- file_hash, epigraph, notes (str) --
-        for key in ["file_hash", "epigraph", "notes"]:
-            if key in metadata:
-                setattr(entry, key, md.normalize_str(metadata[key]))
-
-        # --- Tags ---
-        if "tags" in metadata:
-            self.update_entry_tags(session, entry, metadata["tags"])
-
-        # --- Relationships ---
-        self.update_entry_relationships(session, entry, metadata)
+        # --- Update relationships ---
+        self._update_entry_relationships(session, entry, metadata)
         return entry
 
+    # ---- Location ----
+    @validate_metadata(["name"])
+    @handle_db_errors
+    def create_location(self, session: Session, metadata: Dict[str, Any]) -> Location:
+        """
+        Create a new Location in the database with its associated relationships.
+
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - name (str)
+                Optional keys:
+                    - full_name (str)
+
+        Returns:
+            Location: The newly created Location ORM object.
+        """
+        # --- Required fields ---
+        loc_name = md.normalize_str(metadata.get("name"))
+        if not loc_name:
+            raise ValueError(f"Invalid name: {metadata['name']}")
+
+        # --- Create Location ---
+        location = Location(
+            name=loc_name,
+            full_name=md.normalize_str(metadata.get("full_name")),
+        )
+        session.add(location)
+        session.flush()
+        return location
+
+    @handle_db_errors
     def update_location(
-        self, session: Session, loc: Location, metadata: Dict[str, Any]
+        self, session: Session, location: Location, metadata: Dict[str, Any]
     ) -> Location:
         """
-        Update an existing Location in the db and refresh its relationships.
+        Update an existing Location in the database and refresh its relationships.
 
         Does NOT perform file parsing. Accepts pre-normalized metadata.
         Clears previous relationships before adding new ones.
 
         Args:
             session (Session): Active SQLAlchemy session
-            loc (Location): Existing Entry ORM object to update.
+            location (Location): Existing Location ORM object to update.
             metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
                 Keys may include:
-                    - Core fields: name, full_name
+                    - Core fields:
+                      name, full_name
 
         Returns:
-            Location: The updated Entry ORM object (still attached to session).
+            Location: The updated Location ORM object (still attached to session).
         """
-        # --- Failsafe ---
-        db_loc = session.get(Location, loc.id)
+        # --- Ensure existance ---
+        db_loc = session.get(Location, location.id)
         if db_loc is None:
-            raise ValueError(
-                f"Location with id={loc.id} does not exist in the database."
-            )
+            raise ValueError(f"Location with id={location.id} does not exist")
 
         # --- Attach to session ---
-        loc = session.merge(db_loc)
+        location = session.merge(db_loc)
 
-        # --- Check & update fields ---
-        # -- name --
-        if "name" in metadata:
-            loc_name: Optional[str] = md.normalize_str(metadata["name"])
-            if loc_name is None:
-                raise ValueError(
-                    f"Expected str for Location.name, got {type(metadata['name'])}"
-                )
-            loc.name = loc_name
+        # --- Update scalar fields ---
+        field_updates = {
+            "name": lambda x: md.normalize_str(x),
+            "full_name": lambda x: md.normalize_str(x),
+        }
 
-        # -- full_name --
-        if "full_name" in metadata:
-            loc.full_name = md.normalize_str(metadata["full_name"])
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field == "full_name":
+                    setattr(location, field, value)
 
-        return loc
+        return location
 
-    def update_person(
-        self, session: Session, person: Person, metadata: Dict[str, Any]
-    ) -> Person:
+    # ---- Person ----
+    @validate_metadata(["name"])
+    @handle_db_errors
+    def create_person(self, session: Session, metadata: Dict[str, Any]) -> Person:
         """
-        Update an existing Person in the database and refresh its relationships.
+        Create a new Person in the database with its associated relationships.
 
-        Does NOT perform file parsing. Accepts pre-normalized metadata.
-        Clears previous relationships before adding new ones.
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
 
         Args:
             session (Session): Active SQLAlchemy session
-            person (Person): Existing Entry ORM object to update.
-            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
-                Keys may include:
-                    - Core fields: name, full_name, relation_type
-                    - Relationship keys: aliases, events, entries
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - name (str)
+                Optional keys:
+                    - full_name (str)
+                    - relation_type (str)
+                Relationship keys (optional):
+                    - aliases (List[str])
+                    - events (List[Event|int])
+                    - entries (List[Entry|int])
 
         Returns:
-            Person: The updated Entry ORM object (still attached to session).
+            Person: The newly created Location ORM object.
         """
-        # --- Failsafe ---
-        db_person = session.get(Person, person.id)
-        if db_person is None:
-            raise ValueError(
-                f"Person with id={person.id} does not exist in the database."
-            )
+        # --- Required fields ---
+        p_name = md.normalize_str(metadata.get("name"))
+        if not p_name:
+            raise ValueError(f"Invalid name: {metadata['name']}")
 
-        # --- Attach to session ---
-        person = session.merge(db_person)
-
-        # --- Check & update fields ---
-        # -- name --
-        if "name" in metadata:
-            person_name: Optional[str] = md.normalize_str(metadata["name"])
-            if person_name is None:
-                raise ValueError(
-                    f"Expected str for Person.name, got {type(metadata['name'])}"
+        # --- Uniqueness check ---
+        p_fname = md.normalize_str(metadata.get("full_name"))
+        existing = session.query(Person).filter_by(name=p_name).first()
+        if existing:
+            if not p_fname:
+                raise ValidationError(
+                    f"Person already exists for name: {p_name} "
+                    "and no full_name was given"
                 )
-            person.name = person_name
+            if existing.full_name == p_fname:
+                raise ValidationError(
+                    "Person already exists for name: "
+                    f"{p_name} and full_name: {p_fname}"
+                )
 
-        # -- full_name, relation_type (str) --
-        for key in ["full_name", "relation_type"]:
-            if key in metadata:
-                setattr(person, key, md.normalize_str(metadata[key]))
-
-        # --- Aliases ---
-        if "aliases" in metadata:
-            self.update_person_aliases(session, person, metadata["aliases"])
+        # --- Create Person ---
+        person = Person(
+            name=p_name,
+            full_name=p_fname,
+            relation_type=md.normalize_str(metadata.get("relation_type")),
+        )
+        session.add(person)
+        session.flush()
 
         # --- Relationships ---
-        self.update_person_relationships(session, person, metadata)
+        self._update_person_relationships(session, person, metadata)
         return person
 
-    def update_reference(
-        self, session: Session, ref: Reference, metadata: Dict[str, Any]
-    ) -> Reference:
-        """
-        Update an existing Reference in the db and refresh its relationships.
-
-        Does NOT perform file parsing. Accepts pre-normalized metadata.
-        Clears previous relationships before adding new ones.
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            ref (Reference): Existing Entry ORM object to update.
-            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
-                Keys may include:
-                    - Core fields: name, author, content
-                    - Relationship keys: reference_type
-
-        Returns:
-            Reference: The updated Entry ORM object (still attached to session).
-        """
-        # --- Failsafe ---
-        db_ref = session.get(Reference, ref.id)
-        if db_ref is None:
-            raise ValueError(
-                f"Reference with id={ref.id} does not exist in the database."
-            )
-
-        # --- Attach to session ---
-        ref = session.merge(db_ref)
-
-        # --- Check & update fields ---
-        # -- name --
-        if "name" in metadata:
-            ref_name: Optional[str] = md.normalize_str(metadata["name"])
-            if ref_name is None:
-                raise ValueError(
-                    f"Expected str for Reference.name, got {type(metadata['name'])}"
-                )
-            ref.name = ref_name
-
-        # -- author, content (str) --
-        for key in ["author", "content"]:
-            if key in metadata:
-                setattr(ref, key, md.normalize_str(metadata[key]))
-
-        # -- reference type --
-        ref_type: Optional[ReferenceType] = None
-        if ref_type_name := metadata.get("reference_type"):
-            ref_type = self._get_or_create_lookup_item(
-                session, ReferenceType, {"name": ref_type_name}
-            )
-            ref.reference_type = ref_type
-
-        session.flush()
-        return ref
-
-    def update_event(
-        self, session: Session, event: Event, metadata: Dict[str, Any]
-    ) -> Event:
-        """
-        Update an existing Event in the database and refresh its relationships.
-
-        Does NOT perform file parsing. Accepts pre-normalized metadata.
-        Clears previous relationships before adding new ones.
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            event (Event): Existing Entry ORM object to update.
-            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
-                Keys may include:
-                    - Core fields: name, title, description
-                    - Relationship keys: entries, people
-
-        Returns:
-            Event: The updated Entry ORM object (still attached to session).
-        """
-        # --- Failsafe ---
-        db_event = session.get(Event, event.id)
-        if db_event is None:
-            raise ValueError(
-                f"Event with id={event.id} does not exist in the database."
-            )
-
-        # --- Attach to session ---
-        event = session.merge(db_event)
-
-        # --- Check & update fields ---
-        # -- name --
-        if "name" in metadata:
-            event_name: Optional[str] = md.normalize_str(metadata["name"])
-            if event_name is None:
-                raise ValueError(
-                    f"Expected str for Event.name, got {type(metadata['name'])}"
-                )
-            event.name = event_name
-
-        # -- title, description (str) --
-        for key in ["title", "description"]:
-            if key in metadata:
-                setattr(event, key, md.normalize_str(metadata[key]))
-
-        # --- Relationships ---
-        self.update_event_relationships(session, event, metadata)
-        return event
-
-    # --- Relationship updating ---
-    def update_entry_tags(
-        self, session: Session, entry: Entry, tags: List[str]
-    ) -> None:
-        """
-        Update (fully) Tags for an Entry from metadata.
-
-        This clears all existing tags and recreates the relationships.
-
-        Args:
-            session (Session): Active SQLAlchemy session.
-            entry (Entry): Entry object whose tags are to be updated.
-            tags (List[str]): List of tags (strings).
-
-        Returns:
-            None
-        """
-        # --- Failsafe ---
-        if entry.id is None:
-            raise ValueError(
-                "Entry instance has no ID; must be persisted before linking."
-            )
-
-        # --- Clear existing ---
-        entry.tags.clear()
-        session.flush()
-
-        # --- Add new ones --
-        for tag in tags:
-            tag_normalized = md.normalize_str(tag)
-            if not tag_normalized:
-                raise ValueError(f"Invalid tag value: {tag}")
-
-            tag = self._get_or_create_lookup_item(session, Tag, {"tag": tag_normalized})
-
-            entry.tags.append(tag)
-
-        session.flush()
-
-    def update_entry_relationships(
+    def _update_person_relationships(
         self,
         session: Session,
-        entry: Entry,
+        person: Person,
         metadata: Dict[str, Any],
         incremental: bool = True,
     ) -> None:
         """
-        Update relationships for an Entry object in the database.
+        Update relationships for a Person object in the database.
 
         Supports both incremental updates (defualt) and full overwrite.
         This function handles relationships only. No I/O or Markdown parsing.
@@ -1182,23 +934,16 @@ class PalimpsestDB:
 
         Args:
             session (Session): Active SQLAlchemy session.
-            entry (Entry): Entry ORM object to update relationships for.
+            person (Person): Entry ORM object to update relationships for.
             metadata (Dict[str, Any]): Normalized metadata containing:
                 Expected keys (optional):
-                    - dates (List[MentionedDate|int])
-                    - locations (List[Location|int])
-                    - people (List[Person|int])
-                    - references (List[Reference|int])
-                    - events (List[Event|int])
-                    - poems (List[PoemVersion|int]
+                    - aliases (List[str]
+                    - events (List[Event or id])
+                    - entries (List[Entry or id])
                 Removal keys (optional):
-                    - remove_dates (List[MentionedDate|int])
-                    - remove_locations (List[Location|int])
-                    - remove_people (List[Person|int])
-                    - remove_references (List[Reference|int])
-                    - remove_events (List[Event|int])
-                    - remove_poems (List[PoemVersion|int]
-            incremental (bool): Whether incremental/overwrite mode.
+                    - remove_aliases (List[str])
+                    - remove_events (List[Event or id])
+                    - remove_entries (List[Entry or id])
 
         Behavior:
             - Incremental mode:
@@ -1209,286 +954,34 @@ class PalimpsestDB:
 
         Returns:
             None
-
-        Raises:
-            TypeError: if values of metadata are not ORM objects nor int.
-            ValueError: ORM instance is non-existent
         """
-        # --- Failsafe ---
-        if entry.id is None:
-            raise ValueError(
-                "Entry instance has no ID; must be persisted before linking."
+
+        # --- Many to many ---
+        many_to_many_configs = [
+            ("events", "events", Event),
+            ("entries", "entries", Entry),
+        ]
+
+        for rel_name, meta_key, model_class in many_to_many_configs:
+            if meta_key in metadata:
+                RelationshipManager.update_many_to_many(
+                    session=session,
+                    parent_obj=person,
+                    relationship_name=rel_name,
+                    items=metadata[meta_key],
+                    model_class=model_class,
+                    incremental=incremental,
+                    remove_items=metadata.get(f"remove_{meta_key}", []),
+                )
+
+        # --- Aliases ---
+        # They're strings, not objects
+        if "aliases" in metadata:
+            self._update_person_aliases(
+                session, person, metadata["aliases"], incremental
             )
 
-        # --- Relationship management ---
-        changed: bool = False
-
-        # -- MentionedDate --
-        existing_dates: Set[int] = {d.id for d in entry.dates}
-
-        if not incremental:
-            entry.dates.clear()
-            changed = True
-
-        # - Appending -
-        for d_meta in metadata.get("dates", []):
-            if isinstance(d_meta, MentionedDate):
-                date_obj = d_meta
-                if date_obj.id is None:
-                    raise ValueError(
-                        "MentionedDate instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(d_meta, int):
-                date_obj = session.get(MentionedDate, d_meta)
-                if date_obj is None:
-                    raise ValueError(f"No MentionedDate found with id:{d_meta}")
-            else:
-                raise TypeError(
-                    "Expected MentionedDate instance or int, ", f"got {type(d_meta)}"
-                )
-
-            if date_obj.id not in existing_dates:
-                entry.dates.append(date_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for d_meta in metadata.get("remove_dates", []):
-                if isinstance(d_meta, MentionedDate):
-                    date_obj = d_meta
-                    if date_obj.id is None:
-                        raise ValueError(
-                            "MentionedDate instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(d_meta, int):
-                    date_obj = session.get(MentionedDate, d_meta)
-                    if date_obj is None:
-                        raise ValueError(f"No MentionedDate found with id:{d_meta}")
-                else:
-                    raise TypeError(
-                        "Expected MentionedDate instance or int, ",
-                        f"got {type(d_meta)}",
-                    )
-
-                if date_obj.id in existing_dates:
-                    entry.dates.remove(date_obj)
-                    changed = True
-
-        # -- Location --
-        existing_locs: Set[int] = {loc.id for loc in entry.locations}
-
-        if not incremental:
-            entry.locations.clear()
-            changed = True
-
-        # - Appending -
-        for l_meta in metadata.get("locations", []):
-            if isinstance(l_meta, Location):
-                loc_obj = l_meta
-                if loc_obj.id is None:
-                    raise ValueError(
-                        "Location instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(l_meta, int):
-                loc_obj = session.get(Location, l_meta)
-                if loc_obj is None:
-                    raise ValueError(f"No Location found with id:{l_meta}")
-            else:
-                raise TypeError(
-                    "Expected Location instance or int, ", f"got {type(l_meta)}"
-                )
-
-            if loc_obj.id not in existing_locs:
-                entry.locations.append(loc_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for l_meta in metadata.get("remove_locations", []):
-                if isinstance(l_meta, Location):
-                    loc_obj = l_meta
-                    if loc_obj.id is None:
-                        raise ValueError(
-                            "Location instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(l_meta, int):
-                    loc_obj = session.get(Location, l_meta)
-                    if loc_obj is None:
-                        raise ValueError(f"No Location found with id:{l_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Location instance or int, ", f"got {type(l_meta)}"
-                    )
-
-                if loc_obj.id in existing_locs:
-                    entry.locations.remove(loc_obj)
-                    changed = True
-
-        # -- Reference --
-        existing_refs: Set[int] = {r.id for r in entry.references}
-
-        if not incremental:
-            entry.references.clear()
-            changed = True
-
-        # - Appending -
-        for r_meta in metadata.get("references", []):
-            if isinstance(r_meta, Reference):
-                ref_obj = r_meta
-                if ref_obj.id is None:
-                    raise ValueError(
-                        "Reference instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(r_meta, int):
-                ref_obj = session.get(Reference, r_meta)
-                if ref_obj is None:
-                    raise ValueError(f"No Reference found with id:{r_meta}")
-            else:
-                raise TypeError(
-                    "Expected Reference instance or int, ", f"got {type(r_meta)}"
-                )
-
-            if ref_obj.id not in existing_refs:
-                entry.references.append(ref_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for r_meta in metadata.get("remove_references", []):
-                if isinstance(r_meta, Reference):
-                    ref_obj = r_meta
-                    if ref_obj.id is None:
-                        raise ValueError(
-                            "Reference instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(r_meta, int):
-                    ref_obj = session.get(Reference, r_meta)
-                    if ref_obj is None:
-                        raise ValueError(f"No Reference found with id:{r_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Reference instance or int, ", f"got {type(r_meta)}"
-                    )
-
-                if ref_obj.id in existing_refs:
-                    entry.references.remove(ref_obj)
-                    changed = True
-
-        # -- Event --
-        existing_events: Set[int] = {e.id for e in entry.events}
-
-        if not incremental:
-            entry.events.clear()
-            changed = True
-
-        # - Appending -
-        for e_meta in metadata.get("events", []):
-            if isinstance(e_meta, Event):
-                event_obj = e_meta
-                if event_obj.id is None:
-                    raise ValueError(
-                        "Event instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(e_meta, int):
-                event_obj = session.get(Event, e_meta)
-                if event_obj is None:
-                    raise ValueError(f"No Event found with id:{e_meta}")
-            else:
-                raise TypeError(
-                    "Expected Event instance or int, ", f"got {type(e_meta)}"
-                )
-
-            if event_obj.id not in existing_events:
-                entry.events.append(event_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for e_meta in metadata.get("remove_events", []):
-                if isinstance(e_meta, Event):
-                    event_obj = e_meta
-                    if event_obj.id is None:
-                        raise ValueError(
-                            "Event instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(e_meta, int):
-                    event_obj = session.get(Event, e_meta)
-                    if event_obj is None:
-                        raise ValueError(f"No Event found with id:{e_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Event instance or int, ", f"got {type(e_meta)}"
-                    )
-
-                if event_obj.id in existing_events:
-                    entry.events.remove(event_obj)
-                    changed = True
-
-        # -- Poem --
-        existing_poems: Set[int] = {p.id for p in entry.poems}
-
-        if not incremental:
-            entry.poems.clear()
-            changed = True
-
-        # - Appending -
-        for p_meta in metadata.get("poems", []):
-            if isinstance(p_meta, PoemVersion):
-                poem_obj = p_meta
-                if poem_obj.id is None:
-                    raise ValueError(
-                        "PoemVersion instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(p_meta, int):
-                poem_obj = session.get(PoemVersion, p_meta)
-                if poem_obj is None:
-                    raise ValueError(f"No PoemVersion found with id:{p_meta}")
-            else:
-                raise TypeError(
-                    "Expected PoemVersion instance or int, ", f"got {type(p_meta)}"
-                )
-
-            if poem_obj.id not in existing_poems:
-                entry.poems.append(poem_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for p_meta in metadata.get("remove_poems", []):
-                if isinstance(p_meta, PoemVersion):
-                    poem_obj = p_meta
-                    if poem_obj.id is None:
-                        raise ValueError(
-                            "PoemVersion instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(p_meta, int):
-                    poem_obj = session.get(PoemVersion, p_meta)
-                    if poem_obj is None:
-                        raise ValueError(f"No PoemVersion found with id:{p_meta}")
-                else:
-                    raise TypeError(
-                        "Expected PoemVersion instance or int, ", f"got {type(p_meta)}"
-                    )
-
-                if poem_obj.id in existing_poems:
-                    entry.poems.remove(poem_obj)
-                    changed = True
-
-        # --- Session flush ---
-        if changed:
-            session.flush()
-
-    def update_person_aliases(
+    def _update_person_aliases(
         self,
         session: Session,
         person: Person,
@@ -1516,9 +1009,7 @@ class PalimpsestDB:
         """
         # --- Failsafe ---
         if person.id is None:
-            raise ValueError(
-                "Person instance has no ID; must be persisted before linking."
-            )
+            raise ValueError("Person must be persisted before linking tags")
 
         # --- Normalize incoming aliases --
         norm_aliases = {md.normalize_str(a) for a in aliases if md.normalize_str(a)}
@@ -1539,162 +1030,277 @@ class PalimpsestDB:
         if norm_aliases - existing:
             session.flush()
 
-    def update_person_relationships(
-        self,
-        session: Session,
-        person: Person,
-        metadata: Dict[str, Any],
-        incremental: bool = True,
-    ) -> None:
+    @handle_db_errors
+    def update_person(
+        self, session: Session, person: Person, metadata: Dict[str, Any]
+    ) -> Person:
         """
-        Update relationships for a Person object in the database.
+        Update an existing Person in the database and refresh its relationships.
 
-        Supports both incremental updates (defualt) and full overwrite.
-        This function handles relationships only. No I/O or Markdown parsing.
-        Prevents duplicates and ensures lookup tables are updated.
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
 
         Args:
-            session (Session): Active SQLAlchemy session.
-            person (Person): Entry ORM object to update relationships for.
-            metadata (Dict[str, Any]): Normalized metadata containing:
-                Expected keys (optional):
-                    - events (List[Event or id])
-                    - entries (List[Entry or id])
-                Removal keys (optional):
-                    - remove_events (List[Event or id])
-                    - remove_entries (List[Entry or id])
-
-        Behavior:
-            - Incremental mode:
-                adds new relationships and/or removes explicitly listed items.
-            - Overwrite mode:
-                clears all existing relationships before adding new ones.
-            - Calls session.flush() only if any changes were made
+            session (Session): Active SQLAlchemy session
+            person (Person): Existing Person ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      name, full_name, relation_type
+                    - Relationship keys:
+                      aliases, events, entries
 
         Returns:
-            None
-
-        Raises:
-            TypeError: if values of metadata are not ORM objects nor int.
-            ValueError: ORM instance is non-existent
+            Person: The updated Person ORM object (still attached to session).
         """
-        # --- Failsafe ---
-        if person.id is None:
-            raise ValueError(
-                "Person instance has no ID; must be persisted before linking."
+        # --- Ensure existance ---
+        db_person = session.get(Person, person.id)
+        if db_person is None:
+            raise ValueError(f"Person with id={person.id} does not exist")
+
+        # --- Attach to session ---
+        person = session.merge(db_person)
+
+        # --- Update scalar fields ---
+        field_updates = {
+            "name": lambda x: md.normalize_str(x),
+            "full_name": lambda x: md.normalize_str(x),
+            "relation_type": lambda x: md.normalize_str(x),
+        }
+
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field in ["full_name", "relation_type"]:
+                    setattr(person, field, value)
+
+        # --- Update relationships ---
+        self._update_person_relationships(session, person, metadata)
+        return person
+
+    # ---- Reference ----
+    # Reference is created as a one-to-many relationship of Entry
+    @handle_db_errors
+    def update_reference(
+        self, session: Session, reference: Reference, metadata: Dict[str, Any]
+    ) -> Reference:
+        """
+        Update an existing Reference in the database and refresh its relationships.
+
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            reference (Reference): Existing Reference ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      content, speaker
+                    - Relationship keys:
+                        - entry (Entry or id)
+                        - source (ReferenceSource or id)
+                        - remove_source
+
+        Returns:
+            Reference: The updated Reference ORM object (still attached to session).
+        """
+        # --- Ensure existance ---
+        db_ref = session.get(Reference, reference.id)
+        if db_ref is None:
+            raise ValueError(f"Reference with id={reference.id} does not exist")
+
+        # --- Attach to session ---
+        reference = session.merge(db_ref)
+
+        # --- Update scalar fields ---
+        field_updates = {
+            "content": lambda x: md.normalize_str(x),
+            "speaker": lambda x: md.normalize_str(x),
+        }
+
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field == "speaker":
+                    setattr(reference, field, value)
+
+        # --- Parents ---
+        # -- Entry --
+        entry: Optional[Entry] = None
+        if (m_entry := metadata.get("entry")) is not None:
+            entry = self._resolve_object(session, m_entry, Entry)
+            if reference.entry_id != entry.id:
+                reference.entry = entry
+        #
+        # -- ReferenceSource --
+        ref_source: Optional[ReferenceSource] = None
+        if (m_source := metadata.get("source")) is not None:
+            ref_source = self._resolve_object(session, m_source, ReferenceSource)
+            if reference.source_id != ref_source.id:
+                reference.source = ref_source
+
+        return reference
+
+    @validate_metadata(["type", "title"])
+    @handle_db_errors
+    def create_reference_source(
+        self, session: Session, metadata: Dict[str, Any]
+    ) -> ReferenceSource:
+        """
+        Create a new ReferenceSource in the database.
+
+        This function does NOT handle file I/O or Markdown parsing.
+        It assumes that `metadata` is already normalized
+        (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - type (str)
+                    - title (str)
+                Optional keys:
+                    - author (str)
+
+        Returns:
+            ReferenceSource: The newly created Location ORM object.
+        """
+        # --- Required fields ---
+        norm_type = md.normalize_str(metadata.get("type"))
+        if not norm_type:
+            raise ValueError(f"Invalid type: {metadata['type']}")
+
+        norm_title = md.normalize_str(metadata.get("title"))
+        if not norm_title:
+            raise ValueError(f"Invalid title: {metadata['title']}")
+
+        # --- title uniqueness check ---
+        existing = session.query(ReferenceSource).filter_by(title=norm_title).first()
+
+        if existing:
+            raise ValidationError(
+                f"ReferenceSource already exists for title: {norm_title}"
             )
 
-        # --- Relationship management ---
-        changed: bool = False
+        # --- Create Source ---
+        ref = ReferenceSource(
+            type=norm_type,
+            title=norm_title,
+            author=md.normalize_str(metadata.get("author")),
+        )
+        session.add(ref)
+        session.flush()
+        return ref
 
-        # -- Event --
-        existing_events: Set[int] = {e.id for e in person.events}
+    @handle_db_errors
+    def update_reference_source(
+        self,
+        session: Session,
+        source: ReferenceSource,
+        metadata: Dict[str, Any],
+    ) -> ReferenceSource:
+        """
+        Update an existing ReferenceSource in the database
+        and (optionally) refresh its relationships.
 
-        if not incremental:
-            person.events.clear()
-            changed = True
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
 
-        # - Appending -
-        for e_meta in metadata.get("events", []):
-            if isinstance(e_meta, Event):
-                event_obj = e_meta
-                if event_obj.id is None:
-                    raise ValueError(
-                        "Event instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(e_meta, int):
-                event_obj = session.get(Event, e_meta)
-                if event_obj is None:
-                    raise ValueError(f"No Event found with id:{e_meta}")
-            else:
-                raise TypeError(
-                    "Expected Event instance or int, ", f"got {type(e_meta)}"
-                )
+        Args:
+            session (Session): Active SQLAlchemy session
+            entry (Entry): Existing Entry ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      type, title, author
+                    - Relationship keys:
+                        - references (List[Reference, int])
 
-            if event_obj.id not in existing_events:
-                person.events.append(event_obj)
-                changed = True
+        Returns:
+            ReferenceSource:
+                The updated ReferenceSource ORM object
+                (still attached to session).
+        """
+        # --- Ensure existance ---
+        db_source = session.get(ReferenceSource, source.id)
+        if db_source is None:
+            raise ValueError(f"ReferenceSource with id={source.id} does not exist")
 
-        # - Removal -
-        if incremental:
-            for e_meta in metadata.get("remove_events", []):
-                if isinstance(e_meta, Event):
-                    event_obj = e_meta
-                    if event_obj.id is None:
-                        raise ValueError(
-                            "Event instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(e_meta, int):
-                    event_obj = session.get(Event, e_meta)
-                    if event_obj is None:
-                        raise ValueError(f"No Event found with id:{e_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Event instance or int, ", f"got {type(e_meta)}"
-                    )
+        # --- Attach to session ---
+        source = session.merge(db_source)
 
-                if event_obj.id in existing_events:
-                    person.events.remove(event_obj)
-                    changed = True
+        # --- Update scalar fields ---
+        field_updates = {
+            "type": lambda x: md.normalize_str(x),
+            "title": lambda x: md.normalize_str(x),
+            "author": lambda x: md.normalize_str(x),
+        }
 
-        # -- Entry --
-        existing_entries: Set[int] = {e.id for e in person.entries}
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field == "author":
+                    setattr(source, field, value)
 
-        if not incremental:
-            person.entries.clear()
-            changed = True
+        # --- Update relationships ---
+        RelationshipManager.update_one_to_many(
+            session=session,
+            parent_obj=source,
+            items=metadata["references"],
+            model_class=Reference,
+            foreign_key_attr="source_id",
+            remove_items=metadata.get("remove_references", []),
+        )
 
-        # - Appending -
-        for e_meta in metadata.get("entries", []):
-            if isinstance(e_meta, Entry):
-                entry_obj = e_meta
-                if entry_obj.id is None:
-                    raise ValueError(
-                        "Entry instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(e_meta, int):
-                entry_obj = session.get(Entry, e_meta)
-                if entry_obj is None:
-                    raise ValueError(f"No Entry found with id:{e_meta}")
-            else:
-                raise TypeError(
-                    "Expected Entry instance or int, ", f"got {type(e_meta)}"
-                )
+        return source
 
-            if entry_obj.id not in existing_entries:
-                person.entries.append(entry_obj)
-                changed = True
+    # ---- Event ----
+    @validate_metadata(["name"])
+    @handle_db_errors
+    def create_event(self, session: Session, metadata: Dict[str, Any]) -> Event:
+        """
+        Create a new Event in the database with its associated relationships.
 
-        # - Removal -
-        if incremental:
-            for e_meta in metadata.get("remove_entries", []):
-                if isinstance(e_meta, Entry):
-                    entry_obj = e_meta
-                    if entry_obj.id is None:
-                        raise ValueError(
-                            "Entry instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(e_meta, int):
-                    entry_obj = session.get(Entry, e_meta)
-                    if entry_obj is None:
-                        raise ValueError(f"No Entry found with id:{e_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Entry instance or int, ", f"got {type(e_meta)}"
-                    )
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
 
-                if entry_obj.id in existing_entries:
-                    person.entries.remove(entry_obj)
-                    changed = True
+        Args:
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - event (str)
+                Optional keys:
+                    - title (str)
+                    - description (str)
+                Relationship keys (optional):
+                    - entries (List[Entry|int])
+                    - people (List[Person|int])
 
-        if changed:
-            session.flush()
+        Returns:
+            Event: The newly created Event ORM object.
+        """
+        # --- Required fields ---
+        event_name = md.normalize_str(metadata.get("event"))
+        if not event_name:
+            raise ValueError(f"Invalid event name: {metadata['event']}")
 
-    def update_event_relationships(
+        # --- Create Location ---
+        event = Event(
+            event=event_name,
+            title=md.normalize_str(metadata.get("title")),
+            description=md.normalize_str(metadata.get("description")),
+        )
+        session.add(event)
+        session.flush()
+
+        # --- Relationships ---
+        self._update_event_relationships(session, event, metadata)
+        return event
+
+    def _update_event_relationships(
         self,
         session: Session,
         event: Event,
@@ -1713,11 +1319,11 @@ class PalimpsestDB:
             event (Event): Entry ORM object to update relationships for.
             metadata (Dict[str, Any]): Normalized metadata containing:
                 Expected keys (optional):
-                    - entries (List[Entry or id])
-                    - people (List[Person or id])
+                    - entries (List[Entry|int])
+                    - people (List[Person|int])
                 Removal keys (optional):
-                    - remove_entries (List[Entry or id])
-                    - remove_people (List[People or id])
+                    - remove_entries (List[Entry|int])
+                    - remove_people (List[Person|int])
 
         Behavior:
             - Incremental mode:
@@ -1728,412 +1334,852 @@ class PalimpsestDB:
 
         Returns:
             None
-
-        Raises:
-            TypeError: if values of metadata are not ORM objects nor int.
-            ValueError: ORM instance is non-existent
         """
-        # --- Failsafe ---
-        if event.id is None:
-            raise ValueError(
-                "Event instance has no ID; must be persisted before linking."
-            )
 
-        # --- Relationship management ---
-        changed: bool = False
+        # --- Many to many ---
+        many_to_many_configs = [
+            ("entries", "entries", Entry),
+            ("people", "people", Person),
+        ]
 
+        for rel_name, meta_key, model_class in many_to_many_configs:
+            if meta_key in metadata:
+                RelationshipManager.update_many_to_many(
+                    session=session,
+                    parent_obj=event,
+                    relationship_name=rel_name,
+                    items=metadata[meta_key],
+                    model_class=model_class,
+                    incremental=incremental,
+                    remove_items=metadata.get(f"remove_{meta_key}", []),
+                )
+
+    @handle_db_errors
+    def update_event(
+        self, session: Session, event: Event, metadata: Dict[str, Any]
+    ) -> Event:
+        """
+        Update an existing Event in the database and refresh its relationships.
+
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            event (Event): Existing Event ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      name, full_name, relation_type
+                    - Relationship keys:
+                      aliases, events, entries
+
+        Returns:
+            Event: The updated Event ORM object (still attached to session).
+        """
+        # --- Ensure existance ---
+        db_event = session.get(Event, event.id)
+        if db_event is None:
+            raise ValueError(f"Event with id={event.id} does not exist")
+
+        # --- Attach to session ---
+        event = session.merge(db_event)
+
+        # --- Update scalar fields ---
+        field_updates = {
+            "event": lambda x: md.normalize_str(x),
+            "title": lambda x: md.normalize_str(x),
+            "description": lambda x: md.normalize_str(x),
+        }
+
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field in ["title", "description"]:
+                    setattr(event, field, value)
+
+        # --- Update relationships ---
+        self._update_event_relationships(session, event, metadata)
+        return event
+
+    # ---- Poems ----
+    @validate_metadata(["title", "content"])
+    @handle_db_errors
+    def create_poem(self, session: Session, metadata: Dict[str, Any]) -> PoemVersion:
+        """
+        Create a new PoemVersion in the database with its associated Poem.
+
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - title (str)
+                    - content (str)
+                Optional keys:
+                    - version_hash (str)
+                    - notes (str)
+                    - revision_date (str|date)
+                Relationship keys (optional):
+                    - entry (Entry or id)
+                    - poem (Person or id)
+
+        Returns:
+            Event: The newly created Event ORM object.
+        """
+        # --- Required fields ---
+        title = md.normalize_str(metadata.get("title"))
+        if not title:
+            raise ValueError(f"Invalid poem title: {metadata['title']}")
+
+        content = md.normalize_str(metadata.get("content"))
+        if not content:
+            raise ValueError(f"Invalid poem content: {metadata['content']}")
+
+        # --- Uniqueness check ---
+        existing = session.query(PoemVersion).filter_by(content=content).first()
+        if existing:
+            raise ValidationError("PoemVersion already exists with the same content")
+
+        # --- Parents ---
         # -- Entry --
-        existing_entries: Set[int] = {e.id for e in event.entries}
+        entry: Optional[Entry] = None
+        if (m_entry := metadata.get("entry")) is not None:
+            entry = self._resolve_object(session, m_entry, Entry)
 
-        if not incremental:
-            event.entries.clear()
-            changed = True
-
-        # - Appending -
-        for e_meta in metadata.get("entries", []):
-            if isinstance(e_meta, Entry):
-                entry_obj = e_meta
-                if entry_obj.id is None:
-                    raise ValueError(
-                        "Entry instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(e_meta, int):
-                entry_obj = session.get(Entry, e_meta)
-                if entry_obj is None:
-                    raise ValueError(f"No Entry found with id:{e_meta}")
-            else:
-                raise TypeError(
-                    "Expected Entry instance or int, ", f"got {type(e_meta)}"
-                )
-
-            if entry_obj.id not in existing_entries:
-                event.entries.append(entry_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for e_meta in metadata.get("remove_entries", []):
-                if isinstance(e_meta, Entry):
-                    entry_obj = e_meta
-                    if entry_obj.id is None:
-                        raise ValueError(
-                            "Entry instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(e_meta, int):
-                    entry_obj = session.get(Entry, e_meta)
-                    if entry_obj is None:
-                        raise ValueError(f"No Entry found with id:{e_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Entry instance or int, ", f"got {type(e_meta)}"
-                    )
-
-                if entry_obj.id in existing_entries:
-                    event.entries.remove(entry_obj)
-                    changed = True
-
-        # -- Person --
-        existing_people: Set[int] = {p.id for p in event.people}
-
-        if not incremental:
-            event.people.clear()
-            changed = True
-
-        # - Appending -
-        for p_meta in metadata.get("people", []):
-            if isinstance(p_meta, Person):
-                person_obj = p_meta
-                if person_obj.id is None:
-                    raise ValueError(
-                        "Person instance has no ID; ",
-                        "must be persisted before linking.",
-                    )
-            elif isinstance(p_meta, int):
-                person_obj = session.get(Person, p_meta)
-                if person_obj is None:
-                    raise ValueError(f"No Person found with id:{p_meta}")
-            else:
-                raise TypeError(
-                    "Expected Person instance or int, ", f"got {type(p_meta)}"
-                )
-
-            if person_obj.id not in existing_people:
-                event.people.append(person_obj)
-                changed = True
-
-        # - Removal -
-        if incremental:
-            for p_meta in metadata.get("remove_people", []):
-                if isinstance(p_meta, Person):
-                    person_obj = p_meta
-                    if person_obj.id is None:
-                        raise ValueError(
-                            "Person instance has no ID; ",
-                            "must be persisted before linking.",
-                        )
-                elif isinstance(p_meta, int):
-                    person_obj = session.get(Person, p_meta)
-                    if person_obj is None:
-                        raise ValueError(f"No Person found with id:{p_meta}")
-                else:
-                    raise TypeError(
-                        "Expected Person instance or int, ", f"got {type(p_meta)}"
-                    )
-
-                if person_obj.id in existing_people:
-                    event.people.remove(person_obj)
-                    changed = True
-
-        if changed:
+        # -- Poem --
+        poem: Poem
+        if (m_poem := metadata.get("poem")) is not None:
+            poem = self._resolve_object(session, m_poem, Poem)
+        else:
+            poem = Poem(title=title)
+            session.add(poem)
             session.flush()
 
-    # --- Manuscript ---
+        # --- If hash doesn't exist, create it ---
+        version_hash = md.normalize_str(metadata.get("version_hash"))
+        if not version_hash:
+            version_hash = md.get_text_hash(content)
+
+        # --- Use metadata, or entry date or now
+        rev_date: date
+        m_date = md.parse_date(metadata.get("revision_date"))
+        if m_date:
+            rev_date = m_date
+        elif entry:
+            rev_date = entry.date
+        else:
+            rev_date = datetime.now(timezone.utc).date()
+
+        # --- Create PoemVersion ---
+        poem_version = PoemVersion(
+            content=content,
+            revision_date=rev_date,
+            version_hash=version_hash,
+            notes=md.normalize_str(metadata.get("notes")),
+            poem=poem,
+            entry=entry,
+        )
+        session.add(poem_version)
+        session.flush()
+        return poem_version
+
+    @handle_db_errors
+    def update_poem(
+        self, session: Session, poem: Poem, metadata: Dict[str, Any]
+    ) -> Poem:
+        """
+        Update an existing Poem in the database and refresh its relationships.
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            poem (Poem): Existing Poem ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core field: title
+                    - Relationship keys:
+                      versions, remove_versions
+
+        Returns:
+            Event: The updated Event ORM object (still attached to session).
+        """
+        # --- Ensure existance ---
+        db_poem = session.get(Poem, poem.id)
+        if db_poem is None:
+            raise ValueError(f"Poem with id={poem.id} does not exist")
+
+        # --- Attach to session ---
+        poem = session.merge(db_poem)
+
+        # --- Update title ---
+        if "title" in metadata:
+            title = md.normalize_str(metadata["title"])
+            if title is not None:
+                setattr(poem, "title", title)
+
+        # --- Update Versions ---
+        RelationshipManager.update_one_to_many(
+            session=session,
+            parent_obj=poem,
+            items=metadata["versions"],
+            model_class=PoemVersion,
+            foreign_key_attr="poem_id",
+            remove_items=metadata.get("remove_versions", []),
+        )
+        return poem
+
+    @handle_db_errors
+    def update_poem_version(
+        self, session: Session, poem: PoemVersion, metadata: Dict[str, Any]
+    ) -> PoemVersion:
+        """
+        Update an existing Poem (Version) in the database.
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            poem (PoemVersion): Existing Poem ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core field: content, revision_date, notes
+                    - Relationship keys:
+                      poem, entry, remove_entry
+
+        Returns:
+            Event: The updated Event ORM object (still attached to session).
+
+        Notes: version_hash is automatically updated if content changes
+        """
+        # --- Ensure existance ---
+        db_poem = session.get(PoemVersion, poem.id)
+        if db_poem is None:
+            raise ValueError(f"PoemVersion with id={poem.id} does not exist")
+
+        # --- Attach to session ---
+        poem = session.merge(db_poem)
+
+        # --- Update scalar fields ---
+        field_updates = {
+            "content": lambda x: md.normalize_str(x),
+            "notes": lambda x: md.normalize_str(x),
+        }
+
+        for field, parser in field_updates.items():
+            if field in metadata:
+                value = parser(metadata[field])
+                if value is not None or field in ["revision_date", "notes"]:
+                    if field == "content" and value is not None:
+                        content_hash = md.get_text_hash(value)
+                        setattr(poem, "version_hash", content_hash)
+                    setattr(poem, field, value)
+
+        # --- Parents ---
+        # -- Entry --
+        entry: Optional[Entry] = None
+        if (m_entry := metadata.get("entry")) is not None:
+            entry = self._resolve_object(session, m_entry, Entry)
+            if poem.entry_id != entry.id:
+                poem.entry = entry
+                poem.revision_date = entry.date
+        elif metadata.get("remove_entry"):
+            poem.entry = None
+
+        # -- Poem --
+        poem_parent: Optional[Poem] = None
+        if (m_poem := metadata.get("poem")) is not None:
+            poem_parent = self._resolve_object(session, m_poem, Poem)
+            if poem.poem_id != poem_parent.id:
+                poem.poem = poem_parent
+
+        return poem
+
+    # ---- Manuscript ----
+    # --- Entry ---
     def create_or_update_manuscript_entry(
         self, session: Session, entry: Entry, manuscript_data: Dict[str, Any]
-    ) -> None:
+    ) -> Optional[ManuscriptEntry]:
         """
         Create or update a ManuscriptEntry associated with a given Entry.
-
-        This function handles the one-to-one relationship between Entry and
-        ManuscriptEntry. If a ManuscriptEntry already exists for the Entry,
-        it will update its fields. Otherwise, it will create a new row.
 
         Args:
             session (Session): Active SQLAlchemy session.
             entry (Entry): The Entry instance to link to.
             manuscript_data (Dict[str, Any]): Metadata for the ManuscriptEntry,
-                 keys include (optional):
-                    - 'status' (ManuscriptStatus): Status of the Entry.
+                keys include (optional):
+                    - 'status' (str|ManuscriptStatus): Status of the Entry.
                     - 'edited' (bool): Whether the entry has been edited.
-                    - 'themes' (str): Themes (relationship).
+                    - 'notes' (str): Additional notes.
+                    - 'themes' (List[str]): Themes (handled separately).
 
         Returns:
-            None
+            ManuscriptEntry: The created or updated ManuscriptEntry instance.
         """
-        manuscript: Optional[ManuscriptEntry] = entry.manuscript
-        status: Optional[ManuscriptStatus] = manuscript_data.get("status")
-        edited: Optional[bool] = manuscript_data.get("edited")
-        notes: Optional[str] = md.normalize_str(manuscript_data.get("notes"))
-        themes_list: List[str] = manuscript_data.get("themes", [])
+        # -- Normalize the data --
+        normalized_data = {}
 
-        if manuscript:
-            # -- Status --
-            if status is not None:
-                manuscript.status = status
-            # -- Edited --
-            if edited is not None:
-                manuscript.edited = edited
-            # -- Notes --
-            if notes is not None:
-                manuscript.notes = notes
-        else:
-            manuscript = ManuscriptEntry(
-                entry=entry,
-                status=status,
-                edited=edited,
-                notes=notes,
-            )
-            session.add(manuscript)
-        session.flush()
-
-        # -- Themes --
-        if themes_list:
-            norm_themes = {
-                md.normalize_str(t) for t in themes_list if md.normalize_str(t)
-            }
-
-            # --- Overwrite mode (replace all) ---
-            manuscript.themes.clear()
-            session.flush()  # optional, but keeps DB in sync
-
-            for theme_name in norm_themes:
-                # Either get existing Theme or create a new one
-                theme_obj = self._get_or_create_lookup_item(
-                    session, Theme, {"theme": theme_name}
+        # - status -
+        if "status" in manuscript_data:
+            status_value = manuscript_data["status"]
+            if isinstance(status_value, ManuscriptStatus):
+                normalized_data["status"] = status_value
+            elif isinstance(status_value, str):
+                try:
+                    normalized_data["status"] = ManuscriptStatus[status_value.upper()]
+                except KeyError:
+                    # Try to match by value (case-insensitive)
+                    status_found = False
+                    for status_enum in ManuscriptStatus:
+                        if status_enum.value.lower() == status_value.lower():
+                            normalized_data["status"] = status_enum
+                            status_found = True
+                            break
+                    if not status_found:
+                        valid_values = [s.value for s in ManuscriptStatus]
+                        raise ValueError(
+                            f"Invalid status '{status_value}'. "
+                            f"Valid values are: {valid_values}"
+                        )
+            elif status_value is not None:
+                raise ValueError(
+                    "Status must be string or ManuscriptStatus enum, "
+                    f"got {type(status_value)}"
                 )
-                manuscript.themes.append(theme_obj)
 
-            session.flush()
+        # - edited -
+        if "edited" in manuscript_data:
+            edited_value = manuscript_data["edited"]
+            if isinstance(edited_value, bool):
+                normalized_data["edited"] = edited_value
+            elif isinstance(edited_value, str):
+                # Handle string representations of boolean
+                if edited_value.lower() in ("true", "1", "yes", "on"):
+                    normalized_data["edited"] = True
+                elif edited_value.lower() in ("false", "0", "no", "off"):
+                    normalized_data["edited"] = False
+                else:
+                    raise ValueError(f"Cannot convert '{edited_value}' to boolean")
+            elif edited_value is not None:
+                # Try to convert other types to bool
+                normalized_data["edited"] = bool(edited_value)
+
+        # - notes -
+        if "notes" in manuscript_data:
+            normalized_data["notes"] = md.normalize_str(manuscript_data["notes"])
+
+        # -- Relationship --
+        manuscript = RelationshipManager.update_one_to_one(
+            session=session,
+            parent_obj=entry,
+            relationship_name="manuscript",
+            model_class=ManuscriptEntry,
+            child_data=normalized_data if normalized_data else {},
+            foreign_key_attr="entry_id",
+        )
+
+        # -- Theemes --
+        if manuscript and "themes" in manuscript_data:
+            self._update_manuscript_themes(
+                session, manuscript, manuscript_data["themes"]
+            )
+
+        return manuscript
+
+    def _update_manuscript_themes(
+        self, session: Session, manuscript: ManuscriptEntry, themes_list: List[str]
+    ) -> None:
+        """Update themes for a ManuscriptEntry using RelationshipManager."""
+        if not themes_list:
+            return
+
+        # Normalize theme names and create Theme objects as needed
+        theme_objects = []
+        for theme_name in themes_list:
+            theme_norm = md.normalize_str(theme_name)
+            if theme_norm:
+                theme_obj = self._get_or_create_lookup_item(
+                    session, Theme, {"theme": theme_norm}
+                )
+                theme_objects.append(theme_obj)
+
+        RelationshipManager.update_many_to_many(
+            session=session,
+            parent_obj=manuscript,
+            relationship_name="themes",
+            items=theme_objects,
+            model_class=Theme,
+            incremental=False,  # Replace all themes
+        )
 
     def create_or_update_manuscript_person(
         self, session: Session, person: Person, manuscript_data: Dict[str, Any]
-    ):
+    ) -> Optional[ManuscriptPerson]:
         """
         Create or update a ManuscriptPerson associated with a given Person.
-
-        This function handles the one-to-one relationship between Person and
-        ManuscriptPerson. If a ManuscriptPerson already exists for the Person,
-        it will update its fields. Otherwise, it will create a new row.
 
         Args:
             session (Session): Active SQLAlchemy session.
             person (Person): The Person instance to link to.
             manuscript_data (Dict[str, Any]): Metadata for the ManuscriptPerson,
-                 keys include (optional):
+                keys include:
                     - 'character' (str): Pseudonym used in the manuscript
 
         Returns:
             ManuscriptPerson: The created or updated ManuscriptPerson instance.
         """
-        manuscript = person.manuscript
-        character: Optional[str] = md.normalize_str(manuscript_data.get("character"))
-        if manuscript:
-            # -- Character --
-            if character is not None:
-                manuscript.character = character
-        else:
-            manuscript = ManuscriptPerson(
-                person=person,
-                character=character,
+        # -- Character is required
+        if "character" not in manuscript_data or not manuscript_data["character"]:
+            raise ValidationError("Required field 'character' missing or empty")
+
+        norm_character = md.normalize_str(manuscript_data["character"])
+        if not norm_character:
+            raise ValueError(
+                f"Invalid character format: {manuscript_data['character']}"
             )
-            session.add(manuscript)
-        session.flush()
+
+        normalized_data = {"character": norm_character}
+
+        return RelationshipManager.update_one_to_one(
+            session=session,
+            parent_obj=person,
+            relationship_name="manuscript",
+            model_class=ManuscriptPerson,
+            child_data=normalized_data,
+            foreign_key_attr="person_id",
+        )
 
     def create_or_update_manuscript_event(
         self, session: Session, event: Event, manuscript_data: Dict[str, Any]
-    ):
+    ) -> Optional[ManuscriptEvent]:
         """
         Create or update a ManuscriptEvent associated with a given Event.
-
-        This function handles the one-to-one relationship between Event and
-        ManuscriptEvent. If a ManuscriptEvent already exists for the Event,
-        it will update its fields. Otherwise, it will create a new row.
 
         Args:
             session (Session): Active SQLAlchemy session.
             event (Event): The Event instance to link to.
             manuscript_data (Dict[str, Any]): Metadata for the ManuscriptEvent,
-                 keys include (optional):
+                keys include (optional):
                     - 'arc' (str): Name of the arc
                     - 'notes' (str): Qualitative notes regarding the event
 
         Returns:
             ManuscriptEvent: The created or updated ManuscriptEvent instance.
         """
-        manuscript = event.manuscript
-        arc: Optional[str] = md.normalize_str(manuscript_data.get("arc"))
-        notes: Optional[str] = md.normalize_str(manuscript_data.get("notes"))
+        normalized_data = {}
 
-        if manuscript:
-            # -- Character --
-            if notes is not None:
-                manuscript.notes = notes
-        else:
-            manuscript = ManuscriptEvent(
-                event=event,
-                notes=notes,
-            )
-            session.add(manuscript)
-        session.flush()
+        if "notes" in manuscript_data:
+            normalized_data["notes"] = md.normalize_str(manuscript_data["notes"])
 
-        # -- Arc --
-        if arc:
-            arc_obj = self._get_or_create_lookup_item(session, Arc, {"arc": arc})
-            manuscript.arc = arc_obj
+        manuscript = RelationshipManager.update_one_to_one(
+            session=session,
+            parent_obj=event,
+            relationship_name="manuscript",
+            model_class=ManuscriptEvent,
+            child_data=normalized_data if normalized_data else {},
+            foreign_key_attr="event_id",
+        )
 
-        session.flush()
+        # Handle arc separately (many-to-one with Arc)
+        if manuscript and "arc" in manuscript_data:
+            arc_name = md.normalize_str(manuscript_data["arc"])
+            if arc_name:
+                arc_obj = self._get_or_create_lookup_item(
+                    session, Arc, {"arc": arc_name}
+                )
+                manuscript.arc = arc_obj
+                session.flush()
 
-    # --- Cleanup ---
-    def _cleanup_unused(
-        self, session: Session, model_class: Type[Base], relationship_attr: str
-    ) -> int:
+        return manuscript
+
+    # ---- Cleanup ----
+    @handle_db_errors
+    def bulk_cleanup_unused(
+        self, session: Session, cleanup_config: Dict[str, tuple]
+    ) -> Dict[str, int]:
         """
-        Generic helper to delete unused objects from a lookup table.
+        Perform bulk cleanup operations more efficiently.
 
         Args:
-            session (Session): Active SQLAlchemy session
-            model_class (Type[Base]): ORM model to query
-            relationship_attr (str): Name of relationship attribute to check
-
-        Returns:
-            int: Number of rows deleted
+            cleanup_config: Dict mapping table names to (model_class, relationship_attr) tuples
         """
-        unused = (
-            session.query(model_class)
-            .filter(~getattr(model_class, relationship_attr).any())
-            .all()
-        )
-        count = len(unused)
-        for obj in unused:
-            session.delete(obj)
+        results = {}
 
-        session.flush()
-        return count
-
-    # -- Specific cleanup functions --
-    def cleanup_unused_tags(self, session: Session) -> int:
-        return self._cleanup_unused(session, Tag, "entries")
-
-    def cleanup_unused_locations(self, session: Session) -> int:
-        return self._cleanup_unused(session, Location, "entries")
-
-    def cleanup_unused_dates(self, session: Session) -> int:
-        return self._cleanup_unused(session, MentionedDate, "entries")
-
-    def cleanup_unused_reference_types(self, session: Session) -> int:
-        return self._cleanup_unused(session, ReferenceType, "references")
-
-    def cleanup_unused_themes(self, session: Session) -> int:
-        return self._cleanup_unused(session, Theme, "entries")
-
-    # -- Content cleanup (explicit opt-in) --
-    def cleanup_orphan_references(self, session: Session) -> int:
-        return self._cleanup_unused(session, Reference, "entries")
-
-    def cleanup_orphan_events(self, session: Session) -> int:
-        # Events are special: they can be linked to entries OR people
-        unused = (
-            session.query(Event).filter(~Event.entries.any(), ~Event.people.any()).all()
-        )
-        count = len(unused)
-        for obj in unused:
-            session.delete(obj)
-        session.flush()
-        return count
-
-    def cleanup_orphan_arcs(self, session: Session) -> int:
-        return self._cleanup_unused(session, Arc, "events")
-
-    # -- Convenience wrapper --
-    def cleanup_all_metadata(self, session: Session) -> dict[str, int]:
-        """
-        Run safe cleanup passes (tags, locations, dates, reference types).
-        Returns counts of deleted objects.
-        """
-        return {
-            "dates": self.cleanup_unused_dates(session),
-            "locations": self.cleanup_unused_locations(session),
-            "tags": self.cleanup_unused_tags(session),
-            "reference_types": self.cleanup_unused_reference_types(session),
-        }
-
-    # --- CRUD / Query ---
-    def get_entry_metadata(self, file_path: str) -> Dict[str, Any]:
-        """Get metadata for a specific entry"""
-        with self.get_session() as session:
-            entry = session.query(Entry).filter_by(file_path=file_path).first()
-            if not entry:
-                return {}
-
-            return {
-                "date": entry.date,
-                "word_count": entry.word_count,
-                "reading_time": entry.reading_time,
-                "epigraph": entry.epigraph or "",
-                "notes": entry.notes or "",
-                "people": [person.name for person in entry.people],
-                "tags": [tag.tag for tag in entry.tags],
-                "location": [location.name for location in entry.locations],
-                "events": [event.name for event in entry.events],
-                "references": [ref.content for ref in entry.references],
-            }
-
-    def get_all_values(self, field: str) -> List[str]:
-        """Get all unique values for a field (for autocomplete)"""
-        model_map = {
-            "people": Person,
-            "tags": Tag,
-            "locations": Location,
-            "events": Event,
-            "reference_types": ReferenceType,
-        }
-
-        if field in model_map:
-            with self.get_session() as session:
-                items = (
-                    session.query(model_map[field])
-                    .order_by(model_map[field].name)
-                    .all()
-                )
-                return [item.name for item in items]
-
-        return []
-
-    def get_database_stats(self) -> Dict[str, Any]:
-        """Get database statistics"""
-        with self.get_session() as session:
-            stats = {}
-
-            # Basic counts
-            stats["entries"] = session.query(Entry).count()
-            stats["people"] = session.query(Person).count()
-            stats["tags"] = session.query(Tag).count()
-            stats["locations"] = session.query(Location).count()
-            stats["events"] = session.query(Event).count()
-            stats["references"] = session.query(Reference).count()
-
-            # Migration info
-            migration_info = self.get_migration_history()
-            stats["migration_status"] = migration_info
-
-            # Recent activity
-            from datetime import timedelta
-
-            week_ago = datetime.now() - timedelta(days=7)
-            stats["entries_updated_last_7_days"] = (
-                session.query(Entry).filter(Entry.updated_at >= week_ago).count()
+        for table_name, (model_class, relationship_attr) in cleanup_config.items():
+            # Use bulk delete for better performance
+            subquery = (
+                session.query(model_class.id)
+                .filter(~getattr(model_class, relationship_attr).any())
+                .subquery()
             )
 
-            return stats
+            deleted_count = (
+                session.query(model_class)
+                .filter(model_class.id.in_(subquery.select()))
+                .delete(synchronize_session=False)
+            )
+
+            results[table_name] = deleted_count
+            logger.info(f"Cleaned up {deleted_count} unused {table_name}")
+
+        session.flush()
+        return results
+
+    def cleanup_all_metadata(self) -> Dict[str, int]:
+        """Run safe cleanup operations with proper transaction handling."""
+        cleanup_config = {
+            "tags": (Tag, "entries"),
+            "locations": (Location, "entries"),
+            "dates": (MentionedDate, "entries"),
+            "themes": (Theme, "entries"),
+            "references": (Reference, "entry"),
+            "poem_versions": (PoemVersion, "entry"),
+        }
+
+        try:
+            with self.session_scope() as session:
+                return self.bulk_cleanup_unused(session, cleanup_config)
+        except Exception as e:
+            logger.error(f"Cleanup failed: {e}")
+            raise DatabaseError(f"Cleanup operation failed: {e}")
+
+    # ---- Alembic ----
+    def _setup_alembic(self) -> Config:
+        """Setup Alembic configuration with error handling."""
+        try:
+            alembic_cfg: Config = Config()
+            alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
+            alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
+            alembic_cfg.set_main_option(
+                "file_template",
+                "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
+            )
+            return alembic_cfg
+        except Exception as e:
+            logger.error(f"Failed to setup Alembic: {e}")
+            raise DatabaseError(f"Alembic configuration failed: {e}")
+
+    @handle_db_errors
+    def init_alembic(self) -> None:
+        """
+        Initialize Alembic in the project directory.
+
+        Actions:
+            Creates Alembic directory with standard structure
+            Updates alembic/eng.py to import Palimpsest Base metadata
+            Prints instructions for first migration
+
+        Returns:
+            None
+        """
+        try:
+            if not self.alembic_dir.is_dir():
+                logger.info(f"Initializing Alembic in {self.alembic_dir}...")
+                command.init(self.alembic_cfg, str(self.alembic_dir))
+
+                # Update the generated alembic/env.py to use models
+                self._update_alembic_env()
+
+                logger.info("Alembic initialized successfully")
+                logger.info("You can now create your first migration with:")
+                logger.info("python your_script.py create_migration 'Initial schema'")
+            else:
+                logger.info(f"Alembic already initialized in {self.alembic_dir}")
+        except Exception as e:
+            logger.error(f"Failed to initialize Alembic: {e}")
+            raise DatabaseError(f"Alembic initialization failed: {e}")
+
+    def _update_alembic_env(self) -> None:
+        """
+        Update the generated alembic/env.py to import Palimpsest models.
+
+        Returns:
+            None
+        """
+        env_path = self.alembic_dir / "env.py"
+
+        try:
+            if env_path.exists():
+                content = env_path.read_text(encoding="utf-8")
+
+                import_line = "from models import Base\n"
+                target_metadata_line = "target_metadata = Base.metadata"
+
+                # Replace the target_medatara = None line
+                updated_content: str = content.replace(
+                    "target_metadata = None",
+                    f"{import_line}\n{target_metadata_line}",
+                )
+
+                # Write the updated file back
+                env_path.write_text(updated_content, encoding="utf-8")
+                logger.info("Updated alembic/env.py to use Palimpsest models")
+        except Exception as e:
+            logger.error(f"Failed to update alembic/env.py: {e}")
+            raise DatabaseError(f"Could not update Alembic environment: {e}")
+
+    @handle_db_errors
+    def init_database(self) -> None:
+        """
+        Initialize database - create tables if needed and run migrations.
+
+        Actions:
+            Checks if the database is fresh (no tables)
+            If fresh,
+                creates all tables from the ORM models
+                stamps the Alembic revision to head
+            If not,
+                runs pending migrations to update schema
+
+        Returns:
+            None
+        """
+        try:
+            with self.engine.connect() as conn:
+                inspector = self.engine.dialect.get_table_names(conn)
+                is_fresh_db: bool = len(inspector) == 0
+
+            if is_fresh_db:
+                Base.metadata.create_all(bind=self.engine)
+                try:
+                    command.stamp(self.alembic_cfg, "head")
+                    logger.info("Fresh database created and stamped")
+                except Exception as e:
+                    logger.warning(f"Could not stamp database: {e}")
+            else:
+                self.upgrade_database()
+                logger.info("Database initialized with migrations")
+
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            raise DatabaseError(f"Could not initialize database: {e}")
+
+    # ---- Migrations ----
+    @handle_db_errors
+    def create_migration(self, message: str) -> None:
+        """
+        Create a new Alembic migration file for the current database schema.
+
+        Args:
+            message (str): Description of the migration.
+        Returns:
+            None
+        """
+        try:
+            command.revision(self.alembic_cfg, message=message, autogenerate=True)
+            logger.info(f"Created migration: {message}")
+        except Exception as e:
+            logger.error(f"Failed to create migration '{message}': {e}")
+            raise DatabaseError(f"Migration creation failed: {e}")
+
+    @handle_db_errors
+    def downgrade_database(self, revision: str) -> None:
+        """
+        Downgrade the database schema to a specified Alembic revision.
+
+        Args:
+            revision (str): The target revision to downgrade to.
+
+        Returns:
+            None
+        """
+        try:
+            command.downgrade(self.alembic_cfg, revision)
+            logger.info(f"Database downgraded to {revision}")
+        except Exception as e:
+            logger.error(f"Database downgrade to {revision} failed: {e}")
+            raise DatabaseError(f"Could not downgrade database to {revision}: {e}")
+
+    @handle_db_errors
+    def upgrade_database(self, revision: str = "head") -> None:
+        """
+        Upgrade the database schema to the specified Alembic revision.
+
+        Args:
+            revision (str, optional):
+                The target revision to upgrade to.
+                Defaults to 'head' (latest revision).
+
+        Returns:
+            None
+        """
+        try:
+            command.upgrade(self.alembic_cfg, revision)
+            logger.info(f"Database upgraded to {revision}")
+        except Exception as e:
+            logger.error(f"Database upgrade failed: {e}")
+            raise DatabaseError(f"Could not upgrade database to {revision}: {e}")
+
+    def backup_database(self, backup_suffix: Optional[str] = None) -> str:
+        """
+        Create database backup.
+
+        Args:
+            backup_suffix (Optional[str]): Suffix to append to the backup file.
+
+        Returns:
+            str: Path to the backup database file.
+        """
+        try:
+            if backup_suffix is None:
+                backup_suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            backup_path = f"{self.db_path}.backup_{backup_suffix}"
+            shutil.copy2(self.db_path, backup_path)
+            logger.info(f"Database backed up to: {backup_path}")
+            return backup_path
+
+        except Exception as e:
+            logger.error(f"Backup failed: {e}")
+            raise DatabaseError(f"Could not create backup: {e}")
+
+    def get_migration_history(self) -> Dict[str, Optional[str]]:
+        """
+        Get the current migration status of the database.
+
+        Returns:
+            Dictionary with keys:
+                - 'current_revision' (str | None):
+                  Current Alembic revision of the database.
+                - 'status' (str):
+                  Either 'up_to_date' or 'needs_migration'.
+                - 'error' (str, optional):
+                  Present if an exception occurred.
+        """
+        try:
+            with self.engine.connect() as conn:
+                context = MigrationContext.configure(conn)
+                current_rev = context.get_current_revision()
+
+            return {
+                "current_revision": current_rev,
+                "status": "up_to_date" if current_rev else "needs_migration",
+            }
+        except Exception as e:
+            logger.error(f"Failed to get migration history: {e}")
+            return {"error": str(e)}
+
+    # ---- Stats ----
+    def get_database_stats(self) -> Dict[str, Any]:
+        """Get database statistics"""
+        try:
+            with self.session_scope() as session:
+                stats = {
+                    "entries": session.query(Entry).count(),
+                    "mentioned_dates": session.query(MentionedDate).count(),
+                    "locations": session.query(Location).count(),
+                    "people": session.query(Person).count(),
+                    "aliases": session.query(Alias).count(),
+                    "references": session.query(Reference).count(),
+                    "references_sources": session.query(ReferenceSource).count(),
+                    "events": session.query(Event).count(),
+                    "poems": session.query(Poem).count(),
+                    "poemVersion": session.query(PoemVersion).count(),
+                    "tags": session.query(Tag).count(),
+                    "manuscript_entries": session.query(ManuscriptEntry).count(),
+                    "manuscript_events": session.query(ManuscriptEvent).count(),
+                    "manuscript_people": session.query(ManuscriptPerson).count(),
+                    "arcs": session.query(Arc).count(),
+                    "themes": session.query(Theme).count(),
+                    "migration_status": self.get_migration_history(),
+                }
+
+                # -- Recent activity --
+                week_ago = datetime.now() - timedelta(days=7)
+                stats["entries_updated_last_7_days"] = (
+                    session.query(Entry).filter(Entry.updated_at >= week_ago).count()
+                )
+
+                return stats
+        except Exception as e:
+            logger.error(f"Failed to get database stats: {e}")
+            raise DatabaseError(f"Could not retrieve database statistics: {e}")
+
+    ## --- CRUD / Query ---
+    # def get_entry_metadata(self, file_path: str) -> Dict[str, Any]:
+    #     """Get metadata for a specific entry"""
+    #     with self.get_session() as session:
+    #         entry = session.query(Entry).filter_by(file_path=file_path).first()
+    #         if not entry:
+    #             return {}
+    #
+    #         return {
+    #             "date": entry.date,
+    #             "word_count": entry.word_count,
+    #             "reading_time": entry.reading_time,
+    #             "epigraph": entry.epigraph or "",
+    #             "notes": entry.notes or "",
+    #             "people": [person.display_name for person in entry.people],
+    #             "tags": [tag.tag for tag in entry.tags],
+    #             "location": [location.display_name for location in entry.locations],
+    #             "events": [event.display_name for event in entry.events],
+    #             "references": [ref.content_preview for ref in entry.references],
+    #         }
+    #
+    # def get_all_values(self, field: str) -> List[str]:
+    #     """Get all unique values for a field (for autocomplete)"""
+    #     model_map = {
+    #         "people": Person,
+    #         "tags": Tag,
+    #         "locations": Location,
+    #         "events": Event,
+    #         "reference": Reference,
+    #     }
+    #
+    #     if field in model_map:
+    #         with self.get_session() as session:
+    #             items = (
+    #                 session.query(model_map[field])
+    #                 .order_by(model_map[field].name)
+    #                 .all()
+    #             )
+    #             return [item.name for item in items]
+    #
+    #     return []
+    #
+    ## Usage example demonstrating both relationship types
+    # def example_usage(self):
+    #     """Example showing how to handle mixed relationship types."""
+    #
+    #     # Example metadata with both many-to-many and one-to-many relationships
+    #     entry_metadata = {
+    #         'date': '2024-01-15',
+    #         'file_path': '/path/to/entry.md',
+    #
+    #         # Many-to-many relationships (these objects can be shared across entries)
+    #         'people': [1, 2],  # Person IDs that can appear in multiple entries
+    #         'locations': ['New York', 'Paris'],  # Locations that can be referenced by multiple entries
+    #         'events': [{'name': 'Birthday Party', 'description': 'Annual celebration'}],
+    #         'tags': ['personal', 'reflection'],
+    #
+    #         # One-to-many relationships (these objects belong exclusively to this entry)
+    #         'references': [
+    #             {
+    #                 'name': 'The Great Gatsby',
+    #                 'author': 'F. Scott Fitzgerald',
+    #                 'reference_type': 'book'
+    #             }
+    #         ],
+    #         'poems': [
+    #             {
+    #                 'title': 'Morning Reflection',
+    #                 'text': 'The sun rises...',
+    #                 'revision_date': '2024-01-15'
+    #             }
+    #         ]
+    #     }
+    #
+    #     try:
+    #         with self.session_scope() as session:
+    #             # Create entry - this will handle all relationships appropriately
+    #             entry = self.create_entry(session, entry_metadata)
+    #
+    #             # The RelationshipManager automatically handles:
+    #             # - Many-to-many: Updates junction tables for people, locations, events, tags
+    #             # - One-to-many: Sets foreign keys on references and poems to point to this entry
+    #
+    #             logger.info(f"Created entry {entry.id} with mixed relationship types")
+    #
+    #     except (DatabaseError, ValidationError) as e:
+    #         logger.error(f"Failed to create entry: {e}")
+    #         raise
