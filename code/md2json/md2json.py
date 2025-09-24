@@ -27,8 +27,8 @@ from pathlib import Path
 from typing import Any
 
 # --- Local imports ---
-from scripts.metadata import MetadataRegistry, MetaEntry, MetadataValidator
-from scripts.paths import MD_DIR, METADATA_JSON
+from code.metadata import MetadataRegistry, MetaEntry, MetadataValidator
+from code.paths import MD_DIR, METADATA_JSON
 
 
 # ----- Argument parser -----
@@ -47,29 +47,25 @@ def parse_args() -> argparse.Namespace:
 
     # --- ARGUMENTS ---
     p.add_argument(
-        "-i", "--input",
+        "-i",
+        "--input",
         default=str(MD_DIR),
-        help=f"Path to the Markdown dir (default: {str(MD_DIR)})"
+        help=f"Path to the Markdown dir (default: {str(MD_DIR)})",
     )
     p.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default=str(METADATA_JSON),
-        help="Path to metadata.json to update (will be created if missing)"
+        help="Path to metadata.json to update (will be created if missing)",
     )
     p.add_argument(
-        "--glob",
-        default="*.md",
-        help="Glob pattern for Markdown files (default: *.md)"
+        "--glob", default="*.md", help="Glob pattern for Markdown files (default: *.md)"
     )
     p.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="If set, do not write output file"
+        "--dry-run", action="store_true", help="If set, do not write output file"
     )
     p.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true", help="Enable verbose logging"
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
     return p.parse_args()
 
@@ -84,8 +80,8 @@ def main() -> None:
     Supports dry-run mode and reports added/updated entries.
     """
     # -- Setup --
-    args      = parse_args()
-    input     = Path(args.input)
+    args = parse_args()
+    input = Path(args.input)
     meta_path = Path(args.out)
 
     if not input.exists() or not input.is_dir():
@@ -95,8 +91,7 @@ def main() -> None:
         registry = MetadataRegistry(meta_path)
     except Exception as e:
         raise OSError(
-            "Failed to load or create metadata registry at "
-            f"{str(meta_path)}: {e}"
+            "Failed to load or create metadata registry at " f"{str(meta_path)}: {e}"
         )
 
     # -- Counter setup --
@@ -109,14 +104,12 @@ def main() -> None:
         warnings.warn(
             "Warning: No Markdown files matched pattern "
             f"{args.glob} in {str(input)}",
-            UserWarning
+            UserWarning,
         )
 
     for md_file in files:
         try:
-            meta: dict[str, Any] = registry.validator.extract_yaml_frontmatter(
-                md_file
-            )
+            meta: dict[str, Any] = registry.validator.extract_yaml_frontmatter(md_file)
         except Exception as e:
             warnings.warn(f"Warning: Skipping {str(md_file)}: {e}", UserWarning)
             continue
@@ -125,7 +118,7 @@ def main() -> None:
             if args.verbose:
                 warnings.warn(
                     f"Warning: Skipping {str(md_file)}: no YAML frontmatter",
-                    UserWarning
+                    UserWarning,
                 )
             continue
 
@@ -134,22 +127,20 @@ def main() -> None:
             if args.verbose:
                 warnings.warn(
                     f"Warning: Skipping {str(md_file)}: only default metadata",
-                    UserWarning
+                    UserWarning,
                 )
             continue
 
         if not registry.validator.validate(meta):
             warnings.warn(
-                f"Warning: Skipping {str(md_file)} due to validation error",
-                UserWarning
+                f"Warning: Skipping {str(md_file)} due to validation error", UserWarning
             )
             continue
 
         key = meta.get("date")
         if not key:
             warnings.warn(
-                f"Warning: Skipping {str(md_file)}: missing 'date' field",
-                UserWarning
+                f"Warning: Skipping {str(md_file)}: missing 'date' field", UserWarning
             )
             continue
 
@@ -158,15 +149,11 @@ def main() -> None:
         if existed:
             updated.append(key)
             if args.verbose:
-                print(
-                    f"[md2json] →  Updated registry for {key} ({md_file.name})"
-                )
+                print(f"[md2json] →  Updated registry for {key} ({md_file.name})")
         else:
             added.append(key)
             if args.verbose:
-                print(
-                    f"[md2json] →  Added registry for {key} ({md_file.name})"
-                )
+                print(f"[md2json] →  Added registry for {key} ({md_file.name})")
         count += 1
 
     if added:

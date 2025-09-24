@@ -31,8 +31,8 @@ from pathlib import Path
 from typing import List
 
 # --- Local imports ---
-from scripts.paths import ROOT, MD_DIR
-from scripts.txt2md.txt_entry import TxtEntry
+from code.paths import ROOT, MD_DIR
+from code.txt2md.txt_entry import TxtEntry
 
 
 # ----- Argument parser -----

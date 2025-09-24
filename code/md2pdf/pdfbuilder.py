@@ -80,7 +80,7 @@ class PdfBuilder:
         preamble: Optional[Path],
         preamble_notes: Optional[Path],
         verbose: bool = False,
-        clobber: bool = False
+        clobber: bool = False,
     ):
         """
         Initialize a PdfBuilder instance.
@@ -102,7 +102,6 @@ class PdfBuilder:
         self.verbose = verbose
         self.clobber = clobber
 
-
     # --- Methods ---
     def gather_md(self) -> Sequence[Path]:
         """
@@ -121,28 +120,20 @@ class PdfBuilder:
             print(f"[PdfBuilder] →  Looking into: {str(md_year)}")
 
         if not md_year.exists() or not md_year.is_dir():
-            raise FileNotFoundError(
-                f"Markdown directory not found: {str(md_year)}\n"
-            )
+            raise FileNotFoundError(f"Markdown directory not found: {str(md_year)}\n")
 
         files = sorted(md_year.glob(f"{self.year}-*.md"))
 
         if not files:
-            raise FileNotFoundError(
-                f"No Markdown files found in {str(md_year)}\n"
-            )
+            raise FileNotFoundError(f"No Markdown files found in {str(md_year)}\n")
 
         if self.verbose:
             print(f"[PdfBuilder] →  Found {len(files)} Markdown entries")
 
         return files
 
-
     def write_temp_md(
-        self,
-        files: Sequence[Path],
-        tmp_path: Path,
-        notes: bool = False
+        self, files: Sequence[Path], tmp_path: Path, notes: bool = False
     ) -> None:
         """
         Concatenate a list of Markdown files into a single file, optionally
@@ -162,51 +153,42 @@ class PdfBuilder:
         """
         if self.verbose:
             md_type: str = "Markdown (notes)" if notes else "Markdown"
-            print(
-                "[PdfBuilder] →  "
-                f"Preparing concatenated {md_type} on {tmp_path}"
-            )
+            print("[PdfBuilder] →  " f"Preparing concatenated {md_type} on {tmp_path}")
 
         if self.verbose:
-            print(
-                f"[PdfBuilder] →  Concatenating {len(files)} files"
-            )
+            print(f"[PdfBuilder] →  Concatenating {len(files)} files")
         months: Dict[str, List[Path]] = defaultdict(list)
         for md in sorted(files):
             parts = md.stem.split("-")
             if len(parts) < 2:
                 # Not viable YYYY-MM-DD format; skip
                 warnings.warn(
-                    f"Skipping entry ({md.stem}) with no viable date",
-                    UserWarning
+                    f"Skipping entry ({md.stem}) with no viable date", UserWarning
                 )
                 continue
             _, month_str, *_ = parts
             months[month_str].append(md)
         if self.verbose:
             print(
-                "[PdfBuilder] →  "
-                f"Grouped {len(months)} months for year {self.year}"
+                "[PdfBuilder] →  " f"Grouped {len(months)} months for year {self.year}"
             )
 
         if self.verbose:
-            print(
-                f"[PdfBuilder] →  Writing Markdown file on {str(tmp_path)}"
-            )
+            print(f"[PdfBuilder] →  Writing Markdown file on {str(tmp_path)}")
 
         annotations_preamble: List[str] = [
             "",
             "- **Status**: discard | reference | fragments | source | quote",
             "- **People**: "
-" __________________________________________________________________________",
+            " __________________________________________________________________________",
             "- **Tags**: "
-" ____________________________________________________________________________",
+            " ____________________________________________________________________________",
             "- **Themes**: "
-" _________________________________________________________________________",
+            " _________________________________________________________________________",
             "- **Epigraph**: "
-" ________________________________________________________________________",
+            " ________________________________________________________________________",
             "- **References**: "
-" ______________________________________________________________________",
+            " ______________________________________________________________________",
             "",
             "---",
             "",
@@ -236,15 +218,11 @@ class PdfBuilder:
                             if ln.startswith("##") and not inserted:
                                 if not first_day:
                                     updated_lines.append("\\newpage")
-                                updated_lines.extend([
-                                    "\\nolinenumbers",
-                                    ln
-                                ])
+                                updated_lines.extend(["\\nolinenumbers", ln])
                                 updated_lines.extend(annotations_preamble)
-                                updated_lines.extend([
-                                    "\\setcounter{linenumber}{1}",
-                                    "\\linenumbers"
-                                ])
+                                updated_lines.extend(
+                                    ["\\setcounter{linenumber}{1}", "\\linenumbers"]
+                                )
                                 inserted = True
                                 first_day = False
                             else:
@@ -260,14 +238,13 @@ class PdfBuilder:
                 tmp.write("\\nolinenumbers\n")
             tmp.write("\\tableofcontents\n")
 
-
     def run_pandoc(
         self,
         in_md: Path,
         out_pdf: Path,
         preamble: Path,
         metadata: Sequence[str],
-        extra_args: Sequence[str]
+        extra_args: Sequence[str],
     ) -> None:
         """
         Generate a PDF from a Markdown file using Pandoc with LaTeX options.
@@ -288,38 +265,34 @@ class PdfBuilder:
             OSError: If Pandoc executable is not found or file access error.
         """
         if not in_md.is_file():
-            raise FileNotFoundError(
-                f"Markdown file not found: {str(in_md)}\n"
-            )
+            raise FileNotFoundError(f"Markdown file not found: {str(in_md)}\n")
 
-        args: Sequence[str] = [
-            "--from", "markdown",
-            "--pdf-engine", "xelatex",
-            "--include-in-header", str(preamble),
-            "--variable", "documentclass:extarticle"
-        ] + list(metadata) + list(extra_args)
+        args: Sequence[str] = (
+            [
+                "--from",
+                "markdown",
+                "--pdf-engine",
+                "xelatex",
+                "--include-in-header",
+                str(preamble),
+                "--variable",
+                "documentclass:extarticle",
+            ]
+            + list(metadata)
+            + list(extra_args)
+        )
 
         if self.verbose:
-            cmd_str = (
-                "pandoc " + " ".join(args) +
-                f" {str(in_md)} -o {str(out_pdf)}"
-            )
+            cmd_str = "pandoc " + " ".join(args) + f" {str(in_md)} -o {str(out_pdf)}"
             print(f"[PdfBuilder] →  Running Pandoc command:\n  {cmd_str}")
 
         try:
-            convert_file(
-                str(in_md),
-                to="pdf",
-                outputfile=str(out_pdf),
-                extra_args=args
-            )
+            convert_file(str(in_md), to="pdf", outputfile=str(out_pdf), extra_args=args)
         except (OSError, RuntimeError) as e:
             # Add context and re-raise
             raise RuntimeError(
-                "[PdfBuilder] →  Pandoc failed to convert "
-                f"{in_md} → {out_pdf}: {e}"
+                "[PdfBuilder] →  Pandoc failed to convert " f"{in_md} → {out_pdf}: {e}"
             ) from e
-
 
     def build(self) -> None:
         """
@@ -345,34 +318,31 @@ class PdfBuilder:
                 print(f"[PdfBuilder] →  Preamble: {str(self.preamble)}")
             if self.preamble_notes.is_file():
                 print(
-                    "[PdfBuilder] →  Preamble (Notes): "
-                    f"{str(self.preamble_notes)}"
+                    "[PdfBuilder] →  Preamble (Notes): " f"{str(self.preamble_notes)}"
                 )
 
         # Ensure output directory exists
         try:
             self.pdf_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            raise OSError(
-                f"Error creating PDF output directory {self.pdf_dir}: {e}"
-            )
+            raise OSError(f"Error creating PDF output directory {self.pdf_dir}: {e}")
 
         # Common Pandoc args: TOC, margins, font size
         metadata = [
-            "--metadata", "title: Palimpsest",
+            "--metadata",
+            "title: Palimpsest",
             "--metadata",
             f"date: {self.year} — {int(self.year) - 1993} years old",
-            "--metadata", "author: Sofía F."
+            "--metadata",
+            "author: Sofía F.",
         ]
 
         extra_clean = [
-            "--variable", "fontsize:12pt",
+            "--variable",
+            "fontsize:12pt",
         ]
 
-        extra_notes = [
-            "--variable", "fontsize:12pt",
-            "--variable", "linestretch:1.9"
-        ]
+        extra_notes = ["--variable", "fontsize:12pt", "--variable", "linestretch:1.9"]
 
         # Gather Markdown files
         files = self.gather_md()
@@ -388,7 +358,7 @@ class PdfBuilder:
                 warnings.warn(
                     f"Warning: Clean PDF already exists: {clean_pdf}. "
                     "Overwritting it.",
-                    UserWarning
+                    UserWarning,
                 )
                 clean_pdf.unlink()
 
@@ -401,7 +371,7 @@ class PdfBuilder:
                 out_pdf=clean_pdf,
                 preamble=self.preamble,
                 metadata=metadata,
-                extra_args=extra_clean
+                extra_args=extra_clean,
             )
             if self.verbose:
                 print(f"[PdfBuilder] →  Clean PDF: {str(clean_pdf)}")
@@ -410,10 +380,10 @@ class PdfBuilder:
         notes_pdf: Path = self.pdf_dir / f"{self.year}-notes.pdf"
         if self.preamble_notes.is_file():
             if notes_pdf.exists() and not self.clobber:
-                 warnings.warn(
+                warnings.warn(
                     "Warning: Notes PDF already exists and clobber is not set: "
                     f"{notes_pdf}. Skipping.",
-                    UserWarning
+                    UserWarning,
                 )
             else:
                 tmp_file_notes = Path(
@@ -425,7 +395,7 @@ class PdfBuilder:
                     out_pdf=notes_pdf,
                     preamble=self.preamble_notes,
                     metadata=metadata,
-                    extra_args=extra_notes
+                    extra_args=extra_notes,
                 )
                 if self.verbose:
                     print(f"[PdfBuilder] →  Review PDF: {str(notes_pdf)}")
@@ -436,8 +406,6 @@ class PdfBuilder:
                 try:
                     tmp_file.unlink()
                     if self.verbose:
-                        print(
-                            f"[PdfBuilder] →  Removed temporary file {tmp_file}"
-                        )
+                        print(f"[PdfBuilder] →  Removed temporary file {tmp_file}")
                 except Exception:
                     pass

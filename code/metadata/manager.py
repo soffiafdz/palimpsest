@@ -60,9 +60,9 @@ from sqlalchemy.orm import Mapped, Session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 # --- Local imports ---
-from scripts.paths import ROOT
-from scripts.utils import md, fs
-from scripts.metadata.models import (
+from code.paths import ROOT
+from code.utils import md, fs
+from code.metadata.models import (
     Base,
     Entry,
     MentionedDate,
@@ -76,7 +76,7 @@ from scripts.metadata.models import (
     PoemVersion,
     Tag,
 )
-from scripts.metadata.models_manuscript import (
+from code.metadata.models_manuscript import (
     ManuscriptStatus,
     ManuscriptEntry,
     ManuscriptEvent,
@@ -524,7 +524,7 @@ class PalimpsestDB:
             if env_path.exists():
                 content = env_path.read_text(encoding="utf-8")
 
-                import_line = "from scripts.metadata.models import Base\n"
+                import_line = "from code.metadata.models import Base\n"
                 target_metadata_line = "target_metadata = Base.metadata"
 
                 # Replace the target_metadata = None line

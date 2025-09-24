@@ -34,7 +34,7 @@ Generate daily Markdown files for Vimwiki reference and PDF generation.
 │   │   ├── 2024
 │   │   └── 2025
 │   └── metadata.json
-├── scripts
+├── code
 │   ├── md2json
 │   ├── md2pdf
 │   ├── md2wiki
@@ -54,9 +54,9 @@ from pathlib import Path
 # Project directory
 ROOT: Path = Path(__file__).resolve().parents[1]
 
-# Scripts directories
-TXT2MD_DIR: Path = ROOT / "scripts" / "txt2md"
-MD2WIKI_DIR: Path = ROOT / "scripts" / "md2wiki"
+# Coding directories
+TXT2MD_DIR: Path = ROOT / "code" / "txt2md"
+MD2WIKI_DIR: Path = ROOT / "code" / "md2wiki"
 
 # Journal directories
 ARCHIVE_DIR: Path = ROOT / "journal" / "archive"

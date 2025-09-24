@@ -51,8 +51,8 @@ import sys
 from pathlib import Path
 
 # --- Local imports ---
-from scripts.paths import LATEX_DIR, MD_DIR, PDF_DIR
-from scripts.md2pdf.pdfbuilder import PdfBuilder
+from code.paths import LATEX_DIR, MD_DIR, PDF_DIR
+from code.md2pdf.pdfbuilder import PdfBuilder
 
 
 # ----- Argument parser -----

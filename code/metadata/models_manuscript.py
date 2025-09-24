@@ -44,7 +44,7 @@ from sqlalchemy.orm import (
 )
 
 # --- Local ---
-from scripts.metadata.models import Base, Entry, Event, Person, SoftDeleteMixin
+from code.metadata.models import Base, Entry, Event, Person, SoftDeleteMixin
 
 
 # ----- Association tables -----

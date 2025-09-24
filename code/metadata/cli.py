@@ -32,9 +32,9 @@ import logging
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
-from scripts.metadata.manager import PalimpsestDB, DatabaseError, ValidationError
-from scripts.metadata.models import Entry
-from scripts.paths import METADATA_DB, METADATA_ALEMBIC
+from code.metadata.manager import PalimpsestDB, DatabaseError, ValidationError
+from code.metadata.models import Entry
+from code.paths import METADATA_DB, METADATA_ALEMBIC
 
 # ----- Logging -----
 logging.basicConfig(
@@ -378,7 +378,7 @@ def main() -> int:
                 )
 
                 # Check for orphaned references
-                from scripts.metadata.models import Reference
+                from code.metadata.models import Reference
 
                 orphaned_refs = (
                     session.query(Reference)

@@ -30,8 +30,8 @@ from typing import cast, List, Match, Optional, Tuple
 from ftfy import fix_text  # type: ignore
 
 # --- Local imports ---
-# from scripts.metadata import MetadataRegistry, MetaEntry
-from scripts.utils.txt import (
+# from code.metadata import MetadataRegistry, MetaEntry
+from code.utils.txt import (
     ordinal,
     format_body,
     reflow_paragraph,
