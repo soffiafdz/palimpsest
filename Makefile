@@ -1,8 +1,8 @@
 # Makefile for journal conversion & PDF builds (years 2015–2025)
 
 # ─── Toggle verbosity ─────────────────────────────────────────────────────────
-# make          → quiet
-# make V=1      → verbose
+# make          [Make] → quiet
+# make V=1      [Make] → verbose
 V ?= 0
 ifeq ($(V),2)
     Q :=
@@ -56,7 +56,7 @@ $(YEARS): %: %-md %-pdf
 
 # Build only Markdown for a specific year
 $(foreach Y,$(YEARS),$(Y)-md): %-md: inbox
-	$(Q)echo "→  building Markdown for year $*"
+	$(Q)echo "[Make] →  building Markdown for year $*"
 	$(Q)$(MAKE) $(patsubst $(TXT_DIR)/%.txt,$(MD_DIR)/%.stamp,\
 		$(wildcard $(TXT_DIR)/$*/*.txt))
 
@@ -66,13 +66,13 @@ $(foreach Y,$(YEARS),$(Y)-pdf): %-pdf: %-md $(PDF_DIR)/%.pdf \
 
 # ─── 1) import new months from inbox ─────────────────────────────────────────
 inbox:
-	$(Q)echo "→  processing inbox"
+	$(Q)echo "[Make] →  processing inbox"
 	$(Q)bash $(PROC_INBX)
 
 # ─── 2) month‐to‐daily conversion + stamp ────────────────────────────────────
 # journal/md/<y>/<y>_<m>.stamp depends on journal/txt/<y>/<y>_<m>.txt
 $(MD_DIR)/%.stamp: $(TXT_DIR)/%.txt
-	$(Q)echo "→  converting month $*"
+	$(Q)echo "[Make] →  converting month $*"
 	$(Q)mkdir -p $(dir $@)
 	$(Q)PYTHONPATH=$(PWD) \
 	python3 $(TXT2MD) --input $< --outdir $(MD_DIR) $(PY_VERBOSE)
@@ -83,7 +83,7 @@ define BUILD_YEAR_PDF
 $(PDF_DIR)/$(1).pdf $(PDF_DIR)/$(1)-notes.pdf &:  \
 	$(patsubst $(TXT_DIR)/%.txt,$(MD_DIR)/%.stamp,\
 		$(wildcard $(TXT_DIR)/$(1)/*.txt))
-	$(Q)echo "→  building PDF for year $(1)"
+	$(Q)echo "[Make] →  building PDF for year $(1)"
 	$(Q)mkdir -p $(PDF_DIR)
 	$(Q)PYTHONPATH=$(PWD)                         \
 	python3 $(MD2PDF) $(1)                        \
@@ -98,11 +98,11 @@ $(foreach Y,$(YEARS),$(eval $(call BUILD_YEAR_PDF,$Y)))
 # ─── Cleaning ────────────────────────────────────────────────────────────────
 # Remove ONLY the markdown or ONLY the PDFs (won’t touch the other)
 clean-md:
-	$(Q)echo "→  cleaning generated Markdown"
+	$(Q)echo "[Make] →  cleaning generated Markdown"
 	$(Q)rm -rf $(MD_DIR)
 
 clean-pdf:
-	$(Q)echo "→  cleaning generated PDFs"
+	$(Q)echo "[Make] →  cleaning generated PDFs"
 	$(Q)rm -rf $(PDF_DIR)
 
 # ─── Help ────────────────────────────────────────────────────────────────────
