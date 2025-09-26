@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from textwrap import dedent
-from typing import cast, List, Match, Optional, Tuple
+from typing import Any, Dict, List, Match, Optional, Tuple, Union
 
 # --- Third party ---
 from ftfy import fix_text  # type: ignore
@@ -53,18 +53,27 @@ class TxtEntry:
         date (Optional[datetime.date]): Parsed date of the entry.
         header (str): Title or formatted date extracted from the entry.
         body (List[str]): Cleaned lines representing the entry's body content.
-        metadata (dict): Metadata with the following keys:
+        metadata (Dict[str, Any]): Metadata compatible with PalimpsestDB structure:
+            Core fields:
             - word_count (int): Number of words in the entry.
-            - reading_time_min (float): Estimated reading time in minutes.
-            - epigraph (str): If/type of epigraph utilised.
-            - notes (str): Reviewer notes or curation comments.
-            - dates (List[date]): Set of dates referenced in the entry.
-            - locations (Set[str]): geographical location(s).
-            - people (Set[str]): Names of referenced people (besides narrator).
-            - references (Set[str]): External references mentioned.
-            - events (Set[str]): Main narrative events related to the entry.
-            - poems (Set[str]): Poems written in the entry (title).
-            - tags (Set[str]): Additional tags or keywords.
+            - reading_time (float): Estimated reading time in minutes.
+            - epigraph (Optional[str]): If/type of epigraph utilised.
+            - notes (Optional[str]): Reviewer notes or curation comments.
+
+            Relationship fields (for database integration):
+            - dates (List[str]): ISO date strings referenced in the entry.
+            - locations (List[str]): geographical location names.
+            - people (List[str]): Names of referenced people (besides narrator).
+            - references (List[Dict[str, str]]): External references with content/speaker.
+            - events (List[str]): Main narrative events related to the entry.
+            - poems (List[Dict[str, str]]): Poems with title/content.
+            - tags (List[str]): Additional tags or keywords.
+
+            Manuscript fields:
+            - manuscript (Optional[Dict[str, Any]]): Manuscript-specific metadata
+                - status (str): ManuscriptStatus enum value
+                - edited (bool): Whether entry has been edited
+                - themes (List[str]): Manuscript themes
 
     Methods:
         from_txt(cls, path: Path) -> List["TxtEntry"]:

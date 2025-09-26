@@ -1,7 +1,7 @@
 -- Misc config vars
 local home = vim.fn.expand("~")
 local root = home .. "/Documents/palimpsest"
-local nvim_conf = root .. "/nvim/lua/palimpsest"
+local templates_dir = root .. "templates/wiki"
 
 local M = {}
 
@@ -9,7 +9,7 @@ M.paths = {
 	root = root,
 	wiki = root .. "/wiki",
 	log = root .. "/wiki/log",
-	templates = nvim_conf .. "/templates",
+	templates = templates_dir,
 }
 
 M.vimwiki = {

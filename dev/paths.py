@@ -51,30 +51,35 @@ Notes
 """
 from pathlib import Path
 
-# Project directory
+# ----- Project directory -----
 ROOT: Path = Path(__file__).resolve().parents[1]
 
-# Coding directories
+# ---- Dev ----
+DEV_DIR = ROOT / "dev"
+
+# --- Converters/Pipeline ---
+# TODO: Adapt these. New logic for structure
 TXT2MD_DIR: Path = ROOT / "code" / "txt2md"
 MD2WIKI_DIR: Path = ROOT / "code" / "md2wiki"
 
-# Journal directories
-ARCHIVE_DIR: Path = ROOT / "journal" / "archive"
-INBOX_DIR: Path = ROOT / "journal" / "inbox"
-LATEX_DIR: Path = ROOT / "journal" / "latex"
-MD_DIR: Path = ROOT / "journal" / "md"
-TXT_DIR: Path = ROOT / "journal" / "txt"
-PDF_DIR: Path = ROOT / "journal" / "pdf"
+# --- Database ---
+DB_PATH = ROOT / "palimpsest.db"
+ALEMBIC_DIR = DEV_DIR / "migrations"
 
-# Metadata DB
-METADATA_DB: Path = ROOT / "palimpsest.db"
-METADATA_ALEMBIC: Path = ROOT / "alembic"
+# ---- Journal ----
+# LATEX_DIR = ROOT / "journal" / "latex"
+JOURNAL_DIR = ROOT / "journal"
+INBOX_DIR = JOURNAL_DIR / "inbox"
+ARCHIVE_DIR = JOURNAL_DIR / "sources" / "archive"
+TXT_DIR = JOURNAL_DIR / "sources" / "txt"
+MD_DIR = JOURNAL_DIR / "content" / "md"
+PDF_DIR = JOURNAL_DIR / "content" / "pdf"
 
-# Wiki directories
-WIKI_DIR: Path = ROOT / "wiki"
-INVENTORY_DIR: Path = WIKI_DIR / "inventory"
-PEOPLE_DIR: Path = WIKI_DIR / "people"
-SNIPPETS_DIR: Path = WIKI_DIR / "snippets"
+# ---- Vignettes ----
+VIGNETTES_DIR = ROOT / "vignettes"
 
-# Vignettes
-VIGNETTES_DIR: Path = ROOT / "vignettes"
+# ---- Vimwiki ----
+WIKI_DIR = ROOT / "wiki"
+INVENTORY_DIR = WIKI_DIR / "inventory"
+PEOPLE_DIR = WIKI_DIR / "people"
+SNIPPETS_DIR = WIKI_DIR / "snippets"

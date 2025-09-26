@@ -1,0 +1,70 @@
+% — notes-only preamble (include before \begin{document}) —
+
+% ------------- Margins ---------------------------------------------------
+% extra outside margins for handwritten notes
+\usepackage{geometry}
+\geometry{
+  top=25mm, bottom=25mm,
+  inner=23mm, outer=45mm
+}
+
+% ------------- Line numbers ----------------------------------------------
+\usepackage{lineno}
+\linenumbers
+\renewcommand\linenumberfont{\normalfont\tiny\color{gray}}
+
+% ------------- "Review" watermark ----------------------------------------
+\usepackage[firstpageonly]{draftwatermark}
+\SetWatermarkText{Review Manuscript}
+\SetWatermarkScale{0.62}
+
+% ------------- Font ------------------------------------------------------
+\usepackage{fontspec}
+\setmainfont{Cormorant Garamond}
+\usepackage{microtype}
+\usepackage[none]{hyphenat} % disables hyphenation
+
+% ------------- completely self‑contained title page ----------------------
+\usepackage{titling}
+
+% push the title block down
+\setlength{\droptitle}{0.2\textheight}
+
+\makeatletter
+\renewcommand*{\maketitle}{%
+  \newgeometry{top=50mm,bottom=40mm,left=35mm,right=35mm}
+
+  \begin{titlepage}
+    \begingroup
+      \nolinenumbers            % keep line numbers off this page
+      \centering
+      \vspace*{\droptitle}
+
+      % --- Title ---------------------------------------------------------
+      {\fontsize{44pt}{50pt}\selectfont\bfseries \thetitle\par}
+
+      \vspace{1em}
+
+      % --- “Subtitle” string comes in via Pandoc's \date -----------------
+      {\fontsize{32pt}{38pt}\selectfont \thedate\par}
+
+      \vspace{2em}
+
+      % --- Author --------------------------------------------------------
+      {\fontsize{28pt}{32pt}\selectfont \theauthor\par}
+
+      \vfill
+
+      % --- Static tagline ------------------------------------------------
+      {\fontsize{21pt}{24pt}\selectfont
+       \textemdash\ Manuscript for review/notes\ \textemdash\par}
+
+      \vspace{1.5em}
+
+      \thispagestyle{empty}
+    \endgroup
+  \end{titlepage}%
+  \restoregeometry
+}
+\makeatother
+% -------------------------------------------------------------------------

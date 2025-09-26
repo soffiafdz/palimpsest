@@ -1,0 +1,44 @@
+% ------------- Margins ---------------------------------------------------
+\usepackage{geometry}         % 35 mm all round
+\geometry{margin=30mm}
+
+% ------------- Font ------------------------------------------------------
+\usepackage{fontspec}
+\setmainfont{Cormorant Garamond}
+\usepackage{microtype}
+
+% ------------- completely self‑contained title page ----------------------
+\usepackage{titling}
+
+% push the title block down
+\setlength{\droptitle}{0.2\textheight}
+
+\makeatletter
+\renewcommand*{\maketitle}{%
+  \newgeometry{top=50mm,bottom=40mm,left=35mm,right=35mm}
+
+  \begin{titlepage}
+    \begingroup
+      \centering
+      \vspace*{\droptitle}
+
+      % --- Title ---------------------------------------------------------
+      {\fontsize{44pt}{50pt}\selectfont\bfseries \thetitle\par}
+
+      \vspace{1em}
+
+      % --- “Subtitle” string comes in via Pandoc's \date -----------------
+      {\fontsize{32pt}{38pt}\selectfont \thedate\par}
+
+      \vspace{2em}
+
+      % --- Author --------------------------------------------------------
+      {\fontsize{28pt}{32pt}\selectfont \theauthor\par}
+
+      \thispagestyle{empty}
+    \endgroup
+  \end{titlepage}%
+  \restoregeometry
+}
+\makeatother
+% -------------------------------------------------------------------------

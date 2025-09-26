@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple, Set
 # --- Third-party ---
 import yaml
 
+
 # ----------------------------------------------------------------------
 # Extract a specific section
 # ----------------------------------------------------------------------
@@ -44,7 +45,7 @@ def extract_section(lines: List[str], header_name: str) -> List[str]:
     header_level: Optional[int] = None
 
     # Remove leading '#' and whitespace for matching section titles
-    clean_header: str = header_name.lstrip('#').strip()
+    clean_header: str = header_name.lstrip("#").strip()
 
     for ln in lines:
         stripped: str = ln.strip()
@@ -93,8 +94,7 @@ def parse_bullets(lines: List[str]) -> Set[str]:
     elements: Set[str] = {
         ln[1:].strip()
         for ln in lines
-        if ln.strip().startswith("-")
-        and ln.strip() != "-"
+        if ln.strip().startswith("-") and ln.strip() != "-"
     }
     return elements
 
@@ -134,11 +134,13 @@ def relative_link(from_path: Path, to_path: Path) -> str:
         # fallback for unrelated paths
         return str(to_path)
 
+
 def resolve_relative_link(from_path: Path, rel_link: str) -> Path:
     """Resolves a Markdown-style relative link back to absolute."""
     combined = from_path.parent / rel_link
     # Resolve any '..' or '.' parts and return absolute path
     return combined.resolve()
+
 
 # ----------------------------------------------------------------------
 # Search for a section and obtain it's place in document (linenumbers)
@@ -153,7 +155,7 @@ def find_section_line_indexes(
     End is exclusive.
     Returns None if not found.
     """
-    clean_header: str = header_name.lstrip('#').strip()
+    clean_header: str = header_name.lstrip("#").strip()
     start: Optional[int] = None
     header_level: Optional[int] = None
     for idx, ln in enumerate(lines):
@@ -178,13 +180,12 @@ def update_section(
     header_name: str,
     new_lines: List[str],
 ) -> List[str]:
-
     """
     Replaces the section under header_name with new_lines.
     Preserves the header and rest of the document.
     Returns a new list of lines.
     """
-    clean_header: str = header_name.lstrip('#').strip()
+    clean_header: str = header_name.lstrip("#").strip()
     out: List[str] = []
     in_section: bool = False
     header_level: Optional[int] = None

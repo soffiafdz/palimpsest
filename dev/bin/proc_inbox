@@ -10,11 +10,11 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
-ROOT=~/Documents/palimpsest
-ARCHIVE=${ROOT}/journal/archive
-INBOX=${ROOT}/journal/inbox
-TXTS=${ROOT}/journal/txt
-FORMAT_SCRIPT=${ROOT}/bin/init_format
+ROOT="$HOME"/Documents/palimpsest
+INBOX="$ROOT"/journal/inbox
+ARCHIVE="$ROOT"/journal/sources/archive
+TXTS="$ROOT"/journal/sources/txt
+FORMAT_SCRIPT="$ROOT"/dev/bin/init_format
 
 # ─── PREPARE ─────────────────────────────────────────────────────────────────
 mkdir -p "$ARCHIVE" "$TXTS"

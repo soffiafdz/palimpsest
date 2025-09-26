@@ -56,7 +56,7 @@ from sqlalchemy.orm import (
 
 # --- Local ---
 if TYPE_CHECKING:
-    from code.metadata.models_manuscript import (
+    from dev.database.models_manuscript import (
         ManuscriptEntry,
         ManuscriptPerson,
         ManuscriptEvent,

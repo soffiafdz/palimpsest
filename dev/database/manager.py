@@ -60,9 +60,9 @@ from sqlalchemy.orm import Mapped, Session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 # --- Local imports ---
-from code.paths import ROOT
-from code.utils import md, fs
-from code.metadata.models import (
+from dev.paths import ROOT
+from dev.utils import md, fs
+from dev.database.models import (
     Base,
     Entry,
     MentionedDate,
@@ -76,7 +76,7 @@ from code.metadata.models import (
     PoemVersion,
     Tag,
 )
-from code.metadata.models_manuscript import (
+from dev.database.models_manuscript import (
     ManuscriptStatus,
     ManuscriptEntry,
     ManuscriptEvent,
