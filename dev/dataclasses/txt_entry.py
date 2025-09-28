@@ -3,40 +3,44 @@
 txt_entry.py
 -------------------
 
-Defines the Entry dataclass representing individual journal entries parsed
-from raw 750words .txt export files.
+Defines the TxtEntry dataclass representing individual journal entries
+parsed from raw 750words .txt export files.
 
-Each Entry instance contains:
+Each TxtEntry instance contains:
 - raw source lines
 - extracted metadata
+    - date
+    - word_count
+    - reading_time
 - body content
 
-It supports construction from raw text and formatting for Markdown output.
+It supports construction from raw text and formatting for basic Markdown output.
 
-This class is used exclusively within the txt2md pipeline.
+This class is used exclusively within the txt2md pipeline and handles ONLY
+basic text conversion - no complex YAML processing nor database integration.
 """
-# --- Annotations ---
+# ----- Imports -----
+# ---- Annotations ----
 from __future__ import annotations
 
-# --- Standard library imports ---
+# ---- Standard library imports ----
 import re
-from dataclasses import dataclass, field
+import logging
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, List, Match, Optional, Tuple, Union
+from typing import List, Match, Optional, Tuple
 
-# --- Third party ---
+# ---- Third party ----
 from ftfy import fix_text  # type: ignore
 
-# --- Local imports ---
-# from code.metadata import MetadataRegistry, MetaEntry
-from code.utils.txt import (
-    ordinal,
-    format_body,
-    reflow_paragraph,
-    compute_metrics,
-)
+# ---- Local imports ----
+from dev.utils import txt
+
+
+# ----- Logging ----
+logger = logging.getLogger(__name__)
 
 
 # ----- Entry markers-----
@@ -50,89 +54,53 @@ class TxtEntry:
     Represents a single journal entry parsed from raw text export (.txt).
 
     Attributes:
-        date (Optional[datetime.date]): Parsed date of the entry.
+        date (date): Parsed date of the entry.
         header (str): Title or formatted date extracted from the entry.
         body (List[str]): Cleaned lines representing the entry's body content.
-        metadata (Dict[str, Any]): Metadata compatible with PalimpsestDB structure:
-            Core fields:
-            - word_count (int): Number of words in the entry.
-            - reading_time (float): Estimated reading time in minutes.
-            - epigraph (Optional[str]): If/type of epigraph utilised.
-            - notes (Optional[str]): Reviewer notes or curation comments.
-
-            Relationship fields (for database integration):
-            - dates (List[str]): ISO date strings referenced in the entry.
-            - locations (List[str]): geographical location names.
-            - people (List[str]): Names of referenced people (besides narrator).
-            - references (List[Dict[str, str]]): External references with content/speaker.
-            - events (List[str]): Main narrative events related to the entry.
-            - poems (List[Dict[str, str]]): Poems with title/content.
-            - tags (List[str]): Additional tags or keywords.
-
-            Manuscript fields:
-            - manuscript (Optional[Dict[str, Any]]): Manuscript-specific metadata
-                - status (str): ManuscriptStatus enum value
-                - edited (bool): Whether entry has been edited
-                - themes (List[str]): Manuscript themes
+        word_count (int): Number of words in the entry.
+        reading_time (float): Estimated reading time in minutes.
 
     Methods:
-        from_txt(cls, path: Path) -> List["TxtEntry"]:
-            Parses the given .txt file and returns a list of TxtEntry instances.
-        markdown_lines(self) -> List[str]:
-            Returns the Markdown-formatted lines representing this entry.
+        from_file(cls, path: Path) -> List["TxtEntry"]:
+            IN: Parses the given .txt file (monthly)
+            OUT: Returns a list of TxtEntry instances (daily)
         to_markdown(self) -> str:
-            Returns the joined Markdown-formatted lines.
+            Returns basic Markdown with minimal YAML frontmatter.
     """
 
     # ---- Attributes ----
     date: date
     header: str
     body: List[str]
-    # metadata: MetaEntry = field(default_factory=lambda: cast(MetaEntry, {}))
-    metadata: dict
+    word_count: int = 0
+    reading_time: float = 0.0
 
     # ---- Public constructors ----
-    # -- Inner --
+    # --- Outer ---
     @classmethod
     def from_lines(
         cls,
         lines: List[str],
-        metadata_registry=None,
         verbose: bool = False,
-    ) -> "TxtEntry":
+    ) -> TxtEntry:
         if verbose:
-            print("[TxtEntry] →  Parsing single entry lines...")
+            logger.debug("Parsing single entry lines...")
 
         # Parse entry
         date_obj, header, raw_body = cls._parse_entry(lines)
         if verbose:
-            print(f"[TxtEntry] →  Header: {header}, Date: {date_obj}")
+            logger.debug(f"Header: {header}, Date: {date_obj}")
 
         # Format and reflow body
-        raw_body = format_body(raw_body)
+        raw_body = txt.format_body(raw_body)
         if verbose:
-            print(f"[TxtEntry] →  Body lines formatted: {len(raw_body)} lines")
+            logger.debug(f"Body lines formatted: {len(raw_body)} lines")
 
+        # Compute metrics
         plain_lines = [txt for txt, _ in raw_body]
-        wc, rt = compute_metrics(plain_lines)
+        wc, rt = txt.compute_metrics(plain_lines)
         if verbose:
-            print(f"[TxtEntry] →  Entry is {wc} words long; ~{rt} min reading time")
-
-        if metadata_registry and date_obj:
-            key = date_obj.isoformat()
-            meta = metadata_registry.get(key)
-            if verbose:
-                if meta:
-                    print(f"[TxtEntry] →  Found metadata in registry for {key}")
-                else:
-                    print(
-                        "[TxtEntry] →  No metadata found in registry for "
-                        f"{key}, creating new"
-                    )
-            meta["word_count"] = wc
-            meta["reading_time"] = rt
-        else:
-            meta = {"word_count": wc, "reading_time": rt}
+            logger.debug(f"Entry is {wc} words long; ~{rt} min reading time")
 
         paragraphs: List[List[Tuple[str, bool]]] = []
         buffer: List[Tuple[str, bool]] = []
@@ -145,155 +113,92 @@ class TxtEntry:
                 buffer.append((ln, soft))
 
         body: List[str] = []
-
         for paragraph in paragraphs:
             if any(soft for _, soft in paragraph):
                 body.extend([txt for txt, _ in paragraph])
             else:
-                body.extend(reflow_paragraph([txt for txt, _ in paragraph]))
+                body.extend(txt.reflow_paragraph([txt for txt, _ in paragraph]))
             body.append("")  # blank line after each paragraph
 
         if verbose:
-            print(f"[TxtEntry] →  Paragraphs processed: {len(paragraphs)}")
+            logger.debug(f"Paragraphs processed: {len(paragraphs)}")
 
-        return cls(header=header, date=date_obj, body=body, metadata=meta)
+        return cls(
+            date=date_obj, header=header, body=body, word_count=wc, reading_time=rt
+        )
 
-    # -- Outer --
+    # --- Outer ---
     @classmethod
     def from_file(
         cls,
         path: Path,
-        metadata_registry=None,
         verbose: bool = False,
-    ) -> List["TxtEntry"]:
+    ) -> List[TxtEntry]:
         """
-        Parse a single .txt monthly compilation. Generate a list of Entries
+        Parse a single .txt monthly compilation. Generate a list of Entries.
         """
         if verbose:
-            print(f"[TxtEntry] →  Reading file: {str(path)}")
+            logger.debug(f"Reading file: {str(path)}")
 
         try:
             all_lines = path.read_text(encoding="utf-8")
-        except Exception:
-            raise OSError(f"Cannot read input file: {str(path)}")
+        except Exception as e:
+            logger.error(f"Cannot read input file: {str(path)}")
+            raise OSError(f"Cannot read input file: {str(path)}") from e
 
         # Use ftfy to fix text before any processing is done
         all_lines = fix_text(all_lines)
         lines = all_lines.splitlines()
 
         if verbose:
-            print(f"[TxtEntry] →  Total lines read: {len(lines)}")
+            logger.debug(f"Total lines read: {len(lines)}")
 
         # Separate entries
         entries = cls._split_entries(lines, MARKERS)
 
         if verbose:
-            print(f"[TxtEntry] →  Entries found: {len(entries)}")
+            logger.debug(f"Entries found: {len(entries)}")
 
         # Return List of TxtEntries
-        txt_entries: List["TxtEntry"] = []
+        txt_entries: List[TxtEntry] = []
         for idx, entry in enumerate(entries):
             if verbose:
-                print(f"[TxtEntry] →  Parsing entry {idx + 1}/{len(entries)}")
-            txt_entries.append(
-                cls.from_lines(entry, metadata_registry, verbose=verbose)  # type: ignore
-            )
+                logger.debug(f"Parsing entry {idx + 1}/{len(entries)}")
+            try:
+                txt_entries.append(cls.from_lines(entry, verbose=verbose))
+            except Exception as e:
+                logger.error(f"Failed to parse entry {idx + 1}: {e}")
+                raise
+
+        logger.info(f"Successfully parsed {len(txt_entries)} entries from {path.name}")
         return txt_entries
 
     # ---- Serialization ----
-    # -- Inner --
-    def markdown_lines(self) -> List[str]:
+    def to_markdown(self) -> str:
         """
-        Generate the lines to be written in the Markdown file.
-        Including a YAML front-matter with the metadata:
-            date:             self-explanatory
-            word_count:       self-explanatory
-            reading_time:     calculated reading time in minutes
-            epigraph
-              reference:      fragment of a book|song|movie|tv series
-              quote:          a quotation from someone in real life
-              intention:      something that I planned/intended to say
-              poem:           a poem
-            dates:            dates referenced in text
-            location:         geographical location(s) (City, Country)
-            people:           list of people referenced (besides narrator)
-            references:       external pop-culture references
-            events:           list of events (arcs/phases) referenced
-            tags:             self-explanatory
-            poems:            poems in the entry (title)
-            notes:            reviewer notes
+        Generate basic Markdown content with minimal YAML frontmatter.
+
+        Only includes computed fields: date, word_count, reading_time.
+        No complex metadata - that's handled by yaml2sql/MdEntry.
         """
-
-        def yaml_block_list(items):
-            items = sorted(items) if isinstance(items, (set, list)) else []
-            if not items:
-                return "[]"
-            return "\n" + "\n".join(f"  - {item}" for item in items)
-
-        # TODO: Update these
-        location_yaml = yaml_block_list(self.metadata.get("location", []))
-        people_yaml = yaml_block_list(self.metadata.get("people", []))
-        references_yaml = yaml_block_list(self.metadata.get("references", []))
-        events_yaml = yaml_block_list(self.metadata.get("events", []))
-        themes_yaml = yaml_block_list(self.metadata.get("themes", []))
-        tags_yaml = yaml_block_list(self.metadata.get("tags", []))
-
-        notes = self.metadata.get("notes", "")
-        if notes:
-            indented = ("  " + line for line in notes.splitlines())
-            notes_yaml = "|\n" + "\n".join(indented)
-        else:
-            notes_yaml = '""'
-
-        excerpted_val = self.metadata.get("excerpted", False)
-        excerpted_yaml = "true" if excerpted_val else "false"
-
-        # Front-matter
-        # TODO: Update these
-        fm = dedent(
+        # --- YAML frontmatter ---
+        yaml_content = dedent(
             f"""\
             ---
             date: {self.date.isoformat()}
-            word_count: {self.metadata.get('word_count', 0)} words
-            reading_time: {self.metadata.get('reading_time', 0.0):.1f} min
-            status: {self.metadata.get('status', 'unreviewed')}
-            excerpted: {excerpted_yaml}
-            epigraph: {self.metadata.get('epigraph', '')}
-            location: {location_yaml}
-            people: {people_yaml}
-            references: {references_yaml}
-            events: {events_yaml}
-            themes: {themes_yaml}
-            tags: {tags_yaml}
-            notes: {notes_yaml}
+            word_count: {self.word_count}
+            reading_time: {self.reading_time:.1f}
             ---
         """
         ).rstrip()
 
-        md_lines: List[str] = [fm, "", f"# {self.header}", ""]
+        # Frontmatter + header + body
+        md_lines: List[str] = [yaml_content, "", f"# {self.header}", ""]
         md_lines.extend(self.body)
-        return md_lines
 
-    # -- Outer --
-    def to_markdown(self) -> str:
-        """Generate the final Markdown text."""
-        return "\n".join(self.markdown_lines())
-
-    # ---- Metadata loading ----
-    def load_metadata(self, registry, verbose: bool = False) -> None:
-        """Loads metadata for this entry from the registry if available."""
-        if registry and self.date:
-            key = self.date.isoformat()
-            meta = registry.get(key)
-            if meta:
-                if verbose:
-                    print(f"[TxtEntry] →  Found metadata for entry ({key})")
-                self.metadata.update(meta)  # merges in loaded metadata
-            elif verbose:
-                print(f"[TxtEntry] →  Metadata for entry ({key}) not found")
+        return "\n".join(md_lines)
 
     # ---- Parser helpers ----
-    # -- Entry splitter --
     @staticmethod
     def _split_entries(lines: List[str], markers: List[str]) -> List[List[str]]:
         """
@@ -320,23 +225,22 @@ class TxtEntry:
 
         return entries
 
-    # -- Metadata extracter --
     @staticmethod
     def _parse_entry(entry: List[str]) -> Tuple[date, str, List[str]]:
         """
         input: Entry, a list of lines belonging to a single journal entry
         output: a Tuple with
-            - date: (optional) datetime.date parsed from metadata
+            - date: datetime.date parsed from metadata
             - header: a string, either TITLE or formatted DATE
             - body: list of lines after the metadata
         Supports both:
             - === DATE: YYYY-MM-DD === / === TITLE: ... ===
             - Date: YYYY-MM-DD / Title : ...
         process:
-            * Recognizes both Date & Title, in any order
-            * If “=== BODY ===” marker exists, body starts after it
-            * Otherwise, body starts after the first blank line following metadata
-            * Formats header_text: TITLE if present, else “Day, DDth Month, YYYY”
+            Recognizes both Date & Title, in any order
+            If “=== BODY ===” marker exists, body starts after it
+            Otherwise, body starts after the first blank line following metadata
+            Formats header_text: TITLE if present, else “Day, DDth Month, YYYY”
         """
         header_text: str
         body_lines: List[str]
@@ -392,7 +296,10 @@ class TxtEntry:
         if body_start is None:
             body_start = (date_idx + 3) if date_idx is not None else 0
 
-        assert date_obj is not None, "Entry does not contain a valid date"
+        if date_obj is None:
+            error_msg = "Entry does not contain a valid date"
+            logger.error(f"{error_msg} - first few lines: {entry[:5]}")
+            raise ValueError(error_msg)
 
         # build header
         if title:
@@ -400,7 +307,7 @@ class TxtEntry:
         else:
             header_text = (
                 f"{date_obj.strftime('%A')}, "
-                f"{date_obj.strftime('%B')} {ordinal(date_obj.day)}, "
+                f"{date_obj.strftime('%B')} {txt.ordinal(date_obj.day)}, "
                 f"{date_obj.year}"
             )
 
