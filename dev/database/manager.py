@@ -9,42 +9,51 @@ Handles:
     - Initialization of the database engine and sessionmaker
     - CRUD operations for all ORM models
     - Handle queries and convenience methods
-    - Relationship management for:
-      locations, people, references, events, poems, themes, tags
+    - Relationship management for all model types
     - Type-safe and timezone-aware handling of datetime fields
-    - Backup and repopulation of the database
+    - Comprehensive logging system with rotation
+    - Automated backup and recovery system
+    - Database health monitoring and maintenance
+    - Data export functionality
 
 Notes
 ==============
 - Migrations are handled externally via Alembic
 - All datetime fields are UTC-aware
+- Backup retention policies are configurable
+- Logs are rotatedd automatically to prevent disk bloat
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
-from contextlib import contextmanager
+import csv
+import json
 import logging
-import traceback
+import os
 import shutil
+import tempfile
+import traceback
 
-# from contextlib import contextmanager
-# from datetime import date, datetime
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from functools import wraps
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from threading import ExceptHookArgs
 from typing import (
     Any,
     Callable,
     Dict,
+    IO,
     List,
     Optional,
     Protocol,
-    # Set,
+    runtime_checkable,
+    Tuple,
     Type,
     TypeVar,
     Union,
-    runtime_checkable,
 )
 
 # --- Third party ---
@@ -53,9 +62,8 @@ from alembic.config import Config
 from alembic import command
 from alembic.runtime.migration import MigrationContext
 
-# from alembic.operations import Operations
-
-from sqlalchemy import create_engine, Engine
+from sqlalchemy import create_engine, Engine, text, and_, or_, func
+from sqlalchemy import exc
 from sqlalchemy.orm import Mapped, Session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -65,6 +73,7 @@ from dev.utils import md, fs
 from dev.database.models import (
     Base,
     Entry,
+    # entry_related,
     MentionedDate,
     Location,
     Person,
@@ -94,15 +103,8 @@ class HasId(Protocol):
 T = TypeVar("T", bound=HasId)
 C = TypeVar("C", bound=HasId)
 
-# ----- Logging -----
-if not logging.getLogger().handlers:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-logger = logging.getLogger(__name__)
 
-
+# ----- Errors -----
 class DatabaseError(Exception):
     """Custom exception for database-related errors."""
 
@@ -113,6 +115,450 @@ class ValidationError(Exception):
     """Custom exception for validation errors."""
 
     pass
+
+
+class BackupError(Exception):
+    """Custom exception for backup-related errors."""
+
+    pass
+
+
+class TemporalFileError(Exception):
+    """Custom exception for temporal file operations."""
+
+    pass
+
+
+# ----- Temporal File Manager -----
+class TemporalFileManager:
+    """Manages temporal files with automatic cleanup."""
+
+    def __init__(self, base_dir: Optional[Path] = None):
+        self.base_dir = Path(base_dir) if base_dir else Path(tempfile.gettempdir())
+        self.active_files: List[Path] = []
+        self.active_dirs: List[Path] = []
+        self._temp_file_handles: List[IO[Any]] = []
+
+    def create_temp_file(
+        self, suffix: str = "", prefix: str = "palimpsest_", delete: bool = False
+    ) -> Path:
+        """Create a temporary file and track it for cleanup."""
+        try:
+            temp_file_obj = tempfile.NamedTemporaryFile(
+                suffix=suffix, prefix=prefix, dir=self.base_dir, delete=delete
+            )
+
+            temp_path = Path(temp_file_obj.name)
+
+            if delete:
+                # Keep reference to prevente premature deletion
+                self._temp_file_handles.append(temp_file_obj)
+            else:
+                # Close the file handle but keep the file
+                temp_file_obj.close()
+                self.active_files.append(temp_path)
+
+            return temp_path
+
+        except Exception as e:
+            raise TemporalFileError(f"Failed to create temporary file: {e}")
+
+    def create_temp_dir(self, prefix: str = "palimpsest_") -> Path:
+        """Create a temporary directory and track it for cleanup."""
+        try:
+            temp_dir = Path(tempfile.mkdtemp(prefix=prefix, dir=self.base_dir))
+            self.active_dirs.append(temp_dir)
+            return temp_dir
+        except Exception as e:
+            raise TemporalFileError(f"Failed to create temporary directory: {e}")
+
+    def create_secure_temp_file(
+        self,
+        suffix: str = "",
+        prefix: str = "palimpsest_",
+    ) -> Tuple[int, Path]:
+        """
+        Create a secure temporary file using mkstemp.
+
+        Returns:
+            Tuple of (file_descriptor, file_path)
+            Note: Caller is responsible for closing the file descriptor
+        """
+        try:
+            fd, temp_path = tempfile.mkstemp(
+                suffix=suffix, prefix=prefix, dir=self.base_dir
+            )
+            path_obj = Path(temp_path)
+            self.active_files.append(path_obj)
+            return fd, path_obj
+        except Exception as e:
+            raise TemporalFileError(f"Failed to create secure temporary file: {e}")
+
+    def cleanup(self) -> Dict[str, int]:
+        """Clean up all tracked temporary files and directories."""
+        cleanup_stats = {"files_removed": 0, "dirs_removed": 0, "errors": 0}
+
+        # Clean up temporary file handles
+        for temp_handle in self._temp_file_handles[:]:
+            try:
+                temp_handle.close()
+                self._temp_file_handles.remove(temp_handle)
+            except Exception:
+                cleanup_stats["errors"] += 1
+
+        # Clean up tracked filfes
+        for temp_file in self.active_files[:]:
+            try:
+                if temp_file.exists():
+                    temp_file.unlink()
+                    cleanup_stats["files_removed"] += 1
+                self.active_files.remove(temp_file)
+            except Exception:
+                cleanup_stats["errors"] += 1
+
+        # Clean up directories
+        for temp_dir in self.active_dirs[:]:
+            try:
+                if temp_dir.exists():
+                    shutil.rmtree(temp_dir)
+                    cleanup_stats["dirs_removed"] += 1
+                self.active_dirs.remove(temp_dir)
+            except Exception:
+                cleanup_stats["errors"] += 1
+
+        return cleanup_stats
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        del exc_type, exc_val, exc_tb
+        self.cleanup()
+
+
+# ----- Logging System -----
+class DatabaseLogger:
+    """Centralized logging system for database operations."""
+
+    def __init__(self, log_dir: Path, db_name: str = "palimpsest"):
+        self.log_dir = Path(log_dir)
+        self.db_name = db_name
+        self._setup_loggers()
+
+    def _setup_loggers(self) -> None:
+        """Initialize logging system with multiple handlers."""
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Main database logger
+        self.db_logger = logging.getLogger(f"{self.db_name}.database")
+        self.db_logger.setLevel(logging.DEBUG)
+
+        # Error logger (Error and above)
+        self.error_logger = logging.getLogger(f"{self.db_name}.errors")
+        self.error_logger.setLevel(logging.ERROR)
+
+        # Clear existing handlers to avoid duplicates
+        for logger in [self.db_logger, self.error_logger]:
+            logger.handlers.clear()
+
+        # Create handlers
+        self._create_file_handler(
+            self.db_logger, self.log_dir / "database.log", logging.DEBUG
+        )
+        self._create_file_handler(
+            self.error_logger, self.log_dir / "errors.log", logging.ERROR
+        )
+
+        # Console handler for development
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.WARNING)
+        console_formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
+        )
+        console_handler.setFormatter(console_formatter)
+
+        self.db_logger.addHandler(console_handler)
+
+    def _create_file_handler(
+        self, logger: logging.Logger, file_path: Path, level: int
+    ) -> None:
+        """Create a rotating file handler for a logger."""
+
+        handler = RotatingFileHandler(
+            file_path,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        handler.setLevel(level)
+
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s:%(lineno)d] - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    def log_operation(self, operation: str, details: Dict[str, Any]) -> None:
+        """Log a database operation with context."""
+        self.db_logger.info(
+            f"OPERATION - {operation}: {json.dumps(details, default=str)}"
+        )
+
+    def log_error(self, error: Exception, context: Dict[str, Any]) -> None:
+        """Log an error with full context."""
+        error_info = {
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "context": context,
+            "traceback": traceback.format_exc(),
+        }
+        error_msg = f"ERROR - {json.dumps(error_info, default=str)}"
+
+        # Log to both database.log (via db_logger) and errors.log (via error_logger)
+        self.db_logger.error(error_msg)
+        self.error_logger.error(error_msg)
+
+    def log_debug(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """Log debug information - goes sto main database.log."""
+        if details:
+            self.db_logger.debug(
+                f"DEBUG - {message}: {json.dumps(details, default=str)}"
+            )
+        else:
+            self.db_logger.debug(f"DEBUG - {message}")
+
+    def log_info(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """Log general information - goes to main database.log."""
+        if details:
+            self.db_logger.info(f"INFO - {message}: {json.dumps(details, default=str)}")
+        else:
+            self.db_logger.info(f"INFO - {message}")
+
+
+# ----- Backup System -----
+class BackupManager:
+    """Handles database backup and recovery operations."""
+
+    def __init__(
+        self,
+        db_path: Path,
+        backup_dir: Path,
+        retention_days: int = 30,
+        logger: Optional[DatabaseLogger] = None,
+    ):
+        self.db_path = Path(db_path)
+        self.backup_dir = Path(backup_dir)
+        self.retention_days = retention_days
+        self.logger = logger
+
+        # Create backup directories
+        (self.backup_dir / "daily").mkdir(parents=True, exist_ok=True)
+        (self.backup_dir / "weekly").mkdir(parents=True, exist_ok=True)
+        (self.backup_dir / "manual").mkdir(parents=True, exist_ok=True)
+
+    def create_backup(
+        self,
+        backup_type: str = "manual",
+        suffix: Optional[str] = None,
+    ) -> Path:
+        """Create a timestamped database backup."""
+        if not self.db_path.exists():
+            raise BackupError(f"Database file not found: {self.db_path}")
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if suffix:
+            backup_name = f"{self.db_path.stem}_{timestamp}_{suffix}.db"
+        else:
+            backup_name = f"{self.db_path.stem}_{timestamp}.db"
+
+        backup_path = self.backup_dir / backup_type / backup_name
+
+        try:
+            shutil.copy2(self.db_path, backup_path)
+
+            if self.logger:
+                self.logger.log_operation(
+                    "backup_created",
+                    {
+                        "backup_type": backup_type,
+                        "backup_path": str(backup_path),
+                        "original_size": self.db_path.stat().st_size,
+                        "backup_size": backup_path.stat().st_size,
+                    },
+                )
+
+            return backup_path
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(
+                    e,
+                    {
+                        "operation": "create_backup",
+                        "backup_type": backup_type,
+                        "target_path": str(backup_path),
+                    },
+                )
+            raise BackupError(f"Failed to create backup: {e}")
+
+    def auto_backup(self) -> Optional[Path]:
+        """Create automatic daily backup with cleanup."""
+        try:
+            # Create daily backup
+            backup_path = self.create_backup("daily", "auto")
+
+            # Cleanup old backups
+            self._cleanup_old_backups()
+
+            return backup_path
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(e, {"operation": "auto_backup"})
+            return None
+
+    def create_weekly_backup(self) -> Path:
+        """Create weekly backup (typically called on Sundays)."""
+        return self.create_backup("weekly", f"week_{datetime.now().strftime('%U')}")
+
+    def _cleanup_old_backups(self) -> None:
+        """Remove backups older than retention period."""
+        cutoff_date = datetime.now() - timedelta(days=self.retention_days)
+
+        for backup_type in ["daily", "weekly"]:
+            backup_dir = self.backup_dir / backup_type
+            if not backup_dir.exists():
+                continue
+
+            removed_count = 0
+            for backup_file in backup_dir.glob("*.db"):
+                try:
+                    file_mtime = datetime.fromtimestamp(backup_file.stat().st_mtime)
+                    if file_mtime < cutoff_date:
+                        backup_file.unlink()
+                        removed_count += 1
+                except Exception as e:
+                    if self.logger:
+                        self.logger.log_error(
+                            e, {"operation": "cleanup_backup", "file": str(backup_file)}
+                        )
+
+            if removed_count > 0 and self.logger:
+                self.logger.log_operation(
+                    "backup_cleanup",
+                    {
+                        "backup_type": backup_type,
+                        "removed_count": removed_count,
+                        "retention_days": self.retention_days,
+                    },
+                )
+
+    def restore_backup(self, backup_path: Path) -> None:
+        """Restore database from backup."""
+        if not backup_path.exists():
+            raise BackupError(f"Backup file not found: {backup_path}")
+
+        # Create current backup before restore
+        current_backup = self.create_backup("manual", "pre_restore")
+
+        try:
+            shutil.copy2(backup_path, self.db_path)
+
+            if self.logger:
+                self.logger.log_operation(
+                    "restore_backup",
+                    {
+                        "restored_from": str(backup_path),
+                        "pre_restore_backup": str(current_backup),
+                    },
+                )
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(
+                    e, {"operation": "restore_backup", "backup_path": str(backup_path)}
+                )
+            raise BackupError(f"Failed to restore backup: {e}")
+
+    def list_backups(self) -> Dict[str, List[Dict[str, Any]]]:
+        """List all available backups with metadata."""
+        backups = {"daily": [], "weekly": [], "manual": []}
+
+        for backup_type in backups.keys():
+            backup_dir = self.backup_dir / backup_type
+            if not backup_dir.exists():
+                continue
+
+            for backup_file in sorted(backup_dir.glob("*.db")):
+                stat = backup_file.stat()
+                backups[backup_type].append(
+                    {
+                        "name": backup_file.name,
+                        "path": str(backup_file),
+                        "size": stat.st_size,
+                        "created": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        "age_days": (
+                            datetime.now() - datetime.fromtimestamp(stat.st_mtime)
+                        ).days,
+                    }
+                )
+
+        return backups
+
+
+# ----- Operation Decorators -----
+def log_database_operation(operation_name: str):
+    """Decorator to log database operations."""
+
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            start_time = datetime.now()
+            operation_id = f"{operation_name}_{start_time.strftime('%Y%m%d_%H%M%S_%f')}"
+
+            if hasattr(self, "logger") and self.logger:
+                self.logger.log_debug(
+                    f"Starting {operation_name}",
+                    {
+                        "operation_id": operation_id,
+                        "args_count": len(args),
+                        "kwargs_keys": list(kwargs.keys()),
+                    },
+                )
+
+            try:
+                result = func(self, *args, **kwargs)
+
+                duration = (datetime.now() - start_time).total_seconds()
+                if hasattr(self, "logger") and self.logger:
+                    self.logger.log_operation(
+                        f"{operation_name}_completed",
+                        {
+                            "operation_id": operation_id,
+                            "duration_seconds": duration,
+                            "success": True,
+                        },
+                    )
+
+                return result
+
+            except Exception as e:
+                duration = (datetime.now() - start_time).total_seconds()
+                if hasattr(self, "logger") and self.logger:
+                    self.logger.log_error(
+                        e,
+                        {
+                            "operation": operation_name,
+                            "operation_id": operation_id,
+                            "duration_seconds": duration,
+                        },
+                    )
+                raise
+
+        return wrapper
+
+    return decorator
 
 
 def validate_metadata(required_fields: List[str]):
@@ -146,13 +592,10 @@ def handle_db_errors(func: Callable) -> Callable:
         try:
             return func(*args, **kwargs)
         except IntegrityError as e:
-            logger.error(f"Database integrity error in {func.__name__}: {e}")
             raise DatabaseError(f"Data integrity violation: {e}")
         except SQLAlchemyError as e:
-            logger.error(f"Database error in {func.__name__}: {e}")
             raise DatabaseError(f"Database operation failed: {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error in {func.__name__}: {e}")
+        except Exception:
             raise
 
     return wrapper
@@ -406,7 +849,12 @@ class PalimpsestDB:
 
     # ---- Initialization ----
     def __init__(
-        self, db_path: Union[str, Path], alembic_dir: Union[str, Path]
+        self,
+        db_path: Union[str, Path],
+        alembic_dir: Union[str, Path],
+        log_dir: Optional[Union[str, Path]] = None,
+        backup_dir: Optional[Union[str, Path]] = None,
+        enable_auto_backup: bool = True,
     ) -> None:
         """
         Initialize database engine and session factory.
@@ -414,18 +862,49 @@ class PalimpsestDB:
         Args:
             db_path (str | Path): Path to the SQLite  file.
             alembic_dir (str | Path): Path to the Alembic directory.
+            log_dir (str | Path): Directory for log files (optional)
+            backup_dir (str | Path): Directory for backups (optional)
+            enable_auto_backup (bool): Whether to enable automatic backups
+
         """
-        logger.info("Setting up PalimpsestDB...")
-        self.db_path: Path = Path(db_path).expanduser().resolve()
+        self.db_path = Path(db_path).expanduser().resolve()
         self.alembic_dir = Path(alembic_dir).expanduser().resolve()
 
-        try:
-            logger.info("Creating Engine...")
-            self.engine: Engine = create_engine(
-                f"sqlite:///{db_path}", echo=False, future=True, pool_pre_ping=True
+        # --- Logging ---
+        if log_dir:
+            self.log_dir = Path(log_dir).expanduser().resolve()
+            self.logger = DatabaseLogger(self.log_dir)
+        else:
+            self.logger = None
+
+        # --- Backup system ---
+        if backup_dir:
+            self.backup_dir = Path(backup_dir).expanduser().resolve()
+            self.backup_manager = BackupManager(
+                self.db_path,
+                self.backup_dir,
+                logger=self.logger,
             )
 
-            logger.info("Setting up sessionmaker...")
+            if enable_auto_backup:
+                self.backup_manager.auto_backup()
+        else:
+            self.backup_manager = None
+
+        try:
+            if self.logger:
+                self.logger.log_operation(
+                    "database_init_start",
+                    {
+                        "db_path": str(self.db_path),
+                        "alembic_dir": str(self.alembic_dir),
+                    },
+                )
+
+            self.engine: Engine = create_engine(
+                f"sqlite:///{self.db_path}", echo=False, future=True, pool_pre_ping=True
+            )
+
             self.SessionLocal: sessionmaker = sessionmaker(
                 bind=self.engine,
                 autoflush=True,
@@ -433,39 +912,58 @@ class PalimpsestDB:
                 future=True,
             )
 
-            # Initialize
             self.alembic_cfg: Config = self._setup_alembic()
-            logger.info("Initiating database...")
             self.init_database()
-            logger.info("PalimpsestDB properly set up.")
+
+            if self.logger:
+                self.logger.log_operation("database_init_complete", {"success": True})
+
         except Exception as e:
-            logger.error(f"Failed to initialize database: {e}")
+            if self.logger:
+                self.logger.log_error(e, {"operation": "database_init"})
             raise DatabaseError(f"Database initialization failed: {e}")
 
-    # ---- Session / connection utils ----
+    # ---- Session Management ----
     @contextmanager
     def session_scope(self):
         """Provide a transactional scope around operations."""
         session = self.SessionLocal()
+        session_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+
+        if self.logger:
+            self.logger.log_debug("session_start", {"session_id": session_id})
+
         try:
             yield session
             session.commit()
+
+            if self.logger:
+                self.logger.log_debug("session_commit", {"session_id": session_id})
+
         except Exception as e:
             session.rollback()
-            logger.error(f"Session rollback due to error: {e}")
+
+            if self.logger:
+                self.logger.log_error(
+                    e, {"operation": "session_rollback", "session_id": session_id}
+                )
             raise
         finally:
             session.close()
+            if self.logger:
+                self.logger.log_debug("session_close", {"session_id": session_id})
 
     def get_session(self) -> Session:
         """Create and return a new SQLAlchemy session."""
         return self.SessionLocal()
 
-    # ---- Alembic ----
+    # ---- Alembic setup ----
     def _setup_alembic(self) -> Config:
         """Setup Alembic configuration with error handling."""
         try:
-            logger.info("Setting up Alembic configuration...")
+            if self.logger:
+                self.logger.log_debug("Setting up Alembic configuration...")
+
             alembic_cfg: Config = Config(str(ROOT / "alembic.ini"))
             alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
             alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
@@ -473,10 +971,13 @@ class PalimpsestDB:
                 "file_template",
                 "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
             )
-            logger.info("Alembic configuration setup")
+
+            if self.logger:
+                self.logger.log_debug("Alembic configuration setup complete")
             return alembic_cfg
         except Exception as e:
-            logger.error(f"Failed to setup Alembic: {e}")
+            if self.logger:
+                self.logger.log_error(e, {"operation": "setup_alembic"})
             raise DatabaseError(f"Alembic configuration failed: {e}")
 
     @handle_db_errors
@@ -488,60 +989,63 @@ class PalimpsestDB:
             Creates Alembic directory with standard structure
             Updates alembic/env.py to import Palimpsest Base metadata
             Prints instructions for first migration
-
-        Returns:
-            None
         """
         try:
             if not self.alembic_dir.is_dir():
-                logger.info(f"Initializing Alembic in {self.alembic_dir}...")
-                command.init(self.alembic_cfg, str(self.alembic_dir))
+                if self.logger:
+                    self.logger.log_operation(
+                        "init_alembic_start", {"alembic_dir": str(self.alembic_dir)}
+                    )
 
-                # Update the generated alembic/env.py to use models
-                logger.info("Updating alembic env.py...")
+                command.init(self.alembic_cfg, str(self.alembic_dir))
                 self._update_alembic_env()
 
-                logger.info("Alembic initialized successfully")
-                logger.info("You can now create your first migration with:")
-                logger.info("python your_script.py create_migration 'Initial schema'")
+                if self.logger:
+                    self.logger.log_operation(
+                        "init_alembic_complete", {"success": True}
+                    )
+
             else:
-                logger.info(f"Alembic already initialized in {self.alembic_dir}")
+                if self.logger:
+                    self.logger.log_debug(
+                        f"Alembic already initialized in {self.alembic_dir}"
+                    )
         except Exception as e:
-            logger.error(f"Failed to initialize Alembic: {e}")
-            logger.error("".join(traceback.format_exception(None, e, e.__traceback__)))
+            if self.logger:
+                self.logger.log_error(e, {"operation": "init_alembic"})
             raise DatabaseError(f"Alembic initialization failed: {e}")
 
     def _update_alembic_env(self) -> None:
-        """
-        Update the generated alembic/env.py to import Palimpsest models.
-
-        Returns:
-            None
-        """
+        """Update the generated alembic/env.py to import Palimpsest models."""
         env_path = self.alembic_dir / "env.py"
 
         try:
             if env_path.exists():
                 content = env_path.read_text(encoding="utf-8")
 
-                import_line = "from code.metadata.models import Base\n"
+                import_line = "from dev.database.models import Base\n"
                 target_metadata_line = "target_metadata = Base.metadata"
 
                 # Replace the target_metadata = None line
                 if "target_metadata = None" not in content:
-                    logger.warning(
-                        "No 'target_metadata = None' "
-                        "line found in env.py, skipping update"
-                    )
+                    if self.logger:
+                        self.logger.log_debug(
+                            "No 'target_metadata = None' "
+                            "line found in env.py, skipping update"
+                        )
                 else:
                     updated_content = content.replace(
                         "target_metadata = None",
                         f"{import_line}\n{target_metadata_line}",
                     )
                     env_path.write_text(updated_content, encoding="utf-8")
-                    logger.info("Updated alembic/env.py to use Palimpsest models")
+                    if self.logger:
+                        self.logger.log_operation(
+                            "alembic_env_updated", {"env_path": str(env_path)}
+                        )
         except Exception as e:
-            logger.error(f"Failed to update alembic/env.py: {e}")
+            if self.logger:
+                self.logger.log_error(e, {"operation": "update_alembic_env"})
             raise DatabaseError(f"Could not update Alembic environment: {e}")
 
     @handle_db_errors
@@ -556,9 +1060,6 @@ class PalimpsestDB:
                 stamps the Alembic revision to head
             If not,
                 runs pending migrations to update schema
-
-        Returns:
-            None
         """
         try:
             with self.engine.connect() as conn:
@@ -569,18 +1070,28 @@ class PalimpsestDB:
                 Base.metadata.create_all(bind=self.engine)
                 try:
                     command.stamp(self.alembic_cfg, "head")
-                    logger.info("Fresh database created and stamped")
+                    if self.logger:
+                        self.logger.log_operation(
+                            "fresh_database_created",
+                            {"tables_created": len(Base.metadata.tables)},
+                        )
                 except Exception as e:
-                    logger.warning(f"Could not stamp database: {e}")
+                    if self.logger:
+                        self.logger.log_error(e, {"operation": "stamp_database"})
             else:
                 self.upgrade_database()
-                logger.info("Database initialized with migrations")
+                if self.logger:
+                    self.logger.log_operation(
+                        "existing_database_migrated",
+                        {"table_count": len(inspector)},
+                    )
 
         except Exception as e:
-            logger.error(f"Database initialization failed: {e}")
+            if self.logger:
+                self.logger.log_error(e, {"operation": "init_database"})
             raise DatabaseError(f"Could not initialize database: {e}")
 
-    # ---- Model helpers ----
+    # ----  Helper methods ----
     @staticmethod
     def _resolve_object(
         session: Session, item: Union[T, int], model_class: Type[T]

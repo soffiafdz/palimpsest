@@ -174,6 +174,25 @@ event_people = Table(
     ),
 )
 
+entry_related = Table(
+    "entry_related",
+    Base.metadata,
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "related_entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    # No self-references || duplicate pairs
+    CheckConstraint("entry_id != related_entry_id", name="no_self_reference"),
+)
+
 entry_tags = Table(
     "entry_tags",
     Base.metadata,
@@ -256,6 +275,14 @@ class Entry(Base):
     # Relationships many-to-many
     dates: Mapped[List[MentionedDate]] = relationship(
         "MentionedDate", secondary=entry_dates, back_populates="entries"
+    )
+    related_entries: Mapped[List[Entry]] = relationship(
+        "Entry",
+        secondary=entry_related,
+        primaryjoin="Entry.id == entry_related.c.entry_id",
+        secondaryjoin="Entry.id == entry_related.c.related_entry_id",
+        back_populates=None,
+        overlaps="related_entries",
     )
     locations: Mapped[List[Location]] = relationship(
         "Location", secondary=entry_locations, back_populates="entries"
@@ -343,6 +370,16 @@ class Entry(Base):
             "max_date": max_date,
             "duration": (max_date - min_date).days,
         }
+
+    @property
+    def has_related_entries(self) -> bool:
+        """Check if entry has any related entries."""
+        return len(self.related_entries) > 0
+
+    @property
+    def related_entries_list(self) -> List[str]:
+        """Get list of related entry dates as ISO strings."""
+        return [entry.date.isoformat() for entry in self.related_entries]
 
     @property
     def reading_time_minutes(self) -> int:
@@ -436,6 +473,7 @@ class MentionedDate(Base):
     __tablename__ = "dates"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    context: Mapped[Optional[str]] = mapped_column(String)
 
     # Relationships
     entries: Mapped[List[Entry]] = relationship(
