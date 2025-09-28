@@ -75,6 +75,12 @@ TXT_DIR = JOURNAL_DIR / "sources" / "txt"
 MD_DIR = JOURNAL_DIR / "content" / "md"
 PDF_DIR = JOURNAL_DIR / "content" / "pdf"
 
+# ---- Backup & Logs & Temp ----
+BACKUP_DIR = ROOT / "backups"
+LOG_DIR = ROOT / "logs"
+TMP_DIR = ROOT / "tmp"
+
+
 # ---- Vignettes ----
 VIGNETTES_DIR = ROOT / "vignettes"
 
