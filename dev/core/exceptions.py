@@ -2,7 +2,7 @@
 """
 exceptions.py
 --------------------
-Custom exception classes for the Palimpsest database system.
+Custom exception classes for the Palimpsest project.
 """
 
 
@@ -26,5 +26,17 @@ class HealthCheckError(DatabaseError):
 
 class ExportError(DatabaseError):
     """Exception for export operations."""
+
+    pass
+
+
+class TemporalFileError(Exception):
+    """Exception for temporal file operations."""
+
+    pass
+
+
+class ValidationError(Exception):
+    """Exception for validation errors."""
 
     pass

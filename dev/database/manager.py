@@ -44,6 +44,7 @@ from alembic import command
 from alembic.runtime.migration import MigrationContext
 
 # --- Local imports ---
+from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.paths import ROOT
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
@@ -72,7 +73,6 @@ from .models_manuscript import (
     Theme,
 )
 
-from .exceptions import DatabaseError, ValidationError
 from .decorators import (
     handle_db_errors,
     log_database_operation,
