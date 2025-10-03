@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 manager.py
--------------------
+--------------------
 Database manager for the Palimpsest medatata system.
 
 Provides the PalimpsestDB class for interacting with the SQLite database.
@@ -27,50 +27,28 @@ Notes
 from __future__ import annotations
 
 # --- Standard library imports ---
-import csv
-import json
-import logging
-import os
-import shutil
-import tempfile
-import traceback
-
+import time
 from contextlib import contextmanager
-from datetime import date, datetime, timedelta, timezone
-from functools import wraps
-from logging.handlers import RotatingFileHandler
+from datetime import date, datetime, timezone
+
 from pathlib import Path
-from threading import ExceptHookArgs
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    IO,
-    List,
-    Optional,
-    Protocol,
-    runtime_checkable,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar
 
 # --- Third party ---
-# import yaml
+from sqlalchemy import create_engine, Engine, insert
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.exc import IntegrityError, OperationalError
+
 from alembic.config import Config
 from alembic import command
 from alembic.runtime.migration import MigrationContext
 
-from sqlalchemy import create_engine, Engine, text, and_, or_, func
-from sqlalchemy import exc
-from sqlalchemy.orm import Mapped, Session, sessionmaker
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-
 # --- Local imports ---
-from dev.paths import ROOT
+from dev.core.paths import ROOT
+from dev.core.validators import DataValidator
+from dev.core.logging_manager import PalimpsestLogger
 from dev.utils import md, fs
-from dev.database.models import (
+from .models import (
     Base,
     Entry,
     # entry_related,
@@ -85,7 +63,7 @@ from dev.database.models import (
     PoemVersion,
     Tag,
 )
-from dev.database.models_manuscript import (
+from .models_manuscript import (
     ManuscriptStatus,
     ManuscriptEntry,
     ManuscriptEvent,
@@ -94,734 +72,25 @@ from dev.database.models_manuscript import (
     Theme,
 )
 
-
-@runtime_checkable
-class HasId(Protocol):
-    id: Mapped[int]
+from .exceptions import DatabaseError, ValidationError
+from .decorators import (
+    handle_db_errors,
+    log_database_operation,
+    validate_metadata,
+    # with_temporal_cleanup,
+)
+from .backup_manager import BackupManager
+from .health_monitor import HealthMonitor
+from .export_manager import ExportManager
+from .query_analytics import QueryAnalytics
+from .relationship_manager import RelationshipManager, HasId
 
 
 T = TypeVar("T", bound=HasId)
-C = TypeVar("C", bound=HasId)
 
 
-# ----- Errors -----
-class DatabaseError(Exception):
-    """Custom exception for database-related errors."""
-
-    pass
-
-
-class ValidationError(Exception):
-    """Custom exception for validation errors."""
-
-    pass
-
-
-class BackupError(Exception):
-    """Custom exception for backup-related errors."""
-
-    pass
-
-
-class TemporalFileError(Exception):
-    """Custom exception for temporal file operations."""
-
-    pass
-
-
-# ----- Temporal File Manager -----
-class TemporalFileManager:
-    """Manages temporal files with automatic cleanup."""
-
-    def __init__(self, base_dir: Optional[Path] = None):
-        self.base_dir = Path(base_dir) if base_dir else Path(tempfile.gettempdir())
-        self.active_files: List[Path] = []
-        self.active_dirs: List[Path] = []
-        self._temp_file_handles: List[IO[Any]] = []
-
-    def create_temp_file(
-        self, suffix: str = "", prefix: str = "palimpsest_", delete: bool = False
-    ) -> Path:
-        """Create a temporary file and track it for cleanup."""
-        try:
-            temp_file_obj = tempfile.NamedTemporaryFile(
-                suffix=suffix, prefix=prefix, dir=self.base_dir, delete=delete
-            )
-
-            temp_path = Path(temp_file_obj.name)
-
-            if delete:
-                # Keep reference to prevente premature deletion
-                self._temp_file_handles.append(temp_file_obj)
-            else:
-                # Close the file handle but keep the file
-                temp_file_obj.close()
-                self.active_files.append(temp_path)
-
-            return temp_path
-
-        except Exception as e:
-            raise TemporalFileError(f"Failed to create temporary file: {e}")
-
-    def create_temp_dir(self, prefix: str = "palimpsest_") -> Path:
-        """Create a temporary directory and track it for cleanup."""
-        try:
-            temp_dir = Path(tempfile.mkdtemp(prefix=prefix, dir=self.base_dir))
-            self.active_dirs.append(temp_dir)
-            return temp_dir
-        except Exception as e:
-            raise TemporalFileError(f"Failed to create temporary directory: {e}")
-
-    def create_secure_temp_file(
-        self,
-        suffix: str = "",
-        prefix: str = "palimpsest_",
-    ) -> Tuple[int, Path]:
-        """
-        Create a secure temporary file using mkstemp.
-
-        Returns:
-            Tuple of (file_descriptor, file_path)
-            Note: Caller is responsible for closing the file descriptor
-        """
-        try:
-            fd, temp_path = tempfile.mkstemp(
-                suffix=suffix, prefix=prefix, dir=self.base_dir
-            )
-            path_obj = Path(temp_path)
-            self.active_files.append(path_obj)
-            return fd, path_obj
-        except Exception as e:
-            raise TemporalFileError(f"Failed to create secure temporary file: {e}")
-
-    def cleanup(self) -> Dict[str, int]:
-        """Clean up all tracked temporary files and directories."""
-        cleanup_stats = {"files_removed": 0, "dirs_removed": 0, "errors": 0}
-
-        # Clean up temporary file handles
-        for temp_handle in self._temp_file_handles[:]:
-            try:
-                temp_handle.close()
-                self._temp_file_handles.remove(temp_handle)
-            except Exception:
-                cleanup_stats["errors"] += 1
-
-        # Clean up tracked filfes
-        for temp_file in self.active_files[:]:
-            try:
-                if temp_file.exists():
-                    temp_file.unlink()
-                    cleanup_stats["files_removed"] += 1
-                self.active_files.remove(temp_file)
-            except Exception:
-                cleanup_stats["errors"] += 1
-
-        # Clean up directories
-        for temp_dir in self.active_dirs[:]:
-            try:
-                if temp_dir.exists():
-                    shutil.rmtree(temp_dir)
-                    cleanup_stats["dirs_removed"] += 1
-                self.active_dirs.remove(temp_dir)
-            except Exception:
-                cleanup_stats["errors"] += 1
-
-        return cleanup_stats
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        del exc_type, exc_val, exc_tb
-        self.cleanup()
-
-
-# ----- Logging System -----
-class DatabaseLogger:
-    """Centralized logging system for database operations."""
-
-    def __init__(self, log_dir: Path, db_name: str = "palimpsest"):
-        self.log_dir = Path(log_dir)
-        self.db_name = db_name
-        self._setup_loggers()
-
-    def _setup_loggers(self) -> None:
-        """Initialize logging system with multiple handlers."""
-        self.log_dir.mkdir(parents=True, exist_ok=True)
-
-        # Main database logger
-        self.db_logger = logging.getLogger(f"{self.db_name}.database")
-        self.db_logger.setLevel(logging.DEBUG)
-
-        # Error logger (Error and above)
-        self.error_logger = logging.getLogger(f"{self.db_name}.errors")
-        self.error_logger.setLevel(logging.ERROR)
-
-        # Clear existing handlers to avoid duplicates
-        for logger in [self.db_logger, self.error_logger]:
-            logger.handlers.clear()
-
-        # Create handlers
-        self._create_file_handler(
-            self.db_logger, self.log_dir / "database.log", logging.DEBUG
-        )
-        self._create_file_handler(
-            self.error_logger, self.log_dir / "errors.log", logging.ERROR
-        )
-
-        # Console handler for development
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.WARNING)
-        console_formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
-        )
-        console_handler.setFormatter(console_formatter)
-
-        self.db_logger.addHandler(console_handler)
-
-    def _create_file_handler(
-        self, logger: logging.Logger, file_path: Path, level: int
-    ) -> None:
-        """Create a rotating file handler for a logger."""
-
-        handler = RotatingFileHandler(
-            file_path,
-            maxBytes=10 * 1024 * 1024,  # 10MB
-            backupCount=5,
-            encoding="utf-8",
-        )
-        handler.setLevel(level)
-
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s:%(lineno)d] - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-    def log_operation(self, operation: str, details: Dict[str, Any]) -> None:
-        """Log a database operation with context."""
-        self.db_logger.info(
-            f"OPERATION - {operation}: {json.dumps(details, default=str)}"
-        )
-
-    def log_error(self, error: Exception, context: Dict[str, Any]) -> None:
-        """Log an error with full context."""
-        error_info = {
-            "error_type": type(error).__name__,
-            "error_message": str(error),
-            "context": context,
-            "traceback": traceback.format_exc(),
-        }
-        error_msg = f"ERROR - {json.dumps(error_info, default=str)}"
-
-        # Log to both database.log (via db_logger) and errors.log (via error_logger)
-        self.db_logger.error(error_msg)
-        self.error_logger.error(error_msg)
-
-    def log_debug(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
-        """Log debug information - goes sto main database.log."""
-        if details:
-            self.db_logger.debug(
-                f"DEBUG - {message}: {json.dumps(details, default=str)}"
-            )
-        else:
-            self.db_logger.debug(f"DEBUG - {message}")
-
-    def log_info(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
-        """Log general information - goes to main database.log."""
-        if details:
-            self.db_logger.info(f"INFO - {message}: {json.dumps(details, default=str)}")
-        else:
-            self.db_logger.info(f"INFO - {message}")
-
-
-# ----- Backup System -----
-class BackupManager:
-    """Handles database backup and recovery operations."""
-
-    def __init__(
-        self,
-        db_path: Path,
-        backup_dir: Path,
-        retention_days: int = 30,
-        logger: Optional[DatabaseLogger] = None,
-    ):
-        self.db_path = Path(db_path)
-        self.backup_dir = Path(backup_dir)
-        self.retention_days = retention_days
-        self.logger = logger
-
-        # Create backup directories
-        (self.backup_dir / "daily").mkdir(parents=True, exist_ok=True)
-        (self.backup_dir / "weekly").mkdir(parents=True, exist_ok=True)
-        (self.backup_dir / "manual").mkdir(parents=True, exist_ok=True)
-
-    def create_backup(
-        self,
-        backup_type: str = "manual",
-        suffix: Optional[str] = None,
-    ) -> Path:
-        """Create a timestamped database backup."""
-        if not self.db_path.exists():
-            raise BackupError(f"Database file not found: {self.db_path}")
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        if suffix:
-            backup_name = f"{self.db_path.stem}_{timestamp}_{suffix}.db"
-        else:
-            backup_name = f"{self.db_path.stem}_{timestamp}.db"
-
-        backup_path = self.backup_dir / backup_type / backup_name
-
-        try:
-            shutil.copy2(self.db_path, backup_path)
-
-            if self.logger:
-                self.logger.log_operation(
-                    "backup_created",
-                    {
-                        "backup_type": backup_type,
-                        "backup_path": str(backup_path),
-                        "original_size": self.db_path.stat().st_size,
-                        "backup_size": backup_path.stat().st_size,
-                    },
-                )
-
-            return backup_path
-
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(
-                    e,
-                    {
-                        "operation": "create_backup",
-                        "backup_type": backup_type,
-                        "target_path": str(backup_path),
-                    },
-                )
-            raise BackupError(f"Failed to create backup: {e}")
-
-    def auto_backup(self) -> Optional[Path]:
-        """Create automatic daily backup with cleanup."""
-        try:
-            # Create daily backup
-            backup_path = self.create_backup("daily", "auto")
-
-            # Cleanup old backups
-            self._cleanup_old_backups()
-
-            return backup_path
-
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "auto_backup"})
-            return None
-
-    def create_weekly_backup(self) -> Path:
-        """Create weekly backup (typically called on Sundays)."""
-        return self.create_backup("weekly", f"week_{datetime.now().strftime('%U')}")
-
-    def _cleanup_old_backups(self) -> None:
-        """Remove backups older than retention period."""
-        cutoff_date = datetime.now() - timedelta(days=self.retention_days)
-
-        for backup_type in ["daily", "weekly"]:
-            backup_dir = self.backup_dir / backup_type
-            if not backup_dir.exists():
-                continue
-
-            removed_count = 0
-            for backup_file in backup_dir.glob("*.db"):
-                try:
-                    file_mtime = datetime.fromtimestamp(backup_file.stat().st_mtime)
-                    if file_mtime < cutoff_date:
-                        backup_file.unlink()
-                        removed_count += 1
-                except Exception as e:
-                    if self.logger:
-                        self.logger.log_error(
-                            e, {"operation": "cleanup_backup", "file": str(backup_file)}
-                        )
-
-            if removed_count > 0 and self.logger:
-                self.logger.log_operation(
-                    "backup_cleanup",
-                    {
-                        "backup_type": backup_type,
-                        "removed_count": removed_count,
-                        "retention_days": self.retention_days,
-                    },
-                )
-
-    def restore_backup(self, backup_path: Path) -> None:
-        """Restore database from backup."""
-        if not backup_path.exists():
-            raise BackupError(f"Backup file not found: {backup_path}")
-
-        # Create current backup before restore
-        current_backup = self.create_backup("manual", "pre_restore")
-
-        try:
-            shutil.copy2(backup_path, self.db_path)
-
-            if self.logger:
-                self.logger.log_operation(
-                    "restore_backup",
-                    {
-                        "restored_from": str(backup_path),
-                        "pre_restore_backup": str(current_backup),
-                    },
-                )
-
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "restore_backup", "backup_path": str(backup_path)}
-                )
-            raise BackupError(f"Failed to restore backup: {e}")
-
-    def list_backups(self) -> Dict[str, List[Dict[str, Any]]]:
-        """List all available backups with metadata."""
-        backups = {"daily": [], "weekly": [], "manual": []}
-
-        for backup_type in backups.keys():
-            backup_dir = self.backup_dir / backup_type
-            if not backup_dir.exists():
-                continue
-
-            for backup_file in sorted(backup_dir.glob("*.db")):
-                stat = backup_file.stat()
-                backups[backup_type].append(
-                    {
-                        "name": backup_file.name,
-                        "path": str(backup_file),
-                        "size": stat.st_size,
-                        "created": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                        "age_days": (
-                            datetime.now() - datetime.fromtimestamp(stat.st_mtime)
-                        ).days,
-                    }
-                )
-
-        return backups
-
-
-# ----- Operation Decorators -----
-def log_database_operation(operation_name: str):
-    """Decorator to log database operations."""
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            start_time = datetime.now()
-            operation_id = f"{operation_name}_{start_time.strftime('%Y%m%d_%H%M%S_%f')}"
-
-            if hasattr(self, "logger") and self.logger:
-                self.logger.log_debug(
-                    f"Starting {operation_name}",
-                    {
-                        "operation_id": operation_id,
-                        "args_count": len(args),
-                        "kwargs_keys": list(kwargs.keys()),
-                    },
-                )
-
-            try:
-                result = func(self, *args, **kwargs)
-
-                duration = (datetime.now() - start_time).total_seconds()
-                if hasattr(self, "logger") and self.logger:
-                    self.logger.log_operation(
-                        f"{operation_name}_completed",
-                        {
-                            "operation_id": operation_id,
-                            "duration_seconds": duration,
-                            "success": True,
-                        },
-                    )
-
-                return result
-
-            except Exception as e:
-                duration = (datetime.now() - start_time).total_seconds()
-                if hasattr(self, "logger") and self.logger:
-                    self.logger.log_error(
-                        e,
-                        {
-                            "operation": operation_name,
-                            "operation_id": operation_id,
-                            "duration_seconds": duration,
-                        },
-                    )
-                raise
-
-        return wrapper
-
-    return decorator
-
-
-def validate_metadata(required_fields: List[str]):
-    """Decorator to validate metadata dictionaries before processing."""
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(self, session: Session, *args, **kwargs):
-            # Assume metadata is the last positional arg or in kwargs
-            metadata = args[-1] if args else kwargs.get("metadata", {})
-
-            if not isinstance(metadata, dict):
-                raise ValidationError(f"Expected metadata dict, got {type(metadata)}")
-
-            for field in required_fields:
-                if field not in metadata or not metadata[field]:
-                    raise ValidationError(f"Required field '{field}' missing or empty")
-
-            return func(self, session, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def handle_db_errors(func: Callable) -> Callable:
-    """Decorator to handle common database errors."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except IntegrityError as e:
-            raise DatabaseError(f"Data integrity violation: {e}")
-        except SQLAlchemyError as e:
-            raise DatabaseError(f"Database operation failed: {e}")
-        except Exception:
-            raise
-
-    return wrapper
-
-
-# ----- Relationships -----
-class RelationshipManager:
-    """Handles generic relationship updates: one-to-one, one-to-many and many-to-many."""
-
-    @staticmethod
-    def update_one_to_one(
-        session: Session,
-        parent_obj: HasId,
-        relationship_name: str,
-        model_class: Type[C],
-        foreign_key_attr: str,
-        child_data: Dict[str, Any] = {},
-        delete: bool = False,
-    ) -> Optional[C]:
-        """
-        Update a one-to-one relationship.
-
-        Args:
-            session: a SQLAlchemy session
-            parent_obj: The parent object (e.g., Entry)
-            relationship_name: name of the relationship column.
-            model_class: The child model class (e.g., ManuscriptEntry)
-            child_data: Data to update/create the child object
-            foreign_key_attr: Foreign key attribute name on child (e.g., 'entry_id')
-            delete: Whether to delete an existing relationship
-
-        Returns:
-            The child object or None if deleted/not created
-        """
-        if parent_obj.id is None:
-            raise ValueError(
-                f"{parent_obj.__class__.__name__} must be persisted before linking"
-            )
-
-        existing_child: Optional[C] = getattr(parent_obj, relationship_name, None)
-
-        if existing_child:
-            # -- Deletion request --
-            if delete:
-                session.delete(existing_child)
-                session.flush()
-                return None
-            # -- Update --
-            if child_data:
-                for key, value in child_data.items():
-                    if hasattr(existing_child, key):
-                        setattr(existing_child, key, value)
-                session.flush()
-            return existing_child
-
-        # -- Create --
-        child_data[foreign_key_attr] = parent_obj.id
-        child_obj = model_class(**child_data)
-        session.add(child_obj)
-        session.flush()
-        return child_obj
-
-    @staticmethod
-    def update_one_to_many(
-        session: Session,
-        parent_obj: HasId,
-        items: List[Union[C, int, Dict[str, Any]]],
-        model_class: Type[C],
-        foreign_key_attr: str,
-        incremental: bool = True,
-        remove_items: Optional[List[Union[T, int]]] = None,
-    ) -> bool:
-        """
-        Generic one-to-many relationship updater.
-
-        For one-to-many relationships where the child objects belong to only one parent.
-        This updates the foreign key on the child objects rather than using collections.
-
-        Args:
-            session: a SQLAlchemy session
-            parent_obj: The parent object (e.g., Entry)
-            items: List of child objects, IDs, or creation data
-            model_class: The child model class (e.g., Poem, Reference)
-            foreign_key_attr: The foreign key attribute name on the child (e.g., 'entry_id')
-            incremental: If False, removes all existing children first
-            remove_items: Items to explicitly remove (incremental mode only)
-
-        Returns:
-            bool: True if any changes were made
-        """
-        if parent_obj.id is None:
-            raise ValueError(
-                f"{parent_obj.__class__.__name__} must be persisted before linking"
-            )
-
-        changed = False
-
-        # Get existing children
-        existing_children = (
-            session.query(model_class)
-            .filter(getattr(model_class, foreign_key_attr) == parent_obj.id)
-            .all()
-        )
-        existing_ids = {child.id for child in existing_children}
-
-        # Clear all existing if not incremental
-        if not incremental:
-            for child in existing_children:
-                setattr(child, foreign_key_attr, None)
-                changed = True
-
-        # Process new items
-        for item in items:
-            if isinstance(item, dict):
-                # Create new object from metadata
-                child_obj = model_class(**item)
-                session.add(child_obj)
-                session.flush()  # Get the ID
-                setattr(child_obj, foreign_key_attr, parent_obj.id)
-                changed = True
-            else:
-                # Resolve existing object
-                child_obj = RelationshipManager._resolve_object(
-                    session, item, model_class
-                )
-                current_parent_id = getattr(child_obj, foreign_key_attr)
-
-                if current_parent_id != parent_obj.id:
-                    setattr(child_obj, foreign_key_attr, parent_obj.id)
-                    changed = True
-
-        # Remove specified items (incremental mode only)
-        if incremental and remove_items:
-            for item in remove_items:
-                child_obj = RelationshipManager._resolve_object(
-                    session, item, model_class
-                )
-                if child_obj.id in existing_ids:
-                    setattr(child_obj, foreign_key_attr, None)
-                    changed = True
-
-        if changed:
-            session.flush()
-
-        return changed
-
-    @staticmethod
-    def update_many_to_many(
-        session: Session,
-        parent_obj: HasId,
-        relationship_name: str,
-        items: List[Union[C, int]],
-        model_class: Type[C],
-        incremental: bool = True,
-        remove_items: Optional[List[Union[C, int]]] = None,
-    ) -> bool:
-        """
-        Generic many-to-many relationship updater.
-
-        Args:
-            session: a SQLAlchemy session
-            parent_obj: The parent object (e.g., Entry)
-            relationship_name: name of the relationship column.
-            items: List of child objects, IDs, or creation data
-            model_class: The child model class (e.g., Poem, Reference)
-            incremental: If False, removes all existing children first
-            remove_items: Items to explicitly remove (incremental mode only)
-
-        Returns:
-            bool: True if any changes were made
-        """
-        if parent_obj.id is None:
-            raise ValueError(
-                f"{parent_obj.__class__.__name__} must be persisted before linking"
-            )
-
-        relationship = getattr(parent_obj, relationship_name)
-        existing_ids = {obj.id for obj in relationship}
-        changed = False
-
-        # Clear all if not incremental
-        if not incremental:
-            relationship.clear()
-            changed = True
-
-        # Add new items
-        for item in items:
-            obj = RelationshipManager._resolve_object(session, item, model_class)
-            if obj.id not in existing_ids:
-                relationship.append(obj)
-                changed = True
-
-        # Remove specified items (incremental mode only)
-        if incremental and remove_items:
-            for item in remove_items:
-                obj = RelationshipManager._resolve_object(session, item, model_class)
-                if obj.id in existing_ids:
-                    relationship.remove(obj)
-                    changed = True
-
-        if changed:
-            session.flush()
-
-        return changed
-
-    @staticmethod
-    def _resolve_object(
-        session: Session, item: Union[T, int], model_class: Type[T]
-    ) -> T:
-        """Resolve an item to an ORM object."""
-        if isinstance(item, model_class):
-            if item.id is None:
-                raise ValueError(f"{model_class.__name__} instance must be persisted")
-            return item
-        elif isinstance(item, int):
-            obj = session.get(model_class, item)
-            if obj is None:
-                raise ValueError(f"No {model_class.__name__} found with id: {item}")
-            return obj
-        else:
-            raise TypeError(
-                f"Expected {model_class.__name__} instance or int, got {type(item)}"
-            )
-
-
-# ----- Database Manager -----
+#
+# ----- Main Database Manager -----
 class PalimpsestDB:
     """
     Main database manager for the Palimpsest metadata database.
@@ -872,25 +141,41 @@ class PalimpsestDB:
 
         # --- Logging ---
         if log_dir:
-            self.log_dir = Path(log_dir).expanduser().resolve()
-            self.logger = DatabaseLogger(self.log_dir)
+            self.log_dir = Path(log_dir).expanduser().resolve() / "system"
+            self.logger = PalimpsestLogger(
+                self.log_dir,
+                component_name="database",
+            )
         else:
             self.logger = None
 
         # --- Backup system ---
         if backup_dir:
-            self.backup_dir = Path(backup_dir).expanduser().resolve()
+            self.backup_dir = Path(backup_dir).expanduser().resolve() / "database"
             self.backup_manager = BackupManager(
                 self.db_path,
                 self.backup_dir,
                 logger=self.logger,
             )
-
-            if enable_auto_backup:
-                self.backup_manager.auto_backup()
+            # if enable_auto_backup:
+            #     self.backup_manager.auto_backup()
         else:
             self.backup_manager = None
 
+        # Initialize service components
+        self.health_monitor = HealthMonitor(self.logger)
+        self.export_manager = ExportManager(self.logger)
+        self.query_analytics = QueryAnalytics(self.logger)
+
+        # Initialize database
+        self._setup_engine()
+
+        # Auto-backup if enabled
+        if enable_auto_backup and self.backup_manager:
+            self.backup_manager.auto_backup()
+
+    def _setup_engine(self) -> None:
+        """Initialize database engine ans session factory."""
         try:
             if self.logger:
                 self.logger.log_operation(
@@ -902,7 +187,10 @@ class PalimpsestDB:
                 )
 
             self.engine: Engine = create_engine(
-                f"sqlite:///{self.db_path}", echo=False, future=True, pool_pre_ping=True
+                f"sqlite:///{self.db_path}",
+                echo=False,
+                future=True,
+                pool_pre_ping=True,
             )
 
             self.SessionLocal: sessionmaker = sessionmaker(
@@ -913,7 +201,7 @@ class PalimpsestDB:
             )
 
             self.alembic_cfg: Config = self._setup_alembic()
-            self.init_database()
+            self.initialize_schema()
 
             if self.logger:
                 self.logger.log_operation("database_init_complete", {"success": True})
@@ -926,7 +214,7 @@ class PalimpsestDB:
     # ---- Session Management ----
     @contextmanager
     def session_scope(self):
-        """Provide a transactional scope around operations."""
+        """Provide a transactional scope around operations with logging."""
         session = self.SessionLocal()
         session_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
@@ -935,14 +223,13 @@ class PalimpsestDB:
 
         try:
             yield session
-            session.commit()
-
-            if self.logger:
-                self.logger.log_debug("session_commit", {"session_id": session_id})
+            if session.dirty or session.new or session.deleted:
+                session.commit()
+                if self.logger:
+                    self.logger.log_debug("session_commit", {"session_id": session_id})
 
         except Exception as e:
             session.rollback()
-
             if self.logger:
                 self.logger.log_error(
                     e, {"operation": "session_rollback", "session_id": session_id}
@@ -957,9 +244,15 @@ class PalimpsestDB:
         """Create and return a new SQLAlchemy session."""
         return self.SessionLocal()
 
+    @contextmanager
+    def transaction(self):
+        """Context manager for database transactions with logging."""
+        with self.session_scope() as session:
+            yield session
+
     # ---- Alembic setup ----
     def _setup_alembic(self) -> Config:
-        """Setup Alembic configuration with error handling."""
+        """Setup Alembic configuration."""
         try:
             if self.logger:
                 self.logger.log_debug("Setting up Alembic configuration...")
@@ -981,6 +274,7 @@ class PalimpsestDB:
             raise DatabaseError(f"Alembic configuration failed: {e}")
 
     @handle_db_errors
+    @log_database_operation("init_alembic")
     def init_alembic(self) -> None:
         """
         Initialize Alembic in the project directory.
@@ -992,27 +286,14 @@ class PalimpsestDB:
         """
         try:
             if not self.alembic_dir.is_dir():
-                if self.logger:
-                    self.logger.log_operation(
-                        "init_alembic_start", {"alembic_dir": str(self.alembic_dir)}
-                    )
-
                 command.init(self.alembic_cfg, str(self.alembic_dir))
                 self._update_alembic_env()
-
-                if self.logger:
-                    self.logger.log_operation(
-                        "init_alembic_complete", {"success": True}
-                    )
-
             else:
                 if self.logger:
                     self.logger.log_debug(
                         f"Alembic already initialized in {self.alembic_dir}"
                     )
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "init_alembic"})
             raise DatabaseError(f"Alembic initialization failed: {e}")
 
     def _update_alembic_env(self) -> None:
@@ -1027,13 +308,7 @@ class PalimpsestDB:
                 target_metadata_line = "target_metadata = Base.metadata"
 
                 # Replace the target_metadata = None line
-                if "target_metadata = None" not in content:
-                    if self.logger:
-                        self.logger.log_debug(
-                            "No 'target_metadata = None' "
-                            "line found in env.py, skipping update"
-                        )
-                else:
+                if "target_metadata = None" in content:
                     updated_content = content.replace(
                         "target_metadata = None",
                         f"{import_line}\n{target_metadata_line}",
@@ -1049,7 +324,8 @@ class PalimpsestDB:
             raise DatabaseError(f"Could not update Alembic environment: {e}")
 
     @handle_db_errors
-    def init_database(self) -> None:
+    @log_database_operation("initialize_schema")
+    def initialize_schema(self) -> None:
         """
         Initialize database - create tables if needed and run migrations.
 
@@ -1087,29 +363,156 @@ class PalimpsestDB:
                     )
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "init_database"})
             raise DatabaseError(f"Could not initialize database: {e}")
 
+    @handle_db_errors
+    @log_database_operation("upgrade_database")
+    def upgrade_database(self, revision: str = "head") -> None:
+        """
+        Upgrade the database schema to the specified Alembic revision.
+
+        Args:
+            revision (str, optional):
+                The target revision to upgrade to.
+                Defaults to 'head' (latest revision).
+        """
+        try:
+            command.upgrade(self.alembic_cfg, revision)
+        except Exception as e:
+            raise DatabaseError(f"Database upgrade failed: {e}")
+
+    @handle_db_errors
+    @log_database_operation("create_migration")
+    def create_migration(self, message: str) -> str:
+        """
+        Create a new Alembic migration.
+
+        Args:
+            message (str): Description of the migration.
+        Returns:
+            revision
+        """
+        try:
+            result = command.revision(
+                self.alembic_cfg, message=message, autogenerate=True
+            )
+
+            # Handle both single Script and List[Script] return types
+            if isinstance(result, list):
+                if not result or result[0] is None:
+                    raise DatabaseError("Migration creation returned no scripts")
+                script = result[0]
+            else:
+                # Single Script object
+                if result is None:
+                    raise DatabaseError("Migration creation returned no script")
+                script = result
+
+            # Access revision attribute
+            if not hasattr(script, "revision") or script.revision is None:
+                raise DatabaseError("Migration script has no revision")
+
+            return script.revision
+
+        except DatabaseError:
+            raise
+        except Exception as e:
+            raise DatabaseError(f"Migration creation failed: {e}")
+
+    @handle_db_errors
+    @log_database_operation("downgrade_database")
+    def downgrade_database(self, revision: str) -> None:
+        """
+        Downgrade the database schema to a specified Alembic revision.
+
+        Args:
+            revision (str): The target revision to downgrade to.
+        """
+        try:
+            command.downgrade(self.alembic_cfg, revision)
+        except Exception as e:
+            raise DatabaseError(f"Database downgrade to {revision} failed: {e}")
+
+    def get_migration_history(self) -> Dict[str, Optional[str]]:
+        """
+        Get the current migration status of the database.
+
+        Returns:
+            Dictionary with keys:
+                - 'current_revision' (str | None):
+                  Current Alembic revision of the database.
+                - 'status' (str):
+                  Either 'up_to_date' or 'needs_migration'.
+                - 'error' (str, optional):
+                  Present if an exception occurred.
+        """
+        try:
+            with self.engine.connect() as conn:
+                context = MigrationContext.configure(conn)
+                current_rev = context.get_current_revision()
+
+            return {
+                "current_revision": current_rev,
+                "status": "up_to_date" if current_rev else "needs_migration",
+            }
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(e, {"operation": "get_migration_history"})
+            return {"error": str(e)}
+
     # ----  Helper methods ----
-    @staticmethod
+    def _execute_with_retry(
+        self,
+        operation: Callable,
+        max_retries: int = 3,
+        retry_delay: float = 0.1,
+    ) -> Any:
+        """
+        Execute database operation with retry on lock.
+
+        Args:
+            session: SQLAlchemy session
+            operation: Callable that performs the operation
+            max_retries: Maximum number of retry attempts
+            retry_delay: Base delay between retries (exponential backoff)
+
+        Returns:
+            Result of the operation
+
+        Raises:
+            OperationalError: If all retries exhausted
+        """
+        for attempt in range(max_retries):
+            try:
+                return operation()
+            except OperationalError as e:
+                error_msg = str(e).lower()
+
+                if (
+                    "locked" in error_msg or "busy" in error_msg
+                ) and attempt < max_retries - 1:
+                    wait_time = retry_delay * (2**attempt)  # Exponential backoff
+
+                    if self.logger:
+                        self.logger.log_debug(
+                            f"Database locked, retrying in {wait_time}s",
+                            {"attempt": attempt + 1, "max_retries": max_retries},
+                        )
+
+                    time.sleep(wait_time)
+                    continue
+
+                # Re-raise the exception if not a lock error or retries exhausted
+                raise
+
+        # This should never be reached due to the raise in the except block
+        raise DatabaseError("Retry loop completed without success")
+
     def _resolve_object(
-        session: Session, item: Union[T, int], model_class: Type[T]
+        self, session: Session, item: Union[T, int], model_class: Type[T]
     ) -> T:
         """Resolve an item to an ORM object."""
-        if isinstance(item, model_class):
-            if item.id is None:
-                raise ValueError(f"{model_class.__name__} instance must be persisted")
-            return item
-        elif isinstance(item, int):
-            obj = session.get(model_class, item)
-            if obj is None:
-                raise ValueError(f"No {model_class.__name__} found with id: {item}")
-            return obj
-        else:
-            raise TypeError(
-                f"Expected {model_class.__name__} instance or int, got {type(item)}"
-            )
+        return RelationshipManager._resolve_object(session, item, model_class)
 
     @handle_db_errors
     def _get_or_create_lookup_item(
@@ -1160,9 +563,10 @@ class PalimpsestDB:
                 return obj
             raise
 
-    # ---- Entry ----
-    @validate_metadata(["date", "file_path"])
+    # ---- CRUD Operations for Entries ----
     @handle_db_errors
+    @log_database_operation("create_entry")
+    @validate_metadata(["date", "file_path"])
     def create_entry(self, session: Session, metadata: Dict[str, Any]) -> Entry:
         """
         Create a new Entry in the database with its associated relationships.
@@ -1195,11 +599,13 @@ class PalimpsestDB:
             Entry: The newly created Entry ORM object.
         """
         # --- Required fields ---
-        parsed_date = md.parse_date(metadata["date"])
+        # parsed_date = md.parse_date(metadata["date"])
+        parsed_date = DataValidator.normalize_date(metadata["date"])
         if not parsed_date:
             raise ValueError(f"Invalid date format: {metadata['date']}")
 
-        file_path = md.normalize_str(metadata.get("file_path"))
+        # file_path = DataValidator.normalize_string(metadata.get("file_path"))
+        file_path = DataValidator.normalize_string(metadata["file_path"])
         if not file_path:
             raise ValueError(f"Invalid file_path: {metadata['file_path']}")
 
@@ -1209,22 +615,29 @@ class PalimpsestDB:
             raise ValidationError(f"Entry already exists for file_path: {file_path}")
 
         # --- If hash doesn't exist, create it ---
-        file_hash = md.normalize_str(metadata.get("file_hash"))
+        # file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
+        file_hash = DataValidator.normalize_string((metadata.get("file_hash")))
         if not file_hash:
             file_hash = fs.get_file_hash(file_path)
 
         # --- Create Entry ---
-        entry = Entry(
-            date=parsed_date,
-            file_path=file_path,
-            file_hash=file_hash,
-            word_count=md.safe_int(metadata.get("word_count")),
-            reading_time=md.safe_float(metadata.get("reading_time")),
-            epigraph=md.normalize_str(metadata.get("epigraph")),
-            notes=md.normalize_str(metadata.get("notes")),
-        )
-        session.add(entry)
-        session.flush()
+        def _do_create():
+            entry = Entry(
+                date=parsed_date,
+                file_path=file_path,
+                file_hash=file_hash,
+                word_count=DataValidator.normalize_int(metadata.get("word_count")),
+                reading_time=DataValidator.normalize_float(
+                    metadata.get("reading_time")
+                ),
+                epigraph=DataValidator.normalize_string(metadata.get("epigraph")),
+                notes=DataValidator.normalize_string(metadata.get("notes")),
+            )
+            session.add(entry)
+            session.flush()
+            return entry
+
+        entry = self._execute_with_retry(_do_create)
 
         # --- Relationships ---
         self._update_entry_relationships(session, entry, metadata)
@@ -1238,7 +651,7 @@ class PalimpsestDB:
         incremental: bool = True,
     ) -> None:
         """
-        Update relationships for a Entry object in the database.
+        Update relationships for an Entry object in the database.
 
         Supports both incremental updates (defualt) and full overwrite.
         This function handles relationships only. No I/O or Markdown parsing.
@@ -1269,14 +682,15 @@ class PalimpsestDB:
             - Overwrite mode:
                 clears all existing relationships before adding new ones.
             - Calls session.flush() only if any changes were made
-
-        Returns:
-            None
         """
+        if "dates" in metadata:
+            if not incremental:
+                entry.dates.clear()
+                session.flush()
+            self._process_mentioned_dates(session, entry, metadata["dates"])
 
         # --- Many to many ---
         many_to_many_configs = [
-            ("dates", "dates", MentionedDate),
             ("locations", "locations", Location),
             ("people", "people", Person),
             ("events", "events", Event),
@@ -1317,6 +731,46 @@ class PalimpsestDB:
         if "tags" in metadata:
             self._update_entry_tags(session, entry, metadata["tags"], incremental)
 
+        # --- Related entries ---
+        # Handle related entries (uni-directional relationships)
+        if "related_entries" in metadata:
+            self._process_related_entries(session, entry, metadata["related_entries"])
+
+        # --- Manuscript ---
+        if "manuscript" in metadata:
+            self.create_or_update_manuscript_entry(
+                session, entry, metadata["manuscript"]
+            )
+
+    def _process_mentioned_dates(
+        self,
+        session: Session,
+        entry: Entry,
+        dates_data: List[Union[str, Dict[str, Any]]],
+    ) -> None:
+        """Process mentioned dates with optional context."""
+        existing_date_ids = {d.id for d in entry.dates}
+
+        for date_item in dates_data:
+            if isinstance(date_item, str):
+                # Simple date string
+                date_obj = date.fromisoformat(date_item)
+                mentioned_date = self._get_or_create_lookup_item(
+                    session, MentionedDate, {"date": date_obj}
+                )
+            elif isinstance(date_item, dict) and "date" in date_item:
+                # Date with context
+                date_obj = date.fromisoformat(date_item["date"])
+                context = date_item.get("context")
+                mentioned_date = self._get_or_create_lookup_item(
+                    session, MentionedDate, {"date": date_obj, "context": context}
+                )
+            else:
+                continue
+
+            if mentioned_date.id not in existing_date_ids:
+                entry.dates.append(mentioned_date)
+
     def _update_entry_tags(
         self,
         session: Session,
@@ -1348,7 +802,7 @@ class PalimpsestDB:
             raise ValueError("Entry must be persisted before linking tags")
 
         # --- Normalize incoming tags --
-        norm_tags = {md.normalize_str(t) for t in tags if md.normalize_str(t)}
+        norm_tags = {DataValidator.normalize_string(t) for t in tags}
 
         if not incremental:
             entry.tags.clear()
@@ -1364,7 +818,24 @@ class PalimpsestDB:
         if norm_tags - existing_tags:
             session.flush()
 
+    def _process_related_entries(
+        self, session: Session, entry: Entry, related_dates: List[str]
+    ) -> None:
+        """Process related entry connections (uni-directional)."""
+        for date_str in related_dates:
+            try:
+                related_date = date.fromisoformat(date_str)
+                related_entry = (
+                    session.query(Entry).filter_by(date=related_date).first()
+                )
+                if related_entry and related_entry.id != entry.id:
+                    entry.related_entries.append(related_entry)
+            except ValueError:
+                # Invalid date format, skip
+                continue
+
     @handle_db_errors
+    @log_database_operation("update_entry")
     def update_entry(
         self, session: Session, entry: Entry, metadata: Dict[str, Any]
     ) -> Entry:
@@ -1399,32 +870,141 @@ class PalimpsestDB:
         entry = session.merge(db_entry)
 
         # --- Update scalar fields ---
-        field_updates = {
-            "date": lambda x: md.parse_date(x),
-            "file_path": lambda x: md.normalize_str(x),
-            "file_hash": lambda x: md.normalize_str(x),
-            "word_count": lambda x: md.safe_int(x),
-            "reading_time": lambda x: md.safe_float(x),
-            "epigraph": lambda x: md.normalize_str(x),
-            "notes": lambda x: md.normalize_str(x),
-        }
+        def _do_update():
+            field_updates = {
+                "date": DataValidator.normalize_date,
+                "file_path": DataValidator.normalize_string,
+                "file_hash": DataValidator.normalize_string,
+                "word_count": DataValidator.normalize_int,
+                "reading_time": DataValidator.normalize_float,
+                "epigraph": DataValidator.normalize_string,
+                "notes": DataValidator.normalize_string,
+            }
 
-        for field, parser in field_updates.items():
-            if field in metadata:
-                value = parser(metadata[field])
-                if value is not None or field in ["epigraph", "notes"]:
-                    if field == "file_path" and value is not None:
-                        file_hash = fs.get_file_hash(value)
-                        setattr(entry, "file_hash", file_hash)
-                    setattr(entry, field, value)
+            for field, normalizer in field_updates.items():
+                if field in metadata:
+                    value = normalizer(metadata[field])
+                    if value is not None or field in ["epigraph", "notes"]:
+                        if field == "file_path" and value is not None:
+                            file_hash = fs.get_file_hash(value)
+                            setattr(entry, "file_hash", file_hash)
+                        setattr(entry, field, value)
+
+            session.flush()
+            return entry
+
+        entry = self._execute_with_retry(_do_update)
 
         # --- Update relationships ---
         self._update_entry_relationships(session, entry, metadata)
         return entry
 
-    # ---- Location ----
-    @validate_metadata(["name"])
     @handle_db_errors
+    @log_database_operation("get_entry")
+    def get_entry(
+        self, session: Session, entry_date: Union[str, date]
+    ) -> Optional[Entry]:
+        """Get an entry by date."""
+        if isinstance(entry_date, str):
+            entry_date = date.fromisoformat(entry_date)
+
+        return session.query(Entry).filter_by(date=entry_date).first()
+
+    @handle_db_errors
+    @log_database_operation("delete_entry")
+    def delete_entry(self, session: Session, entry: Entry) -> None:
+        """Delete an entry and its associated data."""
+
+        def _do_delete():
+            session.delete(entry)
+            session.flush()
+
+        self._execute_with_retry(_do_delete)
+
+    @handle_db_errors
+    @log_database_operation("bulk_create_entries")
+    def bulk_create_entries(
+        self,
+        session: Session,
+        entries_metadata: List[Dict[str, Any]],
+        batch_size: int = 100,
+    ) -> List[int]:
+        """
+        Create multiple entries efficiently using bulk operations.
+
+        Args:
+            session: SQLAlchemy session
+            entries_metadata: List of metadata dictionaries for entries
+            batch_size: Number of entries to insert per batch
+
+        Returns:
+            List of created entry IDs
+        """
+        created_ids = []
+
+        # Process in batches
+        for i in range(0, len(entries_metadata), batch_size):
+            batch = entries_metadata[i : i + batch_size]
+
+            # Prepare mappings for bulk insert
+            mappings = []
+            for metadata in batch:
+                parsed_date = DataValidator.normalize_date(metadata["date"])
+                file_path = DataValidator.normalize_string(metadata["file_path"])
+                file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
+
+                if file_path and not file_hash:
+                    file_hash = fs.get_file_hash(file_path)
+
+                mappings.append(
+                    {
+                        "date": parsed_date,
+                        "file_path": file_path,
+                        "file_hash": file_hash,
+                        "word_count": DataValidator.normalize_int(
+                            metadata.get("word_count")
+                        ),
+                        "reading_time": DataValidator.normalize_float(
+                            metadata.get("reading_time")
+                        ),
+                        "epigraph": DataValidator.normalize_string(
+                            metadata.get("epigraph")
+                        ),
+                        "notes": DataValidator.normalize_string(metadata.get("notes")),
+                        "created_at": datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc),
+                    }
+                )
+
+            def _do_bulk_insert():
+                # Use Core insert for bulk operations
+                stmt = insert(Entry).values(mappings)
+                session.execute(stmt)
+                session.flush()
+
+            self._execute_with_retry(_do_bulk_insert)
+
+            # Get IDs of created entries
+            dates = [m["date"] for m in mappings]
+            created_entries = session.query(Entry).filter(Entry.date.in_(dates)).all()
+            created_ids.extend([e.id for e in created_entries])
+
+            if self.logger:
+                self.logger.log_operation(
+                    "bulk_create_batch",
+                    {"batch_number": i // batch_size + 1, "count": len(batch)},
+                )
+
+        return created_ids
+
+    # ---- Location CRUD ----
+    # TODO: Add _do_{task}() and _execute_with_retry() logic
+    # for tasks: create_, update_, delete_
+    # for Location, Person, Event, Poem, PoemVersion, Reference, ReferenceSource and Manuscript
+
+    @handle_db_errors
+    @log_database_operation("create_location")
+    @validate_metadata(["name"])
     def create_location(self, session: Session, metadata: Dict[str, Any]) -> Location:
         """
         Create a new Location in the database with its associated relationships.
@@ -1445,20 +1025,21 @@ class PalimpsestDB:
             Location: The newly created Location ORM object.
         """
         # --- Required fields ---
-        loc_name = md.normalize_str(metadata.get("name"))
+        loc_name = DataValidator.normalize_string(metadata.get("name"))
         if not loc_name:
             raise ValueError(f"Invalid name: {metadata['name']}")
 
         # --- Create Location ---
         location = Location(
             name=loc_name,
-            full_name=md.normalize_str(metadata.get("full_name")),
+            full_name=DataValidator.normalize_string(metadata.get("full_name")),
         )
         session.add(location)
         session.flush()
         return location
 
     @handle_db_errors
+    @log_database_operation("update_location")
     def update_location(
         self, session: Session, location: Location, metadata: Dict[str, Any]
     ) -> Location:
@@ -1489,21 +1070,57 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "name": lambda x: md.normalize_str(x),
-            "full_name": lambda x: md.normalize_str(x),
+            "name": DataValidator.normalize_string,
+            "full_name": DataValidator.normalize_string,
         }
 
-        for field, parser in field_updates.items():
+        for field, normalizer in field_updates.items():
             if field in metadata:
-                value = parser(metadata[field])
+                value = normalizer(metadata[field])
                 if value is not None or field == "full_name":
                     setattr(location, field, value)
 
         return location
 
-    # ---- Person ----
-    @validate_metadata(["name"])
     @handle_db_errors
+    @log_database_operation("get_location")
+    def get_location(
+        self,
+        session: Session,
+        location_name: Optional[str] = None,
+        location_full_name: Optional[str] = None,
+    ) -> Optional[Location]:
+        """Get a location by name/full_name."""
+        if not location_name and not location_full_name:
+            raise ValueError("Either name or full_name must be given.")
+
+        if location_full_name:
+            l_fname = DataValidator.normalize_string(location_full_name)
+            return session.query(Location).filter_by(full_name=l_fname).first()
+
+        l_name = DataValidator.normalize_string(location_name)
+        l_n = session.query(Location).filter_by(name=l_name).count()
+        if l_n < 2:
+            return session.query(Location).filter_by(name=l_name).first()
+        else:
+            raise ValidationError(
+                f"+1 locations exist with name {l_name}. Use full_name."
+            )
+
+    @handle_db_errors
+    @log_database_operation("delete_location")
+    def delete_location(self, session: Session, location: Location) -> None:
+        """Delete a location and its associated data."""
+        try:
+            session.delete(location)
+            session.flush()
+        except Exception as e:
+            raise DatabaseError(f"Failed to delete location: {e}")
+
+    # ---- Person CRUD ----
+    @handle_db_errors
+    @log_database_operation("create_person")
+    @validate_metadata(["name"])
     def create_person(self, session: Session, metadata: Dict[str, Any]) -> Person:
         """
         Create a new Person in the database with its associated relationships.
@@ -1529,12 +1146,12 @@ class PalimpsestDB:
             Person: The newly created Location ORM object.
         """
         # --- Required fields ---
-        p_name = md.normalize_str(metadata.get("name"))
+        p_name = DataValidator.normalize_string(metadata.get("name"))
         if not p_name:
             raise ValueError(f"Invalid name: {metadata['name']}")
 
         # --- Uniqueness check ---
-        p_fname = md.normalize_str(metadata.get("full_name"))
+        p_fname = DataValidator.normalize_string(metadata.get("full_name"))
         existing = session.query(Person).filter_by(name=p_name).first()
         if existing:
             if not p_fname:
@@ -1552,7 +1169,7 @@ class PalimpsestDB:
         person = Person(
             name=p_name,
             full_name=p_fname,
-            relation_type=md.normalize_str(metadata.get("relation_type")),
+            relation_type=DataValidator.normalize_string(metadata.get("relation_type")),
         )
         session.add(person)
         session.flush()
@@ -1655,7 +1272,7 @@ class PalimpsestDB:
             raise ValueError("Person must be persisted before linking tags")
 
         # --- Normalize incoming aliases --
-        norm_aliases = {md.normalize_str(a) for a in aliases if md.normalize_str(a)}
+        norm_aliases = {DataValidator.normalize_string(a) for a in aliases}
 
         if not incremental:
             for a in person.aliases:
@@ -1674,6 +1291,7 @@ class PalimpsestDB:
             session.flush()
 
     @handle_db_errors
+    @log_database_operation("update_person")
     def update_person(
         self, session: Session, person: Person, metadata: Dict[str, Any]
     ) -> Person:
@@ -1706,14 +1324,14 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "name": lambda x: md.normalize_str(x),
-            "full_name": lambda x: md.normalize_str(x),
-            "relation_type": lambda x: md.normalize_str(x),
+            "name": DataValidator.normalize_string,
+            "full_name": DataValidator.normalize_string,
+            "relation_type": DataValidator.normalize_string,
         }
 
-        for field, parser in field_updates.items():
+        for field, normalizer in field_updates.items():
             if field in metadata:
-                value = parser(metadata[field])
+                value = normalizer(metadata[field])
                 if value is not None or field in ["full_name", "relation_type"]:
                     setattr(person, field, value)
 
@@ -1721,9 +1339,43 @@ class PalimpsestDB:
         self._update_person_relationships(session, person, metadata)
         return person
 
-    # ---- Reference ----
+    @handle_db_errors
+    @log_database_operation("get_person")
+    def get_person(
+        self,
+        session: Session,
+        person_name: Optional[str] = None,
+        person_full_name: Optional[str] = None,
+    ) -> Optional[Person]:
+        """Get a Person by name/full_name."""
+        if not person_name and not person_full_name:
+            raise ValueError("Either name or full_name must be given.")
+
+        if person_full_name:
+            p_fname = DataValidator.normalize_string(person_full_name)
+            return session.query(Person).filter_by(full_name=p_fname).first()
+
+        p_name = DataValidator.normalize_string(person_name)
+        p_n = session.query(Person).filter_by(name=p_name).count()
+        if p_n < 2:
+            return session.query(Person).filter_by(name=p_name).first()
+        else:
+            raise ValidationError(f"+1 people exist with name {p_name}. Use full_name.")
+
+    @handle_db_errors
+    @log_database_operation("delete_person")
+    def delete_person(self, session: Session, person: Person) -> None:
+        """Delete a person and its associated data."""
+        try:
+            session.delete(person)
+            session.flush()
+        except Exception as e:
+            raise DatabaseError(f"Failed to delete person: {e}")
+
+    # ---- Reference CRUD ----
     # Reference is created as a one-to-many relationship of Entry
     @handle_db_errors
+    @log_database_operation("update_reference")
     def update_reference(
         self, session: Session, reference: Reference, metadata: Dict[str, Any]
     ) -> Reference:
@@ -1758,35 +1410,36 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "content": lambda x: md.normalize_str(x),
-            "speaker": lambda x: md.normalize_str(x),
+            "content": DataValidator.normalize_string,
+            "speaker": DataValidator.normalize_string,
         }
 
-        for field, parser in field_updates.items():
+        for field, normalizer in field_updates.items():
             if field in metadata:
-                value = parser(metadata[field])
+                value = normalizer(metadata[field])
                 if value is not None or field == "speaker":
                     setattr(reference, field, value)
 
         # --- Parents ---
         # -- Entry --
-        entry: Optional[Entry] = None
-        if (m_entry := metadata.get("entry")) is not None:
-            entry = self._resolve_object(session, m_entry, Entry)
+        if "entry" in metadata:
+            entry = self._resolve_object(session, metadata["entry"], Entry)
             if reference.entry_id != entry.id:
                 reference.entry = entry
-        #
+
         # -- ReferenceSource --
-        ref_source: Optional[ReferenceSource] = None
-        if (m_source := metadata.get("source")) is not None:
-            ref_source = self._resolve_object(session, m_source, ReferenceSource)
+        if "source" in metadata:
+            ref_source = self._resolve_object(
+                session, metadata["source"], ReferenceSource
+            )
             if reference.source_id != ref_source.id:
                 reference.source = ref_source
 
         return reference
 
-    @validate_metadata(["type", "title"])
     @handle_db_errors
+    @log_database_operation("create_reference_source")
+    @validate_metadata(["type", "title"])
     def create_reference_source(
         self, session: Session, metadata: Dict[str, Any]
     ) -> ReferenceSource:
@@ -1811,17 +1464,16 @@ class PalimpsestDB:
             ReferenceSource: The newly created Location ORM object.
         """
         # --- Required fields ---
-        norm_type = md.normalize_str(metadata.get("type"))
+        norm_type = DataValidator.normalize_string(metadata.get("type"))
         if not norm_type:
             raise ValueError(f"Invalid type: {metadata['type']}")
 
-        norm_title = md.normalize_str(metadata.get("title"))
+        norm_title = DataValidator.normalize_string(metadata.get("title"))
         if not norm_title:
             raise ValueError(f"Invalid title: {metadata['title']}")
 
         # --- title uniqueness check ---
         existing = session.query(ReferenceSource).filter_by(title=norm_title).first()
-
         if existing:
             raise ValidationError(
                 f"ReferenceSource already exists for title: {norm_title}"
@@ -1831,13 +1483,14 @@ class PalimpsestDB:
         ref = ReferenceSource(
             type=norm_type,
             title=norm_title,
-            author=md.normalize_str(metadata.get("author")),
+            author=DataValidator.normalize_string(metadata.get("author")),
         )
         session.add(ref)
         session.flush()
         return ref
 
     @handle_db_errors
+    @log_database_operation("update_reference_source")
     def update_reference_source(
         self,
         session: Session,
@@ -1876,14 +1529,14 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "type": lambda x: md.normalize_str(x),
-            "title": lambda x: md.normalize_str(x),
-            "author": lambda x: md.normalize_str(x),
+            "type": DataValidator.normalize_string,
+            "title": DataValidator.normalize_string,
+            "author": DataValidator.normalize_string,
         }
 
-        for field, parser in field_updates.items():
+        for field, normalizer in field_updates.items():
             if field in metadata:
-                value = parser(metadata[field])
+                value = normalizer(metadata[field])
                 if value is not None or field == "author":
                     setattr(source, field, value)
 
@@ -1899,9 +1552,10 @@ class PalimpsestDB:
 
         return source
 
-    # ---- Event ----
-    @validate_metadata(["name"])
+    # ---- Event CRUD ----
     @handle_db_errors
+    @log_database_operation("create_event")
+    @validate_metadata(["event"])
     def create_event(self, session: Session, metadata: Dict[str, Any]) -> Event:
         """
         Create a new Event in the database with its associated relationships.
@@ -1926,15 +1580,15 @@ class PalimpsestDB:
             Event: The newly created Event ORM object.
         """
         # --- Required fields ---
-        event_name = md.normalize_str(metadata.get("event"))
+        event_name = DataValidator.normalize_string(metadata.get("event"))
         if not event_name:
             raise ValueError(f"Invalid event name: {metadata['event']}")
 
         # --- Create Location ---
         event = Event(
             event=event_name,
-            title=md.normalize_str(metadata.get("title")),
-            description=md.normalize_str(metadata.get("description")),
+            title=DataValidator.normalize_string(metadata.get("title")),
+            description=DataValidator.normalize_string(metadata.get("description")),
         )
         session.add(event)
         session.flush()
@@ -1951,7 +1605,7 @@ class PalimpsestDB:
         incremental: bool = True,
     ) -> None:
         """
-        Update relationships for a Event object in the database.
+        Update relationships for an Event object in the database.
 
         Supports both incremental updates (defualt) and full overwrite.
         This function handles relationships only. No I/O or Markdown parsing.
@@ -1974,11 +1628,7 @@ class PalimpsestDB:
             - Overwrite mode:
                 clears all existing relationships before adding new ones.
             - Calls session.flush() only if any changes were made
-
-        Returns:
-            None
         """
-
         # --- Many to many ---
         many_to_many_configs = [
             ("entries", "entries", Entry),
@@ -1998,6 +1648,7 @@ class PalimpsestDB:
                 )
 
     @handle_db_errors
+    @log_database_operation("update_event")
     def update_event(
         self, session: Session, event: Event, metadata: Dict[str, Any]
     ) -> Event:
@@ -2030,14 +1681,14 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "event": lambda x: md.normalize_str(x),
-            "title": lambda x: md.normalize_str(x),
-            "description": lambda x: md.normalize_str(x),
+            "event": DataValidator.normalize_string,
+            "title": DataValidator.normalize_string,
+            "description": DataValidator.normalize_string,
         }
 
-        for field, parser in field_updates.items():
+        for field, normalizer in field_updates.items():
             if field in metadata:
-                value = parser(metadata[field])
+                value = normalizer(metadata[field])
                 if value is not None or field in ["title", "description"]:
                     setattr(event, field, value)
 
@@ -2045,9 +1696,10 @@ class PalimpsestDB:
         self._update_event_relationships(session, event, metadata)
         return event
 
-    # ---- Poems ----
-    @validate_metadata(["title", "content"])
+    # ---- Poems CRUD ----
     @handle_db_errors
+    @log_database_operation("create_poem")
+    @validate_metadata(["title", "content"])
     def create_poem(self, session: Session, metadata: Dict[str, Any]) -> PoemVersion:
         """
         Create a new PoemVersion in the database with its associated Poem.
@@ -2074,11 +1726,11 @@ class PalimpsestDB:
             Event: The newly created Event ORM object.
         """
         # --- Required fields ---
-        title = md.normalize_str(metadata.get("title"))
+        title = DataValidator.normalize_string(metadata.get("title"))
         if not title:
             raise ValueError(f"Invalid poem title: {metadata['title']}")
 
-        content = md.normalize_str(metadata.get("content"))
+        content = DataValidator.normalize_string(metadata.get("content"))
         if not content:
             raise ValueError(f"Invalid poem content: {metadata['content']}")
 
@@ -2090,26 +1742,26 @@ class PalimpsestDB:
         # --- Parents ---
         # -- Entry --
         entry: Optional[Entry] = None
-        if (m_entry := metadata.get("entry")) is not None:
-            entry = self._resolve_object(session, m_entry, Entry)
+        if "entry" in metadata:
+            entry = self._resolve_object(session, metadata["entry"], Entry)
 
         # -- Poem --
         poem: Poem
-        if (m_poem := metadata.get("poem")) is not None:
-            poem = self._resolve_object(session, m_poem, Poem)
+        if "poem" in metadata:
+            poem = self._resolve_object(session, metadata["poem"], Poem)
         else:
             poem = Poem(title=title)
             session.add(poem)
             session.flush()
 
         # --- If hash doesn't exist, create it ---
-        version_hash = md.normalize_str(metadata.get("version_hash"))
+        version_hash = DataValidator.normalize_string(metadata.get("version_hash"))
         if not version_hash:
             version_hash = md.get_text_hash(content)
 
-        # --- Use metadata, or entry date or now
+        # --- Determine revision date ---
         rev_date: date
-        m_date = md.parse_date(metadata.get("revision_date"))
+        m_date = DataValidator.normalize_date(metadata.get("revision_date"))
         if m_date:
             rev_date = m_date
         elif entry:
@@ -2122,7 +1774,7 @@ class PalimpsestDB:
             content=content,
             revision_date=rev_date,
             version_hash=version_hash,
-            notes=md.normalize_str(metadata.get("notes")),
+            notes=DataValidator.normalize_string(metadata.get("notes")),
             poem=poem,
             entry=entry,
         )
@@ -2131,6 +1783,7 @@ class PalimpsestDB:
         return poem_version
 
     @handle_db_errors
+    @log_database_operation("update_poem")
     def update_poem(
         self, session: Session, poem: Poem, metadata: Dict[str, Any]
     ) -> Poem:
@@ -2147,7 +1800,7 @@ class PalimpsestDB:
                       versions, remove_versions
 
         Returns:
-            Event: The updated Event ORM object (still attached to session).
+            Poem: The updated Poem ORM object (still attached to session).
         """
         # --- Ensure existance ---
         db_poem = session.get(Poem, poem.id)
@@ -2159,31 +1812,34 @@ class PalimpsestDB:
 
         # --- Update title ---
         if "title" in metadata:
-            title = md.normalize_str(metadata["title"])
+            title = DataValidator.normalize_string(metadata["title"])
             if title is not None:
                 setattr(poem, "title", title)
 
         # --- Update Versions ---
-        RelationshipManager.update_one_to_many(
-            session=session,
-            parent_obj=poem,
-            items=metadata["versions"],
-            model_class=PoemVersion,
-            foreign_key_attr="poem_id",
-            remove_items=metadata.get("remove_versions", []),
-        )
+        if "versions" in metadata or "remove_versions" in metadata:
+            RelationshipManager.update_one_to_many(
+                session=session,
+                parent_obj=poem,
+                items=metadata["versions"],
+                model_class=PoemVersion,
+                foreign_key_attr="poem_id",
+                remove_items=metadata.get("remove_versions", []),
+            )
+
         return poem
 
     @handle_db_errors
+    @log_database_operation("update_poem_version")
     def update_poem_version(
-        self, session: Session, poem: PoemVersion, metadata: Dict[str, Any]
+        self, session: Session, poem_version: PoemVersion, metadata: Dict[str, Any]
     ) -> PoemVersion:
         """
         Update an existing Poem (Version) in the database.
 
         Args:
             session (Session): Active SQLAlchemy session
-            poem (PoemVersion): Existing Poem ORM object to update.
+            poem_version (PoemVersion): Existing PoemVersion ORM object to update.
             metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
                 Keys may include:
                     - Core field: content, revision_date, notes
@@ -2196,50 +1852,51 @@ class PalimpsestDB:
         Notes: version_hash is automatically updated if content changes
         """
         # --- Ensure existance ---
-        db_poem = session.get(PoemVersion, poem.id)
+        db_poem = session.get(PoemVersion, poem_version.id)
         if db_poem is None:
-            raise ValueError(f"PoemVersion with id={poem.id} does not exist")
+            raise ValueError(f"PoemVersion with id={poem_version.id} does not exist")
 
         # --- Attach to session ---
-        poem = session.merge(db_poem)
+        poem_version = session.merge(db_poem)
 
         # --- Update scalar fields ---
         field_updates = {
-            "content": lambda x: md.normalize_str(x),
-            "notes": lambda x: md.normalize_str(x),
+            "content": DataValidator.normalize_string,
+            "notes": DataValidator.normalize_string,
         }
 
-        for field, parser in field_updates.items():
+        for field, normalizer in field_updates.items():
             if field in metadata:
-                value = parser(metadata[field])
-                if value is not None or field in ["revision_date", "notes"]:
+                value = normalizer(metadata[field])
+                if value is not None or field == "notes":
                     if field == "content" and value is not None:
                         content_hash = md.get_text_hash(value)
-                        setattr(poem, "version_hash", content_hash)
-                    setattr(poem, field, value)
+                        setattr(poem_version, "version_hash", content_hash)
+                    setattr(poem_version, field, value)
 
         # --- Parents ---
         # -- Entry --
         entry: Optional[Entry] = None
-        if (m_entry := metadata.get("entry")) is not None:
-            entry = self._resolve_object(session, m_entry, Entry)
-            if poem.entry_id != entry.id:
-                poem.entry = entry
-                poem.revision_date = entry.date
+        if "entry" in metadata:
+            entry = self._resolve_object(session, metadata["entry"], Entry)
+            if poem_version.entry_id != entry.id:
+                poem_version.entry = entry
+                poem_version.revision_date = entry.date
         elif metadata.get("remove_entry"):
-            poem.entry = None
+            poem_version.entry = None
 
         # -- Poem --
         poem_parent: Optional[Poem] = None
-        if (m_poem := metadata.get("poem")) is not None:
-            poem_parent = self._resolve_object(session, m_poem, Poem)
-            if poem.poem_id != poem_parent.id:
-                poem.poem = poem_parent
+        if "poem" in metadata:
+            poem_parent = self._resolve_object(session, metadata["poem"], Poem)
+            if poem_version.poem_id != poem_parent.id:
+                poem_version.poem = poem_parent
 
-        return poem
+        return poem_version
 
-    # ---- Manuscript ----
+    # ---- Manuscript CRUD ----
     # --- Entry ---
+    @log_database_operation("create_or_update_manuscript_entry")
     def create_or_update_manuscript_entry(
         self, session: Session, entry: Entry, manuscript_data: Dict[str, Any]
     ) -> Optional[ManuscriptEntry]:
@@ -2284,32 +1941,18 @@ class PalimpsestDB:
                             f"Invalid status '{status_value}'. "
                             f"Valid values are: {valid_values}"
                         )
-            elif status_value is not None:
-                raise ValueError(
-                    "Status must be string or ManuscriptStatus enum, "
-                    f"got {type(status_value)}"
-                )
 
         # - edited -
         if "edited" in manuscript_data:
-            edited_value = manuscript_data["edited"]
-            if isinstance(edited_value, bool):
-                normalized_data["edited"] = edited_value
-            elif isinstance(edited_value, str):
-                # Handle string representations of boolean
-                if edited_value.lower() in ("true", "1", "yes", "on"):
-                    normalized_data["edited"] = True
-                elif edited_value.lower() in ("false", "0", "no", "off"):
-                    normalized_data["edited"] = False
-                else:
-                    raise ValueError(f"Cannot convert '{edited_value}' to boolean")
-            elif edited_value is not None:
-                # Try to convert other types to bool
-                normalized_data["edited"] = bool(edited_value)
+            normalized_data["edited"] = DataValidator.normalize_bool(
+                manuscript_data["edited"]
+            )
 
         # - notes -
         if "notes" in manuscript_data:
-            normalized_data["notes"] = md.normalize_str(manuscript_data["notes"])
+            normalized_data["notes"] = DataValidator.normalize_string(
+                manuscript_data["notes"]
+            )
 
         # -- Relationship --
         manuscript = RelationshipManager.update_one_to_one(
@@ -2321,7 +1964,7 @@ class PalimpsestDB:
             foreign_key_attr="entry_id",
         )
 
-        # -- Theemes --
+        # -- Themes --
         if manuscript and "themes" in manuscript_data:
             self._update_manuscript_themes(
                 session, manuscript, manuscript_data["themes"]
@@ -2339,7 +1982,7 @@ class PalimpsestDB:
         # Normalize theme names and create Theme objects as needed
         theme_objects = []
         for theme_name in themes_list:
-            theme_norm = md.normalize_str(theme_name)
+            theme_norm = DataValidator.normalize_string(theme_name)
             if theme_norm:
                 theme_obj = self._get_or_create_lookup_item(
                     session, Theme, {"theme": theme_norm}
@@ -2355,6 +1998,7 @@ class PalimpsestDB:
             incremental=False,  # Replace all themes
         )
 
+    @log_database_operation("create_or_update_manuscript_person")
     def create_or_update_manuscript_person(
         self, session: Session, person: Person, manuscript_data: Dict[str, Any]
     ) -> Optional[ManuscriptPerson]:
@@ -2371,11 +2015,11 @@ class PalimpsestDB:
         Returns:
             ManuscriptPerson: The created or updated ManuscriptPerson instance.
         """
-        # -- Character is required
+        # -- Character is required --
         if "character" not in manuscript_data or not manuscript_data["character"]:
             raise ValidationError("Required field 'character' missing or empty")
 
-        norm_character = md.normalize_str(manuscript_data["character"])
+        norm_character = DataValidator.normalize_string(manuscript_data["character"])
         if not norm_character:
             raise ValueError(
                 f"Invalid character format: {manuscript_data['character']}"
@@ -2392,6 +2036,7 @@ class PalimpsestDB:
             foreign_key_attr="person_id",
         )
 
+    @log_database_operation("create_or_update_manuscript_event")
     def create_or_update_manuscript_event(
         self, session: Session, event: Event, manuscript_data: Dict[str, Any]
     ) -> Optional[ManuscriptEvent]:
@@ -2412,7 +2057,9 @@ class PalimpsestDB:
         normalized_data = {}
 
         if "notes" in manuscript_data:
-            normalized_data["notes"] = md.normalize_str(manuscript_data["notes"])
+            normalized_data["notes"] = DataValidator.normalize_string(
+                manuscript_data["notes"]
+            )
 
         manuscript = RelationshipManager.update_one_to_one(
             session=session,
@@ -2425,7 +2072,7 @@ class PalimpsestDB:
 
         # Handle arc separately (many-to-one with Arc)
         if manuscript and "arc" in manuscript_data:
-            arc_name = md.normalize_str(manuscript_data["arc"])
+            arc_name = DataValidator.normalize_string(manuscript_data["arc"])
             if arc_name:
                 arc_obj = self._get_or_create_lookup_item(
                     session, Arc, {"arc": arc_name}
@@ -2435,39 +2082,75 @@ class PalimpsestDB:
 
         return manuscript
 
-    # ---- Cleanup ----
+    # ---- Query Methods ----
+    @handle_db_errors
+    def get_entries_by_date_range(
+        self, session: Session, start_date: Union[str, date], end_date: Union[str, date]
+    ) -> List[Entry]:
+        """Get entries within a date range."""
+        return self.query_analytics.get_entries_by_date_range(
+            session, start_date, end_date
+        )
+
+    @handle_db_errors
+    def search_entries(
+        self, session: Session, query: str, limit: Optional[int] = None
+    ) -> List[Entry]:
+        """Search entries by content in notes or epigraph."""
+        return self.query_analytics.search_entries(session, query, limit)
+
+    @handle_db_errors
+    def get_entries_by_person(self, session: Session, person_name: str) -> List[Entry]:
+        """Get all entries mentioning a specific person."""
+        return self.query_analytics.get_entries_by_person(session, person_name)
+
+    @handle_db_errors
+    def get_entries_by_location(
+        self, session: Session, location_name: str
+    ) -> List[Entry]:
+        """Get all entries at a specific location."""
+        return self.query_analytics.get_entries_by_location(session, location_name)
+
+    @handle_db_errors
+    def get_entries_by_tag(self, session: Session, tag_name: str) -> List[Entry]:
+        """Get all entries with a specific tag."""
+        return self.query_analytics.get_entries_by_tag(session, tag_name)
+
+    # ---- Statistics and Health ----
+    @handle_db_errors
+    def get_database_stats(self, session: Session) -> Dict[str, Any]:
+        """Get comprehensive database statistics."""
+        return self.query_analytics.get_database_stats(session)
+
+    @handle_db_errors
+    def health_check(self, session: Session) -> Dict[str, Any]:
+        """Comprehensive database health check."""
+        return self.health_monitor.health_check(session, self.db_path)
+
+    # ----- Export Functionality (Delegated) -----
+    @handle_db_errors
+    # @with_temporal_cleanup
+    def export_to_csv(
+        self, session: Session, export_dir: Union[str, Path]
+    ) -> Dict[str, Path]:
+        """Export all database tables to CSV files."""
+        return self.export_manager.export_to_csv(session, export_dir)
+
+    @handle_db_errors
+    # @with_temporal_cleanup
+    def export_to_json(self, session: Session, export_file: Union[str, Path]) -> Path:
+        """Export complete database to JSON."""
+        return self.export_manager.export_to_json(session, export_file)
+
+    # ----- Cleanup Operations -----
     @handle_db_errors
     def bulk_cleanup_unused(
         self, session: Session, cleanup_config: Dict[str, tuple]
     ) -> Dict[str, int]:
-        """
-        Perform bulk cleanup operations more efficiently.
+        """Perform bulk cleanup operations more efficiently."""
+        return self.health_monitor.bulk_cleanup_unused(session, cleanup_config)
 
-        Args:
-            cleanup_config: Dict mapping table names to (model_class, relationship_attr) tuples
-        """
-        results = {}
-
-        for table_name, (model_class, relationship_attr) in cleanup_config.items():
-            # Use bulk delete for better performance
-            subquery = (
-                session.query(model_class.id)
-                .filter(~getattr(model_class, relationship_attr).any())
-                .subquery()
-            )
-
-            deleted_count = (
-                session.query(model_class)
-                .filter(model_class.id.in_(subquery.select()))
-                .delete(synchronize_session=False)
-            )
-
-            results[table_name] = deleted_count
-            logger.info(f"Cleaned up {deleted_count} unused {table_name}")
-
-        session.flush()
-        return results
-
+    @log_database_operation("cleanup_all_metadata")
     def cleanup_all_metadata(self) -> Dict[str, int]:
         """Run safe cleanup operations with proper transaction handling."""
         cleanup_config = {
@@ -2483,235 +2166,66 @@ class PalimpsestDB:
             with self.session_scope() as session:
                 return self.bulk_cleanup_unused(session, cleanup_config)
         except Exception as e:
-            logger.error(f"Cleanup failed: {e}")
+            if self.logger:
+                self.logger.log_error(e, {"operation": "cleanup_all_metadata"})
             raise DatabaseError(f"Cleanup operation failed: {e}")
 
-    # ---- Migrations ----
-    @handle_db_errors
-    def create_migration(self, message: str) -> None:
-        """
-        Create a new Alembic migration file for the current database schema.
+    # ----- Backup Integration -----
+    def create_backup(
+        self, backup_type: str = "manual", suffix: Optional[str] = None
+    ) -> Optional[Path]:
+        """Create a database backup using the backup manager."""
+        if not self.backup_manager:
+            raise DatabaseError("Backup manager not configured")
 
-        Args:
-            message (str): Description of the migration.
-        Returns:
-            None
-        """
-        try:
-            command.revision(self.alembic_cfg, message=message, autogenerate=True)
-            logger.info(f"Created migration: {message}")
-        except Exception as e:
-            logger.error(f"Failed to create migration '{message}': {e}")
-            raise DatabaseError(f"Migration creation failed: {e}")
+        return self.backup_manager.create_backup(backup_type, suffix)
 
-    @handle_db_errors
-    def downgrade_database(self, revision: str) -> None:
-        """
-        Downgrade the database schema to a specified Alembic revision.
+    def list_backups(self) -> Dict[str, List[Dict[str, Any]]]:
+        """List all available backups."""
+        if not self.backup_manager:
+            raise DatabaseError("Backup manager not configured")
 
-        Args:
-            revision (str): The target revision to downgrade to.
+        return self.backup_manager.list_backups()
 
-        Returns:
-            None
-        """
-        try:
-            command.downgrade(self.alembic_cfg, revision)
-            logger.info(f"Database downgraded to {revision}")
-        except Exception as e:
-            logger.error(f"Database downgrade to {revision} failed: {e}")
-            raise DatabaseError(f"Could not downgrade database to {revision}: {e}")
+    def restore_backup(self, backup_path: Union[str, Path]) -> None:
+        """Restore database from backup."""
+        if not self.backup_manager:
+            raise DatabaseError("Backup manager not configured")
 
-    @handle_db_errors
-    def upgrade_database(self, revision: str = "head") -> None:
-        """
-        Upgrade the database schema to the specified Alembic revision.
+        self.backup_manager.restore_backup(Path(backup_path))
 
-        Args:
-            revision (str, optional):
-                The target revision to upgrade to.
-                Defaults to 'head' (latest revision).
-
-        Returns:
-            None
-        """
-        try:
-            command.upgrade(self.alembic_cfg, revision)
-            logger.info(f"Database upgraded to {revision}")
-        except Exception as e:
-            logger.error(f"Database upgrade failed: {e}")
-            raise DatabaseError(f"Could not upgrade database to {revision}: {e}")
-
-    def backup_database(self, backup_suffix: Optional[str] = None) -> str:
-        """
-        Create database backup.
-
-        Args:
-            backup_suffix (Optional[str]): Suffix to append to the backup file.
-
-        Returns:
-            str: Path to the backup database file.
-        """
-        try:
-            if backup_suffix is None:
-                backup_suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-            backup_path = f"{self.db_path}.backup_{backup_suffix}"
-            shutil.copy2(self.db_path, backup_path)
-            logger.info(f"Database backed up to: {backup_path}")
-            return backup_path
-
-        except Exception as e:
-            logger.error(f"Backup failed: {e}")
-            raise DatabaseError(f"Could not create backup: {e}")
-
-    def get_migration_history(self) -> Dict[str, Optional[str]]:
-        """
-        Get the current migration status of the database.
-
-        Returns:
-            Dictionary with keys:
-                - 'current_revision' (str | None):
-                  Current Alembic revision of the database.
-                - 'status' (str):
-                  Either 'up_to_date' or 'needs_migration'.
-                - 'error' (str, optional):
-                  Present if an exception occurred.
-        """
-        try:
-            with self.engine.connect() as conn:
-                context = MigrationContext.configure(conn)
-                current_rev = context.get_current_revision()
-
-            return {
-                "current_revision": current_rev,
-                "status": "up_to_date" if current_rev else "needs_migration",
-            }
-        except Exception as e:
-            logger.error(f"Failed to get migration history: {e}")
-            return {"error": str(e)}
-
-    # ---- Stats ----
-    def get_database_stats(self) -> Dict[str, Any]:
-        """Get database statistics"""
+    # ---- Convenience Methods ----
+    def get_stats(self) -> Dict[str, Any]:
+        """Get database statistics (convenience method)."""
         try:
             with self.session_scope() as session:
-                stats = {
-                    "entries": session.query(Entry).count(),
-                    "mentioned_dates": session.query(MentionedDate).count(),
-                    "locations": session.query(Location).count(),
-                    "people": session.query(Person).count(),
-                    "aliases": session.query(Alias).count(),
-                    "references": session.query(Reference).count(),
-                    "references_sources": session.query(ReferenceSource).count(),
-                    "events": session.query(Event).count(),
-                    "poems": session.query(Poem).count(),
-                    "poemVersion": session.query(PoemVersion).count(),
-                    "tags": session.query(Tag).count(),
-                    "manuscript_entries": session.query(ManuscriptEntry).count(),
-                    "manuscript_events": session.query(ManuscriptEvent).count(),
-                    "manuscript_people": session.query(ManuscriptPerson).count(),
-                    "arcs": session.query(Arc).count(),
-                    "themes": session.query(Theme).count(),
-                    "migration_status": self.get_migration_history(),
-                }
-
-                # -- Recent activity --
-                week_ago = datetime.now() - timedelta(days=7)
-                stats["entries_updated_last_7_days"] = (
-                    session.query(Entry).filter(Entry.updated_at >= week_ago).count()
-                )
-
-                return stats
+                return self.get_database_stats(session)
         except Exception as e:
-            logger.error(f"Failed to get database stats: {e}")
+            if self.logger:
+                self.logger.log_error(e, {"operation": "get_stats"})
             raise DatabaseError(f"Could not retrieve database statistics: {e}")
 
-    ## --- CRUD / Query ---
-    # def get_entry_metadata(self, file_path: str) -> Dict[str, Any]:
-    #     """Get metadata for a specific entry"""
-    #     with self.get_session() as session:
-    #         entry = session.query(Entry).filter_by(file_path=file_path).first()
-    #         if not entry:
-    #             return {}
-    #
-    #         return {
-    #             "date": entry.date,
-    #             "word_count": entry.word_count,
-    #             "reading_time": entry.reading_time,
-    #             "epigraph": entry.epigraph or "",
-    #             "notes": entry.notes or "",
-    #             "people": [person.display_name for person in entry.people],
-    #             "tags": [tag.tag for tag in entry.tags],
-    #             "location": [location.display_name for location in entry.locations],
-    #             "events": [event.display_name for event in entry.events],
-    #             "references": [ref.content_preview for ref in entry.references],
-    #         }
-    #
-    # def get_all_values(self, field: str) -> List[str]:
-    #     """Get all unique values for a field (for autocomplete)"""
-    #     model_map = {
-    #         "people": Person,
-    #         "tags": Tag,
-    #         "locations": Location,
-    #         "events": Event,
-    #         "reference": Reference,
-    #     }
-    #
-    #     if field in model_map:
-    #         with self.get_session() as session:
-    #             items = (
-    #                 session.query(model_map[field])
-    #                 .order_by(model_map[field].name)
-    #                 .all()
-    #             )
-    #             return [item.name for item in items]
-    #
-    #     return []
-    #
-    ## Usage example demonstrating both relationship types
-    # def example_usage(self):
-    #     """Example showing how to handle mixed relationship types."""
-    #
-    #     # Example metadata with both many-to-many and one-to-many relationships
-    #     entry_metadata = {
-    #         'date': '2024-01-15',
-    #         'file_path': '/path/to/entry.md',
-    #
-    #         # Many-to-many relationships (these objects can be shared across entries)
-    #         'people': [1, 2],  # Person IDs that can appear in multiple entries
-    #         'locations': ['New York', 'Paris'],  # Locations that can be referenced by multiple entries
-    #         'events': [{'name': 'Birthday Party', 'description': 'Annual celebration'}],
-    #         'tags': ['personal', 'reflection'],
-    #
-    #         # One-to-many relationships (these objects belong exclusively to this entry)
-    #         'references': [
-    #             {
-    #                 'name': 'The Great Gatsby',
-    #                 'author': 'F. Scott Fitzgerald',
-    #                 'reference_type': 'book'
-    #             }
-    #         ],
-    #         'poems': [
-    #             {
-    #                 'title': 'Morning Reflection',
-    #                 'text': 'The sun rises...',
-    #                 'revision_date': '2024-01-15'
-    #             }
-    #         ]
-    #     }
-    #
-    #     try:
-    #         with self.session_scope() as session:
-    #             # Create entry - this will handle all relationships appropriately
-    #             entry = self.create_entry(session, entry_metadata)
-    #
-    #             # The RelationshipManager automatically handles:
-    #             # - Many-to-many: Updates junction tables for people, locations, events, tags
-    #             # - One-to-many: Sets foreign keys on references and poems to point to this entry
-    #
-    #             logger.info(f"Created entry {entry.id} with mixed relationship types")
-    #
-    #     except (DatabaseError, ValidationError) as e:
-    #         logger.error(f"Failed to create entry: {e}")
-    #         raise
+    def check_health(self) -> Dict[str, Any]:
+        """Check database health (convenience method)."""
+        try:
+            with self.session_scope() as session:
+                return self.health_check(session)
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(e, {"operation": "check_health"})
+            raise DatabaseError(f"Health check failed: {e}")
+
+    # ----- Context Manager Support -----
+    def __enter__(self) -> "PalimpsestDB":
+        """Support for context manager usage."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Cleanup on context manager exit."""
+        del exc_type, exc_val, exc_tb
+        if self.backup_manager and hasattr(self, "_auto_backup_on_exit"):
+            try:
+                self.backup_manager.auto_backup()
+            except Exception as e:
+                if self.logger:
+                    self.logger.log_error(e, {"operation": "exit_auto_backup"})
