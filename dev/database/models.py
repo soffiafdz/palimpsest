@@ -1,38 +1,50 @@
 #!/usr/bin/env python3
 """
 models.py
--------------------
-Defines the SQLAlchemy ORM models for the Palimpsest metadata database.
+--------------------
+SQLAlchemy ORM models for the Palimpsest metadata database.
 
-Each class represents a table in the SQLite database.
-Relationships and many-to-many association tables are defined here.
+This module defines the core database schema for journal entry metadata,
+including relationships between entries, people, locations, events, and
+other metadata elements.
 
 Tables:
-    - SchemaInfo        schema version control
-    - Entry:            journal entry metadata (from Markdown frontmatter)
-    - MentionedDate:    set of dates referenced in an Entry
-    - Location:         geographic placement of the entries
-    - Person:           people mentioned in the entries
-    - Alias:            aliases for people
-    - Reference:        outside references in text
-    - ReferenceSource:  source of the references
-    - Event:            overarching thematic arcs/phases
-    - Poem:             poems written in the journal
-    - PoemVersion:      specific version related to entries
-    - Tag:              simple tags
+    - SchemaInfo: Schema version control for migrations
+    - Entry: Journal entry metadata from Markdown frontmatter
+    - MentionedDate: Dates referenced within entries
+    - Location: Geographic locations mentioned in entries
+    - Person: People mentioned in entries with soft delete support
+    - Alias: Alternative names for people
+    - Reference: External references cited in entries
+    - ReferenceSource: Sources of references (books, articles, etc.)
+    - Event: Thematic events spanning multiple entries
+    - Poem: Poetry written in the journal
+    - PoemVersion: Specific versions of poems linked to entries
+    - Tag: Simple keyword tags for entries
+
+Association Tables:
+    - entry_dates: Links entries to mentioned dates
+    - entry_locations: Links entries to locations
+    - entry_people: Links entries to people
+    - entry_events: Links entries to events
+    - event_people: Links events to people
+    - entry_related: Self-referential entry relationships
+    - entry_tags: Links entries to tags
 
 Notes
 ==============
-- Each class represents a table in the SQLite DB.
-- Relationships (many-to-many association tables) are defined here.
-- Updates (migrations) should be handled by Alembic.
+    - All datetime fields are timezone-aware (UTC)
+    - Soft delete functionality available via SoftDeleteMixin
+    - Extensive use of properties for computed fields
+    - Check constraints ensure data integrity
+    - Cascade deletes configured appropriately for each relationship
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
 from datetime import date, datetime, timezone
-from typing import List, Optional, Dict, TYPE_CHECKING
+from typing import Any, List, Optional, Dict, TYPE_CHECKING
 
 # --- Third party ---
 from sqlalchemy import (
@@ -56,7 +68,7 @@ from sqlalchemy.orm import (
 
 # --- Local ---
 if TYPE_CHECKING:
-    from dev.database.models_manuscript import (
+    from .models_manuscript import (
         ManuscriptEntry,
         ManuscriptPerson,
         ManuscriptEvent,
@@ -67,7 +79,9 @@ if TYPE_CHECKING:
 class Base(DeclarativeBase):
     """
     Base class for all ORM models.
-    Provides access to the metadata and acts as the declarative base.
+
+    Serves as the declarative base for SQLAlchemy models and provides
+    access to the metadata object for table creation and migrations.
     """
 
     pass
@@ -75,27 +89,50 @@ class Base(DeclarativeBase):
 
 # ----- Soft Delete -----
 class SoftDeleteMixin:
-    """Basic soft delete functionality - keep in models for ORM integration."""
+    """
+    Mixin providing soft delete functionality for models.
 
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    deleted_by: Mapped[Optional[str]] = mapped_column(String)
-    deletion_reason: Mapped[Optional[str]] = mapped_column(Text)
+    Soft delete allows records to be marked as deleted without actually
+    removing them from the database, preserving historical data and
+    enabling recovery if needed.
+
+    Attributes:
+        deleted_at: Timestamp when the record was soft deleted
+        deleted_by: Identifier of who deleted the record
+        deletion_reason: Optional explanation for the deletion
+    """
+
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, doc="Timestamp of soft deletion"
+    )
+    deleted_by: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="User or process that deleted the record"
+    )
+    deletion_reason: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, doc="Reason for deletion"
+    )
 
     @property
     def is_deleted(self) -> bool:
-        """Simple property check."""
+        """Check if the record is soft deleted."""
         return self.deleted_at is not None
 
     def soft_delete(
         self, deleted_by: Optional[str] = None, reason: Optional[str] = None
     ) -> None:
-        """Basic soft delete - no business logic here."""
+        """
+        Mark record as soft deleted.
+
+        Args:
+            deleted_by: Identifier of who is deleting the record
+            reason: Explanation for the deletion
+        """
         self.deleted_at = datetime.now(timezone.utc)
         self.deleted_by = deleted_by
         self.deletion_reason = reason
 
     def restore(self) -> None:
-        """Basic restore - no business logic here."""
+        """Restore a soft deleted record."""
         self.deleted_at = None
         self.deleted_by = None
         self.deletion_reason = None
@@ -164,8 +201,6 @@ event_people = Table(
         ForeignKey("events.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    # Note: SET NULL on person deletion
-    # keeps the occurrence but removes the link
     Column(
         "person_id",
         Integer,
@@ -209,43 +244,52 @@ entry_tags = Table(
 # ----- Schema Versioning -----
 class SchemaInfo(Base):
     """
-    Tracks schema versions for migration purposes.
+    Tracks schema versions for migration management.
+
+    Used by Alembic or manual migration scripts to track which schema
+    changes have been applied to the database.
 
     Attributes:
-        version (int): Schema version number.
-        applied_at (datetime): Timestamp when migration/version was applied.
-        description (str): Description of the schema changes.
+        version: Schema version number (primary key)
+        applied_at: When this version was applied
+        description: Human-readable description of changes
     """
 
     __tablename__ = "schema_info"
 
-    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version: Mapped[int] = mapped_column(
+        Integer, primary_key=True, doc="Schema version number"
+    )
     applied_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
+        doc="Timestamp when migration was applied",
     )
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, doc="Description of schema changes in this version"
+    )
 
 
 # ----- Models -----
 class Entry(Base):
     """
-    Journal entry metadata and relationships.
+    Central model representing a journal entry's metadata.
+
+    Each Entry corresponds to a single Markdown file in the journal,
+    with metadata extracted from the frontmatter and relationships
+    to various entities mentioned in the entry.
 
     Attributes:
-        id (int):           Primary key.
-        date (date):        Date of the journal entry.
-        file_path (str)     Path to the Markdown file.
-        file_hash (str):    Hash of the file content.
-        word_count (int)
-        reading_time (float)
-        epigraph (str):
-        notes (str)
-        created_at (datetime)
-        updated_at (datetime)
-
-    Relationships:
-        dates, locations, people, references, events, poems, themes, tags
+        id: Primary key
+        date: Date of the journal entry (unique)
+        file_path: Path to the Markdown file (unique)
+        file_hash: Hash of file content for change detection
+        word_count: Number of words in the entry
+        reading_time: Estimated reading time in minutes
+        epigraph: Opening quote or epigraph
+        notes: Additional notes or metadata
+        created_at: When this database record was created
+        updated_at: When this database record was last updated
     """
 
     __tablename__ = "entries"
@@ -255,6 +299,7 @@ class Entry(Base):
         CheckConstraint("reading_time >= 0.0", name="positive_entry_reading_time"),
     )
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     file_path: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -263,6 +308,8 @@ class Entry(Base):
     reading_time: Mapped[float] = mapped_column(Float, default=0.0)
     epigraph: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+
+    # ---- Timestamps ----
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -272,7 +319,7 @@ class Entry(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # Relationships many-to-many
+    # ---- Many-to-many Relationships ----
     dates: Mapped[List[MentionedDate]] = relationship(
         "MentionedDate", secondary=entry_dates, back_populates="entries"
     )
@@ -297,7 +344,7 @@ class Entry(Base):
         "Tag", secondary=entry_tags, back_populates="entries"
     )
 
-    # Relationships one-to-many
+    # ---- One-to-many Relationships ----
     references: Mapped[List[Reference]] = relationship(
         "Reference", back_populates="entry", cascade="all, delete-orphan"
     )
@@ -305,17 +352,12 @@ class Entry(Base):
         "PoemVersion", back_populates="entry", cascade="all, delete-orphan"
     )
 
-    # Manuscript
+    # ---- One-to-one Relationship ----
     manuscript: Mapped[Optional[ManuscriptEntry]] = relationship(
         "ManuscriptEntry", uselist=False, back_populates="entry"
     )
 
-    # Utilities
-    @property
-    def is_recent(self, days: int = 30) -> bool:
-        """Check if entry is from the last N days."""
-        return (date.today() - self.date).days <= days
-
+    # ---- Computed properties ----
     @property
     def age_in_days(self) -> int:
         """Get the age of the entry in days."""
@@ -325,35 +367,35 @@ class Entry(Base):
     def age_display(self) -> str:
         """Get human-readable entry age."""
         days = self.age_in_days
-        if days < 30:
-            return f"{days} days old"
+        if days == 0:
+            return "Today"
+        elif days == 1:
+            return "Yesterday"
+        elif days < 7:
+            return f"{days} days ago"
+        elif days < 30:
+            weeks = days // 7
+            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
         elif days < 365:
             months = days // 30
-            remaining_days = days % 30
-            if remaining_days == 0:
-                return f"{months} months old"
-            return f"{months} months, {remaining_days} days old"
+            return f"{months} month{'s' if months > 1 else ''} ago"
         else:
             years = days // 365
-            remaining_days = days % 365
-            if remaining_days == 0:
-                return f"{years} years old"
-            months = remaining_days // 30
-            remaining_days = remaining_days % 30
-            if remaining_days == 0:
-                return f"{years} years, {months} months old"
-            return f"{years} years, {months} months, {remaining_days} days old"
+            return f"{years} year{'s' if years > 1 else ''} ago"
 
     @property
     def date_formatted(self) -> str:
         """Get date in YYYY-MM-DD format"""
-        return self.date.strftime("%Y-%m-%d")
+        return self.date.isoformat()
 
     @property
-    def date_range(self) -> Optional[Dict[str, int | date]]:
+    def date_range(self) -> Optional[Dict[str, Any]]:
         """
-        Return a Tuple containing:
-            number of days, min_date, max_date, range in days.
+        Calculate statistics about mentioned dates in this entry.
+
+        Returns:
+            Dictionary with count, min_date, max_date, and duration,
+            or None if no dates are mentioned
         """
         if not self.dates:
             return None
@@ -372,92 +414,60 @@ class Entry(Base):
         }
 
     @property
-    def has_related_entries(self) -> bool:
-        """Check if entry has any related entries."""
-        return len(self.related_entries) > 0
-
-    @property
-    def related_entries_list(self) -> List[str]:
-        """Get list of related entry dates as ISO strings."""
-        return [entry.date.isoformat() for entry in self.related_entries]
-
-    @property
-    def reading_time_minutes(self) -> int:
-        """Get reading time rounded to nearest minute."""
-        return max(1, round(self.reading_time))
-
-    @property
     def reading_time_display(self) -> str:
         """Get human-readable reading time."""
-        minutes = self.reading_time_minutes
-        if minutes < 60:
+        minutes = max(1, round(self.reading_time))
+        if minutes == 1:
+            return "1 min read"
+        elif minutes < 60:
             return f"{minutes} min read"
         else:
             hours = minutes // 60
-            remaining_minutes = minutes % 60
-            if remaining_minutes == 0:
+            remaining = minutes % 60
+            if remaining == 0:
                 return f"{hours}h read"
-            return f"{hours}h {remaining_minutes}m read"
-
-    @property
-    def people_count(self) -> int:
-        """Number of people mentioned in this entry."""
-        return len(self.people)
-
-    @property
-    def people_names(self) -> List[str]:
-        """Get list of people mentioned."""
-        return [p.display_name for p in self.people]
+            return f"{hours}h {remaining}m read"
 
     def has_person(self, person_name: str) -> bool:
-        """Check if a specific person is mentioned."""
+        """
+        Check if a specific person is mentioned in this entry.
+
+        Args:
+            person_name: Name to search for (case-insensitive)
+
+        Returns:
+            True if the person is mentioned
+        """
+        search_name = person_name.lower()
         return any(
-            person_name.lower()
-            in (person.name.lower(), (person.full_name or "").lower())
+            search_name in person.name.lower()
+            or (person.full_name and search_name in person.full_name.lower())
             for person in self.people
         )
 
-    @property
-    def location_names(self) -> List[str]:
-        """Get list of location names mentioned."""
-        return [loc.display_name for loc in self.locations]
-
-    @property
-    def references_count(self) -> int:
-        """Number of references in this entry."""
-        return len(self.references)
-
-    @property
-    def has_references(self) -> bool:
-        """Check if entry has any references."""
-        return len(self.references) > 0
-
-    @property
-    def has_poems(self) -> bool:
-        """Check if entry contains any poems."""
-        return len(self.poems) > 0
-
-    @property
-    def tag_names(self) -> List[str]:
-        """Get list of tags."""
-        return [tag.tag for tag in self.tags]
-
     def has_tag(self, tag_name: str) -> bool:
-        """Check if entry has a specific tag."""
-        return any(tag.tag.lower() == tag_name.lower() for tag in self.tags)
+        """
+        Check if entry has a specific tag.
 
-    @property
-    def has_manuscript_version(self) -> bool:
-        """Check if this entry has been added to manuscript consideration."""
-        return self.manuscript is not None
+        Args:
+            tag_name: Tag to search for (case-insensitive)
 
-    @property
-    def manuscript_status(self) -> Optional[str]:
-        """Get manuscript status if it exists."""
-        return self.manuscript.status.value if self.manuscript else None
+        Returns:
+            True if the tag is present
+        """
+        search_tag = tag_name.lower()
+        return any(tag.tag.lower() == search_tag for tag in self.tags)
 
     def needs_update(self, current_hash: str) -> bool:
-        """Check if file has changed since last processing."""
+        """
+        Check if the file has changed since last processing.
+
+        Args:
+            current_hash: Hash of the current file content
+
+        Returns:
+            True if the file has changed
+        """
         return self.file_hash != current_hash
 
     def __repr__(self) -> str:
@@ -468,41 +478,51 @@ class Entry(Base):
 
 
 class MentionedDate(Base):
-    """Represents the set of dates referenced in entries."""
+    """
+    Represents dates referenced within journal entries.
+
+    Tracks specific dates mentioned in entries, allowing for temporal
+    analysis and cross-referencing of events.
+
+    Attributes:
+        id: Primary key
+        date: The mentioned date
+        context: Optional context about why this date was mentioned
+    """
 
     __tablename__ = "dates"
+
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     context: Mapped[Optional[str]] = mapped_column(String)
 
-    # Relationships
+    # ---- Relationship ----
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_dates, back_populates="dates"
     )
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def date_formatted(self) -> str:
         """Get date in YYYY-MM-DD format"""
-        return self.date.strftime("%Y-%m-%d")
+        return self.date.isoformat()
 
     @property
     def entry_count(self) -> int:
-        """Number of entries referencing this date."""
-        if not self.entries:
-            return 0
-        return len(self.entries)
+        """Count of entries referencing this date."""
+        return len(self.entries) if self.entries else 0
 
     @property
     def first_mention_date(self) -> Optional[date]:
-        """Get oldest reference."""
+        """Date when this was first menioned."""
         if not self.entries:
             return None
         return min(entry.date for entry in self.entries)
 
     @property
     def last_mention_date(self) -> Optional[date]:
-        """Get most recent reference."""
+        """Date when this was most recently mentioned."""
         if not self.entries:
             return None
         return max(entry.date for entry in self.entries)
@@ -511,34 +531,42 @@ class MentionedDate(Base):
         return f"<MentionedDate(id={self.id}, date={self.date})>"
 
     def __str__(self) -> str:
-        if self.entry_count == 0:
-            return f"MentionedDate {self.date_formatted}, (orphan)"
-
-        if self.entry_count == 1:
-            return (
-                f"MentionedDate {self.date_formatted} "
-                f"({self.entries[0].date_formatted} entry)"
-            )
-
-        return f"MentionedDate {self.date_formatted} ({self.entry_count} entries)"
+        count = self.entry_count
+        if count == 0:
+            return f"Date {self.date_formatted} (orphan)"
+        elif count == 1:
+            return f"Date {self.date_formatted} (1 mention)"
+        else:
+            return f"Date {self.date_formatted} ({count} mentions)"
 
 
 class Location(Base):
-    """Represents a location associated with entries."""
+    """
+    Represents geographic locations mentioned in entries.
+
+    Tracks places referenced in journal entries for geographic analysis
+    and location-based queries.
+
+    Attributes:
+        id: Primary key
+        name: Short name or abbreviation (unique)
+        full_name: Complete location name
+    """
 
     __tablename__ = "locations"
     __table_args__ = (CheckConstraint("name != ''", name="ck_location_non_empty_name"),)
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     full_name: Mapped[Optional[str]] = mapped_column(String, index=True)
 
-    # Relationships
+    # ---- Relationship ----
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_locations, back_populates="locations"
     )
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def display_name(self) -> str:
         """Get the best display name for this location."""
@@ -546,13 +574,18 @@ class Location(Base):
 
     @property
     def entry_count(self) -> int:
-        """Number of entries at this location."""
+        """Number of entries mentioning this location."""
         return len(self.entries)
 
     @property
     def visit_frequency(self) -> Dict[str, int]:
-        """Get visit frequency by year/month."""
-        frequency = {}
+        """
+        Calculate visit frequency by year-month.
+
+        Returns:
+            Dictionary mapping YYYY-MM strings to visit counts
+        """
+        frequency: Dict[str, int] = {}
         for entry in self.entries:
             year_month = entry.date.strftime("%Y-%m")
             frequency[year_month] = frequency.get(year_month, 0) + 1
@@ -560,42 +593,24 @@ class Location(Base):
 
     @property
     def visit_span_days(self) -> int:
-        """Number of days between first and last visit."""
+        """Days between first and last visit."""
         if not self.entries or len(self.entries) < 2:
             return 0
-        first = self.first_mention_date
-        last = self.last_mention_date
-        return (last - first).days if first and last else 0
-
-    @property
-    def first_mention_date(self) -> Optional[date]:
-        """Get oldest visit."""
-        if not self.entries:
-            return None
-        return min(entry.date for entry in self.entries)
-
-    @property
-    def last_mention_date(self) -> Optional[date]:
-        """Get most recent visit."""
-        if not self.entries:
-            return None
-        return max(entry.date for entry in self.entries)
+        dates = [entry.date for entry in self.entries]
+        return (max(dates) - min(dates)).days
 
     # Call
     def __repr__(self):
         return f"<Location(id={self.id}, name={self.name})>"
 
     def __str__(self) -> str:
-        if self.entry_count == 0:
-            return f"Location {self.display_name}, (orphan)"
-
-        if self.entry_count == 1:
-            return (
-                f"Location {self.display_name} "
-                f"({self.entries[0].date_formatted} entry)"
-            )
-
-        return f"Location {self.display_name} ({self.entry_count} entries)"
+        count = self.entry_count
+        if count == 0:
+            return f"Location {self.display_name} (orphan)"
+        elif count == 1:
+            return f"Location {self.display_name} (1 entry)"
+        else:
+            return f"Location {self.display_name} ({count} entries)"
 
 
 class Person(Base, SoftDeleteMixin):
@@ -604,12 +619,13 @@ class Person(Base, SoftDeleteMixin):
     __tablename__ = "people"
     __table_args__ = (CheckConstraint("name != ''", name="ck_person_non_empty_name"),)
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
     full_name: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
     relation_type: Mapped[Optional[str]] = mapped_column(String)
 
-    # Relationships
+    # ---- Relationships ----
     aliases: Mapped[List[Alias]] = relationship(
         "Alias", back_populates="person", cascade="all, delete-orphan"
     )
@@ -619,22 +635,15 @@ class Person(Base, SoftDeleteMixin):
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_people, back_populates="people"
     )
-
-    # Manuscript
     manuscript: Mapped[Optional[ManuscriptPerson]] = relationship(
         "ManuscriptPerson", uselist=False, back_populates="person"
     )
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def display_name(self) -> str:
         """Get the best display name for this person."""
         return self.full_name or self.name
-
-    @property
-    def has_aliases(self) -> bool:
-        """Check if person has any aliases."""
-        return len(self.aliases) > 0
 
     @property
     def all_names(self) -> List[str]:
@@ -646,60 +655,55 @@ class Person(Base, SoftDeleteMixin):
         return list(set(names))  # Remove duplicates
 
     @property
-    def relation_display(self) -> str:
-        """Get relation type or 'Unknown' if not set."""
-        return self.relation_type or "Unknown"
-
-    @property
     def entry_count(self) -> int:
-        """Number of entries this person appears in."""
+        """Number of entries mentioning this person."""
         return len(self.entries)
 
     @property
-    def mention_span_days(self) -> int:
-        """Number of days between first and last mention."""
-        if not self.entries or len(self.entries) < 2:
-            return 0
-        first = self.first_mention_date
-        last = self.last_mention_date
-        return (last - first).days if first and last else 0
-
-    @property
-    def first_mention_date(self) -> Optional[date]:
-        """Date of first mention in journal."""
+    def first_appearance(self) -> Optional[date]:
+        """Date of first appearance in the journal."""
         if not self.entries:
             return None
-        return min(entry.date for entry in self.entries)
+        dates = [entry.date for entry in self.entries if entry.date]
+        return min(dates) if dates else None
 
     @property
-    def last_mention_date(self) -> Optional[date]:
-        """Date of most recent mention."""
+    def last_appearance(self) -> Optional[date]:
+        """Date of last appearance in the journal."""
         if not self.entries:
             return None
-        return max(entry.date for entry in self.entries)
+        dates = [entry.date for entry in self.entries if entry.date]
+        return max(dates) if dates else None
 
     @property
     def mention_frequency(self) -> Dict[str, int]:
-        """Get mention frequency by year/month."""
-        frequency = {}
+        """
+        Calculate mention frequency by year-month.
+
+        Returns:
+            Dictionary mapping YYYY-MM strings to mention counts
+        """
+        frequency: Dict[str, int] = {}
         for entry in self.entries:
             year_month = entry.date.strftime("%Y-%m")
             frequency[year_month] = frequency.get(year_month, 0) + 1
         return frequency
 
-    def add_alias(self, alias_name: str) -> Alias:
-        """Add a new alias for this person."""
-        alias = Alias(alias=alias_name, person=self)
-        self.aliases.append(alias)
-        return alias
-
     def is_known_as(self, name: str) -> bool:
-        """Check if person is known by this name/alias."""
-        return name.lower() in [n.lower() for n in self.all_names]
+        """
+        Check if person is known by this name or alias.
 
-    # Call
+        Args:
+            name: Name to check (case-insensitive)
+
+        Returns:
+            True if this is a known name for the person
+        """
+        search_name = name.lower()
+        return search_name in [n.lower() for n in self.all_names]
+
     def __repr__(self):
-        return f"<Person(name='{self.name}')>"
+        return f"<Person(id={self.id}, name='{self.name}')>"
 
     def __str__(self) -> str:
         return f"Person {self.display_name} ({self.entry_count} entries)"
@@ -711,69 +715,93 @@ class Alias(Base):
     __tablename__ = "aliases"
     __table_args__ = (CheckConstraint("alias != ''", name="ck_non_empty_alias"),)
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     alias: Mapped[str] = mapped_column(String, nullable=False, index=True)
+
+    # ---- Foreign key ----
     person_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("people.id", ondelete="CASCADE")
     )
 
-    # Relationships
+    # ---- Relationship ----
     person: Mapped[Person] = relationship("Person", back_populates="aliases")
 
-    # Call
     def __repr__(self):
-        return f"<Alias(alias={self.alias})>"
+        return f"<Alias(id={self.id}, alias={self.alias})>"
 
     def __str__(self) -> str:
         return f"Alias {self.alias} (for {self.person.display_name})"
 
 
 class Reference(Base):
-    """Represents an (external) reference associated with entries."""
+    """
+    External references cited in entries.
+
+    Tracks quotes, citations, and references to external sources
+    mentioned in journal entries.
+
+    Attributes:
+        id: Primary key
+        content: The quoted or referenced content
+        speaker: Who said/wrote this (if applicable)
+        entry_id: Which entry contains this reference
+        source_id: Source of the reference (book, article, etc.)
+    """
 
     __tablename__ = "references"
     __table_args__ = (
         CheckConstraint("content != ''", name="check_reference_non_empty_content"),
     )
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     speaker: Mapped[Optional[str]] = mapped_column(String)
 
-    # Relationships
+    # ---- Foreign keys ----
     entry_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("entries.id"), nullable=False
     )
-    entry: Mapped[Entry] = relationship("Entry", back_populates="references")
     source_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("reference_sources.id")
     )
+
+    # ---- Relationships ----
+    entry: Mapped[Entry] = relationship("Entry", back_populates="references")
     source: Mapped[Optional[ReferenceSource]] = relationship(
         "ReferenceSource", back_populates="references"
     )
 
-    # Utilities
+    # ---- Computed property ----
     @property
     def content_preview(self) -> str:
-        """Get truncated content for display."""
-        return self.content[:100] + "..." if len(self.content) > 100 else self.content
+        """Get truncated content for display (max 100 chars)."""
+        if len(self.content) <= 100:
+            return self.content
+        return f"{self.content[:97]}..."
 
-    # Call
     def __repr__(self):
-        return f"<Reference(id={self.id}, content={self.content})>"
+        return f"<Reference(id={self.id}, entry_id={self.entry_id})>"
 
     def __str__(self) -> str:
-        if self.source:
-            return (
-                f"Reference '{self.content_preview}' "
-                f"({self.source.title}, {self.source.type}; "
-                f"{self.entry.date_formatted})"
-            )
-        return f"Reference '{self.content_preview}'"
+        source_info = f" from {self.source.title}" if self.source else ""
+        return f"Reference '{self.content_preview}'{source_info}"
 
 
 class ReferenceSource(Base):
-    """Defines the source of a reference (book, article, movie, etc.)."""
+    """
+    Sources of references (books, articles, movies, etc).
+
+    Centralizes information about sources that are referenced
+    multiple times across different entries.
+
+    Attributes:
+        id: Primary key
+        title: Title of the source (unique)
+        type: Type of source (book, article, movie, etc.)
+        author: Author or creator of the source
+    """
 
     __tablename__ = "reference_sources"
     __table_args__ = (
@@ -781,76 +809,66 @@ class ReferenceSource(Base):
         CheckConstraint("type != ''", name="ck_ref_source_non_empty_type"),
     )
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     type: Mapped[str] = mapped_column(String, nullable=False, index=True)
     author: Mapped[Optional[str]] = mapped_column(String, index=True)
 
-    # Relationships
+    # ---- Relationship ----
     references: Mapped[List[Reference]] = relationship(
         "Reference", back_populates="source", cascade="all, delete-orphan"
     )
 
-    # Utilities
+    # ---- Computed property ----
     @property
     def reference_count(self) -> int:
         """Number of references from this source."""
         return len(self.references)
 
-    @property
-    def author_display(self) -> str:
-        """Get author or 'Unknown' if not set."""
-        return self.author or "Unknown"
-
-    def add_reference_instance(
-        self,
-        entry: Entry,
-        content: str,
-        speaker: Optional[str] = None,
-    ) -> Reference:
-        """Add a new Reference instance for this source."""
-        ref = Reference(content=content, entry=entry, speaker=speaker)
-        self.references.append(ref)
-        return ref
-
-    # Call
     def __repr__(self):
-        return f"<ReferenceSource(id={self.id}, title={self.title}, type={self.type})>"
+        return f"<ReferenceSource(id={self.id}, title={self.title})>"
 
     def __str__(self) -> str:
-        return (
-            f"ReferenceSource {self.title} "
-            f"({self.type}, {len(self.references)} references)"
-        )
+        author_info = f" by {self.author}" if self.author else ""
+        return f"{self.type}: {self.title}{author_info} ({self.reference_count} refs)"
 
 
 class Event(Base, SoftDeleteMixin):
     """
-    Represents a main narrative event related to one or more entries.
+    Narrative events spanning multiple entries.
+
+    Represents significant events or periods that are referenced
+    across multiple journal entries.
+
+    Attributes:
+        id: Primary key
+        event: Short identifier for the event (unique)
+        title: Full title of the event
+        description: Detailed description
     """
 
     __tablename__ = "events"
     __table_args__ = (CheckConstraint("event != ''", name="ck_non_empty_event"),)
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     event: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     title: Mapped[Optional[str]] = mapped_column(String, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
 
-    # Relationships
+    # ---- Relationships ----
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_events, back_populates="events"
     )
     people: Mapped[List[Person]] = relationship(
         "Person", secondary=event_people, back_populates="events"
     )
-
-    # Manuscript
     manuscript: Mapped[Optional[ManuscriptEvent]] = relationship(
         "ManuscriptEvent", uselist=False, back_populates="event"
     )
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def display_name(self) -> str:
         """Get the best display name for this Event."""
@@ -861,59 +879,34 @@ class Event(Base, SoftDeleteMixin):
         """Calculate event duration based on entry dates."""
         if not self.entries:
             return None
-
         dates = [entry.date for entry in self.entries]
         return (max(dates) - min(dates)).days + 1
 
     @property
+    def chronological_entries(self) -> List[Entry]:
+        """Get entries for this event in chronological order."""
+        if not self.entries:
+            return []
+        return sorted(self.entries, key=lambda e: e.date)
+
+    @property
     def start_date(self) -> Optional[date]:
-        """First entry date for this event."""
+        """Start date of the event."""
         if not self.entries:
             return None
-        return min(entry.date for entry in self.entries)
+        dates = [entry.date for entry in self.entries if entry.date]
+        return min(dates) if dates else None
 
     @property
     def end_date(self) -> Optional[date]:
-        """Last entry date for this event."""
+        """End date of the event."""
         if not self.entries:
             return None
-        return max(entry.date for entry in self.entries)
+        dates = [entry.date for entry in self.entries if entry.date]
+        return max(dates) if dates else None
 
-    @property
-    def people_count(self) -> int:
-        """Number of people involved in this event."""
-        return len(self.people)
-
-    @property
-    def average_words_per_entry(self) -> float:
-        """Average word count per entry for this event."""
-        if not self.entries:
-            return 0.0
-        return self.total_word_count / len(self.entries)
-
-    @property
-    def total_word_count(self) -> int:
-        """Total words written about this event."""
-        return sum(entry.word_count for entry in self.entries)
-
-    @property
-    def involved_people_names(self) -> List[str]:
-        """Names of all people involved in this event."""
-        return [person.display_name for person in self.people]
-
-    @property
-    def has_manuscript_version(self) -> bool:
-        """Check if this event has been added to manuscript."""
-        return self.manuscript is not None
-
-    @property
-    def chronological_entries(self) -> List[Entry]:
-        """Get entries for this event in chronological order."""
-        return sorted(self.entries, key=lambda e: e.date)
-
-    # Call
     def __repr__(self):
-        return f"<Event(event={self.event})>"
+        return f"<Event(id={self.id}, event={self.event})>"
 
     def __str__(self) -> str:
         return f"Event {self.display_name} ({len(self.entries)} entries)"
@@ -923,74 +916,120 @@ class Poem(Base):
     __tablename__ = "poems"
     __table_args__ = (CheckConstraint("title != ''", name="ck_poem_non_empty_title"),)
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String, nullable=False, index=True)
 
-    # Relationships
+    # ---- Relationship ----
     versions: Mapped[List[PoemVersion]] = relationship(
         "PoemVersion", back_populates="poem", cascade="all, delete-orphan"
     )
 
-    # Call
+    # ---- Computed properties ----
+    @property
+    def version_count(self) -> int:
+        """Number of versions of this poem."""
+        return len(self.versions)
+
+    @property
+    def latest_version(self) -> Optional[PoemVersion]:
+        """Get the most recent version of this poem."""
+        if not self.versions:
+            return None
+        return max(self.versions, key=lambda v: v.revision_date)
+
     def __repr__(self):
-        return f"<Poem(title='{self.title}')>"
+        return f"<Poem(id={self.id}, title={self.title})>"
 
     def __str__(self) -> str:
-        return f"Poem {self.title} ({len(self.versions)} versions)"
+        return f"Poem {self.title} ({self.version_count} versions)"
 
 
 class PoemVersion(Base):
+    """
+    Specific versions of poems linked to entries.
+
+    Tracks different versions of poems as they evolve over time,
+    with each version potentially linked to a specific journal entry.
+
+    Attributes:
+        id: Primary key
+        poem_id: Foreign key to parent Poem
+        entry_id: Foreign key to Entry (optional)
+        content: The poem text for this version
+        revision_date: When this version was created
+        version_hash: Hash of content for deduplication
+        notes: Notes about this version
+    """
+
     __tablename__ = "poem_versions"
     __table_args__ = (
         CheckConstraint("content != ''", name="ck_poem_version_non_empty_content"),
     )
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    poem_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("poems.id"), nullable=False
-    )
-    entry_id: Mapped[int] = mapped_column(Integer, ForeignKey("entries.id"))
     content: Mapped[str] = mapped_column(Text, nullable=False)
     revision_date: Mapped[date] = mapped_column(Date, index=True)
     version_hash: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
-    # Relationships
+    # ---- Foreign keys ----
+    poem_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("poems.id"), nullable=False
+    )
+    entry_id: Mapped[int] = mapped_column(Integer, ForeignKey("entries.id"))
+
+    # ---- Relationships ----
     poem: Mapped[Poem] = relationship("Poem", back_populates="versions")
     entry: Mapped[Optional[Entry]] = relationship("Entry", back_populates="poems")
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def content_preview(self) -> str:
-        """Get truncated content for display."""
-        return self.content[:100] + "..." if len(self.content) > 100 else self.content
+        """Get truncated content for display (max 100 chars)."""
+        if len(self.content) <= 100:
+            return self.content
+        return f"{self.content[:97]}..."
 
-    # Call
+    @property
+    def line_count(self) -> int:
+        """Count the number of lines in the poem."""
+        return len(self.content.splitlines())
+
     def __repr__(self):
-        return f"<PoemVersion(content={self.content})>"
+        return f"<PoemVersion(id={self.id}, poem_id={self.poem_id})>"
 
     def __str__(self) -> str:
-        if self.entry:
-            return f"PoemVersion ({self.poem.title}, {self.entry.date_formatted})"
-        else:
-            return f"PoemVersion {self.content_preview} ({self.poem.title})"
+        date_str = self.revision_date.isoformat()
+        return f"Version of '{self.poem.title}' ({date_str})"
 
 
 class Tag(Base):
-    """Represents a keyword/tag associated with entries."""
+    """
+    Simple keyword tags for entries.
+
+    Provides a flexible tagging system for categorizing and
+    searching journal entries.
+
+    Attributes:
+        id: Primary key
+        tag: The tag text (unique)
+    """
 
     __tablename__ = "tags"
     __table_args__ = (CheckConstraint("tag != ''", name="ck_non_empty_tag"),)
 
+    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     tag: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
 
-    # Relationships
+    # ---- Relationship ----
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_tags, back_populates="tags"
     )
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def usage_count(self) -> int:
         """Number of entries using this tag."""
@@ -1001,9 +1040,8 @@ class Tag(Base):
         """Number of days between first and last use."""
         if not self.entries or len(self.entries) < 2:
             return 0
-        first = self.first_used
-        last = self.last_used
-        return (last - first).days if first and last else 0
+        dates = [entry.date for entry in self.entries]
+        return (max(dates) - min(dates)).days
 
     @property
     def first_used(self) -> Optional[date]:
@@ -1019,9 +1057,20 @@ class Tag(Base):
             return None
         return max(entry.date for entry in self.entries)
 
+    @property
+    def chronological_entries(self) -> List[Entry]:
+        """Get entries for this tag in chronological order."""
+        return sorted(self.entries, key=lambda e: e.date)
+
     # Call
     def __repr__(self):
-        return f"<Tag(name='{self.tag}')>"
+        return f"<Tag(id={self.id}, tag={self.tag})>"
 
     def __str__(self) -> str:
-        return f"Tag {self.tag} ({self.usage_count} entries)"
+        count = self.usage_count
+        if count == 0:
+            return f"Tag '{self.tag}' (orphan)"
+        elif count == 1:
+            return f"Tag '{self.tag}' (1 entry)"
+        else:
+            return f"Tag '{self.tag}' ({count} entries)"
