@@ -1,0 +1,772 @@
+#!/usr/bin/env python3
+"""
+md_entry.py
+-------------------
+Dataclass representing journal entries with YAML frontmatter.
+
+This module handles the intermediary data structure for Markdown-based
+journal entries with rich metadata. It serves as the bridge between:
+- Human-edited Markdown files with YAML frontmatter
+- Database ORM models (Entry, Person, Location, etc.)
+
+The MdEntry class provides:
+- YAML frontmatter parsing and generation
+- Bidirectional conversion (Markdown ↔ Database)
+- Validation of metadata structure
+- Intelligent parsing of complex fields (locations, references, poems)
+
+Key Design:
+- Progressive complexity: supports minimal to extreme metadata
+- Human-friendly: YAML remains hand-editable
+- Database-mappable: every field maps to ORM models
+- Lossless conversion: round-trip preserves all data
+"""
+from __future__ import annotations
+
+import logging
+import yaml
+from dataclasses import dataclass, field
+from datetime import date
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Union
+
+from dev.core.validators import DataValidator
+from dev.database.models import Entry
+from dev.utils import md, parsers
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MdEntry:
+    """
+    Represents a journal entry parsed from Markdown with YAML frontmatter.
+
+    This is the intermediary format between:
+    - .md files with YAML (human-edited)
+    - Database ORM models (structured storage)
+
+    Attributes:
+        date: Entry date (required)
+        body: Markdown content lines after frontmatter
+        metadata: Parsed YAML frontmatter as dictionary
+        file_path: Source file path if loaded from file
+        frontmatter_raw: Original YAML text for reference
+
+    Examples:
+        >>> # Load from file
+        >>> entry = MdEntry.from_file(Path("2024-01-15.md"))
+        >>>
+        >>> # Convert to database format
+        >>> db_metadata = entry.to_database_metadata()
+        >>>
+        >>> # Generate updated markdown
+        >>> markdown_text = entry.to_markdown()
+    """
+
+    date: date
+    body: List[str]
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    file_path: Optional[Path] = None
+    frontmatter_raw: str = ""
+
+    # ---- Construction Methods ----
+    @classmethod
+    def from_file(cls, file_path: Path, verbose: bool = False) -> MdEntry:
+        """
+        Parse a Markdown file with YAML frontmatter.
+
+        Args:
+            file_path: Path to .md file
+            verbose: Enable debug logging
+
+        Returns:
+            Parsed MdEntry instance
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If file format is invalid (no frontmatter, no date)
+            yaml.YAMLError: If YAML is malformed
+
+        Examples:
+            >>> entry = MdEntry.from_file(Path("journal/2024/2024-01-15.md"))
+            >>> print(entry.date)
+            2024-01-15
+        """
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        if verbose:
+            logger.debug(f"Reading file: {file_path}")
+
+        content: str = file_path.read_text(encoding="utf-8")
+        return cls.from_markdown_text(content, file_path, verbose)
+
+    @classmethod
+    def from_markdown_text(
+        cls, content: str, file_path: Optional[Path] = None, verbose: bool = False
+    ) -> MdEntry:
+        """
+        Parse Markdown text with YAML frontmatter.
+
+        Expected format:
+            ---
+            date: 2024-01-15
+            key: value
+            ---
+
+            # Body content here
+
+        Args:
+            content: Full markdown file content
+            file_path: Optional source file path
+            verbose: Enable debug logging
+
+        Returns:
+            Parsed MdEntry instance
+
+        Raises:
+            ValueError: If no frontmatter or missing date
+            yaml.YAMLError: If YAML is malformed
+        """
+        if verbose:
+            logger.debug("Parsing markdown content")
+
+        # Split frontmatter from body
+        frontmatter_text: str
+        body_lines: List[str]
+        frontmatter_text, body_lines = md.split_frontmatter(content)
+
+        if not frontmatter_text:
+            raise ValueError("No YAML frontmatter found (must start with ---)")
+
+        try:
+            metadata: Any = yaml.safe_load(frontmatter_text)
+        except yaml.YAMLError as e:
+            raise yaml.YAMLError(f"Invalid YAML frontmatter: {e}") from e
+
+        if not isinstance(metadata, dict):
+            raise ValueError("YAML frontmatter must be a dictionary")
+
+        # Extract required date field
+        if "date" not in metadata:
+            raise ValueError("Missing required 'date' field in frontmatter")
+
+        entry_date = DataValidator.normalize_date(metadata["date"])
+        if entry_date is None:
+            raise ValueError(f"Invalid date format: {metadata['date']}")
+
+        if verbose:
+            logger.debug(f"Parsed entry for {entry_date}")
+            logger.debug(
+                f"Metadata fields: {len(metadata)}, Body lines: {len(body_lines)}"
+            )
+
+        return cls(
+            date=entry_date,
+            body=body_lines,
+            metadata=metadata,
+            file_path=file_path,
+            frontmatter_raw=frontmatter_text,
+        )
+
+    @classmethod
+    def from_database(
+        cls,
+        entry: Entry,  # Entry ORM object
+        body_lines: List[str],
+        file_path: Optional[Path] = None,
+    ) -> MdEntry:
+        """
+        Create MdEntry from database Entry ORM object.
+
+        This is used by sql2yaml to export database → Markdown.
+
+        Args:
+            entry: SQLAlchemy Entry ORM instance
+            body_lines: Markdown body content
+            file_path: Target file path
+
+        Returns:
+            MdEntry with metadata populated from database
+
+        Examples:
+            >>> with db.session_scope() as session:
+            ...     entry_orm = db.get_entry(session, "2024-01-15")
+            ...     body = read_body_from_somewhere()
+            ...     md_entry = MdEntry.from_database(entry_orm, body)
+        """
+        metadata: Dict[str, Any] = {
+            "date": entry.date,
+            "word_count": entry.word_count,
+            "reading_time": entry.reading_time,
+        }
+
+        # Optional simple fields
+        if entry.epigraph:
+            metadata["epigraph"] = entry.epigraph
+        if entry.epigraph_attribution:
+            metadata["epigraph_attribution"] = entry.epigraph_attribution
+        if entry.notes:
+            metadata["notes"] = entry.notes
+
+        # City/Cities
+        if entry.cities:
+            if len(entry.cities) == 1:
+                city = entry.cities[0]
+                metadata["city"] = city.city
+            else:
+                metadata["city"] = [c.city for c in entry.cities]
+
+        # Locations
+        if entry.locations:
+            if len(entry.cities) == 1:
+                # Single city - flat list of locations
+                metadata["locations"] = [loc.name for loc in entry.locations]
+            else:
+                # Multiple cities - nested dict
+                locations_dict = {}
+                for loc in entry.locations:
+                    city_name = loc.city.city
+                    if city_name not in locations_dict:
+                        locations_dict[city_name] = []
+                    locations_dict[city_name].append(loc.name)
+                metadata["locations"] = locations_dict
+
+        # Relationships
+        if entry.people:
+            metadata["people"] = [
+                (
+                    {
+                        "name": p.name,
+                        "full_name": p.full_name,
+                    }
+                    if getattr(p, "name_fellow")
+                    else p.name
+                )
+                for p in entry.people
+            ]
+
+        if entry.events:
+            metadata["events"] = [evt.event for evt in entry.events]
+
+        if entry.tags:
+            metadata["tags"] = [tag.tag for tag in entry.tags]
+
+        # Mentioned dates with context
+        if entry.dates:
+            dates_list: List[Union[str, Dict[str, str]]] = []
+            for md in entry.dates:
+                if md.context:
+                    dates_list.append(
+                        {"date": md.date.isoformat(), "context": md.context}
+                    )
+                else:
+                    dates_list.append(md.date.isoformat())
+            metadata["dates"] = dates_list
+
+        # Related entries
+        if entry.related_entries:
+            metadata["related_entries"] = [
+                r_e.date.isoformat() for r_e in entry.related_entries
+            ]
+
+        # References
+        if entry.references:
+            refs_list: List[Dict[str, Any]] = []
+            for ref in entry.references:
+                ref_dict: Dict[str, Any] = {"content": ref.content}
+                if ref.speaker:
+                    ref_dict["speaker"] = ref.speaker
+                if ref.source:
+                    ref_dict["source"] = {
+                        "title": ref.source.title,
+                        "type": ref.source.type,
+                    }
+                    if ref.source.author:
+                        ref_dict["source"]["author"] = ref.source.author
+                refs_list.append(ref_dict)
+            metadata["references"] = refs_list
+
+        # Poems
+        if entry.poems:
+            poems_list: List[Dict[str, Any]] = []
+            for pv in entry.poems:
+                poem_dict: Dict[str, Any] = {
+                    "title": pv.poem.title if pv.poem else "Untitled",
+                    "content": pv.content,
+                }
+                if pv.notes:
+                    poem_dict["notes"] = pv.notes
+                poems_list.append(poem_dict)
+            metadata["poems"] = poems_list
+
+        # Manuscript metadata
+        if entry.manuscript:
+            ms = entry.manuscript
+            ms_dict: Dict[str, Any] = {
+                "status": ms.status.value,
+                "edited": ms.edited,
+            }
+            if ms.themes:
+                ms_dict["themes"] = [theme.theme for theme in ms.themes]
+            if ms.notes:
+                ms_dict["notes"] = ms.notes
+            metadata["manuscript"] = ms_dict
+
+        return cls(
+            date=entry.date,
+            body=body_lines,
+            metadata=metadata,
+            file_path=file_path,
+            frontmatter_raw="",
+        )
+
+    # ---- Conversion Methods ----
+    def to_database_metadata(self) -> Dict[str, Any]:
+        """
+        Convert MdEntry metadata to format expected by PalimpsestDB.
+
+        This transforms the human-friendly YAML format into the structure
+        needed for database.create_entry() and database.update_entry().
+
+        Returns:
+            Dictionary with normalized database-ready metadata
+
+        Examples:
+            >>> entry = MdEntry.from_file(Path("2024-01-15.md"))
+            >>> db_meta = entry.to_database_metadata()
+            >>> with db.session_scope() as session:
+            ...     db.create_entry(session, db_meta)
+        """
+        db_meta: Dict[str, Any] = {
+            "date": self.date,
+            "word_count": self.metadata.get("word_count", 0),
+            "reading_time": self.metadata.get("reading_time", 0.0),
+        }
+
+        # Optional simple fields
+        if "epigraph" in self.metadata:
+            db_meta["epigraph"] = self.metadata["epigraph"]
+
+        if "epigraph_attribution" in self.metadata:
+            db_meta["epigraph_attribution"] = self.metadata["epigraph_attribution"]
+
+        if "notes" in self.metadata:
+            db_meta["notes"] = self.metadata["notes"]
+
+        # Add file path if available
+        if self.file_path:
+            db_meta["file_path"] = str(self.file_path)
+
+        # Parse city/cities
+        if "city" in self.metadata and self.metadata["city"]:
+            db_meta["cities"] = self._parse_city_field(self.metadata["city"])
+
+        # Parse locations
+        if "locations" in self.metadata and self.metadata["locations"]:
+            db_meta["locations"] = self._parse_locations_field(
+                self.metadata["locations"], db_meta.get("cities", [])
+            )
+
+        # Parse people (handle hyphenated names)
+        if "people" in self.metadata and self.metadata["people"]:
+            db_meta["people"] = self._parse_people_field(self.metadata["people"])
+
+        # Simple lists
+        for db_field in ["events", "tags"]:
+            if db_field in self.metadata and self.metadata[db_field]:
+                db_meta[db_field] = self.metadata[db_field]
+
+        # Dates with optional context
+        if "dates" in self.metadata:
+            db_meta["dates"] = self._parse_dates_field(self.metadata["dates"])
+
+        # Related entries
+        if "related_entries" in self.metadata:
+            db_meta["related_entries"] = self.metadata["related_entries"]
+
+        # References
+        if "references" in self.metadata:
+            db_meta["references"] = self._normalize_references_field(
+                self.metadata["references"]
+            )
+
+        # Poems
+        if "poems" in self.metadata:
+            db_meta["poems"] = self._normalize_poems_field(self.metadata["poems"])
+
+        # Manuscript metadata
+        if "manuscript" in self.metadata:
+            db_meta["manuscript"] = self.metadata["manuscript"]
+
+        return db_meta
+
+    def to_markdown(self) -> str:
+        """
+        Generate complete Markdown content with YAML frontmatter.
+
+        Returns:
+            Full markdown file content as string
+
+        Examples:
+            >>> entry = MdEntry.from_database(entry_orm, body_lines)
+            >>> markdown_text = entry.to_markdown()
+            >>> Path("output.md").write_text(markdown_text)
+        """
+        yaml_content: str = self._generate_yaml_frontmatter()
+
+        lines: List[str] = ["---", yaml_content, "---", ""]
+        lines.extend(self.body)
+
+        return "\n".join(lines)
+
+    # ----- Parsing Helpers -----
+    def _parse_city_field(self, city_data: Union[str, List[str]]) -> List[str]:
+        """
+        Parse city field (single city or list of cities).
+
+        Returns:
+            List of city names
+        """
+        if isinstance(city_data, str):
+            return [city_data.strip()]
+        if isinstance(city_data, list):
+            return [str(c).strip() for c in city_data if str(c).strip()]
+
+    def _parse_locations_field(
+        self, locations_data: Union[List[str], Dict[str, List[str]]], cities: List[str]
+    ) -> Dict[str, List[str]]:
+        """
+        Parse locations field.
+
+        Args:
+            locations_data: Either flat list or nested dict
+            cities: List of cities from city field
+
+        Returns:
+            Dict mapping city names to lists of location names
+        """
+        result = {}
+
+        if isinstance(locations_data, list):
+            # Flat list - all locations belong to single city
+            if len(cities) != 1:
+                logger.warning("Flat location list but multiple cities specified")
+                return {}
+            result[cities[0]] = [str(loc).strip() for loc in locations_data]
+
+        elif isinstance(locations_data, dict):
+            # Nested dict - locations grouped by city
+            for city, locs in locations_data.items():
+                city_name = str(city).strip()
+                if isinstance(locs, list):
+                    result[city_name] = [str(loc).strip() for loc in locs]
+                elif isinstance(locs, str):
+                    result[city_name] = [locs.strip()]
+
+        return result
+
+    def _parse_people_field(self, people_list: List[str]) -> List[Dict[str, Any]]:
+        """
+        Parse people field with name/full_name/alias logic.
+
+        Rules:
+        - Single word (hyphenated): name only
+        - Multiple words: full_name only
+        - Parentheses: name (full_name)
+        - Starts with @: alias
+
+        Returns:
+            List of dicts with 'name', 'full_name', and/or 'alias' keys
+        """
+        alias: Optional[str] = None
+        name: Optional[str] = None
+        full_name: Optional[str] = None
+        normalized = []
+
+        for person_str in people_list:
+            person_str = DataValidator.normalize_string(person_str)
+            if not person_str:
+                continue
+
+            # Extract name and expansion
+            primary, expansion = parsers.extract_name_and_expansion(person_str)
+
+            # Check if alias
+            if primary.startswith("@"):
+                alias = parsers.split_hyphenated_to_spaces(primary[1:])
+                if expansion:
+                    if " " in expansion:
+                        full_name = expansion
+                    else:
+                        name = parsers.split_hyphenated_to_spaces(expansion)
+            elif " " in primary:
+                full_name = primary
+            else:
+                name = parsers.split_hyphenated_to_spaces(primary)
+                full_name = expansion
+
+            normalized.append(
+                {
+                    "alias": alias,
+                    "name": name,
+                    "full_name": full_name,
+                }
+            )
+
+        return normalized
+
+    def _parse_dates_field(
+        self, dates_data: Union[List[str], List[Dict[str, str]]]
+    ) -> List[Dict[str, str]]:
+        """
+        Parse dates field with inline or nested format.
+
+        Supports:
+        - Inline: "2025-06-01 (thesis exam)"
+        - Nested: {date: "2025-06-01", context: "thesis exam"}
+
+        Returns:
+            List of dicts with 'date' and optional 'context'
+        """
+        normalized = []
+
+        for item in dates_data:
+            if isinstance(item, str):
+                # Check for inline context
+                date_obj, context = parsers.parse_date_context(item)
+
+                if DataValidator.normalize_date(date_obj):
+                    date_dict = {"date": date_obj}
+                    if context:
+                        date_dict["context"] = context
+                    normalized.append(date_dict)
+                else:
+                    logger.warning(f"Invalid date format, skipping: {date_obj}")
+
+            elif isinstance(item, dict) and "date" in item:
+                if DataValidator.validate_date_string(item["date"]):
+                    normalized.append(item)
+                else:
+                    logger.warning(f"Invalid date format, skipping: {item}")
+
+        return normalized
+
+    def _normalize_references_field(
+        self, refs_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Normalize references to database format.
+
+        Validates each reference has required 'content' field.
+        """
+        return [
+            ref
+            for ref in refs_data
+            if isinstance(ref, dict) and "content" in ref and ref["content"]
+        ]
+
+    def _normalize_poems_field(
+        self, poems_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Normalize poems to database format.
+
+        Validates each poem has required 'title' and 'content' fields.
+        """
+        return [
+            poem
+            for poem in poems_data
+            if isinstance(poem, dict)
+            and "title" in poem
+            and "content" in poem
+            and poem["content"]
+        ]
+
+    # ----- YAML Generation -----
+    def _generate_yaml_frontmatter(self) -> str:
+        """
+        Generate YAML frontmatter from metadata.
+
+        Creates human-readable, properly formatted YAML that preserves
+        the progressive complexity design (minimal → comprehensive).
+        """
+        parts: List[str] = []
+
+        # Required fields
+        parts.append(f"date: {self.date.isoformat()}")
+        parts.append(f"word_count: {self.metadata.get('word_count', 0)}")
+        parts.append(f"reading_time: {self.metadata.get('reading_time', 0.0):.1f}")
+
+        # Optional core metadata
+        if self.metadata.get("epigraph"):
+            parts.append(f'\nepigraph: "{md.yaml_escape(self.metadata["epigraph"])}"')
+
+        if self.metadata.get("epigraph_attribution"):
+            parts.append(
+                f'epigraph_attribution: "{md.yaml_escape(self.metadata["epigraph_attribution"])}"'
+            )
+
+        # City
+        if self.metadata.get("city"):
+            city_data = self.metadata["city"]
+            if isinstance(city_data, list):
+                parts.append(f"\ncity: {md.yaml_list(city_data)}")
+            else:
+                parts.append(f"\ncity: {city_data}")
+
+        # Locations
+        if self.metadata.get("locations"):
+            locs = self.metadata["locations"]
+            if isinstance(locs, list):
+                parts.append(f"\nlocations: {md.yaml_list(locs)}")
+            elif isinstance(locs, dict):
+                parts.append("\nlocations:")
+                for city, venues in locs.items():
+                    if isinstance(venues, list):
+                        parts.append(f"  {city}: {md.yaml_list(venues)}")
+                    else:
+                        parts.append(f"  {city}: {venues}")
+
+        # People
+        if self.metadata.get("people"):
+            people = self.metadata["people"]
+            if any(isinstance(p, dict) for p in people) or len(people) >= 5:
+                parts.append("\npeople:")
+                [
+                    (
+                        parts.append(
+                            f'  - "{parsers.spaces_to_hyphenated(p["name"])}'
+                            f' ({p["full_name"]})"'
+                        )
+                        if isinstance(p, dict)
+                        else parts.append(f"  - {parsers.spaces_to_hyphenated(p)}")
+                    )
+                    for p in people
+                ]
+            else:
+                parts.append(f"\npeople: {md.yaml_list(people, hyphenated=True)}")
+
+        # Simple list fields
+        for db_field in ["events", "tags"]:
+            if db_field in self.metadata and self.metadata[db_field]:
+                parts.append(f"\n{db_field}: {md.yaml_list(self.metadata[db_field])}")
+
+        # Dates (with optional context)
+        if self.metadata.get("dates"):
+            parts.append("\ndates:")
+            for date_item in self.metadata["dates"]:
+                if isinstance(date_item, dict):
+                    parts.append(f'  - date: "{date_item["date"]}"')
+                    if "context" in date_item:
+                        parts.append(f'    context: "{date_item["context"]}"')
+                else:
+                    parts.append(f'  - "{date_item}"')
+
+        # Related entries
+        if self.metadata.get("related_entries"):
+            parts.append(
+                f"\nrelated_entries: {md.yaml_list(self.metadata['related_entries'])}"
+            )
+
+        # References
+        if self.metadata.get("references"):
+            parts.append("\nreferences:")
+            for ref in self.metadata["references"]:
+                parts.append(f'  - content: "{md.yaml_escape(ref["content"])}"')
+                if "speaker" in ref:
+                    parts.append(f'    speaker: "{md.yaml_escape(ref["speaker"])}"')
+                if "source" in ref:
+                    src = ref["source"]
+                    if isinstance(src, dict):
+                        parts.append("    source:")
+                        parts.append(f'      title: "{md.yaml_escape(src["title"])}"')
+                        parts.append(f'      type: {src.get("type", "unknown")}')
+                        if "author" in src:
+                            parts.append(
+                                f'      author: "{md.yaml_escape(src["author"])}"'
+                            )
+
+        # Poems
+        if self.metadata.get("poems"):
+            parts.append("\npoems:")
+            for poem in self.metadata["poems"]:
+                parts.append(f'  - title: "{md.yaml_escape(poem["title"])}"')
+                parts.append("    content: |")
+                for line in poem["content"].splitlines():
+                    parts.append(f"      {line}")
+                if "notes" in poem:
+                    parts.append(f'    notes: "{md.yaml_escape(poem["notes"])}"')
+
+        # Manuscript
+        if self.metadata.get("manuscript"):
+            ms = self.metadata["manuscript"]
+            parts.append("\nmanuscript:")
+            parts.append(f"  status: {ms.get('status', 'draft')}")
+            parts.append(f"  edited: {str(ms.get('edited', False)).lower()}")
+            if "themes" in ms and ms["themes"]:
+                parts.append(f"  themes: {md.yaml_list(ms['themes'])}")
+            if "notes" in ms:
+                parts.append(f'  notes: {md.yaml_multiline(ms["notes"])}')
+
+        # Notes (at end)
+        if self.metadata.get("notes"):
+            parts.append(f"\nnotes: {md.yaml_multiline(self.metadata['notes'])}")
+
+        return "\n".join(parts)
+
+    # ----- Validation -----
+    def validate(self) -> List[str]:
+        """
+        Validate entry data and return list of issues.
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        issues: List[str] = []
+
+        # Required fields
+        if not self.date:
+            issues.append("Missing date")
+
+        if not self.body:
+            issues.append("Empty body content")
+
+        # Validate word_count
+        if "word_count" in self.metadata:
+            wc = DataValidator.normalize_int(self.metadata["word_count"])
+            if wc is not None and wc < 0:
+                issues.append("Word count cannot be negative")
+            elif wc is None:
+                issues.append("Word count must be a number")
+
+        # Validate dates
+        if "dates" in self.metadata:
+            for date_item in self.metadata["dates"]:
+                if isinstance(date_item, dict):
+                    if "date" not in date_item:
+                        issues.append("Date item missing 'date' field")
+                    else:
+                        if not DataValidator.validate_date_string(
+                            str(date_item["date"])
+                        ):
+                            issues.append(f"Invalid date format: {date_item['date']}")
+                elif isinstance(date_item, str):
+                    if not DataValidator.validate_date_string(date_item):
+                        issues.append(f"Invalid date format: {date_item}")
+
+        return issues
+
+    @property
+    def is_valid(self) -> bool:
+        """Check if entry has valid structure."""
+        return len(self.validate()) == 0
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"<MdEntry(date={self.date}, file={self.file_path})>"
+
+    def __str__(self) -> str:
+        """Human-readable string."""
+        return f"MdEntry {self.date.isoformat()} ({len(self.body)} lines)"
