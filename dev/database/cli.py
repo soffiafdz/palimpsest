@@ -57,13 +57,14 @@ import json
 
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 
-from . import (
-    PalimpsestDB,
+from dev.core.exceptions import (
     DatabaseError,
     BackupError,
     ExportError,
     HealthCheckError,
 )
+
+from . import PalimpsestDB
 
 
 @click.group()
@@ -317,6 +318,7 @@ def stats(ctx, verbose):
         click.echo("\nCore Tables:")
         click.echo(f"  Entries: {stats_data.get('entries', 0)}")
         click.echo(f"  People: {stats_data.get('people', 0)}")
+        click.echo(f"  Cities: {stats_data.get('cities', 0)}")
         click.echo(f"  Locations: {stats_data.get('locations', 0)}")
         click.echo(f"  Events: {stats_data.get('events', 0)}")
         click.echo(f"  Tags: {stats_data.get('tags', 0)}")

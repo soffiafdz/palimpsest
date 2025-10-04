@@ -52,8 +52,8 @@ from dev.utils import md, fs
 from .models import (
     Base,
     Entry,
-    # entry_related,
     MentionedDate,
+    City,
     Location,
     Person,
     Alias,
@@ -77,7 +77,6 @@ from .decorators import (
     handle_db_errors,
     log_database_operation,
     validate_metadata,
-    # with_temporal_cleanup,
 )
 from .backup_manager import BackupManager
 from .health_monitor import HealthMonitor
@@ -589,6 +588,7 @@ class PalimpsestDB:
                     - notes (str)
                 Relationship keys (optional):
                     - dates (List[MentionedDate|int])
+                    - cities (List[City|int])
                     - locations (List[Location|int])
                     - people (List[Person|int])
                     - references (List[Reference|int])
@@ -663,6 +663,7 @@ class PalimpsestDB:
             metadata (Dict[str, Any]): Normalized metadata containing:
                 Expected keys (optional):
                     - dates (List[MentionedDate or id])
+                    - cities (List[City or id])
                     - locations (List[Location or id])
                     - people (List[Person or id])
                     - references (List[Reference or id])
@@ -670,6 +671,7 @@ class PalimpsestDB:
                     - poems (List[Poem or id])
                 Removal keys (optional):
                     - remove_dates (List[MentionedDate or id])
+                    - remove_cities (List[City or id])
                     - remove_locations (List[Location or id])
                     - remove_people (List[Person or id])
                     - remove_references (List[Reference or id])
@@ -691,6 +693,7 @@ class PalimpsestDB:
 
         # --- Many to many ---
         many_to_many_configs = [
+            ("cities", "cities", City),
             ("locations", "locations", Location),
             ("people", "people", Person),
             ("events", "events", Event),
@@ -854,7 +857,7 @@ class PalimpsestDB:
                       date, file_path,
                       word_count, reading_time, epigraph, notes
                     - Relationship keys:
-                      dates, locations, people, references, events, poems, tags
+                      dates, cities, locations, people, references, events, poems, tags
 
         Returns:
             Entry: The updated Entry ORM object (still attached to session).
@@ -882,13 +885,15 @@ class PalimpsestDB:
             }
 
             for field, normalizer in field_updates.items():
-                if field in metadata:
-                    value = normalizer(metadata[field])
-                    if value is not None or field in ["epigraph", "notes"]:
-                        if field == "file_path" and value is not None:
-                            file_hash = fs.get_file_hash(value)
-                            setattr(entry, "file_hash", file_hash)
-                        setattr(entry, field, value)
+                if field not in metadata:
+                    continue
+
+                value = normalizer(metadata[field])
+                if value is not None or field in ["epigraph", "notes"]:
+                    if field == "file_path" and value is not None:
+                        file_hash = fs.get_file_hash(value)
+                        setattr(entry, "file_hash", file_hash)
+                    setattr(entry, field, value)
 
             session.flush()
             return entry
@@ -997,6 +1002,193 @@ class PalimpsestDB:
 
         return created_ids
 
+    # ---- City CRUD ----
+    @handle_db_errors
+    @log_database_operation("create_city")
+    @validate_metadata(["city"])
+    def create_city(self, session: Session, metadata: Dict[str, Any]) -> City:
+        """
+        Create a new City in the database with its associated relationships.
+
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - city (str)
+                Optional keys:
+                    - state_province (str)
+                    - country (str)
+                Relationship keys (optional):
+                    - locations (List[Location|int])
+                    - entries (List[Entry|int])
+
+        Returns:
+            City: The newly created City ORM object.
+        """
+        # --- Required fields ---
+        city_name = DataValidator.normalize_string(metadata.get("city"))
+        if not city_name:
+            raise ValueError(f"Invalid name: {metadata['name']}")
+
+        # --- Uniqueness check ---
+        existing = session.query(City).filter_by(city=city_name).first()
+        if existing:
+            raise ValidationError(f"City already exists for: {city_name}")
+
+        state = DataValidator.normalize_string(metadata.get("state_province"))
+        country = DataValidator.normalize_string(metadata.get("country"))
+
+        # --- Create Location ---
+        city = City(
+            city=city_name,
+            state_province=state,
+            country=country,
+        )
+        session.add(city)
+        session.flush()
+
+        # --- Relationships ---
+        self._update_city_relationships(session, city, metadata)
+        return city
+
+    def _update_city_relationships(
+        self,
+        session: Session,
+        city: City,
+        metadata: Dict[str, Any],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update relationships for a City object in the database.
+
+        Supports both incremental updates (defualt) and full overwrite.
+        This function handles relationships only. No I/O or Markdown parsing.
+        Prevents duplicates and ensures lookup tables are updated.
+
+        Args:
+            session (Session): Active SQLAlchemy session.
+            person (Person): Entry ORM object to update relationships for.
+            metadata (Dict[str, Any]): Normalized metadata containing:
+                Expected keys (optional):
+                    - locations (List[str]
+                    - entries (List[Entry or id])
+                Removal keys (optional):
+                    - remove_locations (List[str])
+                    - remove_entries (List[Entry or id])
+
+        Behavior:
+            - Incremental mode:
+                adds new relationships and/or removes explicitly listed items.
+            - Overwrite mode:
+                clears all existing relationships before adding new ones.
+            - Calls session.flush() only if any changes were made
+
+        Returns:
+            None
+        """
+
+        # --- Entries to many ---
+        if "entries" in metadata or "remove_entries" in metadata:
+            RelationshipManager.update_many_to_many(
+                session=session,
+                parent_obj=city,
+                relationship_name="entries",
+                items=metadata["entries"],
+                model_class=Entry,
+                incremental=incremental,
+                remove_items=metadata.get("remove_entries", []),
+            )
+
+        # --- Aliases ---
+        if "locations" in metadata or "remove_locations" in metadata:
+            RelationshipManager.update_one_to_many(
+                session=session,
+                parent_obj=city,
+                items=metadata["locations"],
+                model_class=Location,
+                foreign_key_attr="city_id",
+                remove_items=metadata.get("remove_locations", []),
+            )
+
+    @handle_db_errors
+    @log_database_operation("update_city")
+    def update_city(
+        self, session: Session, city: City, metadata: Dict[str, Any]
+    ) -> City:
+        """
+        Update an existing City in the database and refresh its relationships.
+
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
+
+        Args:
+            session (Session): Active SQLAlchemy session
+            city (City): Existing Location ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      city, state_province, country
+                Relationship keys (optional):
+                    - entries (List[Entry|int])
+                    - locations (List[Location|int])
+
+        Returns:
+            City: The updated City ORM object (still attached to session).
+        """
+        # --- Ensure existance ---
+        db_city = session.get(City, city.id)
+        if db_city is None:
+            raise ValueError(f"Location with id={city.id} does not exist")
+
+        # --- Attach to session ---
+        location = session.merge(db_city)
+
+        # --- Update scalar fields ---
+        field_updates = {
+            "city": DataValidator.normalize_string,
+            "state_province": DataValidator.normalize_string,
+            "country": DataValidator.normalize_string,
+        }
+
+        for field, normalizer in field_updates.items():
+            if field not in metadata:
+                continue
+
+            value = normalizer(metadata[field])
+            if value is not None or field != "city":
+                setattr(location, field, value)
+
+        # --- Relationships ---
+        self._update_city_relationships(session, city, metadata)
+        return city
+
+    @handle_db_errors
+    @log_database_operation("get_city")
+    def get_city(
+        self,
+        session: Session,
+        city_name: str,
+    ) -> Optional[City]:
+        """Get a city by name."""
+        norm_name = DataValidator.normalize_string(city_name)
+        if not norm_name:
+            raise ValueError("Name must be given.")
+        return session.query(City).filter_by(city=norm_name).first()
+
+    @handle_db_errors
+    @log_database_operation("delete_location")
+    def delete_city(self, session: Session, city: City) -> None:
+        """Delete a City and its associated data."""
+        try:
+            session.delete(city)
+            session.flush()
+        except Exception as e:
+            raise DatabaseError(f"Failed to delete location: {e}")
+
     # ---- Location CRUD ----
     # TODO: Add _do_{task}() and _execute_with_retry() logic
     # for tasks: create_, update_, delete_
@@ -1004,7 +1196,7 @@ class PalimpsestDB:
 
     @handle_db_errors
     @log_database_operation("create_location")
-    @validate_metadata(["name"])
+    @validate_metadata(["name", "city"])
     def create_location(self, session: Session, metadata: Dict[str, Any]) -> Location:
         """
         Create a new Location in the database with its associated relationships.
@@ -1018,8 +1210,7 @@ class PalimpsestDB:
             metadata (Dict[str, Any]): Normalized metadata for the entry.
                 Required keys:
                     - name (str)
-                Optional keys:
-                    - full_name (str)
+                    - city (str)
 
         Returns:
             Location: The newly created Location ORM object.
@@ -1029,11 +1220,11 @@ class PalimpsestDB:
         if not loc_name:
             raise ValueError(f"Invalid name: {metadata['name']}")
 
+        city_name = DataValidator.normalize_string((metadata.get("city")))
+        city: City = self._get_or_create_lookup_item(session, City, {"city": city_name})
+
         # --- Create Location ---
-        location = Location(
-            name=loc_name,
-            full_name=DataValidator.normalize_string(metadata.get("full_name")),
-        )
+        location = Location(name=loc_name, city=city)
         session.add(location)
         session.flush()
         return location
@@ -1055,7 +1246,9 @@ class PalimpsestDB:
             metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
                 Keys may include:
                     - Core fields:
-                      name, full_name
+                      name
+                    - Relationship field
+                      city
 
         Returns:
             Location: The updated Location ORM object (still attached to session).
@@ -1069,16 +1262,15 @@ class PalimpsestDB:
         location = session.merge(db_loc)
 
         # --- Update scalar fields ---
-        field_updates = {
-            "name": DataValidator.normalize_string,
-            "full_name": DataValidator.normalize_string,
-        }
-
-        for field, normalizer in field_updates.items():
-            if field in metadata:
-                value = normalizer(metadata[field])
-                if value is not None or field == "full_name":
-                    setattr(location, field, value)
+        name = DataValidator.normalize_string(metadata.get("name"))
+        if name:
+            location.name = name
+        #
+        # --- Parents ---
+        if "city" in metadata:
+            city = self._resolve_object(session, metadata["city"], City)
+            if location.city_id != city.id:
+                location.city = city
 
         return location
 
@@ -1088,24 +1280,11 @@ class PalimpsestDB:
         self,
         session: Session,
         location_name: Optional[str] = None,
-        location_full_name: Optional[str] = None,
     ) -> Optional[Location]:
-        """Get a location by name/full_name."""
-        if not location_name and not location_full_name:
-            raise ValueError("Either name or full_name must be given.")
-
-        if location_full_name:
-            l_fname = DataValidator.normalize_string(location_full_name)
-            return session.query(Location).filter_by(full_name=l_fname).first()
-
-        l_name = DataValidator.normalize_string(location_name)
-        l_n = session.query(Location).filter_by(name=l_name).count()
-        if l_n < 2:
-            return session.query(Location).filter_by(name=l_name).first()
-        else:
-            raise ValidationError(
-                f"+1 locations exist with name {l_name}. Use full_name."
-            )
+        """Get a location by name."""
+        if not location_name:
+            raise ValueError("Name must be given.")
+        return session.query(Location).filter_by(name=location_name).first()
 
     @handle_db_errors
     @log_database_operation("delete_location")
@@ -1136,7 +1315,7 @@ class PalimpsestDB:
                     - name (str)
                 Optional keys:
                     - full_name (str)
-                    - relation_type (str)
+                    - relation_type (Enum)
                 Relationship keys (optional):
                     - aliases (List[str])
                     - events (List[Event|int])
@@ -1152,25 +1331,40 @@ class PalimpsestDB:
 
         # --- Uniqueness check ---
         p_fname = DataValidator.normalize_string(metadata.get("full_name"))
-        existing = session.query(Person).filter_by(name=p_name).first()
-        if existing:
+        name_fellows = session.query(Person).filter_by(name=p_name).all()
+        if name_fellows:
             if not p_fname:
                 raise ValidationError(
-                    f"Person already exists for name: {p_name} "
-                    "and no full_name was given"
+                    f"Existing people found for name '{p_name}', "
+                    "but no full_name was given."
                 )
-            if existing.full_name == p_fname:
-                raise ValidationError(
-                    "Person already exists for name: "
-                    f"{p_name} and full_name: {p_fname}"
-                )
+            for fellow in name_fellows:
+                if fellow.full_name == p_fname:
+                    raise ValidationError(
+                        "Person already exists with "
+                        f"'{p_name}' and full_name '{p_fname}'."
+                    )
+
+            name_fellows = [session.merge(f) for f in name_fellows]
+
+        # --- Relationship Type ---
+        relation_type = DataValidator.normalize_relation_type(
+            metadata.get("relation_type")
+        )
 
         # --- Create Person ---
         person = Person(
             name=p_name,
             full_name=p_fname,
-            relation_type=DataValidator.normalize_string(metadata.get("relation_type")),
+            relation_type=relation_type,
         )
+
+        # --- name_fellow ---
+        if name_fellows:
+            name_fellows.append(person)
+            for fellow in name_fellows:
+                setattr(fellow, "name_fellow", True)
+
         session.add(person)
         session.flush()
 
@@ -1324,16 +1518,33 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "name": DataValidator.normalize_string,
+            "relation_type": DataValidator.normalize_relation_type,
             "full_name": DataValidator.normalize_string,
-            "relation_type": DataValidator.normalize_string,
+            "name": DataValidator.normalize_string,
         }
 
         for field, normalizer in field_updates.items():
-            if field in metadata:
-                value = normalizer(metadata[field])
-                if value is not None or field in ["full_name", "relation_type"]:
-                    setattr(person, field, value)
+            if field not in metadata:
+                continue
+
+            value = normalizer(metadata[field])
+
+            if field == "name" and value is not None:
+                name_fellows = session.query(Person).filter_by(name=value).all()
+
+                if name_fellows:
+                    if person.full_name is None:
+                        raise ValidationError(
+                            f"Other name_fellows exist with name '{value}'; "
+                            "this person needs a full name."
+                        )
+
+                    name_fellows.append(person)
+                    for fellow in name_fellows:
+                        setattr(fellow, "name_fellow", True)
+
+            if value is not None or field in ["full_name", "relation_type"]:
+                setattr(person, field, value)
 
         # --- Update relationships ---
         self._update_person_relationships(session, person, metadata)
@@ -1356,8 +1567,7 @@ class PalimpsestDB:
             return session.query(Person).filter_by(full_name=p_fname).first()
 
         p_name = DataValidator.normalize_string(person_name)
-        p_n = session.query(Person).filter_by(name=p_name).count()
-        if p_n < 2:
+        if session.query(Person).filter_by(name=p_name).count() < 2:
             return session.query(Person).filter_by(name=p_name).first()
         else:
             raise ValidationError(f"+1 people exist with name {p_name}. Use full_name.")
@@ -1455,7 +1665,7 @@ class PalimpsestDB:
             session (Session): Active SQLAlchemy session
             metadata (Dict[str, Any]): Normalized metadata for the entry.
                 Required keys:
-                    - type (str)
+                    - type (Enum)
                     - title (str)
                 Optional keys:
                     - author (str)
@@ -1464,13 +1674,20 @@ class PalimpsestDB:
             ReferenceSource: The newly created Location ORM object.
         """
         # --- Required fields ---
-        norm_type = DataValidator.normalize_string(metadata.get("type"))
-        if not norm_type:
+        ref_type = DataValidator.normalize_reference_type(metadata.get("type"))
+        if not ref_type:
             raise ValueError(f"Invalid type: {metadata['type']}")
 
         norm_title = DataValidator.normalize_string(metadata.get("title"))
         if not norm_title:
             raise ValueError(f"Invalid title: {metadata['title']}")
+
+        author = DataValidator.normalize_string(metadata.get("author"))
+        if ref_type.requires_author and not author and self.logger:
+            self.logger.log_warning(
+                f"Reference type '{ref_type.display_name}' typically requires an author",
+                {"title": norm_title},
+            )
 
         # --- title uniqueness check ---
         existing = session.query(ReferenceSource).filter_by(title=norm_title).first()
@@ -1480,11 +1697,7 @@ class PalimpsestDB:
             )
 
         # --- Create Source ---
-        ref = ReferenceSource(
-            type=norm_type,
-            title=norm_title,
-            author=DataValidator.normalize_string(metadata.get("author")),
-        )
+        ref = ReferenceSource(type=ref_type, title=norm_title, author=author)
         session.add(ref)
         session.flush()
         return ref
@@ -1529,7 +1742,7 @@ class PalimpsestDB:
 
         # --- Update scalar fields ---
         field_updates = {
-            "type": DataValidator.normalize_string,
+            "type": DataValidator.normalize_reference_type,
             "title": DataValidator.normalize_string,
             "author": DataValidator.normalize_string,
         }
@@ -1720,7 +1933,7 @@ class PalimpsestDB:
                     - revision_date (str|date)
                 Relationship keys (optional):
                     - entry (Entry or id)
-                    - poem (Person or id)
+                    - poem (Poem or id)
 
         Returns:
             Event: The newly created Event ORM object.

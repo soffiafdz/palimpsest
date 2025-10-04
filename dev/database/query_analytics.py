@@ -18,6 +18,7 @@ from .decorators import handle_db_errors, log_database_operation
 from dev.database.models import (
     Entry,
     Person,
+    City,
     Location,
     Event,
     Tag,
@@ -72,6 +73,7 @@ class QueryAnalytics:
         # Basic counts
         stats["entries"] = session.query(Entry).count()
         stats["people"] = session.query(Person).count()
+        stats["cities"] = session.query(City).count()
         stats["locations"] = session.query(Location).count()
         stats["events"] = session.query(Event).count()
         stats["tags"] = session.query(Tag).count()
@@ -228,6 +230,16 @@ class QueryAnalytics:
         return person.entries if person else []
 
     @handle_db_errors
+    @log_database_operation("get_entries_by_city")
+    def get_entries_by_city(self, session: Session, city_name: str) -> List[Entry]:
+        """Get all entries at a specific city."""
+        location = (
+            session.query(City).filter(Location.name.ilike(f"%{city_name}%")).first()
+        )
+
+        return location.entries if location else []
+
+    @handle_db_errors
     @log_database_operation("get_entries_by_location")
     def get_entries_by_location(
         self, session: Session, location_name: str
@@ -235,12 +247,7 @@ class QueryAnalytics:
         """Get all entries at a specific location."""
         location = (
             session.query(Location)
-            .filter(
-                or_(
-                    Location.name.ilike(f"%{location_name}%"),
-                    Location.full_name.ilike(f"%{location_name}%"),
-                )
-            )
+            .filter(Location.name.ilike(f"%{location_name}%"))
             .first()
         )
 

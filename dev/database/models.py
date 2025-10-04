@@ -43,11 +43,14 @@ Notes
 from __future__ import annotations
 
 # --- Standard library imports ---
+from enum import Enum
 from datetime import date, datetime, timezone
 from typing import Any, List, Optional, Dict, TYPE_CHECKING
 
 # --- Third party ---
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     Date,
@@ -149,6 +152,18 @@ entry_dates = Table(
         primary_key=True,
     ),
     Column("date_id", Integer, ForeignKey("dates.id"), primary_key=True),
+)
+
+entry_cities = Table(
+    "entry_cities",
+    Base.metadata,
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("city_id", Integer, ForeignKey("cities.id"), primary_key=True),
 )
 
 entry_locations = Table(
@@ -270,6 +285,172 @@ class SchemaInfo(Base):
     )
 
 
+# ----- Enum -----
+class ReferenceType(str, Enum):
+    """
+    Enumeration of reference source types.
+
+    Categories of sources that can be referenced in journal entries:
+    - BOOK: Published books
+    - ARTICLE: Articles, essays, papers
+    - FILM: Movies and documentaries
+    - SONG: Music and songs
+    - PODCAST: Podcast episodes
+    - INTERVIEW: Interviews
+    - SPEECH: Speeches and talks
+    - TV_SHOW: Television programs
+    - VIDEO: Online videos, YouTube content
+    - OTHER: Miscellaneous sources
+    """
+
+    BOOK = "book"
+    ARTICLE = "article"
+    FILM = "film"
+    SONG = "song"
+    PODCAST = "podcast"
+    INTERVIEW = "interview"
+    SPEECH = "speech"
+    TV_SHOW = "tv_show"
+    VIDEO = "video"
+    OTHER = "other"
+
+    @classmethod
+    def choices(cls) -> List[str]:
+        """Get all available reference type choices."""
+        return [ref_type.value for ref_type in cls]
+
+    @classmethod
+    def written_types(cls) -> List["ReferenceType"]:
+        """Get types that are primarily written/text-based."""
+        return [cls.BOOK, cls.ARTICLE]
+
+    @classmethod
+    def audiovisual_types(cls) -> List["ReferenceType"]:
+        """Get types that are audiovisual media."""
+        return [cls.FILM, cls.PODCAST, cls.TV_SHOW, cls.VIDEO]
+
+    @classmethod
+    def performance_types(cls) -> List["ReferenceType"]:
+        """Get types that are performances or spoken word."""
+        return [cls.SONG, cls.INTERVIEW, cls.SPEECH]
+
+    @property
+    def is_written(self) -> bool:
+        """Check if this is a written/text-based source."""
+        return self in self.written_types()
+
+    @property
+    def is_audiovisual(self) -> bool:
+        """Check if this is an audiovisual source."""
+        return self in self.audiovisual_types()
+
+    @property
+    def requires_author(self) -> bool:
+        """Check if this source type typically has an author field."""
+        return self in [self.BOOK, self.ARTICLE]
+
+    @property
+    def display_name(self) -> str:
+        """Get human-readable display name."""
+        display_map = {
+            self.BOOK: "Book",
+            self.ARTICLE: "Article",
+            self.FILM: "Film",
+            self.SONG: "Song",
+            self.PODCAST: "Podcast",
+            self.INTERVIEW: "Interview",
+            self.SPEECH: "Speech",
+            self.TV_SHOW: "TV Show",
+            self.VIDEO: "Video",
+            self.OTHER: "Other",
+        }
+        return display_map.get(self, self.value.title())
+
+
+class RelationType(str, Enum):
+    """
+    Enumeration of personal relationship types.
+
+    Categories of relationships with people mentioned in journal:
+    - FAMILY: Family members
+    - FRIEND: Friends
+    - ROMANTIC: Romantic partners
+    - COLLEAGUE: Work colleagues
+    - ACQUAINTANCE: Casual acquaintances
+    - PROFESSIONAL: Professional relationships (therapist, doctor, etc.)
+    - PUBLIC: Public figures, celebrities
+    - OTHER: Uncategorized relationships
+    """
+
+    FAMILY = "family"
+    FRIEND = "friend"
+    ROMANTIC = "romantic"
+    COLLEAGUE = "colleague"
+    ACQUAINTANCE = "acquaintance"
+    PROFESSIONAL = "professional"
+    PUBLIC = "public"
+    OTHER = "other"
+
+    @classmethod
+    def choices(cls) -> List[str]:
+        """Get all available relation type choices."""
+        return [rel_type.value for rel_type in cls]
+
+    @classmethod
+    def personal_types(cls) -> List["RelationType"]:
+        """Get types that represent personal relationships."""
+        return [cls.FAMILY, cls.FRIEND, cls.ROMANTIC]
+
+    @classmethod
+    def professional_types(cls) -> List["RelationType"]:
+        """Get types that represent professional relationships."""
+        return [cls.COLLEAGUE, cls.PROFESSIONAL]
+
+    @property
+    def is_personal(self) -> bool:
+        """Check if this is a personal relationship."""
+        return self in self.personal_types()
+
+    @property
+    def is_professional(self) -> bool:
+        """Check if this is a professional relationship."""
+        return self in self.professional_types()
+
+    @property
+    def is_close(self) -> bool:
+        """Check if this typically represents a close relationship."""
+        return self in [self.FAMILY, self.FRIEND, self.ROMANTIC]
+
+    @property
+    def privacy_level(self) -> int:
+        """
+        Get privacy sensitivity level (higher = more sensitive).
+
+        Used for manuscript adaptation decisions:
+        - 5: Romantic (highest privacy)
+        - 4: Family
+        - 3: Friend
+        - 2: Professional, Colleague
+        - 1: Acquaintance, Public (lowest privacy)
+        """
+        privacy_map = {
+            self.ROMANTIC: 5,
+            self.FAMILY: 4,
+            self.FRIEND: 3,
+            self.PROFESSIONAL: 2,
+            self.COLLEAGUE: 2,
+            self.ACQUAINTANCE: 1,
+            self.PUBLIC: 1,
+            self.OTHER: 2,
+        }
+        return privacy_map.get(self, 0)
+
+    @property
+    def display_name(self) -> str:
+        """Get human-readable display name."""
+        return self.value.title()
+
+
 # ----- Models -----
 class Entry(Base):
     """
@@ -302,11 +483,12 @@ class Entry(Base):
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
-    file_path: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    file_path: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     file_hash: Mapped[Optional[str]] = mapped_column(String)
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     reading_time: Mapped[float] = mapped_column(Float, default=0.0)
-    epigraph: Mapped[Optional[str]] = mapped_column(String)
+    epigraph: Mapped[Optional[str]] = mapped_column(Text)
+    epigraph_attribution: Mapped[Optional[str]] = mapped_column(String(255))
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # ---- Timestamps ----
@@ -330,6 +512,9 @@ class Entry(Base):
         secondaryjoin="Entry.id == entry_related.c.related_entry_id",
         back_populates=None,
         overlaps="related_entries",
+    )
+    cities: Mapped[List[City]] = relationship(
+        "City", secondary=entry_cities, back_populates="entries"
     )
     locations: Mapped[List[Location]] = relationship(
         "Location", secondary=entry_locations, back_populates="entries"
@@ -495,7 +680,7 @@ class MentionedDate(Base):
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    context: Mapped[Optional[str]] = mapped_column(String)
+    context: Mapped[Optional[str]] = mapped_column(Text)
 
     # ---- Relationship ----
     entries: Mapped[List[Entry]] = relationship(
@@ -542,15 +727,14 @@ class MentionedDate(Base):
 
 class Location(Base):
     """
-    Represents geographic locations mentioned in entries.
+    Represents venues mentioned in entries.
 
     Tracks places referenced in journal entries for geographic analysis
     and location-based queries.
 
     Attributes:
         id: Primary key
-        name: Short name or abbreviation (unique)
-        full_name: Complete location name
+        name: name of the place
     """
 
     __tablename__ = "locations"
@@ -558,8 +742,13 @@ class Location(Base):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    full_name: Mapped[Optional[str]] = mapped_column(String, index=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+
+    # ---- Geographical location ----
+    city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"))
+    city: Mapped[City] = relationship(back_populates="locations")
 
     # ---- Relationship ----
     entries: Mapped[List[Entry]] = relationship(
@@ -567,11 +756,6 @@ class Location(Base):
     )
 
     # ---- Computed properties ----
-    @property
-    def display_name(self) -> str:
-        """Get the best display name for this location."""
-        return self.full_name or self.name
-
     @property
     def entry_count(self) -> int:
         """Number of entries mentioning this location."""
@@ -604,13 +788,91 @@ class Location(Base):
         return f"<Location(id={self.id}, name={self.name})>"
 
     def __str__(self) -> str:
+        loc_name = f"{self.name} ({self.city.city})"
         count = self.entry_count
         if count == 0:
-            return f"Location {self.display_name} (orphan)"
+            return f"Location {loc_name} (orphan)"
         elif count == 1:
-            return f"Location {self.display_name} (1 entry)"
+            return f"Location {loc_name} (1 entry)"
         else:
-            return f"Location {self.display_name} ({count} entries)"
+            return f"Location {loc_name} ({count} entries)"
+
+
+class City(Base):
+    """
+    Represents Cities mentioned in entries.
+
+    Tracks places referenced in journal entries for geographic analysis
+    and location-based queries.
+
+    Attributes:
+        id: Primary key
+        city: name of the place
+        state_province: state or province
+        country: country
+    """
+
+    __tablename__ = "cities"
+    __table_args__ = (CheckConstraint("city != ''", city="ck_city_non_empty_name"),)
+
+    # ---- Primary fields ----
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    city: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    state_province: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    country: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+
+    # ---- Relationship ----
+    locations: Mapped[List[Location]] = relationship("Location", back_populates="city")
+    entries: Mapped[List[Entry]] = relationship(
+        "Entry", secondary=entry_cities, back_populates="cities"
+    )
+
+    # ---- Computed properties ----
+    @property
+    def entry_count(self) -> int:
+        """Number of entries mentioning this location."""
+        return len(self.entries)
+
+    @property
+    def visit_frequency(self) -> Dict[str, int]:
+        """
+        Calculate visit frequency by year-month.
+
+        Returns:
+            Dictionary mapping YYYY-MM strings to visit counts
+        """
+        frequency: Dict[str, int] = {}
+        for entry in self.entries:
+            year_month = entry.date.strftime("%Y-%m")
+            frequency[year_month] = frequency.get(year_month, 0) + 1
+        return frequency
+
+    # Call
+    def __repr__(self):
+        return f"<City(id={self.id}, city={self.city})>"
+
+    def __str__(self) -> str:
+        # Build display name with available context
+        parts = [self.city]
+
+        if self.state_province:
+            parts.append(self.state_province)
+
+        if self.country:
+            parts.append(self.country)
+
+        location_str = ", ".join(parts)
+
+        # Add entry count
+        count = self.entry_count
+        if count == 0:
+            return f"City: {location_str} (no entries)"
+        elif count == 1:
+            return f"City: {location_str} (1 entry)"
+        else:
+            return f"City: {location_str} ({count} entries)"
 
 
 class Person(Base, SoftDeleteMixin):
@@ -621,9 +883,16 @@ class Person(Base, SoftDeleteMixin):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    full_name: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
-    relation_type: Mapped[Optional[str]] = mapped_column(String)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    full_name: Mapped[Optional[str]] = mapped_column(
+        String(255), unique=True, index=True
+    )
+    name_fellow: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    relation_type: Mapped[Optional[RelationType]] = mapped_column(
+        SQLEnum(RelationType, values_callable=lambda x: [e.value for e in x]),
+        nullable=True,
+        index=True,
+    )
 
     # ---- Relationships ----
     aliases: Mapped[List[Alias]] = relationship(
@@ -643,7 +912,7 @@ class Person(Base, SoftDeleteMixin):
     @property
     def display_name(self) -> str:
         """Get the best display name for this person."""
-        return self.full_name or self.name
+        return self.full_name if self.full_name else self.name
 
     @property
     def all_names(self) -> List[str]:
@@ -660,6 +929,11 @@ class Person(Base, SoftDeleteMixin):
         return len(self.entries)
 
     @property
+    def event_count(self) -> int:
+        """Number of events this person is involved in."""
+        return len(self.events)
+
+    @property
     def first_appearance(self) -> Optional[date]:
         """Date of first appearance in the journal."""
         if not self.entries:
@@ -674,6 +948,23 @@ class Person(Base, SoftDeleteMixin):
             return None
         dates = [entry.date for entry in self.entries if entry.date]
         return max(dates) if dates else None
+
+    @property
+    def relationship_display(self) -> str:
+        """Get human-readable relationship type."""
+        if self.relation_type:
+            return self.relation_type.display_name
+        return "Unknown"
+
+    @property
+    def is_close_relationship(self) -> bool:
+        """Check if this person has a close relationship."""
+        return self.relation_type.is_close if self.relation_type else False
+
+    @property
+    def privacy_sensitivity(self) -> int:
+        """Get privacy sensitivity level for manuscript purposes."""
+        return self.relation_type.privacy_level if self.relation_type else 0
 
     @property
     def mention_frequency(self) -> Dict[str, int]:
@@ -717,7 +1008,7 @@ class Alias(Base):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    alias: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    alias: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
     # ---- Foreign key ----
     person_id: Mapped[int] = mapped_column(
@@ -757,7 +1048,7 @@ class Reference(Base):
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    speaker: Mapped[Optional[str]] = mapped_column(String)
+    speaker: Mapped[Optional[str]] = mapped_column(String(255))
 
     # ---- Foreign keys ----
     entry_id: Mapped[int] = mapped_column(
@@ -806,14 +1097,19 @@ class ReferenceSource(Base):
     __tablename__ = "reference_sources"
     __table_args__ = (
         CheckConstraint("title != ''", name="ck_ref_source_non_empty_title"),
-        CheckConstraint("type != ''", name="ck_ref_source_non_empty_type"),
     )
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    type: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    author: Mapped[Optional[str]] = mapped_column(String, index=True)
+    type: Mapped[ReferenceType] = mapped_column(
+        SQLEnum(ReferenceType, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    author: Mapped[Optional[str]] = mapped_column(String(255), index=True)
 
     # ---- Relationship ----
     references: Mapped[List[Reference]] = relationship(
@@ -821,6 +1117,18 @@ class ReferenceSource(Base):
     )
 
     # ---- Computed property ----
+    @property
+    def display_name(self) -> str:
+        """Get formatted display name with type."""
+        if self.author:
+            return f"{self.title} by {self.author} ({self.type.display_name})"
+        return f"{self.title} ({self.type.display_name})"
+
+    @property
+    def requires_author_validation(self) -> bool:
+        """Check if this source type should have an author."""
+        return self.type.requires_author and not self.author
+
     @property
     def reference_count(self) -> int:
         """Number of references from this source."""
@@ -853,8 +1161,10 @@ class Event(Base, SoftDeleteMixin):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    event: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    title: Mapped[Optional[str]] = mapped_column(String, index=True)
+    event: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    title: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
 
     # ---- Relationships ----
@@ -918,7 +1228,7 @@ class Poem(Base):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
     # ---- Relationship ----
     versions: Mapped[List[PoemVersion]] = relationship(
@@ -1022,7 +1332,9 @@ class Tag(Base):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    tag: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    tag: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
 
     # ---- Relationship ----
     entries: Mapped[List[Entry]] = relationship(
