@@ -16,10 +16,27 @@ from pathlib import Path
 from datetime import date
 
 # import re
-# from typing import Any, Dict, Tuple
+from typing import List, Optional
 
 # --- Third-party library imports ---
 # import yaml
+
+
+def find_markdown_files(directory: Path, pattern: str = "**/*.md") -> List[Path]:
+    """Find all markdown files matching pattern."""
+    if not directory.exists():
+        return []
+    return list(directory.glob(pattern))
+
+
+def should_skip_file(
+    file_path: Path, existing_hash: Optional[str], force: bool = False
+) -> bool:
+    """Determine if file processing should be skipped based on hash comparison."""
+    if force or not existing_hash:
+        return False
+    current_hash = get_file_hash(file_path)
+    return current_hash == existing_hash
 
 
 def get_file_hash(file_path: str | Path) -> str:
@@ -41,55 +58,6 @@ def get_file_hash(file_path: str | Path) -> str:
 
     file_bytes = path.read_bytes()
     return hashlib.md5(file_bytes).hexdigest()
-
-
-# def sync_directory(self, directory: str | Path) -> int:
-#     """Sync all markdown files in directory"""
-#     path_dir = Path(directory)
-#     md_files = path_dir.rglob("*.md")
-#     updated_count = 0
-#
-#     for file_path in md_files:
-#         if self.update_entry_from_file(str(file_path)):
-#             updated_count += 1
-#             if updated_count % 50 == 0:
-#                 print(f"Updated {updated_count} files...")
-#
-#     return updated_count
-
-
-# def repopulate_from_directory(
-#     self, directory: str, force: bool = False
-# ) -> Tuple[int, int]:
-#     """Repopulate entire database from markdown files"""
-#     if force:
-#         backup_path = self.backup_database("before_repopulation")
-#         print(f"Created backup: {backup_path}")
-#         self._clear_all_entries()
-#
-#     return self._process_directory(directory)
-
-
-# def _process_directory(self, directory: str) -> Tuple[int, int]:
-#     """Process all markdown files in directory"""
-#     md_files = list(Path(directory).rglob("*.md"))
-#     print(f"Found {len(md_files)} markdown files to process...")
-#
-#     processed = 0
-#     errors = 0
-#
-#     for file_path in md_files:
-#         try:
-#             if self.update_entry_from_file(str(file_path)):
-#                 processed += 1
-#             if processed % 100 == 0:
-#                 print(f"Processed {processed} files...")
-#         except Exception as e:
-#             print(f"Error processing {file_path}: {e}")
-#             errors += 1
-#
-#     print(f"Processing complete: {processed} processed, {errors} errors")
-#     return processed, errors
 
 
 def parse_date_from_filename(path: Path) -> date:

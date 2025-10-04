@@ -11,14 +11,15 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import text, func
 from sqlalchemy.orm import Session
 
+from dev.core.exceptions import HealthCheckError
 from dev.core.logging_manager import PalimpsestLogger
 from .decorators import handle_db_errors, log_database_operation
-from .exceptions import HealthCheckError
 
 # Import models for health checks
 from dev.database.models import (
     Entry,
     Person,
+    City,
     Location,
     Event,
     Tag,
@@ -486,6 +487,7 @@ class HealthMonitor:
         metrics["table_counts"] = {
             "entries": session.query(Entry).count(),
             "people": session.query(Person).count(),
+            "cities": session.query(City).count(),
             "locations": session.query(Location).count(),
             "events": session.query(Event).count(),
             "tags": session.query(Tag).count(),

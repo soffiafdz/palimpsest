@@ -2,147 +2,208 @@
 """
 md.py
 -------------------
-Set of utilities for dealing with Markdown documents.
+Markdown-specific utilities for the Palimpsest project.
 
-It is designed to work with metadata and vimwiki integration.
+Provides functions for parsing and formatting Markdown files with YAML
+frontmatter, including:
+- Frontmatter extraction and splitting
+- YAML formatting helpers
+- Content hashing for change detection
 
-Intended to be imported by the md2wiki and metadata workflow.
+This module handles Markdown structure but delegates type conversion
+and validation to DataValidator.
+
+Intended for use by md2wiki, metadata workflows, and MdEntry dataclass.
 """
 from __future__ import annotations
 
 # --- Standard library imports ---
 import hashlib
-import re
-from datetime import date, datetime
-from typing import Any
+from pathlib import Path
+from datetime import date
+from typing import Any, List
 
-# --- Third-party library imports ---
-# import yaml
-
-
-# TODO: Work on this
-# # ----- Parse metadata from Markdown -----
-# def parse_markdown_metadata(file_path: str) -> Dict[str, Any]:
-#     """
-#     Extract YAML frontmatter metadata from a Markdown file.
-#
-#     Args:
-#         file_path (str): Path to the Markdown file.
-#
-#     Returns:
-#         Dict[str, Any]: Parsed metadata dictionary.
-#     """
-#     try:
-#         with open(file_path, "r", encoding="utf-8") as f:
-#             content = f.read()
-#
-#         if content.startswith("---\n"):
-#             end_marker = content.find("\n---\n", 4)
-#             if end_marker != -1:
-#                 yaml_content = content[4:end_marker]
-#                 metadata = yaml.safe_load(yaml_content)
-#                 return metadata or {}
-#
-#     except Exception as e:
-#         print(f"[Markdown Parse Error] {file_path}: {e}")
-#
-#     return {}
+from .parsers import spaces_to_hyphenated
 
 
-# TODO: Work on this
-# # ----- Update Markdown file -----
-# def update_markdown_file(file_path: str, metadata: Dict[str, Any]) -> bool:
-#     """Update markdown file with new metadata"""
-#     try:
-#         with open(file_path, "r", encoding="utf-8") as f:
-#             content = f.read()
-#
-#         if content.startswith("---\n"):
-#             end_marker = content.find("\n---\n", 4)
-#             if end_marker != -1:
-#                 body_content = content[end_marker + 5 :]
-#             else:
-#                 body_content = content[4:]
-#         else:
-#             body_content = content
-#
-#         yaml_content = yaml.dump(metadata, default_flow_style=False, sort_keys=False)
-#         new_content = f"---\n{yaml_content}---\n{body_content}"
-#
-#         with open(file_path, "w", encoding="utf-8") as f:
-#             f.write(new_content)
-#
-#         return True
-#     except Exception as e:
-#         print(f"Error updating {file_path}: {e}")
-#         return False
-
-
-# ----- text hash -----
-def get_text_hash(text: str) -> str:
+# ----- YAML Frontmatter Parsing -----
+def split_frontmatter(content: str) -> tuple[str, List[str]]:
     """
-    Compute MD5 hash of a string, useful for detecting changes in content.
+    Split markdown content into YAML frontmatter and body.
+
+    Expected format:
+        ---
+        yaml: content
+        ---
+
+        Body content here...
 
     Args:
-        text (str): Input string to hash.
+        content: Full markdown file content
 
     Returns:
-        str: Hexadecimal MD5 hash.
+        Tuple of (frontmatter_text, body_lines)
+        - frontmatter_text: YAML content as string (empty if no frontmatter)
+        - body_lines: List of body content lines
+
+    Examples:
+        >>> content = "---\\ndate: 2024-01-15\\n---\\n\\nBody text"
+        >>> fm, body = split_frontmatter(content)
+        >>> fm
+        'date: 2024-01-15'
+        >>> body
+        ['Body text']
+    """
+    lines = content.splitlines()
+
+    if not lines or lines[0].strip() != "---":
+        return "", lines
+
+    # Find closing ---
+    frontmatter_end = None
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            frontmatter_end = i
+            break
+
+    if frontmatter_end is None:
+        return "", lines
+
+    frontmatter_lines = lines[1:frontmatter_end]
+    body_lines = lines[frontmatter_end + 1 :]
+
+    # Remove empty lines at start of body
+    while body_lines and body_lines[0].strip() == "":
+        body_lines.pop(0)
+
+    return "\n".join(frontmatter_lines), body_lines
+
+
+# ----- YAML Formatting Helpers -----
+def yaml_escape(value: str) -> str:
+    """
+    Escape string for safe YAML output.
+
+    Handles quotes and newlines that could break YAML syntax.
+
+    Args:
+        value: String to escape
+
+    Returns:
+        Escaped string safe for YAML
+
+    Examples:
+        >>> yaml_escape('He said "hello"')
+        'He said \\\\"hello\\\\"'
+        >>> yaml_escape('Line 1\\nLine 2')
+        'Line 1\\\\nLine 2'
+    """
+    return value.replace('"', '\\"').replace("\n", "\\n")
+
+
+def yaml_list(items: List[Any], hyphenated: bool = False) -> str:
+    """
+    Format list for inline YAML output.
+
+    Generates compact bracket notation for lists, properly quoting
+    strings that contain special characters.
+
+    Args:
+        items: List of items to format
+        hyphenated: Whether to hyphenate items
+
+    Returns:
+        YAML inline list string
+
+    Examples:
+        >>> yaml_list(["simple", "list"])
+        '[simple, list]'
+        >>> yaml_list(["Has spaces", "Has: colon"])
+        '["Has spaces", "Has: colon"]'
+        >>> yaml_list(["Has spaces"], hyphenated=True)
+        '["Has-spaces"]'
+        >>> yaml_list([])
+        '[]'
+    """
+    if not items:
+        return "[]"
+
+    formatted = []
+    for item in items:
+        if isinstance(item, str) and (" " in item or ":" in item or '"' in item):
+            item = (
+                yaml_escape(spaces_to_hyphenated(item))
+                if hyphenated
+                else yaml_escape(item)
+            )
+            formatted.append(f'"{item}"')
+        else:
+            formatted.append(str(item))
+
+    return f"[{', '.join(formatted)}]"
+
+
+def yaml_multiline(text: str) -> str:
+    """
+    Format text for YAML multiline output.
+
+    Uses pipe notation (|) for multiline strings, or quotes for single lines.
+
+    Args:
+        text: Text to format
+
+    Returns:
+        YAML-formatted string (multiline or quoted)
+
+    Examples:
+        >>> yaml_multiline("Single line")
+        '"Single line"'
+        >>> yaml_multiline("Line 1\\nLine 2")
+        '|\\n  Line 1\\n  Line 2'
+    """
+    if "\n" in text:
+        lines = ["|\n"]
+        for line in text.splitlines():
+            lines.append(f"  {line}\n")
+        return "".join(lines).rstrip()
+    else:
+        return f'"{yaml_escape(text)}"'
+
+
+# ----- Content Hashing -----
+def get_text_hash(text: str) -> str:
+    """
+    Compute MD5 hash of text content.
+
+    Useful for detecting changes in file content without full comparison.
+
+    Args:
+        text: Input string to hash
+
+    Returns:
+        Hexadecimal MD5 hash string
+
+    Examples:
+        >>> get_text_hash("Hello, world!")
+        '6cd3556deb0da54bca060b4c39479839'
     """
     return hashlib.md5(text.encode("utf-8")).hexdigest()
 
 
-# ----- Extract number from string -----
-def extract_number(value: Any) -> float:
-    """
-    Extract numeric value from a string or number.
-
-    Examples:
-        "150 words" -> 150
-        "2.5 min"   -> 2.5
-
-    Args:
-        value (Any): Input string or number.
-
-    Returns:
-        float: Extracted numeric value.
-    """
-    if isinstance(value, (int, float)):
-        return float(value)
-    if isinstance(value, str):
-        match = re.search(r"(\d+(?:\.\d+)?)", value)
-        if match:
-            return float(match.group(1))
-    return 0.0
+# ----- Entries -----
+def read_entry_body(file_path: Path) -> List[str]:
+    """Read body content from markdown file (everything after frontmatter)."""
+    if not file_path.exists():
+        return []
+    content = file_path.read_text(encoding="utf-8")
+    _, body_lines = split_frontmatter(content)
+    return body_lines
 
 
-# ----- Failsafe obj handling -----
-def parse_date(value: str | date | None) -> date | None:
-    if value is None:
-        return None
-    if isinstance(value, date):
-        return value
-    try:
-        return datetime.strptime(value.strip(), "%Y-%m-%d").date()
-    except Exception:
-        return None
-
-
-def safe_int(value: Any) -> int | None:
-    try:
-        return int(value) if value not in (None, "", " ") else None
-    except ValueError:
-        return None
-
-
-def safe_float(value: Any) -> float | None:
-    try:
-        return float(value) if value not in (None, "", " ") else None
-    except ValueError:
-        return None
-
-
-def normalize_str(value: Any) -> str | None:
-    if not value or not str(value).strip():
-        return None
-    return str(value).strip()
+def generate_placeholder_body(entry_date: date) -> List[str]:
+    """Generate placeholder body for entries without content."""
+    return [
+        f"# {entry_date.strftime('%A, %B %d, %Y')}",
+        "",
+        "*Body content not available - add your journal entry here*",
+    ]

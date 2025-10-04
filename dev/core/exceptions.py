@@ -40,3 +40,15 @@ class ValidationError(Exception):
     """Exception for validation errors."""
 
     pass
+
+
+class Sql2YamlError(Exception):
+    """Exception for SQL to YAML conversion errors."""
+
+    pass
+
+
+class Yaml2SqlError(Exception):
+    """Exception for YAML to SQL conversion errors."""
+
+    pass
