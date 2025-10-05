@@ -24,6 +24,10 @@ Usage:
     python -m dev.pipeline.cli export-db
     python -m dev.pipeline.cli build-pdf 2025
 
+    # Backups
+    python -m dev.pipeline.cli backup-full
+    python -m dev.pipeline.cli backup-list-full
+
     # Status and validation
     python -m dev.pipeline.cli status
     python -m dev.pipeline.cli validate
@@ -46,6 +50,7 @@ from dev.core.paths import (
     ALEMBIC_DIR,
     BACKUP_DIR,
     TEX_DIR,
+    DATA_DIR,
 )
 from dev.builders.txtbuilder import TxtBuilder
 from dev.builders.pdfbuilder import PdfBuilder
@@ -328,13 +333,109 @@ def build_pdf(
 
 
 @cli.command()
+@click.option("--suffix", default=None, help="Optional backup suffix")
+@click.pass_context
+def backup_full(ctx: click.Context, suffix: Optional[str]) -> None:
+    """Create full compressed backup of entire data directory."""
+    logger: PalimpsestLogger = ctx.obj["logger"]
+
+    click.echo("📦 Creating full data backup...")
+    click.echo("   (This may take a while for large archives)")
+
+    from dev.core.backup_manager import BackupManager
+    from dev.core.exceptions import BackupError
+
+    try:
+        backup_mgr = BackupManager(
+            db_path=DB_PATH,
+            backup_dir=BACKUP_DIR,
+            data_dir=DATA_DIR,
+            logger=logger,
+        )
+
+        backup_path = backup_mgr.create_full_backup(suffix=suffix)
+        backup_size = backup_path.stat().st_size
+        backup_size_mb = backup_size / (1024 * 1024)
+
+        click.echo("\n✅ Full backup created:")
+        click.echo(f"  Location: {backup_path}")
+        click.echo(f"  Size: {backup_size_mb:.2f} MB ({backup_size:,} bytes)")
+        click.echo("\n💡 Backup saved outside git repository")
+
+    except BackupError as e:
+        click.echo(f"❌ Full backup failed: {e}", err=True)
+        if ctx.obj["verbose"]:
+            import traceback
+
+            traceback.print_exc()
+        sys.exit(1)
+
+
+@cli.command()
+@click.pass_context
+def backup_list_full(ctx: click.Context) -> None:
+    """List all available full data backups."""
+    from dev.core.backup_manager import BackupManager
+
+    try:
+        backup_mgr = BackupManager(
+            db_path=DB_PATH,
+            backup_dir=BACKUP_DIR,
+            data_dir=DATA_DIR,
+        )
+
+        if (
+            not hasattr(backup_mgr, "full_backup_dir")
+            or not backup_mgr.full_backup_dir.exists()
+        ):
+            click.echo("📦 No full backups directory found")
+            return
+
+        backups = sorted(backup_mgr.full_backup_dir.glob("*.tar.gz"))
+
+        if not backups:
+            click.echo("📦 No full backups found")
+            return
+
+        click.echo("\n📦 Full Data Backups")
+        click.echo("=" * 70)
+
+        for backup in backups:
+            stat = backup.stat()
+            size_mb = stat.st_size / (1024 * 1024)
+            created = datetime.fromtimestamp(stat.st_mtime)
+            age_days = (datetime.now() - created).days
+
+            click.echo(f"\n  • {backup.name}")
+            click.echo(f"    Created: {created.strftime('%Y-%m-%d %H:%M:%S')}")
+            click.echo(f"    Size: {size_mb:.2f} MB ({stat.st_size:,} bytes)")
+            click.echo(f"    Age: {age_days} days")
+
+        click.echo(f"\nTotal backups: {len(backups)}")
+        click.echo(f"Location: {backup_mgr.full_backup_dir}")
+
+    except Exception as e:
+        click.echo(f"❌ Failed to list backups: {e}", err=True)
+        if ctx.obj["verbose"]:
+            import traceback
+
+            traceback.print_exc()
+        sys.exit(1)
+
+
+@cli.command()
 @click.option("--year", help="Specific year to process (optional)")
 @click.option("--skip-inbox", is_flag=True, help="Skip inbox processing")
 @click.option("--skip-pdf", is_flag=True, help="Skip PDF generation")
+@click.option("--backup", is_flag=True, help="Create full data backup after completion")
 @click.confirmation_option(prompt="Run complete pipeline?")
 @click.pass_context
 def run_all(
-    ctx: click.Context, year: Optional[str], skip_inbox: bool, skip_pdf: bool
+    ctx: click.Context,
+    year: Optional[str],
+    skip_inbox: bool,
+    skip_pdf: bool,
+    backup: bool,
 ) -> None:
     """Run the complete processing pipeline end-to-end."""
 
@@ -363,6 +464,12 @@ def run_all(
         if not skip_pdf and year:
             click.echo("=" * 60)
             ctx.invoke(build_pdf, year=year, force=False)
+            click.echo()
+
+        # Step 5: Full backup (if requested)
+        if backup:
+            click.echo("=" * 60)
+            ctx.invoke(backup_full, suffix="pipeline")
             click.echo()
 
         duration = (datetime.now() - start_time).total_seconds()

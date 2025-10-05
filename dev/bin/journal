@@ -9,6 +9,8 @@
 #   journal sync            # Sync database (yaml2sql)
 #   journal export          # Export database (sql2yaml)
 #   journal pdf 2025        # Build PDFs for year (md2pdf)
+#   journal backup-full     # Create full data backup
+#   journal backup-list     # List full data backups
 #   journal run-all         # Run complete pipeline
 #   journal status          # Show status
 #
@@ -31,6 +33,10 @@ Pipeline Commands (in order):
   export              Export database to markdown (sql2yaml)
   pdf <year>          Build PDFs for specified year (md2pdf)
   
+Backup Commands:
+  backup-full         Create full compressed data backup
+  backup-list         List all full data backups
+
 Control Commands:
   run-all [year]      Run complete pipeline end-to-end
   status              Show pipeline status
@@ -40,13 +46,17 @@ Control Commands:
 Options:
   -v, --verbose       Enable verbose logging
   -f, --force         Force overwrite existing files
+  --backup-full       Create full backup after run-all completion
 
 Examples:
   journal inbox
   journal convert --force
   journal sync
   journal pdf 2025
+  journal backup-full
+  journal backup-list
   journal run-all 2025
+  journal run-all 2025 --backup-full
   journal status
 
 Individual Scripts:
@@ -89,6 +99,12 @@ pdf)
     exit 1
   fi
   exec $PIPELINE_CLI build-pdf "$@"
+  ;;
+backup-full)
+  exec $PIPELINE_CLI backup-full "$@"
+  ;;
+backup-list)
+  exec $PIPELINE_CLI backup-list-full "$@"
   ;;
 run-all)
   exec $PIPELINE_CLI run-all "$@"

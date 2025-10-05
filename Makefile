@@ -44,7 +44,7 @@ YEAR_PDFS     := $(foreach Y,$(YEARS),$(PDF_DIR)/$(Y).pdf $(PDF_DIR)/$(Y)-notes.
 .PHONY: all help clean
 .PHONY: inbox txt md db pdf
 .PHONY: clean-txt clean-md clean-db clean-pdf
-.PHONY: init-db backup status validate stats health analyze
+.PHONY: init-db backup backup-full backup-list backup-list-full status validate stats health analyze
 .PHONY: $(YEARS) $(foreach Y,$(YEARS),$(Y)-md $(Y)-pdf)
 
 # ─── Default: Full Pipeline ───────────────────────────────────────────────────
@@ -110,6 +110,16 @@ backup:
 	$(Q)echo "[Make] Creating database backup..."
 	$(Q)$(METADB) backup --type manual
 
+backup-full:
+	$(Q)echo "[Make] Creating full data backup..."
+	$(Q)$(PIPELINE) backup-full
+
+backup-list:
+	$(Q)$(METADB) backups
+
+backup-list-full:
+	$(Q)$(PIPELINE) backup-list-full
+
 status:
 	$(Q)$(PIPELINE) status
 
@@ -170,6 +180,9 @@ help:
 	@echo "Database Operations:"
 	@echo "  make init-db       # Initialize database and Alembic"
 	@echo "  make backup        # Create database backup"
+	@echo "  make backup-full   # Create full compressed data backup"
+	@echo "  make backup-list   # List database backups"
+	@echo "  make backup-list-full  # List full data backups"
 	@echo "  make status        # Show pipeline status"
 	@echo "  make validate      # Validate pipeline integrity"
 	@echo "  make stats         # Show database statistics"
