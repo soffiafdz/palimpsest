@@ -4,7 +4,13 @@
 
 % ------------- Font ------------------------------------------------------
 \usepackage{fontspec}
-\setmainfont{Cormorant Garamond}
+\setmainfont{Cormorant Garamond}[
+  Path = ../fonts/,
+  Extension = .ttf,
+  UprightFont = *-Regular,
+  BoldFont = *-Bold,
+  ItalicFont = *-Italic
+]
 \usepackage{microtype}
 
 % ------------- completely self‑contained title page ----------------------

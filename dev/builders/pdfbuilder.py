@@ -77,7 +77,8 @@ ANNOTATION_TEMPLATE = [
 ]
 
 # Pandoc configuration
-PANDOC_ENGINE = "xelatex"
+# PANDOC_ENGINE = "xelatex"
+PANDOC_ENGINE = "tectonic"
 PANDOC_DOCUMENT_CLASS = "extarticle"
 
 
