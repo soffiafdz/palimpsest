@@ -2,22 +2,60 @@ name: palimpsest
 channels:
   - conda-forge
 dependencies:
-  # Stable version of Python
-  - python=3.10
-
-  # Recent version of make
-  - make=4.3
-
-  # core runtime
-  - ftfy
-  - pyyaml
-  - pip
-  - pandoc=2.19
-  - textstat
-
-  # nvim
-  - pynvim
-
-  # pip installs
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_gnu
+  - alembic=1.16.5=pyhd8ed1ab_0
+  - bzip2=1.0.8=h4bc722e_7
+  - ca-certificates=2025.4.26=hbd8a1cb_0
+  - click=8.3.0=pyh707e725_0
+  - cmudict=1.0.32=pyhd8ed1ab_0
+  - ftfy=6.3.1=pyhd8ed1ab_1
+  - greenlet=3.2.2=py310hf71b8c6_0
+  - importlib-metadata=8.6.1=pyha770c72_0
+  - importlib-resources=6.5.2=pyhd8ed1ab_0
+  - importlib_resources=6.5.2=pyhd8ed1ab_0
+  - ld_impl_linux-64=2.43=h712a8e2_4
+  - libexpat=2.7.0=h5888daf_0
+  - libffi=3.4.6=h2dba641_1
+  - libgcc=15.1.0=h767d61c_2
+  - libgcc-ng=15.1.0=h69a702a_2
+  - libgomp=15.1.0=h767d61c_2
+  - liblzma=5.8.1=hb9d3cd8_1
+  - libnsl=2.0.1=hd590300_0
+  - libsqlite=3.49.2=hee588c1_0
+  - libstdcxx=15.1.0=h8f9b012_2
+  - libuuid=2.38.1=h0b41bf4_0
+  - libxcrypt=4.4.36=hd590300_1
+  - libzlib=1.3.1=hb9d3cd8_2
+  - make=4.3=hd18ef5c_1
+  - mako=1.3.10=pyhd8ed1ab_0
+  - markupsafe=3.0.2=py310h89163eb_1
+  - msgpack-python=1.1.0=py310h3788b33_0
+  - ncurses=6.5=h2d0b736_3
+  - openssl=3.5.0=h7b32b05_1
+  - pandoc=2.19.2=h32600fe_2
+  - pip=25.1.1=pyh8b19718_0
+  - pynvim=0.5.2=pyhd8ed1ab_0
+  - pyphen=0.17.2=pyhd8ed1ab_0
+  - python=3.10.17=hd6af730_0_cpython
+  - python_abi=3.10=7_cp310
+  - pyyaml=6.0.2=py310h89163eb_2
+  - readline=8.2=h8c095d6_2
+  - setuptools=80.1.0=pyhff2d567_0
+  - sqlalchemy=2.0.43=py310h7c4b9e2_0
+  - textstat=0.7.7=pyhd8ed1ab_0
+  - tk=8.6.13=noxft_h4845f30_101
+  - tomli=2.2.1=pyhe01879c_2
+  - typing-extensions=4.15.0=h396c80c_0
+  - typing_extensions=4.15.0=pyhcf101f3_0
+  - tzdata=2025b=h78e105d_0
+  - wcwidth=0.2.13=pyhd8ed1ab_1
+  - wheel=0.45.1=pyhd8ed1ab_1
+  - yaml=0.2.5=h7f98852_2
+  - zipp=3.21.0=pyhd8ed1ab_1
   - pip:
-    - pypandoc
+      - pynvim>=0.5
+      - pypandoc>=1.1
+      - textstat>=0.7
+
+prefix: "/home/soffiafdz/.local/share/micromamba/envs/palimpsest"

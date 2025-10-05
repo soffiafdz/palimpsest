@@ -1,0 +1,119 @@
+Palimpsest
+├── alembic.ini
+├── backups
+├── dev
+│   ├── bin
+│   │   ├── init_format
+│   │   ├── journal
+│   │   ├── metadb
+│   │   └── proc_inbox
+│   ├── builders
+│   │   ├── pdfbuilder.py
+│   │   └── txtbuilder.py
+│   ├── core
+│   │   ├── exceptions.py
+│   │   ├── logging_manager.py
+│   │   ├── paths.py
+│   │   ├── temporal_files.py
+│   │   └── validators.py
+│   ├── database
+│   │   ├── backup_manager.py
+│   │   ├── cli.py
+│   │   ├── decorators.py
+│   │   ├── export_manager.py
+│   │   ├── health_monitor.py
+│   │   ├── __init__.py
+│   │   ├── manager.py
+│   │   ├── models_manuscript.py
+│   │   ├── models.py
+│   │   ├── query_analytics.py
+│   │   └── relationship_manager.py
+│   ├── dataclasses
+│   │   ├── md_entry.py
+│   │   └── txt_entry.py
+│   ├── __init__.py
+│   ├── lua
+│   │   └── palimpsest
+│   │       ├── autocmds.lua
+│   │       ├── config.lua
+│   │       ├── init.lua
+│   │       ├── keymaps.lua
+│   │       ├── templates.lua
+│   │       └── vimwiki.lua
+│   ├── pipeline
+│   │   ├── cli.py
+│   │   ├── md2json.py
+│   │   ├── md2pdf.py
+│   │   ├── md2wiki.py
+│   │   ├── source2txt.py
+│   │   ├── sql2yaml.py
+│   │   ├── txt2md.py
+│   │   └── yaml2sql.py
+│   └── utils
+│       ├── fs.py
+│       ├── __init__.py
+│       ├── md.py
+│       ├── parsers.py
+│       ├── txt.py
+│       └── wiki.py
+├── environment.yaml
+├── example_yaml.md
+├── journal
+│   ├── annotations
+│   │   ├── proofreading
+│   │   │   ├── YYYY_marked.pdf
+│   │   │   └── [...]
+│   │   └── structure
+│   │       ├── YYYY-notes_done.pdf
+│   │       └── [...]
+│   ├── content
+│   │   └── pdf
+│   │       ├── YYYY-notes.pdf
+│   │       ├── YYYY.pdf
+│   │       └── [...]
+│   ├── inbox
+│   └── sources
+│       ├── archive
+│       │   ├── YYYY.zip
+│       │   └── [...]
+│       └── txt
+│           └── YYYY
+│               ├── YYYY-MM.txt
+│               └── [...]
+├── LICENSE.md
+├── logs
+├── Makefile
+├── manuscript
+│   ├── archive
+│   ├── chapters
+│   ├── drafts
+│   ├── notes
+│   ├── output
+│   └── sources
+├── README.md
+├── templates
+│   ├── tex
+│   │   ├── preamble_notes.tex
+│   │   └── preamble.tex
+│   └── wiki
+│       └── log.template
+├── tmp
+├── vignettes
+│   └── [...].md
+└── wiki
+    ├── index.md
+    ├── inventory.md
+    ├── log
+    │   ├── YYYY-MM-dd.md
+    │   └── index.md
+    ├── notes.md
+    ├── people
+    ├── people.md
+    ├── snippets
+    ├── snippets.md
+    ├── structure.md
+    ├── tags.md
+    ├── themes.md
+    ├── timeline
+    │   └── index.md
+    └── vignettes.md
