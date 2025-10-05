@@ -1,1 +1,22 @@
-__pycache__
+# Build artifacts
+*.pyc
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Logs and temporary files
+logs/
+tmp/
+
+# Database files (in submodule anyway)
+*.db
+*.db-journal
+
+# Editor/IDE
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
