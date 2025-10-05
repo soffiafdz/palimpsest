@@ -42,6 +42,18 @@ class ValidationError(Exception):
     pass
 
 
+class TxtBuildError(Exception):
+    """Exception for source to txt conversion errors."""
+
+    pass
+
+
+class Txt2MdError(Exception):
+    """Exception for inbox processing errors."""
+
+    pass
+
+
 class Sql2YamlError(Exception):
     """Exception for SQL to YAML conversion errors."""
 

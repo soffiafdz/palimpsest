@@ -38,17 +38,11 @@ from pathlib import Path
 from typing import List, Optional
 
 # --- Local imports ---
+from dev.core.exceptions import Txt2MdError
 from dev.core.paths import LOG_DIR, MD_DIR  # , TMP_DIR  , ROOT
 from dev.core.temporal_files import TemporalFileManager
 from dev.core.logging_manager import PalimpsestLogger
 from dev.dataclasses.txt_entry import TxtEntry
-
-
-# ----- Conversion Error -----
-class ConversionError(Exception):
-    """Exception for conversion errors."""
-
-    pass
 
 
 # ----- Conversion Stats -----
@@ -109,7 +103,7 @@ def process_entry(
         Path to created file, or None if skipped
 
     Raises:
-        ConversionError: If processing fails
+        Txt2MdError: If processing fails
     """
     if logger:
         logger.log_debug(f"Processing entry dated {entry.date.isoformat()}")
@@ -157,12 +151,12 @@ def convert_file(
         ConversionStats with results
 
     Raises:
-        ConversionError: If conversion fails
+        Txt2MdError: If conversion fails
     """
     stats = ConversionStats()
 
     if not input_path.exists():
-        raise ConversionError(f"Input file not found: {input_path}")
+        raise Txt2MdError(f"Input file not found: {input_path}")
 
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -194,7 +188,7 @@ def convert_file(
     except Exception as e:
         if logger:
             logger.log_error(e, {"operation": "parse_file", "file": str(input_path)})
-        raise ConversionError(f"Failed to parse {input_path}: {e}") from e
+        raise Txt2MdError(f"Failed to parse {input_path}: {e}") from e
 
     if not entries:
         if logger:
@@ -211,7 +205,7 @@ def convert_file(
                 stats.entries_created += 1
             else:
                 stats.entries_skipped += 1
-        except ConversionError as e:
+        except Txt2MdError as e:
             stats.errors += 1
             if logger:
                 logger.log_error(
@@ -241,12 +235,12 @@ def convert_directory(
         ConversionStats with results
 
     Raises:
-        ConversionError: If directory not found
+        Txt2MdError: If directory not found
     """
     total_stats = ConversionStats()
 
     if not input_dir.exists():
-        raise ConversionError(f"Input directory not found: {input_dir}")
+        raise Txt2MdError(f"Input directory not found: {input_dir}")
 
     txt_files = list(input_dir.glob(pattern))
     if not txt_files:
@@ -276,7 +270,7 @@ def convert_directory(
             total_stats.entries_skipped += stats.entries_skipped
             total_stats.errors += stats.errors
 
-        except ConversionError as e:
+        except Txt2MdError as e:
             total_stats.errors += 1
             if logger:
                 logger.log_error(
@@ -362,7 +356,7 @@ def convert(ctx, input_file, output, force, minimal):
             click.echo(f"  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except ConversionError as e:
+    except Txt2MdError as e:
         click.echo(f"❌ Conversion failed: {e}", err=True)
         sys.exit(1)
     except Exception as e:
@@ -417,7 +411,7 @@ def batch(ctx, input_dir, output, pattern, force, minimal):
             click.echo(f"  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except ConversionError as e:
+    except Txt2MdError as e:
         click.echo(f"❌ Batch conversion failed: {e}", err=True)
         sys.exit(1)
     except Exception as e:

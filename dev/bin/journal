@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# =============================================================================
+# journal - Main wrapper script for journal processing pipeline
+# =============================================================================
+#
+# Usage:
+#   journal inbox           # Process inbox (src2txt)
+#   journal convert         # Convert text to markdown (txt2md)
+#   journal sync            # Sync database (yaml2sql)
+#   journal export          # Export database (sql2yaml)
+#   journal pdf 2025        # Build PDFs for year (md2pdf)
+#   journal run-all         # Run complete pipeline
+#   journal status          # Show status
+#
+# All commands are thin wrappers around Python pipeline.py
+#
+set -euo pipefail
+
+# ─── CONFIGURATION ─────────────────────────────────────────────────────────
+PIPELINE_CLI="python3 -m dev.pipeline.cli"
+
+# ─── FUNCTIONS ─────────────────────────────────────────────────────────────
+usage() {
+  cat <<EOF
+Usage: journal <command> [options]
+
+Pipeline Commands (in order):
+  inbox               Process inbox (src2txt - raw exports → formatted text)
+  convert             Convert text to markdown (txt2md)
+  sync                Sync database from markdown (yaml2sql)
+  export              Export database to markdown (sql2yaml)
+  pdf <year>          Build PDFs for specified year (md2pdf)
+  
+Control Commands:
+  run-all [year]      Run complete pipeline end-to-end
+  status              Show pipeline status
+  validate            Validate pipeline integrity
+  help                Show this help message
+
+Options:
+  -v, --verbose       Enable verbose logging
+  -f, --force         Force overwrite existing files
+
+Examples:
+  journal inbox
+  journal convert --force
+  journal sync
+  journal pdf 2025
+  journal run-all 2025
+  journal status
+
+Individual Scripts:
+  src2txt             python -m dev.pipeline.src2txt
+  txt2md              python -m dev.pipeline.txt2md
+  yaml2sql            python -m dev.pipeline.yaml2sql
+  sql2yaml            python -m dev.pipeline.sql2yaml
+  md2pdf              python -m dev.pipeline.md2pdf
+
+For more options: $PIPELINE_CLI <command> --help
+EOF
+}
+
+# ─── MAIN ──────────────────────────────────────────────────────────────────
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+inbox)
+  exec $PIPELINE_CLI inbox "$@"
+  ;;
+convert)
+  exec $PIPELINE_CLI convert "$@"
+  ;;
+sync)
+  exec $PIPELINE_CLI sync-db "$@"
+  ;;
+export)
+  exec $PIPELINE_CLI export-db "$@"
+  ;;
+pdf)
+  if [[ $# -eq 0 ]]; then
+    echo "Error: Year required for pdf command" >&2
+    echo "Usage: journal pdf <year>" >&2
+    exit 1
+  fi
+  exec $PIPELINE_CLI build-pdf "$@"
+  ;;
+run-all)
+  exec $PIPELINE_CLI run-all "$@"
+  ;;
+status)
+  exec $PIPELINE_CLI status "$@"
+  ;;
+validate)
+  exec $PIPELINE_CLI validate "$@"
+  ;;
+help | --help | -h)
+  usage
+  ;;
+*)
+  echo "Error: Unknown command '$COMMAND'" >&2
+  echo "Run 'journal help' for usage information" >&2
+  exit 1
+  ;;
+esac

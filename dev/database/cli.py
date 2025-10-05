@@ -5,58 +5,50 @@ cli.py
 Command-line interface for Palimpsest database management.
 
 Provides comprehensive commands for database initialization, migration,
-backup, health monitoring, and maintenance operations. This CLI leverages
-the refactored modular database architecture.
+backup, health monitoring, and maintenance operations.
 
-Commands:
-    Database Setup:
-        - bootstrap: Complete setup (Alembic + database + migration)
-        - init-alembic: Initialize Alembic migration environment
-        - init-db: Initialize or migrate the database
+Command Groups:
+    Setup & Initialization:
+        - init: Initialize database and Alembic
+        - reset: Reset database (dangerous!)
 
     Migration Management:
-        - create-migration: Create a new Alembic migration
-        - upgrade-db: Upgrade database to specified revision
-        - downgrade-db: Downgrade database to specified revision
-        - migration-status: Show current migration status
+        - migration-create: Create new migration
+        - migration-upgrade: Upgrade to revision
+        - migration-downgrade: Downgrade to revision
+        - migration-status: Show migration status
+        - migration-history: Show migration history
 
-    Backup Operations:
-        - backup-db: Create timestamped backup
-        - list-backups: List all available backups
-        - restore-backup: Restore from a backup file
+    Backup & Restore:
+        - backup: Create timestamped backup
+        - backups: List all backups
+        - restore: Restore from backup
 
-    Monitoring & Maintenance:
-        - stats: Display database statistics
-        - health: Run comprehensive health check
-        - validate: Validate database integrity
-        - cleanup: Clean up orphaned records
+    Monitoring:
+        - stats: Database statistics
+        - health: Health check
+        - validate: Integrity validation
 
-    Data Export:
-        - export-csv: Export all tables to CSV files
-        - export-json: Export complete database to JSON
+    Maintenance:
+        - cleanup: Remove orphaned records
+        - optimize: Optimize database
 
-    Advanced:
-        - query: Run custom queries (read-only by default)
-        - analyze: Generate detailed analytics report
+    Export:
+        - export-csv: Export to CSV files
+        - export-json: Export to JSON
 
 Usage:
-    python -m database.cli [command] [options]
-
-Examples:
-    python -m database.cli bootstrap
-    python -m database.cli stats --verbose
-    python -m database.cli backup-db --type daily
-    python -m database.cli health --fix
+    metadb init
+    metadb stats --verbose
+    metadb backup --type daily
+    metadb health --fix
 """
 import sys
 import click
+import json
 from pathlib import Path
 
-# from typing import Optional
-import json
-
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
-
 from dev.core.exceptions import (
     DatabaseError,
     BackupError,
@@ -115,71 +107,89 @@ def get_db(ctx) -> PalimpsestDB:
     return ctx.obj["db"]
 
 
-# ===== Database Setup Commands =====
+# ===== Setup & Initialization =====
 @cli.command()
+@click.option("--alembic-only", is_flag=True, help="Initialize Alembic only")
+@click.option("--db-only", is_flag=True, help="Initialize database only")
 @click.pass_context
-def bootstrap(ctx):
-    """Complete database setup (Alembic + database + migration)."""
+def init(ctx, alembic_only, db_only):
+    """Initialize database and Alembic (complete setup)."""
     try:
-        click.echo("🚀 Bootstrapping Palimpsest database...")
         db = get_db(ctx)
 
-        # Initialize Alembic
-        click.echo("📁 Initializing Alembic...")
-        db.init_alembic()
-
-        # Initialize database
-        click.echo("🗄️  Initializing database schema...")
-        db.initialize_schema()
-
-        click.echo("✅ Bootstrap complete!")
+        if alembic_only:
+            click.echo("📁 Initializing Alembic...")
+            db.init_alembic()
+            click.echo("✅ Alembic initialized!")
+        elif db_only:
+            click.echo("🗄️  Initializing database schema...")
+            db.initialize_schema()
+            click.echo("✅ Database initialized!")
+        else:
+            click.echo("🚀 Initializing Palimpsest database...")
+            click.echo("📁 Initializing Alembic...")
+            db.init_alembic()
+            click.echo("🗄️  Initializing database schema...")
+            db.initialize_schema()
+            click.echo("✅ Complete setup finished!")
 
     except DatabaseError as e:
-        click.echo(f"❌ Bootstrap failed: {e}", err=True)
+        click.echo(f"❌ Initialization failed: {e}", err=True)
         sys.exit(1)
 
 
 @cli.command()
+@click.confirmation_option(prompt="⚠️  This will DELETE the database! Are you sure?")
+@click.option("--keep-backups", is_flag=True, help="Keep existing backups")
 @click.pass_context
-def init_alembic(ctx):
-    """Initialize Alembic migration environment."""
+def reset(ctx, keep_backups):
+    """Reset database (DANGEROUS - deletes all data!)."""
     try:
-        click.echo("📁 Initializing Alembic...")
+        db_path = ctx.obj["db_path"]
+
+        click.echo("🗑️  Resetting database...")
+
+        # Delete database file
+        if db_path.exists():
+            db_path.unlink()
+            click.echo(f"  Deleted: {db_path}")
+
+        # Reinitialize
+        click.echo("🔄 Reinitializing...")
         db = get_db(ctx)
         db.init_alembic()
-        click.echo("✅ Alembic initialized successfully!")
-
-    except DatabaseError as e:
-        click.echo(f"❌ Alembic initialization failed: {e}", err=True)
-        sys.exit(1)
-
-
-@cli.command()
-@click.pass_context
-def init_db(ctx):
-    """Initialize or migrate the database."""
-    try:
-        click.echo("🗄️  Initializing databas schema...")
-        db = get_db(ctx)
         db.initialize_schema()
-        click.echo("✅ Database schema initialized successfully!")
+
+        click.echo("✅ Database reset complete!")
+
+        if not keep_backups:
+            click.echo("💡 Tip: Use --keep-backups to preserve backup files")
 
     except DatabaseError as e:
-        click.echo(f"❌ Database initialization failed: {e}", err=True)
+        click.echo(f"❌ Reset failed: {e}", err=True)
         sys.exit(1)
 
 
 # ===== Migration Management =====
 @cli.command()
 @click.argument("message")
+@click.option(
+    "--autogenerate", is_flag=True, help="Auto-generate migration from models"
+)
 @click.pass_context
-def create_migration(ctx, message):
+def migration_create(ctx, message, autogenerate):
     """Create a new Alembic migration."""
     try:
         click.echo(f"📝 Creating migration: {message}")
         db = get_db(ctx)
+
+        # TODO: Add autogenerate support
+        if autogenerate:
+            click.echo("⚠️  Auto-generate not yet implemented, creating empty migration")
+
         revision = db.create_migration(message)
         click.echo(f"✅ Migration created: {revision}")
+        click.echo("💡 Edit the migration file and then run: metadb migration-upgrade")
 
     except DatabaseError as e:
         click.echo(f"❌ Migration creation failed: {e}", err=True)
@@ -187,9 +197,9 @@ def create_migration(ctx, message):
 
 
 @cli.command()
-@click.option("--revision", default="head", help="Target revision")
+@click.option("--revision", default="head", help="Target revision (default: head)")
 @click.pass_context
-def upgrade_db(ctx, revision):
+def migration_upgrade(ctx, revision):
     """Upgrade database to specified revision."""
     try:
         click.echo(f"⬆️  Upgrading database to: {revision}")
@@ -205,7 +215,7 @@ def upgrade_db(ctx, revision):
 @cli.command()
 @click.argument("revision")
 @click.pass_context
-def downgrade_db(ctx, revision):
+def migration_downgrade(ctx, revision):
     """Downgrade database to specified revision."""
     try:
         click.echo(f"⬇️  Downgrading database to: {revision}")
@@ -239,12 +249,39 @@ def migration_status(ctx):
         sys.exit(1)
 
 
-# ===== Backup Operations =====
 @cli.command()
-@click.option("--type", default="manual", help="Backup type (manual/daily/weekly)")
+@click.pass_context
+def migration_history(ctx):
+    """Show migration history."""
+    try:
+        db = get_db(ctx)
+        status = db.get_migration_history()
+
+        click.echo("\n📜 Migration History")
+        click.echo("=" * 50)
+
+        if "history" in status and status["history"]:
+            for migration in status["history"]:
+                click.echo(f"  • {migration}")
+        else:
+            click.echo("  No migrations found")
+
+    except DatabaseError as e:
+        click.echo(f"❌ Failed to get migration history: {e}", err=True)
+        sys.exit(1)
+
+
+# ===== Backup & Restore =====
+@cli.command()
+@click.option(
+    "--type",
+    type=click.Choice(["manual", "daily", "weekly"]),
+    default="manual",
+    help="Backup type",
+)
 @click.option("--suffix", default=None, help="Optional backup suffix")
 @click.pass_context
-def backup_db(ctx, type, suffix):
+def backup(ctx, type, suffix):
     """Create timestamped backup."""
     try:
         click.echo(f"💾 Creating {type} backup...")
@@ -259,16 +296,17 @@ def backup_db(ctx, type, suffix):
 
 @cli.command()
 @click.pass_context
-def list_backups(ctx):
+def backups(ctx):
     """List all available backups."""
     try:
         db = get_db(ctx)
-        backups = db.list_backups()
+        backups_dict = db.list_backups()
 
         click.echo("\n📦 Available Backups")
         click.echo("=" * 70)
 
-        for backup_type, backup_list in backups.items():
+        total = 0
+        for backup_type, backup_list in backups_dict.items():
             if backup_list:
                 click.echo(f"\n{backup_type.upper()}:")
                 for backup in backup_list:
@@ -276,6 +314,12 @@ def list_backups(ctx):
                     click.echo(f"    Created: {backup['created']}")
                     click.echo(f"    Size: {backup['size']:,} bytes")
                     click.echo(f"    Age: {backup['age_days']} days")
+                    total += 1
+
+        if total == 0:
+            click.echo("\n  No backups found")
+        else:
+            click.echo(f"\nTotal backups: {total}")
 
     except DatabaseError as e:
         click.echo(f"❌ Failed to list backups: {e}", err=True)
@@ -285,10 +329,10 @@ def list_backups(ctx):
 @cli.command()
 @click.argument("backup_path", type=click.Path(exists=True))
 @click.confirmation_option(
-    prompt="Are you sure you want to restore? This will overwrite the current database."
+    prompt="⚠️  This will overwrite the current database! Continue?"
 )
 @click.pass_context
-def restore_backup(ctx, backup_path):
+def restore(ctx, backup_path):
     """Restore from a backup file."""
     try:
         click.echo(f"♻️  Restoring from: {backup_path}")
@@ -301,7 +345,7 @@ def restore_backup(ctx, backup_path):
         sys.exit(1)
 
 
-# ===== Monitoring & Maintenance =====
+# ===== Monitoring =====
 @cli.command()
 @click.option("--verbose", is_flag=True, help="Show detailed statistics")
 @click.pass_context
@@ -367,14 +411,14 @@ def health(ctx, fix):
         click.echo(f"Status: {health_data['status'].upper()}")
 
         if health_data["issues"]:
-            click.echo("\n⚠️  Issues Found:")
+            click.echo(f"\n⚠️  Issues Found ({len(health_data['issues'])}):")
             for issue in health_data["issues"]:
                 click.echo(f"  • {issue}")
         else:
             click.echo("\n✅ No issues found!")
 
         if health_data["recommendations"]:
-            click.echo("\n💡 Recommendations:")
+            click.echo(f"\n💡 Recommendations ({len(health_data['recommendations'])}):")
             for rec in health_data["recommendations"]:
                 click.echo(f"  • {rec}")
 
@@ -385,9 +429,14 @@ def health(ctx, fix):
                     session, dry_run=False
                 )
                 click.echo("\nCleanup Results:")
+                total_cleaned = 0
                 for key, value in results.items():
                     if isinstance(value, int) and value > 0:
                         click.echo(f"  • {key}: {value}")
+                        total_cleaned += value
+
+                if total_cleaned == 0:
+                    click.echo("  No orphaned records found")
 
     except DatabaseError as e:
         click.echo(f"❌ Health check failed: {e}", err=True)
@@ -401,7 +450,6 @@ def validate(ctx):
     try:
         db = get_db(ctx)
         with db.session_scope() as session:
-            # Check for orphaned records
             orphans = db.health_monitor._check_orphaned_records(session)
             integrity = db.health_monitor._check_data_integrity(session)
 
@@ -433,6 +481,7 @@ def validate(ctx):
         sys.exit(1)
 
 
+# ===== Maintenance =====
 @cli.command()
 @click.confirmation_option(prompt="This will remove orphaned records. Continue?")
 @click.pass_context
@@ -444,9 +493,16 @@ def cleanup(ctx):
         results = db.cleanup_all_metadata()
 
         click.echo("\n✅ Cleanup Complete:")
+        total_removed = 0
         for table, count in results.items():
             if count > 0:
                 click.echo(f"  • {table}: {count} removed")
+                total_removed += count
+
+        if total_removed == 0:
+            click.echo("  No orphaned records found")
+        else:
+            click.echo(f"\nTotal removed: {total_removed}")
 
     except DatabaseError as e:
         click.echo(f"❌ Cleanup failed: {e}", err=True)
@@ -454,53 +510,42 @@ def cleanup(ctx):
 
 
 @cli.command()
-@click.option("--vacuum", is_flag=True, help="Run VACUUM to reclaim space")
-@click.option("--analyze", is_flag=True, help="Run ANALYZE to update statistics")
 @click.confirmation_option(
     prompt="Optimization can take time and requires exclusive access. Continue?"
 )
 @click.pass_context
-def optimize(ctx, vacuum, analyze):
-    """Optimize database performance."""
+def optimize(ctx):
+    """Optimize database performance (VACUUM + ANALYZE)."""
     try:
         db = get_db(ctx)
-        results = None
-
         click.echo("🔧 Optimizing database...")
 
         with db.session_scope() as session:
-            if vacuum or analyze or (not vacuum and not analyze):
-                # If no flags or both flags, do full optimization
-                results = db.health_monitor.optimize_database(session)
-            else:
-                # TODO: Implemente partial optimization
-                # click.echo("🔧 Running optimization...")
-                # Implement partial optimization if needed
-                click.echo("Partial optimization not yet implemented.")
+            results = db.health_monitor.optimize_database(session)
 
         if results:
             click.echo("\n✅ Optimization Complete:")
             if "space_reclaimed_bytes" in results:
                 reclaimed = results["space_reclaimed_bytes"]
+                mb_reclaimed = reclaimed / 1024 / 1024
                 click.echo(
-                    f"  Space reclaimed: {reclaimed:,} bytes ({reclaimed / 1024 / 1024:.2f} MB)"
+                    f"  Space reclaimed: {reclaimed:,} bytes ({mb_reclaimed:.2f} MB)"
                 )
             if "vacuum_completed" in results:
-                click.echo(f"  VACUUM: {'✓' if results['vacuum_completed'] else '✗'}")
+                status = "✓" if results["vacuum_completed"] else "✗"
+                click.echo(f"  VACUUM: {status}")
             if "analyze_completed" in results:
-                click.echo(f"  ANALYZE: {'✓' if results['analyze_completed'] else '✗'}")
+                status = "✓" if results["analyze_completed"] else "✗"
+                click.echo(f"  ANALYZE: {status}")
         else:
             click.echo("⚠️  No optimization performed")
 
-    except HealthCheckError as e:
+    except (HealthCheckError, DatabaseError) as e:
         click.echo(f"❌ Optimization failed: {e}", err=True)
         sys.exit(1)
-    except DatabaseError as e:
-        click.echo(f"❌ Database error: {e}", err=True)
-        sys.exit(1)
 
 
-# ===== Data Export =====
+# ===== Export =====
 @cli.command()
 @click.argument("output_dir", type=click.Path())
 @click.pass_context
@@ -513,7 +558,7 @@ def export_csv(ctx, output_dir):
         with db.session_scope() as session:
             exported = db.export_to_csv(session, output_dir)
 
-        click.echo("\n✅ Export Complete:")
+        click.echo(f"\n✅ Export Complete ({len(exported)} tables):")
         for table, path in exported.items():
             click.echo(f"  • {table}: {path}")
 
@@ -541,7 +586,6 @@ def export_json(ctx, output_file):
         sys.exit(1)
 
 
-# ===== Advanced Commands =====
 @cli.command()
 @click.pass_context
 def analyze(ctx):
@@ -556,11 +600,9 @@ def analyze(ctx):
         click.echo("\n📈 Analytics Report")
         click.echo("=" * 70)
 
-        # Database stats
         click.echo("\nDatabase Overview:")
         click.echo(json.dumps(stats, indent=2, default=str))
 
-        # Manuscript analytics
         click.echo("\nManuscript Analytics:")
         click.echo(json.dumps(manuscript, indent=2, default=str))
 

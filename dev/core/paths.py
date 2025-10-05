@@ -58,6 +58,7 @@ ROOT: Path = Path(__file__).resolve().parents[1]
 DEV_DIR = ROOT / "dev"
 
 # --- Converters/Pipeline ---
+FORMATTING_SCRIPT = DEV_DIR / "bin" / "init_format"
 # TODO: Adapt these. New logic for structure
 # TXT2MD_DIR: Path = ROOT / "code" / "txt2md"
 # MD2WIKI_DIR: Path = ROOT / "code" / "md2wiki"
