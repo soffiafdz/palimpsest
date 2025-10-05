@@ -1,110 +1,336 @@
 # Palimpsest
 
-**Private writing archive and manuscript workspace.**
+**A personal journal metadata management and PDF compilation system.**
 
-This repository contains the archival, curatorial, and editorial infrastructure
-for an ongoing hybrid memoir project currently titled _What wasn't said_.
-It is built atop more than a decade of daily journals (2015–present)
-and is being shaped into a book-length manuscript that blends autobiographical
-fragments, personal essay, and autofiction.
+Palimpsest is a personal project consisting of a Python-based toolkit for processing, organizing, and analyzing journal entries with rich metadata. It converts raw text exports into structured Markdown files with YAML frontmatter, maintains a SQLite database of relationships and themes, and generates annotated PDFs for review and curation.
+
+Originally built for managing my decade+ archive from [750words.com](https://750words.com), Palimpsest provides me the infrastructure for transforming my personal documentary writings into searchable, cross-referenced material suitable for memoir or creative non-fiction projects.
 
 ---
 
-## What this is
+## Features
 
-- A structured **journal archive**:
-originally exported from [750words.com](https://750words.com), now converted to
-yearly Markdown files and tablet-ready PDFs for annotation.
-- A **curation and revision workspace**:
-fragments are extracted, rewritten, and developed into vignettes inside
-a standalone `vignettes/` directory.
-- A **manuscript scaffolding system**:
-including thematic cross-referencing, character mapping, section/chapter
-outlines, and a tracked inventory of what is kept, cut, or rewritten.
+- **Multi-stage processing pipeline**: Raw exports → Formatted text → Markdown → Database → PDFs
+- **Rich metadata extraction**: Track people, locations, events, themes, dates, and references
+- **Database-backed queries**: SQLAlchemy ORM with relationship mapping and analytics
+- **PDF generation**: Create clean reading copies and annotated review versions
+- **Vim/Neovim integration**: Vimwiki templates and automation (optional)
+- **Makefile orchestration**: Simple commands for batch processing and year-based builds
 
-The project uses a Vim-native writing workflow and custom scripts for managing
-format conversions and editorial tracking.
+---
+
+## Quick Start
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/soffiafdz/palimpsest.git
+cd palimpsest
+
+# Create conda/micromamba environment
+micromamba env create -f environment.yaml
+micromamba activate palimpsest
+
+# Set up data directory (private submodule or local)
+# Option 1: With private submodule
+git submodule update --init --recursive
+
+# Option 2: Create local data directory
+mkdir -p data/journal/{inbox,sources/txt,content/{md,pdf}}
+mkdir -p data/metadata
+
+# Initialize database
+metadb init
+```
+
+### Basic Usage
+
+```bash
+# Process new journal exports
+journal inbox
+
+# Convert to markdown
+journal convert
+
+# Sync database
+journal sync
+
+# Build PDFs for a year
+journal pdf 2024
+
+# Or run complete pipeline
+journal run-all 2024
+```
+
+### Using Make
+
+```bash
+# Process everything
+make all
+
+# Year-specific
+make 2024
+make 2024-md   # Markdown only
+make 2024-pdf  # PDFs only
+
+# Database operations
+make init-db
+make backup
+make stats
+```
+
+---
+
+## Pipeline Architecture
+
+```
+inbox/ (raw exports) → source2txt → txt/     (formatted text)
+                                     ↓
+                                    txt2md
+                                     ↓
+                                    md/      (markdown + YAML)
+                                     ↓            ↑
+                                    yaml2sql  sql2yaml
+                                     ↓            ↑
+                                    database (SQLite + metadata)
+                                     ↓
+                                    md2pdf
+                                     ↓
+                                    pdf/     (annotated PDFs)
+```
 
 ---
 
 ## Directory Structure
 
-- `bin/` - Standalone scripts/utilities
-- `journal/` - Source material (personal journal)
-  - `annotations/` - Marked PDFs
-  - `archive/` - Compressed original 750words daily text exports
-  - `inbox/` - Where to download 750words exports to be processed
-  - `latex/` - Preamble style LaTeX files for compiling PDFs
-  - `md/` – Markdown files generated via `txt2md.py` containing Metadata.
-  - `pdf/` – Printable/annotatable PDFs
-  - `txt/` – Pre-cleaned text exports by year
-- `Makefile` – Custom build system for txt→md→pdf, plus tagging and cleaning
-- `scripts/` – Conversion and inventory scaffolding tools
-- `vignettes/` – Curated, rewritten excerpts for potential manuscript inclusion
-- `wiki/` – Internal documentation and planning:
-  - `index.md` – Dashboard hub
-  - `inventory.md` – Checklist of reviewed entries
-  - `log\{YYYY-MM-DD.md}` - Log entries
-  - `structure.md` – Book outline (sections → chapters → vignettes)
-  - `themes.md`, `tags.md`, `people.md`, `timeline.md` – Supporting documents
+```
+palimpsest/
+├── dev/                        # Source code
+│   ├── bin/                    # CLI wrappers (journal, metadb)
+│   ├── builders/               # PDF and text builders
+│   ├── core/                   # Logging, validation, paths
+│   ├── database/               # SQLAlchemy ORM and managers
+│   ├── dataclasses/            # Entry data structures
+│   ├── pipeline/               # Processing scripts
+│   └── utils/                  # Utilities (fs, md, parsers)
+├── templates/                  # LaTeX preambles, wiki templates
+├── data/                       # Personal content (git submodule)
+│   ├── journal/
+│   │   ├── inbox/
+│   │   ├── sources/txt/
+│   │   ├── content/md/
+│   │   └── annotations/
+│   ├── manuscript/
+│   ├── wiki/
+│   └── metadata/
+│       └── palimpsest.db
+├── environment.yaml
+├── Makefile
+└── README.md
+```
 
 ---
 
-## Toolchain
+## Command Reference
 
-**Core plugins:**
-- `vimwiki/vimwiki`
-- `nvim-telescope/telescope.nvim` (+ `fzf-native`, `telescope-vimwiki`)
-- `nvim-lua/plenary.nvim`
+### Pipeline Commands
 
-**Utility plugins:**
-- `tpope/vim-fugitive`
-- `junegunn/goyo.vim`
+```bash
+# Process inbox (raw exports → formatted text)
+journal inbox [-i INBOX] [-o OUTPUT]
 
-**External tools:**
-- `ripgrep`, `fd`, `make`, `pandoc`, `xelatex`, `python3`
+# Convert text to markdown
+journal convert [-i INPUT] [-o OUTPUT] [-f]
+
+# Sync database from markdown
+journal sync [-i INPUT] [-f]
+
+# Export database to markdown
+journal export [-o OUTPUT] [-f]
+
+# Build PDFs
+journal pdf YEAR [-i INPUT] [-o OUTPUT] [-f]
+
+# Complete pipeline
+journal run-all [--year YEAR] [--skip-inbox] [--skip-pdf]
+
+# Status
+journal status
+journal validate
+```
+
+### Database Commands
+
+```bash
+# Initialize
+metadb init [--alembic-only] [--db-only]
+metadb reset [--keep-backups]
+
+# Migrations
+metadb migration-create MESSAGE [--autogenerate]
+metadb migration-upgrade [--revision REV]
+metadb migration-status
+metadb migration-history
+
+# Backups
+metadb backup [--type TYPE] [--suffix SUFFIX]
+metadb backups
+metadb restore BACKUP_PATH
+
+# Monitoring
+metadb stats [--verbose]
+metadb health [--fix]
+metadb validate
+
+# Maintenance
+metadb cleanup
+metadb optimize
+
+# Export
+metadb export-csv OUTPUT_DIR
+metadb export-json OUTPUT_FILE
+metadb analyze
+```
 
 ---
 
-## Keyboard Shortcuts (Vim)
+## Markdown Format
 
-- `<Leader>ww` → Open main page `wiki/index.md`
-- `<Leader>wi` → Open log index `wiki/log/index.md`
-- `<Leader>w<Leader>w` → Open current day log entry
-- `<Leader>f` → Telescope picker for any wiki file
-- `<Leader>v` → Telescope picker for `vignettes/`
-- `<Leader>g` → Live-grep inside wiki
-- `<Leader>zz` → Toggle distraction-free mode (`goyo.vim`)
-- `<Leader>gs` → Git status in root (via `vim-fugitive`)
+### Entry Structure
+
+```yaml
+---
+date: 2024-01-15
+word_count: 850
+reading_time: 4.2
+
+city: Montreal
+locations: [Cafe X, Library]
+
+people: [Maria-Jose, "@Friend (Full Name)"]
+tags: [writing, reflection]
+events: [thesis-defense]
+
+epigraph: "Quote text here"
+epigraph_attribution: Author Name
+
+dates:
+  - 2024-06-01 (thesis exam)
+
+references:
+  - content: "Referenced quote"
+    speaker: Speaker Name
+    source:
+      title: Book Title
+      type: book
+      author: Author Name
+
+manuscript:
+  status: draft
+  edited: false
+  themes: [identity, memory]
+---
+## Monday, January 15, 2024
+
+Entry content here...
+```
+
+See `example_yaml.md` for complete examples.
 
 ---
 
-## Usage Overview
+## Database Schema
 
-1. `make {YEAR}` → Convert raw text to Markdown/PDF.
-2. Annotate on tablet or desktop; update `inventory.md`.
-3. Curate fragments into `vignettes/`, tag and outline structure.
-4. Iterate on narrative arc, rewrite vignettes, typeset manuscript.
+Core tables:
 
-Optional tasks: create final Typst file, build CI integration, select image inserts.
+- `entries` - Journal entries with metadata
+- `people` - People mentioned (with aliases, relationships)
+- `cities` - Geographic cities
+- `locations` - Specific venues/places
+- `events` - Thematic events spanning entries
+- `tags` - Keyword tags
+- `dates` - Referenced dates with context
+- `references` - External citations
+- `poems` - Poetry versions
+
+Manuscript tables:
+
+- `manuscript_entries` - Curation status
+- `manuscript_people` - Character adaptations
+- `manuscript_events` - Event transformations
+- `themes` - Thematic categories
+- `arcs` - Narrative arcs
 
 ---
 
-## About the name
+## Development
 
-A *palimpsest* is a manuscript that has been scraped or washed clean so it can
-be reused—yet beneath the surface, traces of the original text remain. This
-project carries that spirit: overwritten memory, persistent ghosts, rewritten
-selves.
+### Running Tests
+
+```bash
+pytest tests/
+```
+
+### Adding Migrations
+
+```bash
+# Create migration
+metadb migration-create "add_new_field"
+
+# Edit generated file in alembic/versions/
+
+# Apply migration
+metadb migration-upgrade
+```
+
+### Code Style
+
+Uses Ruff for linting. Code follows:
+
+- Type hints throughout
+- Click for CLI interfaces
+- Emoji-style terminal output
+- Comprehensive logging
+
+---
+
+## Dependencies
+
+- Python 3.10+
+- SQLAlchemy 2.0+
+- Click 8.0+
+- Pandoc 2.19+
+- Tectonic or XeLaTeX
+- Cormorant Garamond font (for PDFs)
+
+See `environment.yaml` for complete list.
+
+---
+
+## Configuration
+
+Edit `dev/core/paths.py` to customize:
+
+- Data directory location
+- Database path
+- Output directories
+- Template paths
+
+---
+
+## About the Name
+
+A _palimpsest_ is a manuscript that has been scraped clean for reuse—yet traces of the original text remain visible beneath. This project embodies that concept: writing layered over writing, memory overwritten but never fully erased.
 
 ---
 
 ## License
 
-The contents of this repository are licensed under the **Creative Commons
-Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)**
-license.
+MIT License - See LICENSE file for details.
 
-[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
-This means you may not use, share, or build upon this work without explicit
-permission.
+---
+
+## Acknowledgments
+
+Built for managing journal archives from [750words.com](https://750words.com). Inspired by the practice of daily writing and the challenge of transforming private reflection into public art.
