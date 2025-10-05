@@ -44,6 +44,7 @@ from alembic import command
 from alembic.runtime.migration import MigrationContext
 
 # --- Local imports ---
+from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.paths import ROOT
 from dev.core.validators import DataValidator
@@ -78,7 +79,6 @@ from .decorators import (
     log_database_operation,
     validate_metadata,
 )
-from .backup_manager import BackupManager
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
@@ -150,7 +150,7 @@ class PalimpsestDB:
 
         # --- Backup system ---
         if backup_dir:
-            self.backup_dir = Path(backup_dir).expanduser().resolve() / "database"
+            self.backup_dir = Path(backup_dir).expanduser().resolve()
             self.backup_manager = BackupManager(
                 self.db_path,
                 self.backup_dir,

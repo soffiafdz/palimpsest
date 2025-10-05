@@ -3,14 +3,16 @@
 backup_manager.py
 --------------------
 Database backup and recovery operations.
+
+Handles both database-only and full data directory backups.
 """
 import sqlite3
+import tarfile
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
-from dev.core.logging_manager import PalimpsestLogger
-
+from .logging_manager import PalimpsestLogger
 from .exceptions import BackupError
 
 
@@ -20,12 +22,17 @@ class BackupManager:
 
     Provides automated backup creation with configurable retention policies
     and safe restore operations with pre-restore backup creation.
+
+    Supports two backup types:
+    1. Database-only backups (fast, frequent)
+    2. Full data directory backups (complete archive, less frequent)
     """
 
     def __init__(
         self,
         db_path: Path,
         backup_dir: Path,
+        data_dir: Optional[Path] = None,
         retention_days: int = 30,
         logger: Optional[PalimpsestLogger] = None,
     ) -> None:
@@ -35,18 +42,21 @@ class BackupManager:
         Args:
             db_path: Path to the database file
             backup_dir: Directory for backup storage
+            data_dir: Root data directory (for full backups)
             retention_days: Days to retain backups
             logger: Optional logger for backup operations
         """
         self.db_path = Path(db_path)
-        self.backup_dir = Path(backup_dir)
+        self.db_backup_dir = Path(backup_dir) / "database"
+        self.data_dir = Path(data_dir) if data_dir else None
+        self.full_backup_dir = Path(backup_dir) / "full_data"
         self.retention_days = retention_days
         self.logger = logger
 
         # Create backup directories
-        (self.backup_dir / "daily").mkdir(parents=True, exist_ok=True)
-        (self.backup_dir / "weekly").mkdir(parents=True, exist_ok=True)
-        (self.backup_dir / "manual").mkdir(parents=True, exist_ok=True)
+        (self.db_backup_dir / "daily").mkdir(parents=True, exist_ok=True)
+        (self.db_backup_dir / "weekly").mkdir(parents=True, exist_ok=True)
+        (self.db_backup_dir / "manual").mkdir(parents=True, exist_ok=True)
 
     def create_backup(
         self, backup_type: str = "manual", suffix: Optional[str] = None
@@ -73,7 +83,7 @@ class BackupManager:
         else:
             backup_name = f"{self.db_path.stem}_{timestamp}.db"
 
-        backup_path = self.backup_dir / backup_type / backup_name
+        backup_path = self.db_backup_dir / backup_type / backup_name
 
         try:
             source = sqlite3.connect(str(self.db_path))
@@ -112,7 +122,128 @@ class BackupManager:
                         "target_path": str(backup_path),
                     },
                 )
-            raise BackupError(f"Failed to create backup: {e}")
+            raise BackupError(f"Failed to create backup: {e}") from e
+
+    def create_full_backup(self, suffix: Optional[str] = None) -> Path:
+        """
+        Create compressed archive of entire data directory.
+
+        Excludes:
+        - Git files (.git/, .gitignore)
+        - Temporary files (tmp/, logs/)
+        - Existing backups (backups/)
+
+        Args:
+            suffix: Optional suffix for backup filename
+
+        Returns:
+            Path to the created archive
+
+        Raises:
+            BackupError: If data directory not configured or backup fails
+        """
+        if not self.data_dir:
+            raise BackupError("Data directory not configured for full backups")
+
+        if not self.data_dir.exists():
+            raise BackupError(f"Data directory not found: {self.data_dir}")
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if suffix:
+            archive_name = f"palimpsest-data-full_{timestamp}_{suffix}.tar.gz"
+        else:
+            archive_name = f"palimpsest-data-full_{timestamp}.tar.gz"
+
+        backup_path = self.full_backup_dir / archive_name
+
+        # Patterns to exclude
+        exclude_patterns = [
+            ".git",
+            ".gitignore",
+            ".gitmodules",
+            "__pycache__",
+            "*.pyc",
+            "tmp",
+            "logs",
+            "backups",  # Don't backup backups
+            ".DS_Store",
+            "Thumbs.db",
+        ]
+
+        try:
+            if self.logger:
+                self.logger.log_operation(
+                    "full_backup_start",
+                    {"data_dir": str(self.data_dir), "backup_path": str(backup_path)},
+                )
+
+            with tarfile.open(backup_path, "w:gz") as tar:
+                # Add data directory with filtering
+                tar.add(
+                    self.data_dir,
+                    arcname=self.data_dir.name,
+                    filter=lambda tarinfo: self._filter_tarinfo(
+                        tarinfo, exclude_patterns
+                    ),
+                )
+
+            # Create marker file
+            marker_path = backup_path.with_suffix(".tar.gz.marker")
+            marker_path.write_text(datetime.now().isoformat())
+
+            backup_size = backup_path.stat().st_size
+            backup_size_mb = backup_size / (1024 * 1024)
+
+            if self.logger:
+                self.logger.log_operation(
+                    "full_backup_created",
+                    {
+                        "backup_path": str(backup_path),
+                        "size_bytes": backup_size,
+                        "size_mb": f"{backup_size_mb:.2f}",
+                    },
+                )
+
+            return backup_path
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(
+                    e,
+                    {
+                        "operation": "create_full_backup",
+                        "target_path": str(backup_path),
+                    },
+                )
+            raise BackupError(f"Failed to create full backup: {e}") from e
+
+    def _filter_tarinfo(
+        self, tarinfo: tarfile.TarInfo, exclude_patterns: List[str]
+    ) -> Optional[tarfile.TarInfo]:
+        """
+        Filter function for tarfile to exclude certain patterns.
+
+        Args:
+            tarinfo: TarInfo object being added
+            exclude_patterns: List of patterns to exclude
+
+        Returns:
+            TarInfo if file should be included, None to exclude
+        """
+        # Get the path relative to the archive root
+        path_parts = Path(tarinfo.name).parts
+
+        # Check each part against exclude patterns
+        for part in path_parts:
+            for pattern in exclude_patterns:
+                if pattern.startswith("*"):
+                    # Wildcard pattern
+                    if part.endswith(pattern[1:]):
+                        return None
+                elif part == pattern:
+                    return None
+
+        return tarinfo
 
     def auto_backup(self) -> Optional[Path]:
         """
@@ -153,12 +284,12 @@ class BackupManager:
         cutoff_date = datetime.now() - timedelta(days=self.retention_days)
 
         for backup_type in ["daily", "weekly"]:
-            backup_dir = self.backup_dir / backup_type
-            if not backup_dir.exists():
+            db_backup_dir = self.db_backup_dir / backup_type
+            if not db_backup_dir.exists():
                 continue
 
             removed_count = 0
-            for backup_file in backup_dir.glob("*.db"):
+            for backup_file in db_backup_dir.glob("*.db"):
                 marker_file = backup_file.with_suffix(".db.marker")
 
                 try:
@@ -246,13 +377,29 @@ class BackupManager:
         backups = {"daily": [], "weekly": [], "manual": []}
 
         for backup_type in backups.keys():
-            backup_dir = self.backup_dir / backup_type
+            backup_dir = self.db_backup_dir / backup_type
             if not backup_dir.exists():
                 continue
 
             for backup_file in sorted(backup_dir.glob("*.db")):
                 stat = backup_file.stat()
                 backups[backup_type].append(
+                    {
+                        "name": backup_file.name,
+                        "path": str(backup_file),
+                        "size": stat.st_size,
+                        "created": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        "age_days": (
+                            datetime.now() - datetime.fromtimestamp(stat.st_mtime)
+                        ).days,
+                    }
+                )
+
+        # Full data backups
+        if hasattr(self, "full_backup_dir") and self.full_backup_dir.exists():
+            for backup_file in sorted(self.full_backup_dir.glob("*.tar.gz")):
+                stat = backup_file.stat()
+                backups["full"].append(
                     {
                         "name": backup_file.name,
                         "path": str(backup_file),

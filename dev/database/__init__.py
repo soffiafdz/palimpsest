@@ -16,14 +16,13 @@ Palimpsest personal journal archive system, with specialized modules for:
 """
 
 from .manager import PalimpsestDB
-from .exceptions import (
+from dev.core.exceptions import (
     DatabaseError,
     ValidationError,
     BackupError,
     HealthCheckError,
     ExportError,
 )
-from .backup_manager import BackupManager
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
@@ -47,7 +46,6 @@ __all__ = [
     "HealthCheckError",
     "ExportError",
     # Core modules
-    "BackupManager",
     "HealthMonitor",
     "ExportManager",
     "QueryAnalytics",
