@@ -59,8 +59,8 @@ DEV_DIR = ROOT / "dev"
 
 # --- Converters/Pipeline ---
 # TODO: Adapt these. New logic for structure
-TXT2MD_DIR: Path = ROOT / "code" / "txt2md"
-MD2WIKI_DIR: Path = ROOT / "code" / "md2wiki"
+# TXT2MD_DIR: Path = ROOT / "code" / "txt2md"
+# MD2WIKI_DIR: Path = ROOT / "code" / "md2wiki"
 
 # --- Database ---
 DB_PATH = ROOT / "palimpsest.db"
@@ -80,6 +80,8 @@ BACKUP_DIR = ROOT / "backups"
 LOG_DIR = ROOT / "logs"
 TMP_DIR = ROOT / "tmp"
 
+# ---- Templates ----
+TEX_DIR = ROOT / "templates" / "tex"
 
 # ---- Vignettes ----
 VIGNETTES_DIR = ROOT / "vignettes"

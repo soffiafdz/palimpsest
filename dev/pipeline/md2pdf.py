@@ -2,144 +2,230 @@
 """
 md2pdf.py
 -------------------
+Generate yearly journal PDFs from Markdown entries.
 
-Command-line interface for generating yearly journal PDFs (clean and
-review-notes versions) from daily Markdown entries using the PdfBuilder class.
+Builds two PDF versions from daily Markdown files:
+1. Clean PDF - Reading/archival version
+2. Notes PDF - Annotation version with line numbers
 
-This script parses command-line arguments to determine the year, source and
-output directories, and LaTeX preamble files. It then instantiates PdfBuilder
-with the appropriate configuration, executes the build process, and reports the
-outcome.
+Uses Pandoc with custom LaTeX preambles for professional typography.
 
-Features:
-    - Builds a 'clean' PDF suitable for distribution or archiving.
-    - Builds a 'review-notes' PDF, which includes line numbers and other markup
-      for review.
-    - Supports verbose mode for detailed progress reporting.
-    - Handles file and conversion errors gracefully, reporting user-friendly
-      messages.
+Usage:
+    # Build PDFs for a specific year
+    python -m dev.pipeline.md2pdf build 2025
 
-Arguments:
-    year                 Four-digit year to process (e.g., '2025').
-    -i, --indir          Path to the root directory containing Markdown files
-                            (default: 'journal/md').
-    -o, --outdir         Output directory for resulting PDFs
-                            (default: 'journal/pdf').
-    --preamble           Path to the LaTeX preamble for the clean PDF
-                            (default: 'journal/latex/preamble.tex').
-    --preamble-notes     Path to the LaTeX preamble for the notes PDF
-                            (default: 'journal/latex/preamble_notes.tex').
-    -v, --verbose        Enable verbose output for diagnostics.
+    # Build with custom directories
+    python -m dev.pipeline.md2pdf build 2025 -i path/to/md -o path/to/pdf
 
-Typical usage:
-    python build_pdf.py 2025 --verbose
-    python build_pdf.py 2024 --indir ~/journals/md --outdir ~/journals/pdf
+    # Force overwrite existing PDFs
+    python -m dev.pipeline.md2pdf build 2025 --force
 
-Requires:
-    - Python 3.7+
-    - The pdfbuilder module (must be in your PYTHONPATH or same directory)
-    - Pandoc and LaTeX installed and available to pypandoc
-    - pypandoc Python package
-
+    # Verbose output
+    python -m dev.pipeline.md2pdf build 2025 -v
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
-import argparse
+import click
 import sys
 from pathlib import Path
 
 # --- Local imports ---
-from code.paths import LATEX_DIR, MD_DIR, PDF_DIR
-from code.md2pdf.pdfbuilder import PdfBuilder
+from dev.core.paths import TEX_DIR, MD_DIR, PDF_DIR, LOG_DIR
+from dev.core.exceptions import PdfBuildError
+from dev.core.logging_manager import PalimpsestLogger
+from dev.builders.pdfbuilder import PdfBuilder, BuildStats
 
 
-# ----- Argument parser -----
-def parse_args() -> argparse.Namespace:
-    """
-    Arguments:
-        - year: Four digit year to build.
-        - indir: Directory to read Markdown files from.
-        - outdir: Directory to save the yearly PDFs.
-        - preamble: LaTeX preamble file for formatting.
-        - preamble_notes: LaTeX preamble file for formatting (Notes).
-        - clobber: Overwrite existing files.
-        - verbose: Logging.
-    """
-    p = argparse.ArgumentParser(
-        description="Build clean + review PDFs for a journal year"
-    )
-
-    # --- ARGUMENTS ---
-    p.add_argument("year", help="Four-digit year to build (e.g. 2025)")
-    p.add_argument(
-        "-i", "--indir", default=MD_DIR, help="Root directory of Markdown files"
-    )
-    p.add_argument(
-        "-o", "--outdir", default=PDF_DIR, help="Directory to write PDFs into"
-    )
-    p.add_argument(
-        "--preamble",
-        default=LATEX_DIR / "preamble.tex",
-        help="Path to LaTeX preamble for clean PDF",
-    )
-    p.add_argument(
-        "--preamble-notes",
-        default=LATEX_DIR / "preamble_notes.tex",
-        help="Path to LaTeX preamble for review-notes PDF",
-    )
-    p.add_argument(
-        "-f",
-        "--force",
-        "--clobber",
-        action="store_true",
-        help="Overwrite existing output PDFs (quiet skip otherwise)",
-    )
-    p.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-
-    return p.parse_args()
+def setup_logger(log_dir: Path) -> PalimpsestLogger:
+    """Setup logging for md2pdf operations."""
+    operations_log_dir = log_dir / "operations"
+    operations_log_dir.mkdir(parents=True, exist_ok=True)
+    return PalimpsestLogger(operations_log_dir, component_name="md2pdf")
 
 
-# ----- Main -----
-def main() -> None:
-    """
-    CLI entrypoint:
-        - Parse command-line arguments
-        - Gather per-entry Markdown files for the given year
-        - Concatenate them into a temp .md
-        - Run Pandoc twice to produce:
-            * a clean PDF
-            * a review-notes PDF with line numbers & watermark
-    """
-    args = parse_args()
+@click.group()
+@click.option(
+    "--log-dir",
+    type=click.Path(),
+    default=str(LOG_DIR),
+    help="Directory for log files",
+)
+@click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
+@click.pass_context
+def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
+    """md2pdf - Generate yearly journal PDFs from Markdown"""
+    ctx.ensure_object(dict)
+    ctx.obj["log_dir"] = Path(log_dir)
+    ctx.obj["verbose"] = verbose
+    ctx.obj["logger"] = setup_logger(Path(log_dir))
 
-    clean_pdf: Path = Path(args.outdir) / f"{args.year}.pdf"
-    notes_pdf: Path = Path(args.outdir) / f"{args.year}-notes.pdf"
 
-    builder = PdfBuilder(
-        year=args.year,
-        md_dir=Path(args.indir),
-        pdf_dir=Path(args.outdir),
-        preamble=Path(args.preamble),
-        preamble_notes=Path(args.preamble_notes),
-        verbose=args.verbose,
-        clobber=args.force,
-    )
+@cli.command()
+@click.argument("year")
+@click.option(
+    "-i",
+    "--input",
+    type=click.Path(),
+    default=str(MD_DIR),
+    help=f"Markdown source directory (default: {MD_DIR})",
+)
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(),
+    default=str(PDF_DIR),
+    help=f"PDF output directory (default: {PDF_DIR})",
+)
+@click.option(
+    "--preamble",
+    type=click.Path(exists=True),
+    default=str(TEX_DIR / "preamble.tex"),
+    help="LaTeX preamble for clean PDF",
+)
+@click.option(
+    "--preamble-notes",
+    type=click.Path(exists=True),
+    default=str(TEX_DIR / "preamble_notes.tex"),
+    help="LaTeX preamble for notes PDF",
+)
+@click.option("-f", "--force", is_flag=True, help="Force overwrite existing PDFs")
+@click.pass_context
+def build(
+    ctx: click.Context,
+    year: str,
+    input: str,
+    output: str,
+    preamble: str,
+    preamble_notes: str,
+    force: bool,
+) -> None:
+    """Build clean and notes PDFs for a specific year."""
+    logger: PalimpsestLogger = ctx.obj["logger"]
 
     try:
-        builder.build()
-    except FileNotFoundError as e:
-        print(f"[md2pdf] →  File not found: {e}", file=sys.stderr)
+        # Validate year format
+        if not year.isdigit() or len(year) != 4:
+            raise PdfBuildError(f"Invalid year format: {year} (expected YYYY)")
+
+        input_dir = Path(input)
+        output_dir = Path(output)
+        preamble_path = Path(preamble) if preamble else None
+        preamble_notes_path = Path(preamble_notes) if preamble_notes else None
+
+        click.echo(f"📚 Building PDFs for year {year}")
+
+        # Create builder
+        builder = PdfBuilder(
+            year=year,
+            md_dir=input_dir,
+            pdf_dir=output_dir,
+            preamble=preamble_path,
+            preamble_notes=preamble_notes_path,
+            force_overwrite=force,
+            logger=logger,
+        )
+
+        # Execute build
+        stats: BuildStats = builder.build()
+
+        # Report results
+        click.echo("\n✅ PDF build complete:")
+        click.echo(f"  Markdown entries: {stats.files_processed}")
+        click.echo(f"  PDFs created: {stats.pdfs_created}")
+
+        if stats.pdfs_created > 0:
+            if preamble_path:
+                clean_pdf = output_dir / f"{year}.pdf"
+                click.echo(f"  📄 Clean PDF: {clean_pdf}")
+            if preamble_notes_path:
+                notes_pdf = output_dir / f"{year}-notes.pdf"
+                click.echo(f"  📝 Notes PDF: {notes_pdf}")
+
+        if stats.errors > 0:
+            click.echo(f"  ⚠️  Errors: {stats.errors}")
+
+        click.echo(f"  Duration: {stats.duration():.2f}s")
+
+    except PdfBuildError as e:
+        click.echo(f"❌ PDF build failed: {e}", err=True)
         sys.exit(1)
-    except RuntimeError as e:
-        print(f"[md2pdf] →  Runtime error: {e}", file=sys.stderr)
-        sys.exit(2)
     except Exception as e:
-        print(f"[md2pdf] →  Unexpected error: {e}", file=sys.stderr)
-        sys.exit(3)
+        click.echo(f"❌ Unexpected error: {e}", err=True)
+        if ctx.obj["verbose"]:
+            import traceback
+
+            traceback.print_exc()
+        sys.exit(1)
 
 
-# ---- Main call ----
+@cli.command()
+@click.argument("year")
+@click.option(
+    "-i",
+    "--input",
+    type=click.Path(),
+    default=str(MD_DIR),
+    help=f"Markdown source directory (default: {MD_DIR})",
+)
+@click.pass_context
+def validate(ctx: click.Context, year: str, input: str) -> None:
+    """Validate Markdown files for a specific year."""
+    try:
+        # Validate year format
+        if not year.isdigit() or len(year) != 4:
+            raise PdfBuildError(f"Invalid year format: {year} (expected YYYY)")
+
+        input_dir = Path(input)
+        year_dir = input_dir / year
+
+        click.echo(f"🔍 Validating Markdown files for {year}")
+
+        if not year_dir.exists():
+            click.echo(f"❌ Directory not found: {year_dir}", err=True)
+            sys.exit(1)
+
+        # Find all markdown files
+        md_files = sorted(year_dir.glob(f"{year}-*.md"))
+
+        if not md_files:
+            click.echo(f"⚠️  No Markdown files found in {year_dir}")
+            return
+
+        click.echo(f"Found {len(md_files)} entries")
+
+        # Basic validation
+        malformed = []
+        for md_file in md_files:
+            parts = md_file.stem.split("-")
+            if len(parts) != 3:
+                malformed.append(md_file.name)
+
+        if malformed:
+            click.echo(f"\n⚠️  Malformed filenames ({len(malformed)}):")
+            for filename in malformed:
+                click.echo(f"  • {filename}")
+        else:
+            click.echo("\n✅ All filenames valid")
+
+        # Date range
+        if md_files:
+            first_entry = md_files[0].stem
+            last_entry = md_files[-1].stem
+            click.echo(f"\nDate range: {first_entry} to {last_entry}")
+
+    except PdfBuildError as e:
+        click.echo(f"❌ Validation failed: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"❌ Unexpected error: {e}", err=True)
+        if ctx.obj.get("verbose"):
+            import traceback
+
+            traceback.print_exc()
+        sys.exit(1)
+
+
 if __name__ == "__main__":
-    main()
+    cli(obj={})

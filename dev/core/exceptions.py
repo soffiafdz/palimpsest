@@ -52,3 +52,9 @@ class Yaml2SqlError(Exception):
     """Exception for YAML to SQL conversion errors."""
 
     pass
+
+
+class PdfBuildError(Exception):
+    """Exception for Md to PDF conversion errors."""
+
+    pass
