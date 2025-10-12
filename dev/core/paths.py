@@ -13,7 +13,7 @@ Notes
 from pathlib import Path
 
 # ----- Project directory -----
-ROOT: Path = Path(__file__).resolve().parents[1]
+ROOT: Path = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"  # Personal data (private)
 
 # ---- Dev ----

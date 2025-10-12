@@ -174,7 +174,7 @@ class PalimpsestDB:
             self.backup_manager.auto_backup()
 
     def _setup_engine(self) -> None:
-        """Initialize database engine ans session factory."""
+        """Initialize database engine and session factory."""
         try:
             if self.logger:
                 self.logger.log_operation(
@@ -184,6 +184,8 @@ class PalimpsestDB:
                         "alembic_dir": str(self.alembic_dir),
                     },
                 )
+
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
             self.engine: Engine = create_engine(
                 f"sqlite:///{self.db_path}",
@@ -200,7 +202,9 @@ class PalimpsestDB:
             )
 
             self.alembic_cfg: Config = self._setup_alembic()
-            self.initialize_schema()
+
+            if not self.db_path.exists():
+                self.initialize_schema()
 
             if self.logger:
                 self.logger.log_operation("database_init_complete", {"success": True})

@@ -58,6 +58,9 @@ class BackupManager:
         (self.db_backup_dir / "weekly").mkdir(parents=True, exist_ok=True)
         (self.db_backup_dir / "manual").mkdir(parents=True, exist_ok=True)
 
+        if self.data_dir:
+            self.full_backup_dir.mkdir(parents=True, exist_ok=True)
+
     def create_backup(
         self, backup_type: str = "manual", suffix: Optional[str] = None
     ) -> Path:

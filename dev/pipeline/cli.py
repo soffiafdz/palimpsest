@@ -25,7 +25,7 @@ Usage:
     python -m dev.pipeline.cli build-pdf 2025
 
     # Backups
-    python -m dev.pipeline.cli backup
+    python -m dev.pipeline.cli backup-data
     python -m dev.pipeline.cli backup-list
 
     # Status and validation
@@ -55,6 +55,7 @@ from dev.core.paths import (
 from dev.builders.txtbuilder import TxtBuilder
 from dev.builders.pdfbuilder import PdfBuilder
 from dev.core.logging_manager import PalimpsestLogger
+from dev.core.backup_manager import BackupManager
 from dev.database.manager import PalimpsestDB
 
 
@@ -120,11 +121,12 @@ def inbox(ctx: click.Context, inbox: str, output: str) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        click.echo(f"❌ Inbox processing failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "inbox"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
@@ -167,11 +169,12 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        click.echo(f"❌ Conversion failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "convert"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
@@ -214,11 +217,12 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        click.echo(f"❌ Database sync failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "sync_db"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
@@ -271,11 +275,12 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "export_db"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
@@ -324,18 +329,19 @@ def build_pdf(
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        click.echo(f"❌ PDF build failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "build_pdf"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
 @cli.command()
 @click.option("--suffix", default=None, help="Optional backup suffix")
 @click.pass_context
-def backup(ctx: click.Context, suffix: Optional[str]) -> None:
+def backup_data(ctx: click.Context, suffix: Optional[str]) -> None:
     """Create full compressed backup of entire data directory."""
     logger: PalimpsestLogger = ctx.obj["logger"]
 
@@ -363,11 +369,12 @@ def backup(ctx: click.Context, suffix: Optional[str]) -> None:
         click.echo("\n💡 Backup saved outside git repository")
 
     except BackupError as e:
-        click.echo(f"❌ Full backup failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "backup"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
@@ -375,7 +382,7 @@ def backup(ctx: click.Context, suffix: Optional[str]) -> None:
 @click.pass_context
 def backup_list(ctx: click.Context) -> None:
     """List all available full data backups."""
-    from dev.core.backup_manager import BackupManager
+    logger: PalimpsestLogger = ctx.obj["logger"]
 
     try:
         backup_mgr = BackupManager(
@@ -415,11 +422,12 @@ def backup_list(ctx: click.Context) -> None:
         click.echo(f"Location: {backup_mgr.full_backup_dir}")
 
     except Exception as e:
-        click.echo(f"❌ Failed to list backups: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "backup_list"},
+            show_traceback=ctx.obj["verbose"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
@@ -438,7 +446,7 @@ def run_all(
     backup: bool,
 ) -> None:
     """Run the complete processing pipeline end-to-end."""
-
+    logger: PalimpsestLogger = ctx.obj["logger"]
     click.echo("🚀 Starting complete pipeline...\n")
 
     start_time = datetime.now()
@@ -469,7 +477,7 @@ def run_all(
         # Step 5: Full backup (if requested)
         if backup:
             click.echo("=" * 60)
-            ctx.invoke(backup_full, suffix="pipeline")
+            ctx.invoke(backup_data, suffix="pipeline")
             click.echo()
 
         duration = (datetime.now() - start_time).total_seconds()
@@ -478,17 +486,20 @@ def run_all(
         click.echo(f"\n✅ Pipeline complete! ({duration:.2f}s)")
 
     except Exception as e:
-        click.echo(f"\n❌ Pipeline failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "backup_list"},
+            show_traceback=ctx.obj["run_all"],
+        )
+        click.echo(error_msg, err=True)
         sys.exit(1)
 
 
 @cli.command()
-def status() -> None:
+@click.pass_context
+def status(ctx: click.Context) -> None:
     """Show pipeline status and statistics."""
+    logger: PalimpsestLogger = ctx.obj["logger"]
     click.echo("📊 Pipeline Status\n")
 
     # Check directories
@@ -523,7 +534,13 @@ def status() -> None:
         click.echo(f"  Total words: {stats.get('total_words', 0):,}")
 
     except Exception as e:
-        click.echo(f"  ⚠️  Database error: {e}")
+        error_msg = logger.log_cli_error(
+            e,
+            {"operation": "backup_list"},
+            show_traceback=ctx.obj["run_all"],
+        )
+        click.echo(error_msg, err=True)
+        sys.exit(1)
 
 
 @cli.command()

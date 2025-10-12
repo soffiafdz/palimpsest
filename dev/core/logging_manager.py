@@ -191,3 +191,44 @@ class PalimpsestLogger:
             )
         else:
             self.main_logger.warning(f"WARNING - {message}")
+
+    def log_cli_error(
+        self,
+        error: Exception,
+        context: Optional[Dict[str, Any]] = None,
+        show_traceback: bool = False,
+    ) -> str:
+        """
+        Format error for CLI display and log full details to file.
+
+        This method:
+        1. Logs complete error details (JSON format) to log files
+        2. Returns a clean, human-readable error message for CLI output
+
+        Args:
+            error: Exception to log
+            context: Optional context information about where error occurred
+            show_traceback: If True, include full traceback in CLI output
+
+        Returns:
+            Formatted error message suitable for CLI display
+
+        Examples:
+            >>> logger.log_cli_error(DatabaseError("Connection failed"))
+            '❌ DatabaseError: Connection failed'
+
+            >>> logger.log_cli_error(error, {"operation": "init"}, show_traceback=True)
+            '❌ DatabaseError: Connection failed\\n\\nTraceback (most recent call last)...'
+        """
+        # Log full details to file (JSON format for machine parsing)
+        self.log_error(error, context or {"source": "cli"})
+
+        # Build clean CLI message
+        error_type = type(error).__name__
+        error_msg = str(error)
+
+        if show_traceback:
+            tb = traceback.format_exc()
+            return f"❌ {error_type}: {error_msg}\n\n{tb}"
+        else:
+            return f"❌ {error_type}: {error_msg}"
