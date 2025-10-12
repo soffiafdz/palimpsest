@@ -13,8 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from dev.core.validators import DataValidator
-
-from .exceptions import DatabaseError
+from dev.core.exceptions import DatabaseError
 
 
 def log_database_operation(operation_name: str):
