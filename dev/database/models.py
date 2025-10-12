@@ -813,7 +813,7 @@ class City(Base):
     """
 
     __tablename__ = "cities"
-    __table_args__ = (CheckConstraint("city != ''", city="ck_city_non_empty_name"),)
+    __table_args__ = (CheckConstraint("city != ''", name="ck_city_non_empty_name"),)
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
