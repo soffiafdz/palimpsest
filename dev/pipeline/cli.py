@@ -25,8 +25,8 @@ Usage:
     python -m dev.pipeline.cli build-pdf 2025
 
     # Backups
-    python -m dev.pipeline.cli backup-full
-    python -m dev.pipeline.cli backup-list-full
+    python -m dev.pipeline.cli backup
+    python -m dev.pipeline.cli backup-list
 
     # Status and validation
     python -m dev.pipeline.cli status
@@ -335,7 +335,7 @@ def build_pdf(
 @cli.command()
 @click.option("--suffix", default=None, help="Optional backup suffix")
 @click.pass_context
-def backup_full(ctx: click.Context, suffix: Optional[str]) -> None:
+def backup(ctx: click.Context, suffix: Optional[str]) -> None:
     """Create full compressed backup of entire data directory."""
     logger: PalimpsestLogger = ctx.obj["logger"]
 
@@ -373,7 +373,7 @@ def backup_full(ctx: click.Context, suffix: Optional[str]) -> None:
 
 @cli.command()
 @click.pass_context
-def backup_list_full(ctx: click.Context) -> None:
+def backup_list(ctx: click.Context) -> None:
     """List all available full data backups."""
     from dev.core.backup_manager import BackupManager
 
