@@ -153,20 +153,32 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
 
     click.echo("📝 Converting text to Markdown...")
 
-    from dev.pipeline.txt2md import convert_directory
+    from dev.pipeline.txt2md import convert_directory, convert_file
 
     try:
-        stats = convert_directory(
-            input_dir=Path(input),
-            output_dir=Path(output),
-            force_overwrite=force,
-            logger=logger,
-        )
+        stats = None
+        input_path = Path(input)
+        if input_path.is_dir():
+            stats = convert_directory(
+                input_dir=input_path,
+                output_dir=Path(output),
+                force_overwrite=force,
+                logger=logger,
+            )
 
-        click.echo("\n✅ Conversion complete:")
-        click.echo(f"  Files processed: {stats.files_processed}")
-        click.echo(f"  Entries created: {stats.entries_created}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
+        if input_path.is_file():
+            stats = convert_file(
+                input_path=input_path,
+                output_dir=Path(output),
+                force_overwrite=force,
+                logger=logger,
+            )
+
+        if stats:
+            click.echo("\n✅ Conversion complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Entries created: {stats.entries_created}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
         error_msg = logger.log_cli_error(
