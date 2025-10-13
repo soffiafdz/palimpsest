@@ -556,8 +556,9 @@ class MdEntry:
          Args:
              people_list: List of person specifications (strings or dicts)
 
-         Returns:
-             List of dicts with 'name', 'full_name', and/or 'alias' keys
+        Returns dict with:
+            - "people": List of person specs (strings/dicts)
+            - "aliases_used": List of alias strings that were mentioned
 
          Examples:
              >>> _parse_people_field(["John", "Jane Smith", "Bob (Robert)", "@Bobby"])
@@ -568,7 +569,8 @@ class MdEntry:
                  {"alias": "Bobby"}
              ]
         """
-        normalized = []
+        normalized_people = []
+        aliases_mentioned = []
 
         for person_item in people_list:
             if isinstance(person_item, dict):
@@ -581,8 +583,19 @@ class MdEntry:
                     person_dict["full_name"] = DataValidator.normalize_string(
                         person_item["full_name"]
                     )
+                if "alias" in person_item:
+                    alias = person_item["alias"]
+                    if isinstance(alias, str):
+                        norm_alias = DataValidator.normalize_string(alias)
+                        if norm_alias:
+                            aliases_mentioned.append(norm_alias)
+                    elif alias:
+                        for a in alias:
+                            norm_alias = DataValidator.normalize_string(a)
+                            if norm_alias:
+                                aliases_mentioned.append(norm_alias)
                 if person_dict:
-                    normalized.append(person_dict)
+                    normalized_people.append(person_dict)
                 continue
 
             alias: Optional[str] = None

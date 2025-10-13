@@ -766,6 +766,7 @@ class PalimpsestDB:
             many_to_many_configs = [
                 ("cities", "cities", City),
                 ("people", "people", Person),
+                ("aliases_used", "aliases_used", Alias),
                 ("events", "events", Event),
             ]
 

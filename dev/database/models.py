@@ -28,6 +28,7 @@ Association Tables:
     - entry_people: Links entries to people
     - entry_events: Links entries to events
     - event_people: Links events to people
+    - entry_aliases: Links entries to alias
     - entry_related: Self-referential entry relationships
     - entry_tags: Links entries to tags
 
@@ -45,7 +46,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 from enum import Enum
 from datetime import date, datetime, timezone
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, TYPE_CHECKING
 
 # --- Third party ---
 from sqlalchemy import Enum as SQLEnum
@@ -70,11 +71,12 @@ from sqlalchemy.orm import (
 )
 
 # --- Local ---
-from .models_manuscript import (
-    ManuscriptEntry,
-    ManuscriptPerson,
-    ManuscriptEvent,
-)
+if TYPE_CHECKING:
+    from .models_manuscript import (
+        ManuscriptEntry,
+        ManuscriptPerson,
+        ManuscriptEvent,
+    )
 
 
 # ----- Base ORM class -----
@@ -187,6 +189,23 @@ entry_people = Table(
         primary_key=True,
     ),
     Column("people_id", Integer, ForeignKey("people.id"), primary_key=True),
+)
+
+entry_aliases = Table(
+    "entry_aliases",
+    Base.metadata,
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "alias_id",
+        Integer,
+        ForeignKey("aliases.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 entry_events = Table(
@@ -566,6 +585,9 @@ class Entry(Base):
     )
     people: Mapped[List[Person]] = relationship(
         "Person", secondary=entry_people, back_populates="entries"
+    )
+    aliases_used: Mapped[List[Alias]] = relationship(
+        "Alias", secondary=entry_aliases, back_populates="entries"
     )
     events: Mapped[List[Event]] = relationship(
         "Event", secondary=entry_events, back_populates="entries"
@@ -1128,12 +1150,43 @@ class Alias(Base):
 
     # ---- Relationship ----
     person: Mapped[Person] = relationship("Person", back_populates="aliases")
+    entries: Mapped[List[Entry]] = relationship(
+        "Entry", secondary=entry_aliases, back_populates="aliases_used"
+    )
+
+    # ---- Computed properties ----
+    @property
+    def first_used(self) -> Optional[date]:
+        """Date when alias was first used."""
+        if not self.entries:
+            return None
+        return min(entry.date for entry in self.entries)
+
+    @property
+    def last_used(self) -> Optional[date]:
+        """Date when alias was last used."""
+        if not self.entries:
+            return None
+        return max(entry.date for entry in self.entries)
+
+    @property
+    def usage_count(self) -> int:
+        """Number of entries using this alias."""
+        return len(self.entries)
 
     def __repr__(self) -> str:
         return f"<Alias(id={self.id}, alias={self.alias})>"
 
     def __str__(self) -> str:
-        return f"Alias {self.alias} (for {self.person.display_name})"
+        count = self.usage_count
+        if count == 0:
+            return f"Alias '{self.alias}' for {self.person.display_name} (unused)"
+        elif count == 1:
+            return f"Alias '{self.alias}' for {self.person.display_name} (1 entry)"
+        else:
+            return (
+                f"Alias '{self.alias}' for {self.person.display_name} ({count} entries)"
+            )
 
 
 class Reference(Base):
