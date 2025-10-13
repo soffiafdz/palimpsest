@@ -281,7 +281,7 @@ class MdEntry:
                 if ref.source:
                     ref_dict["source"] = {
                         "title": ref.source.title,
-                        "type": ref.source.type,
+                        "type": ref.source.type.value,
                     }
                     if ref.source.author:
                         ref_dict["source"]["author"] = ref.source.author
@@ -295,6 +295,7 @@ class MdEntry:
                 poem_dict: Dict[str, Any] = {
                     "title": pv.poem.title if pv.poem else "Untitled",
                     "content": pv.content,
+                    "revision_date": pv.revision_date.isoformat(),
                 }
                 if pv.notes:
                     poem_dict["notes"] = pv.notes
@@ -388,13 +389,13 @@ class MdEntry:
 
         # References
         if "references" in self.metadata:
-            db_meta["references"] = self._normalize_references_field(
+            db_meta["references"] = self._parse_references_field(
                 self.metadata["references"]
             )
 
         # Poems
         if "poems" in self.metadata:
-            db_meta["poems"] = self._normalize_poems_field(self.metadata["poems"])
+            db_meta["poems"] = self._parse_poems_field(self.metadata["poems"])
 
         # Manuscript metadata
         if "manuscript" in self.metadata:
@@ -553,36 +554,127 @@ class MdEntry:
 
         return normalized
 
-    def _normalize_references_field(
+    def _parse_references_field(
         self, refs_data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
-        Normalize references to database format.
+        Parse and normalize references with source handling.
 
-        Validates each reference has required 'content' field.
+        Returns list of dicts ready for database processing:
+        {
+            "content": str,
+            "speaker": Optional[str],
+            "source": Optional[Dict] with validated type
+        }
         """
-        return [
-            ref
-            for ref in refs_data
-            if isinstance(ref, dict) and "content" in ref and ref["content"]
-        ]
+        normalized = []
 
-    def _normalize_poems_field(
+        for ref in refs_data:
+            if not isinstance(ref, dict):
+                logger.warning(f"Invalid reference format: {ref}")
+                continue
+
+            if "content" not in ref or not DataValidator.normalize_string(
+                ref["content"]
+            ):
+                logger.warning("Reference missing required 'content' field")
+                continue
+
+            ref_dict: Dict[str, Any] = {
+                "content": DataValidator.normalize_string(ref["content"])
+            }
+
+            # Optional speaker
+            if "speaker" in ref:
+                speaker = DataValidator.normalize_string(ref["speaker"])
+                if speaker:
+                    ref_dict["speaker"] = speaker
+
+            # Optional source
+            if "source" in ref and isinstance(ref["source"], dict):
+                source = ref["source"]
+
+                # Validate required source fields
+                if "title" not in source or not source["title"]:
+                    logger.warning(f"Source missing title: {source}")
+                elif "type" not in source:
+                    logger.warning(f"Source missing type: {source}")
+                else:
+                    # Normalize type enum
+                    source_type = DataValidator.normalize_reference_type(source["type"])
+                    if source_type:
+                        ref_dict["source"] = {
+                            "title": DataValidator.normalize_string(source["title"]),
+                            "type": source_type,  # This is now ReferenceType enum
+                        }
+
+                        # Optional author
+                        if "author" in source:
+                            author = DataValidator.normalize_string(source["author"])
+                            if author:
+                                ref_dict["source"]["author"] = author
+                    else:
+                        logger.warning(
+                            f"Invalid source type '{source['type']}' in reference"
+                        )
+
+            normalized.append(ref_dict)
+
+        return normalized
+
+    def _parse_poems_field(
         self, poems_data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
-        Normalize poems to database format.
+        Parse and normalize poems with Poem parent handling.
 
-        Validates each poem has required 'title' and 'content' fields.
+        Returns list of dicts ready for database processing:
+        {
+            "title": str,
+            "content": str,
+            "revision_date": Optional[date],
+            "notes": Optional[str],
+        }
         """
-        return [
-            poem
-            for poem in poems_data
-            if isinstance(poem, dict)
-            and "title" in poem
-            and "content" in poem
-            and poem["content"]
-        ]
+        normalized = []
+
+        for poem in poems_data:
+            if not isinstance(poem, dict):
+                logger.warning(f"Invalid poem format: {poem}")
+                continue
+
+            if "title" not in poem or not poem["title"]:
+                logger.warning("Poem missing required 'title' field")
+                continue
+
+            if "content" not in poem or not poem["content"]:
+                logger.warning("Reference missing required 'content' field")
+                continue
+
+            poem_dict: Dict[str, Any] = {
+                "title": DataValidator.normalize_string(poem["title"]),
+                "content": DataValidator.normalize_string(poem["content"]),
+            }
+
+            # Optional revision_date
+            if "revision_date" in poem:
+                rev_date = DataValidator.normalize_date(poem["revision_date"])
+                if rev_date:
+                    poem_dict["revision_date"] = rev_date
+                else:
+                    logger.warning(
+                        f"Invalid revision_date in poem '{poem['title']}': {poem['revision_date']}"
+                    )
+
+            # Optional notes
+            if "notes" in poem:
+                notes = DataValidator.normalize_string(poem["notes"])
+                if notes:
+                    poem_dict["notes"] = notes
+
+            normalized.append(poem_dict)
+
+        return normalized
 
     # ----- YAML Generation -----
     def _generate_yaml_frontmatter(self) -> str:
@@ -696,6 +788,8 @@ class MdEntry:
                 parts.append("    content: |")
                 for line in poem["content"].splitlines():
                     parts.append(f"      {line}")
+                if "revision_date" in poem:
+                    parts.append(f'    revision_date: {poem["revision_date"]}')
                 if "notes" in poem:
                     parts.append(f'    notes: "{md.yaml_escape(poem["notes"])}"')
 

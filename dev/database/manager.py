@@ -226,10 +226,9 @@ class PalimpsestDB:
 
         try:
             yield session
-            if session.dirty or session.new or session.deleted:
-                session.commit()
-                if self.logger:
-                    self.logger.log_debug("session_commit", {"session_id": session_id})
+            session.commit()
+            if self.logger:
+                self.logger.log_debug("session_commit", {"session_id": session_id})
 
         except Exception as e:
             session.rollback()
@@ -715,33 +714,24 @@ class PalimpsestDB:
                     remove_items=metadata.get(f"remove_{meta_key}", []),
                 )
 
-        # --- One to many ---
-        one_to_many_configs = [
-            ("references", Reference, "entry_id"),
-            ("poems", PoemVersion, "entry_id"),
-        ]
+        # --- References ---
+        # References need special handling because they involve ReferenceSource creation
+        if "references" in metadata:
+            self._process_references(session, entry, metadata["references"])
 
-        for meta_key, model_class, foreign_key_attr in one_to_many_configs:
-            if meta_key in metadata:
-                RelationshipManager.update_one_to_many(
-                    session=session,
-                    parent_obj=entry,
-                    items=metadata[meta_key],
-                    model_class=model_class,
-                    foreign_key_attr=foreign_key_attr,
-                    incremental=incremental,
-                    remove_items=metadata.get(f"remove_{meta_key}", []),
-                )
-
-        # --- Tags ---
-        # They're strings, not objects
-        if "tags" in metadata:
-            self._update_entry_tags(session, entry, metadata["tags"], incremental)
+        # --- Poems ---
+        if "poems" in metadata:
+            self._process_poems(session, entry, metadata["poems"])
 
         # --- Related entries ---
         # Handle related entries (uni-directional relationships)
         if "related_entries" in metadata:
             self._process_related_entries(session, entry, metadata["related_entries"])
+
+        # --- Tags ---
+        # They're strings, not objects
+        if "tags" in metadata:
+            self._update_entry_tags(session, entry, metadata["tags"], incremental)
 
         # --- Manuscript ---
         if "manuscript" in metadata:
@@ -1587,7 +1577,105 @@ class PalimpsestDB:
             raise DatabaseError(f"Failed to delete person: {e}")
 
     # ---- Reference CRUD ----
-    # Reference is created as a one-to-many relationship of Entry
+    def _process_references(
+        self,
+        session: Session,
+        entry: Entry,
+        references_data: List[Dict[str, Any]],
+    ) -> None:
+        """
+        Process references for an entry, handling ReferenceSource creation.
+
+        Each reference dict should have:
+        {
+            "content": str (required),
+            "speaker": Optional[str],
+            "source": Optional[{
+                "title": str,
+                "type": ReferenceType enum,
+                "author": Optional[str]
+            }]
+        }
+
+        Args:
+            session: SQLAlchemy session
+            entry: Entry to attach references to
+            references_data: List of normalized reference dicts
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding references")
+
+        # Clear existing references
+        entry.references.clear()
+        session.flush()
+
+        for ref_data in references_data:
+            content = DataValidator.normalize_string(ref_data.get("content"))
+            if not content:
+                if self.logger:
+                    self.logger.log_warning("Skipping reference with empty content")
+                continue
+
+            speaker = DataValidator.normalize_string(ref_data.get("speaker"))
+
+            # Handle ReferenceSource if provided
+            source_id = None
+            source = None
+            if "source" in ref_data and isinstance(ref_data["source"], dict):
+                source_dict = ref_data["source"]
+
+                title = DataValidator.normalize_string(source_dict.get("title"))
+                ref_type = source_dict.get(
+                    "type"
+                )  # Already ReferenceType enum from parser
+
+                if title and ref_type:
+                    from dev.database.models import ReferenceType
+
+                    # Validate type is actually an enum
+                    if not isinstance(ref_type, ReferenceType):
+                        if self.logger:
+                            self.logger.log_warning(
+                                f"Invalid reference type for source '{title}': {ref_type}"
+                            )
+                        continue
+
+                    # Get or create ReferenceSource
+                    source = self._get_or_create_lookup_item(
+                        session,
+                        ReferenceSource,
+                        lookup_fields={"title": title},
+                        extra_fields={
+                            "type": ref_type,
+                            "author": DataValidator.normalize_string(
+                                source_dict.get("author")
+                            ),
+                        },
+                    )
+                    source_id = source.id
+
+                    if self.logger:
+                        self.logger.log_debug(
+                            f"Using ReferenceSource: {source.title} (id={source.id})"
+                        )
+
+            # Create Reference
+            reference = Reference(
+                content=content,
+                speaker=speaker,
+                entry_id=entry.id,
+                source_id=source_id,
+            )
+            session.add(reference)
+
+            if self.logger:
+                source_info = f" from '{source.title}'" if source and source_id else ""
+                self.logger.log_debug(
+                    f"Created reference: '{content[:50]}...'{source_info}"
+                )
+
+        session.flush()
+
     @handle_db_errors
     @log_database_operation("update_reference")
     def update_reference(
@@ -1769,6 +1857,29 @@ class PalimpsestDB:
 
         return source
 
+    @handle_db_errors
+    @log_database_operation("get_reference_source")
+    def get_reference_source(
+        self,
+        session: Session,
+        title: str,
+    ) -> Optional[ReferenceSource]:
+        """
+        Get a ReferenceSource by title.
+
+        Args:
+            session: SQLAlchemy session
+            title: Title of the source
+
+        Returns:
+            ReferenceSource instance or None if not found
+        """
+        norm_title = DataValidator.normalize_string(title)
+        if not norm_title:
+            raise ValueError("Title must be provided")
+
+        return session.query(ReferenceSource).filter_by(title=norm_title).first()
+
     # ---- Event CRUD ----
     @handle_db_errors
     @log_database_operation("create_event")
@@ -1914,6 +2025,112 @@ class PalimpsestDB:
         return event
 
     # ---- Poems CRUD ----
+    def _process_poems(
+        self,
+        session: Session,
+        entry: Entry,
+        poems_data: List[Dict[str, Any]],
+    ) -> None:
+        """
+        Process poem versions for an entry, handling Poem parent creation.
+
+        Each poem dict should have:
+        {
+            "title": str (required),
+            "content": str (required),
+            "revision_date": Optional[date],
+            "notes": Optional[str],
+            "version_hash": Optional[str]
+        }
+
+        Args:
+            session: SQLAlchemy session
+            entry: Entry to attach poems to
+            poems_data: List of normalized poem dicts
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding poems")
+
+        # Clear existing poems
+        entry.poems.clear()
+        session.flush()
+
+        for poem_data in poems_data:
+            title = DataValidator.normalize_string(poem_data.get("title"))
+            content = DataValidator.normalize_string(poem_data.get("content"))
+
+            if not title or not content:
+                if self.logger:
+                    self.logger.log_warning(
+                        "Skipping poem with missing title or content", {"title": title}
+                    )
+                continue
+
+            # Get or create Poem parent
+            # Note: Poems are NOT unique by title - multiple versions can exist
+            # We need to find or create based on title, but be aware of duplicates
+            poem = session.query(Poem).filter_by(title=title).first()
+
+            if not poem:
+                poem = Poem(title=title)
+                session.add(poem)
+                session.flush()
+
+                if self.logger:
+                    self.logger.log_debug(f"Created new Poem: {title} (id={poem.id})")
+            else:
+                if self.logger:
+                    self.logger.log_debug(
+                        f"Using existing Poem: {title} (id={poem.id})"
+                    )
+
+            # Generate version_hash if not provided
+            version_hash = DataValidator.normalize_string(poem_data.get("version_hash"))
+            if not version_hash:
+                version_hash = md.get_text_hash(content)
+
+            # Check if this exact version already exists (deduplication)
+            existing_version = (
+                session.query(PoemVersion)
+                .filter_by(poem_id=poem.id, version_hash=version_hash)
+                .first()
+            )
+
+            if existing_version:
+                if self.logger:
+                    self.logger.log_debug(
+                        f"Poem version already exists, skipping: {title} (hash={version_hash[:8]}...)"
+                    )
+                # Optionally: link to this entry if not already linked
+                if existing_version.entry_id != entry.id:
+                    existing_version.entry_id = entry.id
+                    session.flush()
+                continue
+
+            # Determine revision_date
+            rev_date = DataValidator.normalize_date(poem_data.get("revision_date"))
+            if not rev_date:
+                rev_date = entry.date  # Default to entry date
+
+            # Create PoemVersion
+            poem_version = PoemVersion(
+                content=content,
+                revision_date=rev_date,
+                version_hash=version_hash,
+                notes=DataValidator.normalize_string(poem_data.get("notes")),
+                poem_id=poem.id,
+                entry_id=entry.id,
+            )
+            session.add(poem_version)
+
+            if self.logger:
+                self.logger.log_debug(
+                    f"Created PoemVersion: {title} "
+                    f"(revision={rev_date}, hash={version_hash[:8]}...)"
+                )
+
+        session.flush()
+
     @handle_db_errors
     @log_database_operation("create_poem")
     @validate_metadata(["title", "content"])
