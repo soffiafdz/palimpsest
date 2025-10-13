@@ -392,7 +392,9 @@ class ExportManager:
             # References
             "references": [
                 {
-                    "content": ref.content,
+                    "content": ref.content if ref.content else None,
+                    "description": ref.description if ref.description else None,
+                    "mode": ref.mode.value if ref.mode else "direct",
                     "speaker": ref.speaker,
                     "source": (
                         {

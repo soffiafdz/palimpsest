@@ -275,9 +275,23 @@ class MdEntry:
         if entry.references:
             refs_list: List[Dict[str, Any]] = []
             for ref in entry.references:
-                ref_dict: Dict[str, Any] = {"content": ref.content}
+                ref_dict: Dict[str, Any] = {}
+
+                # Content is now optional
+                if ref.content:
+                    ref_dict["content"] = ref.content
+
+                # Add description if present
+                if ref.description:
+                    ref_dict["description"] = ref.description
+
+                # Add mode (default is direct)
+                if ref.mode and ref.mode.value != "direct":
+                    ref_dict["mode"] = ref.mode.value
+
                 if ref.speaker:
                     ref_dict["speaker"] = ref.speaker
+
                 if ref.source:
                     ref_dict["source"] = {
                         "title": ref.source.title,
@@ -589,7 +603,9 @@ class MdEntry:
 
         Returns list of dicts ready for database processing:
         {
-            "content": str,
+            "content": Optional[str],
+            "description": Optional[str],
+            "mode": str (default: "direct"),
             "speaker": Optional[str],
             "source": Optional[Dict] with validated type
         }
@@ -601,15 +617,31 @@ class MdEntry:
                 logger.warning(f"Invalid reference format: {ref}")
                 continue
 
-            if "content" not in ref or not DataValidator.normalize_string(
-                ref["content"]
-            ):
-                logger.warning("Reference missing required 'content' field")
+            content = DataValidator.normalize_string(ref.get("content"))
+            description = DataValidator.normalize_string(ref.get("description"))
+            if not content and not description:
+                logger.warning(
+                    "Reference missing both 'content' and 'description' fields"
+                )
                 continue
 
-            ref_dict: Dict[str, Any] = {
-                "content": DataValidator.normalize_string(ref["content"])
-            }
+            ref_dict: Dict[str, Any] = {}
+
+            if content:
+                ref_dict["content"] = content
+
+            if description:
+                ref_dict["description"] = description
+
+            # Optional mode (default: direct)
+            mode = DataValidator.normalize_string(ref.get("mode", "direct"))
+            if mode in ["direct", "indirect", "paraphrase", "visual"]:
+                ref_dict["mode"] = mode
+            else:
+                logger.warning(
+                    f"Invalid reference mode '{mode}', defaulting to 'direct'"
+                )
+                ref_dict["mode"] = "direct"
 
             # Optional speaker
             if "speaker" in ref:
@@ -627,7 +659,7 @@ class MdEntry:
                 elif "type" not in source:
                     logger.warning(f"Source missing type: {source}")
                 else:
-                    # Normalize type enum
+                    # Normalize type enum (now includes 'poem')
                     source_type = DataValidator.normalize_reference_type(source["type"])
                     if source_type:
                         ref_dict["source"] = {
@@ -793,9 +825,21 @@ class MdEntry:
         if self.metadata.get("references"):
             parts.append("\nreferences:")
             for ref in self.metadata["references"]:
-                parts.append(f'  - content: "{md.yaml_escape(ref["content"])}"')
+                # Content or description (at least one required)
+                if "content" in ref:
+                    parts.append(f'  - content: "{md.yaml_escape(ref["content"])}"')
+                elif "description" in ref:
+                    parts.append(
+                        f'  - description: "{md.yaml_escape(ref["description"])}"'
+                    )
+
+                # Mode (only if not default)
+                if "mode" in ref and ref["mode"] != "direct":
+                    parts.append(f'    mode: {ref["mode"]}')
+
                 if "speaker" in ref:
                     parts.append(f'    speaker: "{md.yaml_escape(ref["speaker"])}"')
+
                 if "source" in ref:
                     src = ref["source"]
                     if isinstance(src, dict):

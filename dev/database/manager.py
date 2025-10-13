@@ -60,6 +60,8 @@ from .models import (
     Alias,
     Reference,
     ReferenceSource,
+    ReferenceMode,
+    ReferenceType,
     Event,
     Poem,
     PoemVersion,
@@ -1681,7 +1683,9 @@ class PalimpsestDB:
 
         Each reference dict should have:
         {
-            "content": str (required),
+            "content": Optional[str],
+            "description": Optional[str],
+            "mode": Optional[str] (default: "direct"),
             "speaker": Optional[str],
             "source": Optional[{
                 "title": str,
@@ -1703,13 +1707,29 @@ class PalimpsestDB:
         session.flush()
 
         for ref_data in references_data:
+            # Either content or description required
             content = DataValidator.normalize_string(ref_data.get("content"))
-            if not content:
+            description = DataValidator.normalize_string(ref_data.get("description"))
+
+            if not content and not description:
                 if self.logger:
-                    self.logger.log_warning("Skipping reference with empty content")
+                    self.logger.log_warning(
+                        "Skipping reference with no content or description"
+                    )
                 continue
 
             speaker = DataValidator.normalize_string(ref_data.get("speaker"))
+
+            # Parse mode (default: direct)
+            mode_str = ref_data.get("mode", "direct")
+            try:
+                mode = ReferenceMode(mode_str)
+            except ValueError:
+                if self.logger:
+                    self.logger.log_warning(
+                        f"Invalid reference mode '{mode_str}', using 'direct'"
+                    )
+                mode = ReferenceMode.DIRECT
 
             # Handle ReferenceSource if provided
             source_id = None
@@ -1723,7 +1743,6 @@ class PalimpsestDB:
                 )  # Already ReferenceType enum from parser
 
                 if title and ref_type:
-                    from dev.database.models import ReferenceType
 
                     # Validate type is actually an enum
                     if not isinstance(ref_type, ReferenceType):
@@ -1755,6 +1774,8 @@ class PalimpsestDB:
             # Create Reference
             reference = Reference(
                 content=content,
+                description=description,
+                mode=mode,
                 speaker=speaker,
                 entry_id=entry.id,
                 source_id=source_id,
@@ -1764,7 +1785,7 @@ class PalimpsestDB:
             if self.logger:
                 source_info = f" from '{source.title}'" if source and source_id else ""
                 self.logger.log_debug(
-                    f"Created reference: '{content[:50]}...'{source_info}"
+                    f"Created reference: '{content[:50] if content else description}...'{source_info}"
                 )
 
         session.flush()

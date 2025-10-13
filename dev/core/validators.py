@@ -20,7 +20,7 @@ from typing import cast, Any, Dict, List, Optional, Type, TYPE_CHECKING
 from .exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from dev.database.models import ReferenceType, RelationType
+    from dev.database.models import ReferenceMode, ReferenceType, RelationType
 
 
 class DataValidator:
@@ -339,6 +339,12 @@ class DataValidator:
         raise ValidationError(
             f"Cannot convert {type(value).__name__} to {enum_class.__name__}"
         )
+
+    @staticmethod
+    def normalize_reference_mode(value: Any) -> Optional[ReferenceMode]:
+        """Normalize value to ReferenceMode enum."""
+        result = DataValidator.normalize_enum(value, ReferenceMode, "reference_mode")
+        return cast(Optional[ReferenceMode], result)
 
     @staticmethod
     def normalize_reference_type(value: Any) -> Optional[ReferenceType]:
