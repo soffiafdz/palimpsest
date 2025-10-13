@@ -81,6 +81,7 @@ def process_entry_file(
     db: PalimpsestDB,
     force_update: bool = False,
     logger: Optional[PalimpsestLogger] = None,
+    raise_on_error: bool = True,
 ) -> str:
     """
     Process a single Markdown file and update database.
@@ -90,6 +91,7 @@ def process_entry_file(
         db: Database manager instance
         force_update: If True, update even if file hash unchanged
         logger: Optional logger
+        raise_on_error: Raise exceptions
 
     Returns:
         Status string: "created", "updated", "skipped", or "error"
@@ -97,69 +99,78 @@ def process_entry_file(
     Raises:
         Yaml2SqlError: If processing fails
     """
-    if logger:
-        logger.log_debug(f"Processing {file_path.name}")
-
-    # Parse markdown entry
     try:
-        md_entry: MdEntry = MdEntry.from_file(file_path, verbose=False)
+        if logger:
+            logger.log_debug(f"Processing {file_path.name}")
+
+        # Parse markdown entry
+        try:
+            md_entry: MdEntry = MdEntry.from_file(file_path, verbose=False)
+        except Exception as e:
+            if logger:
+                logger.log_error(e, {"operation": "parse_file", "file": str(file_path)})
+            raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
+
+        # Validate entry
+        validation_errors: List[str] = md_entry.validate()
+        if validation_errors:
+            error_msg: str = f"Validation failed: {', '.join(validation_errors)}"
+            if logger:
+                logger.log_warning(error_msg, {"file": str(file_path)})
+            raise Yaml2SqlError(error_msg)
+
+        # Convert to database format
+        db_metadata: Dict[str, Any] = md_entry.to_database_metadata()
+
+        # Check if entry exists
+        with db.session_scope() as session:
+            existing = db.get_entry(session, md_entry.date)
+
+            if existing:
+                if fs.should_skip_file(file_path, existing.file_hash, force_update):
+                    if logger:
+                        logger.log_debug(f"Entry {md_entry.date} unchanged, skipping")
+                    return "skipped"
+
+                # Update existing entry
+                try:
+                    db.update_entry(session, existing, db_metadata)
+                    if logger:
+                        logger.log_operation(
+                            "entry_updated",
+                            {"date": str(md_entry.date), "file": str(file_path)},
+                        )
+                    return "updated"
+                except Exception as e:
+                    if logger:
+                        logger.log_error(
+                            e, {"operation": "update_entry", "date": str(md_entry.date)}
+                        )
+                    raise Yaml2SqlError(f"Failed to update entry: {e}") from e
+            else:
+                # Create new entry
+                try:
+                    db.create_entry(session, db_metadata)
+                    if logger:
+                        logger.log_operation(
+                            "entry_created",
+                            {"date": str(md_entry.date), "file": str(file_path)},
+                        )
+                    return "created"
+                except Exception as e:
+                    if logger:
+                        logger.log_error(
+                            e, {"operation": "create_entry", "date": str(md_entry.date)}
+                        )
+                    raise Yaml2SqlError(f"Failed to create entry: {e}") from e
     except Exception as e:
         if logger:
             logger.log_error(e, {"operation": "parse_file", "file": str(file_path)})
-        raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
 
-    # Validate entry
-    validation_errors: List[str] = md_entry.validate()
-    if validation_errors:
-        error_msg: str = f"Validation failed: {', '.join(validation_errors)}"
-        if logger:
-            logger.log_warning(error_msg, {"file": str(file_path)})
-        raise Yaml2SqlError(error_msg)
-
-    # Convert to database format
-    db_metadata: Dict[str, Any] = md_entry.to_database_metadata()
-
-    # Check if entry exists
-    with db.session_scope() as session:
-        existing = db.get_entry(session, md_entry.date)
-
-        if existing:
-            if fs.should_skip_file(file_path, existing.file_hash, force_update):
-                if logger:
-                    logger.log_debug(f"Entry {md_entry.date} unchanged, skipping")
-                return "skipped"
-
-            # Update existing entry
-            try:
-                db.update_entry(session, existing, db_metadata)
-                if logger:
-                    logger.log_operation(
-                        "entry_updated",
-                        {"date": str(md_entry.date), "file": str(file_path)},
-                    )
-                return "updated"
-            except Exception as e:
-                if logger:
-                    logger.log_error(
-                        e, {"operation": "update_entry", "date": str(md_entry.date)}
-                    )
-                raise Yaml2SqlError(f"Failed to update entry: {e}") from e
+        if raise_on_error:
+            raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
         else:
-            # Create new entry
-            try:
-                db.create_entry(session, db_metadata)
-                if logger:
-                    logger.log_operation(
-                        "entry_created",
-                        {"date": str(md_entry.date), "file": str(file_path)},
-                    )
-                return "created"
-            except Exception as e:
-                if logger:
-                    logger.log_error(
-                        e, {"operation": "create_entry", "date": str(md_entry.date)}
-                    )
-                raise Yaml2SqlError(f"Failed to create entry: {e}") from e
+            return "error"
 
 
 def process_directory(
@@ -205,7 +216,13 @@ def process_directory(
         stats.files_processed += 1
 
         try:
-            result: str = process_entry_file(md_file, db, force_update, logger)
+            result: str = process_entry_file(
+                md_file,
+                db,
+                force_update,
+                logger,
+                False,
+            )
 
             if result == "created":
                 stats.entries_created += 1

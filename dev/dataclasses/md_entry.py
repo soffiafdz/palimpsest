@@ -340,6 +340,12 @@ class MdEntry:
             >>> with db.session_scope() as session:
             ...     db.create_entry(session, db_meta)
         """
+        if not self.date:
+            raise ValueError("Entry date is required")
+
+        if not self.file_path:
+            raise ValueError("File path is required for database operations")
+
         db_meta: Dict[str, Any] = {
             "date": self.date,
             "word_count": self.metadata.get("word_count", 0),
@@ -366,9 +372,17 @@ class MdEntry:
 
         # Parse locations
         if "locations" in self.metadata and self.metadata["locations"]:
-            db_meta["locations"] = self._parse_locations_field(
+            locations_dict = self._parse_locations_field(
                 self.metadata["locations"], db_meta.get("cities", [])
             )
+
+            # Flatten to list of dicts with city context
+            locations_list = []
+            for city_name, loc_names in locations_dict.items():
+                for loc_name in loc_names:
+                    locations_list.append({"name": loc_name, "city": city_name})
+
+            db_meta["locations"] = locations_list
 
         # Parse people (handle hyphenated names)
         if "people" in self.metadata and self.metadata["people"]:
@@ -481,12 +495,13 @@ class MdEntry:
         Returns:
             List of dicts with 'name', 'full_name', and/or 'alias' keys
         """
-        alias: Optional[str] = None
-        name: Optional[str] = None
-        full_name: Optional[str] = None
         normalized = []
 
         for person_str in people_list:
+            alias: Optional[str] = None
+            name: Optional[str] = None
+            full_name: Optional[str] = None
+
             person_str = DataValidator.normalize_string(person_str)
             if not person_str:
                 continue
@@ -508,13 +523,14 @@ class MdEntry:
                 name = parsers.split_hyphenated_to_spaces(primary)
                 full_name = expansion
 
-            normalized.append(
-                {
-                    "alias": alias,
-                    "name": name,
-                    "full_name": full_name,
-                }
-            )
+            if alias or name or full_name:
+                normalized.append(
+                    {
+                        "alias": alias,
+                        "name": name,
+                        "full_name": full_name,
+                    }
+                )
 
         return normalized
 

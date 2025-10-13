@@ -618,10 +618,16 @@ class PalimpsestDB:
             raise ValidationError(f"Entry already exists for file_path: {file_path}")
 
         # --- If hash doesn't exist, create it ---
-        # file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
         file_hash = DataValidator.normalize_string((metadata.get("file_hash")))
-        if not file_hash:
-            file_hash = fs.get_file_hash(file_path)
+        if not file_hash and file_path:
+            file_path_obj = Path(file_path)
+            if file_path_obj.exists():
+                file_hash = fs.get_file_hash(file_path)
+            else:
+                if self.logger:
+                    self.logger.log_warning(
+                        f"File path does not exist, cannot calculate hash: {file_path}"
+                    )
 
         # --- Create Entry ---
         def _do_create():
@@ -688,56 +694,79 @@ class PalimpsestDB:
                 clears all existing relationships before adding new ones.
             - Calls session.flush() only if any changes were made
         """
-        if "dates" in metadata:
-            if not incremental:
-                entry.dates.clear()
-                session.flush()
-            self._process_mentioned_dates(session, entry, metadata["dates"])
+        try:
+            if "dates" in metadata:
+                if not incremental:
+                    entry.dates.clear()
+                    session.flush()
+                self._process_mentioned_dates(session, entry, metadata["dates"])
 
-        # --- Many to many ---
-        many_to_many_configs = [
-            ("cities", "cities", City),
-            ("locations", "locations", Location),
-            ("people", "people", Person),
-            ("events", "events", Event),
-        ]
+            # --- Many to many ---
+            many_to_many_configs = [
+                ("cities", "cities", City),
+                ("people", "people", Person),
+                ("events", "events", Event),
+            ]
 
-        for rel_name, meta_key, model_class in many_to_many_configs:
-            if meta_key in metadata:
-                RelationshipManager.update_many_to_many(
-                    session=session,
-                    parent_obj=entry,
-                    relationship_name=rel_name,
-                    items=metadata[meta_key],
-                    model_class=model_class,
-                    incremental=incremental,
-                    remove_items=metadata.get(f"remove_{meta_key}", []),
+            for rel_name, meta_key, model_class in many_to_many_configs:
+                if meta_key in metadata:
+                    RelationshipManager.update_many_to_many(
+                        session=session,
+                        parent_obj=entry,
+                        relationship_name=rel_name,
+                        items=metadata[meta_key],
+                        model_class=model_class,
+                        incremental=incremental,
+                        remove_items=metadata.get(f"remove_{meta_key}", []),
+                    )
+
+            # --- Locations ---
+            if "locations" in metadata:
+                self._update_entry_locations(
+                    session, entry, metadata["locations"], incremental
                 )
 
-        # --- References ---
-        # References need special handling because they involve ReferenceSource creation
-        if "references" in metadata:
-            self._process_references(session, entry, metadata["references"])
+            # --- References ---
+            # References need special handling because they involve ReferenceSource creation
+            if "references" in metadata:
+                self._process_references(session, entry, metadata["references"])
 
-        # --- Poems ---
-        if "poems" in metadata:
-            self._process_poems(session, entry, metadata["poems"])
+            # --- Poems ---
+            if "poems" in metadata:
+                self._process_poems(session, entry, metadata["poems"])
 
-        # --- Related entries ---
-        # Handle related entries (uni-directional relationships)
-        if "related_entries" in metadata:
-            self._process_related_entries(session, entry, metadata["related_entries"])
+            # --- Related entries ---
+            # Handle related entries (uni-directional relationships)
+            if "related_entries" in metadata:
+                self._process_related_entries(
+                    session, entry, metadata["related_entries"]
+                )
 
-        # --- Tags ---
-        # They're strings, not objects
-        if "tags" in metadata:
-            self._update_entry_tags(session, entry, metadata["tags"], incremental)
+            # --- Tags ---
+            # They're strings, not objects
+            if "tags" in metadata:
+                self._update_entry_tags(session, entry, metadata["tags"], incremental)
 
-        # --- Manuscript ---
-        if "manuscript" in metadata:
-            self.create_or_update_manuscript_entry(
-                session, entry, metadata["manuscript"]
-            )
+            # --- Manuscript ---
+            if "manuscript" in metadata:
+                self.create_or_update_manuscript_entry(
+                    session, entry, metadata["manuscript"]
+                )
+
+            session.flush()
+        except Exception as e:
+            # Log error with context
+            if self.logger:
+                self.logger.log_error(
+                    e,
+                    {
+                        "operation": "update_entry_relationships",
+                        "entry_id": entry.id,
+                        "entry_date": str(entry.date),
+                    },
+                )
+            # Re-raise for higher-level handling
+            raise
 
     def _process_mentioned_dates(
         self,
@@ -1097,7 +1126,7 @@ class PalimpsestDB:
                 remove_items=metadata.get("remove_entries", []),
             )
 
-        # --- Aliases ---
+        # --- Locations ---
         if "locations" in metadata or "remove_locations" in metadata:
             RelationshipManager.update_one_to_many(
                 session=session,
@@ -1187,6 +1216,42 @@ class PalimpsestDB:
     # TODO: Add _do_{task}() and _execute_with_retry() logic
     # for tasks: create_, update_, delete_
     # for Location, Person, Event, Poem, PoemVersion, Reference, ReferenceSource and Manuscript
+    def _update_entry_locations(
+        self,
+        session: Session,
+        entry: Entry,
+        locations_data: List[Dict[str, str]],
+        incremental: bool = True,
+    ) -> None:
+        """Update locations with city resolution."""
+        if not incremental:
+            entry.locations.clear()
+            session.flush()
+
+        existing_ids = {loc.id for loc in entry.locations}
+
+        for loc_data in locations_data:
+            # Get or create city
+            city = self._get_or_create_lookup_item(
+                session, City, {"city": loc_data["city"]}
+            )
+
+            # Get or create location with city
+            location = (
+                session.query(Location)
+                .filter_by(name=loc_data["name"], city_id=city.id)
+                .first()
+            )
+
+            if not location:
+                location = Location(name=loc_data["name"], city=city)
+                session.add(location)
+                session.flush()
+
+            if location.id not in existing_ids:
+                entry.locations.append(location)
+
+        session.flush()
 
     @handle_db_errors
     @log_database_operation("create_location")
