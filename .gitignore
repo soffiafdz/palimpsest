@@ -11,6 +11,7 @@ tmp/
 # Database files (in submodule anyway)
 *.db
 *.db-journal
+backups/
 
 # Editor/IDE
 *.swp
