@@ -286,12 +286,44 @@ class SchemaInfo(Base):
 
 
 # ----- Enum -----
+class ReferenceMode(str, Enum):
+    """
+    Enumeration of reference modes.
+    - DIRECT
+    - INDIRECT
+    - PARAPHRASE
+    - VISUAL
+    """
+
+    DIRECT = "direct"
+    INDIRECT = "indirect"
+    PARAPHRASE = "paraphrase"
+    VISUAL = "visual"
+
+    @classmethod
+    def choices(cls) -> List[str]:
+        """Get all available reference mode choices."""
+        return [ref_mode.value for ref_mode in cls]
+
+    @property
+    def display_name(self) -> str:
+        """Get human-readable display name."""
+        display_map = {
+            self.DIRECT: "Direct",
+            self.INDIRECT: "Indirect",
+            self.PARAPHRASE: "Paraphrase",
+            self.VISUAL: "Visual",
+        }
+        return display_map.get(self, self.value.title())
+
+
 class ReferenceType(str, Enum):
     """
     Enumeration of reference source types.
 
     Categories of sources that can be referenced in journal entries:
     - BOOK: Published books
+    - POEM: Poem
     - ARTICLE: Articles, essays, papers
     - FILM: Movies and documentaries
     - SONG: Music and songs
@@ -304,6 +336,7 @@ class ReferenceType(str, Enum):
     """
 
     BOOK = "book"
+    POEM = "poem"
     ARTICLE = "article"
     FILM = "film"
     SONG = "song"
@@ -322,7 +355,7 @@ class ReferenceType(str, Enum):
     @classmethod
     def written_types(cls) -> List["ReferenceType"]:
         """Get types that are primarily written/text-based."""
-        return [cls.BOOK, cls.ARTICLE]
+        return [cls.BOOK, cls.POEM, cls.ARTICLE]
 
     @classmethod
     def audiovisual_types(cls) -> List["ReferenceType"]:
@@ -1047,8 +1080,15 @@ class Reference(Base):
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(String(255))
     speaker: Mapped[Optional[str]] = mapped_column(String(255))
+    mode: Mapped[ReferenceMode] = mapped_column(
+        SQLEnum(ReferenceMode, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=ReferenceMode.DIRECT.value,
+        index=True,
+    )
 
     # ---- Foreign keys ----
     entry_id: Mapped[int] = mapped_column(
@@ -1066,18 +1106,21 @@ class Reference(Base):
 
     # ---- Computed property ----
     @property
-    def content_preview(self) -> str:
+    def content_preview(self) -> str | None:
         """Get truncated content for display (max 100 chars)."""
-        if len(self.content) <= 100:
-            return self.content
-        return f"{self.content[:97]}..."
+        if self.content:
+            if len(self.content) <= 100:
+                return self.content
+            return f"{self.content[:97]}..."
+        return None
 
     def __repr__(self):
         return f"<Reference(id={self.id}, entry_id={self.entry_id})>"
 
     def __str__(self) -> str:
         source_info = f" from {self.source.title}" if self.source else ""
-        return f"Reference '{self.content_preview}'{source_info}"
+        ref = self.content_preview if self.content else self.description
+        return f"Reference '{ref}'{source_info}"
 
 
 class ReferenceSource(Base):

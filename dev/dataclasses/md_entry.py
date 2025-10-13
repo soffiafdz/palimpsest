@@ -352,19 +352,20 @@ class MdEntry:
             "reading_time": self.metadata.get("reading_time", 0.0),
         }
 
-        # Optional simple fields
-        if "epigraph" in self.metadata:
-            db_meta["epigraph"] = self.metadata["epigraph"]
-
-        if "epigraph_attribution" in self.metadata:
-            db_meta["epigraph_attribution"] = self.metadata["epigraph_attribution"]
-
-        if "notes" in self.metadata:
-            db_meta["notes"] = self.metadata["notes"]
-
         # Add file path if available
         if self.file_path:
             db_meta["file_path"] = str(self.file_path)
+
+        # Parse epigraph
+        if "epigraph" in self.metadata:
+            db_meta["epigraph"] = DataValidator.normalize_string(
+                self.metadata["epigraph"]
+            )
+
+        if "epigraph_attribution" in self.metadata:
+            db_meta["epigraph_attribution"] = DataValidator.normalize_string(
+                self.metadata["epigraph_attribution"]
+            )
 
         # Parse city/cities
         if "city" in self.metadata and self.metadata["city"]:
@@ -391,7 +392,9 @@ class MdEntry:
         # Simple lists
         for db_field in ["events", "tags"]:
             if db_field in self.metadata and self.metadata[db_field]:
-                db_meta[db_field] = self.metadata[db_field]
+                db_meta[db_field] = DataValidator.normalize_string(
+                    self.metadata[db_field]
+                )
 
         # Dates with optional context
         if "dates" in self.metadata:
@@ -399,7 +402,11 @@ class MdEntry:
 
         # Related entries
         if "related_entries" in self.metadata:
-            db_meta["related_entries"] = self.metadata["related_entries"]
+            db_meta["related_entries"] = [
+                d
+                for d in self.metadata["related_entries"]
+                if DataValidator.validate_date_string(d)
+            ]
 
         # References
         if "references" in self.metadata:
@@ -410,6 +417,10 @@ class MdEntry:
         # Poems
         if "poems" in self.metadata:
             db_meta["poems"] = self._parse_poems_field(self.metadata["poems"])
+
+        # Notes
+        if "notes" in self.metadata:
+            db_meta["notes"] = DataValidator.normalize_string(self.metadata["notes"])
 
         # Manuscript metadata
         if "manuscript" in self.metadata:
@@ -554,7 +565,7 @@ class MdEntry:
                 # Check for inline context
                 date_obj, context = parsers.parse_date_context(item)
 
-                if DataValidator.normalize_date(date_obj):
+                if DataValidator.validate_date_string(date_obj):
                     date_dict = {"date": date_obj}
                     if context:
                         date_dict["context"] = context
