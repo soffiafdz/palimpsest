@@ -1057,52 +1057,52 @@ class PalimpsestDB:
 
     # ---- City CRUD ----
     @handle_db_errors
-    @log_database_operation("create_city")
-    @validate_metadata(["city"])
-    def create_city(self, session: Session, metadata: Dict[str, Any]) -> City:
+    @log_database_operation("update_city")
+    def update_city(
+        self, session: Session, city: City, metadata: Dict[str, Any]
+    ) -> City:
         """
-        Create a new City in the database with its associated relationships.
+        Update an existing City in the database and refresh its relationships.
 
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
 
         Args:
             session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required keys:
-                    - city (str)
-                Optional keys:
-                    - state_province (str)
-                    - country (str)
+            city (City): Existing Location ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      city, state_province, country
                 Relationship keys (optional):
-                    - locations (List[Location|int])
                     - entries (List[Entry|int])
+                    - locations (List[Location|int])
 
         Returns:
-            City: The newly created City ORM object.
+            City: The updated City ORM object (still attached to session).
         """
-        # --- Required fields ---
-        city_name = DataValidator.normalize_string(metadata.get("city"))
-        if not city_name:
-            raise ValueError(f"Invalid name: {metadata['name']}")
+        # --- Ensure existance ---
+        db_city = session.get(City, city.id)
+        if db_city is None:
+            raise ValueError(f"Location with id={city.id} does not exist")
 
-        # --- Uniqueness check ---
-        existing = session.query(City).filter_by(city=city_name).first()
-        if existing:
-            raise ValidationError(f"City already exists for: {city_name}")
+        # --- Attach to session ---
+        location = session.merge(db_city)
 
-        state = DataValidator.normalize_string(metadata.get("state_province"))
-        country = DataValidator.normalize_string(metadata.get("country"))
+        # --- Update scalar fields ---
+        field_updates = {
+            "city": DataValidator.normalize_string,
+            "state_province": DataValidator.normalize_string,
+            "country": DataValidator.normalize_string,
+        }
 
-        # --- Create Location ---
-        city = City(
-            city=city_name,
-            state_province=state,
-            country=country,
-        )
-        session.add(city)
-        session.flush()
+        for field, normalizer in field_updates.items():
+            if field not in metadata:
+                continue
+
+            value = normalizer(metadata[field])
+            if value is not None or field != "city":
+                setattr(location, field, value)
 
         # --- Relationships ---
         self._update_city_relationships(session, city, metadata)
@@ -1167,81 +1167,6 @@ class PalimpsestDB:
                 remove_items=metadata.get("remove_locations", []),
             )
 
-    @handle_db_errors
-    @log_database_operation("update_city")
-    def update_city(
-        self, session: Session, city: City, metadata: Dict[str, Any]
-    ) -> City:
-        """
-        Update an existing City in the database and refresh its relationships.
-
-        Does NOT perform file parsing. Accepts pre-normalized metadata.
-        Clears previous relationships before adding new ones.
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            city (City): Existing Location ORM object to update.
-            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
-                Keys may include:
-                    - Core fields:
-                      city, state_province, country
-                Relationship keys (optional):
-                    - entries (List[Entry|int])
-                    - locations (List[Location|int])
-
-        Returns:
-            City: The updated City ORM object (still attached to session).
-        """
-        # --- Ensure existance ---
-        db_city = session.get(City, city.id)
-        if db_city is None:
-            raise ValueError(f"Location with id={city.id} does not exist")
-
-        # --- Attach to session ---
-        location = session.merge(db_city)
-
-        # --- Update scalar fields ---
-        field_updates = {
-            "city": DataValidator.normalize_string,
-            "state_province": DataValidator.normalize_string,
-            "country": DataValidator.normalize_string,
-        }
-
-        for field, normalizer in field_updates.items():
-            if field not in metadata:
-                continue
-
-            value = normalizer(metadata[field])
-            if value is not None or field != "city":
-                setattr(location, field, value)
-
-        # --- Relationships ---
-        self._update_city_relationships(session, city, metadata)
-        return city
-
-    @handle_db_errors
-    @log_database_operation("get_city")
-    def get_city(
-        self,
-        session: Session,
-        city_name: str,
-    ) -> Optional[City]:
-        """Get a city by name."""
-        norm_name = DataValidator.normalize_string(city_name)
-        if not norm_name:
-            raise ValueError("Name must be given.")
-        return session.query(City).filter_by(city=norm_name).first()
-
-    @handle_db_errors
-    @log_database_operation("delete_location")
-    def delete_city(self, session: Session, city: City) -> None:
-        """Delete a City and its associated data."""
-        try:
-            session.delete(city)
-            session.flush()
-        except Exception as e:
-            raise DatabaseError(f"Failed to delete location: {e}")
-
     # ---- Location CRUD ----
     # TODO: Add _do_{task}() and _execute_with_retry() logic
     # for tasks: create_, update_, delete_
@@ -1282,41 +1207,6 @@ class PalimpsestDB:
                 entry.locations.append(location)
 
         session.flush()
-
-    @handle_db_errors
-    @log_database_operation("create_location")
-    @validate_metadata(["name", "city"])
-    def create_location(self, session: Session, metadata: Dict[str, Any]) -> Location:
-        """
-        Create a new Location in the database with its associated relationships.
-
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required keys:
-                    - name (str)
-                    - city (str)
-
-        Returns:
-            Location: The newly created Location ORM object.
-        """
-        # --- Required fields ---
-        loc_name = DataValidator.normalize_string(metadata.get("name"))
-        if not loc_name:
-            raise ValueError(f"Invalid name: {metadata['name']}")
-
-        city_name = DataValidator.normalize_string((metadata.get("city")))
-        city: City = self._get_or_create_lookup_item(session, City, {"city": city_name})
-
-        # --- Create Location ---
-        location = Location(name=loc_name, city=city)
-        session.add(location)
-        session.flush()
-        return location
 
     @handle_db_errors
     @log_database_operation("update_location")
@@ -1374,16 +1264,6 @@ class PalimpsestDB:
         if not location_name:
             raise ValueError("Name must be given.")
         return session.query(Location).filter_by(name=location_name).first()
-
-    @handle_db_errors
-    @log_database_operation("delete_location")
-    def delete_location(self, session: Session, location: Location) -> None:
-        """Delete a location and its associated data."""
-        try:
-            session.delete(location)
-            session.flush()
-        except Exception as e:
-            raise DatabaseError(f"Failed to delete location: {e}")
 
     # ---- Person CRUD ----
     @handle_db_errors
@@ -1518,60 +1398,28 @@ class PalimpsestDB:
                 )
 
         # --- Aliases ---
-        # They're strings, not objects
         if "aliases" in metadata:
-            self._update_person_aliases(
-                session, person, metadata["aliases"], incremental
-            )
+            if person.id is None:
+                raise ValueError("Person must be persisted before linking aliases")
 
-    def _update_person_aliases(
-        self,
-        session: Session,
-        person: Person,
-        aliases: List[str],
-        incremental: bool = True,
-    ) -> None:
-        """
-        Update Aliases for a Person from metadata.
+            norm_aliases = {
+                DataValidator.normalize_string(a) for a in metadata["aliases"]
+            }
 
-        Args:
-            session (Session): Active SQLAlchemy session.
-            person (Person): Person object whose aliases are to be updated.
-            aliases (List[str]): List of aliases (strings).
-            incremental (bool): Whether incremental/overwrite mode.
+            if not incremental:
+                for a in person.aliases:
+                    session.delete(a)
+                for alias_norm in norm_aliases:
+                    session.add(Alias(alias=alias_norm, person=person))
+                session.flush()
+            else:
+                # Incremental: only add aliases that don't exist yet
+                existing = {a.alias for a in person.aliases}
+                for alias_norm in norm_aliases - existing:
+                    session.add(Alias(alias=alias_norm, person=person))
 
-        Behavior:
-            - Incremental mode:
-                adds new relationships and/or removes explicitly listed items.
-            - Overwrite mode:
-                clears all existing relationships before adding new ones.
-            - Calls session.flush() only if any changes were made
-
-        Returns:
-            None
-        """
-        # --- Failsafe ---
-        if person.id is None:
-            raise ValueError("Person must be persisted before linking tags")
-
-        # --- Normalize incoming aliases --
-        norm_aliases = {DataValidator.normalize_string(a) for a in aliases}
-
-        if not incremental:
-            for a in person.aliases:
-                session.delete(a)
-            for alias_norm in norm_aliases:
-                session.add(Alias(alias=alias_norm, person=person))
-            session.flush()
-            return
-
-        # Incremental: only add aliases that don't exist yet
-        existing = {a.alias for a in person.aliases}
-        for alias_norm in norm_aliases - existing:
-            session.add(Alias(alias=alias_norm, person=person))
-
-        if norm_aliases - existing:
-            session.flush()
+                if norm_aliases - existing:
+                    session.flush()
 
     @handle_db_errors
     @log_database_operation("update_person")
@@ -1970,29 +1818,6 @@ class PalimpsestDB:
         )
 
         return source
-
-    @handle_db_errors
-    @log_database_operation("get_reference_source")
-    def get_reference_source(
-        self,
-        session: Session,
-        title: str,
-    ) -> Optional[ReferenceSource]:
-        """
-        Get a ReferenceSource by title.
-
-        Args:
-            session: SQLAlchemy session
-            title: Title of the source
-
-        Returns:
-            ReferenceSource instance or None if not found
-        """
-        norm_title = DataValidator.normalize_string(title)
-        if not norm_title:
-            raise ValueError("Title must be provided")
-
-        return session.query(ReferenceSource).filter_by(title=norm_title).first()
 
     # ---- Event CRUD ----
     @handle_db_errors
@@ -2630,172 +2455,6 @@ class PalimpsestDB:
 
         return manuscript
 
-    # ---- Navigation Methods ----
-    @handle_db_errors
-    @log_database_operation("get_available_years")
-    def get_available_years(self, session: Session) -> List[int]:
-        """
-        Get all years that have entries.
-
-        Args:
-            session: SQLAlchemy session
-
-        Returns:
-            Sorted list of years
-        """
-        return HierarchicalBatcher.get_years(session)
-
-    @handle_db_errors
-    @log_database_operation("get_available_months")
-    def get_available_months(self, session: Session, year: int) -> List[int]:
-        """
-        Get all months in a year that have entries.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to query
-
-        Returns:
-            Sorted list of months (1-12)
-        """
-        return HierarchicalBatcher.get_months_for_year(session, year)
-
-    @handle_db_errors
-    @log_database_operation("get_year_entry_count")
-    def get_year_entry_count(self, session: Session, year: int) -> int:
-        """
-        Count entries in a specific year.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to count
-
-        Returns:
-            Number of entries
-        """
-        return HierarchicalBatcher.count_year_entries(session, year)
-
-    @handle_db_errors
-    @log_database_operation("get_month_entry_count")
-    def get_month_entry_count(self, session: Session, year: int, month: int) -> int:
-        """
-        Count entries in a specific month.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to count
-            month: Month to count (1-12)
-
-        Returns:
-            Number of entries
-        """
-        return HierarchicalBatcher.count_month_entries(session, year, month)
-
-    @handle_db_errors
-    @log_database_operation("get_yearly_batch")
-    def get_yearly_batch(self, session: Session, year: int) -> Any:  # DateBatch
-        """
-        Create a batch for a specific year.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to batch
-
-        Returns:
-            DateBatch with all entries for the year
-        """
-        return HierarchicalBatcher.create_yearly_batch(session, year)
-
-    @handle_db_errors
-    @log_database_operation("get_monthly_batch")
-    def get_monthly_batch(
-        self, session: Session, year: int, month: int
-    ) -> Any:  # DateBatch
-        """
-        Create a batch for a specific month.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to batch
-            month: Month to batch (1-12)
-
-        Returns:
-            DateBatch with all entries for the month
-        """
-        return HierarchicalBatcher.create_monthly_batch(session, year, month)
-
-    # ---- Query Methods ----
-    @handle_db_errors
-    @log_database_operation("get_entries_for_export")
-    def get_entries_for_export(
-        self, session: Session, entry_ids: List[int]
-    ) -> List[Entry]:
-        """
-        Get entries optimized for export operations.
-
-        Preloads all relationships to prevent N+1 queries.
-
-        Args:
-            session: SQLAlchemy session
-            entry_ids: List of entry IDs to load
-
-        Returns:
-            List of Entry objects with relationships preloaded
-        """
-        return QueryOptimizer.for_export(session, entry_ids)
-
-    @handle_db_errors
-    @log_database_operation("get_entries_by_year_optimized")
-    def get_entries_by_year(self, session: Session, year: int) -> List[Entry]:
-        """
-        Get all entries for a year with optimized relationship loading.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to query
-
-        Returns:
-            List of Entry objects with relationships preloaded
-        """
-        return QueryOptimizer.for_year(session, year)
-
-    @handle_db_errors
-    @log_database_operation("get_entries_by_month_optimized")
-    def get_entries_by_month(
-        self, session: Session, year: int, month: int
-    ) -> List[Entry]:
-        """
-        Get all entries for a month with optimized relationship loading.
-
-        Args:
-            session: SQLAlchemy session
-            year: Year to query
-            month: Month to query (1-12)
-
-        Returns:
-            List of Entry objects with relationships preloaded
-        """
-        return QueryOptimizer.for_month(session, year, month)
-
-    @handle_db_errors
-    @log_database_operation("get_hierarchical_batches")
-    def get_hierarchical_batches(
-        self, session: Session, threshold: int = 500
-    ) -> List[Any]:  # Returns List[DateBatch]
-        """
-        Create hierarchical batches for processing entries.
-
-        Automatically groups entries by year or month based on volume.
-
-        Args:
-            session: SQLAlchemy session
-            threshold: Maximum entries per batch
-
-        Returns:
-            List of DateBatch objects
-        """
-        return HierarchicalBatcher.create_batches(session, threshold)
-
     # ---- Convenience method for common export pattern ----
     @handle_db_errors
     def export_all_to_md(
@@ -2828,7 +2487,7 @@ class PalimpsestDB:
 
         try:
             with self.session_scope() as session:
-                batches = self.get_hierarchical_batches(session, threshold)
+                batches = HierarchicalBatcher.create_batches(session, threshold)
                 stats_summary["total_batches"] = len(batches)
 
                 for batch in batches:
@@ -2852,50 +2511,6 @@ class PalimpsestDB:
             raise DatabaseError(f"Optimized export failed: {e}")
 
         return stats_summary
-
-    @handle_db_errors
-    def get_entries_by_date_range(
-        self, session: Session, start_date: Union[str, date], end_date: Union[str, date]
-    ) -> List[Entry]:
-        """Get entries within a date range."""
-        return self.query_analytics.get_entries_by_date_range(
-            session, start_date, end_date
-        )
-
-    @handle_db_errors
-    def search_entries(
-        self, session: Session, query: str, limit: Optional[int] = None
-    ) -> List[Entry]:
-        """Search entries by content in notes or epigraph."""
-        return self.query_analytics.search_entries(session, query, limit)
-
-    @handle_db_errors
-    def get_entries_by_person(self, session: Session, person_name: str) -> List[Entry]:
-        """Get all entries mentioning a specific person."""
-        return self.query_analytics.get_entries_by_person(session, person_name)
-
-    @handle_db_errors
-    def get_entries_by_location(
-        self, session: Session, location_name: str
-    ) -> List[Entry]:
-        """Get all entries at a specific location."""
-        return self.query_analytics.get_entries_by_location(session, location_name)
-
-    @handle_db_errors
-    def get_entries_by_tag(self, session: Session, tag_name: str) -> List[Entry]:
-        """Get all entries with a specific tag."""
-        return self.query_analytics.get_entries_by_tag(session, tag_name)
-
-    # ---- Statistics and Health ----
-    @handle_db_errors
-    def get_database_stats(self, session: Session) -> Dict[str, Any]:
-        """Get comprehensive database statistics."""
-        return self.query_analytics.get_database_stats(session)
-
-    @handle_db_errors
-    def health_check(self, session: Session) -> Dict[str, Any]:
-        """Comprehensive database health check."""
-        return self.health_monitor.health_check(session, self.db_path)
 
     # ----- Export Functionality (Delegated) -----
     @handle_db_errors
@@ -2963,27 +2578,6 @@ class PalimpsestDB:
             raise DatabaseError("Backup manager not configured")
 
         self.backup_manager.restore_backup(Path(backup_path))
-
-    # ---- Convenience Methods ----
-    def get_stats(self) -> Dict[str, Any]:
-        """Get database statistics (convenience method)."""
-        try:
-            with self.session_scope() as session:
-                return self.get_database_stats(session)
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "get_stats"})
-            raise DatabaseError(f"Could not retrieve database statistics: {e}")
-
-    def check_health(self) -> Dict[str, Any]:
-        """Check database health (convenience method)."""
-        try:
-            with self.session_scope() as session:
-                return self.health_check(session)
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "check_health"})
-            raise DatabaseError(f"Health check failed: {e}")
 
     # ----- Context Manager Support -----
     def __enter__(self) -> "PalimpsestDB":

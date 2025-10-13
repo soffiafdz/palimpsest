@@ -301,63 +301,6 @@ class ExportManager:
 
         return export_file
 
-    def _gather_export_data(self, session: Session) -> Dict[str, Any]:
-        """
-        Gather all data for JSON export.
-
-        Args:
-            session: SQLAlchemy session
-
-        Returns:
-            Dictionary with all export data
-        """
-        analytics = QueryAnalytics(self.logger)
-
-        data = {
-            "export_timestamp": datetime.now(timezone.utc).isoformat(),
-            "database_stats": analytics.get_database_stats(session),
-            "entries": [],
-        }
-
-        # Export entries with all relationships
-        entries = session.query(Entry).order_by(Entry.date).all()
-        for entry in entries:
-            entry_data = self._serialize_entry(entry)
-            data["entries"].append(entry_data)
-
-        # Export people with all data
-        data["people"] = []
-        people = session.query(Person).all()
-        for person in people:
-            person_data = self._serialize_person(person)
-            data["people"].append(person_data)
-
-        # Export locations
-        data["locations"] = []
-        locations = session.query(Location).all()
-        for location in locations:
-            data["locations"].append(
-                {
-                    "id": location.id,
-                    "name": location.name,
-                }
-            )
-
-        # Export events
-        data["events"] = []
-        events = session.query(Event).all()
-        for event in events:
-            data["events"].append(
-                {
-                    "id": event.id,
-                    "event": event.event,
-                    "title": event.title,
-                    "description": event.description,
-                }
-            )
-
-        return data
-
     def _serialize_entry(self, entry: Entry) -> Dict[str, Any]:
         """
         Serialize an entry with all its relationships.

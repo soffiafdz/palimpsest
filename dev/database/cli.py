@@ -653,7 +653,8 @@ def stats(ctx, verbose):
     """Display database statistics."""
     try:
         db = get_db(ctx)
-        stats_data = db.get_stats()
+        with db.session_scope() as session:
+            stats_data = db.query_analytics.get_database_stats(session)
 
         click.echo("\n📊 Database Statistics")
         click.echo("=" * 50)
@@ -715,7 +716,8 @@ def health(ctx, fix):
     """Run comprehensive health check."""
     try:
         db = get_db(ctx)
-        health_data = db.check_health()
+        with db.session_scope() as session:
+            health_data = db.health_monitor.health_check(session, db.db_path)
 
         click.echo("\n🏥 Database Health Check")
         click.echo("=" * 50)
@@ -901,42 +903,6 @@ def optimize(ctx):
 
 
 # ===== Export =====
-@cli.command()
-@click.option("--year", type=int, help="Export specific year")
-@click.option("--threshold", type=int, default=500, help="Batch threshold")
-@click.pass_context
-def export_optimized(ctx, year, threshold):
-    """Export entries with optimized batch processing."""
-    try:
-        db = get_db(ctx)
-
-        click.echo("📊 Analyzing entry distribution...")
-
-        with db.session_scope() as session:
-            if year:
-                entries = db.get_entries_by_year(session, year)
-                click.echo(f"✅ Loaded {len(entries)} entries for {year}")
-            else:
-                batches = db.get_hierarchical_batches(session, threshold)
-                click.echo(f"✅ Created {len(batches)} hierarchical batches:")
-                for batch in batches:
-                    click.echo(f"  • {batch}")
-
-    except DatabaseError as e:
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "export_optimized"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Export failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
-
-
 @cli.command()
 @click.argument("output_dir", type=click.Path())
 @click.pass_context
