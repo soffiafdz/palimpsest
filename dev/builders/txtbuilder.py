@@ -95,13 +95,13 @@ class TxtBuilder:
         Args:
             inbox_dir: Directory with raw export files
             output_dir: Base output directory (creates YYYY subdirs)
-            archive_dir: Archive directory (defaults to inbox_dir/archive)
+            archive_dir: Archive directory (defaults to inbox_dir/../archive)
             format_script: Format script path (defaults to dev/bin/init_format)
             logger: Optional logger
         """
         self.inbox_dir = inbox_dir
         self.output_dir = output_dir
-        self.archive_dir: Path = archive_dir or (inbox_dir / "archive")
+        self.archive_dir: Path = archive_dir or (inbox_dir.parent / "archive")
         self.format_script: Path = format_script or FORMATTING_SCRIPT
         self.logger = logger
 

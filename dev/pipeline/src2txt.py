@@ -32,7 +32,7 @@ import sys
 import click
 from pathlib import Path
 
-from dev.core.paths import INBOX_DIR, TXT_DIR, LOG_DIR
+from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.exceptions import TxtBuildError
 from dev.builders.txtbuilder import TxtBuilder, ProcessingStats
@@ -80,8 +80,8 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
 @click.option(
     "--archive",
     type=click.Path(),
-    default=None,
-    help="Archive directory (default: <inbox>/archive)",
+    default=str(ARCHIVE_DIR),
+    help=f"Archive directory (default: {ARCHIVE_DIR})",
 )
 @click.option(
     "--format-script",
