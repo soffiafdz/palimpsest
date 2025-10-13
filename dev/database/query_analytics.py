@@ -3,6 +3,67 @@
 query_analytics.py
 ------------------
 Complex queries and analytics for the database.
+
+Provides comprehensive analytical queries and statistics generation
+for the Palimpsest database, including:
+    - Database statistics and counts
+    - Entry summaries with optimized loading
+    - Date range queries
+    - Full-text search across entries
+    - Filtering by people, locations, cities, events, tags
+    - Year and month analytics with breakdowns
+    - Timeline overviews
+    - Manuscript analytics
+
+Features:
+    - Optimized queries using QueryOptimizer
+    - Hierarchical batching for large datasets
+    - Monthly and yearly aggregations
+    - Top mentions and frequency analysis
+    - Migration status tracking
+    - Comprehensive error handling
+
+Key Methods:
+    Statistics:
+        - get_database_stats: Overall database counts and metrics
+        - get_entry_summary: Quick summary of single entry
+        - get_timeline_overview: Full journal timeline
+        - get_manuscript_analytics: Manuscript-specific metrics
+
+    Queries:
+        - get_entries_by_date_range: Filter by date range
+        - search_entries: Full-text search
+        - get_entries_by_person: Filter by person mentions
+        - get_entries_by_city: Filter by city
+        - get_entries_by_location: Filter by specific venue
+        - get_entries_by_tag: Filter by tag
+
+    Analytics:
+        - get_year_analytics: Comprehensive year statistics
+        - get_month_analytics: Detailed month statistics
+        - _get_top_people: Most mentioned people
+        - _get_top_locations: Most visited locations
+
+Usage:
+    >>> analytics = QueryAnalytics(logger)
+    >>>
+    >>> # Get overall stats
+    >>> stats = analytics.get_database_stats(session)
+    >>>
+    >>> # Get year breakdown
+    >>> year_stats = analytics.get_year_analytics(session, 2024)
+    >>>
+    >>> # Search entries
+    >>> results = analytics.search_entries(session, "dream", limit=10)
+    >>>
+    >>> # Get timeline
+    >>> timeline = analytics.get_timeline_overview(session)
+
+Notes:
+    - Uses QueryOptimizer for efficient relationship loading
+    - Supports hierarchical batching via HierarchicalBatcher
+    - Returns comprehensive dictionaries with computed metrics
+    - All date fields returned as ISO format strings
 """
 from datetime import datetime, timedelta, date
 from sqlite3 import DatabaseError

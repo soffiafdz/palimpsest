@@ -6,25 +6,96 @@ Parse YAML frontmatter from Markdown files and populate database.
 
 This pipeline converts human-edited Markdown entries with rich YAML metadata
 into structured database records. It handles the complete conversion from
-MdEntry → Database ORM models.
+MdEntry → Database ORM models with comprehensive relationship management.
 
 Features:
-- Parse YAML frontmatter with progressive complexity
-- Intelligent name/location parsing (hyphens, quotes, hierarchy)
-- Create or update database entries with relationships
-- Handle manuscript metadata
-- Batch processing with error recovery
-- Comprehensive logging and statistics
+    - Parse YAML frontmatter with progressive complexity
+    - Intelligent name/location parsing (hyphens, quotes, hierarchy)
+    - Create or update database entries with relationships
+    - Handle manuscript metadata
+    - Batch processing with error recovery
+    - Comprehensive logging and statistics
+    - Hash-based change detection
+    - Incremental and full synchronization modes
 
-Usage:
-    # Single file
-    python -m dev.pipeline.yaml2sql update path/to/entry.md
+Supported Metadata Fields:
+    Core Fields:
+        - date (required): Entry date in YYYY-MM-DD format
+        - word_count: Word count (computed if missing)
+        - reading_time: Estimated reading time in minutes
+        - epigraph: Opening quote
+        - epigraph_attribution: Attribution for epigraph
+        - notes: Editorial notes
 
-    # Batch directory
-    python -m dev.pipeline.yaml2sql batch path/to/entries/
+    Geographic Fields:
+        - city: Single city or list of cities
+        - locations: Flat list or nested dict by city
 
-    # Full sync
-    python -m dev.pipeline.yaml2sql sync path/to/entries/
+    Relationship Fields:
+        - people: Names with hyphen/alias/full_name support
+        - events: Event identifiers
+        - tags: Keyword tags
+        - dates: Mentioned dates with optional context
+        - related_entries: Date strings of related entries
+
+    Content Fields:
+        - references: External citations with sources
+        - poems: Poem versions with revision tracking
+
+    Manuscript Fields:
+        - manuscript: Status, themes, and editorial notes
+
+Processing Modes:
+    Single File Update:
+        - Process individual Markdown file
+        - Create or update based on file hash
+        - Skip unchanged files (unless forced)
+
+    Batch Processing:
+        - Process directory of Markdown files
+        - Parallel-safe with transaction isolation
+        - Error recovery for individual failures
+
+    Full Synchronization:
+        - Update all entries in directory
+        - Optional deletion of missing entries
+        - Comprehensive validation
+
+CLI Commands:
+    update <file>:
+        Process single Markdown file
+        Options: --force to update even if unchanged
+
+    batch <dir>:
+        Process all files in directory
+        Options: --pattern for file matching, --force
+
+    sync <dir>:
+        Synchronize database with directory
+        Options: --delete-missing to remove orphaned entries
+
+Examples:
+    # Update single entry
+    python -m dev.pipeline.yaml2sql update journal/md/2024/2024-01-15.md
+
+    # Process year directory
+    python -m dev.pipeline.yaml2sql batch journal/md/2024/ --force
+
+    # Full sync with cleanup
+    python -m dev.pipeline.yaml2sql sync journal/md/ --delete-missing
+
+Error Handling:
+    - Validation errors logged with context
+    - Parsing failures don't stop batch processing
+    - Transaction rollback on database errors
+    - Comprehensive error statistics
+
+Notes:
+    - All datetime fields stored as UTC
+    - File paths must be absolute or relative to working directory
+    - Hash-based change detection prevents redundant updates
+    - Supports incremental relationship updates
+    - Manuscript metadata optional but validated if present
 """
 from __future__ import annotations
 

@@ -6,7 +6,7 @@ Database manager for the Palimpsest medatata system.
 
 Provides the PalimpsestDB class for interacting with the SQLite database.
 Handles:
-    - Initialization of the database engine and sessionmaker
+ - Initialization of the database engine and sessionmaker
     - CRUD operations for all ORM models
     - Handle queries and convenience methods
     - Relationship management for all model types
@@ -15,13 +15,63 @@ Handles:
     - Automated backup and recovery system
     - Database health monitoring and maintenance
     - Data export functionality
+    - Migration management via Alembic
+
+Key Features:
+    - Transaction management with automatic rollback
+    - Retry logic for database lock handling
+    - Optimized relationship loading
+    - Validation and normalization of inputs
+    - Comprehensive error handling and logging
+    - Support for manuscript metadata
+
+Core Operations:
+    Entry Management:
+        - create_entry: Create new entries with relationships
+        - update_entry: Update existing entries
+        - get_entry: Retrieve entries by date
+        - delete_entry: Remove entries
+        - bulk_create_entries: Efficient batch creation
+
+    People Management:
+        - create_person: Create person records with aliases
+        - update_person: Update person details
+        - get_person: Retrieve by name or full_name
+
+    Location Management:
+        - update_city: Manage city records
+        - update_location: Manage venue records
+
+    Reference Management:
+        - update_reference: Manage reference records
+        - create_reference_source: Create source records
+        - update_reference_source: Update source details
+
+    Event & Poem Management:
+        - create_event: Create event records
+        - update_event: Update event details
+        - create_poem: Create poem versions
+        - update_poem: Update poem details
+        - update_poem_version: Update specific versions
+
+    Manuscript Management:
+        - create_or_update_manuscript_entry: Link entries to manuscript
+        - create_or_update_manuscript_person: Map people to characters
+        - create_or_update_manuscript_event: Track manuscript events
+
+    Database Maintenance:
+        - cleanup_all_metadata: Remove orphaned records
+        - health_monitor: Check database integrity
+        - export_manager: Export data to various formats
+        - query_analytics: Generate statistics and reports
 
 Notes
 ==============
 - Migrations are handled externally via Alembic
 - All datetime fields are UTC-aware
 - Backup retention policies are configurable
-- Logs are rotatedd automatically to prevent disk bloat
+- Logs are rotated automatically to prevent disk bloat
+- Retry logic handles SQLite lock contention
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -671,21 +721,24 @@ class PalimpsestDB:
             person (Person): Entry ORM object to update relationships for.
             metadata (Dict[str, Any]): Normalized metadata containing:
                 Expected keys (optional):
-                    - dates (List[MentionedDate or id])
-                    - cities (List[City or id])
-                    - locations (List[Location or id])
-                    - people (List[Person or id])
-                    - references (List[Reference or id])
-                    - events (List[Event or id])
-                    - poems (List[Poem or id])
+                    - dates (List[MentionedDate|int|str|Dict]) - Mentioned dates with optional context
+                    - cities (List[City|int|str]) - Cities where entry took place
+                    - locations (List[Dict]) - Locations with city context: {"name": str, "city": str}
+                    - people (List[Person|int|str]) - People mentioned
+                    - events (List[Event|int|str]) - Events entry belongs to
+                    - tags (List[str]) - Keyword tags
+                    - related_entries (List[str]) - Date strings of related entries
+                    - references (List[Dict]) - External references with sources
+                    - poems (List[Dict]) - Poem versions
+                    - manuscript (Dict) - Manuscript metadata
                 Removal keys (optional):
-                    - remove_dates (List[MentionedDate or id])
-                    - remove_cities (List[City or id])
-                    - remove_locations (List[Location or id])
-                    - remove_people (List[Person or id])
-                    - remove_references (List[Reference or id])
-                    - remove_events (List[Event or id])
-                    - remove_poems (List[Poem or id])
+                    - remove_dates (List[MentionedDate|int])
+                    - remove_cities (List[City|int])
+                    - remove_people (List[Person|int])
+                    - remove_events (List[Event|int])
+                    - remove_locations (List[Location|int])
+            incremental (bool): If True, add/remove specified items.
+                                If False, replace all relationships.
 
         Behavior:
             - Incremental mode:
@@ -693,6 +746,14 @@ class PalimpsestDB:
             - Overwrite mode:
                 clears all existing relationships before adding new ones.
             - Calls session.flush() only if any changes were made
+
+        Special Handling:
+            - dates: Supports both simple date strings and dicts with context
+            - locations: Requires city context in dict format
+            - references: Creates ReferenceSource records as needed
+            - poems: Creates Poem parent records as needed
+            - tags: Simple string list (not ORM objects)
+            - related_entries: Uni-directional relationships by date string
         """
         try:
             if "dates" in metadata:

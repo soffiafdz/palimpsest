@@ -466,8 +466,18 @@ class MdEntry:
         """
         Parse city field (single city or list of cities).
 
+        Supports both formats:
+        - Single string: "Montreal"
+        - List of strings: ["Montreal", "Toronto"]
+
         Returns:
-            List of city names
+            List of city names (always a list, even for single city)
+
+        Examples:
+            >>> _parse_city_field("Montreal")
+            ["Montreal"]
+            >>> _parse_city_field(["Montreal", "Toronto"])
+            ["Montreal", "Toronto"]
         """
         if isinstance(city_data, str):
             return [city_data.strip()]
@@ -478,14 +488,28 @@ class MdEntry:
         self, locations_data: Union[List[str], Dict[str, List[str]]], cities: List[str]
     ) -> Dict[str, List[str]]:
         """
-        Parse locations field.
+        Parse locations field supporting both flat and nested formats.
+
+        Formats:
+        - Flat list (single city): ["Café X", "Park Y"]
+        - Nested dict (multiple cities): {"Montreal": ["Café X"], "Toronto": ["Park Y"]}
 
         Args:
             locations_data: Either flat list or nested dict
-            cities: List of cities from city field
+            cities: List of cities from city field (for validation)
 
         Returns:
             Dict mapping city names to lists of location names
+
+        Examples:
+            >>> _parse_locations_field(["Café X", "Park Y"], ["Montreal"])
+            {"Montreal": ["Café X", "Park Y"]}
+
+            >>> _parse_locations_field(
+            ...     {"Montreal": ["Café X"], "Toronto": ["Park Y"]},
+            ...     ["Montreal", "Toronto"]
+            ... )
+            {"Montreal": ["Café X"], "Toronto": ["Park Y"]}
         """
         result = {}
 
@@ -507,27 +531,65 @@ class MdEntry:
 
         return result
 
-    def _parse_people_field(self, people_list: List[str]) -> List[Dict[str, Any]]:
+    def _parse_people_field(
+        self, people_list: List[Union[str, Dict]]
+    ) -> List[Dict[str, Any]]:
         """
         Parse people field with name/full_name/alias logic.
 
-        Rules:
-        - Single word (hyphenated): name only
-        - Multiple words: full_name only
-        - Parentheses: name (full_name)
-        - Starts with @: alias
+         Supports multiple formats:
+         - Simple name: "John" → {name: "John"}
+         - Hyphenated name: "Jean-Paul" → {name: "Jean Paul"}
+         - Full name: "John Smith" → {full_name: "John Smith"}
+         - Name with expansion: "John (John Smith)" → {name: "John", full_name: "John Smith"}
+         - Alias format: "@Johnny" → {alias: "Johnny"}
+         - Alias with name: "@Johnny (John)" → {alias: "Johnny", name: "John"}
+         - Dict format: {"name": "John", "full_name": "John Smith"}
 
-        Returns:
-            List of dicts with 'name', 'full_name', and/or 'alias' keys
+         Rules:
+         - Single word (may be hyphenated): treated as name only
+         - Multiple words: treated as full_name only
+         - Parentheses: name (full_name) format
+         - Starts with @: alias format
+         - Hyphens in single-word names converted to spaces
+
+         Args:
+             people_list: List of person specifications (strings or dicts)
+
+         Returns:
+             List of dicts with 'name', 'full_name', and/or 'alias' keys
+
+         Examples:
+             >>> _parse_people_field(["John", "Jane Smith", "Bob (Robert)", "@Bobby"])
+             [
+                 {"name": "John"},
+                 {"full_name": "Jane Smith"},
+                 {"name": "Bob", "full_name": "Robert"},
+                 {"alias": "Bobby"}
+             ]
         """
         normalized = []
 
-        for person_str in people_list:
+        for person_item in people_list:
+            if isinstance(person_item, dict):
+                person_dict = {}
+                if "name" in person_item:
+                    person_dict["name"] = DataValidator.normalize_string(
+                        person_item["name"]
+                    )
+                if "full_name" in person_item:
+                    person_dict["full_name"] = DataValidator.normalize_string(
+                        person_item["full_name"]
+                    )
+                if person_dict:
+                    normalized.append(person_dict)
+                continue
+
             alias: Optional[str] = None
             name: Optional[str] = None
             full_name: Optional[str] = None
 
-            person_str = DataValidator.normalize_string(person_str)
+            person_str = DataValidator.normalize_string(person_item)
             if not person_str:
                 continue
 
@@ -566,11 +628,27 @@ class MdEntry:
         Parse dates field with inline or nested format.
 
         Supports:
-        - Inline: "2025-06-01 (thesis exam)"
-        - Nested: {date: "2025-06-01", context: "thesis exam"}
+        - Simple date: "2025-06-01"
+        - Inline context: "2025-06-01 (thesis exam)"
+        - Nested format: {"date": "2025-06-01", "context": "thesis exam"}
+
+        Args:
+            dates_data: List of date specifications
 
         Returns:
-            List of dicts with 'date' and optional 'context'
+            List of dicts with 'date' and optional 'context' keys
+
+        Examples:
+            >>> _parse_dates_field([
+            ...     "2025-06-01",
+            ...     "2025-06-15 (birthday)",
+            ...     {"date": "2025-07-01", "context": "celebration"}
+            ... ])
+            [
+                {"date": "2025-06-01"},
+                {"date": "2025-06-15", "context": "birthday"},
+                {"date": "2025-07-01", "context": "celebration"}
+            ]
         """
         normalized = []
 
@@ -601,14 +679,44 @@ class MdEntry:
         """
         Parse and normalize references with source handling.
 
-        Returns list of dicts ready for database processing:
+        Reference format:
         {
-            "content": Optional[str],
-            "description": Optional[str],
-            "mode": str (default: "direct"),
-            "speaker": Optional[str],
-            "source": Optional[Dict] with validated type
+            "content": str (optional, but content or description required),
+            "description": str (optional),
+            "mode": str (optional, default: "direct"),
+            "speaker": str (optional),
+            "source": {
+                "title": str (required),
+                "type": str (required: book/article/film/poem/etc),
+                "author": str (optional)
+            } (optional)
         }
+
+        Args:
+            refs_data: List of reference dictionaries
+
+        Returns:
+            List of validated reference dicts with normalized types
+
+        Examples:
+            >>> _parse_references_field([{
+            ...     "content": "To be or not to be",
+            ...     "mode": "direct",
+            ...     "source": {
+            ...         "title": "Hamlet",
+            ...         "type": "book",
+            ...         "author": "Shakespeare"
+            ...     }
+            ... }])
+            [{
+                "content": "To be or not to be",
+                "mode": "direct",
+                "source": {
+                    "title": "Hamlet",
+                    "type": ReferenceType.BOOK,
+                    "author": "Shakespeare"
+                }
+            }]
         """
         normalized = []
 
@@ -687,13 +795,34 @@ class MdEntry:
         """
         Parse and normalize poems with Poem parent handling.
 
-        Returns list of dicts ready for database processing:
+        Poem format:
         {
-            "title": str,
-            "content": str,
-            "revision_date": Optional[date],
-            "notes": Optional[str],
+            "title": str (required),
+            "content": str (required),
+            "revision_date": str|date (optional),
+            "notes": str (optional),
+            "version_hash": str (optional, auto-generated if not provided)
         }
+
+        Args:
+            poems_data: List of poem dictionaries
+
+        Returns:
+            List of validated poem dicts ready for database
+
+        Examples:
+            >>> _parse_poems_field([{
+            ...     "title": "Ode to Joy",
+            ...     "content": "Beautiful spark of divinity...",
+            ...     "revision_date": "2024-01-15",
+            ...     "notes": "First draft"
+            ... }])
+            [{
+                "title": "Ode to Joy",
+                "content": "Beautiful spark of divinity...",
+                "revision_date": date(2024, 1, 15),
+                "notes": "First draft"
+            }]
         """
         normalized = []
 

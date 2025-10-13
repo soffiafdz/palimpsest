@@ -288,10 +288,10 @@ class SchemaInfo(Base):
 class ReferenceMode(str, Enum):
     """
     Enumeration of reference modes.
-    - DIRECT
-    - INDIRECT
-    - PARAPHRASE
-    - VISUAL
+    - DIRECT: Direct quotation
+    - INDIRECT: Indirect reference or allusion
+    - PARAPHRASE: Paraphrased content
+    - VISUAL: Visual/image reference
     """
 
     DIRECT = "direct"
@@ -488,21 +488,34 @@ class Entry(Base):
     """
     Central model representing a journal entry's metadata.
 
-    Each Entry corresponds to a single Markdown file in the journal,
-    with metadata extracted from the frontmatter and relationships
-    to various entities mentioned in the entry.
+       Each Entry corresponds to a single Markdown file in the journal,
+       with metadata extracted from the frontmatter and relationships
+       to various entities mentioned in the entry.
 
-    Attributes:
-        id: Primary key
-        date: Date of the journal entry (unique)
-        file_path: Path to the Markdown file (unique)
-        file_hash: Hash of file content for change detection
-        word_count: Number of words in the entry
-        reading_time: Estimated reading time in minutes
-        epigraph: Opening quote or epigraph
-        notes: Additional notes or metadata
-        created_at: When this database record was created
-        updated_at: When this database record was last updated
+       Attributes:
+           id: Primary key
+           date: Date of the journal entry (unique)
+           file_path: Path to the Markdown file (unique)
+           file_hash: Hash of file content for change detection
+           word_count: Number of words in the entry
+           reading_time: Estimated reading time in minutes
+           epigraph: Opening quote or epigraph
+           epigraph_attribution: Attribution for epigraph (author, source)
+           notes: Additional notes or metadata
+           created_at: When this database record was created
+           updated_at: When this database record was last updated
+
+       Relationships:
+           dates: Many-to-many with MentionedDate (dates referenced in entry)
+           cities: Many-to-many with City (cities where entry took place)
+           locations: Many-to-many with Location (specific venues mentioned)
+           people: Many-to-many with Person (people mentioned)
+           events: Many-to-many with Event (thematic events entry belongs to)
+           tags: Many-to-many with Tag (keyword tags)
+           related_entries: Many-to-many self-referential (related entries)
+           references: One-to-many with Reference (external citations)
+           poems: One-to-many with PoemVersion (poems written in entry)
+           manuscript: One-to-one with ManuscriptEntry (manuscript metadata)
     """
 
     __tablename__ = "entries"
@@ -699,12 +712,29 @@ class MentionedDate(Base):
     Represents dates referenced within journal entries.
 
     Tracks specific dates mentioned in entries, allowing for temporal
-    analysis and cross-referencing of events.
+    analysis and cross-referencing of events. Dates can optionally include
+    context about why they were mentioned.
 
     Attributes:
         id: Primary key
         date: The mentioned date
         context: Optional context about why this date was mentioned
+
+    Relationships:
+        entries: Many-to-many with Entry (entries that mention this date)
+
+    Computed Properties:
+        date_formatted: ISO format string (YYYY-MM-DD)
+        entry_count: Number of entries referencing this date
+        first_mention_date: When this date was first mentioned in the journal
+        last_mention_date: Most recent mention of this date
+
+    Examples:
+        # Simple date mention
+        MentionedDate(date=date(2020, 3, 15))
+
+        # Date with context
+        MentionedDate(date=date(2020, 3, 15), context="thesis defense")
     """
 
     __tablename__ = "dates"
@@ -757,91 +787,22 @@ class MentionedDate(Base):
             return f"Date {self.date_formatted} ({count} mentions)"
 
 
-class Location(Base):
-    """
-    Represents venues mentioned in entries.
-
-    Tracks places referenced in journal entries for geographic analysis
-    and location-based queries.
-
-    Attributes:
-        id: Primary key
-        name: name of the place
-    """
-
-    __tablename__ = "locations"
-    __table_args__ = (CheckConstraint("name != ''", name="ck_location_non_empty_name"),)
-
-    # ---- Primary fields ----
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
-
-    # ---- Geographical location ----
-    city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"))
-    city: Mapped[City] = relationship(back_populates="locations")
-
-    # ---- Relationship ----
-    entries: Mapped[List[Entry]] = relationship(
-        "Entry", secondary=entry_locations, back_populates="locations"
-    )
-
-    # ---- Computed properties ----
-    @property
-    def entry_count(self) -> int:
-        """Number of entries mentioning this location."""
-        return len(self.entries)
-
-    @property
-    def visit_frequency(self) -> Dict[str, int]:
-        """
-        Calculate visit frequency by year-month.
-
-        Returns:
-            Dictionary mapping YYYY-MM strings to visit counts
-        """
-        frequency: Dict[str, int] = {}
-        for entry in self.entries:
-            year_month = entry.date.strftime("%Y-%m")
-            frequency[year_month] = frequency.get(year_month, 0) + 1
-        return frequency
-
-    @property
-    def visit_span_days(self) -> int:
-        """Days between first and last visit."""
-        if not self.entries or len(self.entries) < 2:
-            return 0
-        dates = [entry.date for entry in self.entries]
-        return (max(dates) - min(dates)).days
-
-    # Call
-    def __repr__(self):
-        return f"<Location(id={self.id}, name={self.name})>"
-
-    def __str__(self) -> str:
-        loc_name = f"{self.name} ({self.city.city})"
-        count = self.entry_count
-        if count == 0:
-            return f"Location {loc_name} (orphan)"
-        elif count == 1:
-            return f"Location {loc_name} (1 entry)"
-        else:
-            return f"Location {loc_name} ({count} entries)"
-
-
 class City(Base):
     """
     Represents Cities mentioned in entries.
 
-    Tracks places referenced in journal entries for geographic analysis
-    and location-based queries.
+    Tracks cities referenced in journal entries for geographic analysis
+    and location-based queries. Cities are parent entities for Locations.
 
     Attributes:
         id: Primary key
-        city: name of the place
-        state_province: state or province
-        country: country
+        city: Name of the city (unique)
+        state_province: State or province (optional)
+        country: Country (optional)
+
+    Relationships:
+        locations: One-to-many with Location (specific venues in this city)
+        entries: Many-to-many with Entry (entries that took place in this city)
     """
 
     __tablename__ = "cities"
@@ -907,8 +868,126 @@ class City(Base):
             return f"City: {location_str} ({count} entries)"
 
 
+class Location(Base):
+    """
+    Represents specific venues or places mentioned in entries.
+
+    Tracks venues referenced in journal entries for geographic analysis
+    and location-based queries. Each location belongs to a parent City.
+
+    Attributes:
+        id: Primary key
+        name: Name of the location/venue (unique)
+        city_id: Foreign key to parent City
+        city: Relationship to parent City
+
+    Relationships:
+        city: Many-to-one with City (parent city)
+        entries: Many-to-many with Entry (entries mentioning this location)
+
+    Computed Properties:
+        entry_count: Number of entries mentioning this location
+        visit_frequency: Monthly visit frequency statistics
+        visit_span_days: Days between first and last visit
+    """
+
+    __tablename__ = "locations"
+    __table_args__ = (CheckConstraint("name != ''", name="ck_location_non_empty_name"),)
+
+    # ---- Primary fields ----
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+
+    # ---- Geographical location ----
+    city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"))
+    city: Mapped[City] = relationship(back_populates="locations")
+
+    # ---- Relationship ----
+    entries: Mapped[List[Entry]] = relationship(
+        "Entry", secondary=entry_locations, back_populates="locations"
+    )
+
+    # ---- Computed properties ----
+    @property
+    def entry_count(self) -> int:
+        """Number of entries mentioning this location."""
+        return len(self.entries)
+
+    @property
+    def visit_frequency(self) -> Dict[str, int]:
+        """
+        Calculate visit frequency by year-month.
+
+        Returns:
+            Dictionary mapping YYYY-MM strings to visit counts
+        """
+        frequency: Dict[str, int] = {}
+        for entry in self.entries:
+            year_month = entry.date.strftime("%Y-%m")
+            frequency[year_month] = frequency.get(year_month, 0) + 1
+        return frequency
+
+    @property
+    def visit_span_days(self) -> int:
+        """Days between first and last visit."""
+        if not self.entries or len(self.entries) < 2:
+            return 0
+        dates = [entry.date for entry in self.entries]
+        return (max(dates) - min(dates)).days
+
+    # Call
+    def __repr__(self):
+        return f"<Location(id={self.id}, name={self.name})>"
+
+    def __str__(self) -> str:
+        loc_name = f"{self.name} ({self.city.city})"
+        count = self.entry_count
+        if count == 0:
+            return f"Location {loc_name} (orphan)"
+        elif count == 1:
+            return f"Location {loc_name} (1 entry)"
+        else:
+            return f"Location {loc_name} ({count} entries)"
+
+
 class Person(Base, SoftDeleteMixin):
-    """Represents a person mentioned in journal entries."""
+    """
+    Represents a person mentioned in journal entries.
+
+    Tracks individuals referenced across entries with support for:
+    - Multiple names (name vs full_name)
+    - Name disambiguation (name_fellow flag)
+    - Relationship categorization
+    - Aliases
+    - Soft deletion
+
+    Attributes:
+        id: Primary key
+        name: Primary name (usually first name or nickname)
+        full_name: Full legal name (unique, optional)
+        name_fellow: Flag indicating multiple people share this name
+        relation_type: Category of relationship (enum)
+
+    Relationships:
+        aliases: One-to-many with Alias (alternative names)
+        events: Many-to-many with Event (events person is involved in)
+        entries: Many-to-many with Entry (entries mentioning person)
+        manuscript: One-to-one with ManuscriptPerson (manuscript character mapping)
+
+    Computed Properties:
+        display_name: Best name for display (full_name or name)
+        all_names: List of all names including aliases
+        entry_count: Number of entries mentioning person
+        event_count: Number of events person is involved in
+        first_appearance: Date of first journal mention
+        last_appearance: Date of most recent mention
+        relationship_display: Human-readable relationship type
+        is_close_relationship: Whether relationship is close (family/friend/romantic)
+        privacy_sensitivity: Privacy level for manuscript adaptation (0-5)
+        mention_frequency: Monthly mention frequency statistics
+    """
 
     __tablename__ = "people"
     __table_args__ = (CheckConstraint("name != ''", name="ck_person_non_empty_name"),)
@@ -1062,20 +1141,33 @@ class Reference(Base):
     External references cited in entries.
 
     Tracks quotes, citations, and references to external sources
-    mentioned in journal entries.
+    mentioned in journal entries. References can be direct quotes,
+    paraphrases, or visual references.
 
     Attributes:
         id: Primary key
-        content: The quoted or referenced content
-        speaker: Who said/wrote this (if applicable)
-        entry_id: Which entry contains this reference
-        source_id: Source of the reference (book, article, etc.)
+        content: The quoted or referenced content (optional)
+        description: Brief description of reference (optional, but content or description required)
+        speaker: Who said/wrote this (optional)
+        mode: Type of reference (direct/indirect/paraphrase/visual)
+        entry_id: Which entry contains this reference (required)
+        source_id: Source of the reference (book, article, etc., optional)
+
+    Relationships:
+        entry: Many-to-one with Entry (parent entry)
+        source: Many-to-one with ReferenceSource (optional source details)
+
+    Computed Properties:
+        content_preview: Truncated content for display (max 100 chars)
+
+    Note:
+        Either content or description must be provided.
     """
 
     __tablename__ = "references"
-    __table_args__ = (
-        CheckConstraint("content != ''", name="check_reference_non_empty_content"),
-    )
+    # __table_args__ = (
+    #     CheckConstraint("content != ''", name="check_reference_non_empty_content"),
+    # )
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -1127,13 +1219,25 @@ class ReferenceSource(Base):
     Sources of references (books, articles, movies, etc).
 
     Centralizes information about sources that are referenced
-    multiple times across different entries.
+    multiple times across different entries. Supports various
+    media types with type-specific validation.
 
     Attributes:
         id: Primary key
+        type: Type of source (book/article/film/poem/song/etc.)
         title: Title of the source (unique)
-        type: Type of source (book, article, movie, etc.)
-        author: Author or creator of the source
+        author: Author or creator of the source (optional)
+
+    Relationships:
+        references: One-to-many with Reference (references from this source)
+
+    Computed Properties:
+        display_name: Formatted name with type and author
+        requires_author_validation: Whether this source type should have an author
+        reference_count: Number of references from this source
+
+    Note:
+        Some source types (book, article) typically require an author field.
     """
 
     __tablename__ = "reference_sources"
@@ -1265,6 +1369,29 @@ class Event(Base, SoftDeleteMixin):
 
 
 class Poem(Base):
+    """
+    Parent entity for poem tracking.
+
+    Represents a poem title that may have multiple versions/revisions
+    across different entries. The Poem entity groups related PoemVersions.
+
+    Attributes:
+        id: Primary key
+        title: Title of the poem (not unique - multiple versions allowed)
+
+    Relationships:
+        versions: One-to-many with PoemVersion (all versions of this poem)
+
+    Computed Properties:
+        version_count: Number of versions of this poem
+        latest_version: Most recent version by revision_date
+
+    Note:
+        Poems are not unique by title - the same title can have multiple
+        poem records if they represent different works. Version deduplication
+        is handled at the PoemVersion level via version_hash.
+    """
+
     __tablename__ = "poems"
     __table_args__ = (CheckConstraint("title != ''", name="ck_poem_non_empty_title"),)
 

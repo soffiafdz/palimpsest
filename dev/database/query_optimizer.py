@@ -3,16 +3,159 @@
 query_optimizer.py
 ------------------
 INTERNAL: Optimized query strategies to eliminate N+1 query problems.
+
 Utilities for efficient relationship loading in SQLAlchemy,
 preventing performance issues when accessing related objects in loops.
 
 ⚠️ This module is for INTERNAL use by ExportManager, QueryAnalytics,
 and HealthMonitor. External code should use those high-level interfaces instead.
 
+Key Concepts:
+    N+1 Problem:
+        Without optimization:
+            entries = session.query(Entry).all()  # 1 query
+            for entry in entries:
+                people = entry.people  # N additional queries!
+
+        With optimization:
+            entries = QueryOptimizer.for_export(session, entry_ids)  # 1 query
+            for entry in entries:
+                people = entry.people  # FREE - already loaded!
+
+    Eager Loading:
+        Uses SQLAlchemy's selectinload() to preload relationships
+        Executes separate efficient queries for each relationship type
+        Attaches results to parent objects automatically
+
 Classes:
-    - QueryOptimizer: Optimized query builders for common operations
-    - RelationshipLoader: Preload relationships for existing objects
-    - HierarchicalBatcher: Batch entries by natural date hierarchy
+    QueryOptimizer:
+        Static methods that return queries with relationships preloaded
+        Each method optimized for specific use cases
+
+    RelationshipLoader:
+        Preload relationships for existing entry collections
+        Use when you already have Entry objects
+
+    HierarchicalBatcher:
+        Batch entries by natural date hierarchy (years/months)
+        Provides meaningful, predictable batches
+
+    DateBatch:
+        Container for batched entries with metadata
+        Represents year or month worth of entries
+
+QueryOptimizer Methods:
+    for_export(entry_ids):
+        Load entries for export operations
+        Preloads: people+aliases+manuscript, locations+cities, cities,
+                  events+manuscript, tags, dates, references+sources,
+                  poems+poem, manuscript+themes
+
+    for_display(entry_id):
+        Load single entry for display
+        Preloads: people, locations, tags, events
+        Skips: aliases, manuscript, references, poems (not needed for display)
+
+    for_year(year):
+        Load all entries in a year
+        Returns: Chronologically sorted entries with full relationships
+
+    for_month(year, month):
+        Load all entries in a specific month
+        Returns: Chronologically sorted entries with full relationships
+
+RelationshipLoader Methods:
+    preload_for_entries(entries):
+        Preload relationships for existing Entry objects
+        Modifies entries in-place
+        Use when you already have entries but need relationships
+
+HierarchicalBatcher Methods:
+    create_batches(threshold=500):
+        Main method - creates intelligent batches
+        Logic:
+            - If year ≤ threshold entries: one batch for full year
+            - If year > threshold entries: split into monthly batches
+        Returns: List of DateBatch objects
+
+    get_years():
+        Get all years that have entries
+        Returns: [2020, 2021, 2022, ...]
+
+    get_months_for_year(year):
+        Get months in a year that have entries
+        Returns: [1, 3, 5, 8, ...] (month numbers)
+
+    count_year_entries(year):
+        Count entries in a specific year
+
+    count_month_entries(year, month):
+        Count entries in a specific month
+
+    create_yearly_batch(year):
+        Create batch for specific year
+
+    create_monthly_batch(year, month):
+        Create batch for specific month
+
+DateBatch Properties:
+    entry_count: Number of entries
+    period_label: Human-readable label (e.g., "2024" or "2024-06")
+    is_monthly: True if represents single month
+    is_yearly: True if represents full year
+    entries: List of Entry objects with relationships preloaded
+
+Usage Examples:
+    # Export with optimization
+    >>> entry_ids = [1, 2, 3, 4, 5]
+    >>> entries = QueryOptimizer.for_export(session, entry_ids)
+    >>> for entry in entries:
+    ...     # All relationships already loaded - no additional queries!
+    ...     export_entry(entry)
+
+    # Display single entry
+    >>> entry = QueryOptimizer.for_display(session, entry_id)
+    >>> print(f"{entry.date}: {len(entry.people)} people")
+
+    # Process by year
+    >>> entries_2024 = QueryOptimizer.for_year(session, 2024)
+    >>> analyze_year(entries_2024)
+
+    # Hierarchical batching for export
+    >>> batches = HierarchicalBatcher.create_batches(session, threshold=500)
+    >>> for batch in batches:
+    ...     print(f"Processing {batch.period_label}: {batch.entry_count} entries")
+    ...     for entry in batch.entries:
+    ...         # All relationships already loaded!
+    ...         process_entry(entry)
+
+    # Preload for existing entries
+    >>> entries = session.query(Entry).filter(...).all()
+    >>> RelationshipLoader.preload_for_entries(session, entries)
+    >>> for entry in entries:
+    ...     # Now relationships are loaded
+    ...     use_entry(entry)
+
+Performance Notes:
+    - Reduces N+1 queries to O(relationships) queries
+    - For 1000 entries with 5 relationships: 1005 queries → 6 queries
+    - Massive speedup for batch operations
+    - Memory efficient - uses SQLAlchemy's built-in mechanisms
+    - Always prefer these methods over manual loading
+
+Best Practices:
+    - Use for_export() for comprehensive needs
+    - Use for_display() when references/poems not needed
+    - Use hierarchical batching for large dataset processing
+    - Clear session periodically when processing many batches
+    - Monitor memory usage for very large batches
+
+Notes:
+    - All methods return entries sorted by date
+    - Relationships are loaded via selectinload (not joinedload)
+    - Session remains usable after optimization
+    - Safe to call multiple times (idempotent)
+    - Works with any SQLAlchemy session
 """
 
 from __future__ import annotations

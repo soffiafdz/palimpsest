@@ -3,6 +3,98 @@
 relationship_manager.py
 -----------------------
 Handles generic relationship updates: one-to-one, one-to-many and many-to-many.
+
+Provides static methods for managing SQLAlchemy relationships with proper
+error handling, transaction management, and support for incremental updates.
+
+Key Features:
+    - Type-safe relationship management using Protocol
+    - Support for incremental and full replacement modes
+    - Automatic flush management
+    - Object resolution (handle IDs or ORM instances)
+    - Comprehensive error handling
+    - Minimal API surface (all static methods)
+
+Relationship Types:
+    One-to-One:
+        - Create/update single child object
+        - Optional deletion support
+        - Foreign key management
+
+    One-to-Many:
+        - Parent owns multiple children
+        - Children have foreign key to parent
+        - Add/remove/replace operations
+
+    Many-to-Many:
+        - Association table relationships
+        - Bidirectional updates
+        - Add/remove/replace operations
+
+Usage Patterns:
+    One-to-One (e.g., Entry → ManuscriptEntry):
+        >>> RelationshipManager.update_one_to_one(
+        ...     session=session,
+        ...     parent_obj=entry,
+        ...     relationship_name="manuscript",
+        ...     model_class=ManuscriptEntry,
+        ...     foreign_key_attr="entry_id",
+        ...     child_data={"status": "source", "edited": True}
+        ... )
+
+    One-to-Many (e.g., ReferenceSource → References):
+        >>> RelationshipManager.update_one_to_many(
+        ...     session=session,
+        ...     parent_obj=source,
+        ...     items=[ref1, ref2, ref3],
+        ...     model_class=Reference,
+        ...     foreign_key_attr="source_id",
+        ...     incremental=True
+        ... )
+
+    Many-to-Many (e.g., Entry → People):
+        >>> RelationshipManager.update_many_to_many(
+        ...     session=session,
+        ...     parent_obj=entry,
+        ...     relationship_name="people",
+        ...     items=["Alice", "Bob"],  # Can be IDs or objects
+        ...     model_class=Person,
+        ...     incremental=True,
+        ...     remove_items=["Charlie"]
+        ... )
+
+Modes:
+    Incremental Mode (incremental=True):
+        - Add new items to existing relationships
+        - Optionally remove specific items
+        - Preserves unlisted items
+        - Efficient for updates
+
+    Replacement Mode (incremental=False):
+        - Clear all existing relationships
+        - Add only specified items
+        - Complete replacement
+        - Use for full sync operations
+
+Helper Methods:
+    _resolve_object:
+        - Converts IDs to ORM objects
+        - Validates object persistence
+        - Handles both instances and integers
+        - Comprehensive error messages
+
+Error Handling:
+    - ValueError: Parent object not persisted
+    - ValueError: Referenced object not found
+    - TypeError: Invalid item type
+    - Automatic transaction rollback on errors
+
+Notes:
+    - All operations call session.flush() if changes made
+    - Parent objects must be persisted (have ID) before linking
+    - Supports mixing ORM objects and IDs in item lists
+    - Returns boolean indicating if changes were made
+    - Thread-safe when used with proper session management
 """
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, Protocol
 from sqlalchemy.orm import Session, Mapped

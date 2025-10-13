@@ -24,24 +24,67 @@ Command Groups:
         - backups: List all backups
         - restore: Restore from backup
 
-    Monitoring:
+    Monitoring & Analytics:
         - stats: Database statistics
         - health: Health check
         - validate: Integrity validation
+        - show: Display single entry with details
+        - years: List all years with entry counts
+        - months: List months in a year with entry counts
+        - batches: Show hierarchical export batches
+        - analyze: Generate detailed analytics report
 
     Maintenance:
         - cleanup: Remove orphaned records
-        - optimize: Optimize database
+        - optimize: Optimize database (VACUUM + ANALYZE)
 
     Export:
         - export-csv: Export to CSV files
         - export-json: Export to JSON
 
+Features:
+    - Comprehensive error handling with context
+    - Optional verbose logging
+    - Configurable paths for database, logs, backups
+    - Confirmation prompts for dangerous operations
+    - Statistics and progress reporting
+    - Support for dry-run operations
+
 Usage:
+    # Initialize new database
     metadb init
+
+    # Create backup before major operation
+    metadb backup --type manual
+
+    # Check database health
+    metadb health
+
+    # View statistics
     metadb stats --verbose
-    metadb backup --type daily
-    metadb health --fix
+
+    # Display entry details
+    metadb show 2024-01-15 --full
+
+    # List available years
+    metadb years
+
+    # Clean up orphaned records
+    metadb cleanup
+
+    # Optimize database
+    metadb optimize
+
+    # Export data
+    metadb export-csv output/
+    metadb export-json output/data.json
+
+Notes:
+    - All commands support --verbose flag for detailed output
+    - Paths can be customized via command-line options
+    - Database operations use transactions with automatic rollback
+    - Backup operations create timestamped files
+    - Health checks provide actionable recommendations
 """
 import sys
 import click
@@ -416,7 +459,7 @@ def show(ctx, entry_date, full):
                 if summary["tags"]:
                     click.echo(f"\n🏷️  Tags: {summary['tags']}")
             else:
-                entry = db.get_entry(session, entry_date)
+                entry = db.get_entry_for_display(session, entry_date)
                 if not entry:
                     click.echo(f"❌ No entry found for {entry_date}", err=True)
                     sys.exit(1)

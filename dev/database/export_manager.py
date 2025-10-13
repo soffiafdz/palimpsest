@@ -496,6 +496,7 @@ class ExportManager:
             "word_count": entry.word_count,
             "reading_time": entry.reading_time,
             "epigraph": entry.epigraph,
+            "epigraph_attribution": entry.epigraph_attribution,
             "notes": entry.notes,
             "created_at": entry.created_at.isoformat() if entry.created_at else None,
             "updated_at": entry.updated_at.isoformat() if entry.updated_at else None,
@@ -504,7 +505,11 @@ class ExportManager:
                 {"date": md.date.isoformat(), "context": md.context}
                 for md in entry.dates
             ],
-            "locations": [loc.name for loc in entry.locations],
+            "cities": [city.city for city in entry.cities],
+            "locations": [
+                {"name": loc.name, "city": loc.city.city if loc.city else None}
+                for loc in entry.locations
+            ],
             "people": [person.display_name for person in entry.people],
             "events": [event.display_name for event in entry.events],
             "tags": [tag.tag for tag in entry.tags],
@@ -567,8 +572,18 @@ class ExportManager:
             "id": person.id,
             "name": person.name,
             "full_name": person.full_name,
-            "relation_type": person.relation_type,
+            "name_fellow": person.name_fellow,
+            "relation_type": (
+                person.relation_type.value if person.relation_type else None
+            ),
             "aliases": [alias.alias for alias in person.aliases],
+            "entry_count": person.entry_count,
+            "first_appearance": (
+                person.first_appearance.isoformat() if person.first_appearance else None
+            ),
+            "last_appearance": (
+                person.last_appearance.isoformat() if person.last_appearance else None
+            ),
             "manuscript": (
                 {"character": person.manuscript.character}
                 if person.manuscript
