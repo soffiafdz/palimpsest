@@ -30,20 +30,24 @@ from __future__ import annotations
 
 import sys
 import click
-import traceback
 from datetime import date, datetime
 from pathlib import Path
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
+from dev.database.query_analytics import QueryAnalytics
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
-from dev.database.query_optimizer import HierarchicalBatcher, RelationshipLoader
+from dev.database.query_optimizer import (
+    HierarchicalBatcher,
+    QueryOptimizer,
+    RelationshipLoader,
+)
 from dev.database.manager import PalimpsestDB
 
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR, MD_DIR
 from dev.core.exceptions import Sql2YamlError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.validators import DataValidator
 
 from dev.utils import md
@@ -207,10 +211,9 @@ def export_entries(
             "export_batch_start", {"count": len(entries), "output": str(output_dir)}
         )
 
-    if session:
-        RelationshipLoader.preload_for_entries(session, entries)
-        if logger:
-            logger.log_debug("Preloaded relationships for batch")
+    RelationshipLoader.preload_for_entries(session, entries)
+    if logger:
+        logger.log_debug("Preloaded relationships for batch")
 
     for entry in entries:
         try:
@@ -328,14 +331,8 @@ def export(
         elif result == "skipped":
             click.echo("⏭️  File skipped (already exists)")
 
-    except Sql2YamlError as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            traceback.print_exc()
-        sys.exit(1)
+    except (Sql2YamlError, Exception) as e:
+        handle_cli_error(ctx, e, "export", {"entry_date": entry_date})
 
 
 @cli.command()
@@ -379,7 +376,8 @@ def range(
 
         # Get entries from database
         with db.session_scope() as session:
-            entries = db.get_entries_by_date_range(session, start, end)
+            analytics = QueryAnalytics(logger=logger)
+            entries = analytics.get_entries_by_date_range(session, start, end)
 
             if not entries:
                 click.echo("⚠️  No entries found in date range")
@@ -400,14 +398,13 @@ def range(
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Sql2YamlError as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            traceback.print_exc()
-        sys.exit(1)
+    except (Sql2YamlError, Exception) as e:
+        handle_cli_error(
+            ctx,
+            e,
+            "export_range",
+            {"start_date": start_date, "end_date": end_date},
+        )
 
 
 @cli.command()
@@ -433,7 +430,7 @@ def export_year(ctx: click.Context, year: int, output: str, force: bool) -> None
 
         with db.session_scope() as session:
             # Use optimized monthly query
-            entries = db.get_entries_by_year(session, year)
+            entries = QueryOptimizer.for_year(session, year)
 
             if not entries:
                 click.echo("⚠️  No entries found for this year")
@@ -454,11 +451,13 @@ def export_year(ctx: click.Context, year: int, output: str, force: bool) -> None
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Exception as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            traceback.print_exc()
-        sys.exit(1)
+    except (Sql2YamlError, Exception) as e:
+        handle_cli_error(
+            ctx,
+            e,
+            "export_year",
+            {"year": year},
+        )
 
 
 @cli.command()
@@ -487,7 +486,7 @@ def export_month(
 
         with db.session_scope() as session:
             # Use optimized monthly query
-            entries = db.get_entries_by_month(session, year, month)
+            entries = QueryOptimizer.for_month(session, year, month)
 
             if not entries:
                 click.echo("⚠️  No entries found for this month")
@@ -508,11 +507,13 @@ def export_month(
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Exception as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            traceback.print_exc()
-        sys.exit(1)
+    except (Sql2YamlError, Exception) as e:
+        handle_cli_error(
+            ctx,
+            e,
+            "export_month",
+            {"year": year, "month": month},
+        )
 
 
 @cli.command()
@@ -571,6 +572,8 @@ def export_hierarchical(
                     total_stats.entries_skipped += stats.entries_skipped
                     total_stats.errors += stats.errors
 
+                    session.expunge_all()
+
         click.echo("\n✅ Hierarchical export complete:")
         click.echo(f"  Total entries: {total_stats.entries_exported}")
         click.echo(f"  Files created: {total_stats.files_created}")
@@ -580,11 +583,13 @@ def export_hierarchical(
             click.echo(f"  ⚠️  Errors: {total_stats.errors}")
         click.echo(f"  Duration: {total_stats.duration():.2f}s")
 
-    except Exception as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        if ctx.obj["verbose"]:
-            traceback.print_exc()
-        sys.exit(1)
+    except (Sql2YamlError, Exception) as e:
+        handle_cli_error(
+            ctx,
+            e,
+            "export_hierarchical",
+            {"threshold": threshold},
+        )
 
 
 @cli.command()
@@ -634,14 +639,8 @@ def all(ctx: click.Context, output: str, force: bool, no_preserve_body: bool) ->
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Sql2YamlError as e:
-        click.echo(f"❌ Export failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            traceback.print_exc()
-        sys.exit(1)
+    except (Sql2YamlError, Exception) as e:
+        handle_cli_error(ctx, e, "export_all")
 
 
 if __name__ == "__main__":

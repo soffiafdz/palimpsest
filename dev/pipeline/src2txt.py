@@ -33,7 +33,7 @@ import click
 from pathlib import Path
 
 from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.exceptions import TxtBuildError
 from dev.builders.txtbuilder import TxtBuilder, ProcessingStats
 
@@ -131,16 +131,8 @@ def process(
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except TxtBuildError as e:
-        click.echo(f"❌ Processing failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (TxtBuildError, Exception) as e:
+        handle_cli_error(ctx, e, "process", {"inbox": inbox})
 
 
 @cli.command()
@@ -207,13 +199,8 @@ def validate(ctx: click.Context, inbox: str) -> None:
             for year in sorted(years.keys()):
                 click.echo(f"  {year}: {years[year]} file(s)")
 
-    except Exception as e:
-        click.echo(f"❌ Validation failed: {e}", err=True)
-        if ctx.obj.get("verbose"):
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (TxtBuildError, Exception) as e:
+        handle_cli_error(ctx, e, "validate", {"inbox": inbox})
 
 
 if __name__ == "__main__":

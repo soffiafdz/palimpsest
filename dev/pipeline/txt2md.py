@@ -29,7 +29,6 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
-import sys
 import click
 import logging
 
@@ -41,7 +40,7 @@ from typing import List, Optional
 from dev.core.exceptions import Txt2MdError
 from dev.core.paths import LOG_DIR, MD_DIR  # , TMP_DIR  , ROOT
 from dev.core.temporal_files import TemporalFileManager
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.dataclasses.txt_entry import TxtEntry
 
 
@@ -356,16 +355,8 @@ def convert(ctx, input_file, output, force, minimal):
             click.echo(f"  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Txt2MdError as e:
-        click.echo(f"❌ Conversion failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (Txt2MdError, Exception) as e:
+        handle_cli_error(ctx, e, "convert", {"input_file": input_file})
 
 
 @cli.command()
@@ -411,16 +402,8 @@ def batch(ctx, input_dir, output, pattern, force, minimal):
             click.echo(f"  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Txt2MdError as e:
-        click.echo(f"❌ Batch conversion failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (Txt2MdError, Exception) as e:
+        handle_cli_error(ctx, e, "batch", {"input_dir": input_dir})
 
 
 @cli.command()
@@ -450,13 +433,8 @@ def validate(ctx, input_file):
             click.echo(f"  Total words: {total_words:,}")
             click.echo(f"  Average words/entry: {avg_words:.0f}")
 
-    except Exception as e:
-        click.echo(f"❌ Validation failed: {e}", err=True)
-        if ctx.obj.get("verbose"):
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (Txt2MdError, Exception) as e:
+        handle_cli_error(ctx, e, "validate", {"input_file": input_file})
 
 
 if __name__ == "__main__":

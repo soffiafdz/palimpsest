@@ -50,14 +50,14 @@ import logging
 from pathlib import Path
 
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
+from dev.core.logging_manager import handle_cli_error
 from dev.core.exceptions import (
     DatabaseError,
     BackupError,
     ExportError,
     HealthCheckError,
 )
-
-from . import PalimpsestDB, QueryOptimizer, HierarchicalBatcher
+from . import PalimpsestDB, QueryOptimizer, HierarchicalBatcher, ExportManager
 
 
 @click.group()
@@ -145,19 +145,7 @@ def init(ctx, alembic_only, db_only):
             click.echo("✅ Complete setup finished!")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Initialization failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "init")
 
 
 @cli.command()
@@ -188,19 +176,7 @@ def reset(ctx, keep_backups):
             click.echo("💡 Tip: Use --keep-backups to preserve backup files")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Reset failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "reset")
 
 
 # ===== Migration Management =====
@@ -225,19 +201,7 @@ def migration_create(ctx, message, autogenerate):
         click.echo("💡 Edit the migration file and then run: metadb migration-upgrade")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Migration creation failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "migration_create")
 
 
 @cli.command()
@@ -252,19 +216,12 @@ def migration_upgrade(ctx, revision):
         click.echo("✅ Database upgraded successfully!")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Database upgrade failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "migration_update",
+            additional_context={"revision": revision},
+        )
 
 
 @cli.command()
@@ -279,19 +236,12 @@ def migration_downgrade(ctx, revision):
         click.echo("✅ Database downgraded successfully!")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Database downgrade failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "migration_downgrade",
+            additional_context={"revision": revision},
+        )
 
 
 @cli.command()
@@ -311,19 +261,7 @@ def migration_status(ctx):
             click.echo(f"⚠️  Error: {status['error']}")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Failed to get migration status: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "migration_status")
 
 
 @cli.command()
@@ -344,19 +282,7 @@ def migration_history(ctx):
             click.echo("  No migrations found")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Failed to get migration history: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "migration_history")
 
 
 # ===== Backup & Restore =====
@@ -378,19 +304,12 @@ def backup(ctx, type, suffix):
         click.echo(f"✅ Backup created: {backup_path}")
 
     except BackupError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Backup failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "backup",
+            additional_context={"type": type},
+        )
 
 
 @cli.command()
@@ -421,19 +340,7 @@ def backups(ctx):
             click.echo(f"\nTotal backups: {total}")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Failed to list backups: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "backups")
 
 
 @cli.command()
@@ -451,19 +358,12 @@ def restore(ctx, backup_path):
         click.echo("✅ Database restored successfully!")
 
     except BackupError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Restore failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "restore",
+            additional_context={"backup_path": backup_path},
+        )
 
 
 # ===== Monitoring =====
@@ -532,8 +432,12 @@ def show(ctx, entry_date, full):
                     )
 
     except DatabaseError as e:
-        click.echo(f"❌ Error: {e}", err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "show",
+            additional_context={"entry_date": entry_date},
+        )
 
 
 @cli.command()
@@ -555,8 +459,7 @@ def years(ctx):
             click.echo(f"\nTotal: {len(years)} years")
 
     except DatabaseError as e:
-        click.echo(f"❌ Error: {e}", err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "years")
 
 
 @cli.command()
@@ -602,8 +505,12 @@ def months(ctx, year):
             click.echo(f"\nTotal: {total} entries")
 
     except DatabaseError as e:
-        click.echo(f"❌ Error: {e}", err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "months",
+            additional_context={"year": year},
+        )
 
 
 @cli.command()
@@ -642,8 +549,12 @@ def batches(ctx, threshold):
             click.echo(f"\nTotal: {len(batches)} batches, {total_entries} entries")
 
     except DatabaseError as e:
-        click.echo(f"❌ Error: {e}", err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "batches",
+            additional_context={"threshold": threshold},
+        )
 
 
 @cli.command()
@@ -694,19 +605,7 @@ def stats(ctx, verbose):
             click.echo(f"  Total Days: {dr['total_days']}")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Failed to get statistics: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "stats")
 
 
 @cli.command()
@@ -752,19 +651,12 @@ def health(ctx, fix):
                     click.echo("  No orphaned records found")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Health check failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "health",
+            additional_context={"fix": fix},
+        )
 
 
 @cli.command()
@@ -801,19 +693,7 @@ def validate(ctx):
                 click.echo("✅ No integrity issues found")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Validation failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "validate")
 
 
 # ===== Maintenance =====
@@ -840,19 +720,7 @@ def cleanup(ctx):
             click.echo(f"\nTotal removed: {total_removed}")
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Cleanup failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "clean")
 
 
 @cli.command()
@@ -887,19 +755,7 @@ def optimize(ctx):
             click.echo("⚠️  No optimization performed")
 
     except (HealthCheckError, DatabaseError) as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Optimization failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "optimize")
 
 
 # ===== Export =====
@@ -913,26 +769,19 @@ def export_csv(ctx, output_dir):
         click.echo(f"📤 Exporting to CSV: {output_dir}")
 
         with db.session_scope() as session:
-            exported = db.export_to_csv(session, output_dir)
+            exported = ExportManager.export_to_csv(session, output_dir)
 
         click.echo(f"\n✅ Export Complete ({len(exported)} tables):")
         for table, path in exported.items():
             click.echo(f"  • {table}: {path}")
 
     except ExportError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ CSV export failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "export_csv",
+            additional_context={"output_dir": output_dir},
+        )
 
 
 @cli.command()
@@ -945,24 +794,17 @@ def export_json(ctx, output_file):
         click.echo(f"📤 Exporting to JSON: {output_file}")
 
         with db.session_scope() as session:
-            exported = db.export_to_json(session, output_file)
+            exported = ExportManager.export_to_json(session, output_file)
 
         click.echo(f"✅ Export complete: {exported}")
 
     except ExportError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ JSON export failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(
+            ctx,
+            e,
+            "export_json",
+            additional_context={"output_file": output_file},
+        )
 
 
 @cli.command()
@@ -986,19 +828,7 @@ def analyze(ctx):
         click.echo(json.dumps(manuscript, indent=2, default=str))
 
     except DatabaseError as e:
-        # Get logger from context
-        logger = ctx.obj.get("logger")
-        if logger:
-            error_msg = logger.log_cli_error(
-                e,
-                {"operation": "init"},
-                show_traceback=ctx.obj.get("verbose", False),
-            )
-        else:
-            error_msg = f"❌ Analytics failed: {e}"
-
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "analyze")
 
 
 if __name__ == "__main__":

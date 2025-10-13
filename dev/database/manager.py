@@ -84,7 +84,7 @@ from .decorators import (
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
-from .query_optimizer import QueryOptimizer, HierarchicalBatcher
+from .query_optimizer import QueryOptimizer
 from .relationship_manager import RelationshipManager, HasId
 
 
@@ -158,8 +158,6 @@ class PalimpsestDB:
                 self.backup_dir,
                 logger=self.logger,
             )
-            # if enable_auto_backup:
-            #     self.backup_manager.auto_backup()
         else:
             self.backup_manager = None
 
@@ -2454,78 +2452,6 @@ class PalimpsestDB:
                 session.flush()
 
         return manuscript
-
-    # ---- Convenience method for common export pattern ----
-    @handle_db_errors
-    def export_all_to_md(
-        self,
-        output_dir: Union[str, Path],
-        threshold: int = 500,
-        force_overwrite: bool = False,
-    ) -> Dict[str, Any]:
-        """
-        Export all entries using hierarchical batching (convenience method).
-
-        Args:
-            output_dir: Output directory for markdown files
-            threshold: Batch size threshold
-            force_overwrite: Whether to overwrite existing files
-
-        Returns:
-            Dictionary with export statistics
-        """
-        from dev.pipeline.sql2yaml import export_entries
-
-        output_path = Path(output_dir)
-        stats_summary = {
-            "total_batches": 0,
-            "total_entries": 0,
-            "files_created": 0,
-            "files_updated": 0,
-            "errors": 0,
-        }
-
-        try:
-            with self.session_scope() as session:
-                batches = HierarchicalBatcher.create_batches(session, threshold)
-                stats_summary["total_batches"] = len(batches)
-
-                for batch in batches:
-                    batch_stats = export_entries(
-                        session,
-                        batch.entries,
-                        output_path,
-                        force_overwrite,
-                        preserve_body=True,
-                        logger=self.logger,
-                    )
-
-                    stats_summary["total_entries"] += batch_stats.entries_exported
-                    stats_summary["files_created"] += batch_stats.files_created
-                    stats_summary["files_updated"] += batch_stats.files_updated
-                    stats_summary["errors"] += batch_stats.errors
-
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "export_all_optimized"})
-            raise DatabaseError(f"Optimized export failed: {e}")
-
-        return stats_summary
-
-    # ----- Export Functionality (Delegated) -----
-    @handle_db_errors
-    # @with_temporal_cleanup
-    def export_to_csv(
-        self, session: Session, export_dir: Union[str, Path]
-    ) -> Dict[str, Path]:
-        """Export all database tables to CSV files."""
-        return self.export_manager.export_to_csv(session, export_dir)
-
-    @handle_db_errors
-    # @with_temporal_cleanup
-    def export_to_json(self, session: Session, export_file: Union[str, Path]) -> Path:
-        """Export complete database to JSON."""
-        return self.export_manager.export_to_json(session, export_file)
 
     # ----- Cleanup Operations -----
     @handle_db_errors

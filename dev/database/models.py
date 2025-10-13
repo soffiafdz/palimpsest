@@ -45,7 +45,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 from enum import Enum
 from datetime import date, datetime, timezone
-from typing import Any, List, Optional, Dict, TYPE_CHECKING
+from typing import Any, List, Optional, Dict
 
 # --- Third party ---
 from sqlalchemy import Enum as SQLEnum
@@ -70,12 +70,11 @@ from sqlalchemy.orm import (
 )
 
 # --- Local ---
-if TYPE_CHECKING:
-    from .models_manuscript import (
-        ManuscriptEntry,
-        ManuscriptPerson,
-        ManuscriptEvent,
-    )
+from .models_manuscript import (
+    ManuscriptEntry,
+    ManuscriptPerson,
+    ManuscriptEvent,
+)
 
 
 # ----- Base ORM class -----

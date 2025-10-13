@@ -15,7 +15,6 @@ Palimpsest personal journal archive system, with specialized modules for:
 - Temporal file handling
 """
 
-from .manager import PalimpsestDB
 from dev.core.exceptions import (
     DatabaseError,
     ValidationError,
@@ -23,6 +22,7 @@ from dev.core.exceptions import (
     HealthCheckError,
     ExportError,
 )
+from .manager import PalimpsestDB
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics

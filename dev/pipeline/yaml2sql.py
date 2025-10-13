@@ -28,7 +28,6 @@ Usage:
 """
 from __future__ import annotations
 
-import sys
 import click
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +38,7 @@ from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
 from dev.core.exceptions import Yaml2SqlError
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.utils import fs
 
 
@@ -370,16 +369,8 @@ def update(ctx: click.Context, input_file: str, force: bool) -> None:
         elif result == "skipped":
             click.echo("⏭️  Entry skipped (unchanged)")
 
-    except Yaml2SqlError as e:
-        click.echo(f"❌ Error: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (Yaml2SqlError, Exception) as e:
+        handle_cli_error(ctx, e, "update", {"file": input_file})
 
 
 @cli.command()
@@ -413,16 +404,8 @@ def batch(ctx: click.Context, input_dir: str, pattern: str, force: bool) -> None
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Yaml2SqlError as e:
-        click.echo(f"❌ Batch processing failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (Yaml2SqlError, Exception) as e:
+        handle_cli_error(ctx, e, "batch", {"input_dir": input_dir})
 
 
 @cli.command()
@@ -466,16 +449,13 @@ def sync(
             click.echo(f"  ⚠️  Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except Yaml2SqlError as e:
-        click.echo(f"❌ Sync failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (Yaml2SqlError, Exception) as e:
+        handle_cli_error(
+            ctx,
+            e,
+            "sync",
+            {"input_dir": input_dir, "delete_missing": delete_missing},
+        )
 
 
 if __name__ == "__main__":

@@ -10,10 +10,14 @@ conversion pipelines, and any process requiring comprehensive logging.
 import json
 import logging
 import traceback
+import sys
 
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import click
 
 
 class PalimpsestLogger:
@@ -232,3 +236,56 @@ class PalimpsestLogger:
             return f"❌ {error_type}: {error_msg}\n\n{tb}"
         else:
             return f"❌ {error_type}: {error_msg}"
+
+
+def handle_cli_error(
+    ctx: "click.Context",
+    error: Exception,
+    operation: str,
+    additional_context: Optional[Dict[str, Any]] = None,
+    exit_code: int = 1,
+) -> None:
+    """
+    Standardized error handling for all CLI commands.
+
+    This function:
+    1. Retrieves logger from Click context
+    2. Logs complete error details (JSON format) to log files
+    3. Displays clean, human-readable error message in terminal
+    4. Exits with specified error code
+
+    Args:
+        ctx: Click context object containing logger and verbose flag
+        error: Exception that occurred
+        operation: Name of the operation that failed (e.g., 'build_pdf', 'sync_db')
+        additional_context: Optional extra context (year, file path, etc.)
+        exit_code: Exit code for sys.exit() (default: 1)
+
+    Note:
+        This function never returns - it always calls sys.exit()
+    """
+    logger: Optional[PalimpsestLogger] = ctx.obj.get("logger")
+    verbose: bool = ctx.obj.get("verbose", False)
+
+    # Build context dictionary
+    context = {"operation": operation}
+    if additional_context:
+        context.update(additional_context)
+
+    # Format error message
+    if logger:
+        error_msg = logger.log_cli_error(error, context, show_traceback=verbose)
+    else:
+        # Fallback if logger not available
+        error_type = type(error).__name__
+        error_msg = (
+            f"❌ {operation.replace('_', ' ').title()} failed: {error_type}: {error}"
+        )
+        if verbose:
+            error_msg += f"\n\n{traceback.format_exc()}"
+
+    # Display and exit
+    import click  # Import here to avoid hard dependency at module level
+
+    click.echo(error_msg, err=True)
+    sys.exit(exit_code)

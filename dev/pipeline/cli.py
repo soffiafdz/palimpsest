@@ -54,9 +54,16 @@ from dev.core.paths import (
 )
 from dev.builders.txtbuilder import TxtBuilder
 from dev.builders.pdfbuilder import PdfBuilder
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.backup_manager import BackupManager
+from dev.core.exceptions import BackupError
 from dev.database.manager import PalimpsestDB
+from dev.database.models import Entry
+from dev.database.query_analytics import QueryAnalytics
+
+from .txt2md import convert_directory, convert_file
+from .yaml2sql import process_directory
+from .sql2yaml import export_entries
 
 
 def setup_logger(log_dir: Path) -> PalimpsestLogger:
@@ -121,13 +128,7 @@ def inbox(ctx: click.Context, inbox: str, output: str) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
-            e,
-            {"operation": "inbox"},
-            show_traceback=ctx.obj["verbose"],
-        )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "inbox")
 
 
 @cli.command()
@@ -152,8 +153,6 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("📝 Converting text to Markdown...")
-
-    from dev.pipeline.txt2md import convert_directory, convert_file
 
     try:
         stats = None
@@ -181,13 +180,12 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
             click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
+        handle_cli_error(
+            ctx,
             e,
-            {"operation": "convert"},
-            show_traceback=ctx.obj["verbose"],
+            "convert",
+            additional_context={"input": input, "output": output},
         )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
 
 
 @cli.command()
@@ -205,9 +203,6 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("🔄 Syncing database from Markdown...")
-
-    from dev.pipeline.yaml2sql import process_directory
-    from dev.database.manager import PalimpsestDB
 
     try:
         db = PalimpsestDB(
@@ -229,13 +224,12 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
+        handle_cli_error(
+            ctx,
             e,
-            {"operation": "sync_db"},
-            show_traceback=ctx.obj["verbose"],
+            "sync_db",
+            additional_context={"input": input},
         )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
 
 
 @cli.command()
@@ -254,10 +248,6 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
 
     click.echo("📤 Exporting database to Markdown...")
 
-    from dev.pipeline.sql2yaml import export_entries
-    from dev.database.manager import PalimpsestDB
-    from dev.database.models import Entry
-
     try:
         db = PalimpsestDB(
             db_path=DB_PATH,
@@ -275,6 +265,7 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
                 return
 
             stats = export_entries(
+                session=session,
                 entries=entries,
                 output_dir=Path(output),
                 force_overwrite=force,
@@ -287,13 +278,12 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
+        handle_cli_error(
+            ctx,
             e,
-            {"operation": "export_db"},
-            show_traceback=ctx.obj["verbose"],
+            "export_db",
+            additional_context={"output": output},
         )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
 
 
 @cli.command()
@@ -341,13 +331,12 @@ def build_pdf(
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
+        handle_cli_error(
+            ctx,
             e,
-            {"operation": "build_pdf"},
-            show_traceback=ctx.obj["verbose"],
+            "build_pdf",
+            additional_context={"year": year},
         )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
 
 
 @cli.command()
@@ -359,9 +348,6 @@ def backup_data(ctx: click.Context, suffix: Optional[str]) -> None:
 
     click.echo("📦 Creating full data backup...")
     click.echo("   (This may take a while for large archives)")
-
-    from dev.core.backup_manager import BackupManager
-    from dev.core.exceptions import BackupError
 
     try:
         backup_mgr = BackupManager(
@@ -381,13 +367,7 @@ def backup_data(ctx: click.Context, suffix: Optional[str]) -> None:
         click.echo("\n💡 Backup saved outside git repository")
 
     except BackupError as e:
-        error_msg = logger.log_cli_error(
-            e,
-            {"operation": "backup"},
-            show_traceback=ctx.obj["verbose"],
-        )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "build_pdf")
 
 
 @cli.command()
@@ -401,6 +381,7 @@ def backup_list(ctx: click.Context) -> None:
             db_path=DB_PATH,
             backup_dir=BACKUP_DIR,
             data_dir=DATA_DIR,
+            logger=logger,
         )
 
         if (
@@ -434,13 +415,7 @@ def backup_list(ctx: click.Context) -> None:
         click.echo(f"Location: {backup_mgr.full_backup_dir}")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
-            e,
-            {"operation": "backup_list"},
-            show_traceback=ctx.obj["verbose"],
-        )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "backup_list")
 
 
 @cli.command()
@@ -458,7 +433,6 @@ def run_all(
     backup: bool,
 ) -> None:
     """Run the complete processing pipeline end-to-end."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
     click.echo("🚀 Starting complete pipeline...\n")
 
     start_time = datetime.now()
@@ -498,13 +472,7 @@ def run_all(
         click.echo(f"\n✅ Pipeline complete! ({duration:.2f}s)")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
-            e,
-            {"operation": "backup_list"},
-            show_traceback=ctx.obj["run_all"],
-        )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "run_all")
 
 
 @cli.command()
@@ -537,7 +505,9 @@ def status(ctx: click.Context) -> None:
             enable_auto_backup=False,
         )
 
-        stats = db.get_stats()
+        with db.session_scope() as session:
+            analytics = QueryAnalytics(logger)
+            stats = analytics.get_database_stats(session)
 
         click.echo("Database:")
         click.echo(f"  Entries: {stats.get('entries', 0)}")
@@ -546,13 +516,7 @@ def status(ctx: click.Context) -> None:
         click.echo(f"  Total words: {stats.get('total_words', 0):,}")
 
     except Exception as e:
-        error_msg = logger.log_cli_error(
-            e,
-            {"operation": "backup_list"},
-            show_traceback=ctx.obj["run_all"],
-        )
-        click.echo(error_msg, err=True)
-        sys.exit(1)
+        handle_cli_error(ctx, e, "status")
 
 
 @cli.command()

@@ -177,6 +177,24 @@ class QueryOptimizer:
         )
 
     @staticmethod
+    def for_range(session: Session, year: int) -> List[Entry]:
+        """
+        Load all entries for a specific date range.
+
+        Args:
+            session: Active SQLAlchemy session
+            start_date: initial range limit to query
+            end_date: final range limit to query
+
+        Returns:
+            List of Entry objects sorted by date
+
+        Examples:
+            >>> entries_2024-08_2025-10 = QueryOptimizer.for_range(session, 2024-08-01, 2025-10-31)
+        """
+        return []
+
+    @staticmethod
     def for_year(session: Session, year: int) -> List[Entry]:
         """
         Load all entries for a specific year with relationships.
@@ -547,80 +565,3 @@ class HierarchicalBatcher:
         """
         entries = QueryOptimizer.for_month(session, year, month)
         return DateBatch(year=year, month=month, entries=entries)
-
-
-# ==================== USAGE EXAMPLES ====================
-
-"""
-EXAMPLE 1: Export all entries efficiently
-------------------------------------------
-
-from dev.database.query_optimizer import HierarchicalBatcher
-
-with db.session_scope() as session:
-    # Create hierarchical batches
-    batches = HierarchicalBatcher.create_batches(session, threshold=500)
-    
-    for batch in batches:
-        print(f"📦 Processing {batch.period_label} ({batch.entry_count} entries)")
-        
-        for entry in batch.entries:
-            # All relationships already loaded - no queries!
-            export_entry_to_markdown(entry)
-
-# Output:
-# 📦 Processing 2020 (234 entries)
-# 📦 Processing 2021-01 (458 entries)
-# 📦 Processing 2021-02 (502 entries)
-# 📦 Processing 2022 (389 entries)
-
-
-EXAMPLE 2: Export specific year
---------------------------------
-
-with db.session_scope() as session:
-    batch = HierarchicalBatcher.create_yearly_batch(session, 2024)
-    
-    print(f"Exporting {batch.entry_count} entries from 2024")
-    
-    for entry in batch.entries:
-        export_entry_to_markdown(entry)
-
-
-EXAMPLE 3: Preload relationships for existing entries
------------------------------------------------------
-
-from dev.database.query_optimizer import RelationshipLoader
-
-with db.session_scope() as session:
-    # Get entries from some query
-    entries = session.query(Entry).filter(
-        Entry.word_count > 1000
-    ).all()
-    
-    # Preload relationships before iterating
-    RelationshipLoader.preload_for_entries(session, entries)
-    
-    # Now iterate freely - no queries triggered
-    for entry in entries:
-        people = entry.people  # FREE
-        locations = entry.locations  # FREE
-        process_entry(entry)
-
-
-EXAMPLE 4: Get years and months for navigation
-----------------------------------------------
-
-with db.session_scope() as session:
-    years = HierarchicalBatcher.get_years(session)
-    print(f"Available years: {years}")
-    
-    for year in years:
-        count = HierarchicalBatcher.count_year_entries(session, year)
-        print(f"  {year}: {count} entries")
-        
-        months = HierarchicalBatcher.get_months_for_year(session, year)
-        for month in months:
-            count = HierarchicalBatcher.count_month_entries(session, year, month)
-            print(f"    {year}-{month:02d}: {count} entries")
-"""

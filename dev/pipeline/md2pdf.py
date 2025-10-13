@@ -34,7 +34,7 @@ from pathlib import Path
 # --- Local imports ---
 from dev.core.paths import TEX_DIR, MD_DIR, PDF_DIR, LOG_DIR
 from dev.core.exceptions import PdfBuildError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.builders.pdfbuilder import PdfBuilder, BuildStats
 
 
@@ -148,16 +148,8 @@ def build(
 
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
-    except PdfBuildError as e:
-        click.echo(f"❌ PDF build failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj["verbose"]:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (PdfBuildError, Exception) as e:
+        handle_cli_error(ctx, e, "build_pdf", {"year": year})
 
 
 @cli.command()
@@ -215,16 +207,8 @@ def validate(ctx: click.Context, year: str, input: str) -> None:
             last_entry = md_files[-1].stem
             click.echo(f"\nDate range: {first_entry} to {last_entry}")
 
-    except PdfBuildError as e:
-        click.echo(f"❌ Validation failed: {e}", err=True)
-        sys.exit(1)
-    except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        if ctx.obj.get("verbose"):
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+    except (PdfBuildError, Exception) as e:
+        handle_cli_error(ctx, e, "validate_pdf", {"year": year})
 
 
 if __name__ == "__main__":
