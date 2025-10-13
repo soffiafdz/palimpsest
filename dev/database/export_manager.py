@@ -9,7 +9,7 @@ import json
 import shutil
 from pathlib import Path
 from datetime import datetime, timezone, date
-from typing import Dict, Any, Union, Optional
+from typing import Dict, Any, Union, Optional, List, Callable
 
 from sqlalchemy.orm import Session
 
@@ -19,7 +19,7 @@ from dev.core.temporal_files import TemporalFileManager
 
 from .decorators import handle_db_errors, log_database_operation
 from .query_analytics import QueryAnalytics
-from .query_optimizer import QueryOptimizer
+from .query_optimizer import QueryOptimizer, HierarchicalBatcher, DateBatch
 
 # Import models for export
 from .models import (
@@ -60,6 +60,183 @@ class ExportManager:
             logger: Optional logger for export operations
         """
         self.logger = logger
+
+    @handle_db_errors
+    @log_database_operation("export_entries_optimized")
+    def export_entries_optimized(
+        self,
+        session: Session,
+        entry_ids: List[int],
+        export_callback: Callable,
+        **callback_kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Export entries using optimized loading.
+
+        This is a helper method for other export operations. It loads
+        entries with all relationships preloaded and calls the provided
+        callback for each entry.
+
+        Args:
+            session: SQLAlchemy session
+            entry_ids: List of entry IDs to export
+            export_callback: Function to call for each entry
+            **callback_kwargs: Additional arguments for callback
+
+        Returns:
+            Dictionary with export statistics
+
+        Examples:
+            >>> def my_export(entry, output_dir):
+            ...     # Do something with entry
+            ...     pass
+            >>>
+            >>> stats = export_manager.export_entries_optimized(
+            ...     session,
+            ...     entry_ids,
+            ...     my_export,
+            ...     output_dir="/path/to/output"
+            ... )
+        """
+        stats = {
+            "total": len(entry_ids),
+            "processed": 0,
+            "errors": 0,
+            "start_time": datetime.now(),
+        }
+
+        # Use optimized loading internally
+        entries = QueryOptimizer.for_export(session, entry_ids)
+
+        for entry in entries:
+            try:
+                export_callback(entry, **callback_kwargs)
+                stats["processed"] += 1
+            except Exception as e:
+                stats["errors"] += 1
+                if self.logger:
+                    self.logger.log_error(
+                        e, {"operation": "export_entry", "entry_id": entry.id}
+                    )
+
+        stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
+        return stats
+
+    @handle_db_errors
+    @log_database_operation("export_hierarchical")
+    def export_hierarchical(
+        self,
+        session: Session,
+        export_callback: Callable,
+        threshold: int = 500,
+        **callback_kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Export all entries using hierarchical batching for optimal performance.
+
+        Automatically batches entries by year or month based on volume,
+        using optimized relationship loading for each batch.
+
+        Args:
+            session: SQLAlchemy session
+            export_callback: Function to call for each entry
+            threshold: Batch size threshold (default: 500)
+            **callback_kwargs: Additional arguments for callback
+
+        Returns:
+            Dictionary with export statistics
+
+        Examples:
+            >>> def export_to_file(entry, output_dir):
+            ...     # Export entry to file
+            ...     pass
+            >>>
+            >>> stats = export_manager.export_hierarchical(
+            ...     session,
+            ...     export_to_file,
+            ...     threshold=500,
+            ...     output_dir="/path/to/output"
+            ... )
+        """
+        stats = {
+            "total_batches": 0,
+            "total_entries": 0,
+            "processed": 0,
+            "errors": 0,
+            "batches": [],
+            "start_time": datetime.now(),
+        }
+
+        # Use HierarchicalBatcher internally
+        batches = HierarchicalBatcher.create_batches(session, threshold)
+        stats["total_batches"] = len(batches)
+
+        for batch in batches:
+            batch_stats = {
+                "period": batch.period_label,
+                "entries": batch.entry_count,
+                "processed": 0,
+                "errors": 0,
+            }
+
+            stats["total_entries"] += batch.entry_count
+
+            # All relationships already preloaded by QueryOptimizer!
+            for entry in batch.entries:
+                try:
+                    export_callback(entry, **callback_kwargs)
+                    batch_stats["processed"] += 1
+                    stats["processed"] += 1
+                except Exception as e:
+                    batch_stats["errors"] += 1
+                    stats["errors"] += 1
+                    if self.logger:
+                        self.logger.log_error(
+                            e, {"operation": "export_entry", "entry_id": entry.id}
+                        )
+
+            stats["batches"].append(batch_stats)
+
+            if self.logger:
+                self.logger.log_operation(
+                    "batch_exported",
+                    {
+                        "period": batch.period_label,
+                        "processed": batch_stats["processed"],
+                        "errors": batch_stats["errors"],
+                    },
+                )
+
+        stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
+        return stats
+
+    @handle_db_errors
+    @log_database_operation("get_export_batches")
+    def get_export_batches(
+        self, session: Session, threshold: int = 500
+    ) -> List[DateBatch]:
+        """
+        Get hierarchical batches for custom export operations.
+
+        Use this when you need more control over the export process
+        but still want optimized batching.
+
+        Args:
+            session: SQLAlchemy session
+            threshold: Batch size threshold (default: 500)
+
+        Returns:
+            List of DateBatch objects with preloaded entries
+
+        Examples:
+            >>> batches = export_manager.get_export_batches(session)
+            >>> for batch in batches:
+            ...     print(f"Processing {batch.period_label}")
+            ...     for entry in batch.entries:
+            ...         # All relationships already loaded
+            ...         process_entry(entry)
+        """
+        return HierarchicalBatcher.create_batches(session, threshold)
 
     @handle_db_errors
     @log_database_operation("export_to_csv")

@@ -2,41 +2,17 @@
 """
 query_optimizer.py
 ------------------
-Optimized query strategies to eliminate N+1 query problems.
-
-This module provides utilities for efficient relationship loading in SQLAlchemy,
+INTERNAL: Optimized query strategies to eliminate N+1 query problems.
+Utilities for efficient relationship loading in SQLAlchemy,
 preventing performance issues when accessing related objects in loops.
+
+⚠️ This module is for INTERNAL use by ExportManager, QueryAnalytics,
+and HealthMonitor. External code should use those high-level interfaces instead.
 
 Classes:
     - QueryOptimizer: Optimized query builders for common operations
     - RelationshipLoader: Preload relationships for existing objects
     - HierarchicalBatcher: Batch entries by natural date hierarchy
-
-The Problem:
-    # Naive approach - triggers thousands of queries
-    entries = session.query(Entry).all()  # 1 query
-    for entry in entries:  # 1000 iterations
-        people = entry.people  # 1 query each = 1000 queries
-        for person in people:
-            aliases = person.aliases  # 5000 more queries
-
-The Solution:
-    # Optimized approach - uses ~10 queries total
-    entries = QueryOptimizer.for_export(session, entry_ids)
-    for entry in entries:  # 1000 iterations
-        people = entry.people  # FREE - already loaded
-        for person in people:
-            aliases = person.aliases  # FREE - already loaded
-
-Usage:
-    from dev.database.query_optimizer import QueryOptimizer, HierarchicalBatcher
-
-    # Export with optimized loading
-    batches = HierarchicalBatcher.create_batches(session, threshold=500)
-    for batch in batches:
-        for entry in batch.entries:
-            # All relationships already loaded
-            export_entry(entry)
 """
 
 from __future__ import annotations
@@ -46,7 +22,7 @@ from dataclasses import dataclass
 # from datetime import date
 from typing import List, Optional
 
-from sqlalchemy import extract  # , func
+from sqlalchemy import extract
 from sqlalchemy.orm import Session, selectinload
 
 from .models import (
@@ -175,24 +151,6 @@ class QueryOptimizer:
             )
             .first()
         )
-
-    @staticmethod
-    def for_range(session: Session, year: int) -> List[Entry]:
-        """
-        Load all entries for a specific date range.
-
-        Args:
-            session: Active SQLAlchemy session
-            start_date: initial range limit to query
-            end_date: final range limit to query
-
-        Returns:
-            List of Entry objects sorted by date
-
-        Examples:
-            >>> entries_2024-08_2025-10 = QueryOptimizer.for_range(session, 2024-08-01, 2025-10-31)
-        """
-        return []
 
     @staticmethod
     def for_year(session: Session, year: int) -> List[Entry]:

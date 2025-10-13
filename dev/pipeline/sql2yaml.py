@@ -32,17 +32,10 @@ import sys
 import click
 from datetime import date, datetime
 from pathlib import Path
-from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from dev.database.query_analytics import QueryAnalytics
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
-from dev.database.query_optimizer import (
-    HierarchicalBatcher,
-    QueryOptimizer,
-    RelationshipLoader,
-)
 from dev.database.manager import PalimpsestDB
 
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR, MD_DIR
@@ -86,7 +79,7 @@ def setup_logger(log_dir: Path) -> PalimpsestLogger:
     return PalimpsestLogger(operations_log_dir, component_name="sql2yaml")
 
 
-def export_entry(
+def export_entry_to_markdown(
     entry: Entry,
     output_dir: Path,
     force_overwrite: bool = False,
@@ -182,67 +175,6 @@ def export_entry(
         raise Sql2YamlError(f"Failed to write file: {e}") from e
 
 
-def export_entries(
-    session: Session,
-    entries: List[Entry],
-    output_dir: Path,
-    force_overwrite: bool = False,
-    preserve_body: bool = True,
-    logger: Optional[PalimpsestLogger] = None,
-) -> ExportStats:
-    """
-    Export multiple database entries to Markdown files.
-    Uses Optimized relationship loading.
-
-    Args:
-        entries: List of Entry ORM instances
-        output_dir: Base output directory
-        force_overwrite: If True, overwrite existing files
-        preserve_body: If True, preserve existing body content
-        logger: Optional logger
-
-    Returns:
-        ExportStats with export results
-    """
-    stats = ExportStats()
-
-    if logger:
-        logger.log_operation(
-            "export_batch_start", {"count": len(entries), "output": str(output_dir)}
-        )
-
-    RelationshipLoader.preload_for_entries(session, entries)
-    if logger:
-        logger.log_debug("Preloaded relationships for batch")
-
-    for entry in entries:
-        try:
-            result: str = export_entry(
-                entry, output_dir, force_overwrite, preserve_body, logger
-            )
-
-            stats.entries_exported += 1
-
-            if result == "created":
-                stats.files_created += 1
-            elif result == "updated":
-                stats.files_updated += 1
-            elif result == "skipped":
-                stats.entries_skipped += 1
-
-        except Sql2YamlError as e:
-            stats.errors += 1
-            if logger:
-                logger.log_error(
-                    e, {"operation": "export_entry", "date": str(entry.date)}
-                )
-
-    if logger:
-        logger.log_operation("export_batch_complete", {"stats": stats.summary()})
-
-    return stats
-
-
 # ----- CLI -----
 @click.group()
 @click.option(
@@ -309,7 +241,6 @@ def export(
             raise Sql2YamlError(f"Invalid date format: {entry_date}")
 
         output_dir: Path = Path(output)
-
         click.echo(f"📤 Exporting entry for {date_obj}")
 
         # Get entry from database
@@ -320,16 +251,21 @@ def export(
                 click.echo(f"❌ No entry found for {date_obj}", err=True)
                 sys.exit(1)
 
-            result: str = export_entry(
-                entry, output_dir, force, not no_preserve_body, logger
+            stats = db.export_manager.export_entries_optimized(
+                session,
+                [entry.id],
+                export_entry_to_markdown,
+                output_dir=output_dir,
+                force_overwrite=force,
+                preserve_body=not no_preserve_body,
+                logger=logger,
             )
 
-        if result == "created":
-            click.echo("✅ File created")
-        elif result == "updated":
-            click.echo("✅ File updated")
-        elif result == "skipped":
-            click.echo("⏭️  File skipped (already exists)")
+        if stats["errors"] > 0:
+            click.echo("❌ Export failed")
+            sys.exit(1)
+        else:
+            click.echo("✅ Export complete")
 
     except (Sql2YamlError, Exception) as e:
         handle_cli_error(ctx, e, "export", {"entry_date": entry_date})
@@ -371,13 +307,11 @@ def range(
             raise Sql2YamlError("Invalid date format")
 
         output_dir: Path = Path(output)
-
         click.echo(f"📤 Exporting entries from {start} to {end}")
 
         # Get entries from database
         with db.session_scope() as session:
-            analytics = QueryAnalytics(logger=logger)
-            entries = analytics.get_entries_by_date_range(session, start, end)
+            entries = db.query_analytics.get_entries_by_date_range(session, start, end)
 
             if not entries:
                 click.echo("⚠️  No entries found in date range")
@@ -385,18 +319,22 @@ def range(
 
             click.echo(f"Found {len(entries)} entries")
 
-            stats: ExportStats = export_entries(
-                session, entries, output_dir, force, not no_preserve_body, logger
+            entry_ids = [e.id for e in entries]
+            stats = db.export_manager.export_entries_optimized(
+                session,
+                entry_ids,
+                export_entry_to_markdown,
+                output_dir=output_dir,
+                force_overwrite=force,
+                preserve_body=not no_preserve_body,
+                logger=logger,
             )
 
         click.echo("\n✅ Export complete:")
-        click.echo(f"  Entries exported: {stats.entries_exported}")
-        click.echo(f"  Files created: {stats.files_created}")
-        click.echo(f"  Files updated: {stats.files_updated}")
-        click.echo(f"  Entries skipped: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
+        click.echo(f"  Entries processed: {stats['processed']}")
+        if stats["errors"] > 0:
+            click.echo(f"  ⚠️  Errors: {stats['errors']}")
+        click.echo(f"  Duration: {stats['duration']:.2f}s")
 
     except (Sql2YamlError, Exception) as e:
         handle_cli_error(
@@ -404,115 +342,6 @@ def range(
             e,
             "export_range",
             {"start_date": start_date, "end_date": end_date},
-        )
-
-
-@cli.command()
-@click.argument("year", type=int)
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(),
-    default=str(MD_DIR),
-    help=f"Output directory (default: {MD_DIR})",
-)
-@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
-@click.pass_context
-def export_year(ctx: click.Context, year: int, output: str, force: bool) -> None:
-    """Export entries for a specific year (optimized)."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
-    db: PalimpsestDB = ctx.obj["db"]
-
-    try:
-        output_dir: Path = Path(output)
-
-        click.echo(f"📅 Exporting {year}")
-
-        with db.session_scope() as session:
-            # Use optimized monthly query
-            entries = QueryOptimizer.for_year(session, year)
-
-            if not entries:
-                click.echo("⚠️  No entries found for this year")
-                return
-
-            click.echo(f"Found {len(entries)} entries")
-
-            stats: ExportStats = export_entries(
-                session, entries, output_dir, force, True, logger
-            )
-
-        click.echo("\n✅ Export complete:")
-        click.echo(f"  Entries exported: {stats.entries_exported}")
-        click.echo(f"  Files created: {stats.files_created}")
-        click.echo(f"  Files updated: {stats.files_updated}")
-        click.echo(f"  Entries skipped: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
-
-    except (Sql2YamlError, Exception) as e:
-        handle_cli_error(
-            ctx,
-            e,
-            "export_year",
-            {"year": year},
-        )
-
-
-@cli.command()
-@click.argument("year", type=int)
-@click.argument("month", type=int)
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(),
-    default=str(MD_DIR),
-    help=f"Output directory (default: {MD_DIR})",
-)
-@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
-@click.pass_context
-def export_month(
-    ctx: click.Context, year: int, month: int, output: str, force: bool
-) -> None:
-    """Export entries for a specific month (optimized)."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
-    db: PalimpsestDB = ctx.obj["db"]
-
-    try:
-        output_dir: Path = Path(output)
-
-        click.echo(f"📅 Exporting {year}-{month:02d}")
-
-        with db.session_scope() as session:
-            # Use optimized monthly query
-            entries = QueryOptimizer.for_month(session, year, month)
-
-            if not entries:
-                click.echo("⚠️  No entries found for this month")
-                return
-
-            click.echo(f"Found {len(entries)} entries")
-
-            stats: ExportStats = export_entries(
-                session, entries, output_dir, force, True, logger
-            )
-
-        click.echo("\n✅ Export complete:")
-        click.echo(f"  Entries exported: {stats.entries_exported}")
-        click.echo(f"  Files created: {stats.files_created}")
-        click.echo(f"  Files updated: {stats.files_updated}")
-        click.echo(f"  Entries skipped: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
-
-    except (Sql2YamlError, Exception) as e:
-        handle_cli_error(
-            ctx,
-            e,
-            "export_month",
-            {"year": year, "month": month},
         )
 
 
@@ -548,40 +377,23 @@ def export_hierarchical(
         click.echo("📤 Starting hierarchical export")
 
         with db.session_scope() as session:
-            # ✨ NEW: Use HierarchicalBatcher
-            batches = HierarchicalBatcher.create_batches(session, threshold=threshold)
-
-            click.echo(f"Created {len(batches)} batches")
-            total_stats = ExportStats()
-
-            with click.progressbar(batches, label="Exporting batches") as batch_bar:
-                for batch in batch_bar:
-                    click.echo(
-                        f"\n📦 {batch.period_label} ({batch.entry_count} entries)"
-                    )
-
-                    # All relationships already preloaded by QueryOptimizer!
-                    stats = export_entries(
-                        session, batch.entries, output_dir, force, True, logger
-                    )
-
-                    # Aggregate stats
-                    total_stats.entries_exported += stats.entries_exported
-                    total_stats.files_created += stats.files_created
-                    total_stats.files_updated += stats.files_updated
-                    total_stats.entries_skipped += stats.entries_skipped
-                    total_stats.errors += stats.errors
-
-                    session.expunge_all()
+            stats = db.export_manager.export_hierarchical(
+                session,
+                export_entry_to_markdown,
+                threshold=threshold,
+                output_dir=output_dir,
+                force_overwrite=force,
+                preserve_body=True,
+                logger=logger,
+            )
 
         click.echo("\n✅ Hierarchical export complete:")
-        click.echo(f"  Total entries: {total_stats.entries_exported}")
-        click.echo(f"  Files created: {total_stats.files_created}")
-        click.echo(f"  Files updated: {total_stats.files_updated}")
-        click.echo(f"  Entries skipped: {total_stats.entries_skipped}")
-        if total_stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {total_stats.errors}")
-        click.echo(f"  Duration: {total_stats.duration():.2f}s")
+        click.echo(f"  Total batches: {stats['total_batches']}")
+        click.echo(f"  Total entries: {stats['total_entries']}")
+        click.echo(f"  Processed: {stats['processed']}")
+        if stats["errors"] > 0:
+            click.echo(f"  ⚠️  Errors: {stats['errors']}")
+        click.echo(f"  Duration: {stats['duration']:.2f}s")
 
     except (Sql2YamlError, Exception) as e:
         handle_cli_error(
@@ -604,9 +416,21 @@ def export_hierarchical(
 @click.option(
     "--no-preserve-body", is_flag=True, help="Don't preserve existing body content"
 )
+@click.option(
+    "--threshold",
+    type=int,
+    default=500,
+    help="Batch size threshold (default: 500)",
+)
 @click.confirmation_option(prompt="This will export all database entries. Continue?")
 @click.pass_context
-def all(ctx: click.Context, output: str, force: bool, no_preserve_body: bool) -> None:
+def all(
+    ctx: click.Context,
+    output: str,
+    force: bool,
+    no_preserve_body: bool,
+    threshold: int,
+) -> None:
     """Export all database entries."""
     logger: PalimpsestLogger = ctx.obj["logger"]
     db: PalimpsestDB = ctx.obj["db"]
@@ -618,26 +442,23 @@ def all(ctx: click.Context, output: str, force: bool, no_preserve_body: bool) ->
 
         # Get all entries
         with db.session_scope() as session:
-            entries = session.query(Entry).order_by(Entry.date).all()
-
-            if not entries:
-                click.echo("⚠️  No entries found in database")
-                return
-
-            click.echo(f"Found {len(entries)} entries")
-
-            stats: ExportStats = export_entries(
-                session, entries, output_dir, force, not no_preserve_body, logger
+            stats = db.export_manager.export_hierarchical(
+                session,
+                export_entry_to_markdown,
+                threshold=threshold,
+                output_dir=output_dir,
+                force_overwrite=force,
+                preserve_body=not no_preserve_body,
+                logger=logger,
             )
 
         click.echo("\n✅ Export complete:")
-        click.echo(f"  Entries exported: {stats.entries_exported}")
-        click.echo(f"  Files created: {stats.files_created}")
-        click.echo(f"  Files updated: {stats.files_updated}")
-        click.echo(f"  Entries skipped: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
+        click.echo(f"  Total batches: {stats['total_batches']}")
+        click.echo(f"  Total entries: {stats['total_entries']}")
+        click.echo(f"  Processed: {stats['processed']}")
+        if stats["errors"] > 0:
+            click.echo(f"  ⚠️  Errors: {stats['errors']}")
+        click.echo(f"  Duration: {stats['duration']:.2f}s")
 
     except (Sql2YamlError, Exception) as e:
         handle_cli_error(ctx, e, "export_all")

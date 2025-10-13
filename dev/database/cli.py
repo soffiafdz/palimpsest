@@ -57,7 +57,7 @@ from dev.core.exceptions import (
     ExportError,
     HealthCheckError,
 )
-from . import PalimpsestDB, QueryOptimizer, HierarchicalBatcher, ExportManager
+from . import PalimpsestDB, ExportManager
 
 
 @click.group()
@@ -380,56 +380,53 @@ def show(ctx, entry_date, full):
 
         with db.session_scope() as session:
             if full:
-                # Load everything
-                entry = db.get_entry(session, entry_date)
-                if entry:
-                    entry_ids = [entry.id]
-                    entry = QueryOptimizer.for_export(session, entry_ids)[0]
+                summary = db.query_analytics.get_entry_summary(session, entry_date)
+                if "error" in summary:
+                    click.echo(f"❌ {summary['error']}", err=True)
+                    sys.exit(1)
+
+                # Display full summary
+                click.echo(f"\n📅 {summary['date']}")
+                click.echo(
+                    f"📊 {summary['word_count']} words, "
+                    f"{summary['reading_time']:.1f} min read"
+                )
+
+                if (n_people := summary["people_count"]) > 1:
+                    click.echo(f"\n👥 People ({n_people}):\n")
+                    for person in summary["people"]:
+                        click.echo(f"  • {person}\n")
+                elif n_people == 1:
+                    click.echo(f"\n👥 Person: {summary['people']}\n")
+
+                if (n_locations := summary["locations_count"]) > 1:
+                    click.echo(f"\n📍 Locations ({n_locations}):\n")
+                    for loc in summary["locations"]:
+                        click.echo(f"  • {loc}\n")
+                elif n_locations == 1:
+                    click.echo(f"\n📍 Location: {summary['locations']}\n")
+
+                if (n_events := summary["events_count"]) > 1:
+                    click.echo(f"\n🎯 Events ({n_events}):")
+                    for event in summary["events"]:
+                        click.echo(f"  • {event}\n")
+                elif n_events == 1:
+                    click.echo(f"\n🎯 Event: {summary['events']}\n")
+
+                if summary["tags"]:
+                    click.echo(f"\n🏷️  Tags: {summary['tags']}")
             else:
-                # Use optimized display query
-                entry = db.get_entry_for_display(session, entry_date)
+                entry = db.get_entry(session, entry_date)
+                if not entry:
+                    click.echo(f"❌ No entry found for {entry_date}", err=True)
+                    sys.exit(1)
 
-            if not entry:
-                click.echo(f"❌ No entry found for {entry_date}", err=True)
-                sys.exit(1)
-
-            # Display entry
-            click.echo(f"\n📅 {entry.date.isoformat()}")
-            click.echo(
-                f"📊 {entry.word_count} words, {entry.reading_time:.1f} min read"
-            )
-
-            if entry.people:
-                click.echo(f"\n👥 People ({len(entry.people)}):")
-                for person in entry.people:
-                    click.echo(f"  • {person.display_name}")
-
-            if entry.locations:
-                click.echo(f"\n📍 Locations ({len(entry.locations)}):")
-                for loc in entry.locations:
-                    click.echo(f"  • {loc.name} ({loc.city.city})")
-
-            if entry.events:
-                click.echo(f"\n🎯 Events ({len(entry.events)}):")
-                for event in entry.events:
-                    click.echo(f"  • {event.display_name}")
-
-            if entry.tags:
-                click.echo(f"\n🏷️  Tags: {', '.join(tag.tag for tag in entry.tags)}")
-
-            if full and entry.references:
-                click.echo(f"\n📚 References ({len(entry.references)}):")
-                for ref in entry.references:
-                    click.echo(f"  • {ref.content_preview}")
-                    if ref.source:
-                        click.echo(f"    Source: {ref.source.display_name}")
-
-            if full and entry.poems:
-                click.echo(f"\n✍️  Poems ({len(entry.poems)}):")
-                for poem_version in entry.poems:
-                    click.echo(
-                        f"  • {poem_version.poem.title} ({poem_version.line_count} lines)"
-                    )
+                # Display basic info
+                click.echo(f"\n📅 {entry.date.isoformat()}")
+                click.echo(
+                    f"📊 {entry.word_count} words, "
+                    f"{entry.reading_time:.1f} min read"
+                )
 
     except DatabaseError as e:
         handle_cli_error(
@@ -448,15 +445,16 @@ def years(ctx):
         db = get_db(ctx)
 
         with db.session_scope() as session:
-            years = HierarchicalBatcher.get_years(session)
+            timeline = db.query_analytics.get_timeline_overview(session)
 
             click.echo("\n📅 Available Years:\n")
 
-            for year in years:
-                count = HierarchicalBatcher.count_year_entries(session, year)
+            for year_data in timeline["years"]:
+                year = year_data["year"]
+                count = year_data["total_entries"]
                 click.echo(f"  {year}: {count:4d} entries")
 
-            click.echo(f"\nTotal: {len(years)} years")
+            click.echo(f"\nTotal: {timeline['total_years']} years")
 
     except DatabaseError as e:
         handle_cli_error(ctx, e, "years")
@@ -471,9 +469,9 @@ def months(ctx, year):
         db = get_db(ctx)
 
         with db.session_scope() as session:
-            months = HierarchicalBatcher.get_months_for_year(session, year)
+            year_analytics = db.query_analytics.get_year_analytics(session, year)
 
-            if not months:
+            if year_analytics["total_entries"] == 0:
                 click.echo(f"⚠️  No entries found for {year}")
                 return
 
@@ -494,13 +492,17 @@ def months(ctx, year):
 
             click.echo(f"\n📅 Entries in {year}:\n")
 
+            monthly = year_analytics["monthly_breakdown"]
             total = 0
-            for month in months:
-                count = HierarchicalBatcher.count_month_entries(session, year, month)
-                total += count
-                click.echo(
-                    f"  {month_names[month-1]} ({month:02d}): {count:3d} entries"
-                )
+
+            for month in range(1, 13):
+                month_key = f"{year}-{month:02d}"
+                if month_key in monthly:
+                    count = monthly[month_key]["entries"]
+                    total += count
+                    click.echo(
+                        f"  {month_names[month-1]} ({month:02d}): {count:3d} entries"
+                    )
 
             click.echo(f"\nTotal: {total} entries")
 
@@ -522,7 +524,7 @@ def batches(ctx, threshold):
         db = get_db(ctx)
 
         with db.session_scope() as session:
-            batches = HierarchicalBatcher.create_batches(session, threshold)
+            batches = db.export_manager.get_export_batches(session, threshold)
 
             click.echo(f"\n📦 Hierarchical Batches (threshold={threshold}):\n")
 
