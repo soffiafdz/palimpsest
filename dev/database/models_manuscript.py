@@ -132,6 +132,18 @@ class ManuscriptEntry(Base):
         status: How this entry is used in the manuscript
         edited: Whether the entry has been edited for manuscript
         notes: Editorial notes about this entry's usage
+
+    Relationships:
+        themes: Many-to-many with Theme (thematic elements)
+        entry: One-to-one with Entry (source journal entry)
+
+    Computed Properties:
+        is_ready_for_manuscript: Check if entry is ready for inclusion
+        theme_names: List of theme names for this entry
+        theme_count: Number of themes associated with entry
+        word_count: Word count from associated entry
+        date: Date from associated entry
+        date_formatted: Formatted date string
     """
 
     __tablename__ = "manuscript_entries"
@@ -227,6 +239,16 @@ class ManuscriptPerson(Base, SoftDeleteMixin):
         id: Primary key
         person_id: Foreign key to Person (unique - one-to-one)
         character: Name of the fictional character
+
+    Relationships:
+        person: One-to-one with Person (real person being adapted)
+
+    Computed Properties:
+        real_name: The real person's display name
+        entry_count: Number of entries this person/character appears in
+        event_count: Number of events this person/character is involved in
+        first_appearance: Date of first appearance in journal
+        last_appearance: Date of last appearance in journal
     """
 
     __tablename__ = "manuscript_people"
@@ -298,6 +320,19 @@ class ManuscriptEvent(Base, SoftDeleteMixin):
         event_id: Foreign key to Event (unique - one-to-one)
         arc_id: Foreign key to Arc (optional)
         notes: Notes about how this event is adapted
+
+    Relationships:
+        event: One-to-one with Event (source event)
+        arc: Many-to-one with Arc (story arc containing this event)
+
+    Computed Properties:
+        display_name: Event display name
+        entry_count: Number of entries in this event
+        duration_days: Event duration in days
+        arc_name: Name of associated arc
+        people_involved: List of people involved in event
+        start_date: Event start date
+        end_date: Event end date
     """
 
     __tablename__ = "manuscript_events"
@@ -359,7 +394,7 @@ class ManuscriptEvent(Base, SoftDeleteMixin):
         """End date of the event."""
         return self.event.end_date if self.event else None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<ManuscriptEvent(id={self.id}, event_id={self.event_id})>"
 
     def __str__(self) -> str:
@@ -377,6 +412,15 @@ class Arc(Base, SoftDeleteMixin):
     Attributes:
         id: Primary key
         arc: Name/identifier of the arc (unique)
+
+    Relationships:
+        events: One-to-many with ManuscriptEvent (events in this arc)
+
+    Computed Properties:
+        event_count: Number of events in this arc
+        total_entry_count: Total entries across all events in arc
+        date_range: Date range statistics across all events
+        chronological_events: Events sorted chronologically
     """
 
     __tablename__ = "arcs"
@@ -393,7 +437,7 @@ class Arc(Base, SoftDeleteMixin):
         "ManuscriptEvent", back_populates="arc"
     )
 
-    # Utilities
+    # ---- Computed properties ----
     @property
     def event_count(self) -> int:
         """Number of events in this arc."""
@@ -440,14 +484,15 @@ class Arc(Base, SoftDeleteMixin):
         """Get events in this arc in chronological order."""
         return sorted(self.events, key=lambda e: e.start_date or date.min)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Arc(id={self.id}, arc={self.arc})>"
 
     def __str__(self) -> str:
-        return (
-            f"Arc {self.arc} ({self.event_count} events, "
-            f"{self.total_entry_count} entries)"
-        )
+        event_count = self.event_count
+        entry_count = self.total_entry_count
+        event_str = "event" if event_count == 1 else "events"
+        entry_str = "entry" if entry_count == 1 else "entries"
+        return f"Arc: {self.arc} ({event_count} {event_str}, {entry_count} {entry_str})"
 
 
 class Theme(Base, SoftDeleteMixin):
@@ -460,6 +505,17 @@ class Theme(Base, SoftDeleteMixin):
     Attributes:
         id: Primary key
         theme: Name of the theme (unique)
+
+    Relationships:
+        entries: Many-to-many with ManuscriptEntry (entries with this theme)
+
+    Computed Properties:
+        usage_count: Number of manuscript entries using this theme
+        word_count_total: Total word count across entries with theme
+        average_word_count: Average word count for themed entries
+        first_used: Date when theme was first used
+        last_used: Date when theme was last used
+        usage_span_days: Days between first and last use
     """
 
     __tablename__ = "themes"
@@ -519,13 +575,13 @@ class Theme(Base, SoftDeleteMixin):
             return 0
         return (last - first).days
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Theme(id={self.id}, theme={self.theme})>"
 
     def __str__(self) -> str:
         count = self.usage_count
         if count == 0:
-            return f"Theme '{self.theme}' (unused)"
+            return f"Theme '{self.theme}' (no entries)"
         elif count == 1:
             return f"Theme '{self.theme}' (1 entry)"
         else:

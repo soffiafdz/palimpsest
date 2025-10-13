@@ -780,11 +780,11 @@ class MentionedDate(Base):
     def __str__(self) -> str:
         count = self.entry_count
         if count == 0:
-            return f"Date {self.date_formatted} (orphan)"
+            return f"Date {self.date_formatted} (no entries)"
         elif count == 1:
-            return f"Date {self.date_formatted} (1 mention)"
+            return f"Date {self.date_formatted} (1 entry)"
         else:
-            return f"Date {self.date_formatted} ({count} mentions)"
+            return f"Date {self.date_formatted} ({count} entries)"
 
 
 class City(Base):
@@ -843,7 +843,7 @@ class City(Base):
         return frequency
 
     # Call
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<City(id={self.id}, city={self.city})>"
 
     def __str__(self) -> str:
@@ -938,14 +938,14 @@ class Location(Base):
         return (max(dates) - min(dates)).days
 
     # Call
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Location(id={self.id}, name={self.name})>"
 
     def __str__(self) -> str:
         loc_name = f"{self.name} ({self.city.city})"
         count = self.entry_count
         if count == 0:
-            return f"Location {loc_name} (orphan)"
+            return f"Location {loc_name} (no entries)"
         elif count == 1:
             return f"Location {loc_name} (1 entry)"
         else:
@@ -1104,7 +1104,7 @@ class Person(Base, SoftDeleteMixin):
         search_name = name.lower()
         return search_name in [n.lower() for n in self.all_names]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Person(id={self.id}, name='{self.name}')>"
 
     def __str__(self) -> str:
@@ -1129,7 +1129,7 @@ class Alias(Base):
     # ---- Relationship ----
     person: Mapped[Person] = relationship("Person", back_populates="aliases")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Alias(id={self.id}, alias={self.alias})>"
 
     def __str__(self) -> str:
@@ -1165,9 +1165,12 @@ class Reference(Base):
     """
 
     __tablename__ = "references"
-    # __table_args__ = (
-    #     CheckConstraint("content != ''", name="check_reference_non_empty_content"),
-    # )
+    __table_args__ = (
+        CheckConstraint(
+            "content IS NOT NULL OR description IS NOT NULL",
+            name="ck_reference_has_content_or_description",
+        ),
+    )
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -1205,7 +1208,7 @@ class Reference(Base):
             return f"{self.content[:97]}..."
         return None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Reference(id={self.id}, entry_id={self.entry_id})>"
 
     def __str__(self) -> str:
@@ -1280,12 +1283,16 @@ class ReferenceSource(Base):
         """Number of references from this source."""
         return len(self.references)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<ReferenceSource(id={self.id}, title={self.title})>"
 
     def __str__(self) -> str:
         author_info = f" by {self.author}" if self.author else ""
-        return f"{self.type}: {self.title}{author_info} ({self.reference_count} refs)"
+        count = self.reference_count
+        ref_str = "reference" if count == 1 else "references"
+        return (
+            f"{self.type.display_name}: {self.title}{author_info} ({count} {ref_str})"
+        )
 
 
 class Event(Base, SoftDeleteMixin):
@@ -1361,7 +1368,7 @@ class Event(Base, SoftDeleteMixin):
         dates = [entry.date for entry in self.entries if entry.date]
         return max(dates) if dates else None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Event(id={self.id}, event={self.event})>"
 
     def __str__(self) -> str:
@@ -1417,11 +1424,13 @@ class Poem(Base):
             return None
         return max(self.versions, key=lambda v: v.revision_date)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Poem(id={self.id}, title={self.title})>"
 
     def __str__(self) -> str:
-        return f"Poem {self.title} ({self.version_count} versions)"
+        count = self.version_count
+        version_str = "version" if count == 1 else "versions"
+        return f"Poem: {self.title} ({count} {version_str})"
 
 
 class PoemVersion(Base):
@@ -1476,7 +1485,7 @@ class PoemVersion(Base):
         """Count the number of lines in the poem."""
         return len(self.content.splitlines())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PoemVersion(id={self.id}, poem_id={self.poem_id})>"
 
     def __str__(self) -> str:
@@ -1544,13 +1553,13 @@ class Tag(Base):
         return sorted(self.entries, key=lambda e: e.date)
 
     # Call
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Tag(id={self.id}, tag={self.tag})>"
 
     def __str__(self) -> str:
         count = self.usage_count
         if count == 0:
-            return f"Tag '{self.tag}' (orphan)"
+            return f"Tag '{self.tag}' (no entries)"
         elif count == 1:
             return f"Tag '{self.tag}' (1 entry)"
         else:
