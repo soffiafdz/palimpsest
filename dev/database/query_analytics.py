@@ -12,10 +12,10 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from dev.core.logging_manager import PalimpsestLogger
-from .decorators import handle_db_errors, log_database_operation
 
-# Import models
-from dev.database.models import (
+from .decorators import handle_db_errors, log_database_operation
+from .query_optimizer import QueryOptimizer, HierarchicalBatcher
+from .models import (
     Entry,
     Person,
     City,
@@ -29,7 +29,7 @@ from dev.database.models import (
     PoemVersion,
     Alias,
 )
-from dev.database.models_manuscript import (
+from .models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
     ManuscriptEvent,
@@ -156,6 +156,48 @@ class QueryAnalytics:
             raise DatabaseError(f"Failed to get migration status: {e}")
 
     @handle_db_errors
+    @log_database_operation("get_entry_summary")
+    def get_entry_summary(
+        self, session: Session, entry_date: Union[str, date]
+    ) -> Dict[str, Any]:
+        """
+        Get quick summary of an entry with optimized loading.
+
+        Args:
+            session: SQLAlchemy session
+            entry_date: Date to query
+
+        Returns:
+            Dictionary with entry summary
+        """
+        if isinstance(entry_date, str):
+            entry_date = date.fromisoformat(entry_date)
+
+        entry = session.query(Entry).filter_by(date=entry_date).first()
+        if not entry:
+            return {"error": "Entry not found"}
+
+        # Use display-optimized query
+        entry = QueryOptimizer.for_display(session, entry.id)
+
+        summary = {}
+        if entry is not None:
+            summary = {
+                "date": entry.date.isoformat(),
+                "word_count": entry.word_count,
+                "reading_time": entry.reading_time,
+                "people_count": len(entry.people),
+                "people": [p.display_name for p in entry.people],
+                "locations_count": len(entry.locations),
+                "locations": [loc.name for loc in entry.locations],
+                "events_count": len(entry.events),
+                "events": [evt.display_name for evt in entry.events],
+                "tags": [tag.tag for tag in entry.tags],
+            }
+
+        return summary
+
+    @handle_db_errors
     @log_database_operation("get_entries_by_date_range")
     def get_entries_by_date_range(
         self, session: Session, start_date: Union[str, date], end_date: Union[str, date]
@@ -260,6 +302,172 @@ class QueryAnalytics:
         tag = session.query(Tag).filter(Tag.tag.ilike(f"%{tag_name}%")).first()
 
         return tag.entries if tag else []
+
+    @handle_db_errors
+    @log_database_operation("get_year_analytics")
+    def get_year_analytics(self, session: Session, year: int) -> Dict[str, Any]:
+        """
+        Get comprehensive analytics for a specific year with optimized loading.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to analyze
+
+        Returns:
+            Dictionary with year analytics
+        """
+        # Use optimized query
+        entries = QueryOptimizer.for_year(session, year)
+
+        analytics = {
+            "year": year,
+            "total_entries": len(entries),
+            "total_words": sum(e.word_count for e in entries),
+            "avg_words": (
+                sum(e.word_count for e in entries) / len(entries) if entries else 0
+            ),
+            "unique_people": len({p.id for e in entries for p in e.people}),
+            "top_people": self._get_top_people(entries, limit=5),
+            "unique_locations": len({loc.id for e in entries for loc in e.locations}),
+            "top_locations": self._get_top_locations(entries, limit=5),
+            "unique_cities": len({city.id for e in entries for city in e.cities}),
+            "unique_events": len({evt.id for e in entries for evt in e.events}),
+            "total_references": sum(len(e.references) for e in entries),
+            "total_poems": sum(len(e.poems) for e in entries),
+        }
+
+        # Monthly breakdown
+        monthly = {}
+        for entry in entries:
+            month_key = entry.date.strftime("%Y-%m")
+            if month_key not in monthly:
+                monthly[month_key] = {"entries": 0, "words": 0}
+            monthly[month_key]["entries"] += 1
+            monthly[month_key]["words"] += entry.word_count
+
+        analytics["monthly_breakdown"] = monthly
+
+        return analytics
+
+    @handle_db_errors
+    @log_database_operation("get_month_analytics")
+    def get_month_analytics(
+        self, session: Session, year: int, month: int
+    ) -> Dict[str, Any]:
+        """
+        Get comprehensive analytics for a specific month with optimized loading.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to analyze
+            month: Month to analyze (1-12)
+
+        Returns:
+            Dictionary with month analytics
+        """
+        # Use optimized query
+        entries = QueryOptimizer.for_month(session, year, month)
+
+        analytics = {
+            "year": year,
+            "month": month,
+            "total_entries": len(entries),
+            "total_words": sum(e.word_count for e in entries),
+            "avg_words": (
+                sum(e.word_count for e in entries) / len(entries) if entries else 0
+            ),
+            "unique_people": len({p.id for e in entries for p in e.people}),
+            "top_people": self._get_top_people(entries, limit=5),
+            "unique_locations": len({loc.id for e in entries for loc in e.locations}),
+            "top_locations": self._get_top_locations(entries, limit=5),
+            "unique_cities": len({city.id for e in entries for city in e.cities}),
+            "unique_events": len({evt.id for e in entries for evt in e.events}),
+            "total_references": sum(len(e.references) for e in entries),
+            "total_poems": sum(len(e.poems) for e in entries),
+        }
+
+        return analytics
+
+    def _get_top_people(
+        self, entries: List[Entry], limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Get most mentioned people in entries."""
+        from collections import Counter
+
+        people_count = Counter()
+        for entry in entries:
+            for person in entry.people:
+                people_count[person.display_name] += 1
+
+        return [
+            {"name": name, "mentions": count}
+            for name, count in people_count.most_common(limit)
+        ]
+
+    def _get_top_locations(
+        self, entries: List[Entry], limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Get most visited locations in entries."""
+        from collections import Counter
+
+        location_count = Counter()
+        for entry in entries:
+            for location in entry.locations:
+                location_count[location.name] += 1
+
+        return [
+            {"name": name, "visits": count}
+            for name, count in location_count.most_common(limit)
+        ]
+
+    @handle_db_errors
+    @log_database_operation("get_timeline_overview")
+    def get_timeline_overview(self, session: Session) -> Dict[str, Any]:
+        """
+        Get overview of entire journal timeline.
+
+        Args:
+            session: SQLAlchemy session
+
+        Returns:
+            Dictionary with timeline analytics
+        """
+        years = HierarchicalBatcher.get_years(session)
+
+        overview = {
+            "total_years": len(years),
+            "year_range": {
+                "start": min(years) if years else None,
+                "end": max(years) if years else None,
+            },
+            "years": [],
+        }
+
+        for year in years:
+            year_count = HierarchicalBatcher.count_year_entries(session, year)
+            months = HierarchicalBatcher.get_months_for_year(session, year)
+
+            year_data = {
+                "year": year,
+                "total_entries": year_count,
+                "months_active": len(months),
+                "months": [],
+            }
+
+            for month in months:
+                month_count = HierarchicalBatcher.count_month_entries(
+                    session, year, month
+                )
+                year_data["months"].append(
+                    {
+                        "month": month,
+                        "entries": month_count,
+                    }
+                )
+
+            overview["years"].append(year_data)
+
+        return overview
 
     @handle_db_errors
     def get_manuscript_analytics(self, session: Session) -> Dict[str, Any]:

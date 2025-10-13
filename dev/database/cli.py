@@ -57,7 +57,7 @@ from dev.core.exceptions import (
     HealthCheckError,
 )
 
-from . import PalimpsestDB
+from . import PalimpsestDB, QueryOptimizer, HierarchicalBatcher
 
 
 @click.group()
@@ -468,6 +468,185 @@ def restore(ctx, backup_path):
 
 # ===== Monitoring =====
 @cli.command()
+@click.argument("entry_date")
+@click.option(
+    "--full", is_flag=True, help="Show all details including references/poems"
+)
+@click.pass_context
+def show(ctx, entry_date, full):
+    """Display a single entry with optimized loading."""
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            if full:
+                # Load everything
+                entry = db.get_entry(session, entry_date)
+                if entry:
+                    entry_ids = [entry.id]
+                    entry = QueryOptimizer.for_export(session, entry_ids)[0]
+            else:
+                # Use optimized display query
+                entry = db.get_entry_for_display(session, entry_date)
+
+            if not entry:
+                click.echo(f"❌ No entry found for {entry_date}", err=True)
+                sys.exit(1)
+
+            # Display entry
+            click.echo(f"\n📅 {entry.date.isoformat()}")
+            click.echo(
+                f"📊 {entry.word_count} words, {entry.reading_time:.1f} min read"
+            )
+
+            if entry.people:
+                click.echo(f"\n👥 People ({len(entry.people)}):")
+                for person in entry.people:
+                    click.echo(f"  • {person.display_name}")
+
+            if entry.locations:
+                click.echo(f"\n📍 Locations ({len(entry.locations)}):")
+                for loc in entry.locations:
+                    click.echo(f"  • {loc.name} ({loc.city.city})")
+
+            if entry.events:
+                click.echo(f"\n🎯 Events ({len(entry.events)}):")
+                for event in entry.events:
+                    click.echo(f"  • {event.display_name}")
+
+            if entry.tags:
+                click.echo(f"\n🏷️  Tags: {', '.join(tag.tag for tag in entry.tags)}")
+
+            if full and entry.references:
+                click.echo(f"\n📚 References ({len(entry.references)}):")
+                for ref in entry.references:
+                    click.echo(f"  • {ref.content_preview}")
+                    if ref.source:
+                        click.echo(f"    Source: {ref.source.display_name}")
+
+            if full and entry.poems:
+                click.echo(f"\n✍️  Poems ({len(entry.poems)}):")
+                for poem_version in entry.poems:
+                    click.echo(
+                        f"  • {poem_version.poem.title} ({poem_version.line_count} lines)"
+                    )
+
+    except DatabaseError as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.pass_context
+def years(ctx):
+    """List all years with entry counts."""
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            years = HierarchicalBatcher.get_years(session)
+
+            click.echo("\n📅 Available Years:\n")
+
+            for year in years:
+                count = HierarchicalBatcher.count_year_entries(session, year)
+                click.echo(f"  {year}: {count:4d} entries")
+
+            click.echo(f"\nTotal: {len(years)} years")
+
+    except DatabaseError as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument("year", type=int)
+@click.pass_context
+def months(ctx, year):
+    """List all months in a year with entry counts."""
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            months = HierarchicalBatcher.get_months_for_year(session, year)
+
+            if not months:
+                click.echo(f"⚠️  No entries found for {year}")
+                return
+
+            month_names = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ]
+
+            click.echo(f"\n📅 Entries in {year}:\n")
+
+            total = 0
+            for month in months:
+                count = HierarchicalBatcher.count_month_entries(session, year, month)
+                total += count
+                click.echo(
+                    f"  {month_names[month-1]} ({month:02d}): {count:3d} entries"
+                )
+
+            click.echo(f"\nTotal: {total} entries")
+
+    except DatabaseError as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.option("--threshold", type=int, default=500, help="Batch threshold")
+@click.pass_context
+def batches(ctx, threshold):
+    """Show how entries would be batched for export."""
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            batches = HierarchicalBatcher.create_batches(session, threshold)
+
+            click.echo(f"\n📦 Hierarchical Batches (threshold={threshold}):\n")
+
+            yearly_batches = [b for b in batches if b.is_yearly]
+            monthly_batches = [b for b in batches if b.is_monthly]
+
+            if yearly_batches:
+                click.echo("Full Year Batches:")
+                for batch in yearly_batches:
+                    click.echo(f"  • {batch.year}: {batch.entry_count} entries")
+
+            if monthly_batches:
+                click.echo("\nMonthly Batches:")
+                current_year = None
+                for batch in monthly_batches:
+                    if batch.year != current_year:
+                        click.echo(f"\n  {batch.year}:")
+                        current_year = batch.year
+                    click.echo(
+                        f"    • {batch.period_label}: {batch.entry_count} entries"
+                    )
+
+            total_entries = sum(b.entry_count for b in batches)
+            click.echo(f"\nTotal: {len(batches)} batches, {total_entries} entries")
+
+    except DatabaseError as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
 @click.option("--verbose", is_flag=True, help="Show detailed statistics")
 @click.pass_context
 def stats(ctx, verbose):
@@ -722,6 +901,42 @@ def optimize(ctx):
 
 
 # ===== Export =====
+@cli.command()
+@click.option("--year", type=int, help="Export specific year")
+@click.option("--threshold", type=int, default=500, help="Batch threshold")
+@click.pass_context
+def export_optimized(ctx, year, threshold):
+    """Export entries with optimized batch processing."""
+    try:
+        db = get_db(ctx)
+
+        click.echo("📊 Analyzing entry distribution...")
+
+        with db.session_scope() as session:
+            if year:
+                entries = db.get_entries_by_year(session, year)
+                click.echo(f"✅ Loaded {len(entries)} entries for {year}")
+            else:
+                batches = db.get_hierarchical_batches(session, threshold)
+                click.echo(f"✅ Created {len(batches)} hierarchical batches:")
+                for batch in batches:
+                    click.echo(f"  • {batch}")
+
+    except DatabaseError as e:
+        logger = ctx.obj.get("logger")
+        if logger:
+            error_msg = logger.log_cli_error(
+                e,
+                {"operation": "export_optimized"},
+                show_traceback=ctx.obj.get("verbose", False),
+            )
+        else:
+            error_msg = f"❌ Export failed: {e}"
+
+        click.echo(error_msg, err=True)
+        sys.exit(1)
+
+
 @cli.command()
 @click.argument("output_dir", type=click.Path())
 @click.pass_context

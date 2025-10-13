@@ -19,6 +19,7 @@ from dev.core.temporal_files import TemporalFileManager
 
 from .decorators import handle_db_errors, log_database_operation
 from .query_analytics import QueryAnalytics
+from .query_optimizer import QueryOptimizer
 
 # Import models for export
 from .models import (
@@ -212,13 +213,18 @@ class ExportManager:
                 first_entry = True
 
                 while offset < total_entries:
-                    entries = (
-                        session.query(Entry)
+                    entry_ids = (
+                        session.query(Entry.id)
                         .order_by(Entry.date)
                         .limit(batch_size)
                         .offset(offset)
                         .all()
                     )
+
+                    entry_ids = [e_id for (e_id,) in entry_ids]
+
+                    # Preload all relationships at once
+                    entries = QueryOptimizer.for_export(session, entry_ids)
 
                     for entry in entries:
                         if not first_entry:
@@ -258,7 +264,6 @@ class ExportManager:
                             {
                                 "id": location.id,
                                 "name": location.name,
-                                "full_name": location.full_name,
                             },
                             ensure_ascii=False,
                             default=str,
@@ -335,7 +340,6 @@ class ExportManager:
                 {
                     "id": location.id,
                     "name": location.name,
-                    "full_name": location.full_name,
                 }
             )
 
@@ -380,7 +384,7 @@ class ExportManager:
                 {"date": md.date.isoformat(), "context": md.context}
                 for md in entry.dates
             ],
-            "locations": [loc.display_name for loc in entry.locations],
+            "locations": [loc.name for loc in entry.locations],
             "people": [person.display_name for person in entry.people],
             "events": [event.display_name for event in entry.events],
             "tags": [tag.tag for tag in entry.tags],

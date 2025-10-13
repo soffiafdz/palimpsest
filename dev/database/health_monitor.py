@@ -14,9 +14,10 @@ from sqlalchemy.orm import Session
 from dev.core.exceptions import HealthCheckError
 from dev.core.logging_manager import PalimpsestLogger
 from .decorators import handle_db_errors, log_database_operation
+from .query_optimizer import QueryOptimizer
 
 # Import models for health checks
-from dev.database.models import (
+from .models import (
     Entry,
     Person,
     City,
@@ -31,7 +32,7 @@ from dev.database.models import (
     Alias,
     entry_dates,
 )
-from dev.database.models_manuscript import (
+from .models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
     ManuscriptEvent,
@@ -97,6 +98,10 @@ class HealthMonitor:
             # Check for data integrity issues
             integrity_results = self._check_data_integrity(session)
             health["metrics"]["integrity"] = integrity_results
+
+            # Check relationship integrity
+            rel_integrity = self._check_relationship_integrity(session)
+            health["metrics"]["relationship_integrity"] = rel_integrity
 
             # Check reference integrity
             ref_integrity = self._check_reference_integrity(session)
@@ -224,6 +229,42 @@ class HealthMonitor:
         integrity["entries_without_file_path"] = entries_no_path
 
         return integrity
+
+    def _check_relationship_integrity(self, session: Session) -> Dict[str, Any]:
+        """
+        Check relationship integrity with optimized queries.
+
+        Uses QueryOptimizer to efficiently check all relationships.
+        """
+        issues = {}
+
+        # Get sample of entries with all relationships preloaded
+        sample_ids = (
+            session.query(Entry.id).order_by(Entry.date.desc()).limit(100).all()
+        )
+        sample_ids = [e_id for (e_id,) in sample_ids]
+
+        if sample_ids:
+            # Preload everything at once
+            entries = QueryOptimizer.for_export(session, sample_ids)
+
+            # Now check relationships without triggering queries
+            for entry in entries:
+                # Check for people without names
+                invalid_people = [p for p in entry.people if not p.name]
+                if invalid_people:
+                    issues[f"entry_{entry.date}"] = (
+                        f"{len(invalid_people)} people without names"
+                    )
+
+                # Check for locations without cities
+                invalid_locations = [loc for loc in entry.locations if not loc.city]
+                if invalid_locations:
+                    issues[f"entry_{entry.date}_locations"] = (
+                        f"{len(invalid_locations)} locations without cities"
+                    )
+
+        return issues
 
     def _check_reference_integrity(self, session: Session) -> Dict[str, Any]:
         """

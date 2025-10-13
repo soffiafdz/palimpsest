@@ -82,13 +82,13 @@ from .decorators import (
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
+from .query_optimizer import QueryOptimizer, HierarchicalBatcher
 from .relationship_manager import RelationshipManager, HasId
 
 
 T = TypeVar("T", bound=HasId)
 
 
-#
 # ----- Main Database Manager -----
 class PalimpsestDB:
     """
@@ -948,6 +948,34 @@ class PalimpsestDB:
             session.flush()
 
         self._execute_with_retry(_do_delete)
+
+    @handle_db_errors
+    @log_database_operation("get_entry_for_display")
+    def get_entry_for_display(
+        self, session: Session, entry_date: Union[str, date]
+    ) -> Optional[Entry]:
+        """
+        Get single entry optimized for display operations.
+
+        Loads basic metadata without heavy relationships like references/poems.
+
+        Args:
+            session: SQLAlchemy session
+            entry_date: Date to query
+
+        Returns:
+            Entry with display relationships preloaded
+        """
+        if isinstance(entry_date, str):
+            entry_date = date.fromisoformat(entry_date)
+
+        entry = session.query(Entry).filter_by(date=entry_date).first()
+
+        if entry:
+            # Use optimized display query
+            return QueryOptimizer.for_display(session, entry.id)
+
+        return None
 
     @handle_db_errors
     @log_database_operation("bulk_create_entries")
@@ -2581,7 +2609,229 @@ class PalimpsestDB:
 
         return manuscript
 
+    # ---- Navigation Methods ----
+    @handle_db_errors
+    @log_database_operation("get_available_years")
+    def get_available_years(self, session: Session) -> List[int]:
+        """
+        Get all years that have entries.
+
+        Args:
+            session: SQLAlchemy session
+
+        Returns:
+            Sorted list of years
+        """
+        return HierarchicalBatcher.get_years(session)
+
+    @handle_db_errors
+    @log_database_operation("get_available_months")
+    def get_available_months(self, session: Session, year: int) -> List[int]:
+        """
+        Get all months in a year that have entries.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to query
+
+        Returns:
+            Sorted list of months (1-12)
+        """
+        return HierarchicalBatcher.get_months_for_year(session, year)
+
+    @handle_db_errors
+    @log_database_operation("get_year_entry_count")
+    def get_year_entry_count(self, session: Session, year: int) -> int:
+        """
+        Count entries in a specific year.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to count
+
+        Returns:
+            Number of entries
+        """
+        return HierarchicalBatcher.count_year_entries(session, year)
+
+    @handle_db_errors
+    @log_database_operation("get_month_entry_count")
+    def get_month_entry_count(self, session: Session, year: int, month: int) -> int:
+        """
+        Count entries in a specific month.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to count
+            month: Month to count (1-12)
+
+        Returns:
+            Number of entries
+        """
+        return HierarchicalBatcher.count_month_entries(session, year, month)
+
+    @handle_db_errors
+    @log_database_operation("get_yearly_batch")
+    def get_yearly_batch(self, session: Session, year: int) -> Any:  # DateBatch
+        """
+        Create a batch for a specific year.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to batch
+
+        Returns:
+            DateBatch with all entries for the year
+        """
+        return HierarchicalBatcher.create_yearly_batch(session, year)
+
+    @handle_db_errors
+    @log_database_operation("get_monthly_batch")
+    def get_monthly_batch(
+        self, session: Session, year: int, month: int
+    ) -> Any:  # DateBatch
+        """
+        Create a batch for a specific month.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to batch
+            month: Month to batch (1-12)
+
+        Returns:
+            DateBatch with all entries for the month
+        """
+        return HierarchicalBatcher.create_monthly_batch(session, year, month)
+
     # ---- Query Methods ----
+    @handle_db_errors
+    @log_database_operation("get_entries_for_export")
+    def get_entries_for_export(
+        self, session: Session, entry_ids: List[int]
+    ) -> List[Entry]:
+        """
+        Get entries optimized for export operations.
+
+        Preloads all relationships to prevent N+1 queries.
+
+        Args:
+            session: SQLAlchemy session
+            entry_ids: List of entry IDs to load
+
+        Returns:
+            List of Entry objects with relationships preloaded
+        """
+        return QueryOptimizer.for_export(session, entry_ids)
+
+    @handle_db_errors
+    @log_database_operation("get_entries_by_year_optimized")
+    def get_entries_by_year(self, session: Session, year: int) -> List[Entry]:
+        """
+        Get all entries for a year with optimized relationship loading.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to query
+
+        Returns:
+            List of Entry objects with relationships preloaded
+        """
+        return QueryOptimizer.for_year(session, year)
+
+    @handle_db_errors
+    @log_database_operation("get_entries_by_month_optimized")
+    def get_entries_by_month(
+        self, session: Session, year: int, month: int
+    ) -> List[Entry]:
+        """
+        Get all entries for a month with optimized relationship loading.
+
+        Args:
+            session: SQLAlchemy session
+            year: Year to query
+            month: Month to query (1-12)
+
+        Returns:
+            List of Entry objects with relationships preloaded
+        """
+        return QueryOptimizer.for_month(session, year, month)
+
+    @handle_db_errors
+    @log_database_operation("get_hierarchical_batches")
+    def get_hierarchical_batches(
+        self, session: Session, threshold: int = 500
+    ) -> List[Any]:  # Returns List[DateBatch]
+        """
+        Create hierarchical batches for processing entries.
+
+        Automatically groups entries by year or month based on volume.
+
+        Args:
+            session: SQLAlchemy session
+            threshold: Maximum entries per batch
+
+        Returns:
+            List of DateBatch objects
+        """
+        return HierarchicalBatcher.create_batches(session, threshold)
+
+    # ---- Convenience method for common export pattern ----
+    @handle_db_errors
+    def export_all_to_md(
+        self,
+        output_dir: Union[str, Path],
+        threshold: int = 500,
+        force_overwrite: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Export all entries using hierarchical batching (convenience method).
+
+        Args:
+            output_dir: Output directory for markdown files
+            threshold: Batch size threshold
+            force_overwrite: Whether to overwrite existing files
+
+        Returns:
+            Dictionary with export statistics
+        """
+        from dev.pipeline.sql2yaml import export_entries
+
+        output_path = Path(output_dir)
+        stats_summary = {
+            "total_batches": 0,
+            "total_entries": 0,
+            "files_created": 0,
+            "files_updated": 0,
+            "errors": 0,
+        }
+
+        try:
+            with self.session_scope() as session:
+                batches = self.get_hierarchical_batches(session, threshold)
+                stats_summary["total_batches"] = len(batches)
+
+                for batch in batches:
+                    batch_stats = export_entries(
+                        session,
+                        batch.entries,
+                        output_path,
+                        force_overwrite,
+                        preserve_body=True,
+                        logger=self.logger,
+                    )
+
+                    stats_summary["total_entries"] += batch_stats.entries_exported
+                    stats_summary["files_created"] += batch_stats.files_created
+                    stats_summary["files_updated"] += batch_stats.files_updated
+                    stats_summary["errors"] += batch_stats.errors
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(e, {"operation": "export_all_optimized"})
+            raise DatabaseError(f"Optimized export failed: {e}")
+
+        return stats_summary
+
     @handle_db_errors
     def get_entries_by_date_range(
         self, session: Session, start_date: Union[str, date], end_date: Union[str, date]

@@ -30,12 +30,15 @@ from __future__ import annotations
 
 import sys
 import click
+import traceback
 from datetime import date, datetime
 from pathlib import Path
+from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
+from dev.database.query_optimizer import HierarchicalBatcher, RelationshipLoader
 from dev.database.manager import PalimpsestDB
 
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR, MD_DIR
@@ -176,6 +179,7 @@ def export_entry(
 
 
 def export_entries(
+    session: Session,
     entries: List[Entry],
     output_dir: Path,
     force_overwrite: bool = False,
@@ -184,6 +188,7 @@ def export_entries(
 ) -> ExportStats:
     """
     Export multiple database entries to Markdown files.
+    Uses Optimized relationship loading.
 
     Args:
         entries: List of Entry ORM instances
@@ -201,6 +206,11 @@ def export_entries(
         logger.log_operation(
             "export_batch_start", {"count": len(entries), "output": str(output_dir)}
         )
+
+    if session:
+        RelationshipLoader.preload_for_entries(session, entries)
+        if logger:
+            logger.log_debug("Preloaded relationships for batch")
 
     for entry in entries:
         try:
@@ -324,8 +334,6 @@ def export(
     except Exception as e:
         click.echo(f"❌ Unexpected error: {e}", err=True)
         if ctx.obj["verbose"]:
-            import traceback
-
             traceback.print_exc()
         sys.exit(1)
 
@@ -380,7 +388,7 @@ def range(
             click.echo(f"Found {len(entries)} entries")
 
             stats: ExportStats = export_entries(
-                entries, output_dir, force, not no_preserve_body, logger
+                session, entries, output_dir, force, not no_preserve_body, logger
             )
 
         click.echo("\n✅ Export complete:")
@@ -398,8 +406,183 @@ def range(
     except Exception as e:
         click.echo(f"❌ Unexpected error: {e}", err=True)
         if ctx.obj["verbose"]:
-            import traceback
+            traceback.print_exc()
+        sys.exit(1)
 
+
+@cli.command()
+@click.argument("year", type=int)
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(),
+    default=str(MD_DIR),
+    help=f"Output directory (default: {MD_DIR})",
+)
+@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
+@click.pass_context
+def export_year(ctx: click.Context, year: int, output: str, force: bool) -> None:
+    """Export entries for a specific year (optimized)."""
+    logger: PalimpsestLogger = ctx.obj["logger"]
+    db: PalimpsestDB = ctx.obj["db"]
+
+    try:
+        output_dir: Path = Path(output)
+
+        click.echo(f"📅 Exporting {year}")
+
+        with db.session_scope() as session:
+            # Use optimized monthly query
+            entries = db.get_entries_by_year(session, year)
+
+            if not entries:
+                click.echo("⚠️  No entries found for this year")
+                return
+
+            click.echo(f"Found {len(entries)} entries")
+
+            stats: ExportStats = export_entries(
+                session, entries, output_dir, force, True, logger
+            )
+
+        click.echo("\n✅ Export complete:")
+        click.echo(f"  Entries exported: {stats.entries_exported}")
+        click.echo(f"  Files created: {stats.files_created}")
+        click.echo(f"  Files updated: {stats.files_updated}")
+        click.echo(f"  Entries skipped: {stats.entries_skipped}")
+        if stats.errors > 0:
+            click.echo(f"  ⚠️  Errors: {stats.errors}")
+        click.echo(f"  Duration: {stats.duration():.2f}s")
+
+    except Exception as e:
+        click.echo(f"❌ Export failed: {e}", err=True)
+        if ctx.obj["verbose"]:
+            traceback.print_exc()
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument("year", type=int)
+@click.argument("month", type=int)
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(),
+    default=str(MD_DIR),
+    help=f"Output directory (default: {MD_DIR})",
+)
+@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
+@click.pass_context
+def export_month(
+    ctx: click.Context, year: int, month: int, output: str, force: bool
+) -> None:
+    """Export entries for a specific month (optimized)."""
+    logger: PalimpsestLogger = ctx.obj["logger"]
+    db: PalimpsestDB = ctx.obj["db"]
+
+    try:
+        output_dir: Path = Path(output)
+
+        click.echo(f"📅 Exporting {year}-{month:02d}")
+
+        with db.session_scope() as session:
+            # Use optimized monthly query
+            entries = db.get_entries_by_month(session, year, month)
+
+            if not entries:
+                click.echo("⚠️  No entries found for this month")
+                return
+
+            click.echo(f"Found {len(entries)} entries")
+
+            stats: ExportStats = export_entries(
+                session, entries, output_dir, force, True, logger
+            )
+
+        click.echo("\n✅ Export complete:")
+        click.echo(f"  Entries exported: {stats.entries_exported}")
+        click.echo(f"  Files created: {stats.files_created}")
+        click.echo(f"  Files updated: {stats.files_updated}")
+        click.echo(f"  Entries skipped: {stats.entries_skipped}")
+        if stats.errors > 0:
+            click.echo(f"  ⚠️  Errors: {stats.errors}")
+        click.echo(f"  Duration: {stats.duration():.2f}s")
+
+    except Exception as e:
+        click.echo(f"❌ Export failed: {e}", err=True)
+        if ctx.obj["verbose"]:
+            traceback.print_exc()
+        sys.exit(1)
+
+
+@cli.command()
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(),
+    default=str(MD_DIR),
+    help=f"Output directory (default: {MD_DIR})",
+)
+@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
+@click.option(
+    "--threshold",
+    type=int,
+    default=500,
+    help="Batch size threshold for year splitting (default: 500)",
+)
+@click.pass_context
+def export_hierarchical(
+    ctx: click.Context, output: str, force: bool, threshold: int
+) -> None:
+    """
+    Export all entries using hierarchical batching for optimal performance.
+
+    Automatically batches by year or month based on entry volume.
+    """
+    logger: PalimpsestLogger = ctx.obj["logger"]
+    db: PalimpsestDB = ctx.obj["db"]
+
+    try:
+        output_dir: Path = Path(output)
+        click.echo("📤 Starting hierarchical export")
+
+        with db.session_scope() as session:
+            # ✨ NEW: Use HierarchicalBatcher
+            batches = HierarchicalBatcher.create_batches(session, threshold=threshold)
+
+            click.echo(f"Created {len(batches)} batches")
+            total_stats = ExportStats()
+
+            with click.progressbar(batches, label="Exporting batches") as batch_bar:
+                for batch in batch_bar:
+                    click.echo(
+                        f"\n📦 {batch.period_label} ({batch.entry_count} entries)"
+                    )
+
+                    # All relationships already preloaded by QueryOptimizer!
+                    stats = export_entries(
+                        session, batch.entries, output_dir, force, True, logger
+                    )
+
+                    # Aggregate stats
+                    total_stats.entries_exported += stats.entries_exported
+                    total_stats.files_created += stats.files_created
+                    total_stats.files_updated += stats.files_updated
+                    total_stats.entries_skipped += stats.entries_skipped
+                    total_stats.errors += stats.errors
+
+        click.echo("\n✅ Hierarchical export complete:")
+        click.echo(f"  Total entries: {total_stats.entries_exported}")
+        click.echo(f"  Files created: {total_stats.files_created}")
+        click.echo(f"  Files updated: {total_stats.files_updated}")
+        click.echo(f"  Entries skipped: {total_stats.entries_skipped}")
+        if total_stats.errors > 0:
+            click.echo(f"  ⚠️  Errors: {total_stats.errors}")
+        click.echo(f"  Duration: {total_stats.duration():.2f}s")
+
+    except Exception as e:
+        click.echo(f"❌ Export failed: {e}", err=True)
+        if ctx.obj["verbose"]:
             traceback.print_exc()
         sys.exit(1)
 
@@ -439,7 +622,7 @@ def all(ctx: click.Context, output: str, force: bool, no_preserve_body: bool) ->
             click.echo(f"Found {len(entries)} entries")
 
             stats: ExportStats = export_entries(
-                entries, output_dir, force, not no_preserve_body, logger
+                session, entries, output_dir, force, not no_preserve_body, logger
             )
 
         click.echo("\n✅ Export complete:")
@@ -457,8 +640,6 @@ def all(ctx: click.Context, output: str, force: bool, no_preserve_body: bool) ->
     except Exception as e:
         click.echo(f"❌ Unexpected error: {e}", err=True)
         if ctx.obj["verbose"]:
-            import traceback
-
             traceback.print_exc()
         sys.exit(1)
 

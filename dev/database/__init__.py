@@ -27,6 +27,12 @@ from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
 from .relationship_manager import RelationshipManager, HasId
+from .query_optimizer import (
+    QueryOptimizer,
+    RelationshipLoader,
+    HierarchicalBatcher,
+    DateBatch,
+)
 from .decorators import (
     log_database_operation,
     handle_db_errors,
@@ -56,4 +62,8 @@ __all__ = [
     "validate_metadata",
     # Protocols
     "HasId",
+    "QueryOptimizer",
+    "RelationshipLoader",
+    "HierarchicalBatcher",
+    "DateBatch",
 ]
