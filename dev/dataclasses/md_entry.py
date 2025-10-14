@@ -234,18 +234,38 @@ class MdEntry:
                 metadata["locations"] = locations_dict
 
         # Relationships
-        if entry.people:
-            metadata["people"] = [
-                (
-                    {
-                        "name": p.name,
-                        "full_name": p.full_name,
-                    }
-                    if getattr(p, "name_fellow")
-                    else p.name
-                )
-                for p in entry.people
-            ]
+        if entry.people or entry.aliases_used:
+            people_list = []
+            aliases_by_person: Dict[int, Dict[str, Any]] = {}
+
+            if entry.aliases_used:
+                for alias in entry.aliases_used:
+                    person_id = alias.person_id
+                    if person_id not in aliases_by_person:
+                        aliases_by_person[person_id] = {
+                            "alias": [],
+                            "name": alias.person.name,
+                        }
+                        if alias.person.name_fellow and alias.person.full_name:
+                            fname = alias.person.full_name
+                            aliases_by_person[person_id]["full_name"] = fname
+                    aliases_by_person[person_id]["alias"].append(alias.alias)
+
+            for p in entry.people:
+                if aliases_by_person and p.id in aliases_by_person:
+                    continue
+                if getattr(p, "name_fellow"):
+                    people_list.append(
+                        {
+                            "name": p.name,
+                            "full_name": p.full_name,
+                        }
+                    )
+                else:
+                    people_list.append(p.name)
+
+            people_list.extend(aliases_by_person.values())
+            metadata["people"] = people_list
 
         if entry.events:
             metadata["events"] = [evt.event for evt in entry.events]
