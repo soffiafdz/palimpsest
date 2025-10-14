@@ -82,7 +82,7 @@ from contextlib import contextmanager
 from datetime import date, datetime, timezone
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar
+from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Sequence
 
 # --- Third party ---
 from sqlalchemy import create_engine, Engine, insert
@@ -766,7 +766,6 @@ class PalimpsestDB:
             many_to_many_configs = [
                 ("cities", "cities", City),
                 ("people", "people", Person),
-                ("aliases_used", "aliases_used", Alias),
                 ("events", "events", Event),
             ]
 
@@ -781,6 +780,10 @@ class PalimpsestDB:
                         incremental=incremental,
                         remove_items=metadata.get(f"remove_{meta_key}", []),
                     )
+
+            # --- Aliases ---
+            if "alias" in metadata:
+                self._process_entry_aliases(session, entry, metadata["alias"])
 
             # --- Locations ---
             if "locations" in metadata:
@@ -829,6 +832,256 @@ class PalimpsestDB:
                 )
             # Re-raise for higher-level handling
             raise
+
+    def _process_entry_aliases(
+        self,
+        session: Session,
+        entry: Entry,
+        alias_data: Sequence[str | Sequence[str] | Dict[str, Any]],
+    ):
+        """
+        Process aliases with optional person context and link to entry.
+
+        Args:
+            session: SQLAlchemy session
+            entry: Entry to link aliases to
+            alias_data: List of alias specifications:
+                - str: single alias
+                - List[str]: multiple aliases for same person
+                - Dict: {"alias": str|List[str], "name": str, "full_name": str}
+
+        Raises:
+            ValueError: If entry not persisted or invalid alias data
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before linking aliases")
+
+        alias_orms = []
+
+        for alias_obj in alias_data:
+            person: Optional[Person] = None
+            aliases: List[str] = []
+            name: Optional[str] = None
+            full_name: Optional[str] = None
+
+            # Parse input format
+            if isinstance(alias_obj, dict):
+                # Dict format: {"alias": [...], "name": "...", "full_name": "..."}
+                alias_raw = alias_obj.get("alias", [])
+                if isinstance(alias_raw, str):
+                    alias_raw = [alias_raw]
+
+                aliases_raw = [
+                    DataValidator.normalize_string(a) for a in alias_raw if a
+                ]
+                aliases = [a for a in aliases_raw if a]
+
+                name = DataValidator.normalize_string(alias_obj.get("name"))
+                full_name = DataValidator.normalize_string(alias_obj.get("full_name"))
+
+            elif isinstance(alias_obj, list):
+                # List format: ["alias1", "alias2"]
+                aliases_raw = [DataValidator.normalize_string(a) for a in alias_obj]
+                aliases = [a for a in aliases_raw if a]
+
+            elif isinstance(alias_obj, str):
+                # String format: "alias"
+                normalized = DataValidator.normalize_string(alias_obj)
+                if normalized:
+                    aliases = [normalized]
+
+            else:
+                if self.logger:
+                    self.logger.log_warning(
+                        f"Invalid alias format: {type(alias_obj).__name__}",
+                        {"entry_id": entry.id, "alias_data": str(alias_obj)[:100]},
+                    )
+                continue
+
+            if not aliases:
+                if self.logger:
+                    self.logger.log_warning(
+                        "Empty alias list after normalization",
+                        {"entry_id": entry.id, "raw_data": str(alias_obj)[:100]},
+                    )
+                continue
+
+            # Try to resolve person from existing aliases
+            unresolved_aliases = aliases.copy()
+            alias_fellows = []
+            for alias in aliases:
+                existing_aliases = session.query(Alias).filter_by(alias=alias).all()
+
+                if len(existing_aliases) == 1:
+                    # Unique alias found - use it
+                    alias_orms.append(existing_aliases[0])
+                    person = existing_aliases[0].person
+                    unresolved_aliases.remove(alias)
+
+                elif len(existing_aliases) > 1:
+                    # Ambiguous - multiple people have this alias
+                    alias_fellows.append(alias)
+                    unresolved_aliases.remove(alias)
+
+            if unresolved_aliases or alias_fellows:
+                if not person:
+                    if name or full_name:
+                        try:
+                            person = self.get_person(session, name, full_name)
+                        except ValidationError as e:
+                            if self.logger:
+                                self.logger.log_warning(
+                                    f"Could not resolve person for aliases: {e}",
+                                    {
+                                        "entry_id": entry.id,
+                                        "entry_date": str(entry.date),
+                                        "alias": [
+                                            *unresolved_aliases,
+                                            *alias_fellows,
+                                        ],
+                                        "name": name,
+                                        "full_name": full_name,
+                                    },
+                                )
+                            continue
+
+                        if person is None:
+                            if self.logger:
+                                person_id = full_name if full_name else name
+                                self.logger.log_warning(
+                                    f"Person '{person_id}' not found for alias",
+                                    {
+                                        "entry_id": entry.id,
+                                        "entry_date": str(entry.date),
+                                        "alias": [
+                                            *unresolved_aliases,
+                                            *alias_fellows,
+                                        ],
+                                        "name": name,
+                                        "full_name": full_name,
+                                    },
+                                )
+                            continue
+                    else:
+                        # No person context provided
+                        if self.logger:
+                            self.logger.log_warning(
+                                "Cannot resolve alias without person context",
+                                {
+                                    "entry_id": entry.id,
+                                    "entry_date": str(entry.date),
+                                    "alias": [*unresolved_aliases, *alias_fellows],
+                                    "hint": "Provide 'name' or 'full_name' in alias dict",
+                                },
+                            )
+                        continue
+
+                if alias_fellows:
+                    # Resolve ambiguous alias
+                    resolved_fellows = []
+                    for alias in alias_fellows:
+                        existing_aliases = (
+                            session.query(Alias)
+                            .filter_by(alias=alias, person_id=person.id)
+                            .all()
+                        )
+
+                        if len(existing_aliases) == 1:
+                            # Unique alias found - use it
+                            alias_orms.append(existing_aliases[0])
+                            resolved_fellows.append(alias)
+
+                    alias_fellows = [
+                        a for a in alias_fellows if a not in resolved_fellows
+                    ]
+                    # This shouldn't happen due to Tables limitation, leave here anyway
+                    if alias_fellows:
+                        if self.logger:
+                            self.logger.log_warning(
+                                f"Ambiguous alias(es) '{alias_fellows}' match multiple people",
+                                {
+                                    "entry_id": entry.id,
+                                    "entry_date": str(entry.date),
+                                    "alias": alias_fellows,
+                                },
+                            )
+
+                # Create new alias records for this person
+                for alias in unresolved_aliases:
+                    try:
+                        alias_orm = self._get_or_create_lookup_item(
+                            session,
+                            Alias,
+                            lookup_fields={"alias": alias, "person_id": person.id},
+                        )
+                        alias_orms.append(alias_orm)
+
+                        if self.logger:
+                            self.logger.log_debug(
+                                f"Created alias '{alias}' for {person.display_name}",
+                                {
+                                    "entry_id": entry.id,
+                                    "person_id": person.id,
+                                    "alias": alias,
+                                },
+                            )
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.log_error(
+                                e,
+                                {
+                                    "operation": "create_alias",
+                                    "entry_id": entry.id,
+                                    "person_id": person.id,
+                                    "alias": alias,
+                                },
+                            )
+                        # Continue processing other aliases
+                        continue
+
+        # Link all collected aliases to entry
+        if alias_orms:
+            try:
+                RelationshipManager.update_many_to_many(
+                    session=session,
+                    parent_obj=entry,
+                    relationship_name="aliases_used",
+                    items=alias_orms,
+                    model_class=Alias,
+                    incremental=True,
+                )
+
+                if self.logger:
+                    self.logger.log_debug(
+                        f"Linked {len(alias_orms)} aliases to entry",
+                        {
+                            "entry_id": entry.id,
+                            "entry_date": str(entry.date),
+                            "alias_count": len(alias_orms),
+                        },
+                    )
+            except Exception as e:
+                if self.logger:
+                    self.logger.log_error(
+                        e,
+                        {
+                            "operation": "link_aliases_to_entry",
+                            "entry_id": entry.id,
+                            "entry_date": str(entry.date),
+                            "alias_count": len(alias_orms),
+                        },
+                    )
+                raise
+        elif self.logger:
+            # No aliases were successfully processed
+            self.logger.log_debug(
+                "No alias linked to entry",
+                {
+                    "entry_id": entry.id,
+                    "entry_date": str(entry.date),
+                    "input_count": len(alias_data),
+                },
+            )
 
     def _process_mentioned_dates(
         self,

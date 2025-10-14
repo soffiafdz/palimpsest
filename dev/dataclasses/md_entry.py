@@ -28,7 +28,7 @@ import yaml
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Sequence
 
 from dev.core.validators import DataValidator
 from dev.database.models import Entry
@@ -533,7 +533,7 @@ class MdEntry:
 
     def _parse_people_field(
         self, people_list: List[Union[str, Dict]]
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Parse people field with name/full_name/alias logic.
 
@@ -573,34 +573,42 @@ class MdEntry:
         aliases_mentioned = []
 
         for person_item in people_list:
+            name: Optional[str] = None
+            full_name: Optional[str] = None
+            alias: Optional[Sequence[str]] = None
+
             if isinstance(person_item, dict):
                 person_dict = {}
                 if "name" in person_item:
-                    person_dict["name"] = DataValidator.normalize_string(
-                        person_item["name"]
-                    )
+                    name = DataValidator.normalize_string(person_item["name"])
                 if "full_name" in person_item:
-                    person_dict["full_name"] = DataValidator.normalize_string(
-                        person_item["full_name"]
-                    )
+                    full_name = DataValidator.normalize_string(person_item["full_name"])
                 if "alias" in person_item:
-                    alias = person_item["alias"]
-                    if isinstance(alias, str):
-                        norm_alias = DataValidator.normalize_string(alias)
-                        if norm_alias:
-                            aliases_mentioned.append(norm_alias)
-                    elif alias:
-                        for a in alias:
-                            norm_alias = DataValidator.normalize_string(a)
-                            if norm_alias:
-                                aliases_mentioned.append(norm_alias)
+                    alias_raw = person_item["alias"]
+                    if isinstance(alias_raw, str):
+                        alias_raw = [alias_raw]
+
+                    aliases_raw = [
+                        DataValidator.normalize_string(a) for a in alias_raw if a
+                    ]
+                    alias = [a for a in aliases_raw if a]
+
+                if full_name:
+                    person_dict["full_name"] = full_name
+
+                if name:
+                    person_dict["name"] = name
+
                 if person_dict:
                     normalized_people.append(person_dict)
-                continue
 
-            alias: Optional[str] = None
-            name: Optional[str] = None
-            full_name: Optional[str] = None
+                if alias:
+                    alias_dict: Dict[str, Any] = {"alias": alias}
+                    if person_dict:
+                        alias_dict.update(person_dict)
+                    aliases_mentioned.append(alias_dict)
+
+                continue
 
             person_str = DataValidator.normalize_string(person_item)
             if not person_str:
@@ -623,16 +631,22 @@ class MdEntry:
                 name = parsers.split_hyphenated_to_spaces(primary)
                 full_name = expansion
 
-            if alias or name or full_name:
-                normalized.append(
-                    {
-                        "alias": alias,
-                        "name": name,
-                        "full_name": full_name,
-                    }
-                )
+            if alias:
+                if name or full_name:
+                    aliases_mentioned.append(
+                        {
+                            "alias": alias,
+                            "name": name,
+                            "full_name": full_name,
+                        }
+                    )
+                else:
+                    aliases_mentioned.append(alias)
 
-        return normalized
+            if name or full_name:
+                normalized_people.append({"name": name, "full_name": full_name})
+
+        return {"people": normalized_people, "alias": aliases_mentioned}
 
     def _parse_dates_field(
         self, dates_data: Union[List[str], List[Dict[str, str]]]
