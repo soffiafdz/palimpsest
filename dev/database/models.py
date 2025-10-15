@@ -273,6 +273,40 @@ entry_tags = Table(
     Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
+location_dates = Table(
+    "location_dates",
+    Base.metadata,
+    Column(
+        "location_id",
+        Integer,
+        ForeignKey("locations.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "date_id",
+        Integer,
+        ForeignKey("dates.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+people_dates = Table(
+    "people_dates",
+    Base.metadata,
+    Column(
+        "person_id",
+        Integer,
+        ForeignKey("people.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "date_id",
+        Integer,
+        ForeignKey("dates.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
 
 # ----- Schema Versioning -----
 class SchemaInfo(Base):
@@ -735,7 +769,8 @@ class MentionedDate(Base):
 
     Tracks specific dates mentioned in entries, allowing for temporal
     analysis and cross-referencing of events. Dates can optionally include
-    context about why they were mentioned.
+    context about why they were mentioned. They can, but not necessarily
+    be the date of the entry.
 
     Attributes:
         id: Primary key
@@ -744,6 +779,8 @@ class MentionedDate(Base):
 
     Relationships:
         entries: Many-to-many with Entry (entries that mention this date)
+        locations: Many-to-many with Location (locations visited on this date)
+        people: Many-to-many with People (people interacted with on this date)
 
     Computed Properties:
         date_formatted: ISO format string (YYYY-MM-DD)
@@ -770,6 +807,12 @@ class MentionedDate(Base):
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_dates, back_populates="dates"
     )
+    locations: Mapped[List[Location]] = relationship(
+        "Location", secondary=location_dates, back_populates="dates"
+    )
+    people: Mapped[List[Person]] = relationship(
+        "Person", secondary=people_dates, back_populates="dates"
+    )
 
     # ---- Computed properties ----
     @property
@@ -781,6 +824,26 @@ class MentionedDate(Base):
     def entry_count(self) -> int:
         """Count of entries referencing this date."""
         return len(self.entries) if self.entries else 0
+
+    @property
+    def location_count(self) -> int:
+        """Count of locations visited on this date."""
+        return len(self.locations) if self.locations else 0
+
+    @property
+    def locations_visited(self) -> List[str]:
+        """Names of locations visited on this date."""
+        return [loc.name for loc in self.locations] if self.locations else []
+
+    @property
+    def people_count(self) -> int:
+        """Count of people present on this date."""
+        return len(self.people) if self.people else 0
+
+    @property
+    def people_present(self) -> List[str]:
+        """Names of people present on this date."""
+        return [person.display_name for person in self.people] if self.people else []
 
     @property
     def first_mention_date(self) -> Optional[date]:
@@ -906,6 +969,7 @@ class Location(Base):
     Relationships:
         city: Many-to-one with City (parent city)
         entries: Many-to-many with Entry (entries mentioning this location)
+        dates: Many-to-many with MentionedDate (dates related to this location)
 
     Computed Properties:
         entry_count: Number of entries mentioning this location
@@ -930,6 +994,9 @@ class Location(Base):
     entries: Mapped[List[Entry]] = relationship(
         "Entry", secondary=entry_locations, back_populates="locations"
     )
+    dates: Mapped[List[MentionedDate]] = relationship(
+        "MentionedDate", secondary=location_dates, back_populates="locations"
+    )
 
     # ---- Computed properties ----
     @property
@@ -938,26 +1005,82 @@ class Location(Base):
         return len(self.entries)
 
     @property
+    def visit_count(self) -> int:
+        """Total number of recorded visits (explicit dates)."""
+        return len(self.dates)
+
+    @property
+    def first_visit_date(self) -> Optional[date]:
+        """Earliest date this location was visited."""
+        dates = [md.date for md in self.dates]
+        return min(dates) if dates else None
+
+    @property
+    def last_visit_date(self) -> Optional[date]:
+        """Most recent date this location was visited."""
+        dates = [md.date for md in self.dates]
+        return max(dates) if dates else None
+
+    @property
+    def visit_timeline(self) -> List[Dict[str, Any]]:
+        """
+        Complete timeline of visits with context.
+
+        Returns:
+            List of dicts with keys: date, source ('entry'|'mentioned'), context
+        """
+        timeline = []
+
+        # Add entry dates
+        for entry in self.entries:
+            timeline.append(
+                {
+                    "date": entry.date,
+                    "source": "entry",
+                    "entry_id": entry.id,
+                    "context": None,
+                }
+            )
+
+        # Add explicit mentioned dates
+        for md in self.dates:
+            timeline.append(
+                {
+                    "date": md.date,
+                    "source": "mentioned",
+                    "context": md.context,
+                    "mentioned_date_id": md.id,
+                }
+            )
+
+        # Sort by date
+        timeline.sort(key=lambda x: x["date"])
+        return timeline
+
+    @property
     def visit_frequency(self) -> Dict[str, int]:
         """
         Calculate visit frequency by year-month.
+        Uses all recorded visits (entries + mentioned dates).
 
         Returns:
             Dictionary mapping YYYY-MM strings to visit counts
         """
         frequency: Dict[str, int] = {}
-        for entry in self.entries:
-            year_month = entry.date.strftime("%Y-%m")
+        # Count from mentioned dates
+        for md in self.dates:
+            year_month = md.date.strftime("%Y-%m")
             frequency[year_month] = frequency.get(year_month, 0) + 1
         return frequency
 
     @property
     def visit_span_days(self) -> int:
         """Days between first and last visit."""
-        if not self.entries or len(self.entries) < 2:
+        first = self.first_visit_date
+        last = self.last_visit_date
+        if not first or not last or first == last:
             return 0
-        dates = [entry.date for entry in self.entries]
-        return (max(dates) - min(dates)).days
+        return (last - first).days
 
     # Call
     def __repr__(self) -> str:
@@ -965,13 +1088,13 @@ class Location(Base):
 
     def __str__(self) -> str:
         loc_name = f"{self.name} ({self.city.city})"
-        count = self.entry_count
+        count = self.visit_count
         if count == 0:
-            return f"Location {loc_name} (no entries)"
+            return f"Location {loc_name} (no visits)"
         elif count == 1:
-            return f"Location {loc_name} (1 entry)"
+            return f"Location {loc_name} (1 visit)"
         else:
-            return f"Location {loc_name} ({count} entries)"
+            return f"Location {loc_name} ({count} visits)"
 
 
 class Person(Base, SoftDeleteMixin):
@@ -1031,6 +1154,9 @@ class Person(Base, SoftDeleteMixin):
     aliases: Mapped[List[Alias]] = relationship(
         "Alias", back_populates="person", cascade="all, delete-orphan"
     )
+    dates: Mapped[List[MentionedDate]] = relationship(
+        "MentionedDate", secondary=people_dates, back_populates="people"
+    )
     events: Mapped[List[Event]] = relationship(
         "Event", secondary=event_people, back_populates="people"
     )
@@ -1062,25 +1188,77 @@ class Person(Base, SoftDeleteMixin):
         return len(self.entries)
 
     @property
+    def appearances_count(self) -> int:
+        """Total number of appearances (explicit dates)."""
+        return len(self.dates)
+
+    @property
     def event_count(self) -> int:
         """Number of events this person is involved in."""
         return len(self.events)
 
     @property
-    def first_appearance(self) -> Optional[date]:
-        """Date of first appearance in the journal."""
-        if not self.entries:
-            return None
-        dates = [entry.date for entry in self.entries if entry.date]
+    def first_appearance_date(self) -> Optional[date]:
+        """Earliest date this person was mentioned."""
+        dates = [md.date for md in self.dates]
         return min(dates) if dates else None
 
     @property
-    def last_appearance(self) -> Optional[date]:
-        """Date of last appearance in the journal."""
-        if not self.entries:
-            return None
-        dates = [entry.date for entry in self.entries if entry.date]
+    def lasts_appearance_date(self) -> Optional[date]:
+        """Most recent date this person was mentioned."""
+        dates = [md.date for md in self.dates]
         return max(dates) if dates else None
+
+    @property
+    def mention_timeline(self) -> List[Dict[str, Any]]:
+        """
+        Complete timeline of mentions with context.
+
+        Returns:
+            List of dicts with keys: date, source ('entry'|'mentioned'), context
+        """
+        timeline = []
+
+        # Add entry dates
+        for entry in self.entries:
+            timeline.append(
+                {
+                    "date": entry.date,
+                    "source": "entry",
+                    "entry_id": entry.id,
+                    "context": None,
+                }
+            )
+
+        # Add explicit mentioned dates
+        for md in self.dates:
+            timeline.append(
+                {
+                    "date": md.date,
+                    "source": "date",
+                    "context": md.context,
+                    "mentioned_date_id": md.id,
+                }
+            )
+
+        # Sort by date
+        timeline.sort(key=lambda x: x["date"])
+        return timeline
+
+    @property
+    def mention_frequency(self) -> Dict[str, int]:
+        """
+        Calculate mention frequency by year-month.
+        Uses all mentions (entries + mentioned dates).
+
+        Returns:
+            Dictionary mapping YYYY-MM strings to mention counts
+        """
+        frequency: Dict[str, int] = {}
+        for md in self.dates:
+            year_month = md.date.strftime("%Y-%m")
+            frequency[year_month] = frequency.get(year_month, 0) + 1
+        return frequency
 
     @property
     def relationship_display(self) -> str:
@@ -1099,20 +1277,6 @@ class Person(Base, SoftDeleteMixin):
         """Get privacy sensitivity level for manuscript purposes."""
         return self.relation_type.privacy_level if self.relation_type else 0
 
-    @property
-    def mention_frequency(self) -> Dict[str, int]:
-        """
-        Calculate mention frequency by year-month.
-
-        Returns:
-            Dictionary mapping YYYY-MM strings to mention counts
-        """
-        frequency: Dict[str, int] = {}
-        for entry in self.entries:
-            year_month = entry.date.strftime("%Y-%m")
-            frequency[year_month] = frequency.get(year_month, 0) + 1
-        return frequency
-
     def is_known_as(self, name: str) -> bool:
         """
         Check if person is known by this name or alias.
@@ -1130,7 +1294,7 @@ class Person(Base, SoftDeleteMixin):
         return f"<Person(id={self.id}, name='{self.name}')>"
 
     def __str__(self) -> str:
-        return f"Person {self.display_name} ({self.entry_count} entries)"
+        return f"Person {self.display_name} ({self.appearances_count} mentions)"
 
 
 class Alias(Base):

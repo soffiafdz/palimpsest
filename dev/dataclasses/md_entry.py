@@ -28,7 +28,7 @@ import yaml
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union, Sequence
+from typing import Dict, Any, List, Optional, Union, Sequence, Tuple
 
 from dev.core.validators import DataValidator
 from dev.database.models import Entry
@@ -254,36 +254,56 @@ class MdEntry:
             for p in entry.people:
                 if aliases_by_person and p.id in aliases_by_person:
                     continue
-                if getattr(p, "name_fellow"):
-                    people_list.append(
-                        {
-                            "name": p.name,
-                            "full_name": p.full_name,
-                        }
-                    )
+                if p.name_fellow:
+                    people_list.append({"full_name": p.full_name})
                 else:
-                    people_list.append(p.name)
+                    people_list.append({"name": p.name})
 
             people_list.extend(aliases_by_person.values())
             metadata["people"] = people_list
+
+        # Mentioned dates with context location and people
+        if entry.dates:
+            dates_list = []
+
+            # Check if entry date is in mentioned dates
+            entry_date_in_mentioned = any(md.date == entry.date for md in entry.dates)
+
+            # Add ~ if entry date NOT in mentioned dates
+            if not entry_date_in_mentioned:
+                dates_list.append("~")
+
+            # Build all date items as dicts
+            for md in entry.dates:
+                date_dict: Dict = {"date": md.date.isoformat()}
+
+                # Add locations
+                if md.locations:
+                    date_dict["locations"] = [loc.name for loc in md.locations]
+
+                # Add people
+                if md.people:
+                    people_formatted = []
+                    for person in md.people:
+                        if person.name_fellow:
+                            people_formatted.append({"full_name": person.full_name})
+                        else:
+                            people_formatted.append({"name": person.name})
+                    date_dict["people"] = people_formatted
+
+                # Add context
+                if md.context:
+                    date_dict["context"] = md.context
+
+                dates_list.append(date_dict)
+
+            metadata["dates"] = dates_list
 
         if entry.events:
             metadata["events"] = [evt.event for evt in entry.events]
 
         if entry.tags:
             metadata["tags"] = [tag.tag for tag in entry.tags]
-
-        # Mentioned dates with context
-        if entry.dates:
-            dates_list: List[Union[str, Dict[str, str]]] = []
-            for md in entry.dates:
-                if md.context:
-                    dates_list.append(
-                        {"date": md.date.isoformat(), "context": md.context}
-                    )
-                else:
-                    dates_list.append(md.date.isoformat())
-            metadata["dates"] = dates_list
 
         # Related entries
         if entry.related_entries:
@@ -390,50 +410,6 @@ class MdEntry:
         if self.file_path:
             db_meta["file_path"] = str(self.file_path)
 
-        # Parse epigraph
-        if "epigraph" in self.metadata:
-            db_meta["epigraph"] = DataValidator.normalize_string(
-                self.metadata["epigraph"]
-            )
-
-        if "epigraph_attribution" in self.metadata:
-            db_meta["epigraph_attribution"] = DataValidator.normalize_string(
-                self.metadata["epigraph_attribution"]
-            )
-
-        # Parse city/cities
-        if "city" in self.metadata and self.metadata["city"]:
-            db_meta["cities"] = self._parse_city_field(self.metadata["city"])
-
-        # Parse locations
-        if "locations" in self.metadata and self.metadata["locations"]:
-            locations_dict = self._parse_locations_field(
-                self.metadata["locations"], db_meta.get("cities", [])
-            )
-
-            # Flatten to list of dicts with city context
-            locations_list = []
-            for city_name, loc_names in locations_dict.items():
-                for loc_name in loc_names:
-                    locations_list.append({"name": loc_name, "city": city_name})
-
-            db_meta["locations"] = locations_list
-
-        # Parse people (handle hyphenated names)
-        if "people" in self.metadata and self.metadata["people"]:
-            db_meta["people"] = self._parse_people_field(self.metadata["people"])
-
-        # Simple lists
-        for db_field in ["events", "tags"]:
-            if db_field in self.metadata and self.metadata[db_field]:
-                db_meta[db_field] = DataValidator.normalize_string(
-                    self.metadata[db_field]
-                )
-
-        # Dates with optional context
-        if "dates" in self.metadata:
-            db_meta["dates"] = self._parse_dates_field(self.metadata["dates"])
-
         # Related entries
         if "related_entries" in self.metadata:
             db_meta["related_entries"] = [
@@ -441,6 +417,73 @@ class MdEntry:
                 for d in self.metadata["related_entries"]
                 if DataValidator.validate_date_string(d)
             ]
+
+        # Parse city/cities
+        if "city" in self.metadata and self.metadata["city"]:
+            db_meta["cities"] = self._parse_city_field(self.metadata["city"])
+
+        # Parse locations
+        locations_by_city = {}
+        if "locations" in self.metadata and self.metadata["locations"]:
+            locations_by_city = self._parse_locations_field(
+                self.metadata["locations"], db_meta.get("cities", [])
+            )
+
+            # Flatten to list of dicts with city context
+            locations_list = []
+            for city_name, loc_names in locations_by_city.items():
+                for loc_name in loc_names:
+                    locations_list.append({"name": loc_name, "city": city_name})
+
+            db_meta["locations"] = locations_list
+
+        # Parse people
+        people_parsed = None
+        if "people" in self.metadata and self.metadata["people"]:
+            people_parsed = self._parse_people_field(self.metadata["people"])
+
+            if "people" in people_parsed:
+                db_meta["people"] = people_parsed["people"]
+            if "alias" in people_parsed:
+                db_meta["alias"] = people_parsed["alias"]
+
+        # Dates: including their own locations and people
+        parsed_dates = []
+        exclude_entry_date = False
+        has_dates_field = "dates" in self.metadata and self.metadata["dates"]
+
+        if has_dates_field:
+            parsed_dates, exclude_entry_date = self._parse_dates_field(
+                self.metadata["dates"],
+                people_parsed,
+            )
+
+        if not exclude_entry_date:
+            entry_date_str: str = self.date.isoformat()
+
+            if entry_date_str not in [d["date"] for d in parsed_dates]:
+                entry_date_item: Dict[str, Any] = {"date": entry_date_str}
+
+                # Add locations/people ONLY if NO dates field
+                # (if dates field exists, user must explicitly include entry date)
+                if not has_dates_field:
+                    if "locations" in db_meta:
+                        entry_date_item["locations"] = [
+                            loc["name"] for loc in db_meta["locations"]
+                        ]
+
+                    if "people" in db_meta or "alias" in db_meta:
+                        all_people = []
+                        if "people" in db_meta:
+                            all_people.extend(db_meta["people"])
+                        if "alias" in db_meta:
+                            all_people.extend(db_meta["alias"])
+                        entry_date_item["people"] = all_people
+
+                parsed_dates.append(entry_date_item)
+
+        if parsed_dates:
+            db_meta["dates"] = parsed_dates
 
         # References
         if "references" in self.metadata:
@@ -452,13 +495,16 @@ class MdEntry:
         if "poems" in self.metadata:
             db_meta["poems"] = self._parse_poems_field(self.metadata["poems"])
 
-        # Notes
-        if "notes" in self.metadata:
-            db_meta["notes"] = DataValidator.normalize_string(self.metadata["notes"])
-
         # Manuscript metadata
         if "manuscript" in self.metadata:
             db_meta["manuscript"] = self.metadata["manuscript"]
+
+        # Simple lists
+        for db_field in ["epigraph", "epigraph_attribution", "events", "tags", "notes"]:
+            if db_field in self.metadata and self.metadata[db_field]:
+                db_meta[db_field] = DataValidator.normalize_string(
+                    self.metadata[db_field]
+                )
 
         return db_meta
 
@@ -578,16 +624,18 @@ class MdEntry:
 
         Returns dict with:
             - "people": List of person specs (strings/dicts)
-            - "aliases_used": List of alias strings that were mentioned
+            - "alias": List of alias strings that were mentioned
 
          Examples:
              >>> _parse_people_field(["John", "Jane Smith", "Bob (Robert)", "@Bobby"])
-             [
-                 {"name": "John"},
-                 {"full_name": "Jane Smith"},
-                 {"name": "Bob", "full_name": "Robert"},
-                 {"alias": "Bobby"}
-             ]
+             {
+                "people": [
+                    {"name": "John"},
+                    {"full_name": "Jane Smith"},
+                    {"name": "Bob", "full_name": "Robert"},
+                ],
+                "alias": [{"alias": "Bobby"}]
+             }
         """
         normalized_people = []
         aliases_mentioned = []
@@ -669,10 +717,16 @@ class MdEntry:
         return {"people": normalized_people, "alias": aliases_mentioned}
 
     def _parse_dates_field(
-        self, dates_data: Union[List[str], List[Dict[str, str]]]
-    ) -> List[Dict[str, str]]:
+        self,
+        dates_data: Union[List[Union[str, Dict]], Dict],
+        people_parsed: Optional[Dict[str, List]],
+    ) -> Tuple[List, bool]:
         """
         Parse dates field with inline or nested format.
+        Associates locations/people to specific dates.
+
+        For people values in dates, looks them up in people_parsed
+        in order to get their keys.
 
         Supports:
         - Simple date: "2025-06-01"
@@ -681,44 +735,166 @@ class MdEntry:
 
         Args:
             dates_data: List of date specifications
+            locations_by_city: {city: [locations]} from locations field
+            people_parsed: Result from _parse_people_field() with keys already assigned
+                Example: {
+                    "people": [{"name": "Clara"}],
+                    "alias": [{"alias": "Majo", "name": "María-José"}]
+                }
 
         Returns:
-            List of dicts with 'date' and optional 'context' keys
+            Tuple of (parsed_dates, exclude_entry_date_flag)
 
         Examples:
             >>> _parse_dates_field([
             ...     "2025-06-01",
-            ...     "2025-06-15 (birthday)",
-            ...     {"date": "2025-07-01", "context": "celebration"}
+            ...     "2025-06-15 (birthday party at #Church)",
+            ...     {"date": "2025-07-01", "context": "celebration", "person": "Alda"}
             ... ])
             [
                 {"date": "2025-06-01"},
-                {"date": "2025-06-15", "context": "birthday"},
-                {"date": "2025-07-01", "context": "celebration"}
+                {
+                    "date": "2025-06-15",
+                    "context": "birthday party at Church",
+                    "locations": "Church,
+                },
+                {
+                    "date": "2025-07-01",
+                    "context": "celebration",
+                    "people": "Alda",
+                }
             ]
         """
+        if isinstance(dates_data, dict):
+            dates_data = [dates_data]
+
         normalized = []
+        exclude_entry_date = False
 
         for item in dates_data:
+            # --- Opt-out trigger ---
+            if item == "~" or item is None:
+                exclude_entry_date = True
+                continue
+
+            # --- Inline string ---
             if isinstance(item, str):
-                # Check for inline context
-                date_obj, context = parsers.parse_date_context(item)
+                date_obj, raw_context = parsers.parse_date_context(item)
 
-                if DataValidator.validate_date_string(date_obj):
-                    date_dict = {"date": date_obj}
-                    if context:
-                        date_dict["context"] = context
-                    normalized.append(date_dict)
-                else:
+                if not DataValidator.validate_date_string(date_obj):
                     logger.warning(f"Invalid date format, skipping: {date_obj}")
+                    continue
 
-            elif isinstance(item, dict) and "date" in item:
-                if DataValidator.validate_date_string(item["date"]):
-                    normalized.append(item)
-                else:
+                date_dict: Dict[str, Union[date, str, List]] = {"date": date_obj}
+
+                if raw_context:
+                    context_dict = parsers.extract_context_refs(raw_context)
+                    date_dict.update(context_dict)
+
+                normalized.append(date_dict)
+
+            # --- Dictionary ---
+            if isinstance(item, dict):
+                if "date" not in item:
+                    logger.warning(f"Date dict missing 'date' field: {item}")
+                    continue
+
+                if not DataValidator.validate_date_string(item["date"]):
                     logger.warning(f"Invalid date format, skipping: {item}")
+                    continue
 
-        return normalized
+                date_dict = {"date": item["date"]}
+                all_locations = []
+                people_context = []
+
+                # Context
+                raw_context = item.get("context", "")
+                if raw_context:
+                    context_dict = parsers.extract_context_refs(raw_context)
+                    if "locations" in context_dict and context_dict["locations"]:
+                        all_locations.extend(context_dict["locations"])
+                    if "people" in context_dict and context_dict["people"]:
+                        people_context.extend(context_dict["people"])
+                    date_dict.update(context_dict)
+
+                # --- Locations ---
+                if "locations" in item:
+                    locs_field = item["locations"]
+                    if isinstance(locs_field, str):
+                        all_locations.append(locs_field)
+                    elif isinstance(locs_field, list):
+                        all_locations.extend(locs_field)
+
+                if all_locations:
+                    date_dict["locations"] = [
+                        DataValidator.normalize_string(loc)
+                        for loc in all_locations
+                        if DataValidator.normalize_string(loc)
+                    ]
+
+                # --- People - LOOKUP IN people_parsed ---
+                if ("people" in item or people_context) and people_parsed:
+                    people_field = item["people"]
+                    if not isinstance(people_field, list):
+                        people_field = [people_field]
+
+                    people_field.extend(people_context)
+
+                    people_list = []
+
+                    for person_value in people_field:
+                        # If already a dict, use as-is
+                        if isinstance(person_value, dict):
+                            people_list.append(person_value)
+                            continue
+
+                        # String value - look up in people_parsed
+                        person_str = DataValidator.normalize_string(person_value)
+                        if not person_str:
+                            continue
+
+                        found = False
+
+                        # Check in people list
+                        if "people" in people_parsed:
+                            for person_spec in people_parsed["people"]:
+                                if isinstance(person_spec, dict):
+                                    # Check name or full_name matches
+                                    if (
+                                        person_spec.get("name") == person_str
+                                        or person_spec.get("full_name") == person_str
+                                    ):
+                                        people_list.append(person_spec)
+                                        found = True
+                                        break
+                                elif person_spec == person_str:
+                                    people_list.append({"name": person_str})
+                                    found = True
+                                    break
+
+                        # Check in alias list
+                        if not found and "alias" in people_parsed:
+                            for alias_spec in people_parsed["alias"]:
+                                if isinstance(alias_spec, dict):
+                                    alias_vals = alias_spec.get("alias", [])
+                                    if not isinstance(alias_vals, list):
+                                        alias_vals = [alias_vals]
+
+                                    if person_str in alias_vals:
+                                        people_list.append(alias_spec)
+                                        found = True
+                                        break
+
+                        # Not found - treat as simple name
+                        if not found:
+                            people_list.append({"name": person_str})
+
+                    if people_list:
+                        date_dict["people"] = people_list
+
+                normalized.append(date_dict)
+
+        return normalized, exclude_entry_date
 
     def _parse_references_field(
         self, refs_data: List[Dict[str, Any]]
@@ -961,17 +1137,37 @@ class MdEntry:
             people = self.metadata["people"]
             if any(isinstance(p, dict) for p in people) or len(people) >= 5:
                 parts.append("\npeople:")
-                [
-                    (
-                        parts.append(
-                            f'  - "{parsers.spaces_to_hyphenated(p["name"])}'
-                            f' ({p["full_name"]})"'
-                        )
-                        if isinstance(p, dict)
-                        else parts.append(f"  - {parsers.spaces_to_hyphenated(p)}")
-                    )
-                    for p in people
-                ]
+                for p in people:
+                    if isinstance(p, dict):
+                        if "alias" in p:
+                            # Alias format: @alias or @alias (name)
+                            alias_vals = p["alias"]
+                            if isinstance(alias_vals, list):
+                                alias_str = ", ".join(
+                                    f"@{parsers.spaces_to_hyphenated(a)}"
+                                    for a in alias_vals
+                                )
+                            else:
+                                alias_str = (
+                                    f"@{parsers.spaces_to_hyphenated(alias_vals)}"
+                                )
+
+                            if "full_name" in p:
+                                parts.append(f'  - "{alias_str} ({p["full_name"]})"')
+                            elif "name" in p:
+                                parts.append(f'  - "{alias_str} ({p["name"]})"')
+                            else:
+                                parts.append(f"  - {alias_str}")
+                        else:
+                            # Regular person: name or full_name
+                            name = parsers.spaces_to_hyphenated(p.get("name", ""))
+                            full = p.get("full_name", "")
+                            if full:
+                                parts.append(f"  - {full}")
+                            else:
+                                parts.append(f"  - {name}")
+                    else:
+                        parts.append(f"  - {parsers.spaces_to_hyphenated(p)}")
             else:
                 parts.append(f"\npeople: {md.yaml_list(people, hyphenated=True)}")
 
@@ -982,14 +1178,50 @@ class MdEntry:
 
         # Dates (with optional context)
         if self.metadata.get("dates"):
+            dates_data = self.metadata["dates"]
             parts.append("\ndates:")
-            for date_item in self.metadata["dates"]:
-                if isinstance(date_item, dict):
-                    parts.append(f'  - date: "{date_item["date"]}"')
-                    if "context" in date_item:
-                        parts.append(f'    context: "{date_item["context"]}"')
+
+            for date_item in dates_data:
+                # Handle ~ opt-out
+                if date_item == "~":
+                    parts.append("  - ~")
+                    continue
+
+                # Date item is always a dict from from_database()
+                if not isinstance(date_item, dict):
+                    continue
+
+                date_str = date_item.get("date")
+                locations = date_item.get("locations", [])
+                people = date_item.get("people", [])
+                context = date_item.get("context")
+
+                # DECIDE: Inline vs dict format
+                if locations or people:
+                    parts.append(f"  - date: {date_str}")
+
+                    if locations:
+                        parts.append(f"    locations: {md.yaml_list(locations)}")
+
+                    if people:
+                        parts.append("    people:")
+                        for p in people:
+                            if full := p.get("full_name", ""):
+                                parts.append(f"      - {full}")
+                            else:
+                                name = parsers.spaces_to_hyphenated(p.get("name", ""))
+                                parts.append(f"      - {name}")
+
+                    if context:
+                        parts.append(f'    context: "{md.yaml_escape(context)}"')
+
                 else:
-                    parts.append(f'  - "{date_item}"')
+                    # Add text context
+                    if context:
+                        parts.append(f'  - "{date_str} ({context})"')
+                    else:
+                        # Just the date
+                        parts.append(f'  - "{date_str}"')
 
         # Related entries
         if self.metadata.get("related_entries"):
