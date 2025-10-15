@@ -756,12 +756,6 @@ class PalimpsestDB:
             - related_entries: Uni-directional relationships by date string
         """
         try:
-            if "dates" in metadata:
-                if not incremental:
-                    entry.dates.clear()
-                    session.flush()
-                self._process_mentioned_dates(session, entry, metadata["dates"])
-
             # --- Many to many ---
             many_to_many_configs = [
                 ("cities", "cities", City),
@@ -791,6 +785,13 @@ class PalimpsestDB:
                     session, entry, metadata["locations"], incremental
                 )
 
+            # --- Dates ---
+            if "dates" in metadata:
+                if not incremental:
+                    entry.dates.clear()
+                    session.flush()
+                self._process_mentioned_dates(session, entry, metadata["dates"])
+
             # --- References ---
             # References need special handling because they involve ReferenceSource creation
             if "references" in metadata:
@@ -819,6 +820,7 @@ class PalimpsestDB:
                 )
 
             session.flush()
+
         except Exception as e:
             # Log error with context
             if self.logger:
@@ -1089,10 +1091,25 @@ class PalimpsestDB:
         entry: Entry,
         dates_data: List[Union[str, Dict[str, Any]]],
     ) -> None:
-        """Process mentioned dates with optional context."""
+        """
+        Process mentioned dates with optional context, locations, and people.
+
+        Each date can have:
+        - date: ISO format date string (required)
+        - context: Optional text context
+        - locations: List of location names (creates relationships)
+        - people: List of person specs (creates relationships)
+
+        Args:
+            session: SQLAlchemy session
+            entry: Entry to attach dates to
+            dates_data: List of date specifications
+        """
         existing_date_ids = {d.id for d in entry.dates}
 
         for date_item in dates_data:
+            mentioned_date = None
+
             if isinstance(date_item, str):
                 # Simple date string
                 date_obj = date.fromisoformat(date_item)
@@ -1103,13 +1120,24 @@ class PalimpsestDB:
                 # Date with context
                 date_obj = date.fromisoformat(date_item["date"])
                 context = date_item.get("context")
+
                 mentioned_date = self._get_or_create_lookup_item(
                     session, MentionedDate, {"date": date_obj, "context": context}
                 )
+
+                if "locations" in date_item and date_item["locations"]:
+                    self._update_mentioned_date_locations(
+                        session, mentioned_date, date_item["locations"]
+                    )
+
+                if "people" in date_item and date_item["people"]:
+                    self._update_mentioned_date_people(
+                        session, mentioned_date, date_item["people"]
+                    )
             else:
                 continue
 
-            if mentioned_date.id not in existing_date_ids:
+            if mentioned_date and mentioned_date.id not in existing_date_ids:
                 entry.dates.append(mentioned_date)
 
     def _update_entry_tags(
@@ -1367,6 +1395,305 @@ class PalimpsestDB:
                 )
 
         return created_ids
+
+    # ---- City CRUD ----
+    def _update_mentioned_date_relationships(
+        self,
+        session: Session,
+        mentioned_date: MentionedDate,
+        metadata: Dict[str, Any],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update relationships for a MentionedDate object.
+
+        Args:
+            session: SQLAlchemy session
+            mentioned_date: MentionedDate to update
+            metadata: Relationship data with keys:
+                - entries: List of Entry objects/IDs
+                - locations: List of location names
+                - people: List of person specs
+                - remove_entries: Entries to unlink
+                - remove_locations: Locations to unlink
+                - remove_people: People to unlink
+            incremental: If True, add/remove specified items.
+                        If False, replace all relationships.
+        """
+        # --- Entries many-to-many ---
+        if "entries" in metadata or "remove_entries" in metadata:
+            RelationshipManager.update_many_to_many(
+                session=session,
+                parent_obj=mentioned_date,
+                relationship_name="entries",
+                items=metadata.get("entries", []),
+                model_class=Entry,
+                incremental=incremental,
+                remove_items=metadata.get("remove_entries", []),
+            )
+
+        # --- Locations many-to-many ---
+        if "locations" in metadata:
+            if not incremental:
+                mentioned_date.locations.clear()
+                session.flush()
+
+            # Process location names
+            self._update_mentioned_date_locations(
+                session, mentioned_date, metadata["locations"]
+            )
+
+        # Handle location removal
+        if "remove_locations" in metadata:
+            remove_names = [
+                DataValidator.normalize_string(loc)
+                for loc in metadata["remove_locations"]
+            ]
+            remove_names = [n for n in remove_names if n]
+
+            for loc in list(mentioned_date.locations):
+                if loc.name in remove_names:
+                    mentioned_date.locations.remove(loc)
+
+            if remove_names:
+                session.flush()
+
+        # --- People many-to-many ---
+        if "people" in metadata:
+            if not incremental:
+                mentioned_date.people.clear()
+                session.flush()
+
+            # Process people specs
+            self._update_mentioned_date_people(
+                session, mentioned_date, metadata["people"]
+            )
+
+        # Handle people removal
+        if "remove_people" in metadata:
+            people_to_remove = []
+
+            for person_spec in metadata["remove_people"]:
+                if isinstance(person_spec, Person):
+                    people_to_remove.append(person_spec)
+                elif isinstance(person_spec, int):
+                    person = session.get(Person, person_spec)
+                    if person:
+                        people_to_remove.append(person)
+                elif isinstance(person_spec, str):
+                    try:
+                        person = self.get_person(session, person_name=person_spec)
+                        if person:
+                            people_to_remove.append(person)
+                    except ValidationError:
+                        continue
+                elif isinstance(person_spec, dict):
+                    try:
+                        person = self.get_person(
+                            session,
+                            person_name=person_spec.get("name"),
+                            person_full_name=person_spec.get("full_name"),
+                        )
+                        if person:
+                            people_to_remove.append(person)
+                    except ValidationError:
+                        continue
+
+            for person in people_to_remove:
+                if person in mentioned_date.people:
+                    mentioned_date.people.remove(person)
+
+            if people_to_remove:
+                session.flush()
+
+    def _update_mentioned_date_locations(
+        self,
+        session: Session,
+        mentioned_date: MentionedDate,
+        locations_data: List[str],
+    ) -> None:
+        """
+        Update locations associated with a mentioned date.
+
+        Args:
+            session: SQLAlchemy session
+            mentioned_date: MentionedDate to update
+            locations_data: List of location names
+        """
+        if mentioned_date.id is None:
+            raise ValueError("MentionedDate must be persisted before linking locations")
+
+        # Get existing location IDs to avoid duplicates
+        existing_location_ids = {loc.id for loc in mentioned_date.locations}
+
+        for loc_name in locations_data:
+            # Normalize location name
+            norm_name = DataValidator.normalize_string(loc_name)
+            if not norm_name:
+                continue
+
+            # Find location by name
+            location = session.query(Location).filter_by(name=norm_name).first()
+
+            if not location:
+                if self.logger:
+                    self.logger.log_warning(
+                        f"Location '{norm_name}' not found for date {mentioned_date.date}",
+                        {
+                            "date_id": mentioned_date.id,
+                            "date": str(mentioned_date.date),
+                            "location": norm_name,
+                        },
+                    )
+                continue
+
+            # Link if not already linked
+            if location.id not in existing_location_ids:
+                mentioned_date.locations.append(location)
+
+        if locations_data:
+            session.flush()
+
+    def _update_mentioned_date_people(
+        self,
+        session: Session,
+        mentioned_date: MentionedDate,
+        people_data: List[Union[str, Dict[str, Any]]],
+    ) -> None:
+        """
+        Update people associated with a mentioned date.
+
+        Supports both simple names and full person specifications:
+        - String: "John" (looks up by name)
+        - Dict: {"name": "John"} or {"full_name": "John Smith"}
+        - Dict with alias:
+            {"alias": "Bobby", "name": "Bob"} or
+            {"alias": ["Bobby", "Rob"], "full_name": "Robert Smith"}
+
+        Args:
+            session: SQLAlchemy session
+            mentioned_date: MentionedDate to update
+            people_data: List of person specifications
+        """
+        if mentioned_date.id is None:
+            raise ValueError("MentionedDate must be persisted before linking people")
+
+        # Get existing person IDs to avoid duplicates
+        existing_person_ids = {p.id for p in mentioned_date.people}
+
+        for person_spec in people_data:
+            person = None
+
+            if isinstance(person_spec, str):
+                # Simple name lookup
+                norm_name = DataValidator.normalize_string(person_spec)
+                if not norm_name:
+                    continue
+
+                try:
+                    person = self.get_person(session, person_name=norm_name)
+                except ValidationError as e:
+                    if self.logger:
+                        self.logger.log_warning(
+                            f"Could not resolve person '{norm_name}' for date: {e}",
+                            {
+                                "date_id": mentioned_date.id,
+                                "date": str(mentioned_date.date),
+                                "person_spec": norm_name,
+                            },
+                        )
+                    continue
+
+            elif isinstance(person_spec, dict):
+                # Dict with name or full_name
+                name = DataValidator.normalize_string(person_spec.get("name"))
+                full_name = DataValidator.normalize_string(person_spec.get("full_name"))
+                alias = person_spec.get("alias")
+
+                # Try to resolve by name/full_name first
+                if name or full_name:
+                    try:
+                        person = self.get_person(
+                            session, person_name=name, person_full_name=full_name
+                        )
+                    except ValidationError as e:
+                        if self.logger:
+                            self.logger.log_warning(
+                                f"Could not resolve person for date: {e}",
+                                {
+                                    "date_id": mentioned_date.id,
+                                    "date": str(mentioned_date.date),
+                                    "person_spec": person_spec,
+                                },
+                            )
+
+                if not person and alias:
+                    # Normalize alias (could be string or list)
+                    alias_list = alias if isinstance(alias, list) else [alias]
+
+                    for alias_str in alias_list:
+                        norm_alias = DataValidator.normalize_string(alias_str)
+                        if not norm_alias:
+                            continue
+
+                        # Look up alias in database
+                        alias_obj = (
+                            session.query(Alias).filter_by(alias=norm_alias).first()
+                        )
+
+                        if alias_obj:
+                            person = alias_obj.person
+                            if self.logger:
+                                self.logger.log_debug(
+                                    f"Resolved person via alias '{norm_alias}' for date",
+                                    {
+                                        "date_id": mentioned_date.id,
+                                        "date": str(mentioned_date.date),
+                                        "person_id": person.id,
+                                        "person_name": person.display_name,
+                                    },
+                                )
+                            break
+                        else:
+                            if self.logger:
+                                self.logger.log_warning(
+                                    f"Alias '{norm_alias}' not found in database for date",
+                                    {
+                                        "date_id": mentioned_date.id,
+                                        "date": str(mentioned_date.date),
+                                        "alias": norm_alias,
+                                    },
+                                )
+
+                # If still not resolved, log warning
+                if not person:
+                    if self.logger:
+                        self.logger.log_warning(
+                            f"Could not resolve person spec for date {mentioned_date.date}",
+                            {
+                                "date_id": mentioned_date.id,
+                                "person_spec": person_spec,
+                            },
+                        )
+                    continue
+
+            else:
+                if self.logger:
+                    self.logger.log_warning(
+                        f"Invalid person spec format for date {mentioned_date.date}",
+                        {
+                            "date_id": mentioned_date.id,
+                            "spec_type": type(person_spec).__name__,
+                        },
+                    )
+                continue
+
+            # Link if person found and not already linked
+            if person and person.id not in existing_person_ids:
+                mentioned_date.people.append(person)
+
+        if people_data:
+            session.flush()
 
     # ---- City CRUD ----
     @handle_db_errors
