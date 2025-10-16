@@ -60,7 +60,7 @@ def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
         # soft-break marker (single backslash)
         soft_break: bool = ln.rstrip().endswith("\\")
         if soft_break:
-            ln = ln.rstrip()[:-1].rstrip()
+            ln = ln.rstrip()  # Keep the backslash for Markdown
 
         # trim whitespace
         ln = ln.strip()
