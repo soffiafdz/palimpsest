@@ -167,9 +167,92 @@ class TxtBuilder:
                 )
             return None
 
+    def _get_existing_dates(self, file_path: Path) -> set:
+        """
+        Extract dates from an existing output file without modifying content.
+
+        Args:
+            file_path: Path to existing output file
+
+        Returns:
+            Set of date strings (YYYY-MM-DD) found in the file
+        """
+        if not file_path.exists():
+            return set()
+
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            # Match "Date: YYYY-MM-DD" pattern
+            date_pattern = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
+            dates = {match.group(1) for match in date_pattern.finditer(content)}
+
+            if self.logger:
+                self.logger.log_debug(
+                    f"Found {len(dates)} existing dates in {file_path.name}"
+                )
+
+            return dates
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_warning(
+                    f"Could not read existing file {file_path.name}: {e}"
+                )
+            return set()
+
+    def _filter_new_entries(self, content: str, existing_dates: set) -> str:
+        """
+        Filter formatted content to only include entries with new dates.
+
+        Args:
+            content: Formatted content from format script
+            existing_dates: Set of dates already in output file
+
+        Returns:
+            Filtered content with only new entries
+        """
+        if not existing_dates:
+            return content
+
+        # Split content into entries
+        entries = []
+        current_entry = []
+        entry_date = None
+
+        for line in content.splitlines():
+            # Check if this is a new entry marker
+            if line.strip() in ["------ ENTRY ------", "===== ENTRY ====="]:
+                # Save previous entry if it's new
+                if current_entry and (entry_date is None or entry_date not in existing_dates):
+                    entries.append("\n".join(current_entry))
+                # Start new entry
+                current_entry = [line]
+                entry_date = None
+            else:
+                # Check if this line contains a date
+                date_match = re.match(r"^Date:\s*(\d{4}-\d{2}-\d{2})", line)
+                if date_match:
+                    entry_date = date_match.group(1)
+                current_entry.append(line)
+
+        # Don't forget the last entry
+        if current_entry and (entry_date is None or entry_date not in existing_dates):
+            entries.append("\n".join(current_entry))
+
+        if self.logger:
+            self.logger.log_debug(
+                f"Filtered to {len(entries)} new entries "
+                f"(skipped {len(existing_dates)} existing)"
+            )
+
+        return "\n\n".join(entries)
+
     def _format_file(self, input_file: Path, output_file: Path) -> bool:
         """
-        Run format script on input file.
+        Run format script on input file and merge with existing output.
+
+        If output_file exists, only appends entries with dates not already present.
+        If output_file doesn't exist, creates new file with all entries.
 
         Args:
             input_file: Input file path
@@ -185,6 +268,9 @@ class TxtBuilder:
             # Ensure output directory exists
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
+            # Check for existing dates if file exists
+            existing_dates = self._get_existing_dates(output_file)
+
             # Run format script
             result = subprocess.run(
                 [str(self.format_script), str(input_file)],
@@ -193,13 +279,43 @@ class TxtBuilder:
                 check=True,
             )
 
-            # Write output
-            output_file.write_text(result.stdout, encoding="utf-8")
+            # Filter to only new entries if file exists
+            formatted_content = result.stdout
+            if existing_dates:
+                filtered_content = self._filter_new_entries(formatted_content, existing_dates)
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Formatted: {input_file.name} → {output_file.name}"
-                )
+                if not filtered_content.strip():
+                    if self.logger:
+                        self.logger.log_info(
+                            f"No new entries to add to {output_file.name}"
+                        )
+                    return True
+
+                # Read existing content
+                existing_content = output_file.read_text(encoding="utf-8")
+
+                # Ensure proper separation
+                if existing_content and not existing_content.endswith("\n\n"):
+                    if existing_content.endswith("\n"):
+                        filtered_content = "\n" + filtered_content
+                    else:
+                        filtered_content = "\n\n" + filtered_content
+
+                # Append new entries
+                output_file.write_text(existing_content + filtered_content, encoding="utf-8")
+
+                if self.logger:
+                    self.logger.log_debug(
+                        f"Merged: {input_file.name} → {output_file.name} (appended new entries)"
+                    )
+            else:
+                # No existing file, write all content
+                output_file.write_text(formatted_content, encoding="utf-8")
+
+                if self.logger:
+                    self.logger.log_debug(
+                        f"Formatted: {input_file.name} → {output_file.name}"
+                    )
 
             return True
 
