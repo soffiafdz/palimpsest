@@ -63,7 +63,7 @@ from dev.database.query_analytics import QueryAnalytics
 
 from .txt2md import convert_directory, convert_file
 from .yaml2sql import process_directory
-from .sql2yaml import export_entries
+from .sql2yaml import export_entry_to_markdown
 
 
 def setup_logger(log_dir: Path) -> PalimpsestLogger:
@@ -258,24 +258,22 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
         )
 
         with db.session_scope() as session:
-            entries = session.query(Entry).order_by(Entry.date).all()
-
-            if not entries:
-                click.echo("⚠️  No entries found in database")
-                return
-
-            stats = export_entries(
-                session=session,
-                entries=entries,
+            stats = db.export_manager.export_hierarchical(
+                session,
+                export_entry_to_markdown,
+                threshold=500,
                 output_dir=Path(output),
                 force_overwrite=force,
+                preserve_body=True,
                 logger=logger,
             )
 
         click.echo("\n✅ Export complete:")
-        click.echo(f"  Entries exported: {stats.entries_exported}")
-        click.echo(f"  Files created: {stats.files_created}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
+        click.echo(f"  Total entries: {stats['total_entries']}")
+        click.echo(f"  Processed: {stats['processed']}")
+        if stats.get("errors", 0) > 0:
+            click.echo(f"  Errors: {stats['errors']}")
+        click.echo(f"  Duration: {stats['duration']:.2f}s")
 
     except Exception as e:
         handle_cli_error(
