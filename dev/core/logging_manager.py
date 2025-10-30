@@ -137,17 +137,20 @@ class PalimpsestLogger:
             context: Optional context information dictionary
         """
         context = context or {}
-        error_info = {
-            "error_type": type(error).__name__,
-            "error_message": str(error),
-            "context": context,
-            "traceback": traceback.format_exc(),
-        }
-        error_msg = f"ERROR - {json.dumps(error_info, default=str)}"
+        error_type = type(error).__name__
+        error_message = str(error)
 
-        # Log to both main log and errors log
-        self.main_logger.error(error_msg)
-        self.error_logger.error(error_msg)
+        self.main_logger.error(f"ERROR - {error_type}: {error_message}")
+        self.error_logger.error(f"ERROR - {error_type}: {error_message}")
+
+        if context:
+            context_str = ", ".join(f"{k}={v}" for k, v in context.items())
+            self.main_logger.error(f"Context: {context_str}")
+            self.error_logger.error(f"Context: {context_str}")
+
+        # Log traceback
+        self.main_logger.error(f"Traceback:\n{traceback.format_exc()}")
+        self.error_logger.error(f"Traceback:\n{traceback.format_exc()}")
 
     def log_debug(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
         """

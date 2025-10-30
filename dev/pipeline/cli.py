@@ -58,7 +58,8 @@ from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import BackupError
 from dev.database.manager import PalimpsestDB
-from dev.database.models import Entry
+
+# from dev.database.models import Entry
 from dev.database.query_analytics import QueryAnalytics
 
 from .txt2md import convert_directory, convert_file
@@ -301,9 +302,15 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
     help="Output directory for PDFs",
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing PDFs")
+@click.option("--debug", is_flag=True, help="Keep temp files on error for debugging")
 @click.pass_context
 def build_pdf(
-    ctx: click.Context, year: str, input: str, output: str, force: bool
+    ctx: click.Context,
+    year: str,
+    input: str,
+    output: str,
+    force: bool,
+    debug: bool,
 ) -> None:
     """Build clean and notes PDFs for a year."""
     logger: PalimpsestLogger = ctx.obj["logger"]
@@ -318,6 +325,7 @@ def build_pdf(
             preamble=TEX_DIR / "preamble.tex",
             preamble_notes=TEX_DIR / "preamble_notes.tex",
             force_overwrite=force,
+            keep_temp_on_error=debug,
             logger=logger,
         )
 

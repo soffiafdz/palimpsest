@@ -91,6 +91,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     help="LaTeX preamble for notes PDF",
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing PDFs")
+@click.option("--debug", is_flag=True, help="Keep temp file son error for debugging")
 @click.pass_context
 def build(
     ctx: click.Context,
@@ -100,6 +101,7 @@ def build(
     preamble: str,
     preamble_notes: str,
     force: bool,
+    debug: bool,
 ) -> None:
     """Build clean and notes PDFs for a specific year."""
     logger: PalimpsestLogger = ctx.obj["logger"]
@@ -124,6 +126,7 @@ def build(
             preamble=preamble_path,
             preamble_notes=preamble_notes_path,
             force_overwrite=force,
+            keep_temp_on_error=debug,
             logger=logger,
         )
 
