@@ -336,3 +336,17 @@ def event_manager(db_session):
     """Create EventManager instance for testing."""
     from dev.database.managers.event_manager import EventManager
     return EventManager(db_session)
+
+
+@pytest.fixture
+def date_manager(db_session):
+    """Create DateManager instance for testing."""
+    from dev.database.managers.date_manager import DateManager
+    return DateManager(db_session)
+
+
+@pytest.fixture
+def manuscript_manager(db_session):
+    """Create ManuscriptManager instance for testing."""
+    from dev.database.managers.manuscript_manager import ManuscriptManager
+    return ManuscriptManager(db_session)
