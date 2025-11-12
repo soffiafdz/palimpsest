@@ -14,10 +14,9 @@ import sys
 
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional
 
-if TYPE_CHECKING:
-    import click
+import click
 
 
 class PalimpsestLogger:
@@ -34,7 +33,13 @@ class PalimpsestLogger:
         error_logger: Dedicated logger for errors only
     """
 
-    def __init__(self, log_dir: Path, component_name: str = "palimpsest") -> None:
+    def __init__(
+        self,
+        log_dir: Path,
+        component_name: str = "palimpsest",
+        max_bytes: int = 10 * 1024 * 1024,
+        backup_count: int = 5,
+    ) -> None:
         """
         Initialize database logging system.
 
@@ -42,9 +47,13 @@ class PalimpsestLogger:
             log_dir: Directory for log files
             component_name: Name for the component logger
                 (e.g. 'database', 'txt2md', etc.)
+            max_bytes: Maximum log file size before rotation (default: 10MB)
+            backup_count: Number of backup files to keep (default: 5)
         """
         self.log_dir = Path(log_dir)
         self.component_name = component_name
+        self.max_bytes = max_bytes
+        self.backup_count = backup_count
         self._setup_loggers()
 
     def _setup_loggers(self) -> None:
@@ -54,14 +63,14 @@ class PalimpsestLogger:
         # Main database logger (handles all database activity)
         self.main_logger = logging.getLogger(f"{self.component_name}.operations")
         self.main_logger.setLevel(logging.DEBUG)
+        # Reset only this logger's handlers (not global logger state)
+        self.main_logger.handlers = []
 
         # Error logger (errors only, for quick scanning)
         self.error_logger = logging.getLogger(f"{self.component_name}.errors")
         self.error_logger.setLevel(logging.ERROR)
-
-        # Clear existing handlers to avoid duplicates
-        for logger in [self.main_logger, self.error_logger]:
-            logger.handlers.clear()
+        # Reset only this logger's handlers (not global logger state)
+        self.error_logger.handlers = []
 
         # Create handlers - only database.log and errors.log
         self._create_file_handler(
@@ -98,8 +107,8 @@ class PalimpsestLogger:
         """
         handler = RotatingFileHandler(
             file_path,
-            maxBytes=10 * 1024 * 1024,  # 10MB
-            backupCount=5,
+            maxBytes=self.max_bytes,
+            backupCount=self.backup_count,
             encoding="utf-8",
         )
         handler.setLevel(level)
@@ -140,16 +149,14 @@ class PalimpsestLogger:
         error_type = type(error).__name__
         error_message = str(error)
 
-        self.main_logger.error(f"ERROR - {error_type}: {error_message}")
+        # Log to error logger only (dedicated error log file)
         self.error_logger.error(f"ERROR - {error_type}: {error_message}")
 
         if context:
             context_str = ", ".join(f"{k}={v}" for k, v in context.items())
-            self.main_logger.error(f"Context: {context_str}")
             self.error_logger.error(f"Context: {context_str}")
 
         # Log traceback
-        self.main_logger.error(f"Traceback:\n{traceback.format_exc()}")
         self.error_logger.error(f"Traceback:\n{traceback.format_exc()}")
 
     def log_debug(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
@@ -288,7 +295,5 @@ def handle_cli_error(
             error_msg += f"\n\n{traceback.format_exc()}"
 
     # Display and exit
-    import click  # Import here to avoid hard dependency at module level
-
     click.echo(error_msg, err=True)
     sys.exit(exit_code)

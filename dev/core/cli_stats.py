@@ -24,7 +24,7 @@ Usage:
 """
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 @dataclass
@@ -43,15 +43,25 @@ class OperationStats:
     files_processed: int = 0
     errors: int = 0
     start_time: datetime = field(default_factory=datetime.now)
+    _duration_cached: Optional[float] = field(default=None, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        """Validate statistics on initialization."""
+        if self.files_processed < 0:
+            raise ValueError(f"files_processed must be non-negative, got {self.files_processed}")
+        if self.errors < 0:
+            raise ValueError(f"errors must be non-negative, got {self.errors}")
 
     def duration(self) -> float:
         """
-        Get elapsed time in seconds.
+        Get elapsed time in seconds (cached after first call).
 
         Returns:
             Seconds elapsed since start_time
         """
-        return (datetime.now() - self.start_time).total_seconds()
+        if self._duration_cached is None:
+            self._duration_cached = (datetime.now() - self.start_time).total_seconds()
+        return self._duration_cached
 
     def summary(self) -> str:
         """
@@ -97,6 +107,16 @@ class ConversionStats(OperationStats):
     entries_updated: int = 0
     entries_skipped: int = 0
 
+    def __post_init__(self) -> None:
+        """Validate statistics on initialization."""
+        super().__post_init__()
+        if self.entries_created < 0:
+            raise ValueError(f"entries_created must be non-negative, got {self.entries_created}")
+        if self.entries_updated < 0:
+            raise ValueError(f"entries_updated must be non-negative, got {self.entries_updated}")
+        if self.entries_skipped < 0:
+            raise ValueError(f"entries_skipped must be non-negative, got {self.entries_skipped}")
+
     def summary(self) -> str:
         """Get formatted summary with entry metrics."""
         return (
@@ -136,6 +156,16 @@ class ExportStats(OperationStats):
     files_created: int = 0
     files_updated: int = 0
 
+    def __post_init__(self) -> None:
+        """Validate statistics on initialization."""
+        super().__post_init__()
+        if self.entries_exported < 0:
+            raise ValueError(f"entries_exported must be non-negative, got {self.entries_exported}")
+        if self.files_created < 0:
+            raise ValueError(f"files_created must be non-negative, got {self.files_created}")
+        if self.files_updated < 0:
+            raise ValueError(f"files_updated must be non-negative, got {self.files_updated}")
+
     def summary(self) -> str:
         """Get formatted summary with export metrics."""
         return (
@@ -171,6 +201,14 @@ class BuildStats(OperationStats):
     """
     artifacts_created: int = 0
     pdfs_created: int = 0
+
+    def __post_init__(self) -> None:
+        """Validate statistics on initialization."""
+        super().__post_init__()
+        if self.artifacts_created < 0:
+            raise ValueError(f"artifacts_created must be non-negative, got {self.artifacts_created}")
+        if self.pdfs_created < 0:
+            raise ValueError(f"pdfs_created must be non-negative, got {self.pdfs_created}")
 
     def summary(self) -> str:
         """Get formatted summary with build metrics."""

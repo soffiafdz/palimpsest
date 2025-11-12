@@ -17,7 +17,7 @@ Usage:
 """
 from functools import wraps
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 import click
 
 from dev.core.cli_utils import setup_logger
@@ -110,7 +110,10 @@ def palimpsest_command(
     """
     def decorator(f: Callable) -> Callable:
         @wraps(f)
-        def wrapper(ctx: click.Context, *args, **kwargs):
+        def wrapper(ctx: click.Context, *args: Any, **kwargs: Any) -> Any:
+            # Ensure context is initialized
+            ctx.ensure_object(dict)
+
             # Add database if required
             if requires_db:
                 from dev.database.manager import PalimpsestDB
@@ -127,7 +130,10 @@ def palimpsest_command(
 
             # Add confirmation if required
             if confirmation:
-                if not ctx.obj.get("yes", False):
+                yes_flag = ctx.obj.get("yes", False)
+                if not isinstance(yes_flag, bool):
+                    raise ValueError(f"Expected 'yes' flag to be bool, got {type(yes_flag)}")
+                if not yes_flag:
                     click.confirm(
                         "This operation will modify data. Continue?",
                         abort=True
@@ -135,12 +141,6 @@ def palimpsest_command(
 
             # Call original function
             return f(ctx, *args, **kwargs)
-
-        # Add confirmation decorator if needed
-        if confirmation:
-            wrapper = click.confirmation_option(
-                prompt="Are you sure?"
-            )(wrapper)
 
         return wrapper
     return decorator

@@ -15,12 +15,13 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import cast, Any, Dict, List, Optional, Type, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
 
 from .exceptions import ValidationError
 
-# Import enums for runtime use (not just type checking)
-from dev.database.models import ReferenceMode, ReferenceType, RelationType
+# Use TYPE_CHECKING to avoid circular imports
+if TYPE_CHECKING:
+    from dev.database.models import ReferenceMode, ReferenceType, RelationType
 
 
 class DataValidator:
@@ -34,21 +35,35 @@ class DataValidator:
 
     @staticmethod
     def validate_required_fields(
-        data: Dict[str, Any], required_fields: List[str]
+        data: Dict[str, Any], required_fields: List[str], allow_falsy: bool = False
     ) -> None:
         """
-        Validate that required fields are present and non-empty.
+        Validate that required fields are present and non-None.
 
         Args:
             data: Data dictionary to validate
             required_fields: List of required field names
+            allow_falsy: If True, allows 0, False, and empty strings as valid values.
+                        If False (default), only checks that field exists and is not None.
 
         Raises:
             ValidationError: If validation fails
+
+        Examples:
+            >>> DataValidator.validate_required_fields({"count": 0}, ["count"], allow_falsy=True)
+            # OK - 0 is allowed when allow_falsy=True
+            >>> DataValidator.validate_required_fields({"count": 0}, ["count"], allow_falsy=False)
+            # Raises - 0 is falsy and allow_falsy=False
         """
         missing_fields = []
         for field in required_fields:
-            if field not in data or not data[field]:
+            if field not in data:
+                missing_fields.append(field)
+            elif data[field] is None:
+                # None is always considered missing
+                missing_fields.append(field)
+            elif not allow_falsy and not data[field]:
+                # If allow_falsy=False, check truthiness (rejects 0, False, "", [])
                 missing_fields.append(field)
 
         if missing_fields:
@@ -237,7 +252,7 @@ class DataValidator:
         """
         Extract first numeric value from string or return number.
 
-        Useful for parsing metadata like "150 words" → 150.0
+        Supports negative numbers. Useful for parsing metadata like "150 words" → 150.0
 
         Args:
             value: Input string or number
@@ -248,8 +263,8 @@ class DataValidator:
         Examples:
             >>> DataValidator.extract_number("150 words")
             150.0
-            >>> DataValidator.extract_number("2.5 min")
-            2.5
+            >>> DataValidator.extract_number("-2.5 degrees")
+            -2.5
             >>> DataValidator.extract_number(42)
             42.0
         """
@@ -257,7 +272,8 @@ class DataValidator:
             return float(value)
 
         if isinstance(value, str):
-            match = re.search(r"(\d+(?:\.\d+)?)", value)
+            # Updated pattern to support negative numbers
+            match = re.search(r"(-?\d+(?:\.\d+)?)", value)
             if match:
                 return float(match.group(1))
 
@@ -341,19 +357,52 @@ class DataValidator:
         )
 
     @staticmethod
-    def normalize_reference_mode(value: Any) -> Optional[ReferenceMode]:
-        """Normalize value to ReferenceMode enum."""
-        result = DataValidator.normalize_enum(value, ReferenceMode, "reference_mode")
-        return cast(Optional[ReferenceMode], result)
+    def normalize_reference_mode(value: Any) -> Optional["ReferenceMode"]:
+        """
+        Normalize value to ReferenceMode enum.
+
+        Note: Import ReferenceMode from dev.database.models when using this method.
+
+        Args:
+            value: Value to convert
+
+        Returns:
+            ReferenceMode instance or None
+        """
+        # Import here to avoid circular dependency
+        from dev.database.models import ReferenceMode
+        return DataValidator.normalize_enum(value, ReferenceMode, "reference_mode")  # type: ignore
 
     @staticmethod
-    def normalize_reference_type(value: Any) -> Optional[ReferenceType]:
-        """Normalize value to ReferenceType enum."""
-        result = DataValidator.normalize_enum(value, ReferenceType, "reference_type")
-        return cast(Optional[ReferenceType], result)
+    def normalize_reference_type(value: Any) -> Optional["ReferenceType"]:
+        """
+        Normalize value to ReferenceType enum.
+
+        Note: Import ReferenceType from dev.database.models when using this method.
+
+        Args:
+            value: Value to convert
+
+        Returns:
+            ReferenceType instance or None
+        """
+        # Import here to avoid circular dependency
+        from dev.database.models import ReferenceType
+        return DataValidator.normalize_enum(value, ReferenceType, "reference_type")  # type: ignore
 
     @staticmethod
-    def normalize_relation_type(value: Any) -> Optional[RelationType]:
-        """Normalize value to RelationType enum."""
-        result = DataValidator.normalize_enum(value, RelationType, "relation_type")
-        return cast(Optional[RelationType], result)
+    def normalize_relation_type(value: Any) -> Optional["RelationType"]:
+        """
+        Normalize value to RelationType enum.
+
+        Note: Import RelationType from dev.database.models when using this method.
+
+        Args:
+            value: Value to convert
+
+        Returns:
+            RelationType instance or None
+        """
+        # Import here to avoid circular dependency
+        from dev.database.models import RelationType
+        return DataValidator.normalize_enum(value, RelationType, "relation_type")  # type: ignore

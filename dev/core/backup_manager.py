@@ -6,6 +6,7 @@ Database backup and recovery operations.
 
 Handles both database-only and full data directory backups.
 """
+import fnmatch
 import sqlite3
 import tarfile
 from pathlib import Path
@@ -14,6 +15,9 @@ from typing import Dict, List, Any, Optional
 
 from .logging_manager import PalimpsestLogger
 from .exceptions import BackupError
+
+# ---- Constants ----
+SUNDAY = 6  # datetime.weekday() returns 6 for Sunday
 
 
 class BackupManager:
@@ -61,6 +65,28 @@ class BackupManager:
         if self.data_dir:
             self.full_backup_dir.mkdir(parents=True, exist_ok=True)
 
+    def _backup_database(self, source_path: Path, dest_path: Path) -> None:
+        """
+        Backup database using safe connection management.
+
+        Args:
+            source_path: Path to source database
+            dest_path: Path to destination backup file
+
+        Raises:
+            Exception: If backup operation fails
+        """
+        source = sqlite3.connect(str(source_path))
+        try:
+            dest = sqlite3.connect(str(dest_path))
+            try:
+                with dest:
+                    source.backup(dest)
+            finally:
+                dest.close()
+        finally:
+            source.close()
+
     def create_backup(
         self, backup_type: str = "manual", suffix: Optional[str] = None
     ) -> Path:
@@ -89,14 +115,8 @@ class BackupManager:
         backup_path = self.db_backup_dir / backup_type / backup_name
 
         try:
-            source = sqlite3.connect(str(self.db_path))
-            dest = sqlite3.connect(str(backup_path))
-
-            with dest:
-                source.backup(dest)
-
-            source.close()
-            dest.close()
+            # Use extracted helper method for safe backup
+            self._backup_database(self.db_path, backup_path)
 
             # Create marker file with creation timestamp
             marker_path = backup_path.with_suffix(".db.marker")
@@ -226,9 +246,11 @@ class BackupManager:
         """
         Filter function for tarfile to exclude certain patterns.
 
+        Uses fnmatch for proper glob pattern matching (supports *, ?, []).
+
         Args:
             tarinfo: TarInfo object being added
-            exclude_patterns: List of patterns to exclude
+            exclude_patterns: List of patterns to exclude (e.g., "*.pyc", ".git")
 
         Returns:
             TarInfo if file should be included, None to exclude
@@ -239,11 +261,8 @@ class BackupManager:
         # Check each part against exclude patterns
         for part in path_parts:
             for pattern in exclude_patterns:
-                if pattern.startswith("*"):
-                    # Wildcard pattern
-                    if part.endswith(pattern[1:]):
-                        return None
-                elif part == pattern:
+                # Use fnmatch for proper glob matching
+                if fnmatch.fnmatch(part, pattern):
                     return None
 
         return tarinfo
@@ -263,7 +282,7 @@ class BackupManager:
             self._cleanup_old_backups()
 
             # Check if it's Sunday for weekly backup
-            if datetime.now().weekday() == 6:
+            if datetime.now().weekday() == SUNDAY:
                 self.create_weekly_backup()
 
             return backup_path
@@ -307,9 +326,18 @@ class BackupManager:
                         )
 
                     if creation_time < cutoff_date:
-                        backup_file.unlink()
-                        if marker_file.exists():
+                        # Remove backup file (handle race condition)
+                        try:
+                            backup_file.unlink()
+                        except FileNotFoundError:
+                            pass  # Already deleted by another process
+
+                        # Remove marker file if exists (handle race condition)
+                        try:
                             marker_file.unlink()
+                        except FileNotFoundError:
+                            pass  # Already deleted
+
                         removed_count += 1
 
                 except Exception as e:
@@ -345,14 +373,8 @@ class BackupManager:
         current_backup = self.create_backup("manual", "pre_restore")
 
         try:
-            source = sqlite3.connect(str(backup_path))
-            dest = sqlite3.connect(str(self.db_path))
-
-            with dest:
-                source.backup(dest)
-
-            source.close()
-            dest.close()
+            # Use extracted helper method for safe restore
+            self._backup_database(backup_path, self.db_path)
 
             if self.logger:
                 self.logger.log_operation(

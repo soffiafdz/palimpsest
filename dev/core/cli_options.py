@@ -18,7 +18,6 @@ Usage:
         pass
 """
 import click
-from functools import partial
 from dev.core.paths import LOG_DIR
 
 
@@ -69,7 +68,11 @@ quiet_option = click.option(
 
 def input_option(default=None, required=False, help_text="Input directory or file"):
     """
-    Factory function for input path option.
+    Factory function for input path option with validation.
+
+    Creates a Click option that validates the path exists.
+    Using a factory function allows customization of defaults and help text
+    while maintaining consistent validation behavior.
 
     Args:
         default: Default path value (optional)
@@ -92,6 +95,11 @@ def output_option(default=None, required=False, help_text="Output directory or f
     """
     Factory function for output path option.
 
+    Creates a Click option for output paths. Unlike input_option,
+    this does NOT validate existence (output paths may not exist yet).
+    Using a factory function allows customization while maintaining
+    consistent behavior across commands.
+
     Args:
         default: Default path value (optional)
         required: Whether the option is required (default: False)
@@ -111,7 +119,10 @@ def output_option(default=None, required=False, help_text="Output directory or f
 
 def db_path_option(default=None):
     """
-    Factory function for database path option.
+    Factory function for database path option with validation.
+
+    Creates a Click option that validates the database path exists.
+    Consistent with input_option validation behavior.
 
     Args:
         default: Default database path (typically from paths.DB_PATH)
@@ -119,10 +130,13 @@ def db_path_option(default=None):
     Returns:
         Click option decorator
     """
+    # Convert Path to string, but avoid converting None to "None"
+    default_str = str(default) if default is not None else None
+
     return click.option(
         "--db-path",
-        type=click.Path(),
-        default=str(default) if default else None,
+        type=click.Path(exists=True),
+        default=default_str,
         help="Path to database file"
     )
 
@@ -134,7 +148,7 @@ def db_path_option(default=None):
 pattern_option = click.option(
     "-p", "--pattern",
     default="**/*.md",
-    help="File pattern to match (glob syntax)"
+    help="File pattern to match using glob syntax (default: **/*.md - all Markdown files)"
 )
 
 year_option = click.option(
