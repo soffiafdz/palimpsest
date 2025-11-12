@@ -411,6 +411,59 @@ class EntryManager(BaseManager):
     # Relationship Processing Methods
     # -------------------------------------------------------------------------
 
+    def _resolve_or_create(
+        self, item: Union[Any, int, str], model_class: type
+    ) -> Optional[Any]:
+        """
+        Resolve an item to an ORM object, creating it if it's a string.
+
+        This extends the base _resolve_object() to handle string inputs from
+        YAML parsing by delegating to get_or_create methods.
+
+        Args:
+            item: Object instance, ID, or string name
+            model_class: Target model class
+
+        Returns:
+            Resolved ORM object, or None if item is None
+
+        Raises:
+            ValueError: If object not found
+            TypeError: If item type is unsupported
+        """
+        if item is None:
+            return None
+
+        # Handle ORM instances and IDs using base method
+        if isinstance(item, (model_class, int)):
+            return self._resolve_object(item, model_class)
+
+        # Handle strings by delegating to appropriate get_or_create
+        if isinstance(item, str):
+            from dev.database.managers import (
+                PersonManager,
+                EventManager,
+                LocationManager,
+            )
+
+            if model_class == Person:
+                person_mgr = PersonManager(self.session, self.logger)
+                return person_mgr.get_or_create(item)
+            elif model_class == Event:
+                event_mgr = EventManager(self.session, self.logger)
+                return event_mgr.get_or_create(item)
+            elif model_class == City:
+                location_mgr = LocationManager(self.session, self.logger)
+                return location_mgr.get_or_create_city(item)
+            else:
+                raise TypeError(
+                    f"String resolution not supported for {model_class.__name__}"
+                )
+        else:
+            raise TypeError(
+                f"Expected {model_class.__name__} instance, int, or str, got {type(item)}"
+            )
+
     def update_relationships(
         self,
         entry: Entry,
@@ -483,19 +536,19 @@ class EntryManager(BaseManager):
                     if not incremental:
                         collection.clear()
                         for item in items:
-                            resolved_item = self._resolve_object(item, model_class)
+                            resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
                                 collection.append(resolved_item)
                     else:
                         # Incremental mode: add new items
                         for item in items:
-                            resolved_item = self._resolve_object(item, model_class)
+                            resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
                                 collection.append(resolved_item)
 
                         # Remove specified items
                         for item in remove_items:
-                            resolved_item = self._resolve_object(item, model_class)
+                            resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item in collection:
                                 collection.remove(resolved_item)
 

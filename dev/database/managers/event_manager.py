@@ -207,6 +207,36 @@ class EventManager(BaseManager):
         return event
 
     @handle_db_errors
+    @log_database_operation("get_or_create_event")
+    def get_or_create(self, event_name: str) -> Event:
+        """
+        Get existing event or create new one if not found.
+
+        This is a convenience method for use when processing YAML metadata that
+        contains event names as strings. It creates events with minimal metadata.
+
+        Args:
+            event_name: Event identifier to search for or create
+
+        Returns:
+            Existing or newly created Event object
+
+        Raises:
+            ValidationError: If event_name is empty or invalid
+        """
+        event_name = DataValidator.normalize_string(event_name)
+        if not event_name:
+            raise ValidationError("Event name cannot be empty")
+
+        # Try to get existing event
+        event = self.get(event_name=event_name)
+        if event:
+            return event
+
+        # Event doesn't exist - create it
+        return self.create({"event": event_name})
+
+    @handle_db_errors
     @log_database_operation("update_event")
     def update(self, event: Event, metadata: Dict[str, Any]) -> Event:
         """

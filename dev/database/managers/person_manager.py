@@ -313,6 +313,51 @@ class PersonManager(BaseManager):
         return person
 
     @handle_db_errors
+    @log_database_operation("get_or_create_person")
+    def get_or_create(self, person_name: str, full_name: Optional[str] = None) -> Person:
+        """
+        Get existing person or create new one if not found.
+
+        This is a convenience method for use when processing YAML metadata that
+        contains person names as strings. It handles name disambiguation and
+        creates persons with minimal metadata.
+
+        Args:
+            person_name: Primary name to search for or create
+            full_name: Optional full name (required if name_fellows exist)
+
+        Returns:
+            Existing or newly created Person object
+
+        Raises:
+            ValidationError: If name is ambiguous and full_name not provided
+        """
+        person_name = DataValidator.normalize_string(person_name)
+        if not person_name:
+            raise ValidationError("Person name cannot be empty")
+
+        # Try to get existing person
+        try:
+            person = self.get(person_name=person_name)
+            if person:
+                return person
+        except ValidationError as e:
+            # Multiple people with same name - need full_name
+            if full_name:
+                person = self.get(person_full_name=full_name)
+                if person:
+                    return person
+            else:
+                raise  # Re-raise ValidationError about ambiguity
+
+        # Person doesn't exist - create it
+        metadata = {"name": person_name}
+        if full_name:
+            metadata["full_name"] = full_name
+
+        return self.create(metadata)
+
+    @handle_db_errors
     @log_database_operation("update_person")
     def update(self, person: Person, metadata: Dict[str, Any]) -> Person:
         """
