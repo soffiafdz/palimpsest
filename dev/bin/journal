@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
 # =============================================================================
-# journal - Main wrapper script for journal processing pipeline
+# journal - Palimpsest journal processing pipeline wrapper
 # =============================================================================
 #
-# Usage:
-#   journal inbox           # Process inbox (src2txt)
-#   journal convert         # Convert text to markdown (txt2md)
-#   journal sync            # Sync database (yaml2sql)
-#   journal export          # Export database (sql2yaml)
-#   journal pdf 2025        # Build PDFs for year (md2pdf)
-#   journal backup-full     # Create full data backup
-#   journal backup-list     # List full data backups
-#   journal run-all         # Run complete pipeline
-#   journal status          # Show status
+# Description:
+#   Command-line interface for the Palimpsest journal processing system.
+#   Orchestrates the workflow from raw 750words exports to annotated PDFs.
 #
-# All commands are thin wrappers around Python pipeline.py
+# Pipeline Flow:
+#   inbox/ → src2txt → txt/ → txt2md → md/ → yaml2sql → database → md2pdf → pdf/
 #
+# Quick Usage:
+#   journal inbox           # Process inbox (raw exports → formatted text)
+#   journal convert         # Convert text to markdown (txt → md + YAML)
+#   journal sync            # Sync database from markdown (md → SQLite)
+#   journal export          # Export database to markdown (SQLite → md)
+#   journal pdf 2025        # Build PDFs for year (md → PDF)
+#   journal backup-full     # Create full compressed data backup
+#   journal run-all         # Run complete pipeline end-to-end
+#   journal status          # Show pipeline status
+#
+# Implementation:
+#   Thin wrapper around 'python -m dev.pipeline.cli'
+#   Run '<command> --help' for detailed options
+#
+# Installation:
+#   make install   # Creates symlink in ~/.local/bin/journal
+# =============================================================================
+
 set -euo pipefail
 
 # ─── CONFIGURATION ─────────────────────────────────────────────────────────

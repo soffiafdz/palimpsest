@@ -39,19 +39,31 @@ from typing import Dict, List, Optional
 # --- Third party ---
 from pypandoc import convert_file
 
+from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.temporal_files import TemporalFileManager
+from dev.utils.md import split_frontmatter
 
 
 # ----- LaTeX Command Constants -----
-LATEX_NEWPAGE = "\\newpage\n\n"
-LATEX_NO_LINE_NUMBERS = "\\nolinenumbers\n"
-LATEX_LINE_NUMBERS = "\\linenumbers\n"
-LATEX_RESET_LINE_COUNTER = "\\setcounter{linenumber}{1}\n"
-LATEX_TOC = "\\tableofcontents\n"
+"""LaTeX formatting commands for PDF generation."""
 
-# Annotation template for review PDFs
+LATEX_NEWPAGE = "\\newpage\n\n"
+"""LaTeX command to insert a page break."""
+
+LATEX_NO_LINE_NUMBERS = "\\nolinenumbers\n"
+"""LaTeX command to disable line numbering."""
+
+LATEX_LINE_NUMBERS = "\\linenumbers\n"
+"""LaTeX command to enable line numbering."""
+
+LATEX_RESET_LINE_COUNTER = "\\setcounter{linenumber}{1}\n"
+"""LaTeX command to reset line number counter to 1."""
+
+LATEX_TOC = "\\tableofcontents\n"
+"""LaTeX command to generate table of contents."""
+
 ANNOTATION_TEMPLATE = [
     "",
     "- **Curation**: Reference | Quote | Fragments | Source",
@@ -75,29 +87,53 @@ ANNOTATION_TEMPLATE = [
     "---",
     "",
 ]
+"""
+Annotation template for notes PDF generation.
 
-# Pandoc configuration
-# PANDOC_ENGINE = "xelatex"
+Template inserted after each daily entry header in notes PDFs to provide
+structured space for manual review and annotation. Includes fields for
+curation notes, locations, people, references, epigraphs, poems, connections,
+and tags.
+"""
+
 PANDOC_ENGINE = "tectonic"
+"""Pandoc PDF engine to use for compilation (tectonic is a modern, self-contained LaTeX engine)."""
+
 PANDOC_DOCUMENT_CLASS = "extarticle"
+"""LaTeX document class for PDF generation (extarticle supports additional font sizes)."""
+
+PDF_TITLE = "Palimpsest"
+"""Default title for generated PDFs."""
+
+PDF_AUTHOR = "Sofía F."
+"""Default author name for generated PDFs."""
+
+AUTHOR_BIRTH_YEAR = 1993
+"""Birth year used to calculate age annotation in PDF metadata."""
 
 
 # ---- Classes ----
-class BuildStats:
-    """Track PDF build statistics."""
+class BuildStats(BaseStats):
+    """
+    Track PDF build statistics.
+
+    Extends BuilderStats base class with PDF-specific metrics.
+    """
 
     def __init__(self) -> None:
+        """Initialize PDF build statistics."""
+        super().__init__()
         self.files_processed: int = 0
         self.pdfs_created: int = 0
         self.errors: int = 0
-        self.start_time: datetime = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
 
     def summary(self) -> str:
-        """Get formatted summary."""
+        """
+        Get formatted summary of PDF build.
+
+        Returns:
+            Summary string with file count, PDFs created, errors, and duration
+        """
         return (
             f"{self.files_processed} entries, "
             f"{self.pdfs_created} PDFs created, "
@@ -243,18 +279,9 @@ class PdfBuilder:
                     for md_file in months[month_str]:
                         content = md_file.read_text(encoding="utf-8")
 
-                        # Strip YAML frontmatter (lines between --- delimiters at start)
-                        lines = content.split('\n')
-                        if lines and lines[0].strip() == '---':
-                            # Find closing ---
-                            end_idx = None
-                            for i in range(1, len(lines)):
-                                if lines[i].strip() == '---':
-                                    end_idx = i
-                                    break
-                            if end_idx is not None:
-                                # Remove frontmatter and join remaining content
-                                content = '\n'.join(lines[end_idx + 1:])
+                        # Strip YAML frontmatter using utility function
+                        _, body_lines = split_frontmatter(content)
+                        content = '\n'.join(body_lines)
 
                         if notes:
                             # Add notes formatting
@@ -395,9 +422,9 @@ class PdfBuilder:
 
         # Common Pandoc metadata
         metadata = {
-            "title": "Palimpsest",
-            "date": f"{self.year} — {int(self.year) - 1993} years old",
-            "author": "Sofía F.",
+            "title": PDF_TITLE,
+            "date": f"{self.year} — {int(self.year) - AUTHOR_BIRTH_YEAR} years old",
+            "author": PDF_AUTHOR,
         }
 
         # LaTeX variables for different PDF types
@@ -420,39 +447,86 @@ class PdfBuilder:
             if self.preamble:
                 clean_pdf = self.pdf_dir / f"{self.year}.pdf"
 
-                if clean_pdf.exists() and not self.force_overwrite:
-                    if self.logger:
-                        self.logger.log_warning(
-                            f"Clean PDF exists, overwriting: {clean_pdf.name}"
+                if clean_pdf.exists():
+                    if not self.force_overwrite:
+                        if self.logger:
+                            self.logger.log_info(
+                                f"Clean PDF exists, skipping: {clean_pdf.name}"
+                            )
+                    else:
+                        if self.logger:
+                            self.logger.log_debug(
+                                f"Clean PDF exists, overwriting: {clean_pdf.name}"
+                            )
+                        clean_pdf.unlink()
+
+                        tmp_clean = temp_manager.create_temp_file(
+                            suffix=".md", prefix=f"palimpsest_{self.year}_clean_"
                         )
-                    clean_pdf.unlink()
 
-                tmp_clean = temp_manager.create_temp_file(
-                    suffix=".md", prefix=f"palimpsest_{self.year}_clean_"
-                )
+                        self._write_temp_md(files, tmp_clean, notes=False)
+                        self._run_pandoc(
+                            tmp_clean, clean_pdf, self.preamble, metadata, clean_vars
+                        )
 
-                self._write_temp_md(files, tmp_clean, notes=False)
-                self._run_pandoc(
-                    tmp_clean, clean_pdf, self.preamble, metadata, clean_vars
-                )
+                        stats.pdfs_created += 1
 
-                stats.pdfs_created += 1
-
-                if self.logger:
-                    self.logger.log_operation(
-                        "pdf_created", {"type": "clean", "file": str(clean_pdf)}
+                        if self.logger:
+                            self.logger.log_operation(
+                                "pdf_created", {"type": "clean", "file": str(clean_pdf)}
+                            )
+                else:
+                    # File doesn't exist, create it
+                    tmp_clean = temp_manager.create_temp_file(
+                        suffix=".md", prefix=f"palimpsest_{self.year}_clean_"
                     )
+
+                    self._write_temp_md(files, tmp_clean, notes=False)
+                    self._run_pandoc(
+                        tmp_clean, clean_pdf, self.preamble, metadata, clean_vars
+                    )
+
+                    stats.pdfs_created += 1
+
+                    if self.logger:
+                        self.logger.log_operation(
+                            "pdf_created", {"type": "clean", "file": str(clean_pdf)}
+                        )
 
             # Build notes PDF
             if self.preamble_notes:
                 notes_pdf = self.pdf_dir / f"{self.year}-notes.pdf"
 
-                if notes_pdf.exists() and not self.force_overwrite:
-                    if self.logger:
-                        self.logger.log_debug(
-                            f"Notes PDF exists, skipping: {notes_pdf.name}"
+                if notes_pdf.exists():
+                    if not self.force_overwrite:
+                        if self.logger:
+                            self.logger.log_info(
+                                f"Notes PDF exists, skipping: {notes_pdf.name}"
+                            )
+                    else:
+                        if self.logger:
+                            self.logger.log_debug(
+                                f"Notes PDF exists, overwriting: {notes_pdf.name}"
+                            )
+                        notes_pdf.unlink()
+
+                        tmp_notes = temp_manager.create_temp_file(
+                            suffix=".md", prefix=f"palimpsest_{self.year}_notes_"
                         )
+
+                        self._write_temp_md(files, tmp_notes, notes=True)
+                        self._run_pandoc(
+                            tmp_notes, notes_pdf, self.preamble_notes, metadata, notes_vars
+                        )
+
+                        stats.pdfs_created += 1
+
+                        if self.logger:
+                            self.logger.log_operation(
+                                "pdf_created", {"type": "notes", "file": str(notes_pdf)}
+                            )
                 else:
+                    # File doesn't exist, create it
                     tmp_notes = temp_manager.create_temp_file(
                         suffix=".md", prefix=f"palimpsest_{self.year}_notes_"
                     )

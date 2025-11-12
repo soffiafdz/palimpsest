@@ -336,11 +336,11 @@ class QueryAnalytics:
     @log_database_operation("get_entries_by_city")
     def get_entries_by_city(self, session: Session, city_name: str) -> List[Entry]:
         """Get all entries at a specific city."""
-        location = (
-            session.query(City).filter(Location.name.ilike(f"%{city_name}%")).first()
+        city = (
+            session.query(City).filter(City.city.ilike(f"%{city_name}%")).first()
         )
 
-        return location.entries if location else []
+        return city.entries if city else []
 
     @handle_db_errors
     @log_database_operation("get_entries_by_location")

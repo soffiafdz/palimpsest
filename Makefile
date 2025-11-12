@@ -20,6 +20,8 @@ endif
 PYTHON        := python3
 PIPELINE      := $(PYTHON) -m dev.pipeline.cli
 METADB        := $(PYTHON) -m dev.database.cli
+TXT2MD        := $(PIPELINE) convert
+MD2PDF        := $(PIPELINE) build-pdf
 
 # ─── Directories ──────────────────────────────────────────────────────────────
 INBOX_DIR     := journal/inbox
@@ -45,6 +47,7 @@ YEAR_PDFS     := $(foreach Y,$(YEARS),$(PDF_DIR)/$(Y).pdf $(PDF_DIR)/$(Y)-notes.
 .PHONY: inbox txt md db pdf
 .PHONY: clean-txt clean-md clean-db clean-pdf
 .PHONY: init-db backup backup-full backup-list backup-list-full status validate stats health analyze
+.PHONY: install install-dev uninstall
 .PHONY: $(YEARS) $(foreach Y,$(YEARS),$(Y)-md $(Y)-pdf)
 
 # ─── Default: Full Pipeline ───────────────────────────────────────────────────
@@ -135,6 +138,25 @@ health:
 analyze:
 	$(Q)$(METADB) analyze
 
+# ─── Installation ─────────────────────────────────────────────────────────────
+install:
+	$(Q)echo "[Make] Installing CLI commands to ~/.local/bin..."
+	$(Q)mkdir -p $(HOME)/.local/bin
+	$(Q)ln -sf $(PWD)/dev/bin/journal $(HOME)/.local/bin/journal
+	$(Q)ln -sf $(PWD)/dev/bin/metadb $(HOME)/.local/bin/metadb
+	$(Q)echo "✅ Installed: journal, metadb"
+	$(Q)echo "💡 Ensure ~/.local/bin is in your PATH"
+
+install-dev: install
+	$(Q)echo "[Make] Installing development environment..."
+	$(Q)echo "💡 Activate conda environment: conda activate palimpsest"
+
+uninstall:
+	$(Q)echo "[Make] Removing CLI commands..."
+	$(Q)rm -f $(HOME)/.local/bin/journal
+	$(Q)rm -f $(HOME)/.local/bin/metadb
+	$(Q)echo "✅ Uninstalled: journal, metadb"
+
 # ─── Cleaning ─────────────────────────────────────────────────────────────────
 clean-txt:
 	$(Q)echo "[Make] Cleaning formatted text files..."
@@ -188,6 +210,11 @@ help:
 	@echo "  make stats         # Show database statistics"
 	@echo "  make health        # Run health check"
 	@echo "  make analyze       # Generate analytics report"
+	@echo ""
+	@echo "Installation:"
+	@echo "  make install       # Install CLI commands (journal, metadb)"
+	@echo "  make install-dev   # Install with dev environment setup"
+	@echo "  make uninstall     # Remove CLI commands"
 	@echo ""
 	@echo "Cleaning:"
 	@echo "  make clean         # Remove markdown and PDFs"

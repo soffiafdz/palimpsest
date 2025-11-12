@@ -24,36 +24,53 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import zipfile
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
+from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import TxtBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import FORMATTING_SCRIPT
+from dev.utils.txt import ENTRY_MARKERS
+
+DATE_PATTERN = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
+"""
+Regex pattern to match date headers in formatted entries.
+
+Format: "Date: YYYY-MM-DD"
+Used to extract dates from existing files and filter duplicate entries.
+"""
 
 
-class ProcessingStats:
-    """Track inbox processing statistics."""
+class ProcessingStats(BaseStats):
+    """
+    Track inbox processing statistics.
+
+    Extends BuilderStats base class with text processing-specific metrics.
+    """
 
     def __init__(self) -> None:
+        """Initialize text processing statistics."""
+        super().__init__()
         self.files_found: int = 0
         self.files_processed: int = 0
         self.files_skipped: int = 0
         self.years_updated: int = 0
         self.errors: int = 0
-        self.start_time: datetime = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
 
     def summary(self) -> str:
-        """Get formatted summary."""
+        """
+        Get formatted summary of inbox processing.
+
+        Returns:
+            Summary string with files found, processed, skipped, errors, and duration
+        """
         return (
             f"{self.files_found} found, "
             f"{self.files_processed} processed, "
@@ -77,9 +94,21 @@ class TxtBuilder:
         logger: Optional logger for operations
     """
 
-    # Expected filename patterns
     FILENAME_PATTERN = re.compile(r"(\d{4})[_-](\d{2})")
+    """
+    Regex pattern for parsing year and month from filenames.
+
+    Matches formats: YYYY_MM or YYYY-MM
+    Captures: (year, month) as groups
+    """
+
     STANDARD_FORMAT = "journal_{year}_{month}.txt"
+    """
+    Standard filename format for inbox files.
+
+    Template uses placeholders: {year} and {month}
+    Example: journal_2024_09.txt
+    """
 
     def __init__(
         self,
@@ -101,8 +130,12 @@ class TxtBuilder:
         """
         self.inbox_dir = inbox_dir
         self.output_dir = output_dir
-        self.archive_dir: Path = archive_dir or (inbox_dir.parent / "archive")
-        self.format_script: Path = format_script or FORMATTING_SCRIPT
+        self.archive_dir = (
+            archive_dir if archive_dir is not None else (inbox_dir.parent / "archive")
+        )
+        self.format_script = (
+            format_script if format_script is not None else FORMATTING_SCRIPT
+        )
         self.logger = logger
 
     def _parse_filename(self, filename: str) -> Optional[tuple[str, str]]:
@@ -148,18 +181,17 @@ class TxtBuilder:
 
         new_path = file_path.parent / standard_name
 
-        if new_path.exists() and new_path != file_path:
-            if self.logger:
-                self.logger.log_warning(
-                    f"Target exists, skipping rename: {standard_name}"
-                )
-            return file_path
-
         try:
             file_path.rename(new_path)
             if self.logger:
                 self.logger.log_debug(f"Renamed: {filename} → {standard_name}")
             return new_path
+        except FileExistsError:
+            if self.logger:
+                self.logger.log_warning(
+                    f"Target exists, skipping rename: {standard_name}"
+                )
+            return file_path
         except OSError as e:
             if self.logger:
                 self.logger.log_error(
@@ -167,7 +199,7 @@ class TxtBuilder:
                 )
             return None
 
-    def _get_existing_dates(self, file_path: Path) -> set:
+    def _get_existing_dates(self, file_path: Path) -> Set[str]:
         """
         Extract dates from an existing output file without modifying content.
 
@@ -183,8 +215,7 @@ class TxtBuilder:
         try:
             content = file_path.read_text(encoding="utf-8")
             # Match "Date: YYYY-MM-DD" pattern
-            date_pattern = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
-            dates = {match.group(1) for match in date_pattern.finditer(content)}
+            dates = {match.group(1) for match in DATE_PATTERN.finditer(content)}
 
             if self.logger:
                 self.logger.log_debug(
@@ -193,7 +224,7 @@ class TxtBuilder:
 
             return dates
 
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             if self.logger:
                 self.logger.log_warning(
                     f"Could not read existing file {file_path.name}: {e}"
@@ -221,7 +252,7 @@ class TxtBuilder:
 
         for line in content.splitlines():
             # Check if this is a new entry marker
-            if line.strip() in ["------ ENTRY ------", "===== ENTRY ====="]:
+            if line.strip() in ENTRY_MARKERS:
                 # Save previous entry if it's new
                 if current_entry and (entry_date is None or entry_date not in existing_dates):
                     entries.append("\n".join(current_entry))
@@ -230,7 +261,7 @@ class TxtBuilder:
                 entry_date = None
             else:
                 # Check if this line contains a date
-                date_match = re.match(r"^Date:\s*(\d{4}-\d{2}-\d{2})", line)
+                date_match = DATE_PATTERN.match(line)
                 if date_match:
                     entry_date = date_match.group(1)
                 current_entry.append(line)
@@ -263,6 +294,8 @@ class TxtBuilder:
         """
         if not self.format_script.exists():
             raise TxtBuildError(f"Format script not found: {self.format_script}")
+        if not os.access(self.format_script, os.X_OK):
+            raise TxtBuildError(f"Format script not executable: {self.format_script}")
 
         try:
             # Ensure output directory exists

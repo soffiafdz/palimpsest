@@ -3,17 +3,54 @@
 exceptions.py
 --------------------
 Custom exception classes for the Palimpsest project.
+
+Exception Hierarchy:
+    PalimpsestError (root)
+    ├── DatabaseError
+    │   ├── BackupError
+    │   ├── HealthCheckError
+    │   └── ExportError
+    ├── ConversionError
+    │   ├── Txt2MdError
+    │   ├── Yaml2SqlError
+    │   └── Sql2YamlError
+    ├── BuildError
+    │   ├── PdfBuildError
+    │   └── TxtBuildError
+    ├── ValidationError
+    ├── TemporalFileError
+    └── EntryError
+        ├── EntryValidationError
+        └── EntryParseError
 """
 
 
-class DatabaseError(Exception):
+# ----- Root Exception -----
+
+
+class PalimpsestError(Exception):
+    """
+    Base exception for all Palimpsest errors.
+
+    All custom exceptions in the project inherit from this base class,
+    allowing code to catch any Palimpsest-specific error with a single
+    except clause if needed.
+    """
+
+    pass
+
+
+# ----- Database Exceptions -----
+
+
+class DatabaseError(PalimpsestError):
     """Base exception for database-related errors."""
 
     pass
 
 
 class BackupError(DatabaseError):
-    """Exception for backup-related errors."""
+    """Exception for backup and restore operations."""
 
     pass
 
@@ -25,48 +62,93 @@ class HealthCheckError(DatabaseError):
 
 
 class ExportError(DatabaseError):
-    """Exception for export operations."""
+    """Exception for database export operations."""
 
     pass
 
 
-class TemporalFileError(Exception):
+# ----- Conversion Exceptions -----
+
+
+class ConversionError(PalimpsestError):
+    """Base exception for conversion pipeline errors."""
+
+    pass
+
+
+class Txt2MdError(ConversionError):
+    """Exception for txt-to-markdown conversion errors."""
+
+    pass
+
+
+class Yaml2SqlError(ConversionError):
+    """Exception for YAML-to-SQL (markdown to database) conversion errors."""
+
+    pass
+
+
+class Sql2YamlError(ConversionError):
+    """Exception for SQL-to-YAML (database to markdown) conversion errors."""
+
+    pass
+
+
+# ----- Build Exceptions -----
+
+
+class BuildError(PalimpsestError):
+    """Base exception for build operation errors."""
+
+    pass
+
+
+class TxtBuildError(BuildError):
+    """Exception for source-to-txt build errors."""
+
+    pass
+
+
+class PdfBuildError(BuildError):
+    """Exception for markdown-to-PDF build errors."""
+
+    pass
+
+
+# ----- Validation Exceptions -----
+
+
+class ValidationError(PalimpsestError):
+    """Exception for data validation errors."""
+
+    pass
+
+
+# ----- File Management Exceptions -----
+
+
+class TemporalFileError(PalimpsestError):
     """Exception for temporal file operations."""
 
     pass
 
 
-class ValidationError(Exception):
-    """Exception for validation errors."""
+# ----- Entry Processing Exceptions -----
+
+
+class EntryError(PalimpsestError):
+    """Base exception for entry processing operations."""
 
     pass
 
 
-class TxtBuildError(Exception):
-    """Exception for source to txt conversion errors."""
+class EntryValidationError(EntryError):
+    """Exception for entry validation failures (invalid format, missing required fields, etc.)."""
 
     pass
 
 
-class Txt2MdError(Exception):
-    """Exception for inbox processing errors."""
-
-    pass
-
-
-class Sql2YamlError(Exception):
-    """Exception for SQL to YAML conversion errors."""
-
-    pass
-
-
-class Yaml2SqlError(Exception):
-    """Exception for YAML to SQL conversion errors."""
-
-    pass
-
-
-class PdfBuildError(Exception):
-    """Exception for Md to PDF conversion errors."""
+class EntryParseError(EntryError):
+    """Exception for entry parsing failures (cannot extract metadata, malformed content, etc.)."""
 
     pass

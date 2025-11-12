@@ -42,41 +42,10 @@ from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR, MD_DIR
 from dev.core.exceptions import Sql2YamlError
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.validators import DataValidator
+from dev.core.cli_utils import setup_logger
+from dev.core.cli_stats import ExportStats
 
 from dev.utils import md
-
-
-class ExportStats:
-    """Track export statistics."""
-
-    def __init__(self) -> None:
-        self.entries_exported: int = 0
-        self.entries_skipped: int = 0
-        self.files_created: int = 0
-        self.files_updated: int = 0
-        self.errors: int = 0
-        self.start_time: datetime = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
-
-    def summary(self) -> str:
-        """Get formatted summary."""
-        return (
-            f"{self.entries_exported} exported, "
-            f"{self.files_created} created, "
-            f"{self.files_updated} updated, "
-            f"{self.entries_skipped} skipped, "
-            f"{self.errors} errors in {self.duration():.2f}s"
-        )
-
-
-def setup_logger(log_dir: Path) -> PalimpsestLogger:
-    """Setup logging for sql2yaml operations."""
-    operations_log_dir: Path = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-    return PalimpsestLogger(operations_log_dir, component_name="sql2yaml")
 
 
 def export_entry_to_markdown(
@@ -87,20 +56,92 @@ def export_entry_to_markdown(
     logger: Optional[PalimpsestLogger] = None,
 ) -> str:
     """
-    Export a single database entry to Markdown file.
+    Export a single database entry to Markdown file with complete YAML frontmatter.
+
+    Implementation Logic:
+    ---------------------
+    Core function for sql2yaml pipeline. Reads a database Entry ORM object,
+    converts all relationships to YAML frontmatter, and generates a human-editable
+    Markdown file. Handles content preservation to avoid losing text.
+
+    Processing Flow:
+    1. Determine output file path (output_dir/YYYY/YYYY-MM-DD.md)
+    2. Check for existing file (skip if exists unless force_overwrite)
+    3. Retrieve/preserve body content (three strategies)
+    4. Convert database Entry to MdEntry dataclass
+    5. Generate complete Markdown with YAML frontmatter
+    6. Write to file with UTF-8 encoding
+    7. Return status for statistics tracking
+
+    Content Preservation Strategies:
+    Three strategies in priority order:
+
+    1. preserve_body=True + file exists:
+       - Reads existing .md file
+       - Extracts body content (everything after frontmatter)
+       - Combines with NEW frontmatter from database
+       - Use case: Database edits while preserving text
+
+    2. entry.file_path exists:
+       - Reads body from original source file
+       - Uses entry.file_path from database
+       - Use case: Initial export from database
+
+    3. No existing content:
+       - Generates placeholder body with date
+       - Minimal fallback for missing content
+       - Use case: New entries without source files
+
+    YAML Generation from Database:
+    - Loads all relationships via SQLAlchemy ORM
+    - People: Formats names with hyphens/aliases
+    - Locations: Organizes by city hierarchy
+    - Events: List of event identifiers
+    - Tags: List of tag names
+    - References: Includes sources and context
+    - Poems: Includes versions and revisions
+    - Manuscript: Editorial metadata if present
+
+    File Organization:
+    - Creates year-based directories automatically
+    - Filename format: YYYY-MM-DD.md
+    - Example: md/2024/2024-01-15.md
+
+    Status Return Values:
+    - "created": New file written (didn't exist)
+    - "updated": Existing file overwritten
+    - "skipped": File exists and not force_overwrite
+
+    Database Read Operations:
+    - Entry loaded with all relationships (eager loading)
+    - No database modifications (export is read-only)
+    - Relationship data accessed via ORM navigation
+    - Example: entry.people, entry.locations, entry.tags
+
+    Error Handling:
+    - MdEntry creation failures logged with context
+    - Markdown generation failures logged with context
+    - File write failures logged with context
+    - All failures raise Sql2YamlError with original exception
+
+    Use Cases:
+    - Restore .md files from database backup
+    - Propagate database edits back to files
+    - Generate fresh Markdown from imported data
+    - Bidirectional synchronization with yaml2sql
 
     Args:
-        entry: SQLAlchemy Entry ORM instance
-        output_dir: Base output directory
+        entry: SQLAlchemy Entry ORM instance with relationships loaded
+        output_dir: Base output directory (typically MD_DIR)
         force_overwrite: If True, overwrite existing files
         preserve_body: If True, preserve existing body content
-        logger: Optional logger
+        logger: Optional logger for operation tracking
 
     Returns:
-        Status string: "created", "updated", "skipped"
+        Status string: "created", "updated", or "skipped"
 
     Raises:
-        Sql2YamlError: If export fails
+        Sql2YamlError: If export fails (MdEntry creation, markdown generation, file write)
     """
     if logger:
         logger.log_debug(f"Exporting entry {entry.date}")
@@ -197,7 +238,7 @@ def cli(ctx: click.Context, db_path: str, log_dir: str, verbose: bool) -> None:
     ctx.obj["db_path"] = Path(db_path)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir))
+    ctx.obj["logger"] = setup_logger(Path(log_dir), "sql2yaml")
 
     # Initialize database
     ctx.obj["db"] = PalimpsestDB(
