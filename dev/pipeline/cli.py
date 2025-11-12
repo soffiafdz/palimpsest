@@ -178,8 +178,9 @@ def inbox(ctx: click.Context, inbox: str, output: str) -> None:
     help="Output directory for Markdown files",
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing files")
+@click.option("--dry-run", is_flag=True, help="Preview changes without modifying files")
 @click.pass_context
-def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
+def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: bool) -> None:
     """
     Convert formatted text to Markdown entries.
 
@@ -233,6 +234,26 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
+    if dry_run:
+        click.echo("📝 Converting text to Markdown (DRY RUN - no files will be modified)...")
+        click.echo()
+        input_path = Path(input)
+
+        # Preview what would be processed
+        if input_path.is_dir():
+            txt_files = sorted(input_path.rglob("*.txt"))
+            click.echo(f"Would process {len(txt_files)} .txt files:")
+            for txt_file in txt_files:
+                click.echo(f"  • {txt_file.relative_to(input_path)}")
+        elif input_path.is_file():
+            click.echo(f"Would process 1 file:")
+            click.echo(f"  • {input_path.name}")
+
+        click.echo(f"\nOutput directory: {output}")
+        click.echo(f"Force overwrite: {force}")
+        click.echo("\n💡 Run without --dry-run to execute conversion")
+        return
+
     click.echo("📝 Converting text to Markdown...")
 
     try:
@@ -278,8 +299,9 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
     help="Input directory with Markdown files",
 )
 @click.option("-f", "--force", is_flag=True, help="Force update all entries")
+@click.option("--dry-run", is_flag=True, help="Preview changes without modifying database")
 @click.pass_context
-def sync_db(ctx: click.Context, input: str, force: bool) -> None:
+def sync_db(ctx: click.Context, input: str, force: bool, dry_run: bool) -> None:
     """
     Synchronize database with Markdown metadata.
 
@@ -344,6 +366,33 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
+    if dry_run:
+        click.echo("🔄 Syncing database from Markdown (DRY RUN - no database changes)...")
+        click.echo()
+        input_path = Path(input)
+
+        # Preview what would be synced
+        md_files = sorted(input_path.rglob("*.md"))
+        click.echo(f"Would process {len(md_files)} .md files:")
+
+        # Show sample of files with progress bar
+        with click.progressbar(
+            md_files[:10] if len(md_files) > 10 else md_files,
+            label="Scanning files",
+            show_pos=True
+        ) as files:
+            for md_file in files:
+                pass  # Just for progress visualization
+
+        if len(md_files) > 10:
+            click.echo(f"  ... and {len(md_files) - 10} more files")
+
+        click.echo(f"\nDatabase: {DB_PATH}")
+        click.echo(f"Force update: {force}")
+        click.echo(f"Auto-backup: Enabled")
+        click.echo("\n💡 Run without --dry-run to execute database sync")
+        return
+
     click.echo("🔄 Syncing database from Markdown...")
 
     try:
@@ -383,8 +432,9 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
     help="Output directory for Markdown files",
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing files")
+@click.option("--dry-run", is_flag=True, help="Preview changes without writing files")
 @click.pass_context
-def export_db(ctx: click.Context, output: str, force: bool) -> None:
+def export_db(ctx: click.Context, output: str, force: bool, dry_run: bool) -> None:
     """
     Export database to Markdown files.
 
@@ -445,6 +495,46 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
     - YAML library for frontmatter serialization
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
+
+    if dry_run:
+        click.echo("📤 Exporting database to Markdown (DRY RUN - no files will be written)...")
+        click.echo()
+
+        # Query database to show what would be exported
+        try:
+            db = PalimpsestDB(
+                db_path=DB_PATH,
+                alembic_dir=ALEMBIC_DIR,
+                log_dir=LOG_DIR,
+                backup_dir=BACKUP_DIR,
+                enable_auto_backup=False,
+            )
+
+            with db.session_scope() as session:
+                # Get count of entries
+                from dev.database.models import Entry
+                entry_count = session.query(Entry).count()
+
+                click.echo(f"Would export {entry_count} database entries")
+                click.echo(f"Output directory: {output}")
+                click.echo(f"Force overwrite: {force}")
+                click.echo(f"Preserve body content: True")
+
+                # Show sample entries with progress bar
+                sample_entries = session.query(Entry).order_by(Entry.date.desc()).limit(5).all()
+                click.echo("\nSample entries that would be exported:")
+                for entry in sample_entries:
+                    year = entry.date.year
+                    filename = f"{entry.date.isoformat()}.md"
+                    click.echo(f"  • {output}/{year}/{filename}")
+
+                click.echo(f"\n  ... and {max(0, entry_count - 5)} more entries")
+                click.echo("\n💡 Run without --dry-run to execute export")
+                return
+
+        except Exception as e:
+            handle_cli_error(ctx, e, "export_db_dry_run")
+            return
 
     click.echo("📤 Exporting database to Markdown...")
 
