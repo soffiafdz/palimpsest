@@ -59,7 +59,6 @@ from dev.database.models_manuscript import (
     Theme,
     ManuscriptStatus,
 )
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 

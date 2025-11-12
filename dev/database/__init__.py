@@ -26,7 +26,6 @@ from .manager import PalimpsestDB
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
-from .relationship_manager import RelationshipManager, HasId
 from .decorators import (
     log_database_operation,
     handle_db_errors,
@@ -49,11 +48,8 @@ __all__ = [
     "HealthMonitor",
     "ExportManager",
     "QueryAnalytics",
-    "RelationshipManager",
     # Decorators
     "log_database_operation",
     "handle_db_errors",
     "validate_metadata",
-    # Protocols
-    "HasId",
 ]

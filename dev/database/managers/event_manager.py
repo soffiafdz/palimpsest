@@ -53,7 +53,6 @@ from dev.database.decorators import (
     validate_metadata,
 )
 from dev.database.models import Event, Entry, Person
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 

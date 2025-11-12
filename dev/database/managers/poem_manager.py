@@ -56,7 +56,6 @@ from dev.database.decorators import (
     validate_metadata,
 )
 from dev.database.models import Poem, PoemVersion, Entry
-from dev.database.relationship_manager import RelationshipManager
 from dev.utils import md
 from .base_manager import BaseManager
 

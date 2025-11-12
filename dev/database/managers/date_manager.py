@@ -43,7 +43,6 @@ from dev.database.decorators import (
     log_database_operation,
 )
 from dev.database.models import MentionedDate, Entry, Location, Person
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 
