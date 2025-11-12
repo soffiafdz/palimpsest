@@ -37,17 +37,7 @@ from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import TxtBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import FORMATTING_SCRIPT
-
-
-# ----- Entry Processing Constants -----
-
-ENTRY_MARKERS = {"------ ENTRY ------", "===== ENTRY ====="}
-"""
-Valid entry separator markers in formatted text files.
-
-These markers delimit individual journal entries in the formatted
-text output from the formatting script.
-"""
+from dev.utils.txt import ENTRY_MARKERS
 
 DATE_PATTERN = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
 """

@@ -220,11 +220,11 @@ class MdEntry:
 
         # Locations
         if entry.locations:
-            if len(entry.cities) == 1:
-                # Single city - flat list of locations
+            if not entry.cities or len(entry.cities) == 1:
+                # No cities or single city - flat list of locations
                 metadata["locations"] = [loc.name for loc in entry.locations]
             else:
-                # Multiple cities - nested dict
+                # Multiple cities - nested dict grouped by city
                 locations_dict = {}
                 for loc in entry.locations:
                     city_name = loc.city.city
@@ -549,6 +549,10 @@ class MdEntry:
             return [city_data.strip()]
         if isinstance(city_data, list):
             return [str(c).strip() for c in city_data if str(c).strip()]
+
+        # Explicit fallback for unexpected types
+        logger.warning(f"Invalid city_data type: {type(city_data)}")
+        return []
 
     def _parse_locations_field(
         self, locations_data: Union[List[str], Dict[str, List[str]]], cities: List[str]
