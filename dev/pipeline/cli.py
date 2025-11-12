@@ -373,7 +373,7 @@ def backup_data(ctx: click.Context, suffix: Optional[str]) -> None:
         click.echo("\n💡 Backup saved outside git repository")
 
     except BackupError as e:
-        handle_cli_error(ctx, e, "build_pdf")
+        handle_cli_error(ctx, e, "backup_data")
 
 
 @cli.command()

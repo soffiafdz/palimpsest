@@ -91,7 +91,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     help="LaTeX preamble for notes PDF",
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing PDFs")
-@click.option("--debug", is_flag=True, help="Keep temp file son error for debugging")
+@click.option("--debug", is_flag=True, help="Keep temp files on error for debugging")
 @click.pass_context
 def build(
     ctx: click.Context,

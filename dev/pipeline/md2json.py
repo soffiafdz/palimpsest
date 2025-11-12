@@ -82,7 +82,7 @@ def main() -> None:
     # -- Setup --
     args = parse_args()
     input = Path(args.input)
-    meta_path = Path(args.out)
+    meta_path = Path(args.output)
 
     if not input.exists() or not input.is_dir():
         raise OSError(f"Input directory not found: {str(input)}")
