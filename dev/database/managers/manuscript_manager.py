@@ -196,15 +196,14 @@ class ManuscriptManager(BaseManager):
             theme = self._get_or_create(Theme, {"theme": theme_name})
             theme_objs.append(theme)
 
-        # Replace all themes
-        RelationshipManager.update_many_to_many(
-            session=self.session,
-            parent_obj=manuscript_entry,
-            relationship_name="themes",
-            items=theme_objs,
-            model_class=Theme,
-            incremental=False,  # Replace all
-        )
+        # Replace all themes (entity-specific logic)
+        # Clear existing themes
+        manuscript_entry.themes.clear()
+        # Add new themes
+        for theme in theme_objs:
+            if theme not in manuscript_entry.themes:
+                manuscript_entry.themes.append(theme)
+        self.session.flush()
 
     # =========================================================================
     # MANUSCRIPT PERSON OPERATIONS

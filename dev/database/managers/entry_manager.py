@@ -474,15 +474,33 @@ class EntryManager(BaseManager):
 
             for rel_name, meta_key, model_class in many_to_many_configs:
                 if meta_key in metadata:
-                    RelationshipManager.update_many_to_many(
-                        session=self.session,
-                        parent_obj=entry,
-                        relationship_name=rel_name,
-                        items=metadata[meta_key],
-                        model_class=model_class,
-                        incremental=incremental,
-                        remove_items=metadata.get(f"remove_{meta_key}", []),
-                    )
+                    items = metadata[meta_key]
+                    remove_items = metadata.get(f"remove_{meta_key}", [])
+
+                    # Get the collection
+                    collection = getattr(entry, rel_name)
+
+                    # Replacement mode: clear and add all
+                    if not incremental:
+                        collection.clear()
+                        for item in items:
+                            resolved_item = self._resolve_object(item, model_class)
+                            if resolved_item and resolved_item not in collection:
+                                collection.append(resolved_item)
+                    else:
+                        # Incremental mode: add new items
+                        for item in items:
+                            resolved_item = self._resolve_object(item, model_class)
+                            if resolved_item and resolved_item not in collection:
+                                collection.append(resolved_item)
+
+                        # Remove specified items
+                        for item in remove_items:
+                            resolved_item = self._resolve_object(item, model_class)
+                            if resolved_item and resolved_item in collection:
+                                collection.remove(resolved_item)
+
+                    self.session.flush()
 
             # --- Aliases ---
             if "alias" in metadata:
@@ -748,14 +766,12 @@ class EntryManager(BaseManager):
         # Link all collected aliases to entry
         if alias_orms:
             try:
-                RelationshipManager.update_many_to_many(
-                    session=self.session,
-                    parent_obj=entry,
-                    relationship_name="aliases_used",
-                    items=alias_orms,
-                    model_class=Alias,
-                    incremental=True,
-                )
+                # Incremental mode: add new aliases
+                for alias_orm in alias_orms:
+                    resolved_alias = self._resolve_object(alias_orm, Alias)
+                    if resolved_alias and resolved_alias not in entry.aliases_used:
+                        entry.aliases_used.append(resolved_alias)
+                self.session.flush()
 
                 if self.logger:
                     self.logger.log_debug(

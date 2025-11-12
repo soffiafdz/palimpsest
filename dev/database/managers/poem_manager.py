@@ -173,14 +173,15 @@ class PoemManager(BaseManager):
 
         # Update relationships
         if "versions" in metadata:
-            RelationshipManager.update_one_to_many(
-                session=self.session,
-                parent_obj=poem,
-                items=metadata["versions"],
-                model_class=PoemVersion,
-                foreign_key_attr="poem_id",
-                incremental=False,
-            )
+            items = metadata["versions"]
+
+            # Non-incremental mode: clear and add all
+            poem.versions.clear()
+            for item in items:
+                resolved_item = self._resolve_object(item, PoemVersion)
+                if resolved_item:
+                    poem.versions.append(resolved_item)
+            self.session.flush()
 
         return poem
 
@@ -216,15 +217,23 @@ class PoemManager(BaseManager):
 
         # Update versions (one-to-many)
         if "versions" in metadata:
-            RelationshipManager.update_one_to_many(
-                session=self.session,
-                parent_obj=poem,
-                items=metadata["versions"],
-                model_class=PoemVersion,
-                foreign_key_attr="poem_id",
-                incremental=True,
-                remove_items=metadata.get("remove_versions", []),
-            )
+            items = metadata["versions"]
+            remove_items = metadata.get("remove_versions", [])
+
+            # Get existing IDs for comparison
+            existing_ids = {version.id for version in poem.versions}
+
+            # Incremental mode: add new items
+            for item in items:
+                resolved_item = self._resolve_object(item, PoemVersion)
+                if resolved_item and resolved_item.id not in existing_ids:
+                    poem.versions.append(resolved_item)
+
+            # Remove specified items
+            for item in remove_items:
+                resolved_item = self._resolve_object(item, PoemVersion)
+                if resolved_item and resolved_item.id in existing_ids:
+                    poem.versions.remove(resolved_item)
 
         self.session.flush()
 

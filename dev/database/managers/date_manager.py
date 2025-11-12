@@ -326,15 +326,33 @@ class DateManager(BaseManager):
 
         for rel_name, meta_key, model_class in many_to_many_configs:
             if meta_key in metadata:
-                RelationshipManager.update_many_to_many(
-                    session=self.session,
-                    parent_obj=mentioned_date,
-                    relationship_name=rel_name,
-                    items=metadata[meta_key],
-                    model_class=model_class,
-                    incremental=incremental,
-                    remove_items=metadata.get(f"remove_{meta_key}", []),
-                )
+                items = metadata[meta_key]
+                remove_items = metadata.get(f"remove_{meta_key}", [])
+
+                # Get the collection
+                collection = getattr(mentioned_date, rel_name)
+
+                # Replacement mode: clear and add all
+                if not incremental:
+                    collection.clear()
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+                else:
+                    # Incremental mode: add new items
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+
+                    # Remove specified items
+                    for item in remove_items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item in collection:
+                            collection.remove(resolved_item)
+
+                self.session.flush()
 
     @handle_db_errors
     @log_database_operation("link_mentioned_date_to_entry")
