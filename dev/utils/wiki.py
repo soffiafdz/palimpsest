@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-md_utils.py
+wiki.py
 -------------------
 Set of utilities for parsing, extracting, and modifying Markdown documents.
 
@@ -27,6 +27,10 @@ from typing import Any, Dict, List, Optional, Tuple, Set
 
 # --- Third-party ---
 import yaml
+import logging
+
+# Module logger
+logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
@@ -119,7 +123,7 @@ def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
             yaml_text: str = "".join(lines)
         return yaml.safe_load(yaml_text) or {}
     except Exception as exc:
-        print(f"[WARN] YAML error in {path.name}: {exc}")
+        logger.warning(f"YAML parse error in {path.name}: {exc}")
         return {}
 
 
@@ -143,7 +147,7 @@ def resolve_relative_link(from_path: Path, rel_link: str) -> Path:
 
 
 # ----------------------------------------------------------------------
-# Search for a section and obtain it's place in document (linenumbers)
+# Search for a section and obtain its place in document (line numbers)
 # ----------------------------------------------------------------------
 def find_section_line_indexes(
     lines: List[str],

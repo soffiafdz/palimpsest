@@ -1,5 +1,5 @@
 """
-txt_utils.py
+txt.py
 -------------------
 Set of utilities for parsing, formatting, and modifying text documents.
 
