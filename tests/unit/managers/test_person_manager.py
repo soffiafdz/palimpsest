@@ -324,7 +324,7 @@ class TestPersonManagerDelete:
         db_session.refresh(person)
 
         assert person.deleted_at is not None
-        assert person.deleted_reason == "Duplicate entry"
+        assert person.deletion_reason == "Duplicate entry"
 
     def test_deleted_person_not_in_get(self, person_manager, db_session):
         """Test deleted person not returned by get()."""
@@ -353,7 +353,7 @@ class TestPersonManagerRestore:
 
         assert person.deleted_at is None
         assert person.deleted_by is None
-        assert person.deleted_reason is None
+        assert person.deletion_reason is None
 
     def test_restored_person_in_get(self, person_manager, db_session):
         """Test restored person is returned by get()."""
