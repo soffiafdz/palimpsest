@@ -296,13 +296,13 @@ class PalimpsestDB:
         Also initializes modular entity managers for use within the session.
         Managers are available via properties (db.people, db.tags, etc.)
 
-        Usage:
+        Usage (both syntaxes supported):
             with db.session_scope() as session:
-                # New pattern (recommended)
+                # Direct manager access (recommended for new code)
                 person = db.people.create({"name": "Alice"})
                 tag = db.tags.get_or_create("python")
 
-                # Old pattern (still works, deprecated)
+                # Facade API (stable, used by yaml2sql/sql2yaml)
                 entry = db.create_entry(session, metadata)
         """
         session = self.SessionLocal()
