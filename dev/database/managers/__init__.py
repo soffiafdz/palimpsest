@@ -29,19 +29,22 @@ from .base_manager import BaseManager
 from .tag_manager import TagManager
 from .event_manager import EventManager
 from .date_manager import DateManager
+from .location_manager import LocationManager
+from .reference_manager import ReferenceManager
+from .poem_manager import PoemManager
 
 __all__ = [
     "BaseManager",
     "TagManager",
     "EventManager",
     "DateManager",
+    "LocationManager",
+    "ReferenceManager",
+    "PoemManager",
 ]
 
 # Additional managers will be added as they are implemented:
 # See REFACTORING_GUIDE.md for implementation templates
-# from .location_manager import LocationManager
-# from .reference_manager import ReferenceManager
-# from .poem_manager import PoemManager
 # from .person_manager import PersonManager
 # from .manuscript_manager import ManuscriptManager
 # from .entry_manager import EntryManager
