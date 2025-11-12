@@ -415,21 +415,144 @@ assert callable(palimpsest_cli_group)
 
 ---
 
-## Conclusion
+## PART 3: Command Naming Standardization (COMPLETED ✅)
 
-**Status:** ✅ **Module 1 Critical Fixes Complete**
+All CLI commands have been standardized to use hyphenated naming (Click convention) instead of underscores.
 
-All production-blocking bugs have been fixed, and a solid foundation of shared utilities has been created. The codebase is now:
-- Free of syntax errors and critical bugs
-- Ready for standardization (command naming, options)
-- Equipped with reusable utilities for future development
-- Positioned for easy addition of new CLI features
+### Pipeline CLI (dev/pipeline/cli.py)
 
-**Quality Improvement:** 6 critical bugs fixed, 220+ lines of duplication eliminated
+**Commands Renamed:**
+1. `sync_db` → `sync-db` (function remains `sync_db`)
+2. `export_db` → `export-db` (function remains `export_db`)
+3. `build_pdf` → `build-pdf` (function remains `build_pdf`)
+4. `backup_data` → `backup-full` (function renamed to `backup_full`)
+5. `backup_list` → `backup-list-full` (function renamed to `backup_list_full`)
+6. `run_all` → `run-all` (function remains `run_all`)
 
-**Next Session:** Standardize command naming and update scripts to use shared utilities
+**Fixed ctx.invoke calls:**
+Updated all `ctx.invoke()` calls in `run_all()` to use new function names and include all required parameters:
+```python
+# Step 3: Sync database
+ctx.invoke(sync_db, input=str(MD_DIR), force=False)
+
+# Step 4: Build PDFs (if year specified)
+if not skip_pdf and year:
+    ctx.invoke(build_pdf, year=year, input=str(MD_DIR), output=str(PDF_DIR), force=False, debug=False)
+
+# Step 5: Full backup (if requested)
+if backup:
+    ctx.invoke(backup_full, suffix="pipeline")
+```
+
+### Database CLI (dev/database/cli.py)
+
+**Status:** Already standardized! All commands use Click's automatic underscore-to-hyphen conversion:
+- `migration_create` → `migration-create`
+- `migration_upgrade` → `migration-upgrade`
+- `export_csv` → `export-csv`
+- `export_json` → `export-json`
+- etc.
+
+**Impact:**
+- Consistent CLI interface across all commands
+- Follows Click best practices
+- Better user experience with predictable command names
 
 ---
 
-**Implementation Complete**
+## PART 4: Shared Utilities Migration (COMPLETED ✅)
+
+All CLI scripts have been updated to use the shared utility modules, eliminating all code duplication.
+
+### Scripts Updated (6 files):
+
+#### 1. dev/pipeline/txt2md.py
+**Changes:**
+- Removed duplicate `ConversionStats` class (lines 48-69)
+- Removed duplicate `setup_logger` function (lines 74-87)
+- Added imports: `from dev.core.cli_utils import setup_logger`
+- Added imports: `from dev.core.cli_stats import ConversionStats`
+- Created helper function `configure_verbose_logging()` for verbose mode
+- Updated setup_logger call: `setup_logger(Path(log_dir), "txt2md")`
+
+**Code Eliminated:** 46 lines
+
+#### 2. dev/pipeline/yaml2sql.py
+**Changes:**
+- Removed duplicate `ConversionStats` class (lines 116-139)
+- Removed duplicate `setup_logger` function (lines 142-146)
+- Added imports: `from dev.core.cli_utils import setup_logger`
+- Added imports: `from dev.core.cli_stats import ConversionStats`
+- Updated setup_logger call: `setup_logger(Path(log_dir), "yaml2sql")`
+
+**Code Eliminated:** 29 lines
+
+#### 3. dev/pipeline/sql2yaml.py
+**Changes:**
+- Removed duplicate `ExportStats` class (lines 49-72)
+- Removed duplicate `setup_logger` function (lines 75-79)
+- Added imports: `from dev.core.cli_utils import setup_logger`
+- Added imports: `from dev.core.cli_stats import ExportStats`
+- Updated setup_logger call: `setup_logger(Path(log_dir), "sql2yaml")`
+
+**Code Eliminated:** 29 lines
+
+#### 4. dev/pipeline/md2pdf.py
+**Changes:**
+- Removed duplicate `setup_logger` function (lines 41-45)
+- Added import: `from dev.core.cli_utils import setup_logger`
+- Updated setup_logger call: `setup_logger(Path(log_dir), "md2pdf")`
+
+**Code Eliminated:** 5 lines
+
+#### 5. dev/pipeline/src2txt.py
+**Changes:**
+- Removed duplicate `setup_logger` function (lines 41-45)
+- Added import: `from dev.core.cli_utils import setup_logger`
+- Updated setup_logger call: `setup_logger(Path(log_dir), "src2txt")`
+
+**Code Eliminated:** 5 lines
+
+#### 6. dev/pipeline/cli.py
+**Changes:**
+- Removed duplicate `setup_logger` function (lines 70-74)
+- Added import: `from dev.core.cli_utils import setup_logger`
+- Updated setup_logger call: `setup_logger(Path(log_dir), "pipeline")`
+
+**Code Eliminated:** 5 lines
+
+### Total Impact:
+- **Lines of duplicate code eliminated:** 119 lines
+- **Scripts using shared utilities:** 6/6 (100%)
+- **Consistency improvement:** All scripts now use identical patterns
+- **Maintainability:** Single source of truth for common functionality
+
+---
+
+## Conclusion
+
+**Status:** ✅ **Module 1 Implementation Complete**
+
+All critical fixes, standardization, and shared utilities migration have been completed. The codebase is now:
+- ✅ Free of syntax errors and critical bugs (6 bugs fixed)
+- ✅ Command naming standardized (6 commands renamed in pipeline/cli.py)
+- ✅ Code duplication eliminated (119 lines removed, using shared utilities)
+- ✅ Consistent patterns across all CLI scripts
+- ✅ Ready for next module tasks (docstrings, features, migrations)
+
+**Quality Improvements:**
+- 6 critical bugs fixed
+- 119 lines of duplicate code eliminated (in addition to 220+ lines saved by creating shared modules)
+- 6 commands standardized
+- 6 scripts migrated to shared utilities
+- 100% consistency in CLI patterns
+
+**Next Steps (Module 1 - Remaining):**
+1. Add comprehensive docstrings to all CLI scripts (explaining implementation and logic)
+2. Add missing features (--dry-run, progress indicators, --quiet mode)
+3. Migrate md2json.py and md2wiki.py to Click framework
+
+---
+
+**Current Session Complete**
 Ready for commit and push.

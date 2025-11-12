@@ -57,6 +57,7 @@ from dev.builders.pdfbuilder import PdfBuilder
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import BackupError
+from dev.core.cli_utils import setup_logger
 from dev.database.manager import PalimpsestDB
 
 # from dev.database.models import Entry
@@ -65,13 +66,6 @@ from dev.database.query_analytics import QueryAnalytics
 from .txt2md import convert_directory, convert_file
 from .yaml2sql import process_directory
 from .sql2yaml import export_entry_to_markdown
-
-
-def setup_logger(log_dir: Path) -> PalimpsestLogger:
-    """Setup logging for pipeline operations."""
-    operations_log_dir = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-    return PalimpsestLogger(operations_log_dir, component_name="pipeline")
 
 
 @click.group()
@@ -88,7 +82,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     ctx.ensure_object(dict)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir))
+    ctx.obj["logger"] = setup_logger(Path(log_dir), "pipeline")
 
 
 @cli.command()
@@ -189,7 +183,7 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
         )
 
 
-@cli.command()
+@cli.command("sync-db")
 @click.option(
     "-i",
     "--input",
@@ -233,7 +227,7 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
         )
 
 
-@cli.command()
+@cli.command("export-db")
 @click.option(
     "-o",
     "--output",
@@ -285,7 +279,7 @@ def export_db(ctx: click.Context, output: str, force: bool) -> None:
         )
 
 
-@cli.command()
+@cli.command("build-pdf")
 @click.argument("year")
 @click.option(
     "-i",
@@ -345,10 +339,10 @@ def build_pdf(
         )
 
 
-@cli.command()
+@cli.command("backup-full")
 @click.option("--suffix", default=None, help="Optional backup suffix")
 @click.pass_context
-def backup_data(ctx: click.Context, suffix: Optional[str]) -> None:
+def backup_full(ctx: click.Context, suffix: Optional[str]) -> None:
     """Create full compressed backup of entire data directory."""
     logger: PalimpsestLogger = ctx.obj["logger"]
 
@@ -373,12 +367,12 @@ def backup_data(ctx: click.Context, suffix: Optional[str]) -> None:
         click.echo("\n💡 Backup saved outside git repository")
 
     except BackupError as e:
-        handle_cli_error(ctx, e, "backup_data")
+        handle_cli_error(ctx, e, "backup_full")
 
 
-@cli.command()
+@cli.command("backup-list-full")
 @click.pass_context
-def backup_list(ctx: click.Context) -> None:
+def backup_list_full(ctx: click.Context) -> None:
     """List all available full data backups."""
     logger: PalimpsestLogger = ctx.obj["logger"]
 
@@ -421,10 +415,10 @@ def backup_list(ctx: click.Context) -> None:
         click.echo(f"Location: {backup_mgr.full_backup_dir}")
 
     except Exception as e:
-        handle_cli_error(ctx, e, "backup_list")
+        handle_cli_error(ctx, e, "backup_list_full")
 
 
-@cli.command()
+@cli.command("run-all")
 @click.option("--year", help="Specific year to process (optional)")
 @click.option("--skip-inbox", is_flag=True, help="Skip inbox processing")
 @click.option("--skip-pdf", is_flag=True, help="Skip PDF generation")
@@ -457,19 +451,19 @@ def run_all(
 
         # Step 3: Sync database
         click.echo("=" * 60)
-        ctx.invoke(sync_db, force=False)
+        ctx.invoke(sync_db, input=str(MD_DIR), force=False)
         click.echo()
 
         # Step 4: Build PDFs (if year specified)
         if not skip_pdf and year:
             click.echo("=" * 60)
-            ctx.invoke(build_pdf, year=year, force=False)
+            ctx.invoke(build_pdf, year=year, input=str(MD_DIR), output=str(PDF_DIR), force=False, debug=False)
             click.echo()
 
         # Step 5: Full backup (if requested)
         if backup:
             click.echo("=" * 60)
-            ctx.invoke(backup_data, suffix="pipeline")
+            ctx.invoke(backup_full, suffix="pipeline")
             click.echo()
 
         duration = (datetime.now() - start_time).total_seconds()

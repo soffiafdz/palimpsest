@@ -35,14 +35,8 @@ from pathlib import Path
 from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.exceptions import TxtBuildError
+from dev.core.cli_utils import setup_logger
 from dev.builders.txtbuilder import TxtBuilder, ProcessingStats
-
-
-def setup_logger(log_dir: Path) -> PalimpsestLogger:
-    """Setup logging for src2txt operations."""
-    operations_log_dir = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-    return PalimpsestLogger(operations_log_dir, component_name="src2txt")
 
 
 @click.group()
@@ -59,7 +53,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     ctx.ensure_object(dict)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir))
+    ctx.obj["logger"] = setup_logger(Path(log_dir), "src2txt")
 
 
 @cli.command()

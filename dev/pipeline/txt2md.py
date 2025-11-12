@@ -41,50 +41,18 @@ from dev.core.exceptions import Txt2MdError
 from dev.core.paths import LOG_DIR, MD_DIR  # , TMP_DIR  , ROOT
 from dev.core.temporal_files import TemporalFileManager
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
+from dev.core.cli_utils import setup_logger
+from dev.core.cli_stats import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
 
 
-# ----- Conversion Stats -----
-class ConversionStats:
-    """Track conversion statistics."""
-
-    def __init__(self):
-        self.files_processed = 0
-        self.entries_created = 0
-        self.entries_skipped = 0
-        self.errors = 0
-        self.start_time = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
-
-    def summary(self) -> str:
-        """Get summary string."""
-        return (
-            f"{self.files_processed} files processed, "
-            f"{self.entries_created} entries created, "
-            f"{self.entries_skipped} skipped, "
-            f"{self.errors} errors in {self.duration():.2f}s"
-        )
-
-
-# ----- Functions -----
-# ---- Logging ----
-def setup_logger(log_dir: Path, verbose: bool = False) -> PalimpsestLogger:
-    """Setup logging for txt2md operations."""
-    operations_log_dir = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-
-    logger = PalimpsestLogger(operations_log_dir, component_name="txt2md")
-
-    if verbose:
-        logger.main_logger.setLevel(logging.DEBUG)
-        for handler in logger.main_logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
-                handler.setLevel(logging.DEBUG)
-
-    return logger
+# ----- Helper Functions -----
+def configure_verbose_logging(logger: PalimpsestLogger) -> None:
+    """Enable verbose/debug logging for a logger instance."""
+    logger.main_logger.setLevel(logging.DEBUG)
+    for handler in logger.main_logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            handler.setLevel(logging.DEBUG)
 
 
 # ---- Conversion ----
@@ -314,7 +282,10 @@ def cli(ctx, log_dir, verbose):
     ctx.ensure_object(dict)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir), verbose)
+    logger = setup_logger(Path(log_dir), "txt2md")
+    if verbose:
+        configure_verbose_logging(logger)
+    ctx.obj["logger"] = logger
 
 
 @cli.command()
