@@ -329,3 +329,10 @@ def reference_manager(db_session):
     """Create ReferenceManager instance for testing."""
     from dev.database.managers.reference_manager import ReferenceManager
     return ReferenceManager(db_session)
+
+
+@pytest.fixture
+def event_manager(db_session):
+    """Create EventManager instance for testing."""
+    from dev.database.managers.event_manager import EventManager
+    return EventManager(db_session)
