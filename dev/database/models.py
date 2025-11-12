@@ -152,7 +152,7 @@ entry_dates = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("date_id", Integer, ForeignKey("dates.id"), primary_key=True),
+    Column("date_id", Integer, ForeignKey("dates.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_cities = Table(
@@ -164,7 +164,7 @@ entry_cities = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("city_id", Integer, ForeignKey("cities.id"), primary_key=True),
+    Column("city_id", Integer, ForeignKey("cities.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_locations = Table(
@@ -176,7 +176,7 @@ entry_locations = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("location_id", Integer, ForeignKey("locations.id"), primary_key=True),
+    Column("location_id", Integer, ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_people = Table(
@@ -188,7 +188,7 @@ entry_people = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("people_id", Integer, ForeignKey("people.id"), primary_key=True),
+    Column("people_id", Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_aliases = Table(
@@ -237,7 +237,7 @@ event_people = Table(
     Column(
         "person_id",
         Integer,
-        ForeignKey("people.id", ondelete="SET NULL"),
+        ForeignKey("people.id", ondelete="CASCADE"),  # Fixed: was SET NULL on primary key!
         primary_key=True,
     ),
 )
@@ -270,7 +270,7 @@ entry_tags = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
 
 location_dates = Table(
