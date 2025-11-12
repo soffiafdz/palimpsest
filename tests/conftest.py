@@ -226,8 +226,7 @@ def create_complex_location():
     }
 
 
-# ----- Test Database Fixtures (for Phase 3+) -----
-# These will be expanded in Phase 3 when testing database managers
+# ----- Test Database Fixtures (Phase 3) -----
 
 @pytest.fixture
 def test_db_path(tmp_dir):
@@ -235,5 +234,92 @@ def test_db_path(tmp_dir):
     return tmp_dir / "test.db"
 
 
-# Note: Database fixtures will be added in Phase 3
-# when we start testing database managers
+@pytest.fixture
+def test_alembic_dir():
+    """Path to Alembic directory."""
+    return Path(__file__).parent.parent / "alembic"
+
+
+@pytest.fixture
+def test_db(test_db_path, test_alembic_dir):
+    """
+    Create test database instance with schema.
+
+    Returns a PalimpsestDB instance with an initialized schema.
+    Database is torn down after the test.
+    """
+    from dev.database.manager import PalimpsestDB
+    from dev.database.models import Base
+    from sqlalchemy import create_engine
+
+    # Create engine and initialize schema
+    engine = create_engine(f"sqlite:///{test_db_path}")
+    Base.metadata.create_all(engine)
+
+    # Create DB instance (without auto-backup for tests)
+    db = PalimpsestDB(
+        db_path=test_db_path,
+        alembic_dir=test_alembic_dir,
+        enable_auto_backup=False
+    )
+
+    yield db
+
+    # Cleanup
+    engine.dispose()
+    if test_db_path.exists():
+        test_db_path.unlink()
+
+
+@pytest.fixture
+def db_session(test_db):
+    """
+    Create a database session for tests.
+
+    Provides a session with automatic rollback after test.
+    """
+    with test_db.session_scope() as session:
+        yield session
+        session.rollback()
+
+
+@pytest.fixture
+def entry_manager(db_session):
+    """Create EntryManager instance for testing."""
+    from dev.database.managers.entry_manager import EntryManager
+    return EntryManager(db_session)
+
+
+@pytest.fixture
+def person_manager(db_session):
+    """Create PersonManager instance for testing."""
+    from dev.database.managers.person_manager import PersonManager
+    return PersonManager(db_session)
+
+
+@pytest.fixture
+def location_manager(db_session):
+    """Create LocationManager instance for testing."""
+    from dev.database.managers.location_manager import LocationManager
+    return LocationManager(db_session)
+
+
+@pytest.fixture
+def tag_manager(db_session):
+    """Create TagManager instance for testing."""
+    from dev.database.managers.tag_manager import TagManager
+    return TagManager(db_session)
+
+
+@pytest.fixture
+def poem_manager(db_session):
+    """Create PoemManager instance for testing."""
+    from dev.database.managers.poem_manager import PoemManager
+    return PoemManager(db_session)
+
+
+@pytest.fixture
+def reference_manager(db_session):
+    """Create ReferenceManager instance for testing."""
+    from dev.database.managers.reference_manager import ReferenceManager
+    return ReferenceManager(db_session)
