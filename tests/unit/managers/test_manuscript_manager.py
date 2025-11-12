@@ -110,7 +110,6 @@ class TestCreateOrUpdateEntry:
         assert "identity" in theme_names
         assert "loss" in theme_names
 
-    @pytest.mark.skip(reason="Known issue: update_one_to_one needs investigation")
     def test_update_manuscript_entry_changes_status(self, manuscript_manager, db_session):
         """Test updating manuscript entry changes status."""
         entry = Entry(date=date(2024, 1, 1), file_path="/path/to/entry.md")
@@ -123,8 +122,10 @@ class TestCreateOrUpdateEntry:
         )
         db_session.commit()
 
-        # Get fresh entry from database
+        # Get fresh entry from database and explicitly load the relationship
         entry = db_session.get(Entry, entry_id)
+        db_session.refresh(entry, ['manuscript'])  # Explicitly load the relationship
+
         ms_entry = manuscript_manager.create_or_update_entry(
             entry, {"status": ManuscriptStatus.FRAGMENTS}
         )
@@ -141,8 +142,10 @@ class TestCreateOrUpdateEntry:
         manuscript_manager.create_or_update_entry(entry, {"themes": ["identity", "loss"]})
         db_session.commit()
 
-        # Get fresh entry from database
+        # Get fresh entry from database and force-load the relationship
         entry = db_session.get(Entry, entry_id)
+        _ = entry.manuscript  # Force load the relationship
+
         ms_entry = manuscript_manager.create_or_update_entry(entry, {"themes": ["memory"]})
 
         assert len(ms_entry.themes) == 1
@@ -215,8 +218,10 @@ class TestCreateOrUpdatePerson:
         manuscript_manager.create_or_update_person(person, {"character": "Alexandra"})
         db_session.commit()
 
-        # Get fresh person from database
+        # Get fresh person from database and force-load the relationship
         person = db_session.get(Person, person_id)
+        _ = person.manuscript  # Force load the relationship
+
         ms_person = manuscript_manager.create_or_update_person(
             person, {"character": "Alexandria"}
         )
@@ -312,14 +317,17 @@ class TestRestorePerson:
         person_id = person.id
 
         person = db_session.get(Person, person_id)
+        _ = person.manuscript  # Force load
         manuscript_manager.create_or_update_person(person, {"character": "Alexandra"})
         db_session.commit()
 
         person = db_session.get(Person, person_id)
+        _ = person.manuscript  # Force load
         manuscript_manager.delete_person(person)
         db_session.commit()
 
         person = db_session.get(Person, person_id)
+        _ = person.manuscript  # Force load
         assert person.manuscript.deleted_at is not None
 
         restored = manuscript_manager.restore_person(person)
@@ -349,10 +357,12 @@ class TestRestorePerson:
         person_id = person.id
 
         person = db_session.get(Person, person_id)
+        _ = person.manuscript  # Force load
         manuscript_manager.create_or_update_person(person, {"character": "Alexandra"})
         db_session.commit()
 
         person = db_session.get(Person, person_id)
+        _ = person.manuscript  # Force load
         with pytest.raises(DatabaseError, match="not deleted"):
             manuscript_manager.restore_person(person)
 
@@ -409,8 +419,10 @@ class TestCreateOrUpdateEvent:
         manuscript_manager.create_or_update_event(event, {"arc": "journey"})
         db_session.commit()
 
-        # Get fresh event from database
+        # Get fresh event from database and force-load the relationship
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load the relationship
+
         ms_event = manuscript_manager.create_or_update_event(event, {"arc": "resolution"})
 
         assert ms_event.arc.arc == "resolution"
@@ -480,14 +492,17 @@ class TestRestoreEvent:
         event_id = event.id
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.create_or_update_event(event, {"notes": "Test"})
         db_session.commit()
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.delete_event(event)
         db_session.commit()
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         assert event.manuscript.deleted_at is not None
 
         restored = manuscript_manager.restore_event(event)
@@ -517,10 +532,12 @@ class TestRestoreEvent:
         event_id = event.id
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.create_or_update_event(event, {"notes": "Test"})
         db_session.commit()
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         with pytest.raises(DatabaseError, match="not deleted"):
             manuscript_manager.restore_event(event)
 
@@ -794,10 +811,12 @@ class TestGetEventsByArc:
         event_id = event.id
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.create_or_update_event(event, {"arc": "journey"})
         db_session.commit()
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.delete_event(event)
         db_session.commit()
 
@@ -818,10 +837,12 @@ class TestGetEventsByArc:
         event_id = event.id
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.create_or_update_event(event, {"arc": "journey"})
         db_session.commit()
 
         event = db_session.get(Event, event_id)
+        _ = event.manuscript  # Force load
         manuscript_manager.delete_event(event)
         db_session.commit()
 
