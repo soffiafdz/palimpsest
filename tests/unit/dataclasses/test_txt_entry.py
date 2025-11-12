@@ -14,6 +14,88 @@ from dev.dataclasses.txt_entry import TxtEntry
 from dev.core.exceptions import EntryParseError
 
 
+class TestTxtEntryRealFiles:
+    """Test TxtEntry parsing with real 750words export files."""
+
+    def test_parse_real_september_2025_export(self, txt_exports_dir):
+        """Test parsing real September 2025 export file."""
+        file_path = txt_exports_dir / "750words_export_2025-09.txt"
+        entries = TxtEntry.from_file(file_path)
+
+        # Should have at least one entry
+        assert len(entries) > 0
+
+        # Check first entry structure
+        first_entry = entries[0]
+        assert first_entry.date is not None
+        assert isinstance(first_entry.date, date)
+        assert first_entry.header is not None
+        assert len(first_entry.body) > 0
+        assert first_entry.word_count > 0
+        assert first_entry.reading_time > 0
+
+    def test_parse_real_april_2016_export(self, txt_exports_dir):
+        """Test parsing real April 2016 export file."""
+        file_path = txt_exports_dir / "750words_export_2016-04.txt"
+        entries = TxtEntry.from_file(file_path)
+
+        # Should have multiple entries (April has 30 days)
+        assert len(entries) > 0
+
+        # All entries should have required fields
+        for entry in entries:
+            assert entry.date is not None
+            assert isinstance(entry.date, date)
+            assert entry.header is not None
+            assert len(entry.body) > 0
+            assert entry.word_count >= 0
+
+    def test_real_files_all_dates_valid(self, txt_exports_dir):
+        """Test that all dates in real files are valid."""
+        for file_path in txt_exports_dir.glob("*.txt"):
+            entries = TxtEntry.from_file(file_path)
+            for entry in entries:
+                assert entry.date is not None
+                assert isinstance(entry.date, date)
+                # Date should be reasonable (not in distant past/future)
+                assert entry.date.year >= 2000
+                assert entry.date.year <= 2030
+
+    def test_real_files_entries_ordered_chronologically(self, txt_exports_dir):
+        """Test that entries in real files are ordered by date."""
+        file_path = txt_exports_dir / "750words_export_2016-04.txt"
+        entries = TxtEntry.from_file(file_path)
+
+        if len(entries) > 1:
+            # Check that entries are in chronological order
+            for i in range(len(entries) - 1):
+                assert entries[i].date <= entries[i + 1].date
+
+    def test_real_files_word_counts_reasonable(self, txt_exports_dir):
+        """Test that word counts in real files are reasonable."""
+        file_path = txt_exports_dir / "750words_export_2025-09.txt"
+        entries = TxtEntry.from_file(file_path)
+
+        for entry in entries:
+            # 750words entries should have some content
+            assert entry.word_count > 0
+            # Should be reasonable (typical range is 750+)
+            assert entry.word_count < 10000  # Sanity check
+
+    def test_real_files_reading_time_calculated(self, txt_exports_dir):
+        """Test that reading time is calculated for real entries."""
+        file_path = txt_exports_dir / "750words_export_2025-09.txt"
+        entries = TxtEntry.from_file(file_path)
+
+        for entry in entries:
+            assert entry.reading_time > 0
+            # Reading time should be proportional to word count
+            # Assuming ~250 words per minute
+            expected_time = entry.word_count / 250
+            # Allow for variance in lexicon_count
+            assert 0.5 * expected_time <= entry.reading_time <= 2.0 * expected_time
+
+
 class TestTxtEntryFromLines:
     """Test TxtEntry.from_lines() constructor."""
 

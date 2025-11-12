@@ -29,6 +29,12 @@ def sample_entries_dir(test_data_dir):
 
 
 @pytest.fixture
+def txt_exports_dir(test_data_dir):
+    """Path to 750words txt export files."""
+    return test_data_dir / "txt_exports"
+
+
+@pytest.fixture
 def tmp_dir():
     """Create a temporary directory for test file operations."""
     with TemporaryDirectory() as tmpdir:
