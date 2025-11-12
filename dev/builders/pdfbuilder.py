@@ -39,6 +39,7 @@ from typing import Dict, List, Optional
 # --- Third party ---
 from pypandoc import convert_file
 
+from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.temporal_files import TemporalFileManager
@@ -46,13 +47,23 @@ from dev.utils.md import split_frontmatter
 
 
 # ----- LaTeX Command Constants -----
-LATEX_NEWPAGE = "\\newpage\n\n"
-LATEX_NO_LINE_NUMBERS = "\\nolinenumbers\n"
-LATEX_LINE_NUMBERS = "\\linenumbers\n"
-LATEX_RESET_LINE_COUNTER = "\\setcounter{linenumber}{1}\n"
-LATEX_TOC = "\\tableofcontents\n"
+"""LaTeX formatting commands for PDF generation."""
 
-# Annotation template for review PDFs
+LATEX_NEWPAGE = "\\newpage\n\n"
+"""LaTeX command to insert a page break."""
+
+LATEX_NO_LINE_NUMBERS = "\\nolinenumbers\n"
+"""LaTeX command to disable line numbering."""
+
+LATEX_LINE_NUMBERS = "\\linenumbers\n"
+"""LaTeX command to enable line numbering."""
+
+LATEX_RESET_LINE_COUNTER = "\\setcounter{linenumber}{1}\n"
+"""LaTeX command to reset line number counter to 1."""
+
+LATEX_TOC = "\\tableofcontents\n"
+"""LaTeX command to generate table of contents."""
+
 ANNOTATION_TEMPLATE = [
     "",
     "- **Curation**: Reference | Quote | Fragments | Source",
@@ -76,33 +87,53 @@ ANNOTATION_TEMPLATE = [
     "---",
     "",
 ]
+"""
+Annotation template for notes PDF generation.
 
-# Pandoc configuration
+Template inserted after each daily entry header in notes PDFs to provide
+structured space for manual review and annotation. Includes fields for
+curation notes, locations, people, references, epigraphs, poems, connections,
+and tags.
+"""
+
 PANDOC_ENGINE = "tectonic"
-PANDOC_DOCUMENT_CLASS = "extarticle"
+"""Pandoc PDF engine to use for compilation (tectonic is a modern, self-contained LaTeX engine)."""
 
-# PDF Metadata defaults
+PANDOC_DOCUMENT_CLASS = "extarticle"
+"""LaTeX document class for PDF generation (extarticle supports additional font sizes)."""
+
 PDF_TITLE = "Palimpsest"
+"""Default title for generated PDFs."""
+
 PDF_AUTHOR = "Sofía F."
+"""Default author name for generated PDFs."""
+
 AUTHOR_BIRTH_YEAR = 1993
+"""Birth year used to calculate age annotation in PDF metadata."""
 
 
 # ---- Classes ----
-class BuildStats:
-    """Track PDF build statistics."""
+class BuildStats(BaseStats):
+    """
+    Track PDF build statistics.
+
+    Extends BuilderStats base class with PDF-specific metrics.
+    """
 
     def __init__(self) -> None:
+        """Initialize PDF build statistics."""
+        super().__init__()
         self.files_processed: int = 0
         self.pdfs_created: int = 0
         self.errors: int = 0
-        self.start_time: datetime = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
 
     def summary(self) -> str:
-        """Get formatted summary."""
+        """
+        Get formatted summary of PDF build.
+
+        Returns:
+            Summary string with file count, PDFs created, errors, and duration
+        """
         return (
             f"{self.files_processed} entries, "
             f"{self.pdfs_created} PDFs created, "

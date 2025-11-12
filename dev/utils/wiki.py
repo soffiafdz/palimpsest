@@ -29,6 +29,9 @@ from typing import Any, Dict, List, Optional, Tuple, Set
 import yaml
 import logging
 
+# --- Project imports ---
+from dev.utils.md import split_frontmatter
+
 # Module logger
 logger = logging.getLogger(__name__)
 
@@ -109,18 +112,17 @@ def parse_bullets(lines: List[str]) -> Set[str]:
 def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
     """
     Reads YAML front-matter (delimited by ---) from a markdown file.
+
+    Uses split_frontmatter() utility for consistent parsing behavior.
     Returns a dict or empty dict on failure.
     """
     try:
-        with path.open(encoding="utf-8") as fh:
-            if fh.readline().rstrip() != "---":
-                return {}
-            lines: List[str] = []
-            for line in fh:
-                if line.rstrip() == "---":
-                    break
-                lines.append(line)
-            yaml_text: str = "".join(lines)
+        content = path.read_text(encoding="utf-8")
+        yaml_text, _ = split_frontmatter(content)
+
+        if not yaml_text:
+            return {}
+
         return yaml.safe_load(yaml_text) or {}
     except Exception as exc:
         logger.warning(f"YAML parse error in {path.name}: {exc}")

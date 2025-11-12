@@ -33,33 +33,54 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import TxtBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import FORMATTING_SCRIPT
 
 
 # ----- Entry Processing Constants -----
+
 ENTRY_MARKERS = {"------ ENTRY ------", "===== ENTRY ====="}
+"""
+Valid entry separator markers in formatted text files.
+
+These markers delimit individual journal entries in the formatted
+text output from the formatting script.
+"""
+
 DATE_PATTERN = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
+"""
+Regex pattern to match date headers in formatted entries.
+
+Format: "Date: YYYY-MM-DD"
+Used to extract dates from existing files and filter duplicate entries.
+"""
 
 
-class ProcessingStats:
-    """Track inbox processing statistics."""
+class ProcessingStats(BaseStats):
+    """
+    Track inbox processing statistics.
+
+    Extends BuilderStats base class with text processing-specific metrics.
+    """
 
     def __init__(self) -> None:
+        """Initialize text processing statistics."""
+        super().__init__()
         self.files_found: int = 0
         self.files_processed: int = 0
         self.files_skipped: int = 0
         self.years_updated: int = 0
         self.errors: int = 0
-        self.start_time: datetime = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
 
     def summary(self) -> str:
-        """Get formatted summary."""
+        """
+        Get formatted summary of inbox processing.
+
+        Returns:
+            Summary string with files found, processed, skipped, errors, and duration
+        """
         return (
             f"{self.files_found} found, "
             f"{self.files_processed} processed, "
@@ -83,9 +104,21 @@ class TxtBuilder:
         logger: Optional logger for operations
     """
 
-    # Expected filename patterns
     FILENAME_PATTERN = re.compile(r"(\d{4})[_-](\d{2})")
+    """
+    Regex pattern for parsing year and month from filenames.
+
+    Matches formats: YYYY_MM or YYYY-MM
+    Captures: (year, month) as groups
+    """
+
     STANDARD_FORMAT = "journal_{year}_{month}.txt"
+    """
+    Standard filename format for inbox files.
+
+    Template uses placeholders: {year} and {month}
+    Example: journal_2024_09.txt
+    """
 
     def __init__(
         self,

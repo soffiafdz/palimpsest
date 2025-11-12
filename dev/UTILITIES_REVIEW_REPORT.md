@@ -422,7 +422,13 @@ def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
         return {}
 ```
 
-**Status:** Documented, refactoring deferred to future iteration
+**Status:** ✅ IMPLEMENTED - Refactored in follow-up session
+
+**Implementation:**
+- Modified `wiki.extract_yaml_front_matter()` to use `split_frontmatter()` internally
+- Added import: `from dev.utils.md import split_frontmatter`
+- Reduced code duplication and ensures consistent frontmatter parsing behavior
+- See commit: "Complete deferred Module 2 and 3 tasks"
 
 ---
 
