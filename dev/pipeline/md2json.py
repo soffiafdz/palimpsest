@@ -4,16 +4,67 @@ md2json.py
 -------------------
 Synchronize a metadata registry (JSON) with frontmatter from Markdown files.
 
-Features:
-- Parses YAML frontmatter from each Markdown file in a directory.
-- Validates and normalizes metadata using MetadataValidator.
-- Records only non-default/curated metadata entries.
-- Tracks and reports newly added and updated registry entries.
-- Supports a dry-run mode to preview changes without writing.
-- Uses the shared MetadataRegistry, MetaEntry, and MetadataValidator classes.
+This module extracts YAML frontmatter from Markdown journal entries and
+maintains a synchronized JSON registry of metadata. The registry tracks
+curated metadata changes over time and provides a queryable index of
+journal entry metadata.
 
-Typical usage:
+Features:
+    - Parses YAML frontmatter from Markdown files
+    - Validates and normalizes metadata using MetadataValidator
+    - Records only non-default/curated metadata entries
+    - Tracks and reports newly added and updated registry entries
+    - Supports dry-run mode to preview changes without writing
+    - Uses shared MetadataRegistry, MetaEntry, and MetadataValidator classes
+
+Pipeline Position:
+    This is a supplementary tool alongside the main pipeline.
+    md → json registry (for quick metadata queries without database)
+
+Use Cases:
+    - Create lightweight metadata index for quick lookups
+    - Export metadata for external tools and analysis
+    - Track metadata changes over time
+    - Validate metadata consistency across entries
+
+CLI Usage:
+    # Basic sync
     python md2json.py --input journal/md --output journal/metadata.json
+
+    # Dry run to preview changes
+    python md2json.py --input journal/md --output metadata.json --dry-run
+
+    # Verbose logging
+    python md2json.py -i journal/md -o metadata.json -v
+
+    # Custom glob pattern
+    python md2json.py -i journal/2024 --glob "2024-*.md" -o 2024-meta.json
+
+Args (via command line):
+    --input, -i: Directory containing Markdown files (default: MD_DIR from paths)
+    --output, -o: Output JSON file path (default: METADATA_JSON from paths)
+    --glob: File pattern for Markdown files (default: "*.md")
+    --dry-run: Preview changes without writing output file
+    --verbose, -v: Enable detailed logging
+
+Output:
+    JSON file with structure:
+    {
+        "2024-01-15": {
+            "date": "2024-01-15",
+            "people": ["Alice", "Bob"],
+            "locations": ["Montreal", "Cafe X"],
+            "tags": ["reflection", "travel"],
+            ...
+        },
+        ...
+    }
+
+Notes:
+    - Only entries with non-default metadata are recorded
+    - Existing entries are updated if metadata changes
+    - Validation errors are reported but do not stop processing
+    - Date field is required for all entries
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -34,12 +85,22 @@ from code.paths import MD_DIR, METADATA_JSON
 # ----- Argument parser -----
 def parse_args() -> argparse.Namespace:
     """
-    Arguments:
-        - input: Directory with Markdown entry files to be parsed.
-        - output: Metadata JSON registry file to be updated/created.
-        - glob: Glob pattern for Markdown file parsing.
-        - dry-run: Do not write output file.
-        - verbose: Logging.
+    Parse command-line arguments for md2json script.
+
+    Returns:
+        argparse.Namespace with the following attributes:
+            input (str): Path to directory containing Markdown files
+            output (str): Path to output JSON metadata file
+            glob (str): Glob pattern for matching Markdown files
+            dry_run (bool): If True, preview changes without writing
+            verbose (bool): If True, enable detailed logging
+
+    Examples:
+        >>> args = parse_args()  # Uses defaults from paths.py
+        >>> args.input
+        'data/journal/content/md'
+        >>> args.dry_run
+        False
     """
     p = argparse.ArgumentParser(
         description="Extract metadata: Markdown →  registry JSON."

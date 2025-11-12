@@ -3,6 +3,85 @@
 health_monitor.py
 -----------------
 Database health monitoring and maintenance utilities.
+
+This module provides comprehensive database health checks, integrity validation,
+and maintenance operations for the Palimpsest metadata database. It detects
+issues like orphaned records, integrity violations, and performance problems.
+
+Key Features:
+    - Comprehensive health checks with multiple validation layers
+    - Orphaned record detection across all entity types
+    - Data integrity validation (foreign keys, constraints)
+    - Database file statistics and performance metrics
+    - Relationship consistency checks
+    - Automated issue detection and reporting
+    - Fix recommendations for common problems
+
+Health Checks Performed:
+    1. **Connectivity**: Basic database connection and query execution
+    2. **Orphaned Records**: Detects records with broken relationships
+       - Locations without parent cities
+       - References without parent entries
+       - PoemVersions without parent poems
+       - ManuscriptEntries without base entries
+    3. **Data Integrity**: Validates constraints and relationships
+       - Foreign key consistency
+       - Check constraint validation
+       - Date range validation
+    4. **Performance**: Database size, index health, query performance
+    5. **Schema**: Verifies schema version and migrations
+
+Usage:
+    from dev.database.health_monitor import HealthMonitor
+    from dev.database.manager import PalimpsestDB
+
+    db = PalimpsestDB(db_path, alembic_dir)
+    monitor = HealthMonitor(logger=db.logger)
+
+    with db.session_scope() as session:
+        # Run comprehensive health check
+        health_report = monitor.health_check(session, db_path=db.db_path)
+
+        if health_report["status"] != "healthy":
+            print(f"Issues found: {health_report['issues']}")
+            print(f"Recommendations: {health_report['recommendations']}")
+
+        # Check for specific issues
+        orphans = monitor._check_orphaned_records(session)
+        if orphans["total"] > 0:
+            print(f"Found {orphans['total']} orphaned records")
+
+CLI Integration:
+    metadb health                  # Basic health check
+    metadb health --fix            # Run health check and auto-fix issues
+    metadb validate                # Validate database integrity
+
+Health Report Structure:
+    {
+        "status": "healthy" | "warning" | "critical",
+        "issues": [
+            {"severity": "high", "category": "orphans", "message": "..."},
+            ...
+        ],
+        "metrics": {
+            "orphaned_records": {"total": 0, "by_type": {...}},
+            "integrity": {"passed": True, "violations": []},
+            "performance": {"size_mb": 5.2, "entry_count": 1250}
+        },
+        "recommendations": ["Run cleanup...", "Optimize indexes..."]
+    }
+
+Notes:
+    - Health checks are non-destructive by default
+    - Use --fix flag with metadb CLI for auto-repair
+    - Orphan detection uses QueryOptimizer for efficiency
+    - Health check results are logged automatically
+    - Failed checks raise HealthCheckError
+
+See Also:
+    - query_optimizer.py: Efficient database queries
+    - manager.py: Main database interface
+    - decorators.py: @handle_db_errors, @log_database_operation
 """
 from pathlib import Path
 from typing import Dict, Any, Optional
