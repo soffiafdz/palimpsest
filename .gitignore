@@ -4,6 +4,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
+# Test coverage
+.coverage
+htmlcov/
+
 # Logs and temporary files
 logs/
 tmp/
