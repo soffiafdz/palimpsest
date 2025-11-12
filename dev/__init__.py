@@ -11,7 +11,7 @@ database of relationships and themes, and generates annotated PDFs for
 review and curation.
 
 Main Components:
-    - pipeline: Multi-stage processing (src ’ txt ’ md ’ db ’ pdf)
+    - pipeline: Multi-stage processing (src -> txt -> md -> db -> pdf)
     - database: SQLAlchemy ORM with entity managers and query analytics
     - builders: PDF and text generation
     - core: Logging, validation, paths, backup management

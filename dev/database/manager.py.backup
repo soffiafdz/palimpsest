@@ -137,18 +137,6 @@ from .query_analytics import QueryAnalytics
 from .query_optimizer import QueryOptimizer
 from .relationship_manager import RelationshipManager, HasId
 
-# Modular entity managers (Phase 2)
-from .managers import (
-    TagManager,
-    PersonManager,
-    EventManager,
-    DateManager,
-    LocationManager,
-    ReferenceManager,
-    PoemManager,
-    ManuscriptManager,
-)
-
 
 T = TypeVar("T", bound=HasId)
 
@@ -228,16 +216,6 @@ class PalimpsestDB:
         self.export_manager = ExportManager(self.logger)
         self.query_analytics = QueryAnalytics(self.logger)
 
-        # Initialize modular entity managers (lazy-loaded in session_scope)
-        self._tag_manager: Optional[TagManager] = None
-        self._person_manager: Optional[PersonManager] = None
-        self._event_manager: Optional[EventManager] = None
-        self._date_manager: Optional[DateManager] = None
-        self._location_manager: Optional[LocationManager] = None
-        self._reference_manager: Optional[ReferenceManager] = None
-        self._poem_manager: Optional[PoemManager] = None
-        self._manuscript_manager: Optional[ManuscriptManager] = None
-
         # Initialize database
         self._setup_engine()
 
@@ -289,33 +267,9 @@ class PalimpsestDB:
     # ---- Session Management ----
     @contextmanager
     def session_scope(self):
-        """
-        Provide a transactional scope around operations with logging.
-
-        Also initializes modular entity managers for use within the session.
-        Managers are available via properties (db.people, db.tags, etc.)
-
-        Usage:
-            with db.session_scope() as session:
-                # New pattern (recommended)
-                person = db.people.create({"name": "Alice"})
-                tag = db.tags.get_or_create("python")
-
-                # Old pattern (still works, deprecated)
-                entry = db.create_entry(session, metadata)
-        """
+        """Provide a transactional scope around operations with logging."""
         session = self.SessionLocal()
         session_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-
-        # Initialize modular managers for this session
-        self._tag_manager = TagManager(session, self.logger)
-        self._person_manager = PersonManager(session, self.logger)
-        self._event_manager = EventManager(session, self.logger)
-        self._date_manager = DateManager(session, self.logger)
-        self._location_manager = LocationManager(session, self.logger)
-        self._reference_manager = ReferenceManager(session, self.logger)
-        self._poem_manager = PoemManager(session, self.logger)
-        self._manuscript_manager = ManuscriptManager(session, self.logger)
 
         if self.logger:
             self.logger.log_debug("session_start", {"session_id": session_id})
@@ -334,16 +288,6 @@ class PalimpsestDB:
                 )
             raise
         finally:
-            # Clean up managers
-            self._tag_manager = None
-            self._person_manager = None
-            self._event_manager = None
-            self._date_manager = None
-            self._location_manager = None
-            self._reference_manager = None
-            self._poem_manager = None
-            self._manuscript_manager = None
-
             session.close()
             if self.logger:
                 self.logger.log_debug("session_close", {"session_id": session_id})
@@ -357,165 +301,6 @@ class PalimpsestDB:
         """Context manager for database transactions with logging."""
         with self.session_scope() as session:
             yield session
-
-    # -------------------------------------------------------------------------
-    # Modular Entity Manager Properties (Phase 2)
-    # -------------------------------------------------------------------------
-
-    @property
-    def tags(self) -> TagManager:
-        """
-        Access TagManager for tag operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                tag = db.tags.get_or_create("python")
-                db.tags.link_to_entry(entry, "coding")
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._tag_manager is None:
-            raise DatabaseError(
-                "TagManager requires active session. "
-                "Use within session_scope: "
-                "with db.session_scope() as session: db.tags.create(...)"
-            )
-        return self._tag_manager
-
-    @property
-    def people(self) -> PersonManager:
-        """
-        Access PersonManager for person operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                person = db.people.create({"name": "Alice", "relation_type": "friend"})
-                alice = db.people.get(person_name="Alice")
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._person_manager is None:
-            raise DatabaseError(
-                "PersonManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._person_manager
-
-    @property
-    def events(self) -> EventManager:
-        """
-        Access EventManager for event operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                event = db.events.create({"name": "PyCon 2024"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._event_manager is None:
-            raise DatabaseError(
-                "EventManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._event_manager
-
-    @property
-    def dates(self) -> DateManager:
-        """
-        Access DateManager for mentioned date operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                date = db.dates.get_or_create("2024-01-15")
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._date_manager is None:
-            raise DatabaseError(
-                "DateManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._date_manager
-
-    @property
-    def locations(self) -> LocationManager:
-        """
-        Access LocationManager for location operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                location = db.locations.create({"name": "Central Park", "city": "NYC"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._location_manager is None:
-            raise DatabaseError(
-                "LocationManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._location_manager
-
-    @property
-    def references(self) -> ReferenceManager:
-        """
-        Access ReferenceManager for reference operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                ref = db.references.create({"title": "Book Title", "author": "Author"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._reference_manager is None:
-            raise DatabaseError(
-                "ReferenceManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._reference_manager
-
-    @property
-    def poems(self) -> PoemManager:
-        """
-        Access PoemManager for poem operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                poem = db.poems.create({"title": "Poem Title", "text": "..."})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._poem_manager is None:
-            raise DatabaseError(
-                "PoemManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._poem_manager
-
-    @property
-    def manuscripts(self) -> ManuscriptManager:
-        """
-        Access ManuscriptManager for manuscript operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                ms = db.manuscripts.create_entry(entry, {"status": "draft"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._manuscript_manager is None:
-            raise DatabaseError(
-                "ManuscriptManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._manuscript_manager
 
     # ---- Alembic setup ----
     def _setup_alembic(self) -> Config:
@@ -2120,122 +1905,259 @@ class PalimpsestDB:
             raise ValueError("Name must be given.")
         return session.query(Location).filter_by(name=location_name).first()
 
-    # -------------------------------------------------------------------------
-    # DEPRECATED: Person Operations (Use db.people instead)
-    # -------------------------------------------------------------------------
-
+    # ---- Person CRUD ----
+    @handle_db_errors
+    @log_database_operation("create_person")
+    @validate_metadata(["name"])
     def create_person(self, session: Session, metadata: Dict[str, Any]) -> Person:
         """
-        DEPRECATED: Use db.people.create(metadata) instead.
+        Create a new Person in the database with its associated relationships.
 
-        Create a new person with relationships.
+        This function does NOT handle file I/O or Markdown parsing. It assumes
+        that `metadata` is already normalized (all dates as `datetime.date`,
+        people, tags, events, etc. as strings or dicts).
 
         Args:
-            session: SQLAlchemy session (ignored, uses manager's session)
-            metadata: Person metadata dict
+            session (Session): Active SQLAlchemy session
+            metadata (Dict[str, Any]): Normalized metadata for the entry.
+                Required keys:
+                    - name (str)
+                Optional keys:
+                    - full_name (str)
+                    - relation_type (Enum)
+                Relationship keys (optional):
+                    - aliases (List[str])
+                    - events (List[Event|int])
+                    - entries (List[Entry|int])
 
         Returns:
-            Created Person object
-
-        Example (OLD):
-            with db.session_scope() as session:
-                person = db.create_person(session, {"name": "Alice"})
-
-        Example (NEW - RECOMMENDED):
-            with db.session_scope() as session:
-                person = db.people.create({"name": "Alice"})
+            Person: The newly created Location ORM object.
         """
-        import warnings
-        warnings.warn(
-            "db.create_person() is deprecated. Use db.people.create() instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.people.create(metadata)
+        # --- Required fields ---
+        p_name = DataValidator.normalize_string(metadata.get("name"))
+        if not p_name:
+            raise ValueError(f"Invalid name: {metadata['name']}")
 
+        # --- Uniqueness check ---
+        p_fname = DataValidator.normalize_string(metadata.get("full_name"))
+        name_fellows = session.query(Person).filter_by(name=p_name).all()
+        if name_fellows:
+            if not p_fname:
+                raise ValidationError(
+                    f"Existing people found for name '{p_name}', "
+                    "but no full_name was given."
+                )
+            for fellow in name_fellows:
+                if fellow.full_name == p_fname:
+                    raise ValidationError(
+                        "Person already exists with "
+                        f"'{p_name}' and full_name '{p_fname}'."
+                    )
+
+            name_fellows = [session.merge(f) for f in name_fellows]
+
+        # --- Relationship Type ---
+        relation_type = DataValidator.normalize_relation_type(
+            metadata.get("relation_type")
+        )
+
+        # --- Create Person ---
+        person = Person(
+            name=p_name,
+            full_name=p_fname,
+            relation_type=relation_type,
+        )
+
+        # --- name_fellow ---
+        if name_fellows:
+            name_fellows.append(person)
+            for fellow in name_fellows:
+                setattr(fellow, "name_fellow", True)
+
+        session.add(person)
+        session.flush()
+
+        # --- Relationships ---
+        self._update_person_relationships(session, person, metadata)
+        return person
+
+    def _update_person_relationships(
+        self,
+        session: Session,
+        person: Person,
+        metadata: Dict[str, Any],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update relationships for a Person object in the database.
+
+        Supports both incremental updates (defualt) and full overwrite.
+        This function handles relationships only. No I/O or Markdown parsing.
+        Prevents duplicates and ensures lookup tables are updated.
+
+        Args:
+            session (Session): Active SQLAlchemy session.
+            person (Person): Entry ORM object to update relationships for.
+            metadata (Dict[str, Any]): Normalized metadata containing:
+                Expected keys (optional):
+                    - aliases (List[str]
+                    - events (List[Event or id])
+                    - entries (List[Entry or id])
+                Removal keys (optional):
+                    - remove_aliases (List[str])
+                    - remove_events (List[Event or id])
+                    - remove_entries (List[Entry or id])
+
+        Behavior:
+            - Incremental mode:
+                adds new relationships and/or removes explicitly listed items.
+            - Overwrite mode:
+                clears all existing relationships before adding new ones.
+            - Calls session.flush() only if any changes were made
+
+        Returns:
+            None
+        """
+
+        # --- Many to many ---
+        many_to_many_configs = [
+            ("events", "events", Event),
+            ("entries", "entries", Entry),
+        ]
+
+        for rel_name, meta_key, model_class in many_to_many_configs:
+            if meta_key in metadata:
+                RelationshipManager.update_many_to_many(
+                    session=session,
+                    parent_obj=person,
+                    relationship_name=rel_name,
+                    items=metadata[meta_key],
+                    model_class=model_class,
+                    incremental=incremental,
+                    remove_items=metadata.get(f"remove_{meta_key}", []),
+                )
+
+        # --- Aliases ---
+        if "aliases" in metadata:
+            if person.id is None:
+                raise ValueError("Person must be persisted before linking aliases")
+
+            norm_aliases = {
+                DataValidator.normalize_string(a) for a in metadata["aliases"]
+            }
+
+            if not incremental:
+                for a in person.aliases:
+                    session.delete(a)
+                for alias_norm in norm_aliases:
+                    session.add(Alias(alias=alias_norm, person=person))
+                session.flush()
+            else:
+                # Incremental: only add aliases that don't exist yet
+                existing = {a.alias for a in person.aliases}
+                for alias_norm in norm_aliases - existing:
+                    session.add(Alias(alias=alias_norm, person=person))
+
+                if norm_aliases - existing:
+                    session.flush()
+
+    @handle_db_errors
+    @log_database_operation("update_person")
     def update_person(
         self, session: Session, person: Person, metadata: Dict[str, Any]
     ) -> Person:
         """
-        DEPRECATED: Use db.people.update(person, metadata) instead.
+        Update an existing Person in the database and refresh its relationships.
 
-        Update an existing person.
+        Does NOT perform file parsing. Accepts pre-normalized metadata.
+        Clears previous relationships before adding new ones.
 
         Args:
-            session: SQLAlchemy session (ignored)
-            person: Person object to update
-            metadata: Updated metadata
+            session (Session): Active SQLAlchemy session
+            person (Person): Existing Person ORM object to update.
+            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
+                Keys may include:
+                    - Core fields:
+                      name, full_name, relation_type
+                    - Relationship keys:
+                      aliases, events, entries
 
         Returns:
-            Updated Person object
-
-        Example (NEW - RECOMMENDED):
-            with db.session_scope() as session:
-                db.people.update(person, {"relation_type": "colleague"})
+            Person: The updated Person ORM object (still attached to session).
         """
-        import warnings
-        warnings.warn(
-            "db.update_person() is deprecated. Use db.people.update() instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.people.update(person, metadata)
+        # --- Ensure existance ---
+        db_person = session.get(Person, person.id)
+        if db_person is None:
+            raise ValueError(f"Person with id={person.id} does not exist")
 
+        # --- Attach to session ---
+        person = session.merge(db_person)
+
+        # --- Update scalar fields ---
+        field_updates = {
+            "relation_type": DataValidator.normalize_relation_type,
+            "full_name": DataValidator.normalize_string,
+            "name": DataValidator.normalize_string,
+        }
+
+        for field, normalizer in field_updates.items():
+            if field not in metadata:
+                continue
+
+            value = normalizer(metadata[field])
+
+            if field == "name" and value is not None:
+                name_fellows = session.query(Person).filter_by(name=value).all()
+
+                if name_fellows:
+                    if person.full_name is None:
+                        raise ValidationError(
+                            f"Other name_fellows exist with name '{value}'; "
+                            "this person needs a full name."
+                        )
+
+                    name_fellows.append(person)
+                    for fellow in name_fellows:
+                        setattr(fellow, "name_fellow", True)
+
+            if value is not None or field in ["full_name", "relation_type"]:
+                setattr(person, field, value)
+
+        # --- Update relationships ---
+        self._update_person_relationships(session, person, metadata)
+        return person
+
+    @handle_db_errors
+    @log_database_operation("get_person")
     def get_person(
         self,
         session: Session,
         person_name: Optional[str] = None,
         person_full_name: Optional[str] = None,
     ) -> Optional[Person]:
-        """
-        DEPRECATED: Use db.people.get(person_name=...) instead.
+        """Get a Person by name/full_name."""
+        if not person_name and not person_full_name:
+            raise ValueError("Either name or full_name must be given.")
 
-        Get a person by name or full_name.
+        if person_full_name:
+            p_fname = DataValidator.normalize_string(person_full_name)
+            return session.query(Person).filter_by(full_name=p_fname).first()
 
-        Args:
-            session: SQLAlchemy session (ignored)
-            person_name: Person's name
-            person_full_name: Person's full name
+        p_name = DataValidator.normalize_string(person_name)
+        if session.query(Person).filter_by(name=p_name).count() < 2:
+            return session.query(Person).filter_by(name=p_name).first()
+        else:
+            raise ValidationError(f"+1 people exist with name {p_name}. Use full_name.")
 
-        Returns:
-            Person object if found, None otherwise
-
-        Example (NEW - RECOMMENDED):
-            with db.session_scope() as session:
-                alice = db.people.get(person_name="Alice")
-        """
-        import warnings
-        warnings.warn(
-            "db.get_person() is deprecated. Use db.people.get() instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.people.get(
-            person_name=person_name,
-            person_full_name=person_full_name
-        )
-
+    @handle_db_errors
+    @log_database_operation("delete_person")
     def delete_person(self, session: Session, person: Person) -> None:
-        """
-        DEPRECATED: Use db.people.delete(person) instead.
-
-        Delete a person.
-
-        Args:
-            session: SQLAlchemy session (ignored)
-            person: Person object to delete
-
-        Example (NEW - RECOMMENDED):
-            with db.session_scope() as session:
-                db.people.delete(person)
-        """
-        import warnings
-        warnings.warn(
-            "db.delete_person() is deprecated. Use db.people.delete() instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        self.people.delete(person)
+        """Delete a person and its associated data."""
+        try:
+            session.delete(person)
+            session.flush()
+        except Exception as e:
+            raise DatabaseError(f"Failed to delete person: {e}")
 
     # ---- Reference CRUD ----
     def _process_references(
