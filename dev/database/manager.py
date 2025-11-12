@@ -1588,6 +1588,9 @@ class PalimpsestDB:
                         "epigraph": DataValidator.normalize_string(
                             metadata.get("epigraph")
                         ),
+                        "epigraph_attribution": DataValidator.normalize_string(
+                            metadata.get("epigraph_attribution")
+                        ),
                         "notes": DataValidator.normalize_string(metadata.get("notes")),
                         "created_at": datetime.now(timezone.utc),
                         "updated_at": datetime.now(timezone.utc),
