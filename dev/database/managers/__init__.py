@@ -28,15 +28,17 @@ Usage:
 from .base_manager import BaseManager
 from .tag_manager import TagManager
 from .event_manager import EventManager
+from .date_manager import DateManager
 
 __all__ = [
     "BaseManager",
     "TagManager",
     "EventManager",
+    "DateManager",
 ]
 
 # Additional managers will be added as they are implemented:
-# from .date_manager import DateManager
+# See REFACTORING_GUIDE.md for implementation templates
 # from .location_manager import LocationManager
 # from .reference_manager import ReferenceManager
 # from .poem_manager import PoemManager
