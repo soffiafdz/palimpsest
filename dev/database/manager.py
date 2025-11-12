@@ -137,7 +137,7 @@ from .query_analytics import QueryAnalytics
 from .query_optimizer import QueryOptimizer
 from .relationship_manager import RelationshipManager, HasId
 
-# Modular entity managers (Phase 2)
+# Modular entity managers (Phase 2 & Phase 3)
 from .managers import (
     TagManager,
     PersonManager,
@@ -147,6 +147,7 @@ from .managers import (
     ReferenceManager,
     PoemManager,
     ManuscriptManager,
+    EntryManager,
 )
 
 
@@ -316,6 +317,7 @@ class PalimpsestDB:
         self._reference_manager = ReferenceManager(session, self.logger)
         self._poem_manager = PoemManager(session, self.logger)
         self._manuscript_manager = ManuscriptManager(session, self.logger)
+        self._entry_manager = EntryManager(session, self.logger)
 
         if self.logger:
             self.logger.log_debug("session_start", {"session_id": session_id})
@@ -516,6 +518,27 @@ class PalimpsestDB:
                 "Use within session_scope."
             )
         return self._manuscript_manager
+
+    @property
+    def entries(self) -> EntryManager:
+        """
+        Access EntryManager for entry operations.
+
+        Recommended usage:
+            with db.session_scope() as session:
+                entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
+                entry = db.entries.get(entry_date="2024-01-15")
+                db.entries.update(entry, {"notes": "Updated notes"})
+
+        Raises:
+            DatabaseError: If accessed outside of session_scope context
+        """
+        if self._entry_manager is None:
+            raise DatabaseError(
+                "EntryManager requires active session. "
+                "Use within session_scope."
+            )
+        return self._entry_manager
 
     # ---- Alembic setup ----
     def _setup_alembic(self) -> Config:
@@ -830,714 +853,57 @@ class PalimpsestDB:
                 return obj
             raise
 
-    # ---- CRUD Operations for Entries ----
+    # -------------------------------------------------------------------------
+    # Entry Operations - Delegated to EntryManager (Phase 3)
+    # -------------------------------------------------------------------------
+    # All Entry CRUD and relationship operations are now handled by EntryManager.
+    #
+    # New recommended usage:
+    #   with db.session_scope() as session:
+    #       entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
+    #       entry = db.entries.get(entry_date="2024-01-15")
+    #       db.entries.update(entry, {"notes": "Updated"})
+    #       db.entries.delete(entry)
+    #
+    # Legacy methods below delegate to EntryManager for backward compatibility:
+    # -------------------------------------------------------------------------
+
     @handle_db_errors
     @log_database_operation("create_entry")
     @validate_metadata(["date", "file_path"])
     def create_entry(self, session: Session, metadata: Dict[str, Any]) -> Entry:
-        """
-        Create a new Entry in the database with its associated relationships.
-
-        This function does NOT handle file I/O or Markdown parsing. It assumes
-        that `metadata` is already normalized (all dates as `datetime.date`,
-        people, tags, events, etc. as strings or dicts).
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            metadata (Dict[str, Any]): Normalized metadata for the entry.
-                Required keys:
-                    - date (str | datetime.date)
-                    - file_path (str)
-                Optional keys:
-                    - file_hash (str)
-                    - word_count (int|str)
-                    - reading_time (float|str)
-                    - epigraph (str)
-                    - notes (str)
-                Relationship keys (optional):
-                    - dates (List[MentionedDate|int])
-                    - cities (List[City|int])
-                    - locations (List[Location|int])
-                    - people (List[Person|int])
-                    - references (List[Reference|int])
-                    - events (List[Event|int])
-                    - poems (List[Poem|int])
-                    - tags (List[str])
-        Returns:
-            Entry: The newly created Entry ORM object.
-        """
-        # --- Required fields ---
-        # parsed_date = md.parse_date(metadata["date"])
-        parsed_date = DataValidator.normalize_date(metadata["date"])
-        if not parsed_date:
-            raise ValueError(f"Invalid date format: {metadata['date']}")
-
-        # file_path = DataValidator.normalize_string(metadata.get("file_path"))
-        file_path = DataValidator.normalize_string(metadata["file_path"])
-        if not file_path:
-            raise ValueError(f"Invalid file_path: {metadata['file_path']}")
-
-        # --- file_path uniqueness check ---
-        existing = session.query(Entry).filter_by(file_path=file_path).first()
-        if existing:
-            raise ValidationError(f"Entry already exists for file_path: {file_path}")
-
-        # --- If hash doesn't exist, create it ---
-        file_hash = DataValidator.normalize_string((metadata.get("file_hash")))
-        if not file_hash and file_path:
-            file_path_obj = Path(file_path)
-            if file_path_obj.exists():
-                file_hash = fs.get_file_hash(file_path)
-            else:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"File path does not exist, cannot calculate hash: {file_path}"
-                    )
-
-        # --- Create Entry ---
-        def _do_create():
-            entry = Entry(
-                date=parsed_date,
-                file_path=file_path,
-                file_hash=file_hash,
-                word_count=DataValidator.normalize_int(metadata.get("word_count")),
-                reading_time=DataValidator.normalize_float(
-                    metadata.get("reading_time")
-                ),
-                epigraph=DataValidator.normalize_string(metadata.get("epigraph")),
-                epigraph_attribution=DataValidator.normalize_string(
-                    metadata.get("epigraph_attribution")
-                ),
-                notes=DataValidator.normalize_string(metadata.get("notes")),
-            )
-            session.add(entry)
-            session.flush()
-            return entry
-
-        entry = self._execute_with_retry(_do_create)
-
-        # --- Relationships ---
-        self._update_entry_relationships(session, entry, metadata)
-        return entry
-
-    def _update_entry_relationships(
-        self,
-        session: Session,
-        entry: Entry,
-        metadata: Dict[str, Any],
-        incremental: bool = True,
-    ) -> None:
-        """
-        Update relationships for an Entry object in the database.
-
-        Supports both incremental updates (defualt) and full overwrite.
-        This function handles relationships only. No I/O or Markdown parsing.
-        Prevents duplicates and ensures lookup tables are updated.
-
-        Args:
-            session (Session): Active SQLAlchemy session.
-            person (Person): Entry ORM object to update relationships for.
-            metadata (Dict[str, Any]): Normalized metadata containing:
-                Expected keys (optional):
-                    - dates (List[MentionedDate|int|str|Dict]) - Mentioned dates with optional context
-                    - cities (List[City|int|str]) - Cities where entry took place
-                    - locations (List[Dict]) - Locations with city context: {"name": str, "city": str}
-                    - people (List[Person|int|str]) - People mentioned
-                    - events (List[Event|int|str]) - Events entry belongs to
-                    - tags (List[str]) - Keyword tags
-                    - related_entries (List[str]) - Date strings of related entries
-                    - references (List[Dict]) - External references with sources
-                    - poems (List[Dict]) - Poem versions
-                    - manuscript (Dict) - Manuscript metadata
-                Removal keys (optional):
-                    - remove_dates (List[MentionedDate|int])
-                    - remove_cities (List[City|int])
-                    - remove_people (List[Person|int])
-                    - remove_events (List[Event|int])
-                    - remove_locations (List[Location|int])
-            incremental (bool): If True, add/remove specified items.
-                                If False, replace all relationships.
-
-        Behavior:
-            - Incremental mode:
-                adds new relationships and/or removes explicitly listed items.
-            - Overwrite mode:
-                clears all existing relationships before adding new ones.
-            - Calls session.flush() only if any changes were made
-
-        Special Handling:
-            - dates: Supports both simple date strings and dicts with context
-            - locations: Requires city context in dict format
-            - references: Creates ReferenceSource records as needed
-            - poems: Creates Poem parent records as needed
-            - tags: Simple string list (not ORM objects)
-            - related_entries: Uni-directional relationships by date string
-        """
-        try:
-            # --- Many to many ---
-            many_to_many_configs = [
-                ("cities", "cities", City),
-                ("people", "people", Person),
-                ("events", "events", Event),
-            ]
-
-            for rel_name, meta_key, model_class in many_to_many_configs:
-                if meta_key in metadata:
-                    RelationshipManager.update_many_to_many(
-                        session=session,
-                        parent_obj=entry,
-                        relationship_name=rel_name,
-                        items=metadata[meta_key],
-                        model_class=model_class,
-                        incremental=incremental,
-                        remove_items=metadata.get(f"remove_{meta_key}", []),
-                    )
-
-            # --- Aliases ---
-            if "alias" in metadata:
-                self._process_entry_aliases(session, entry, metadata["alias"])
-
-            # --- Locations ---
-            if "locations" in metadata:
-                self._update_entry_locations(
-                    session, entry, metadata["locations"], incremental
-                )
-
-            # --- Dates ---
-            if "dates" in metadata:
-                if not incremental:
-                    entry.dates.clear()
-                    session.flush()
-                self._process_mentioned_dates(session, entry, metadata["dates"])
-
-            # --- References ---
-            # References need special handling because they involve ReferenceSource creation
-            if "references" in metadata:
-                self._process_references(session, entry, metadata["references"])
-
-            # --- Poems ---
-            if "poems" in metadata:
-                self._process_poems(session, entry, metadata["poems"])
-
-            # --- Related entries ---
-            # Handle related entries (uni-directional relationships)
-            if "related_entries" in metadata:
-                self._process_related_entries(
-                    session, entry, metadata["related_entries"]
-                )
-
-            # --- Tags ---
-            # They're strings, not objects
-            if "tags" in metadata:
-                self._update_entry_tags(session, entry, metadata["tags"], incremental)
-
-            # --- Manuscript ---
-            if "manuscript" in metadata:
-                self.create_or_update_manuscript_entry(
-                    session, entry, metadata["manuscript"]
-                )
-
-            session.flush()
-
-        except Exception as e:
-            # Log error with context
-            if self.logger:
-                self.logger.log_error(
-                    e,
-                    {
-                        "operation": "update_entry_relationships",
-                        "entry_id": entry.id,
-                        "entry_date": str(entry.date),
-                    },
-                )
-            # Re-raise for higher-level handling
-            raise
-
-    def _process_entry_aliases(
-        self,
-        session: Session,
-        entry: Entry,
-        alias_data: Sequence[str | Sequence[str] | Dict[str, Any]],
-    ):
-        """
-        Process aliases with optional person context and link to entry.
-
-        Args:
-            session: SQLAlchemy session
-            entry: Entry to link aliases to
-            alias_data: List of alias specifications:
-                - str: single alias
-                - List[str]: multiple aliases for same person
-                - Dict: {"alias": str|List[str], "name": str, "full_name": str}
-
-        Raises:
-            ValueError: If entry not persisted or invalid alias data
-        """
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before linking aliases")
-
-        alias_orms = []
-
-        for alias_obj in alias_data:
-            person: Optional[Person] = None
-            aliases: List[str] = []
-            name: Optional[str] = None
-            full_name: Optional[str] = None
-
-            # Parse input format
-            if isinstance(alias_obj, dict):
-                # Dict format: {"alias": [...], "name": "...", "full_name": "..."}
-                alias_raw = alias_obj.get("alias", [])
-                if isinstance(alias_raw, str):
-                    alias_raw = [alias_raw]
-
-                aliases_raw = [
-                    DataValidator.normalize_string(a) for a in alias_raw if a
-                ]
-                aliases = [a for a in aliases_raw if a]
-
-                name = DataValidator.normalize_string(alias_obj.get("name"))
-                full_name = DataValidator.normalize_string(alias_obj.get("full_name"))
-
-            elif isinstance(alias_obj, list):
-                # List format: ["alias1", "alias2"]
-                aliases_raw = [DataValidator.normalize_string(a) for a in alias_obj]
-                aliases = [a for a in aliases_raw if a]
-
-            elif isinstance(alias_obj, str):
-                # String format: "alias"
-                normalized = DataValidator.normalize_string(alias_obj)
-                if normalized:
-                    aliases = [normalized]
-
-            else:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Invalid alias format: {type(alias_obj).__name__}",
-                        {"entry_id": entry.id, "alias_data": str(alias_obj)[:100]},
-                    )
-                continue
-
-            if not aliases:
-                if self.logger:
-                    self.logger.log_warning(
-                        "Empty alias list after normalization",
-                        {"entry_id": entry.id, "raw_data": str(alias_obj)[:100]},
-                    )
-                continue
-
-            # Try to resolve person from existing aliases
-            unresolved_aliases = aliases.copy()
-            alias_fellows = []
-            for alias in aliases:
-                existing_aliases = session.query(Alias).filter_by(alias=alias).all()
-
-                if len(existing_aliases) == 1:
-                    # Unique alias found - use it
-                    alias_orms.append(existing_aliases[0])
-                    person = existing_aliases[0].person
-                    unresolved_aliases.remove(alias)
-
-                elif len(existing_aliases) > 1:
-                    # Ambiguous - multiple people have this alias
-                    alias_fellows.append(alias)
-                    unresolved_aliases.remove(alias)
-
-            if unresolved_aliases or alias_fellows:
-                if not person:
-                    if name or full_name:
-                        try:
-                            person = self.get_person(session, name, full_name)
-                        except ValidationError as e:
-                            if self.logger:
-                                self.logger.log_warning(
-                                    f"Could not resolve person for aliases: {e}",
-                                    {
-                                        "entry_id": entry.id,
-                                        "entry_date": str(entry.date),
-                                        "alias": [
-                                            *unresolved_aliases,
-                                            *alias_fellows,
-                                        ],
-                                        "name": name,
-                                        "full_name": full_name,
-                                    },
-                                )
-                            continue
-
-                        if person is None:
-                            if self.logger:
-                                person_id = full_name if full_name else name
-                                self.logger.log_warning(
-                                    f"Person '{person_id}' not found for alias",
-                                    {
-                                        "entry_id": entry.id,
-                                        "entry_date": str(entry.date),
-                                        "alias": [
-                                            *unresolved_aliases,
-                                            *alias_fellows,
-                                        ],
-                                        "name": name,
-                                        "full_name": full_name,
-                                    },
-                                )
-                            continue
-                    else:
-                        # No person context provided
-                        if self.logger:
-                            self.logger.log_warning(
-                                "Cannot resolve alias without person context",
-                                {
-                                    "entry_id": entry.id,
-                                    "entry_date": str(entry.date),
-                                    "alias": [*unresolved_aliases, *alias_fellows],
-                                    "hint": "Provide 'name' or 'full_name' in alias dict",
-                                },
-                            )
-                        continue
-
-                if alias_fellows:
-                    # Resolve ambiguous alias
-                    resolved_fellows = []
-                    for alias in alias_fellows:
-                        existing_aliases = (
-                            session.query(Alias)
-                            .filter_by(alias=alias, person_id=person.id)
-                            .all()
-                        )
-
-                        if len(existing_aliases) == 1:
-                            # Unique alias found - use it
-                            alias_orms.append(existing_aliases[0])
-                            resolved_fellows.append(alias)
-
-                    alias_fellows = [
-                        a for a in alias_fellows if a not in resolved_fellows
-                    ]
-                    # This shouldn't happen due to Tables limitation, leave here anyway
-                    if alias_fellows:
-                        if self.logger:
-                            self.logger.log_warning(
-                                f"Ambiguous alias(es) '{alias_fellows}' match multiple people",
-                                {
-                                    "entry_id": entry.id,
-                                    "entry_date": str(entry.date),
-                                    "alias": alias_fellows,
-                                },
-                            )
-
-                # Create new alias records for this person
-                for alias in unresolved_aliases:
-                    try:
-                        alias_orm = self._get_or_create_lookup_item(
-                            session,
-                            Alias,
-                            lookup_fields={"alias": alias, "person_id": person.id},
-                        )
-                        alias_orms.append(alias_orm)
-
-                        if self.logger:
-                            self.logger.log_debug(
-                                f"Created alias '{alias}' for {person.display_name}",
-                                {
-                                    "entry_id": entry.id,
-                                    "person_id": person.id,
-                                    "alias": alias,
-                                },
-                            )
-                    except Exception as e:
-                        if self.logger:
-                            self.logger.log_error(
-                                e,
-                                {
-                                    "operation": "create_alias",
-                                    "entry_id": entry.id,
-                                    "person_id": person.id,
-                                    "alias": alias,
-                                },
-                            )
-                        # Continue processing other aliases
-                        continue
-
-        # Link all collected aliases to entry
-        if alias_orms:
-            try:
-                RelationshipManager.update_many_to_many(
-                    session=session,
-                    parent_obj=entry,
-                    relationship_name="aliases_used",
-                    items=alias_orms,
-                    model_class=Alias,
-                    incremental=True,
-                )
-
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Linked {len(alias_orms)} aliases to entry",
-                        {
-                            "entry_id": entry.id,
-                            "entry_date": str(entry.date),
-                            "alias_count": len(alias_orms),
-                        },
-                    )
-            except Exception as e:
-                if self.logger:
-                    self.logger.log_error(
-                        e,
-                        {
-                            "operation": "link_aliases_to_entry",
-                            "entry_id": entry.id,
-                            "entry_date": str(entry.date),
-                            "alias_count": len(alias_orms),
-                        },
-                    )
-                raise
-        elif self.logger:
-            # No aliases were successfully processed
-            self.logger.log_debug(
-                "No alias linked to entry",
-                {
-                    "entry_id": entry.id,
-                    "entry_date": str(entry.date),
-                    "input_count": len(alias_data),
-                },
-            )
-
-    def _process_mentioned_dates(
-        self,
-        session: Session,
-        entry: Entry,
-        dates_data: List[Union[str, Dict[str, Any]]],
-    ) -> None:
-        """
-        Process mentioned dates with optional context, locations, and people.
-
-        Each date can have:
-        - date: ISO format date string (required)
-        - context: Optional text context
-        - locations: List of location names (creates relationships)
-        - people: List of person specs (creates relationships)
-
-        Args:
-            session: SQLAlchemy session
-            entry: Entry to attach dates to
-            dates_data: List of date specifications
-        """
-        existing_date_ids = {d.id for d in entry.dates}
-
-        for date_item in dates_data:
-            mentioned_date = None
-
-            if isinstance(date_item, str):
-                # Simple date string
-                date_obj = date.fromisoformat(date_item)
-                mentioned_date = self._get_or_create_lookup_item(
-                    session, MentionedDate, {"date": date_obj}
-                )
-            elif isinstance(date_item, dict) and "date" in date_item:
-                # Date with context
-                date_obj = date.fromisoformat(date_item["date"])
-                context = date_item.get("context")
-
-                mentioned_date = self._get_or_create_lookup_item(
-                    session, MentionedDate, {"date": date_obj, "context": context}
-                )
-
-                if "locations" in date_item and date_item["locations"]:
-                    self._update_mentioned_date_locations(
-                        session, mentioned_date, date_item["locations"]
-                    )
-
-                if "people" in date_item and date_item["people"]:
-                    self._update_mentioned_date_people(
-                        session, mentioned_date, date_item["people"]
-                    )
-            else:
-                continue
-
-            if mentioned_date and mentioned_date.id not in existing_date_ids:
-                entry.dates.append(mentioned_date)
-
-    def _update_entry_tags(
-        self,
-        session: Session,
-        entry: Entry,
-        tags: List[str],
-        incremental: bool = True,
-    ) -> None:
-        """
-        Update Tags for an Entry from metadata.
-
-        Args:
-            session (Session): Active SQLAlchemy session.
-            entry (Entry): Entry object whose tags are to be updated.
-            tags (List[str]): List of tags (strings).
-            incremental (bool): Whether incremental/overwrite mode.
-
-        Behavior:
-            - Incremental mode:
-                adds new relationships and/or removes explicitly listed items.
-            - Overwrite mode:
-                clears all existing relationships before adding new ones.
-            - Calls session.flush() only if any changes were made
-
-        Returns:
-            None
-        """
-        # --- Failsafe ---
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before linking tags")
-
-        # --- Normalize incoming tags --
-        norm_tags = {DataValidator.normalize_string(t) for t in tags}
-
-        if not incremental:
-            entry.tags.clear()
-            session.flush()
-
-        existing_tags = {tag.tag for tag in entry.tags}
-
-        # Add new tags
-        for tag_name in norm_tags - existing_tags:
-            tag_obj = self._get_or_create_lookup_item(session, Tag, {"tag": tag_name})
-            entry.tags.append(tag_obj)
-
-        if norm_tags - existing_tags:
-            session.flush()
-
-    def _process_related_entries(
-        self, session: Session, entry: Entry, related_dates: List[str]
-    ) -> None:
-        """Process related entry connections (uni-directional)."""
-        for date_str in related_dates:
-            try:
-                related_date = date.fromisoformat(date_str)
-                related_entry = (
-                    session.query(Entry).filter_by(date=related_date).first()
-                )
-                if related_entry and related_entry.id != entry.id:
-                    entry.related_entries.append(related_entry)
-            except ValueError:
-                # Invalid date format, skip
-                continue
+        """Create entry - delegates to EntryManager."""
+        return self.entries.create(metadata)
 
     @handle_db_errors
     @log_database_operation("update_entry")
     def update_entry(
         self, session: Session, entry: Entry, metadata: Dict[str, Any]
     ) -> Entry:
-        """
-        Update an existing Entry in the database and refresh its relationships.
-
-        Does NOT perform file parsing. Accepts pre-normalized metadata.
-        Clears previous relationships before adding new ones.
-
-        Args:
-            session (Session): Active SQLAlchemy session
-            entry (Entry): Existing Entry ORM object to update.
-            metadata (Dict[str, Any]): Normalized metadata as in `create_entry`.
-                Keys may include:
-                    - Core fields:
-                      date, file_path,
-                      word_count, reading_time, epigraph, notes
-                    - Relationship keys:
-                      dates, cities, locations, people, references, events, poems, tags
-
-        Returns:
-            Entry: The updated Entry ORM object (still attached to session).
-
-        Notes: version_hash is automatically updated if content changes
-        """
-        # --- Ensure existance ---
-        db_entry = session.get(Entry, entry.id)
-        if db_entry is None:
-            raise ValueError(f"Entry with id={entry.id} does not exist")
-
-        # --- Attach to session ---
-        entry = session.merge(db_entry)
-
-        # --- Update scalar fields ---
-        def _do_update():
-            field_updates = {
-                "date": DataValidator.normalize_date,
-                "file_path": DataValidator.normalize_string,
-                "file_hash": DataValidator.normalize_string,
-                "word_count": DataValidator.normalize_int,
-                "reading_time": DataValidator.normalize_float,
-                "epigraph": DataValidator.normalize_string,
-                "epigraph_attribution": DataValidator.normalize_string,
-                "notes": DataValidator.normalize_string,
-            }
-
-            for field, normalizer in field_updates.items():
-                if field not in metadata:
-                    continue
-
-                value = normalizer(metadata[field])
-                if value is not None or field in ["epigraph", "epigraph_attribution", "notes"]:
-                    if field == "file_path" and value is not None:
-                        file_hash = fs.get_file_hash(value)
-                        setattr(entry, "file_hash", file_hash)
-                    setattr(entry, field, value)
-
-            session.flush()
-            return entry
-
-        entry = self._execute_with_retry(_do_update)
-
-        # --- Update relationships ---
-        self._update_entry_relationships(session, entry, metadata)
-        return entry
+        """Update entry - delegates to EntryManager."""
+        return self.entries.update(entry, metadata)
 
     @handle_db_errors
     @log_database_operation("get_entry")
     def get_entry(
         self, session: Session, entry_date: Union[str, date]
     ) -> Optional[Entry]:
-        """Get an entry by date."""
-        if isinstance(entry_date, str):
-            entry_date = date.fromisoformat(entry_date)
-
-        return session.query(Entry).filter_by(date=entry_date).first()
+        """Get entry - delegates to EntryManager."""
+        return self.entries.get(entry_date=entry_date)
 
     @handle_db_errors
     @log_database_operation("delete_entry")
     def delete_entry(self, session: Session, entry: Entry) -> None:
-        """Delete an entry and its associated data."""
-
-        def _do_delete():
-            session.delete(entry)
-            session.flush()
-
-        self._execute_with_retry(_do_delete)
+        """Delete entry - delegates to EntryManager."""
+        self.entries.delete(entry)
 
     @handle_db_errors
     @log_database_operation("get_entry_for_display")
     def get_entry_for_display(
         self, session: Session, entry_date: Union[str, date]
     ) -> Optional[Entry]:
-        """
-        Get single entry optimized for display operations.
-
-        Loads basic metadata without heavy relationships like references/poems.
-
-        Args:
-            session: SQLAlchemy session
-            entry_date: Date to query
-
-        Returns:
-            Entry with display relationships preloaded
-        """
-        if isinstance(entry_date, str):
-            entry_date = date.fromisoformat(entry_date)
-
-        entry = session.query(Entry).filter_by(date=entry_date).first()
-
-        if entry:
-            # Use optimized display query
-            return QueryOptimizer.for_display(session, entry.id)
-
-        return None
+        """Get entry for display - delegates to EntryManager."""
+        return self.entries.get_for_display(entry_date)
 
     @handle_db_errors
     @log_database_operation("bulk_create_entries")
@@ -1547,78 +913,10 @@ class PalimpsestDB:
         entries_metadata: List[Dict[str, Any]],
         batch_size: int = 100,
     ) -> List[int]:
-        """
-        Create multiple entries efficiently using bulk operations.
+        """Bulk create entries - delegates to EntryManager."""
+        return self.entries.bulk_create(entries_metadata, batch_size)
 
-        Args:
-            session: SQLAlchemy session
-            entries_metadata: List of metadata dictionaries for entries
-            batch_size: Number of entries to insert per batch
-
-        Returns:
-            List of created entry IDs
-        """
-        created_ids = []
-
-        # Process in batches
-        for i in range(0, len(entries_metadata), batch_size):
-            batch = entries_metadata[i : i + batch_size]
-
-            # Prepare mappings for bulk insert
-            mappings = []
-            for metadata in batch:
-                parsed_date = DataValidator.normalize_date(metadata["date"])
-                file_path = DataValidator.normalize_string(metadata["file_path"])
-                file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
-
-                if file_path and not file_hash:
-                    file_hash = fs.get_file_hash(file_path)
-
-                mappings.append(
-                    {
-                        "date": parsed_date,
-                        "file_path": file_path,
-                        "file_hash": file_hash,
-                        "word_count": DataValidator.normalize_int(
-                            metadata.get("word_count")
-                        ),
-                        "reading_time": DataValidator.normalize_float(
-                            metadata.get("reading_time")
-                        ),
-                        "epigraph": DataValidator.normalize_string(
-                            metadata.get("epigraph")
-                        ),
-                        "epigraph_attribution": DataValidator.normalize_string(
-                            metadata.get("epigraph_attribution")
-                        ),
-                        "notes": DataValidator.normalize_string(metadata.get("notes")),
-                        "created_at": datetime.now(timezone.utc),
-                        "updated_at": datetime.now(timezone.utc),
-                    }
-                )
-
-            def _do_bulk_insert():
-                # Use Core insert for bulk operations
-                stmt = insert(Entry).values(mappings)
-                session.execute(stmt)
-                session.flush()
-
-            self._execute_with_retry(_do_bulk_insert)
-
-            # Get IDs of created entries
-            dates = [m["date"] for m in mappings]
-            created_entries = session.query(Entry).filter(Entry.date.in_(dates)).all()
-            created_ids.extend([e.id for e in created_entries])
-
-            if self.logger:
-                self.logger.log_operation(
-                    "bulk_create_batch",
-                    {"batch_number": i // batch_size + 1, "count": len(batch)},
-                )
-
-        return created_ids
-
-    # ---- City CRUD ----
+    # ---- Mentioned Date Helper Methods ----
     def _update_mentioned_date_relationships(
         self,
         session: Session,
@@ -2097,6 +1395,168 @@ class PalimpsestDB:
 
         # Delegate to ManuscriptManager
         self.manuscripts.create_or_update_entry(entry, manuscript_data)
+
+    # ---- Static Helper Methods for EntryManager ----
+    # These allow EntryManager to call back to modular managers without circular dependencies
+
+    @staticmethod
+    def _get_person_static(
+        session: Session,
+        person_name: Optional[str] = None,
+        person_full_name: Optional[str] = None,
+    ) -> Optional[Person]:
+        """Static method for PersonManager access from EntryManager."""
+        from .managers import PersonManager
+        person_mgr = PersonManager(session, None)
+        return person_mgr.get(person_name=person_name, full_name=person_full_name)
+
+    @staticmethod
+    def _update_entry_locations_static(
+        session: Session,
+        entry: Entry,
+        locations_data: List[Any],
+        incremental: bool = True,
+    ) -> None:
+        """Static method for location processing from EntryManager."""
+        from .managers import LocationManager
+        location_mgr = LocationManager(session, None)
+
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before linking locations")
+
+        if not incremental:
+            entry.locations.clear()
+            session.flush()
+
+        existing_location_ids = {loc.id for loc in entry.locations}
+
+        for loc_spec in locations_data:
+            # Handle different input formats
+            if isinstance(loc_spec, dict):
+                location_name = DataValidator.normalize_string(loc_spec.get("name"))
+                city_name = DataValidator.normalize_string(loc_spec.get("city"))
+
+                if not location_name or not city_name:
+                    continue
+
+                # Get or create location via manager
+                city = location_mgr.get_or_create_city(city_name)
+                location = location_mgr.get_or_create_location(location_name, city)
+
+            elif isinstance(loc_spec, str):
+                # Just a location name - need city context
+                location_name = DataValidator.normalize_string(loc_spec)
+                if not location_name:
+                    continue
+                # Try to find existing location by name only
+                location = location_mgr.get(location_name=location_name)
+                if not location:
+                    continue
+            elif isinstance(loc_spec, Location):
+                location = loc_spec
+            else:
+                continue
+
+            if location and location.id not in existing_location_ids:
+                entry.locations.append(location)
+
+        session.flush()
+
+    @staticmethod
+    def _process_references_static(
+        session: Session,
+        entry: Entry,
+        references_data: List[Dict[str, Any]],
+    ) -> None:
+        """Static method for reference processing from EntryManager."""
+        from .managers import ReferenceManager
+        reference_mgr = ReferenceManager(session, None)
+
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding references")
+
+        for ref_data in references_data:
+            content = DataValidator.normalize_string(ref_data.get("content"))
+            description = DataValidator.normalize_string(ref_data.get("description"))
+
+            if not content and not description:
+                continue
+
+            # Process source if provided
+            source = None
+            if "source" in ref_data and ref_data["source"]:
+                source_data = ref_data["source"]
+                if isinstance(source_data, dict):
+                    title = DataValidator.normalize_string(source_data.get("title"))
+                    if title:
+                        # Get or create source via manager
+                        source = reference_mgr.get_or_create_source({
+                            "title": title,
+                            "type": source_data.get("type"),
+                            "author": source_data.get("author"),
+                            "publication_date": source_data.get("publication_date"),
+                        })
+
+            # Create reference via manager
+            reference_mgr.create({
+                "content": content,
+                "description": description,
+                "mode": ref_data.get("mode", "direct"),
+                "type": ref_data.get("type"),
+                "speaker": ref_data.get("speaker"),
+                "entry_id": entry.id,
+                "source_id": source.id if source else None,
+            })
+
+    @staticmethod
+    def _process_poems_static(
+        session: Session,
+        entry: Entry,
+        poems_data: List[Dict[str, Any]],
+    ) -> None:
+        """Static method for poem processing from EntryManager."""
+        from .managers import PoemManager
+        poem_mgr = PoemManager(session, None)
+
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding poems")
+
+        for poem_data in poems_data:
+            title = DataValidator.normalize_string(poem_data.get("title"))
+            text = DataValidator.normalize_string(poem_data.get("text"))
+
+            if not title or not text:
+                continue
+
+            # Parse revision date (default to entry date)
+            revision_date = DataValidator.normalize_date(
+                poem_data.get("revision_date") or entry.date
+            )
+
+            # Create poem version via manager
+            poem_mgr.create_version({
+                "title": title,
+                "text": text,
+                "revision_date": revision_date,
+                "notes": poem_data.get("notes"),
+                "entry_id": entry.id,
+            })
+
+    @staticmethod
+    def _create_or_update_manuscript_entry_static(
+        session: Session,
+        entry: Entry,
+        manuscript_data: Dict[str, Any],
+    ) -> None:
+        """Static method for manuscript processing from EntryManager."""
+        from .managers import ManuscriptManager
+        manuscript_mgr = ManuscriptManager(session, None)
+
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding manuscript data")
+
+        # Delegate to ManuscriptManager
+        manuscript_mgr.create_or_update_entry(entry, manuscript_data)
 
     # -------------------------------------------------------------------------
     # Entity Operations Delegated to Modular Managers
