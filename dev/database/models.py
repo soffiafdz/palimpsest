@@ -978,12 +978,15 @@ class Location(Base):
     """
 
     __tablename__ = "locations"
-    __table_args__ = (CheckConstraint("name != ''", name="ck_location_non_empty_name"),)
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_location_non_empty_name"),
+        UniqueConstraint("name", "city_id", name="uq_location_name_city"),
+    )
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+        String(255), nullable=False, index=True  # Removed unique=True (now composite)
     )
 
     # ---- Geographical location ----
