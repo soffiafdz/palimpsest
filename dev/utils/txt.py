@@ -22,9 +22,23 @@ from textstat import lexicon_count  # type: ignore
 # ----- Ordinal dates -----
 def ordinal(n: int) -> str:
     """
-    input: n, an integer day of month
-    output: the number with its ordinal suffix ("st", "nd", "rd", "th")
-    process: handles English ordinal rules
+    Convert day of month to ordinal string.
+
+    Handles English ordinal rules for day numbers.
+
+    Args:
+        n: Integer day of month (1-31)
+
+    Returns:
+        Number with ordinal suffix ("st", "nd", "rd", "th")
+
+    Examples:
+        >>> ordinal(1)
+        '1st'
+        >>> ordinal(22)
+        '22nd'
+        >>> ordinal(13)
+        '13th'
     """
     if 10 <= n % 100 <= 20:
         return f"{n}th"
@@ -40,16 +54,25 @@ def ordinal(n: int) -> str:
 # ----- Format body of text -----
 def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
     """
-    input: lines, list of raw body lines (strings)
-    output: list of (line_text, is_soft_break) tuples.
-      - leading/trailing whitespace stripped
-      - soft-break lines (ending in '\\') preserved verbatim
-      - blank lines preserved
-    process:
-      * For each line, strip newline; detect if it ends with backslash
-      * If so, append it unchanged (soft-hard break in Markdown)
-      * Otherwise, trim spaces/tabs on both ends
-      * Pass through blank lines and content lines for later paragraphing
+    Format raw body lines for Markdown processing.
+
+    Processes each line to detect soft breaks (lines ending with backslash),
+    strip whitespace, and preserve blank lines for paragraph separation.
+
+    Args:
+        lines: List of raw body lines (strings) from text document
+
+    Returns:
+        List of (line_text, is_soft_break) tuples where:
+        - line_text: Line with leading/trailing whitespace stripped
+        - is_soft_break: True if line ends with backslash (Markdown soft break)
+        - Blank lines are preserved for paragraph separation
+
+    Processing:
+        - Strips newline characters from each line
+        - Detects backslash endings for Markdown soft breaks
+        - Trims whitespace while preserving soft-break markers
+        - Collapses consecutive blank lines into single blank line
     """
     out: List[Tuple[str, bool]] = []
     prev_blank: bool = False
@@ -79,9 +102,21 @@ def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
 # ----- Wrap entry -> <80 chars -----
 def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
     """
-    input: paragraph, a list of lines (strings) without blank lines
-    output: list of wrapped lines at most `width` characters
-    process: joins the lines with spaces, then uses textwrap
+    Wrap paragraph lines to specified character width.
+
+    Joins paragraph lines with spaces and applies text wrapping using
+    Python's textwrap module to ensure lines don't exceed the width limit.
+
+    Args:
+        paragraph: List of lines (strings) without blank lines
+        width: Maximum character width per line (default: 80)
+
+    Returns:
+        List of wrapped lines, each at most `width` characters long
+
+    Examples:
+        >>> reflow_paragraph(["This is a very long line that needs wrapping"], 20)
+        ['This is a very long', 'line that needs', 'wrapping']
     """
     text: str = " ".join(paragraph)
     wrapper = TextWrapper(
@@ -95,10 +130,22 @@ def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
 # ----- Word-count & ~reading time -----
 def compute_metrics(lines: List[str]) -> Tuple[int, float]:
     """
-    input: str, complete text for the entry
-    output: EntryMetrics
-        - word_count: int, number of words
-        - reading_time_min: float, minutes to read
+    Compute word count and reading time metrics for text.
+
+    Calculates the number of words (excluding punctuation) and estimates
+    reading time based on 260 words per minute average reading speed.
+
+    Args:
+        lines: List of text lines comprising the complete entry
+
+    Returns:
+        Tuple of (word_count, reading_time_min) where:
+        - word_count: Number of words (excluding punctuation)
+        - reading_time_min: Estimated reading time in minutes (260 WPM)
+
+    Examples:
+        >>> compute_metrics(["Hello world", "This is a test"])
+        (6, 0.023)
     """
     text = " ".join(line.strip() for line in lines)
     wc: int = lexicon_count(text, removepunct=True)

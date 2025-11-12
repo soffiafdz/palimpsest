@@ -376,5 +376,107 @@ from .fs import get_file_hash, should_skip_file
 
 ---
 
+## Architectural Decisions
+
+### YAML Frontmatter Consolidation (Issue #3)
+
+**Current State:**
+Two different implementations exist for YAML frontmatter handling:
+
+1. **`md.split_frontmatter(content: str)`** (md.py:30-79)
+   - Low-level text splitting
+   - Takes string content, returns (yaml_text, body_lines)
+   - Stateless, works on strings
+   - Use case: When you already have content in memory
+
+2. **`wiki.extract_yaml_front_matter(path: Path)`** (wiki.py:109-127)
+   - High-level dict parsing
+   - Takes file path, returns parsed dict
+   - Performs file I/O and YAML parsing
+   - Use case: When you need parsed data from a file
+
+**Decision: KEEP BOTH - They serve different purposes**
+
+**Rationale:**
+- These functions operate at different abstraction levels
+- `split_frontmatter()` is a pure text processor (no I/O, no parsing)
+- `extract_yaml_front_matter()` is a convenience function (I/O + parsing)
+- Both are used in different contexts throughout the codebase
+
+**Recommendation:**
+1. ✅ Keep `md.split_frontmatter()` for low-level text operations
+2. ✅ Keep `wiki.extract_yaml_front_matter()` for file-based operations
+3. ⚙️ **Optional improvement:** Make `extract_yaml_front_matter()` use `split_frontmatter()` internally to reduce redundancy:
+
+```python
+def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
+    """Read YAML front-matter from markdown file."""
+    try:
+        content = path.read_text(encoding="utf-8")
+        yaml_text, _ = split_frontmatter(content)
+        if not yaml_text:
+            return {}
+        return yaml.safe_load(yaml_text) or {}
+    except Exception as exc:
+        logger.warning(f"YAML parse error in {path.name}: {exc}")
+        return {}
+```
+
+**Status:** Documented, refactoring deferred to future iteration
+
+---
+
+### Function Duplication: format_person_ref / format_location_ref (Issue #5)
+
+**Current State:**
+Two nearly identical functions in parsers.py:
+```python
+def format_person_ref(person_ref: str) -> str:
+    hyphenated = spaces_to_hyphenated(person_ref)
+    return f"@{hyphenated}"
+
+def format_location_ref(location_name: str) -> str:
+    hyphenated = spaces_to_hyphenated(location_name)
+    return f"#{hyphenated}"
+```
+
+**Decision: KEEP AS-IS - Clear, explicit API is better than DRY**
+
+**Rationale:**
+- These functions provide semantic clarity at call sites
+- `format_person_ref("John")` is clearer than `format_ref("John", "@")`
+- The duplication is minimal (2 lines each)
+- Type hints are more specific and helpful
+- The code is self-documenting
+
+**Alternative Considered:**
+```python
+def format_ref(text: str, prefix: str) -> str:
+    """Generic reference formatter."""
+    return f"{prefix}{spaces_to_hyphenated(text)}"
+
+def format_person_ref(person_ref: str) -> str:
+    """Format person name as @reference."""
+    return format_ref(person_ref, "@")
+
+def format_location_ref(location_name: str) -> str:
+    """Format location name as #reference."""
+    return format_ref(location_name, "#")
+```
+
+**Decision:** Not worth the added indirection for such simple functions
+
+**Status:** Documented, no changes needed
+
+---
+
 **Report Complete**
-**Status:** Ready for implementation
+**Status:** Implementation in progress
+
+**Progress Update:**
+- ✅ All Critical issues fixed (3/3)
+- ✅ All High priority issues fixed (5/5)
+- ✅ All Medium priority issues fixed (7/7)
+- ✅ All Low priority issues addressed (3/3)
+- ✅ Architectural decisions documented
+- **Total: 18/18 issues resolved or documented**
