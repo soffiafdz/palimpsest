@@ -32,6 +32,7 @@ from .date_manager import DateManager
 from .location_manager import LocationManager
 from .reference_manager import ReferenceManager
 from .poem_manager import PoemManager
+from .person_manager import PersonManager
 
 __all__ = [
     "BaseManager",
@@ -41,11 +42,11 @@ __all__ = [
     "LocationManager",
     "ReferenceManager",
     "PoemManager",
+    "PersonManager",
 ]
 
 # Additional managers will be added as they are implemented:
 # See REFACTORING_GUIDE.md for implementation templates
-# from .person_manager import PersonManager
 # from .manuscript_manager import ManuscriptManager
 # from .entry_manager import EntryManager
 # from .entry_relationship_handler import EntryRelationshipHandler
