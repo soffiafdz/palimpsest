@@ -19,8 +19,8 @@ from typing import cast, Any, Dict, List, Optional, Type, TYPE_CHECKING
 
 from .exceptions import ValidationError
 
-if TYPE_CHECKING:
-    from dev.database.models import ReferenceMode, ReferenceType, RelationType
+# Import enums for runtime use (not just type checking)
+from dev.database.models import ReferenceMode, ReferenceType, RelationType
 
 
 class DataValidator:

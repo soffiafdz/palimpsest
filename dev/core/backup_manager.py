@@ -377,7 +377,7 @@ class BackupManager:
         Returns:
             Dictionary mapping backup types to lists of backup info
         """
-        backups = {"daily": [], "weekly": [], "manual": []}
+        backups = {"daily": [], "weekly": [], "manual": [], "full": []}
 
         for backup_type in backups.keys():
             backup_dir = self.db_backup_dir / backup_type

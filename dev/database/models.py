@@ -1204,7 +1204,7 @@ class Person(Base, SoftDeleteMixin):
         return min(dates) if dates else None
 
     @property
-    def lasts_appearance_date(self) -> Optional[date]:
+    def last_appearance_date(self) -> Optional[date]:
         """Most recent date this person was mentioned."""
         dates = [md.date for md in self.dates]
         return max(dates) if dates else None

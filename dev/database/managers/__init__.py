@@ -47,7 +47,14 @@ __all__ = [
     "ManuscriptManager",
 ]
 
-# All entity managers complete! 🎉
-# See REFACTORING_GUIDE.md for usage patterns
+# Phase 1: Core entity managers complete (9/9)! 🎉
+# See REFACTORING_GUIDE.md for usage patterns and implementation details
+#
+# Phase 2 (Future Work - Not Yet Implemented):
+# The following managers handle the most complex operations and are planned
+# for future implementation:
+#   - EntryManager: Core entry CRUD operations
+#   - EntryRelationshipHandler: Complex multi-entity relationship updates
+#
 # from .entry_manager import EntryManager
 # from .entry_relationship_handler import EntryRelationshipHandler
