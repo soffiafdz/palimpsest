@@ -905,6 +905,9 @@ class PalimpsestDB:
                     metadata.get("reading_time")
                 ),
                 epigraph=DataValidator.normalize_string(metadata.get("epigraph")),
+                epigraph_attribution=DataValidator.normalize_string(
+                    metadata.get("epigraph_attribution")
+                ),
                 notes=DataValidator.normalize_string(metadata.get("notes")),
             )
             session.add(entry)
@@ -1462,6 +1465,7 @@ class PalimpsestDB:
                 "word_count": DataValidator.normalize_int,
                 "reading_time": DataValidator.normalize_float,
                 "epigraph": DataValidator.normalize_string,
+                "epigraph_attribution": DataValidator.normalize_string,
                 "notes": DataValidator.normalize_string,
             }
 
@@ -1470,7 +1474,7 @@ class PalimpsestDB:
                     continue
 
                 value = normalizer(metadata[field])
-                if value is not None or field in ["epigraph", "notes"]:
+                if value is not None or field in ["epigraph", "epigraph_attribution", "notes"]:
                     if field == "file_path" and value is not None:
                         file_hash = fs.get_file_hash(value)
                         setattr(entry, "file_hash", file_hash)
