@@ -24,17 +24,23 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import zipfile
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from dev.core.exceptions import TxtBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import FORMATTING_SCRIPT
+
+
+# ----- Entry Processing Constants -----
+ENTRY_MARKERS = {"------ ENTRY ------", "===== ENTRY ====="}
+DATE_PATTERN = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
 
 
 class ProcessingStats:
@@ -101,8 +107,12 @@ class TxtBuilder:
         """
         self.inbox_dir = inbox_dir
         self.output_dir = output_dir
-        self.archive_dir: Path = archive_dir or (inbox_dir.parent / "archive")
-        self.format_script: Path = format_script or FORMATTING_SCRIPT
+        self.archive_dir = (
+            archive_dir if archive_dir is not None else (inbox_dir.parent / "archive")
+        )
+        self.format_script = (
+            format_script if format_script is not None else FORMATTING_SCRIPT
+        )
         self.logger = logger
 
     def _parse_filename(self, filename: str) -> Optional[tuple[str, str]]:
@@ -148,18 +158,17 @@ class TxtBuilder:
 
         new_path = file_path.parent / standard_name
 
-        if new_path.exists() and new_path != file_path:
-            if self.logger:
-                self.logger.log_warning(
-                    f"Target exists, skipping rename: {standard_name}"
-                )
-            return file_path
-
         try:
             file_path.rename(new_path)
             if self.logger:
                 self.logger.log_debug(f"Renamed: {filename} → {standard_name}")
             return new_path
+        except FileExistsError:
+            if self.logger:
+                self.logger.log_warning(
+                    f"Target exists, skipping rename: {standard_name}"
+                )
+            return file_path
         except OSError as e:
             if self.logger:
                 self.logger.log_error(
@@ -167,7 +176,7 @@ class TxtBuilder:
                 )
             return None
 
-    def _get_existing_dates(self, file_path: Path) -> set:
+    def _get_existing_dates(self, file_path: Path) -> Set[str]:
         """
         Extract dates from an existing output file without modifying content.
 
@@ -183,8 +192,7 @@ class TxtBuilder:
         try:
             content = file_path.read_text(encoding="utf-8")
             # Match "Date: YYYY-MM-DD" pattern
-            date_pattern = re.compile(r"^Date:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
-            dates = {match.group(1) for match in date_pattern.finditer(content)}
+            dates = {match.group(1) for match in DATE_PATTERN.finditer(content)}
 
             if self.logger:
                 self.logger.log_debug(
@@ -193,7 +201,7 @@ class TxtBuilder:
 
             return dates
 
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             if self.logger:
                 self.logger.log_warning(
                     f"Could not read existing file {file_path.name}: {e}"
@@ -221,7 +229,7 @@ class TxtBuilder:
 
         for line in content.splitlines():
             # Check if this is a new entry marker
-            if line.strip() in ["------ ENTRY ------", "===== ENTRY ====="]:
+            if line.strip() in ENTRY_MARKERS:
                 # Save previous entry if it's new
                 if current_entry and (entry_date is None or entry_date not in existing_dates):
                     entries.append("\n".join(current_entry))
@@ -230,7 +238,7 @@ class TxtBuilder:
                 entry_date = None
             else:
                 # Check if this line contains a date
-                date_match = re.match(r"^Date:\s*(\d{4}-\d{2}-\d{2})", line)
+                date_match = DATE_PATTERN.match(line)
                 if date_match:
                     entry_date = date_match.group(1)
                 current_entry.append(line)
@@ -263,6 +271,8 @@ class TxtBuilder:
         """
         if not self.format_script.exists():
             raise TxtBuildError(f"Format script not found: {self.format_script}")
+        if not os.access(self.format_script, os.X_OK):
+            raise TxtBuildError(f"Format script not executable: {self.format_script}")
 
         try:
             # Ensure output directory exists
