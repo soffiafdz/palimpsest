@@ -41,50 +41,18 @@ from dev.core.exceptions import Txt2MdError
 from dev.core.paths import LOG_DIR, MD_DIR  # , TMP_DIR  , ROOT
 from dev.core.temporal_files import TemporalFileManager
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
+from dev.core.cli_utils import setup_logger
+from dev.core.cli_stats import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
 
 
-# ----- Conversion Stats -----
-class ConversionStats:
-    """Track conversion statistics."""
-
-    def __init__(self):
-        self.files_processed = 0
-        self.entries_created = 0
-        self.entries_skipped = 0
-        self.errors = 0
-        self.start_time = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
-
-    def summary(self) -> str:
-        """Get summary string."""
-        return (
-            f"{self.files_processed} files processed, "
-            f"{self.entries_created} entries created, "
-            f"{self.entries_skipped} skipped, "
-            f"{self.errors} errors in {self.duration():.2f}s"
-        )
-
-
-# ----- Functions -----
-# ---- Logging ----
-def setup_logger(log_dir: Path, verbose: bool = False) -> PalimpsestLogger:
-    """Setup logging for txt2md operations."""
-    operations_log_dir = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-
-    logger = PalimpsestLogger(operations_log_dir, component_name="txt2md")
-
-    if verbose:
-        logger.main_logger.setLevel(logging.DEBUG)
-        for handler in logger.main_logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
-                handler.setLevel(logging.DEBUG)
-
-    return logger
+# ----- Helper Functions -----
+def configure_verbose_logging(logger: PalimpsestLogger) -> None:
+    """Enable verbose/debug logging for a logger instance."""
+    logger.main_logger.setLevel(logging.DEBUG)
+    for handler in logger.main_logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            handler.setLevel(logging.DEBUG)
 
 
 # ---- Conversion ----
@@ -96,13 +64,51 @@ def process_entry(
     logger: Optional[PalimpsestLogger] = None,
 ) -> Optional[Path]:
     """
-    Process a single entry and write to file.
+    Process a single TxtEntry and write to Markdown file.
+
+    Implementation Logic:
+    ---------------------
+    Converts a parsed TxtEntry dataclass instance into a Markdown file with
+    YAML frontmatter. Handles year-based directory organization and file
+    existence checks.
+
+    Processing Flow:
+    1. Extracts date from entry for filename generation
+    2. Creates year-based directory structure (output_dir/YYYY/)
+    3. Checks for existing file (skips if exists unless force_overwrite)
+    4. Generates Markdown content with frontmatter
+    5. Writes to file with UTF-8 encoding
+
+    Filename Generation:
+    - Format: YYYY-MM-DD.md
+    - Derived from entry.date field
+    - Example: 2024-01-15.md
+
+    Directory Structure:
+    - Creates: output_dir/YYYY/
+    - Example: md/2024/2024-01-15.md
+
+    YAML Frontmatter Options:
+    - minimal_yaml=True: Only date, word_count, reading_time
+    - minimal_yaml=False: Uses entry.to_markdown() with full metadata
+
+    Skip Logic:
+    - If file exists and not force_overwrite: returns None
+    - Logs skip action for debugging
+    - No error raised (considered success)
+
+    Args:
+        entry: Parsed TxtEntry with date, content, and computed metadata
+        output_dir: Base output directory (typically MD_DIR)
+        force_overwrite: If True, overwrite existing files
+        minimal_yaml: If True, generate minimal frontmatter only
+        logger: Optional logger for debug output
 
     Returns:
-        Path to created file, or None if skipped
+        Path to created/overwritten file, or None if skipped
 
     Raises:
-        Txt2MdError: If processing fails
+        Txt2MdError: If file write fails or directory creation fails
     """
     if logger:
         logger.log_debug(f"Processing entry dated {entry.date.isoformat()}")
@@ -144,13 +150,58 @@ def convert_file(
     logger: Optional[PalimpsestLogger] = None,
 ) -> ConversionStats:
     """
-    Convert a single .txt file to multiple Markdown files.
+    Convert a single monthly .txt file to multiple daily Markdown files.
+
+    Implementation Logic:
+    ---------------------
+    Takes a monthly text file (YYYY-MM.txt) containing multiple daily entries
+    and splits it into individual daily Markdown files with YAML frontmatter.
+    Core function for txt2md conversion pipeline.
+
+    Processing Flow:
+    1. Validates input file exists
+    2. Creates output directory structure
+    3. Parses file into TxtEntry objects (using TxtEntry.from_file())
+    4. Processes each entry individually (calls process_entry())
+    5. Tracks statistics (created/skipped/errors)
+    6. Logs operation completion
+
+    Large File Handling:
+    - Files > 50MB use temporary file processing
+    - Copies to temp location to avoid memory issues
+    - TemporalFileManager handles cleanup automatically
+    - Prevents memory exhaustion on large monthly exports
+
+    Parsing Strategy:
+    - TxtEntry.from_file() handles entry boundary detection
+    - Identifies daily entries by date markers
+    - Extracts content and computes metadata
+    - Returns list of TxtEntry objects
+
+    Error Handling:
+    - Individual entry failures don't stop batch
+    - Each error logged and counted in stats
+    - Statistics track: files_processed, entries_created, entries_skipped, errors
+    - Final operation logged with summary
+
+    Statistics Tracking:
+    - stats.files_processed: Always 1 (single file)
+    - stats.entries_created: Count of new .md files written
+    - stats.entries_skipped: Count of existing files not overwritten
+    - stats.errors: Count of entry processing failures
+
+    Args:
+        input_path: Path to monthly .txt file (e.g., 2024-01.txt)
+        output_dir: Base output directory (typically MD_DIR)
+        force_overwrite: If True, overwrite existing .md files
+        minimal_yaml: If True, generate minimal frontmatter only
+        logger: Optional logger for operation tracking
 
     Returns:
-        ConversionStats with results
+        ConversionStats object with processing results
 
     Raises:
-        Txt2MdError: If conversion fails
+        Txt2MdError: If input file not found or critical parsing failure
     """
     stats = ConversionStats()
 
@@ -314,7 +365,10 @@ def cli(ctx, log_dir, verbose):
     ctx.ensure_object(dict)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir), verbose)
+    logger = setup_logger(Path(log_dir), "txt2md")
+    if verbose:
+        configure_verbose_logging(logger)
+    ctx.obj["logger"] = logger
 
 
 @cli.command()

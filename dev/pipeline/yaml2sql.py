@@ -110,40 +110,9 @@ from dev.database.models import Entry
 from dev.core.exceptions import Yaml2SqlError
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
+from dev.core.cli_utils import setup_logger
+from dev.core.cli_stats import ConversionStats
 from dev.utils import fs
-
-
-class ConversionStats:
-    """Track conversion statistics."""
-
-    def __init__(self) -> None:
-        self.files_processed: int = 0
-        self.entries_created: int = 0
-        self.entries_updated: int = 0
-        self.entries_skipped: int = 0
-        self.errors: int = 0
-        self.start_time: datetime = datetime.now()
-
-    def duration(self) -> float:
-        """Get elapsed time in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
-
-    def summary(self) -> str:
-        """Get formatted summary."""
-        return (
-            f"{self.files_processed} files, "
-            f"{self.entries_created} created, "
-            f"{self.entries_updated} updated, "
-            f"{self.entries_skipped} skipped, "
-            f"{self.errors} errors in {self.duration():.2f}s"
-        )
-
-
-def setup_logger(log_dir: Path) -> PalimpsestLogger:
-    """Setup logging for yaml2sql operations."""
-    operations_log_dir: Path = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-    return PalimpsestLogger(operations_log_dir, component_name="yaml2sql")
 
 
 def process_entry_file(
@@ -154,20 +123,83 @@ def process_entry_file(
     raise_on_error: bool = True,
 ) -> str:
     """
-    Process a single Markdown file and update database.
+    Process a single Markdown file and update database with parsed YAML metadata.
+
+    Implementation Logic:
+    ---------------------
+    Core function for yaml2sql pipeline. Reads a Markdown file with YAML
+    frontmatter, parses complex metadata, and creates/updates database records
+    with full relationship management.
+
+    Processing Flow:
+    1. Parse Markdown file to MdEntry dataclass
+    2. Validate required fields and data types
+    3. Convert to database metadata format
+    4. Check for existing entry by date
+    5. Compare file hash for change detection
+    6. Create new entry OR update existing entry
+    7. Return status for statistics tracking
+
+    Change Detection Strategy:
+    - Computes MD5 hash of file content
+    - Compares with Entry.file_hash in database
+    - If hash matches and not force_update: skip processing
+    - This enables incremental updates (only changed files)
+    - Prevents redundant database writes
+
+    YAML Parsing Complexity:
+    - Handles nested structures (locations by city)
+    - Parses name variations (hyphens, aliases, full_name)
+    - Validates date formats and field types
+    - Extracts references with sources
+    - Processes poem versions with revisions
+    - Manages manuscript editorial metadata
+
+    Database Operations:
+    - Uses session_scope() for transaction management
+    - Create: db.create_entry() handles ORM object creation
+    - Update: db.update_entry() manages relationship changes
+    - Automatic rollback on exception
+    - File hash stored in Entry.file_hash field
+
+    Relationship Management:
+    - People: Many-to-many via entry_people table
+    - Locations: Hierarchical (city → location)
+    - Events: Many-to-many via entry_events table
+    - Tags: Many-to-many via entry_tags table
+    - References: One-to-many from Entry
+    - Poems: One-to-many from Entry with versions
+    - Manuscript: One-to-one via ManuscriptEntry
+
+    Error Handling Modes:
+    - raise_on_error=True: Raises Yaml2SqlError (stops batch)
+    - raise_on_error=False: Returns "error" status (continues batch)
+    - Allows flexible error handling in batch vs single-file contexts
+
+    Status Return Values:
+    - "created": New entry added to database
+    - "updated": Existing entry modified
+    - "skipped": File unchanged (hash match)
+    - "error": Processing failed (raise_on_error=False only)
+
+    Validation:
+    - Required fields: date
+    - Optional fields validated if present
+    - Type checking for dates, numbers, lists
+    - Validation errors collected and logged
 
     Args:
-        file_path: Path to .md file
-        db: Database manager instance
+        file_path: Path to .md file with YAML frontmatter
+        db: PalimpsestDB manager for database operations
         force_update: If True, update even if file hash unchanged
-        logger: Optional logger
-        raise_on_error: Raise exceptions
+        logger: Optional logger for operation tracking
+        raise_on_error: If True, raise on errors; if False, return "error"
 
     Returns:
         Status string: "created", "updated", "skipped", or "error"
 
     Raises:
-        Yaml2SqlError: If processing fails
+        Yaml2SqlError: If processing fails and raise_on_error=True
     """
     try:
         if logger:
@@ -405,7 +437,7 @@ def cli(ctx: click.Context, db_path: str, log_dir: str, verbose: bool) -> None:
     ctx.obj["db_path"] = Path(db_path)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir))
+    ctx.obj["logger"] = setup_logger(Path(log_dir), "yaml2sql")
 
     # Initialize database
     ctx.obj["db"] = PalimpsestDB(

@@ -35,14 +35,8 @@ from pathlib import Path
 from dev.core.paths import TEX_DIR, MD_DIR, PDF_DIR, LOG_DIR
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
+from dev.core.cli_utils import setup_logger
 from dev.builders.pdfbuilder import PdfBuilder, BuildStats
-
-
-def setup_logger(log_dir: Path) -> PalimpsestLogger:
-    """Setup logging for md2pdf operations."""
-    operations_log_dir = log_dir / "operations"
-    operations_log_dir.mkdir(parents=True, exist_ok=True)
-    return PalimpsestLogger(operations_log_dir, component_name="md2pdf")
 
 
 @click.group()
@@ -59,7 +53,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     ctx.ensure_object(dict)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir))
+    ctx.obj["logger"] = setup_logger(Path(log_dir), "md2pdf")
 
 
 @cli.command()
@@ -91,7 +85,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     help="LaTeX preamble for notes PDF",
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing PDFs")
-@click.option("--debug", is_flag=True, help="Keep temp file son error for debugging")
+@click.option("--debug", is_flag=True, help="Keep temp files on error for debugging")
 @click.pass_context
 def build(
     ctx: click.Context,

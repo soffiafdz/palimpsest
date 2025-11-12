@@ -35,15 +35,26 @@ from typing import List, Optional, Tuple
 from ftfy import fix_text  # type: ignore
 
 # ---- Local imports ----
+from dev.core.exceptions import EntryParseError
 from dev.utils import txt
+from dev.utils.txt import ENTRY_MARKERS
 
 
 # ----- Logging ----
 logger = logging.getLogger(__name__)
 
 
-# ----- Entry markers-----
-MARKERS: List[str] = ["------ ENTRY ------", "===== ENTRY ====="]
+# ----- Constants -----
+LEGACY_BODY_OFFSET = 3
+"""
+Line offset for body start in legacy 750words format.
+
+In the legacy format, the body begins 3 lines after the date line:
+- Line 0: Date
+- Line 1: Title (or blank)
+- Line 2: Blank separator
+- Line 3: Body starts here
+"""
 
 
 # ----- Dataclass -----
@@ -115,9 +126,9 @@ class TxtEntry:
 
         try:
             all_lines = path.read_text(encoding="utf-8")
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             logger.error(f"Cannot read input file: {str(path)}")
-            raise OSError(f"Cannot read input file: {str(path)}") from e
+            raise
 
         # Fix text encoding issues
         all_lines = fix_text(all_lines)
@@ -127,7 +138,7 @@ class TxtEntry:
             logger.debug(f"Total lines read: {len(lines)}")
 
         # Split into individual entries
-        entries = cls._split_entries(lines, MARKERS)
+        entries = cls._split_entries(lines, list(ENTRY_MARKERS))
 
         if verbose:
             logger.debug(f"Entries found: {len(entries)}")
@@ -139,7 +150,7 @@ class TxtEntry:
                 logger.debug(f"Parsing entry {idx + 1}/{len(entries)}")
             try:
                 txt_entries.append(cls.from_lines(entry, verbose=verbose))
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as e:
                 logger.error(f"Failed to parse entry {idx + 1}: {e}")
                 raise
 
@@ -228,10 +239,17 @@ class TxtEntry:
     @staticmethod
     def _split_entries(lines: List[str], markers: List[str]) -> List[List[str]]:
         """
-        input: lines, a list of strings (each raw line from the .txt)
-        output: a list of entries, where each entry is itself a list of lines
-        process: splits on any line matching the two different ENTRY markers,
-                 discarding the marker lines and grouping surrounding lines
+        Split raw text lines into individual entries based on entry markers.
+
+        Splits on any line matching the entry markers, discarding the marker
+        lines and grouping surrounding lines into separate entries.
+
+        Args:
+            lines: List of raw text lines from the .txt file
+            markers: List of entry marker strings to split on
+
+        Returns:
+            List of entries, where each entry is a list of lines
         """
         entries: List[List[str]] = []
         current: List[str] = []
@@ -317,15 +335,15 @@ class TxtEntry:
                     body_start = j + 1
                     break
 
-        # Fallback: body starts 3 lines after date (legacy format)
+        # Fallback: body starts LEGACY_BODY_OFFSET lines after date (legacy format)
         if body_start is None:
-            body_start = (date_idx + 3) if date_idx is not None else 0
+            body_start = (date_idx + LEGACY_BODY_OFFSET) if date_idx is not None else 0
 
         # Validate date
         if date_obj is None:
             error_msg = "Entry does not contain a valid date"
             logger.error(f"{error_msg} - first few lines: {entry[:5]}")
-            raise ValueError(error_msg)
+            raise EntryParseError(error_msg)
 
         # Build header
         if title:

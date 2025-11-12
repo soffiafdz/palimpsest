@@ -14,12 +14,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 from datetime import date
-
-# import re
 from typing import List, Optional
-
-# --- Third-party library imports ---
-# import yaml
 
 
 def find_markdown_files(directory: Path, pattern: str = "**/*.md") -> List[Path]:
@@ -43,6 +38,8 @@ def get_file_hash(file_path: str | Path) -> str:
     """
     Compute MD5 hash of a file for change detection.
 
+    Note: MD5 is used for change detection only, not cryptographic security.
+
     Args:
         file_path (str | Path): Path to the file.
 
@@ -50,11 +47,11 @@ def get_file_hash(file_path: str | Path) -> str:
         str: Hexadecimal MD5 hash of the file contents.
 
     Raises:
-        FileNotFoundError
+        FileNotFoundError: If file does not exist or is not a regular file.
     """
     path = Path(file_path)
     if not path.is_file():
-        raise FileNotFoundError
+        raise FileNotFoundError(f"File not found or not a regular file: {path}")
 
     file_bytes = path.read_bytes()
     return hashlib.md5(file_bytes).hexdigest()
@@ -88,7 +85,7 @@ def parse_date_from_filename(path: Path) -> date:
         elif "-" in stem and len(stem) == 10:  # YYYY-MM-DD
             year, month, day = map(int, stem.split("-"))
             return date(year, month, day)
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         raise ValueError(f"Invalid date format in filename: {stem}") from e
 
     raise ValueError(f"Unsupported date format in filename: {stem}")

@@ -173,8 +173,9 @@ def yaml_multiline(text: str) -> str:
 # ----- Content Hashing -----
 def get_text_hash(text: str) -> str:
     """
-    Compute MD5 hash of text content.
+    Compute MD5 hash of text content for change detection.
 
+    Note: MD5 is used for change detection only, not cryptographic security.
     Useful for detecting changes in file content without full comparison.
 
     Args:

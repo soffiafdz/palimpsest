@@ -682,7 +682,7 @@ def main() -> None:
         if isinstance(raw_date, date):
             meta_date = raw_date
             meta_date_valid = True
-        elif: isinstance(raw, str):
+        elif isinstance(raw, str):
             try:
                 meta_date = datetime.strptime(raw, "%Y-%m-%d").date()
             except ValueError:

@@ -152,7 +152,7 @@ entry_dates = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("date_id", Integer, ForeignKey("dates.id"), primary_key=True),
+    Column("date_id", Integer, ForeignKey("dates.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_cities = Table(
@@ -164,7 +164,7 @@ entry_cities = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("city_id", Integer, ForeignKey("cities.id"), primary_key=True),
+    Column("city_id", Integer, ForeignKey("cities.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_locations = Table(
@@ -176,7 +176,7 @@ entry_locations = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("location_id", Integer, ForeignKey("locations.id"), primary_key=True),
+    Column("location_id", Integer, ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_people = Table(
@@ -188,7 +188,7 @@ entry_people = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("people_id", Integer, ForeignKey("people.id"), primary_key=True),
+    Column("people_id", Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True),
 )
 
 entry_aliases = Table(
@@ -237,7 +237,7 @@ event_people = Table(
     Column(
         "person_id",
         Integer,
-        ForeignKey("people.id", ondelete="SET NULL"),
+        ForeignKey("people.id", ondelete="CASCADE"),  # Fixed: was SET NULL on primary key!
         primary_key=True,
     ),
 )
@@ -270,7 +270,7 @@ entry_tags = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
 
 location_dates = Table(
@@ -978,12 +978,15 @@ class Location(Base):
     """
 
     __tablename__ = "locations"
-    __table_args__ = (CheckConstraint("name != ''", name="ck_location_non_empty_name"),)
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_location_non_empty_name"),
+        UniqueConstraint("name", "city_id", name="uq_location_name_city"),
+    )
 
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+        String(255), nullable=False, index=True  # Removed unique=True (now composite)
     )
 
     # ---- Geographical location ----
@@ -1204,7 +1207,7 @@ class Person(Base, SoftDeleteMixin):
         return min(dates) if dates else None
 
     @property
-    def lasts_appearance_date(self) -> Optional[date]:
+    def last_appearance_date(self) -> Optional[date]:
         """Most recent date this person was mentioned."""
         dates = [md.date for md in self.dates]
         return max(dates) if dates else None

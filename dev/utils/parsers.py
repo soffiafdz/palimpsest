@@ -53,13 +53,13 @@ def extract_context_refs(context: str) -> Dict[str, List | str]:
     Examples:
         >>> extract_context_refs("Dinner with @Majo and @Aliza at #Aliza's")
         {
-            "context": "Dinner with Majo and Aliza at Aliza's"
+            "context": "Dinner with Majo and Aliza at Aliza's",
             "people": ["Majo", "Aliza"],
             "locations": ["Aliza's"],
         }
         >>> extract_context_refs("Thesis seminar at @The-Neuro")
         {
-            "context", "Thesis seminar at @The-Neuro",
+            "context": "Thesis seminar at @The-Neuro",
             "locations": ["The Neuro"],
         }
     """
@@ -98,7 +98,7 @@ def extract_context_refs(context: str) -> Dict[str, List | str]:
 
 
 def format_person_ref(person_ref: str) -> str:
-    """Format location name as @reference for YAML."""
+    """Format person name as @reference for YAML."""
     hyphenated = spaces_to_hyphenated(person_ref)
     return f"@{hyphenated}"
 
@@ -146,7 +146,7 @@ def split_hyphenated_to_spaces(text: str) -> str:
 
 def spaces_to_hyphenated(text: str) -> str:
     """
-    Convert spaces to a single word (for names and locations.
+    Convert spaces to hyphens (for names and locations).
 
     Examples:
         >>> spaces_to_hyphenated("María José")

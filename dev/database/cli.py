@@ -262,7 +262,7 @@ def migration_upgrade(ctx, revision):
         handle_cli_error(
             ctx,
             e,
-            "migration_update",
+            "migration_upgrade",
             additional_context={"revision": revision},
         )
 
@@ -765,7 +765,7 @@ def cleanup(ctx):
             click.echo(f"\nTotal removed: {total_removed}")
 
     except DatabaseError as e:
-        handle_cli_error(ctx, e, "clean")
+        handle_cli_error(ctx, e, "cleanup")
 
 
 @cli.command()
