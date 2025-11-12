@@ -1917,6 +1917,186 @@ class PalimpsestDB:
         if people_data:
             session.flush()
 
+    # ---- Missing Helper Methods (Phase 2 Integration) ----
+
+    def get_person(
+        self,
+        session: Session,
+        person_name: Optional[str] = None,
+        person_full_name: Optional[str] = None,
+    ) -> Optional[Person]:
+        """
+        Get person by name or full_name - delegates to PersonManager.
+
+        This method exists for backward compatibility with existing code.
+        """
+        return self.people.get(person_name=person_name, full_name=person_full_name)
+
+    def _update_entry_locations(
+        self,
+        session: Session,
+        entry: Entry,
+        locations_data: List[Any],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update entry locations using LocationManager.
+
+        Args:
+            session: SQLAlchemy session
+            entry: Entry to update
+            locations_data: List of location specs (strings, dicts, or Location objects)
+            incremental: If True, add to existing. If False, replace all.
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before linking locations")
+
+        if not incremental:
+            entry.locations.clear()
+            session.flush()
+
+        existing_location_ids = {loc.id for loc in entry.locations}
+
+        for loc_spec in locations_data:
+            # Handle different input formats
+            if isinstance(loc_spec, dict):
+                location_name = DataValidator.normalize_string(loc_spec.get("name"))
+                city_name = DataValidator.normalize_string(loc_spec.get("city"))
+
+                if not location_name or not city_name:
+                    continue
+
+                # Get or create location via manager
+                city = self.locations.get_or_create_city(city_name)
+                location = self.locations.get_or_create_location(location_name, city)
+
+            elif isinstance(loc_spec, str):
+                # Just a location name - need city context
+                location_name = DataValidator.normalize_string(loc_spec)
+                if not location_name:
+                    continue
+                # Try to find existing location by name only
+                location = self.locations.get(location_name=location_name)
+                if not location:
+                    if self.logger:
+                        self.logger.log_warning(
+                            f"Location '{location_name}' not found, skipping"
+                        )
+                    continue
+            elif isinstance(loc_spec, Location):
+                location = loc_spec
+            else:
+                if self.logger:
+                    self.logger.log_warning(
+                        f"Invalid location spec type: {type(loc_spec)}"
+                    )
+                continue
+
+            if location and location.id not in existing_location_ids:
+                entry.locations.append(location)
+
+        session.flush()
+
+    def _process_references(
+        self,
+        session: Session,
+        entry: Entry,
+        references_data: List[Dict[str, Any]],
+    ) -> None:
+        """
+        Process references for an entry using ReferenceManager.
+
+        References are one-to-many children of Entry (cascade delete).
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding references")
+
+        for ref_data in references_data:
+            content = DataValidator.normalize_string(ref_data.get("content"))
+            description = DataValidator.normalize_string(ref_data.get("description"))
+
+            if not content and not description:
+                if self.logger:
+                    self.logger.log_warning("Reference missing content/description, skipping")
+                continue
+
+            # Process source if provided
+            source = None
+            if "source" in ref_data and ref_data["source"]:
+                source_data = ref_data["source"]
+                if isinstance(source_data, dict):
+                    title = DataValidator.normalize_string(source_data.get("title"))
+                    if title:
+                        # Get or create source via manager
+                        source = self.references.get_or_create_source({
+                            "title": title,
+                            "type": source_data.get("type"),
+                            "author": source_data.get("author"),
+                            "publication_date": source_data.get("publication_date"),
+                        })
+
+            # Create reference via manager
+            self.references.create({
+                "content": content,
+                "description": description,
+                "mode": ref_data.get("mode", "direct"),
+                "type": ref_data.get("type"),
+                "speaker": ref_data.get("speaker"),
+                "entry_id": entry.id,
+                "source_id": source.id if source else None,
+            })
+
+    def _process_poems(
+        self,
+        session: Session,
+        entry: Entry,
+        poems_data: List[Dict[str, Any]],
+    ) -> None:
+        """
+        Process poems for an entry using PoemManager.
+
+        Poems are one-to-many children of Entry (cascade delete).
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding poems")
+
+        for poem_data in poems_data:
+            title = DataValidator.normalize_string(poem_data.get("title"))
+            text = DataValidator.normalize_string(poem_data.get("text"))
+
+            if not title or not text:
+                if self.logger:
+                    self.logger.log_warning("Poem missing title/text, skipping")
+                continue
+
+            # Parse revision date (default to entry date)
+            revision_date = DataValidator.normalize_date(
+                poem_data.get("revision_date") or entry.date
+            )
+
+            # Create poem version via manager
+            self.poems.create_version({
+                "title": title,
+                "text": text,
+                "revision_date": revision_date,
+                "notes": poem_data.get("notes"),
+                "entry_id": entry.id,
+            })
+
+    def create_or_update_manuscript_entry(
+        self,
+        session: Session,
+        entry: Entry,
+        manuscript_data: Dict[str, Any],
+    ) -> None:
+        """
+        Create or update manuscript metadata for an entry using ManuscriptManager.
+        """
+        if entry.id is None:
+            raise ValueError("Entry must be persisted before adding manuscript data")
+
+        # Delegate to ManuscriptManager
+        self.manuscripts.create_or_update_entry(entry, manuscript_data)
 
     # -------------------------------------------------------------------------
     # Entity Operations Delegated to Modular Managers
