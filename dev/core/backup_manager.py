@@ -18,6 +18,8 @@ from .exceptions import BackupError
 
 # ---- Constants ----
 SUNDAY = 6  # datetime.weekday() returns 6 for Sunday
+VALID_BACKUP_TYPES = {"manual", "daily", "weekly"}
+"""Valid backup type identifiers for database backups."""
 
 
 class BackupManager:
@@ -65,6 +67,32 @@ class BackupManager:
         if self.data_dir:
             self.full_backup_dir.mkdir(parents=True, exist_ok=True)
 
+    @staticmethod
+    def _get_timestamp_for_filename() -> str:
+        """
+        Get timestamp string suitable for filenames (no special characters).
+
+        Returns:
+            Timestamp in format: YYYYMMDD_HHMMSS
+
+        Note:
+            Uses compact format without colons/hyphens to avoid filesystem issues.
+        """
+        return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    @staticmethod
+    def _get_timestamp_for_metadata() -> str:
+        """
+        Get ISO timestamp string for metadata storage.
+
+        Returns:
+            Timestamp in ISO 8601 format
+
+        Note:
+            Uses ISO format for marker files - easier parsing and more standard.
+        """
+        return datetime.now().isoformat()
+
     def _backup_database(self, source_path: Path, dest_path: Path) -> None:
         """
         Backup database using safe connection management.
@@ -101,12 +129,20 @@ class BackupManager:
             Path to the created backup file
 
         Raises:
-            BackupError: If backup creation fails
+            BackupError: If backup creation fails or invalid backup_type
         """
+        # Validate backup type
+        if backup_type not in VALID_BACKUP_TYPES:
+            valid_types = ", ".join(sorted(VALID_BACKUP_TYPES))
+            raise BackupError(
+                f"Invalid backup_type '{backup_type}'. "
+                f"Must be one of: {valid_types}"
+            )
+
         if not self.db_path.exists():
             raise BackupError(f"Database file not found: {self.db_path}")
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = self._get_timestamp_for_filename()
         if suffix:
             backup_name = f"{self.db_path.stem}_{timestamp}_{suffix}.db"
         else:
@@ -120,7 +156,7 @@ class BackupManager:
 
             # Create marker file with creation timestamp
             marker_path = backup_path.with_suffix(".db.marker")
-            marker_path.write_text(datetime.now().isoformat())
+            marker_path.write_text(self._get_timestamp_for_metadata())
 
             if self.logger:
                 self.logger.log_operation(
@@ -171,7 +207,7 @@ class BackupManager:
         if not self.data_dir.exists():
             raise BackupError(f"Data directory not found: {self.data_dir}")
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = self._get_timestamp_for_filename()
         if suffix:
             archive_name = f"palimpsest-data-full_{timestamp}_{suffix}.tar.gz"
         else:
@@ -212,7 +248,7 @@ class BackupManager:
 
             # Create marker file
             marker_path = backup_path.with_suffix(".tar.gz.marker")
-            marker_path.write_text(datetime.now().isoformat())
+            marker_path.write_text(self._get_timestamp_for_metadata())
 
             backup_size = backup_path.stat().st_size
             backup_size_mb = backup_size / (1024 * 1024)
@@ -420,8 +456,8 @@ class BackupManager:
                     }
                 )
 
-        # Full data backups
-        if hasattr(self, "full_backup_dir") and self.full_backup_dir.exists():
+        # Full data backups (only if data_dir was configured in __init__)
+        if self.data_dir and self.full_backup_dir.exists():
             for backup_file in sorted(self.full_backup_dir.glob("*.tar.gz")):
                 stat = backup_file.stat()
                 backups["full"].append(

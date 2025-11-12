@@ -52,6 +52,8 @@ def palimpsest_cli_group(component_name: str) -> Callable:
         ctx.obj["logger"]: PalimpsestLogger - Configured logger instance
     """
     def decorator(f: Callable) -> Callable:
+        # Apply @wraps first to preserve function metadata
+        @wraps(f)
         @click.group()
         @click.option(
             "--log-dir",
@@ -65,7 +67,6 @@ def palimpsest_cli_group(component_name: str) -> Callable:
             help="Enable verbose logging"
         )
         @click.pass_context
-        @wraps(f)
         def wrapper(ctx: click.Context, log_dir: str, verbose: bool):
             # Initialize context object
             ctx.ensure_object(dict)
