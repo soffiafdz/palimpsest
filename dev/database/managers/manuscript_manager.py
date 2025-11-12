@@ -133,16 +133,28 @@ class ManuscriptManager(BaseManager):
                 manuscript_data["notes"]
             )
 
-        # Create or update ManuscriptEntry
-        ms_entry = RelationshipManager.update_one_to_one(
-            session=self.session,
-            parent_obj=entry,
-            relationship_name="manuscript",
-            model_class=ManuscriptEntry,
-            foreign_key_attr="entry_id",
-            child_data=child_data,
-            delete=manuscript_data.get("delete", False),
-        )
+        # Create or update ManuscriptEntry (entity-specific logic)
+        # Query database directly to avoid lazy loading issues
+        ms_entry = self.session.query(ManuscriptEntry).filter_by(entry_id=entry.id).first()
+
+        if ms_entry:
+            # Existing manuscript entry
+            if manuscript_data.get("delete", False):
+                self.session.delete(ms_entry)
+                self.session.flush()
+                return None
+            # Update existing
+            if child_data:
+                for key, value in child_data.items():
+                    setattr(ms_entry, key, value)
+                self.session.flush()
+        else:
+            # Create new manuscript entry
+            if not manuscript_data.get("delete", False):
+                child_data["entry_id"] = entry.id
+                ms_entry = ManuscriptEntry(**child_data)
+                self.session.add(ms_entry)
+                self.session.flush()
 
         if ms_entry and "themes" in manuscript_data:
             self._update_themes(ms_entry, manuscript_data["themes"])
@@ -228,16 +240,28 @@ class ManuscriptManager(BaseManager):
         # Prepare child data
         child_data = {"character": character}
 
-        # Create or update ManuscriptPerson
-        ms_person = RelationshipManager.update_one_to_one(
-            session=self.session,
-            parent_obj=person,
-            relationship_name="manuscript",
-            model_class=ManuscriptPerson,
-            foreign_key_attr="person_id",
-            child_data=child_data,
-            delete=manuscript_data.get("delete", False),
-        )
+        # Create or update ManuscriptPerson (entity-specific logic)
+        # Query database directly to avoid lazy loading issues
+        ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
+
+        if ms_person:
+            # Existing manuscript person
+            if manuscript_data.get("delete", False):
+                self.session.delete(ms_person)
+                self.session.flush()
+                return None
+            # Update existing
+            if child_data:
+                for key, value in child_data.items():
+                    setattr(ms_person, key, value)
+                self.session.flush()
+        else:
+            # Create new manuscript person
+            if not manuscript_data.get("delete", False):
+                child_data["person_id"] = person.id
+                ms_person = ManuscriptPerson(**child_data)
+                self.session.add(ms_person)
+                self.session.flush()
 
         return ms_person
 
@@ -259,15 +283,17 @@ class ManuscriptManager(BaseManager):
             reason: Deletion reason
             hard_delete: If True, permanently delete
         """
-        if not person.manuscript:
+        # Query database directly to avoid lazy loading issues
+        ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
+        if not ms_person:
             return
 
         if hard_delete:
-            self.session.delete(person.manuscript)
+            self.session.delete(ms_person)
         else:
-            person.manuscript.deleted_at = datetime.now(timezone.utc)
-            person.manuscript.deleted_by = deleted_by
-            person.manuscript.deletion_reason = reason
+            ms_person.deleted_at = datetime.now(timezone.utc)
+            ms_person.deleted_by = deleted_by
+            ms_person.deletion_reason = reason
 
         self.session.flush()
 
@@ -286,21 +312,23 @@ class ManuscriptManager(BaseManager):
         Raises:
             DatabaseError: If not deleted or doesn't exist
         """
-        if not person.manuscript:
+        # Query database directly to avoid lazy loading issues
+        ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
+        if not ms_person:
             raise DatabaseError(f"No manuscript data for person: {person.display_name}")
 
-        if not person.manuscript.deleted_at:
+        if not ms_person.deleted_at:
             raise DatabaseError(
                 f"Manuscript person not deleted: {person.display_name}"
             )
 
-        person.manuscript.deleted_at = None
-        person.manuscript.deleted_by = None
-        person.manuscript.deletion_reason = None
+        ms_person.deleted_at = None
+        ms_person.deleted_by = None
+        ms_person.deletion_reason = None
 
         self.session.flush()
 
-        return person.manuscript
+        return ms_person
 
     # =========================================================================
     # MANUSCRIPT EVENT OPERATIONS
@@ -333,16 +361,28 @@ class ManuscriptManager(BaseManager):
                 manuscript_data["notes"]
             )
 
-        # Create or update ManuscriptEvent
-        ms_event = RelationshipManager.update_one_to_one(
-            session=self.session,
-            parent_obj=event,
-            relationship_name="manuscript",
-            model_class=ManuscriptEvent,
-            foreign_key_attr="event_id",
-            child_data=child_data,
-            delete=manuscript_data.get("delete", False),
-        )
+        # Create or update ManuscriptEvent (entity-specific logic)
+        # Query database directly to avoid lazy loading issues
+        ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
+
+        if ms_event:
+            # Existing manuscript event
+            if manuscript_data.get("delete", False):
+                self.session.delete(ms_event)
+                self.session.flush()
+                return None
+            # Update existing
+            if child_data:
+                for key, value in child_data.items():
+                    setattr(ms_event, key, value)
+                self.session.flush()
+        else:
+            # Create new manuscript event
+            if not manuscript_data.get("delete", False):
+                child_data["event_id"] = event.id
+                ms_event = ManuscriptEvent(**child_data)
+                self.session.add(ms_event)
+                self.session.flush()
 
         # Handle arc assignment
         if ms_event and "arc" in manuscript_data:
@@ -372,15 +412,17 @@ class ManuscriptManager(BaseManager):
             reason: Deletion reason
             hard_delete: If True, permanently delete
         """
-        if not event.manuscript:
+        # Query database directly to avoid lazy loading issues
+        ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
+        if not ms_event:
             return
 
         if hard_delete:
-            self.session.delete(event.manuscript)
+            self.session.delete(ms_event)
         else:
-            event.manuscript.deleted_at = datetime.now(timezone.utc)
-            event.manuscript.deleted_by = deleted_by
-            event.manuscript.deletion_reason = reason
+            ms_event.deleted_at = datetime.now(timezone.utc)
+            ms_event.deleted_by = deleted_by
+            ms_event.deletion_reason = reason
 
         self.session.flush()
 
@@ -399,19 +441,21 @@ class ManuscriptManager(BaseManager):
         Raises:
             DatabaseError: If not deleted or doesn't exist
         """
-        if not event.manuscript:
+        # Query database directly to avoid lazy loading issues
+        ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
+        if not ms_event:
             raise DatabaseError(f"No manuscript data for event: {event.display_name}")
 
-        if not event.manuscript.deleted_at:
+        if not ms_event.deleted_at:
             raise DatabaseError(f"Manuscript event not deleted: {event.display_name}")
 
-        event.manuscript.deleted_at = None
-        event.manuscript.deleted_by = None
-        event.manuscript.deletion_reason = None
+        ms_event.deleted_at = None
+        ms_event.deleted_by = None
+        ms_event.deletion_reason = None
 
         self.session.flush()
 
-        return event.manuscript
+        return ms_event
 
     # =========================================================================
     # ARC OPERATIONS

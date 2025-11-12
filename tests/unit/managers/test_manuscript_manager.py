@@ -317,19 +317,19 @@ class TestRestorePerson:
         person_id = person.id
 
         person = db_session.get(Person, person_id)
-        _ = person.manuscript  # Force load
         manuscript_manager.create_or_update_person(person, {"character": "Alexandra"})
         db_session.commit()
 
         person = db_session.get(Person, person_id)
-        _ = person.manuscript  # Force load
         manuscript_manager.delete_person(person)
         db_session.commit()
 
-        person = db_session.get(Person, person_id)
-        _ = person.manuscript  # Force load
-        assert person.manuscript.deleted_at is not None
+        # Query database directly to verify soft delete
+        from dev.database.models_manuscript import ManuscriptPerson
+        ms_person = db_session.query(ManuscriptPerson).filter_by(person_id=person_id).first()
+        assert ms_person.deleted_at is not None
 
+        person = db_session.get(Person, person_id)
         restored = manuscript_manager.restore_person(person)
 
         assert restored.deleted_at is None
@@ -492,19 +492,19 @@ class TestRestoreEvent:
         event_id = event.id
 
         event = db_session.get(Event, event_id)
-        _ = event.manuscript  # Force load
         manuscript_manager.create_or_update_event(event, {"notes": "Test"})
         db_session.commit()
 
         event = db_session.get(Event, event_id)
-        _ = event.manuscript  # Force load
         manuscript_manager.delete_event(event)
         db_session.commit()
 
-        event = db_session.get(Event, event_id)
-        _ = event.manuscript  # Force load
-        assert event.manuscript.deleted_at is not None
+        # Query database directly to verify soft delete
+        from dev.database.models_manuscript import ManuscriptEvent
+        ms_event = db_session.query(ManuscriptEvent).filter_by(event_id=event_id).first()
+        assert ms_event.deleted_at is not None
 
+        event = db_session.get(Event, event_id)
         restored = manuscript_manager.restore_event(event)
 
         assert restored.deleted_at is None
