@@ -27,13 +27,13 @@ manager.py (3,163 lines)
 ### After (Modular)
 ```
 managers/
-├── base_manager.py           # Common utilities (273 lines)
-├── tag_manager.py            # Tag operations (463 lines)
-├── event_manager.py          # Event operations (629 lines)
-├── date_manager.py           # Date operations (506 lines)
-├── location_manager.py       # TODO: City + Location
-├── reference_manager.py      # TODO: Reference handling
-├── poem_manager.py           # TODO: Poem versioning
+├── base_manager.py           # Common utilities (273 lines) ✅
+├── tag_manager.py            # Tag operations (463 lines) ✅
+├── event_manager.py          # Event operations (629 lines) ✅
+├── date_manager.py           # Date operations (506 lines) ✅
+├── location_manager.py       # City + Location (685 lines) ✅
+├── reference_manager.py      # Reference handling (602 lines) ✅
+├── poem_manager.py           # Poem versioning (664 lines) ✅
 ├── person_manager.py         # TODO: Person management
 ├── manuscript_manager.py     # TODO: Manuscript tracking
 ├── entry_relationship_handler.py  # TODO: Complex entry relationships
@@ -42,7 +42,7 @@ managers/
 
 ## Current Status
 
-### ✅ Completed (4/9 managers)
+### ✅ Completed (7/9 managers - 78%)
 
 #### BaseManager
 - Abstract base class providing common utilities
@@ -75,28 +75,35 @@ managers/
 - Get-or-create semantics
 - **506 lines** (extracted from manager.py:1088-1697)
 
-### 🔄 TODO (5/9 managers)
+#### LocationManager
+- Full CRUD for City and Location entities (parent-child)
+- City: city (unique), state_province, country
+- Location: name (unique), city_id (FK)
+- M2M: both with entries, Location with MentionedDate
+- Get-or-create city helper
+- Query locations by city
+- **685 lines** (extracted from manager.py:2221-2465)
 
-#### LocationManager (TODO)
-- Manage City and Location entities
-- Parent-child relationship handling
-- M2M with entries and dates
-- **Complexity**: Medium
-- **Reference**: manager.py:2221-2465
+#### ReferenceManager
+- Full CRUD for ReferenceSource and Reference entities (parent-child)
+- ReferenceType enum: book, article, film, poem, song, etc.
+- ReferenceMode enum: direct, indirect, paraphrase, visual
+- Reference requires content OR description
+- Optional source linking for references
+- Author validation for certain source types
+- **602 lines** (extracted from manager.py:2606-2873)
 
-#### ReferenceManager (TODO)
-- Manage ReferenceSource and Reference entities
-- Parent-child with mode/type enums
-- Entry relationship handling
-- **Complexity**: Medium
-- **Reference**: manager.py:2606-2873
+#### PoemManager
+- Full CRUD for Poem and PoemVersion entities (parent-child)
+- Hash-based version deduplication using MD5
+- Auto-generates version_hash from content
+- Auto-regenerates hash when content changes
+- Prevents duplicate versions (same poem_id + version_hash)
+- Version timeline and chronological queries
+- Poem titles NOT unique (same title can have multiple poems)
+- **664 lines** (extracted from manager.py:2606-2997)
 
-#### PoemManager (TODO)
-- Manage Poem and PoemVersion entities
-- Version tracking and deduplication
-- Hash-based version comparison
-- **Complexity**: Medium
-- **Reference**: manager.py:2606-2997
+### 🔄 TODO (2/9 managers - 22%)
 
 #### PersonManager (TODO)
 - Manage Person and Alias entities
