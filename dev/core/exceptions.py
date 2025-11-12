@@ -70,3 +70,24 @@ class PdfBuildError(Exception):
     """Exception for Md to PDF conversion errors."""
 
     pass
+
+
+# ----- Entry Processing Exceptions -----
+
+
+class EntryError(Exception):
+    """Base exception for entry processing operations."""
+
+    pass
+
+
+class EntryValidationError(EntryError):
+    """Exception for entry validation failures (invalid format, missing required fields, etc.)."""
+
+    pass
+
+
+class EntryParseError(EntryError):
+    """Exception for entry parsing failures (cannot extract metadata, malformed content, etc.)."""
+
+    pass

@@ -35,6 +35,7 @@ from typing import List, Optional, Tuple
 from ftfy import fix_text  # type: ignore
 
 # ---- Local imports ----
+from dev.core.exceptions import EntryParseError
 from dev.utils import txt
 from dev.utils.txt import ENTRY_MARKERS
 
@@ -342,7 +343,7 @@ class TxtEntry:
         if date_obj is None:
             error_msg = "Entry does not contain a valid date"
             logger.error(f"{error_msg} - first few lines: {entry[:5]}")
-            raise ValueError(error_msg)
+            raise EntryParseError(error_msg)
 
         # Build header
         if title:

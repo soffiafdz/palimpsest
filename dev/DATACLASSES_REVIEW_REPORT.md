@@ -463,58 +463,91 @@ txt_entry.py is generally well-structured with minor fixes needed.
 
 ---
 
-### ⏭️ Deferred Issues (5/12 - 42%)
+### ✅ Deferred Tasks - ALL COMPLETED (Follow-up Session)
 
 **High Priority (1):**
-4. ⏭️ **Method Too Long - from_database()** (md_entry.py:174-378, 204 lines)
-   - **Status:** DEFERRED - Major refactoring required
-   - **Reason:** This requires extensive refactoring to extract helper methods
-   - **Recommendation:** Extract metadata builders for each type (cities, people, dates, etc.)
-   - **Estimated effort:** 3-4 hours
+4. ✅ **Method Too Long - from_database()** (md_entry.py:174-378, 204 lines)
+   - **Status:** COMPLETED - Major refactoring implemented
+   - **Implementation:**
+     - Extracted 6 static helper methods for different metadata types
+     - `_build_cities_metadata()` - 7 lines
+     - `_build_locations_metadata()` - 17 lines
+     - `_build_people_metadata()` - 30 lines
+     - `_build_dates_metadata()` - 38 lines
+     - `_build_references_metadata()` - 31 lines
+     - `_build_poems_metadata()` - 13 lines
+     - `_build_manuscript_metadata()` - 12 lines
+   - **Result:** from_database() reduced from 204 lines → 65 lines (68% reduction)
+   - Each helper method has single responsibility and is easily testable
 
 **Medium Priority (3):**
-5. ⏭️ **Inconsistent Exception Types** (md_entry.py)
-   - **Status:** DEFERRED - Architectural decision needed
-   - **Reason:** Requires custom exception hierarchy design
-   - **Recommendation:** Create EntryError, EntryValidationError, EntryParseError classes
-   - **Estimated effort:** 2 hours
+5. ✅ **Inconsistent Exception Types** (md_entry.py)
+   - **Status:** COMPLETED - Custom exception hierarchy created
+   - **Implementation:**
+     - Created `EntryError` base exception
+     - Created `EntryValidationError` for validation failures
+     - Created `EntryParseError` for parsing failures
+     - Updated all ValueError exceptions to use EntryValidationError
+     - Updated yaml.YAMLError to EntryParseError
+     - Updated txt_entry.py to use EntryParseError for consistency
+   - **Files:** dev/core/exceptions.py, dev/dataclasses/md_entry.py, dev/dataclasses/txt_entry.py
 
-8. ⏭️ **Complex Conditional Logic in _parse_dates_field**
-   - **Status:** DEFERRED - Requires investigation and refactoring
-   - **Reason:** Need to analyze method complexity and break into smaller pieces
-   - **Estimated effort:** 1-2 hours
+8. ✅ **Complex Conditional Logic in _parse_dates_field**
+   - **Status:** COMPLETED - Helper method extracted
+   - **Implementation:**
+     - Created `_find_person_in_parsed()` static helper method
+     - Extracted complex nested person lookup logic (50+ lines)
+     - Simplified main _parse_dates_field method
+     - Reduced cognitive complexity significantly
+   - **Result:** Much clearer logic flow and easier to maintain
 
-9. ⏭️ **No Validation in to_database_metadata()** (md_entry.py:381-509)
-   - **Status:** DEFERRED - Integration work required
-   - **Reason:** Requires DataValidator integration and schema definition
-   - **Estimated effort:** 2 hours
+9. ✅ **No Validation in to_database_metadata()** (md_entry.py:381-509)
+   - **Status:** COMPLETED - Comprehensive validation added
+   - **Implementation:**
+     - Added validation for word_count (must be non-negative integer)
+     - Added validation for reading_time (must be non-negative float)
+     - Added type checking for string fields (epigraph, epigraph_attribution, notes)
+     - Added type checking for list fields (events, tags)
+     - Added automatic conversion of single strings to lists where appropriate
+     - All invalid data logged with warnings and defaulted safely
+   - **Result:** Robust data validation prevents database corruption
 
 **Low Priority (1):**
-12. ⏭️ **Type Hints Could Be More Specific**
-    - **Status:** DEFERRED - Optional improvement
-    - **Reason:** Would require TypedDict definitions for metadata structures
-    - **Recommendation:** Use TypedDict for better type safety
-    - **Estimated effort:** 1 hour
+12. ✅ **Type Hints Could Be More Specific**
+    - **Status:** COMPLETED - TypedDict definitions added
+    - **Implementation:**
+      - Created `PersonSpec` TypedDict
+      - Created `AliasSpec` TypedDict
+      - Created `LocationSpec` TypedDict
+      - Created `DateSpec` TypedDict
+      - Created `ReferenceSpec` and `ReferenceSourceSpec` TypedDicts
+      - Created `PoemSpec` TypedDict
+      - Created `ManuscriptSpec` TypedDict
+      - Created `EntryMetadata` comprehensive TypedDict
+    - **Result:** Much better type safety, IDE autocomplete, and documentation
 
 ---
 
-### Summary Statistics
+### Final Summary Statistics
 
 **Progress:**
 - ✅ Critical: 1/1 (100%)
-- ✅ High: 2/3 (67%)
-- ✅ Medium: 2/5 (40%)
-- ✅ Low: 2/3 (67%)
-- **Overall: 7/12 (58%)**
+- ✅ High: 3/3 (100%)
+- ✅ Medium: 5/5 (100%)
+- ✅ Low: 3/3 (100%)
+- **Overall: 12/12 (100%) - ALL ISSUES RESOLVED**
 
-**Files Modified:**
-- dev/dataclasses/txt_entry.py - 4 fixes
-- dev/dataclasses/md_entry.py - 2 fixes
+**Files Modified (Initial + Deferred Sessions):**
+- dev/dataclasses/txt_entry.py - 5 fixes (initial session + exception update)
+- dev/dataclasses/md_entry.py - 9 major improvements (initial + deferred session)
 - dev/builders/txtbuilder.py - 1 fix (ENTRY_MARKERS import)
 - dev/utils/txt.py - 1 addition (ENTRY_MARKERS constant)
-- dev/dataclasses/__init__.py - 1 new file
+- dev/dataclasses/__init__.py - NEW package exports
+- dev/core/exceptions.py - 3 new exception classes
 
 **Code Quality Improvements:**
+
+*Initial Session (7 issues):*
 - Eliminated broad exception catching
 - Fixed missing return statement
 - Eliminated code duplication (ENTRY_MARKERS)
@@ -523,12 +556,26 @@ txt_entry.py is generally well-structured with minor fixes needed.
 - Standardized docstring format
 - Created package exports
 
+*Deferred Session (5 issues):*
+- Created custom exception hierarchy (3 new exception classes)
+- Refactored from_database() method (204 → 65 lines, 68% reduction)
+- Extracted 7 helper methods for single responsibility
+- Simplified _parse_dates_field complex logic
+- Added comprehensive validation to to_database_metadata()
+- Created 8 TypedDict definitions for type safety
+
+**Total Impact:**
+- **Lines of code reduction:** 139 lines (from method extraction)
+- **New helper methods:** 8 methods
+- **New type definitions:** 8 TypedDicts
+- **Exception hierarchy:** 3 new exception classes
+- **Validation improvements:** 5 validated fields
+
 ---
 
-**Next Steps for Module 4:**
-1. ✅ All Critical issues resolved
-2. ✅ Most High priority issues resolved (2/3)
-3. Consider deferred issues in future refactoring session:
-   - from_database() method extraction (High)
-   - Custom exception hierarchy (Medium)
-   - Enhanced type hints with TypedDict (Low)
+**Module 4 Complete:**
+- ✅ All 12 issues resolved (100%)
+- ✅ Significant improvements to code maintainability
+- ✅ Enhanced type safety and validation
+- ✅ Improved exception handling consistency
+- ✅ Reduced method complexity across the board

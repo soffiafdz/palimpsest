@@ -28,13 +28,118 @@ import yaml
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union, Sequence, Tuple
+from typing import Dict, Any, List, Optional, Union, Sequence, Tuple, TypedDict
 
+from dev.core.exceptions import EntryParseError, EntryValidationError
 from dev.core.validators import DataValidator
 from dev.database.models import Entry
 from dev.utils import md, parsers
 
 logger = logging.getLogger(__name__)
+
+
+# ----- Type Definitions -----
+
+
+class PersonSpec(TypedDict, total=False):
+    """Type specification for person metadata."""
+
+    name: str
+    full_name: str
+
+
+class AliasSpec(TypedDict):
+    """Type specification for alias metadata."""
+
+    alias: Union[str, List[str]]
+    name: str
+    full_name: str  # Optional
+
+
+class LocationSpec(TypedDict):
+    """Type specification for location metadata."""
+
+    name: str
+    city: str
+
+
+class DateSpec(TypedDict, total=False):
+    """Type specification for mentioned date metadata."""
+
+    date: str
+    context: str
+    locations: List[str]
+    people: List[PersonSpec]
+
+
+class ReferenceSourceSpec(TypedDict, total=False):
+    """Type specification for reference source metadata."""
+
+    title: str
+    type: str
+    author: str
+
+
+class ReferenceSpec(TypedDict, total=False):
+    """Type specification for reference metadata."""
+
+    content: str
+    description: str
+    mode: str
+    speaker: str
+    source: ReferenceSourceSpec
+
+
+class PoemSpec(TypedDict, total=False):
+    """Type specification for poem metadata."""
+
+    title: str
+    content: str
+    revision_date: str
+    notes: str
+
+
+class ManuscriptSpec(TypedDict, total=False):
+    """Type specification for manuscript metadata."""
+
+    status: str
+    edited: bool
+    themes: List[str]
+    notes: str
+
+
+class EntryMetadata(TypedDict, total=False):
+    """Type specification for complete entry metadata structure."""
+
+    # Required fields
+    date: Union[str, date]
+    word_count: int
+    reading_time: float
+
+    # Optional simple fields
+    epigraph: str
+    epigraph_attribution: str
+    notes: str
+
+    # Location fields
+    city: Union[str, List[str]]
+    locations: Union[List[str], Dict[str, List[str]]]
+
+    # People fields
+    people: List[PersonSpec]
+
+    # Date references
+    dates: List[Union[str, DateSpec]]
+
+    # Simple list fields
+    events: List[str]
+    tags: List[str]
+    related_entries: List[str]
+
+    # Complex nested fields
+    references: List[ReferenceSpec]
+    poems: List[PoemSpec]
+    manuscript: ManuscriptSpec
 
 
 @dataclass
@@ -138,23 +243,23 @@ class MdEntry:
         frontmatter_text, body_lines = md.split_frontmatter(content)
 
         if not frontmatter_text:
-            raise ValueError("No YAML frontmatter found (must start with ---)")
+            raise EntryValidationError("No YAML frontmatter found (must start with ---)")
 
         try:
             metadata: Any = yaml.safe_load(frontmatter_text)
         except yaml.YAMLError as e:
-            raise yaml.YAMLError(f"Invalid YAML frontmatter: {e}") from e
+            raise EntryParseError(f"Invalid YAML frontmatter: {e}") from e
 
         if not isinstance(metadata, dict):
-            raise ValueError("YAML frontmatter must be a dictionary")
+            raise EntryValidationError("YAML frontmatter must be a dictionary")
 
         # Extract required date field
         if "date" not in metadata:
-            raise ValueError("Missing required 'date' field in frontmatter")
+            raise EntryValidationError("Missing required 'date' field in frontmatter")
 
         entry_date = DataValidator.normalize_date(metadata["date"])
         if entry_date is None:
-            raise ValueError(f"Invalid date format: {metadata['date']}")
+            raise EntryValidationError(f"Invalid date format: {metadata['date']}")
 
         if verbose:
             logger.debug(f"Parsed entry for {entry_date}")
@@ -196,6 +301,7 @@ class MdEntry:
             ...     body = read_body_from_somewhere()
             ...     md_entry = MdEntry.from_database(entry_orm, body)
         """
+        # Build basic metadata
         metadata: Dict[str, Any] = {
             "date": entry.date,
             "word_count": entry.word_count,
@@ -210,164 +316,47 @@ class MdEntry:
         if entry.notes:
             metadata["notes"] = entry.notes
 
-        # City/Cities
-        if entry.cities:
-            if len(entry.cities) == 1:
-                city = entry.cities[0]
-                metadata["city"] = city.city
-            else:
-                metadata["city"] = [c.city for c in entry.cities]
+        # Complex metadata - use helper methods
+        city = cls._build_cities_metadata(entry)
+        if city is not None:
+            metadata["city"] = city
 
-        # Locations
-        if entry.locations:
-            if not entry.cities or len(entry.cities) == 1:
-                # No cities or single city - flat list of locations
-                metadata["locations"] = [loc.name for loc in entry.locations]
-            else:
-                # Multiple cities - nested dict grouped by city
-                locations_dict = {}
-                for loc in entry.locations:
-                    city_name = loc.city.city
-                    if city_name not in locations_dict:
-                        locations_dict[city_name] = []
-                    locations_dict[city_name].append(loc.name)
-                metadata["locations"] = locations_dict
+        locations = cls._build_locations_metadata(entry)
+        if locations is not None:
+            metadata["locations"] = locations
 
-        # Relationships
-        if entry.people or entry.aliases_used:
-            people_list = []
-            aliases_by_person: Dict[int, Dict[str, Any]] = {}
+        people = cls._build_people_metadata(entry)
+        if people is not None:
+            metadata["people"] = people
 
-            if entry.aliases_used:
-                for alias in entry.aliases_used:
-                    person_id = alias.person_id
-                    if person_id not in aliases_by_person:
-                        aliases_by_person[person_id] = {
-                            "alias": [],
-                            "name": alias.person.name,
-                        }
-                        if alias.person.name_fellow and alias.person.full_name:
-                            fname = alias.person.full_name
-                            aliases_by_person[person_id]["full_name"] = fname
-                    aliases_by_person[person_id]["alias"].append(alias.alias)
+        dates = cls._build_dates_metadata(entry)
+        if dates is not None:
+            metadata["dates"] = dates
 
-            for p in entry.people:
-                if aliases_by_person and p.id in aliases_by_person:
-                    continue
-                if p.name_fellow:
-                    people_list.append({"full_name": p.full_name})
-                else:
-                    people_list.append({"name": p.name})
-
-            people_list.extend(aliases_by_person.values())
-            metadata["people"] = people_list
-
-        # Mentioned dates with context location and people
-        if entry.dates:
-            dates_list = []
-
-            # Check if entry date is in mentioned dates
-            entry_date_in_mentioned = any(md.date == entry.date for md in entry.dates)
-
-            # Add ~ if entry date NOT in mentioned dates
-            if not entry_date_in_mentioned:
-                dates_list.append("~")
-
-            # Build all date items as dicts
-            for md in entry.dates:
-                date_dict: Dict = {"date": md.date.isoformat()}
-
-                # Add locations
-                if md.locations:
-                    date_dict["locations"] = [loc.name for loc in md.locations]
-
-                # Add people
-                if md.people:
-                    people_formatted = []
-                    for person in md.people:
-                        if person.name_fellow:
-                            people_formatted.append({"full_name": person.full_name})
-                        else:
-                            people_formatted.append({"name": person.name})
-                    date_dict["people"] = people_formatted
-
-                # Add context
-                if md.context:
-                    date_dict["context"] = md.context
-
-                dates_list.append(date_dict)
-
-            metadata["dates"] = dates_list
-
+        # Simple list fields
         if entry.events:
             metadata["events"] = [evt.event for evt in entry.events]
 
         if entry.tags:
             metadata["tags"] = [tag.tag for tag in entry.tags]
 
-        # Related entries
         if entry.related_entries:
             metadata["related_entries"] = [
                 r_e.date.isoformat() for r_e in entry.related_entries
             ]
 
-        # References
-        if entry.references:
-            refs_list: List[Dict[str, Any]] = []
-            for ref in entry.references:
-                ref_dict: Dict[str, Any] = {}
+        # Complex nested metadata
+        references = cls._build_references_metadata(entry)
+        if references is not None:
+            metadata["references"] = references
 
-                # Content is now optional
-                if ref.content:
-                    ref_dict["content"] = ref.content
+        poems = cls._build_poems_metadata(entry)
+        if poems is not None:
+            metadata["poems"] = poems
 
-                # Add description if present
-                if ref.description:
-                    ref_dict["description"] = ref.description
-
-                # Add mode (default is direct)
-                if ref.mode and ref.mode.value != "direct":
-                    ref_dict["mode"] = ref.mode.value
-
-                if ref.speaker:
-                    ref_dict["speaker"] = ref.speaker
-
-                if ref.source:
-                    ref_dict["source"] = {
-                        "title": ref.source.title,
-                        "type": ref.source.type.value,
-                    }
-                    if ref.source.author:
-                        ref_dict["source"]["author"] = ref.source.author
-                refs_list.append(ref_dict)
-            metadata["references"] = refs_list
-
-        # Poems
-        if entry.poems:
-            poems_list: List[Dict[str, Any]] = []
-            for pv in entry.poems:
-                poem_dict: Dict[str, Any] = {
-                    "title": pv.poem.title if pv.poem else "Untitled",
-                    "content": pv.content,
-                    "revision_date": pv.revision_date.isoformat(),
-                }
-                if pv.notes:
-                    poem_dict["notes"] = pv.notes
-                poems_list.append(poem_dict)
-            metadata["poems"] = poems_list
-
-        # Manuscript metadata
-        if entry.manuscript:
-            ms = entry.manuscript
-            ms_dict: Dict[str, Any] = {
-                "status": ms.status.value,
-                "edited": ms.edited,
-            }
-            if ms.themes:
-                ms_dict["themes"] = [theme.theme for theme in ms.themes]
-            if ms.notes:
-                ms_dict["notes"] = ms.notes
-            metadata["manuscript"] = ms_dict
+        manuscript = cls._build_manuscript_metadata(entry)
+        if manuscript is not None:
+            metadata["manuscript"] = manuscript
 
         return cls(
             date=entry.date,
@@ -394,16 +383,28 @@ class MdEntry:
             >>> with db.session_scope() as session:
             ...     db.create_entry(session, db_meta)
         """
+        # Validate required fields
         if not self.date:
-            raise ValueError("Entry date is required")
+            raise EntryValidationError("Entry date is required")
 
         if not self.file_path:
-            raise ValueError("File path is required for database operations")
+            raise EntryValidationError("File path is required for database operations")
+
+        # Validate and normalize basic metrics
+        word_count = self.metadata.get("word_count", 0)
+        if not isinstance(word_count, int) or word_count < 0:
+            logger.warning(f"Invalid word_count: {word_count}, defaulting to 0")
+            word_count = 0
+
+        reading_time = self.metadata.get("reading_time", 0.0)
+        if not isinstance(reading_time, (int, float)) or reading_time < 0:
+            logger.warning(f"Invalid reading_time: {reading_time}, defaulting to 0.0")
+            reading_time = 0.0
 
         db_meta: Dict[str, Any] = {
             "date": self.date,
-            "word_count": self.metadata.get("word_count", 0),
-            "reading_time": self.metadata.get("reading_time", 0.0),
+            "word_count": word_count,
+            "reading_time": float(reading_time),
         }
 
         # Add file path if available
@@ -499,12 +500,36 @@ class MdEntry:
         if "manuscript" in self.metadata:
             db_meta["manuscript"] = self.metadata["manuscript"]
 
-        # Simple lists
-        for db_field in ["epigraph", "epigraph_attribution", "events", "tags", "notes"]:
+        # Simple string/list fields with validation
+        for db_field in ["epigraph", "epigraph_attribution", "notes"]:
             if db_field in self.metadata and self.metadata[db_field]:
-                db_meta[db_field] = DataValidator.normalize_string(
-                    self.metadata[db_field]
-                )
+                value = self.metadata[db_field]
+                if isinstance(value, str):
+                    normalized = DataValidator.normalize_string(value)
+                    if normalized:
+                        db_meta[db_field] = normalized
+                else:
+                    logger.warning(f"{db_field} should be a string, got {type(value)}")
+
+        # List fields with validation
+        for db_field in ["events", "tags"]:
+            if db_field in self.metadata and self.metadata[db_field]:
+                value = self.metadata[db_field]
+                if isinstance(value, list):
+                    validated_list = [
+                        DataValidator.normalize_string(item)
+                        for item in value
+                        if DataValidator.normalize_string(item)
+                    ]
+                    if validated_list:
+                        db_meta[db_field] = validated_list
+                elif isinstance(value, str):
+                    # Single string - convert to list
+                    normalized = DataValidator.normalize_string(value)
+                    if normalized:
+                        db_meta[db_field] = [normalized]
+                else:
+                    logger.warning(f"{db_field} should be a list, got {type(value)}")
 
         return db_meta
 
@@ -526,6 +551,179 @@ class MdEntry:
         lines.extend(self.body)
 
         return "\n".join(lines)
+
+    # ----- Database Conversion Helpers -----
+    @staticmethod
+    def _build_cities_metadata(entry: Entry) -> Optional[Union[str, List[str]]]:
+        """Extract city/cities metadata from database Entry."""
+        if not entry.cities:
+            return None
+        if len(entry.cities) == 1:
+            return entry.cities[0].city
+        return [c.city for c in entry.cities]
+
+    @staticmethod
+    def _build_locations_metadata(entry: Entry) -> Optional[Union[List[str], Dict[str, List[str]]]]:
+        """Extract locations metadata from database Entry."""
+        if not entry.locations:
+            return None
+
+        if not entry.cities or len(entry.cities) == 1:
+            # No cities or single city - flat list of locations
+            return [loc.name for loc in entry.locations]
+        else:
+            # Multiple cities - nested dict grouped by city
+            locations_dict = {}
+            for loc in entry.locations:
+                city_name = loc.city.city
+                if city_name not in locations_dict:
+                    locations_dict[city_name] = []
+                locations_dict[city_name].append(loc.name)
+            return locations_dict
+
+    @staticmethod
+    def _build_people_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
+        """Extract people and aliases metadata from database Entry."""
+        if not entry.people and not entry.aliases_used:
+            return None
+
+        people_list = []
+        aliases_by_person: Dict[int, Dict[str, Any]] = {}
+
+        if entry.aliases_used:
+            for alias in entry.aliases_used:
+                person_id = alias.person_id
+                if person_id not in aliases_by_person:
+                    aliases_by_person[person_id] = {
+                        "alias": [],
+                        "name": alias.person.name,
+                    }
+                    if alias.person.name_fellow and alias.person.full_name:
+                        fname = alias.person.full_name
+                        aliases_by_person[person_id]["full_name"] = fname
+                aliases_by_person[person_id]["alias"].append(alias.alias)
+
+        for p in entry.people:
+            if aliases_by_person and p.id in aliases_by_person:
+                continue
+            if p.name_fellow:
+                people_list.append({"full_name": p.full_name})
+            else:
+                people_list.append({"name": p.name})
+
+        people_list.extend(aliases_by_person.values())
+        return people_list
+
+    @staticmethod
+    def _build_dates_metadata(entry: Entry) -> Optional[List[Union[str, Dict[str, Any]]]]:
+        """Extract mentioned dates with context from database Entry."""
+        if not entry.dates:
+            return None
+
+        dates_list = []
+
+        # Check if entry date is in mentioned dates
+        entry_date_in_mentioned = any(md.date == entry.date for md in entry.dates)
+
+        # Add ~ if entry date NOT in mentioned dates
+        if not entry_date_in_mentioned:
+            dates_list.append("~")
+
+        # Build all date items as dicts
+        for md in entry.dates:
+            date_dict: Dict = {"date": md.date.isoformat()}
+
+            # Add locations
+            if md.locations:
+                date_dict["locations"] = [loc.name for loc in md.locations]
+
+            # Add people
+            if md.people:
+                people_formatted = []
+                for person in md.people:
+                    if person.name_fellow:
+                        people_formatted.append({"full_name": person.full_name})
+                    else:
+                        people_formatted.append({"name": person.name})
+                date_dict["people"] = people_formatted
+
+            # Add context
+            if md.context:
+                date_dict["context"] = md.context
+
+            dates_list.append(date_dict)
+
+        return dates_list
+
+    @staticmethod
+    def _build_references_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
+        """Extract references metadata from database Entry."""
+        if not entry.references:
+            return None
+
+        refs_list: List[Dict[str, Any]] = []
+        for ref in entry.references:
+            ref_dict: Dict[str, Any] = {}
+
+            # Content is now optional
+            if ref.content:
+                ref_dict["content"] = ref.content
+
+            # Add description if present
+            if ref.description:
+                ref_dict["description"] = ref.description
+
+            # Add mode (default is direct)
+            if ref.mode and ref.mode.value != "direct":
+                ref_dict["mode"] = ref.mode.value
+
+            if ref.speaker:
+                ref_dict["speaker"] = ref.speaker
+
+            if ref.source:
+                ref_dict["source"] = {
+                    "title": ref.source.title,
+                    "type": ref.source.type.value,
+                }
+                if ref.source.author:
+                    ref_dict["source"]["author"] = ref.source.author
+            refs_list.append(ref_dict)
+        return refs_list
+
+    @staticmethod
+    def _build_poems_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
+        """Extract poems metadata from database Entry."""
+        if not entry.poems:
+            return None
+
+        poems_list: List[Dict[str, Any]] = []
+        for pv in entry.poems:
+            poem_dict: Dict[str, Any] = {
+                "title": pv.poem.title if pv.poem else "Untitled",
+                "content": pv.content,
+                "revision_date": pv.revision_date.isoformat(),
+            }
+            if pv.notes:
+                poem_dict["notes"] = pv.notes
+            poems_list.append(poem_dict)
+        return poems_list
+
+    @staticmethod
+    def _build_manuscript_metadata(entry: Entry) -> Optional[Dict[str, Any]]:
+        """Extract manuscript metadata from database Entry."""
+        if not entry.manuscript:
+            return None
+
+        ms = entry.manuscript
+        ms_dict: Dict[str, Any] = {
+            "status": ms.status.value,
+            "edited": ms.edited,
+        }
+        if ms.themes:
+            ms_dict["themes"] = [theme.theme for theme in ms.themes]
+        if ms.notes:
+            ms_dict["notes"] = ms.notes
+        return ms_dict
 
     # ----- Parsing Helpers -----
     def _parse_city_field(self, city_data: Union[str, List[str]]) -> List[str]:
@@ -720,6 +918,50 @@ class MdEntry:
 
         return {"people": normalized_people, "alias": aliases_mentioned}
 
+    @staticmethod
+    def _find_person_in_parsed(
+        person_str: str, people_parsed: Dict[str, List]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Look up a person string in the people_parsed structure.
+
+        Searches both the "people" list and "alias" list to find a matching
+        person specification.
+
+        Args:
+            person_str: Person name or alias to find
+            people_parsed: Parsed people structure with "people" and/or "alias" keys
+
+        Returns:
+            Matching person dict if found, otherwise {"name": person_str}
+        """
+        # Check in people list
+        if "people" in people_parsed:
+            for person_spec in people_parsed["people"]:
+                if isinstance(person_spec, dict):
+                    # Check name or full_name matches
+                    if (
+                        person_spec.get("name") == person_str
+                        or person_spec.get("full_name") == person_str
+                    ):
+                        return person_spec
+                elif person_spec == person_str:
+                    return {"name": person_str}
+
+        # Check in alias list
+        if "alias" in people_parsed:
+            for alias_spec in people_parsed["alias"]:
+                if isinstance(alias_spec, dict):
+                    alias_vals = alias_spec.get("alias", [])
+                    if not isinstance(alias_vals, list):
+                        alias_vals = [alias_vals]
+
+                    if person_str in alias_vals:
+                        return alias_spec
+
+        # Not found - treat as simple name
+        return {"name": person_str}
+
     def _parse_dates_field(
         self,
         dates_data: Union[List[Union[str, Dict]], Dict],
@@ -852,46 +1094,14 @@ class MdEntry:
                             people_list.append(person_value)
                             continue
 
-                        # String value - look up in people_parsed
+                        # String value - look up in people_parsed using helper
                         person_str = DataValidator.normalize_string(person_value)
                         if not person_str:
                             continue
 
-                        found = False
-
-                        # Check in people list
-                        if "people" in people_parsed:
-                            for person_spec in people_parsed["people"]:
-                                if isinstance(person_spec, dict):
-                                    # Check name or full_name matches
-                                    if (
-                                        person_spec.get("name") == person_str
-                                        or person_spec.get("full_name") == person_str
-                                    ):
-                                        people_list.append(person_spec)
-                                        found = True
-                                        break
-                                elif person_spec == person_str:
-                                    people_list.append({"name": person_str})
-                                    found = True
-                                    break
-
-                        # Check in alias list
-                        if not found and "alias" in people_parsed:
-                            for alias_spec in people_parsed["alias"]:
-                                if isinstance(alias_spec, dict):
-                                    alias_vals = alias_spec.get("alias", [])
-                                    if not isinstance(alias_vals, list):
-                                        alias_vals = [alias_vals]
-
-                                    if person_str in alias_vals:
-                                        people_list.append(alias_spec)
-                                        found = True
-                                        break
-
-                        # Not found - treat as simple name
-                        if not found:
-                            people_list.append({"name": person_str})
+                        person_spec = self._find_person_in_parsed(person_str, people_parsed)
+                        if person_spec:
+                            people_list.append(person_spec)
 
                     if people_list:
                         date_dict["people"] = people_list
