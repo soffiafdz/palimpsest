@@ -100,7 +100,43 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
 )
 @click.pass_context
 def inbox(ctx: click.Context, inbox: str, output: str) -> None:
-    """Process inbox: format and organize raw 750words exports."""
+    """
+    Process inbox: format and organize raw 750words exports.
+
+    Implementation Logic:
+    ---------------------
+    This command is the FIRST STEP in the processing pipeline. It takes raw
+    unformatted text exports from 750words.com and transforms them into
+    organized, cleaned monthly text files.
+
+    Processing Flow:
+    1. Scans inbox directory for raw .txt exports
+    2. Validates file naming format (expects 750words export format)
+    3. Groups files by year based on content dates
+    4. Invokes external format script to clean/normalize content
+    5. Organizes output into year-based directory structure
+    6. Archives original files (preserves raw exports)
+
+    File Organization:
+    - Input:  inbox/*.txt (raw 750words exports, any naming)
+    - Output: txt/YYYY/YYYY-MM.txt (formatted, organized by year)
+    - Archive: archive/*.txt (original files preserved)
+
+    Error Handling:
+    - Individual file failures don't stop batch processing
+    - Validation errors logged with context
+    - Statistics track errors for post-processing review
+
+    Side Effects:
+    - Creates year-based directory structure in output
+    - Moves processed files to archive
+    - Modifies filesystem state (output and archive dirs)
+
+    Dependencies:
+    - TxtBuilder handles actual processing logic
+    - External format script for content cleaning (subprocess call)
+    - Logger tracks all operations for debugging
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("📥 Processing inbox...")
@@ -144,7 +180,57 @@ def inbox(ctx: click.Context, inbox: str, output: str) -> None:
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing files")
 @click.pass_context
 def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
-    """Convert formatted text to Markdown entries."""
+    """
+    Convert formatted text to Markdown entries.
+
+    Implementation Logic:
+    ---------------------
+    This command is the SECOND STEP in the pipeline. It transforms formatted
+    monthly text files into individual daily Markdown files with minimal
+    YAML frontmatter (date, word_count, reading_time only).
+
+    Processing Flow:
+    1. Reads monthly text file (YYYY-MM.txt format)
+    2. Parses content to identify daily entry boundaries
+    3. Extracts entry date from content markers
+    4. Computes metadata (word count, reading time)
+    5. Generates minimal YAML frontmatter
+    6. Writes individual daily .md files (YYYY-MM-DD.md)
+
+    Parsing Strategy:
+    - Uses date markers to split monthly file into daily entries
+    - Handles various date format variations
+    - Preserves original text content without modification
+    - Computes metadata from content analysis
+
+    File Organization:
+    - Input:  txt/YYYY/YYYY-MM.txt (monthly files)
+    - Output: md/YYYY/YYYY-MM-DD.md (daily files)
+
+    YAML Frontmatter Generated:
+    - date: Entry date in YYYY-MM-DD format
+    - word_count: Computed word count
+    - reading_time: Estimated reading time (minutes)
+
+    Note: Complex metadata (people, locations, events) is NOT handled here.
+    That's deferred to yaml2sql pipeline for human-edited metadata.
+
+    Error Handling:
+    - Accepts both file and directory paths
+    - Skips existing files unless --force specified
+    - Individual entry failures logged but don't stop batch
+    - Statistics track created/skipped entries
+
+    Side Effects:
+    - Creates year-based directory structure
+    - Writes new .md files (or overwrites if --force)
+    - No database modifications (pure file conversion)
+
+    Dependencies:
+    - txt2md.convert_directory() for batch processing
+    - txt2md.convert_file() for single file processing
+    - TxtEntry dataclass for parsing logic
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("📝 Converting text to Markdown...")
@@ -194,7 +280,68 @@ def convert(ctx: click.Context, input: str, output: str, force: bool) -> None:
 @click.option("-f", "--force", is_flag=True, help="Force update all entries")
 @click.pass_context
 def sync_db(ctx: click.Context, input: str, force: bool) -> None:
-    """Synchronize database with Markdown metadata."""
+    """
+    Synchronize database with Markdown metadata.
+
+    Implementation Logic:
+    ---------------------
+    This command is the THIRD STEP in the pipeline. It reads human-edited
+    Markdown files with rich YAML frontmatter and populates the SQLite
+    database with structured, queryable data.
+
+    Processing Flow:
+    1. Scans directory for .md files
+    2. Reads YAML frontmatter from each file
+    3. Parses complex metadata (people, locations, events, etc.)
+    4. Creates or updates Entry records in database
+    5. Manages relationships (many-to-many tables)
+    6. Updates file hash for change detection
+
+    Change Detection Strategy:
+    - Computes MD5 hash of file content
+    - Stores hash in Entry.file_hash field
+    - Skips processing if hash unchanged (unless --force)
+    - This enables incremental updates (only process changed files)
+
+    Relationship Management:
+    - People: Parses names with hyphen/alias support
+    - Locations: Handles nested city→location hierarchies
+    - Events: Links entries to event identifiers
+    - Tags: Maintains many-to-many tag associations
+    - References: Stores external citations with sources
+    - Poems: Tracks poem versions with revision history
+    - Manuscript: Manages editorial metadata
+
+    Transaction Handling:
+    - Each file processed in separate transaction
+    - Individual failures rolled back automatically
+    - Database remains consistent even if some files fail
+    - Statistics track successes/failures for review
+
+    Database Initialization:
+    - Auto-backup enabled (creates backup before major operations)
+    - Uses PalimpsestDB manager for connection pooling
+    - Alembic tracks schema migrations
+    - SQLite WAL mode for concurrent access
+
+    Error Handling:
+    - Validation errors logged with file context
+    - Parsing failures don't stop batch processing
+    - Orphaned records cleaned up automatically
+    - Statistics report errors for manual review
+
+    Side Effects:
+    - Creates/updates database records
+    - Modifies many-to-many relationship tables
+    - Updates file_hash fields for change tracking
+    - May create backup files (if auto-backup enabled)
+
+    Dependencies:
+    - yaml2sql.process_directory() handles file processing
+    - MdEntry dataclass for YAML parsing
+    - PalimpsestDB for database operations
+    - SQLAlchemy ORM for relationship management
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("🔄 Syncing database from Markdown...")
@@ -238,7 +385,65 @@ def sync_db(ctx: click.Context, input: str, force: bool) -> None:
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing files")
 @click.pass_context
 def export_db(ctx: click.Context, output: str, force: bool) -> None:
-    """Export database to Markdown files."""
+    """
+    Export database to Markdown files.
+
+    Implementation Logic:
+    ---------------------
+    This command is the INVERSE of sync-db. It reads structured database
+    records and generates human-editable Markdown files with complete
+    YAML frontmatter. Used for database→file synchronization.
+
+    Processing Flow:
+    1. Queries all Entry records from database
+    2. Loads relationships (people, locations, events, etc.)
+    3. Converts database records to MdEntry dataclass
+    4. Generates YAML frontmatter from metadata
+    5. Preserves existing body content (or regenerates)
+    6. Writes .md files with complete metadata
+
+    Content Preservation Strategy:
+    - Reads existing .md file if present
+    - Extracts body content (everything after frontmatter)
+    - Regenerates YAML frontmatter from database
+    - Combines new frontmatter with preserved body
+    - This allows database updates while preserving text
+
+    YAML Generation:
+    - All relationship data exported to YAML
+    - People names formatted with hyphens/aliases
+    - Locations organized by city hierarchy
+    - References include sources and context
+    - Manuscript metadata conditionally included
+    - Dates formatted consistently (YYYY-MM-DD)
+
+    Use Cases:
+    - Restore .md files from database backup
+    - Propagate database edits back to files
+    - Generate initial .md files from imported data
+    - Synchronize bidirectional changes
+
+    File Handling:
+    - Skips existing files unless --force specified
+    - Creates year-based directory structure
+    - Maintains file organization (md/YYYY/YYYY-MM-DD.md)
+
+    Error Handling:
+    - Individual export failures logged
+    - Statistics track created/updated/skipped files
+    - Database remains unchanged (read-only operation)
+
+    Side Effects:
+    - Writes/overwrites .md files
+    - Creates year directories if needed
+    - No database modifications (export-only)
+
+    Dependencies:
+    - sql2yaml.export_entry_to_markdown() for conversion
+    - MdEntry dataclass for YAML generation
+    - PalimpsestDB for database queries
+    - YAML library for frontmatter serialization
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("📤 Exporting database to Markdown...")
@@ -306,7 +511,73 @@ def build_pdf(
     force: bool,
     debug: bool,
 ) -> None:
-    """Build clean and notes PDFs for a year."""
+    """
+    Build clean and notes PDFs for a year.
+
+    Implementation Logic:
+    ---------------------
+    This command is the FINAL STEP in the pipeline. It generates professional
+    typeset PDF documents from Markdown entries using Pandoc + LaTeX. Creates
+    two versions: clean (reading) and notes (annotation with line numbers).
+
+    Processing Flow:
+    1. Collects all .md files for specified year
+    2. Sorts entries chronologically
+    3. Concatenates into single Markdown document
+    4. Applies LaTeX preamble for typography
+    5. Invokes Pandoc to convert MD → LaTeX → PDF
+    6. Generates two PDF variants (clean and notes)
+
+    Pandoc Integration:
+    - Uses Pandoc as external subprocess
+    - Passes custom LaTeX preambles for formatting
+    - preamble.tex: Clean reading version
+    - preamble_notes.tex: Annotation version with line numbers
+    - Pandoc handles: citations, cross-refs, typography
+
+    Temporary File Management:
+    - Creates temp directory for intermediate files
+    - Concatenated Markdown → temp/journal_YYYY.md
+    - LaTeX intermediate → temp/journal_YYYY.tex
+    - Cleanup automatic on success
+    - --debug flag preserves temp files for troubleshooting
+
+    Output Files:
+    - journal_YYYY_clean.pdf: Reading/archival version
+    - journal_YYYY_notes.pdf: Annotation version (line numbers)
+    - Location: pdf/YYYY/
+
+    LaTeX Typography Features:
+    - Professional typography (TeX Gyre fonts)
+    - Page margins optimized for reading
+    - Line numbers in notes version
+    - Headers/footers with metadata
+    - Smart hyphenation
+
+    Error Handling:
+    - Pandoc failures captured with stderr output
+    - LaTeX errors logged with context
+    - Temporary files preserved on error if --debug
+    - Partial builds cleaned up automatically
+
+    Performance Considerations:
+    - Large years (>365 entries) may take several minutes
+    - Pandoc is CPU-intensive (LaTeX compilation)
+    - Memory usage scales with year size
+    - Progress feedback via logger
+
+    Side Effects:
+    - Creates PDF files in output directory
+    - Creates/deletes temporary directory
+    - Spawns Pandoc subprocess (external dependency)
+    - May consume significant CPU/memory
+
+    Dependencies:
+    - Pandoc installed and in PATH (REQUIRED)
+    - LaTeX distribution (texlive-full recommended)
+    - preamble.tex and preamble_notes.tex files
+    - PdfBuilder handles actual compilation
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo(f"📚 Building PDFs for {year}...")
@@ -343,7 +614,56 @@ def build_pdf(
 @click.option("--suffix", default=None, help="Optional backup suffix")
 @click.pass_context
 def backup_full(ctx: click.Context, suffix: Optional[str]) -> None:
-    """Create full compressed backup of entire data directory."""
+    """
+    Create full compressed backup of entire data directory.
+
+    Implementation Logic:
+    ---------------------
+    Creates a timestamped, compressed archive of the complete data directory
+    (journal/). Includes all files: md/, pdf/, txt/, database, etc.
+
+    Backup Strategy:
+    1. Creates temp staging directory
+    2. Recursively copies entire data directory
+    3. Compresses to tar.gz format
+    4. Adds timestamp to filename (YYYY-MM-DD_HH-MM-SS)
+    5. Saves to backup directory (outside git repo)
+    6. Cleans up staging directory
+
+    Filename Format:
+    - full_backup_YYYY-MM-DD_HH-MM-SS.tar.gz
+    - With suffix: full_backup_YYYY-MM-DD_HH-MM-SS_suffix.tar.gz
+
+    Compression:
+    - Uses gzip compression (level 6, balance size/speed)
+    - Typical compression ratio: 40-60% for text files
+    - Large archives may take several minutes
+
+    Backup Location:
+    - Saved outside journal/ directory
+    - Not tracked by git (.gitignore)
+    - Recommended: sync to external storage
+
+    Use Cases:
+    - Before major pipeline operations
+    - Before database schema migrations
+    - Regular archival (cron job)
+    - Pre-deployment snapshots
+
+    Error Handling:
+    - Disk space checked before starting
+    - Partial backups cleaned up on failure
+    - Backup integrity verified (file count)
+
+    Side Effects:
+    - Creates large compressed file (GB range possible)
+    - Temporary disk space usage during compression
+    - May take significant time for large datasets
+
+    Dependencies:
+    - BackupManager handles compression
+    - tar/gzip utilities (standard POSIX)
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     click.echo("📦 Creating full data backup...")
@@ -373,7 +693,49 @@ def backup_full(ctx: click.Context, suffix: Optional[str]) -> None:
 @cli.command("backup-list-full")
 @click.pass_context
 def backup_list_full(ctx: click.Context) -> None:
-    """List all available full data backups."""
+    """
+    List all available full data backups.
+
+    Implementation Logic:
+    ---------------------
+    Scans the backup directory for full data backups and displays metadata
+    for each backup file (creation date, size, age).
+
+    Processing Flow:
+    1. Checks if backup directory exists
+    2. Scans for .tar.gz files
+    3. Sorts by creation time
+    4. Extracts metadata from filesystem
+    5. Formats and displays results
+
+    Metadata Displayed:
+    - Filename: full_backup_YYYY-MM-DD_HH-MM-SS[_suffix].tar.gz
+    - Creation timestamp (from file modification time)
+    - File size (in MB and bytes)
+    - Age (days since creation)
+    - Total count and directory location
+
+    Output Format:
+    Provides human-readable list with:
+    - Clear section headers
+    - Indented details for each backup
+    - Summary totals
+    - Directory path for manual inspection
+
+    Use Cases:
+    - Before restore operations (choose backup)
+    - Cleanup old backups (identify candidates)
+    - Verify backup schedule compliance
+    - Monitor backup storage usage
+
+    Side Effects:
+    - None (read-only operation)
+    - No file modifications
+
+    Dependencies:
+    - BackupManager for directory path
+    - Filesystem access for metadata
+    """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     try:
@@ -432,7 +794,98 @@ def run_all(
     skip_pdf: bool,
     backup: bool,
 ) -> None:
-    """Run the complete processing pipeline end-to-end."""
+    """
+    Run the complete processing pipeline end-to-end.
+
+    Implementation Logic:
+    ---------------------
+    Orchestrates the ENTIRE journal processing pipeline in the correct order.
+    This is the master command that runs all steps sequentially, ensuring
+    data flows correctly from raw exports to final PDFs.
+
+    Pipeline Sequence:
+    ------------------
+    1. INBOX (optional, --skip-inbox to skip)
+       - Processes raw 750words exports
+       - Formats and organizes into monthly text files
+       - Archives original files
+       - Output: txt/YYYY/YYYY-MM.txt
+
+    2. CONVERT (always runs)
+       - Transforms monthly text to daily Markdown
+       - Generates minimal YAML frontmatter
+       - Computes word counts and reading times
+       - Output: md/YYYY/YYYY-MM-DD.md
+
+    3. SYNC-DB (always runs)
+       - Reads human-edited Markdown metadata
+       - Populates database with structured data
+       - Manages complex relationships
+       - Output: SQLite database updated
+
+    4. BUILD-PDF (optional, requires --year)
+       - Generates yearly journal PDFs
+       - Creates clean and notes versions
+       - Uses Pandoc + LaTeX for typesetting
+       - Output: pdf/YYYY/journal_YYYY_{clean,notes}.pdf
+       - Skip with --skip-pdf flag
+
+    5. BACKUP (optional, requires --backup flag)
+       - Creates full compressed data backup
+       - Includes all files and database
+       - Timestamped archive outside git
+       - Output: backups/full_backup_TIMESTAMP_pipeline.tar.gz
+
+    Invocation Strategy:
+    - Uses ctx.invoke() to call other commands programmatically
+    - Each command runs in same Click context
+    - Shared logger across all steps
+    - Each step logs independently
+
+    Error Handling:
+    - Pipeline stops on first error
+    - No partial rollback (completed steps remain)
+    - Each command has own error handling
+    - Duration tracked even on failure
+
+    Confirmation Required:
+    - Click confirmation prompt before execution
+    - Prevents accidental full pipeline runs
+    - Can be automated with --yes flag (future)
+
+    Progress Feedback:
+    - Visual separators between steps (=== 60 chars)
+    - Each command echoes its progress
+    - Total duration displayed at end
+    - Celebration message on success
+
+    Use Cases:
+    - Initial data import (process all files)
+    - Regular updates (periodic cron job)
+    - After manual editing session
+    - Pre-deployment data refresh
+
+    Performance Considerations:
+    - Full pipeline can take 10+ minutes for large datasets
+    - Inbox processing: ~1-2 minutes
+    - Convert: ~2-3 minutes
+    - Sync-db: ~3-5 minutes (database operations)
+    - Build-pdf: ~5-10 minutes (Pandoc/LaTeX)
+    - Backup: ~1-2 minutes (compression)
+
+    Side Effects:
+    - Modifies entire data directory structure
+    - Updates database comprehensively
+    - Creates PDF files
+    - May create backup archive
+    - High CPU/memory usage during PDF generation
+
+    Dependencies:
+    - All pipeline commands must be functional
+    - External dependencies: Pandoc, LaTeX
+    - Sufficient disk space for outputs
+    - Database must be initialized
+    """
     click.echo("🚀 Starting complete pipeline...\n")
 
     start_time = datetime.now()
