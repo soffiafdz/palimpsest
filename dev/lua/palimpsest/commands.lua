@@ -158,6 +158,29 @@ function M.index()
 	end
 end
 
+-- Open analysis report
+function M.analysis()
+	local root = get_project_root()
+	local analysis_path = root .. "/data/wiki/analysis.md"
+
+	-- Check if analysis report exists
+	if vim.fn.filereadable(analysis_path) == 0 then
+		-- Generate it first
+		vim.notify("Analysis report not found, generating...", vim.log.levels.INFO)
+		M.export("analysis")
+
+		-- Wait a moment for generation
+		vim.wait(1000)
+	end
+
+	-- Open analysis file
+	if vim.fn.filereadable(analysis_path) == 1 then
+		vim.cmd("edit " .. analysis_path)
+	else
+		vim.notify("Failed to generate analysis report", vim.log.levels.ERROR)
+	end
+end
+
 -- Export manuscript entities to wiki
 function M.manuscript_export(entity_type)
 	entity_type = entity_type or "all"
@@ -244,6 +267,7 @@ function M.setup()
 				"all",
 				"index",
 				"stats",
+				"analysis",
 				"timeline",
 				"entries",
 				"people",
@@ -281,6 +305,13 @@ function M.setup()
 		M.index()
 	end, {
 		desc = "Open wiki index/homepage",
+	})
+
+	-- Analysis command
+	vim.api.nvim_create_user_command("PalimpsestAnalysis", function()
+		M.analysis()
+	end, {
+		desc = "Open analysis report with visualizations",
 	})
 
 	-- Manuscript export command with completion

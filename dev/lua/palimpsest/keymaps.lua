@@ -28,6 +28,7 @@ function M.setup()
 				{ "<leader>pv", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
 				{ "<leader>pV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
 				{ "<leader>ps", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
+				{ "<leader>pa", "<cmd>PalimpsestAnalysis<cr>", desc = "Analysis report" },
 				{ "<leader>ph", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
 				-- Manuscript commands
 				{ "<leader>pm", group = "manuscript" },
@@ -60,6 +61,7 @@ function M.setup()
 				{ "<leader>vv", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
 				{ "<leader>vV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
 				{ "<leader>vs", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
+				{ "<leader>va", "<cmd>PalimpsestAnalysis<cr>", desc = "Analysis report" },
 				{ "<leader>vh", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
 				-- Manuscript commands
 				{ "<leader>vm", group = "manuscript" },
