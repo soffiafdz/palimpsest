@@ -59,9 +59,50 @@ class Theme(WikiEntity):
     # ---- Public constructors ----
     @classmethod
     def from_file(cls, path: Path) -> Optional["Theme"]:
-        """Parse a themes/theme.md file to create a Theme object."""
-        # TODO: Implement parsing from existing wiki files (Phase 3)
-        raise NotImplementedError("Theme.from_file() not yet implemented")
+        """
+        Parse a themes/theme.md file to extract editable fields.
+
+        Only extracts wiki-editable fields (notes, description).
+        Other fields remain empty as they are database-computed.
+
+        Args:
+            path: Path to theme wiki file
+
+        Returns:
+            Theme instance with only editable fields populated, or None on error
+        """
+        if not path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+
+            sections = parse_wiki_file(path)
+
+            # Extract theme name from filename
+            name = path.stem.replace("_", " ").replace("-", "/").title()
+
+            # Extract editable fields
+            notes = extract_notes(sections)
+
+            # Description is in the content right after the ## header
+            description = None
+            if "Description" in sections:
+                desc_text = sections["Description"].strip()
+                if desc_text and not desc_text.startswith("["):  # Not a placeholder
+                    description = desc_text
+
+            return cls(
+                path=path,
+                name=name,
+                description=description,
+                notes=notes,
+                # All other fields left empty - they're database-computed
+            )
+
+        except Exception as e:
+            sys.stderr.write(f"Error parsing {path}: {e}\n")
+            return None
 
     @classmethod
     def from_database(

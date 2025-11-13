@@ -468,8 +468,35 @@ class Entry(WikiEntity):
         Returns:
             Entry instance (partial - only editable fields populated)
         """
-        # TODO: Implement in Phase 3 (wiki2sql)
-        raise NotImplementedError("from_file() will be implemented in Phase 3")
+        if not file_path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+            import sys
+            from datetime import date as Date
+
+            sections = parse_wiki_file(file_path)
+
+            # Extract date from filename (YYYY-MM-DD.md)
+            date_str = file_path.stem  # e.g., "2024-11-01"
+            entry_date = Date.fromisoformat(date_str)
+
+            # Extract editable fields
+            notes = extract_notes(sections)
+
+            return cls(
+                path=file_path,
+                date=entry_date,
+                source_path=file_path,  # Placeholder
+                notes=notes,
+                # All other fields left empty - they're database-computed
+            )
+
+        except Exception as e:
+            import sys
+            sys.stderr.write(f"Error parsing {file_path}: {e}\n")
+            return None
 
     # Computed properties
     @property

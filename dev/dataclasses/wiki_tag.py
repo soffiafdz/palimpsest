@@ -51,9 +51,43 @@ class Tag(WikiEntity):
     # ---- Public constructors ----
     @classmethod
     def from_file(cls, path: Path) -> Optional["Tag"]:
-        """Parse a tags/tag.md file to create a Tag object."""
-        # TODO: Implement parsing from existing wiki files (Phase 3)
-        raise NotImplementedError("Tag.from_file() not yet implemented")
+        """
+        Parse a tags/tag.md file to extract editable fields.
+
+        Only extracts wiki-editable fields (notes).
+        Other fields remain empty as they are database-computed.
+
+        Args:
+            path: Path to tag wiki file
+
+        Returns:
+            Tag instance with only editable fields populated, or None on error
+        """
+        if not path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+            import sys
+
+            sections = parse_wiki_file(path)
+
+            # Extract tag name from filename
+            name = path.stem.replace("_", " ")
+
+            # Extract editable fields
+            notes = extract_notes(sections)
+
+            return cls(
+                path=path,
+                name=name,
+                notes=notes,
+                # All other fields left empty - they're database-computed
+            )
+
+        except Exception as e:
+            sys.stderr.write(f"Error parsing {path}: {e}\n")
+            return None
 
     @classmethod
     def from_database(
