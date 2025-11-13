@@ -898,55 +898,6 @@ class PalimpsestDB:
     #
     # Stable facade methods that delegate to EntryManager:
     # -------------------------------------------------------------------------
-
-    @handle_db_errors
-    @log_database_operation("create_entry")
-    @validate_metadata(["date", "file_path"])
-    def create_entry(self, session: Session, metadata: Dict[str, Any]) -> Entry:
-        """Create entry - delegates to EntryManager."""
-        return self.entries.create(metadata)
-
-    @handle_db_errors
-    @log_database_operation("update_entry")
-    def update_entry(
-        self, session: Session, entry: Entry, metadata: Dict[str, Any]
-    ) -> Entry:
-        """Update entry - delegates to EntryManager."""
-        return self.entries.update(entry, metadata)
-
-    @handle_db_errors
-    @log_database_operation("get_entry")
-    def get_entry(
-        self, session: Session, entry_date: Union[str, date]
-    ) -> Optional[Entry]:
-        """Get entry - delegates to EntryManager."""
-        return self.entries.get(entry_date=entry_date)
-
-    @handle_db_errors
-    @log_database_operation("delete_entry")
-    def delete_entry(self, session: Session, entry: Entry) -> None:
-        """Delete entry - delegates to EntryManager."""
-        self.entries.delete(entry)
-
-    @handle_db_errors
-    @log_database_operation("get_entry_for_display")
-    def get_entry_for_display(
-        self, session: Session, entry_date: Union[str, date]
-    ) -> Optional[Entry]:
-        """Get entry for display - delegates to EntryManager."""
-        return self.entries.get_for_display(entry_date)
-
-    @handle_db_errors
-    @log_database_operation("bulk_create_entries")
-    def bulk_create_entries(
-        self,
-        session: Session,
-        entries_metadata: List[Dict[str, Any]],
-        batch_size: int = 100,
-    ) -> List[int]:
-        """Bulk create entries - delegates to EntryManager."""
-        return self.entries.bulk_create(entries_metadata, batch_size)
-
     # ---- Static Helper Methods for EntryManager ----
     # These allow EntryManager to call back to modular managers without circular dependencies
 

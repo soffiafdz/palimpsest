@@ -286,7 +286,7 @@ def export(
 
         # Get entry from database
         with db.session_scope() as session:
-            entry = db.get_entry(session, date_obj)
+            entry = db.entries.get(entry_date=date_obj)
 
             if entry is None:
                 click.echo(f"❌ No entry found for {date_obj}", err=True)
