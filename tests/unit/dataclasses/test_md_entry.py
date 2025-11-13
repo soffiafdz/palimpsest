@@ -545,6 +545,34 @@ poems:
         poems = entry.metadata.get('poems', [])
         assert len(poems) >= 1
 
+    def test_parse_poem_without_revision_date_defaults_to_entry_date(self, tmp_path):
+        """Test that poems without revision_date default to entry date."""
+        # Create a temp file for the entry (required by to_database_metadata)
+        file_path = tmp_path / "2024-03-20.md"
+        text = """---
+date: 2024-03-20
+poems:
+  - title: Untitled Poem
+    content: |
+      A poem written today
+      Without explicit revision date
+---
+
+# Entry"""
+        file_path.write_text(text)
+
+        entry = MdEntry.from_file(file_path)
+
+        # Convert to database metadata to trigger parsing
+        db_meta = entry.to_database_metadata()
+        poems = db_meta.get('poems', [])
+        assert len(poems) == 1
+
+        # Verify revision_date defaulted to entry date
+        from datetime import date
+        assert poems[0]['revision_date'] == date(2024, 3, 20)
+        assert poems[0]['title'] == 'Untitled Poem'
+
     def test_parse_reference_with_source(self):
         """Test parsing reference with source metadata."""
         text = """---

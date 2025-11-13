@@ -1679,7 +1679,7 @@ class PoemVersion(Base):
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    revision_date: Mapped[date] = mapped_column(Date, index=True)
+    revision_date: Mapped[Optional[date]] = mapped_column(Date, index=True, nullable=True)
     version_hash: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
