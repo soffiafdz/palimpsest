@@ -47,6 +47,9 @@ from dev.dataclasses.wiki_tag import Tag as WikiTag
 from dev.dataclasses.wiki_poem import Poem as WikiPoem
 from dev.dataclasses.wiki_reference import Reference as WikiReference
 from dev.dataclasses.wiki_entry import Entry as WikiEntry
+from dev.dataclasses.wiki_location import Location as WikiLocation
+from dev.dataclasses.wiki_city import City as WikiCity
+from dev.dataclasses.wiki_event import Event as WikiEvent
 from dev.database.models import (
     Person as DBPerson,
     Entry as DBEntry,
@@ -1564,6 +1567,844 @@ def export_entries(
     return stats
 
 
+# ===== LOCATIONS =====
+
+
+def export_location(
+    db_location: DBLocation,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single location to wiki page.
+
+    Args:
+        db_location: Database Location model
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    wiki_location = WikiLocation.from_database(db_location, wiki_dir, journal_dir)
+
+    # Ensure directory exists
+    wiki_location.path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Generate content
+    content = "\n".join(wiki_location.to_wiki())
+
+    # Write if changed
+    status = write_if_changed(wiki_location.path, content, force)
+
+    if logger:
+        logger.log_debug(f"Location {wiki_location.name}: {status}")
+
+    return status
+
+
+def build_locations_index(
+    locations: List[WikiLocation],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build index page for all locations.
+
+    Creates vimwiki/locations.md with organized location listings.
+
+    Args:
+        locations: List of WikiLocation instances
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    index_path = wiki_dir / "locations.md"
+
+    # Group locations by city
+    locations_by_city = defaultdict(list)
+    for loc in locations:
+        locations_by_city[loc.city].append(loc)
+
+    lines = [
+        "# Palimpsest — Locations",
+        "",
+        "Geographic locations and venues visited.",
+        "",
+    ]
+
+    # Statistics
+    total_locations = len(locations)
+    total_visits = sum(loc.visit_count for loc in locations)
+    total_cities = len(locations_by_city)
+
+    lines.extend([
+        "## Statistics",
+        "",
+        f"- **Total Locations:** {total_locations}",
+        f"- **Total Cities:** {total_cities}",
+        f"- **Total Visits:** {total_visits}",
+        "",
+    ])
+
+    # Locations by city
+    lines.extend(["## Locations by City", ""])
+
+    # Sort cities by total visits
+    sorted_cities = sorted(
+        locations_by_city.keys(),
+        key=lambda city: sum(loc.visit_count for loc in locations_by_city[city]),
+        reverse=True
+    )
+
+    for city in sorted_cities:
+        city_locations = sorted(locations_by_city[city], key=lambda l: (-l.visit_count, l.name))
+        total_city_visits = sum(loc.visit_count for loc in city_locations)
+
+        lines.append(f"### {city} ({total_city_visits} visits)")
+        lines.append("")
+
+        for loc in city_locations:
+            link = relative_link(index_path, loc.path)
+            visit_str = f"{loc.visit_count} visit" + ("s" if loc.visit_count != 1 else "")
+            lines.append(f"- [[{link}|{loc.name}]] ({visit_str})")
+
+        lines.append("")
+
+    # Most visited locations (top 20)
+    lines.extend(["## Most Visited", ""])
+    sorted_locations = sorted(locations, key=lambda l: (-l.visit_count, l.name))
+    for loc in sorted_locations[:20]:
+        link = relative_link(index_path, loc.path)
+        visit_str = f"{loc.visit_count} visit" + ("s" if loc.visit_count != 1 else "")
+        lines.append(f"- [[{link}|{loc.name}]] ({loc.city}) — {visit_str}")
+
+    if len(sorted_locations) > 20:
+        lines.append(f"- ... and {len(sorted_locations) - 20} more")
+
+    lines.append("")
+
+    # Write
+    content = "\n".join(lines)
+    status = write_if_changed(index_path, content, force)
+
+    if logger:
+        if status in ("created", "updated"):
+            logger.log_info(f"Locations index {status}")
+        else:
+            logger.log_debug("Locations index unchanged")
+
+    return status
+
+
+def export_locations(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all locations from database to wiki pages.
+
+    Creates:
+    - vimwiki/locations.md (index)
+    - vimwiki/locations/{city}/{location}.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_locations_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all locations with eager loading
+        query = (
+            select(DBLocation)
+            .options(
+                joinedload(DBLocation.city),
+                joinedload(DBLocation.entries).joinedload(DBEntry.people),
+                joinedload(DBLocation.dates),
+            )
+            .order_by(DBLocation.name)
+        )
+
+        db_locations = session.execute(query).scalars().unique().all()
+
+        if not db_locations:
+            if logger:
+                logger.log_warning("No locations found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_locations)} locations in database")
+
+        # Export each location
+        wiki_locations: List[WikiLocation] = []
+        for db_location in db_locations:
+            stats.files_processed += 1
+
+            try:
+                status = export_location(
+                    db_location, wiki_dir, journal_dir, force, logger
+                )
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiLocation for index building
+                wiki_location = WikiLocation.from_database(
+                    db_location, wiki_dir, journal_dir
+                )
+                wiki_locations.append(wiki_location)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_location",
+                        "location": db_location.name
+                    })
+
+        # Build index
+        try:
+            index_status = build_locations_index(wiki_locations, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_locations_index"})
+
+    if logger:
+        logger.log_operation("export_locations_complete", {"stats": stats.summary()})
+
+    return stats
+
+
+# ===== CITIES =====
+
+
+def export_city(
+    db_city: DBCity,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single city to wiki page.
+
+    Args:
+        db_city: Database City model
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    wiki_city = WikiCity.from_database(db_city, wiki_dir, journal_dir)
+
+    # Ensure directory exists
+    wiki_city.path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Generate content
+    content = "\n".join(wiki_city.to_wiki())
+
+    # Write if changed
+    status = write_if_changed(wiki_city.path, content, force)
+
+    if logger:
+        logger.log_debug(f"City {wiki_city.name}: {status}")
+
+    return status
+
+
+def build_cities_index(
+    cities: List[WikiCity],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build index page for all cities.
+
+    Creates vimwiki/cities.md with organized city listings.
+
+    Args:
+        cities: List of WikiCity instances
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    index_path = wiki_dir / "cities.md"
+
+    lines = [
+        "# Palimpsest — Cities",
+        "",
+        "Geographic regions where journal entries take place.",
+        "",
+    ]
+
+    # Statistics
+    total_cities = len(cities)
+    total_entries = sum(city.entry_count for city in cities)
+    total_locations = sum(city.location_count for city in cities)
+
+    lines.extend([
+        "## Statistics",
+        "",
+        f"- **Total Cities:** {total_cities}",
+        f"- **Total Entries:** {total_entries}",
+        f"- **Total Locations:** {total_locations}",
+        "",
+    ])
+
+    # Group by country
+    cities_by_country = defaultdict(list)
+    for city in cities:
+        country = city.country or "Unknown"
+        cities_by_country[country].append(city)
+
+    lines.extend(["## Cities by Country", ""])
+
+    # Sort countries by total entries
+    sorted_countries = sorted(
+        cities_by_country.keys(),
+        key=lambda country: sum(c.entry_count for c in cities_by_country[country]),
+        reverse=True
+    )
+
+    for country in sorted_countries:
+        country_cities = sorted(cities_by_country[country], key=lambda c: (-c.entry_count, c.name))
+        total_country_entries = sum(c.entry_count for c in country_cities)
+
+        lines.append(f"### {country} ({total_country_entries} entries)")
+        lines.append("")
+
+        for city in country_cities:
+            link = relative_link(index_path, city.path)
+            entry_str = f"{city.entry_count} entr" + ("ies" if city.entry_count != 1 else "y")
+            loc_str = f"{city.location_count} location" + ("s" if city.location_count != 1 else "")
+            lines.append(f"- [[{link}|{city.name}]] ({entry_str}, {loc_str})")
+
+        lines.append("")
+
+    # Most visited cities (top 20)
+    lines.extend(["## Most Visited", ""])
+    sorted_cities = sorted(cities, key=lambda c: (-c.entry_count, c.name))
+    for city in sorted_cities[:20]:
+        link = relative_link(index_path, city.path)
+        entry_str = f"{city.entry_count} entr" + ("ies" if city.entry_count != 1 else "y")
+        lines.append(f"- [[{link}|{city.name}]] ({city.country}) — {entry_str}")
+
+    if len(sorted_cities) > 20:
+        lines.append(f"- ... and {len(sorted_cities) - 20} more")
+
+    lines.append("")
+
+    # Write
+    content = "\n".join(lines)
+    status = write_if_changed(index_path, content, force)
+
+    if logger:
+        if status in ("created", "updated"):
+            logger.log_info(f"Cities index {status}")
+        else:
+            logger.log_debug("Cities index unchanged")
+
+    return status
+
+
+def export_cities(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all cities from database to wiki pages.
+
+    Creates:
+    - vimwiki/cities.md (index)
+    - vimwiki/cities/{city}.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_cities_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all cities with eager loading
+        query = (
+            select(DBCity)
+            .options(
+                joinedload(DBCity.entries),
+                joinedload(DBCity.locations),
+            )
+            .order_by(DBCity.city)
+        )
+
+        db_cities = session.execute(query).scalars().unique().all()
+
+        if not db_cities:
+            if logger:
+                logger.log_warning("No cities found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_cities)} cities in database")
+
+        # Export each city
+        wiki_cities: List[WikiCity] = []
+        for db_city in db_cities:
+            stats.files_processed += 1
+
+            try:
+                status = export_city(
+                    db_city, wiki_dir, journal_dir, force, logger
+                )
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiCity for index building
+                wiki_city = WikiCity.from_database(
+                    db_city, wiki_dir, journal_dir
+                )
+                wiki_cities.append(wiki_city)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_city",
+                        "city": db_city.city
+                    })
+
+        # Build index
+        try:
+            index_status = build_cities_index(wiki_cities, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_cities_index"})
+
+    if logger:
+        logger.log_operation("export_cities_complete", {"stats": stats.summary()})
+
+    return stats
+
+
+# ===== EVENTS =====
+
+
+def export_event(
+    db_event: DBEvent,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single event to wiki page.
+
+    Args:
+        db_event: Database Event model
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    wiki_event = WikiEvent.from_database(db_event, wiki_dir, journal_dir)
+
+    # Ensure directory exists
+    wiki_event.path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Generate content
+    content = "\n".join(wiki_event.to_wiki())
+
+    # Write if changed
+    status = write_if_changed(wiki_event.path, content, force)
+
+    if logger:
+        logger.log_debug(f"Event {wiki_event.display_name}: {status}")
+
+    return status
+
+
+def build_events_index(
+    events: List[WikiEvent],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build index page for all events.
+
+    Creates vimwiki/events.md with organized event listings.
+
+    Args:
+        events: List of WikiEvent instances
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    index_path = wiki_dir / "events.md"
+
+    lines = [
+        "# Palimpsest — Events",
+        "",
+        "Narrative events and periods spanning multiple journal entries.",
+        "",
+    ]
+
+    # Statistics
+    total_events = len(events)
+    total_entries = sum(event.entry_count for event in events)
+
+    lines.extend([
+        "## Statistics",
+        "",
+        f"- **Total Events:** {total_events}",
+        f"- **Total Entries:** {total_entries}",
+        "",
+    ])
+
+    # Events by manuscript status
+    events_with_manuscript = [e for e in events if e.has_manuscript_metadata]
+    events_without_manuscript = [e for e in events if not e.has_manuscript_metadata]
+
+    if events_with_manuscript:
+        lines.extend(["## Events with Manuscript Metadata", ""])
+
+        # Group by status
+        by_status = defaultdict(list)
+        for event in events_with_manuscript:
+            status = event.manuscript_status or "No Status"
+            by_status[status].append(event)
+
+        for status in sorted(by_status.keys()):
+            status_events = sorted(by_status[status], key=lambda e: (-e.entry_count, e.display_name))
+            lines.append(f"### {status}")
+            lines.append("")
+
+            for event in status_events:
+                link = relative_link(index_path, event.path)
+                entry_str = f"{event.entry_count} entr" + ("ies" if event.entry_count != 1 else "y")
+                date_range = ""
+                if event.start_date and event.end_date:
+                    date_range = f" ({event.start_date.isoformat()} to {event.end_date.isoformat()})"
+                lines.append(f"- [[{link}|{event.display_name}]] ({entry_str}){date_range}")
+
+            lines.append("")
+
+    # All events chronologically
+    lines.extend(["## All Events", ""])
+    sorted_events = sorted(
+        [e for e in events if e.start_date],
+        key=lambda e: e.start_date,
+        reverse=True
+    )
+
+    for event in sorted_events:
+        link = relative_link(index_path, event.path)
+        entry_str = f"{event.entry_count} entr" + ("ies" if event.entry_count != 1 else "y")
+        date_range = ""
+        if event.start_date and event.end_date:
+            if event.start_date == event.end_date:
+                date_range = f" ({event.start_date.isoformat()})"
+            else:
+                date_range = f" ({event.start_date.isoformat()} to {event.end_date.isoformat()})"
+        lines.append(f"- [[{link}|{event.display_name}]] ({entry_str}){date_range}")
+
+    # Events without dates
+    events_no_dates = [e for e in events if not e.start_date]
+    if events_no_dates:
+        lines.append("")
+        lines.append("### Events without dates")
+        lines.append("")
+        for event in sorted(events_no_dates, key=lambda e: e.display_name):
+            link = relative_link(index_path, event.path)
+            entry_str = f"{event.entry_count} entr" + ("ies" if event.entry_count != 1 else "y")
+            lines.append(f"- [[{link}|{event.display_name}]] ({entry_str})")
+
+    lines.append("")
+
+    # Write
+    content = "\n".join(lines)
+    status = write_if_changed(index_path, content, force)
+
+    if logger:
+        if status in ("created", "updated"):
+            logger.log_info(f"Events index {status}")
+        else:
+            logger.log_debug("Events index unchanged")
+
+    return status
+
+
+def export_events(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all events from database to wiki pages.
+
+    Creates:
+    - vimwiki/events.md (index)
+    - vimwiki/events/{event}.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_events_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all events with eager loading
+        query = (
+            select(DBEvent)
+            .options(
+                joinedload(DBEvent.entries),
+                joinedload(DBEvent.people),
+                joinedload(DBEvent.manuscript),
+            )
+            .order_by(DBEvent.event)
+        )
+
+        db_events = session.execute(query).scalars().unique().all()
+
+        if not db_events:
+            if logger:
+                logger.log_warning("No events found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_events)} events in database")
+
+        # Export each event
+        wiki_events: List[WikiEvent] = []
+        for db_event in db_events:
+            stats.files_processed += 1
+
+            try:
+                status = export_event(
+                    db_event, wiki_dir, journal_dir, force, logger
+                )
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiEvent for index building
+                wiki_event = WikiEvent.from_database(
+                    db_event, wiki_dir, journal_dir
+                )
+                wiki_events.append(wiki_event)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_event",
+                        "event": db_event.event
+                    })
+
+        # Build index
+        try:
+            index_status = build_events_index(wiki_events, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_events_index"})
+
+    if logger:
+        logger.log_operation("export_events_complete", {"stats": stats.summary()})
+
+    return stats
+
+
+# ===== TIMELINE =====
+
+
+def export_timeline(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export timeline/calendar view of all journal entries.
+
+    Creates vimwiki/timeline.md with year-by-year and month-by-month
+    breakdown of all entries.
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_operation("export_timeline_start", {"wiki_dir": str(wiki_dir)})
+
+    timeline_path = wiki_dir / "timeline.md"
+
+    with db.session_scope() as session:
+        # Query all entries (no need for relationships, just dates)
+        query = select(DBEntry).order_by(DBEntry.date)
+        db_entries = session.execute(query).scalars().all()
+
+        if not db_entries:
+            if logger:
+                logger.log_warning("No entries found for timeline")
+            return "skipped"
+
+        # Group entries by year and month
+        entries_by_year = defaultdict(lambda: defaultdict(list))
+        for entry in db_entries:
+            year = entry.date.year
+            month = entry.date.month
+            entries_by_year[year][month].append(entry)
+
+        lines = [
+            "# Palimpsest — Timeline",
+            "",
+            "Chronological calendar view of all journal entries.",
+            "",
+        ]
+
+        # Statistics
+        total_entries = len(db_entries)
+        total_years = len(entries_by_year)
+        first_entry = db_entries[0].date
+        last_entry = db_entries[-1].date
+        span_days = (last_entry - first_entry).days
+
+        lines.extend([
+            "## Statistics",
+            "",
+            f"- **Total Entries:** {total_entries}",
+            f"- **Time Span:** {total_years} years ({span_days} days)",
+            f"- **First Entry:** {first_entry.isoformat()}",
+            f"- **Last Entry:** {last_entry.isoformat()}",
+            f"- **Average per Year:** {total_entries / total_years:.1f} entries",
+            "",
+        ])
+
+        # Year-by-year timeline (most recent first)
+        lines.extend(["## Timeline by Year", ""])
+
+        month_names = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        for year in sorted(entries_by_year.keys(), reverse=True):
+            year_entries = sum(len(entries) for entries in entries_by_year[year].values())
+            lines.append(f"### {year} ({year_entries} entries)")
+            lines.append("")
+
+            # Month-by-month breakdown
+            for month in range(1, 13):
+                if month in entries_by_year[year]:
+                    month_entries = entries_by_year[year][month]
+                    month_name = month_names[month - 1]
+
+                    lines.append(f"#### {month_name} {year} ({len(month_entries)} entries)")
+                    lines.append("")
+
+                    # List entries (most recent first)
+                    for entry in reversed(month_entries):
+                        entry_year = entry.date.year
+                        entry_path = wiki_dir / "entries" / str(entry_year) / f"{entry.date.isoformat()}.md"
+                        entry_link = relative_link(timeline_path, entry_path)
+
+                        word_str = f"{entry.word_count} words" if entry.word_count else "no content"
+                        lines.append(f"- [[{entry_link}|{entry.date.isoformat()}]] — {word_str}")
+
+                    lines.append("")
+
+        # Write
+        content = "\n".join(lines)
+        status = write_if_changed(timeline_path, content, force)
+
+        if logger:
+            if status in ("created", "updated"):
+                logger.log_info(f"Timeline {status}")
+            else:
+                logger.log_debug("Timeline unchanged")
+            logger.log_operation("export_timeline_complete", {"status": status})
+
+        return status
+
+
 # ----- CLI -----
 @click.group()
 @click.option(
@@ -1622,7 +2463,11 @@ def cli(
 @cli.command()
 @click.argument(
     "entity_type",
-    type=click.Choice(["entries", "people", "themes", "tags", "poems", "references", "all"]),
+    type=click.Choice([
+        "entries", "locations", "cities", "events", "timeline",
+        "people", "themes", "tags", "poems", "references",
+        "all"
+    ]),
 )
 @click.option("-f", "--force", is_flag=True, help="Force regenerate all files")
 @click.pass_context
@@ -1647,6 +2492,58 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
             if stats.errors > 0:
                 click.echo(f"  ⚠️  Errors: {stats.errors}")
             click.echo(f"  Duration: {stats.duration():.2f}s")
+
+        elif entity_type == "locations":
+            click.echo(f"📤 Exporting locations to {wiki_dir}/locations/")
+
+            stats = export_locations(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ Locations export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
+        elif entity_type == "cities":
+            click.echo(f"📤 Exporting cities to {wiki_dir}/cities/")
+
+            stats = export_cities(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ Cities export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
+        elif entity_type == "events":
+            click.echo(f"📤 Exporting events to {wiki_dir}/events/")
+
+            stats = export_events(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ Events export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
+        elif entity_type == "timeline":
+            click.echo(f"📤 Exporting timeline to {wiki_dir}/timeline.md")
+
+            status = export_timeline(db, wiki_dir, journal_dir, force, logger)
+
+            if status in ("created", "updated"):
+                click.echo(f"\n✅ Timeline {status}")
+            else:
+                click.echo(f"\n⏭️  Timeline {status}")
 
         elif entity_type == "people":
             click.echo(f"📤 Exporting people to {wiki_dir}/people/")
@@ -1723,14 +2620,23 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
 
             # Export all entity types
             entries_stats = export_entries(db, wiki_dir, journal_dir, force, logger)
+            locations_stats = export_locations(db, wiki_dir, journal_dir, force, logger)
+            cities_stats = export_cities(db, wiki_dir, journal_dir, force, logger)
+            events_stats = export_events(db, wiki_dir, journal_dir, force, logger)
             people_stats = export_people(db, wiki_dir, journal_dir, force, logger)
             themes_stats = export_themes(db, wiki_dir, journal_dir, force, logger)
             tags_stats = export_tags(db, wiki_dir, journal_dir, force, logger)
             poems_stats = export_poems(db, wiki_dir, journal_dir, force, logger)
             references_stats = export_references(db, wiki_dir, journal_dir, force, logger)
 
+            # Export timeline (returns status string, not ConversionStats)
+            timeline_status = export_timeline(db, wiki_dir, journal_dir, force, logger)
+
             # Combined stats
-            all_stats = [entries_stats, people_stats, themes_stats, tags_stats, poems_stats, references_stats]
+            all_stats = [
+                entries_stats, locations_stats, cities_stats, events_stats,
+                people_stats, themes_stats, tags_stats, poems_stats, references_stats
+            ]
             total_files = sum(s.files_processed for s in all_stats)
             total_created = sum(s.entries_created for s in all_stats)
             total_updated = sum(s.entries_updated for s in all_stats)
