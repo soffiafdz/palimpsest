@@ -43,7 +43,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from dev.dataclasses.wiki_person import Person as WikiPerson
 from dev.dataclasses.wiki_theme import Theme as WikiTheme
-from dev.database.models import Person as DBPerson, Entry
+from dev.dataclasses.wiki_tag import Tag as WikiTag
+from dev.database.models import Person as DBPerson, Entry, Tag as DBTag
 from dev.database.models_manuscript import Theme as DBTheme
 from dev.database.manager import PalimpsestDB
 
@@ -570,6 +571,239 @@ def export_themes(
     return stats
 
 
+# ===== TAGS EXPORT =====
+
+def export_tag(
+    db_tag: DBTag,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single tag from database to wiki page.
+
+    Args:
+        db_tag: Database Tag model with relationships loaded
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug(f"Exporting tag: {db_tag.tag}")
+
+    # Create WikiTag from database
+    try:
+        wiki_tag = WikiTag.from_database(db_tag, wiki_dir, journal_dir)
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "create_wiki_tag",
+                "tag": db_tag.tag
+            })
+        raise Sql2WikiError(f"Failed to create WikiTag: {e}") from e
+
+    # Generate markdown
+    try:
+        lines = wiki_tag.to_wiki()
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "generate_wiki_markdown",
+                "tag": db_tag.tag
+            })
+        raise Sql2WikiError(f"Failed to generate wiki markdown: {e}") from e
+
+    # Write to file
+    file_existed = wiki_tag.path.exists()
+
+    if force or _write_if_changed(wiki_tag.path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"tag_{status}",
+                {"tag": db_tag.tag, "file": str(wiki_tag.path)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug(f"Tag unchanged: {db_tag.tag}")
+        return "skipped"
+
+
+def build_tags_index(
+    tags: List[WikiTag],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build the main tags index page (vimwiki/tags.md).
+
+    Lists tags sorted by usage frequency.
+
+    Args:
+        tags: List of WikiTag objects
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug("Building tags index")
+
+    # Sort by usage count (descending), then alphabetically
+    sorted_tags = sorted(tags, key=lambda t: (-t.usage_count, t.name.lower()))
+
+    # Build index lines
+    lines = [
+        "# Palimpsest — Tags",
+        "",
+        "Keyword tags used throughout the journal for categorization and search.",
+        "",
+        "## All Tags",
+        "",
+    ]
+
+    for tag in sorted_tags:
+        # Format: - [[tags/name.md|name]] (N entries)
+        rel_path = tag.path.relative_to(wiki_dir)
+        entry_str = f"{tag.usage_count} entr" + ("ies" if tag.usage_count != 1 else "y")
+
+        # Add date range if available
+        date_range = ""
+        if tag.first_used and tag.last_used:
+            if tag.first_used == tag.last_used:
+                date_range = f" — {tag.first_used}"
+            else:
+                date_range = f" — {tag.first_used} to {tag.last_used}"
+
+        lines.append(f"- [[{rel_path}|{tag.name}]] ({entry_str}){date_range}")
+
+    # Add statistics
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## Statistics",
+        "",
+        f"- Total tags: {len(tags)}",
+        f"- Total usage: {sum(t.usage_count for t in tags)}",
+    ])
+
+    # Write to file
+    index_path = wiki_dir / "tags.md"
+    file_existed = index_path.exists()
+
+    if force or _write_if_changed(index_path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"tags_index_{status}",
+                {"file": str(index_path), "tags_count": len(tags)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug("Tags index unchanged")
+        return "skipped"
+
+
+def export_tags(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all tags from database to wiki pages.
+
+    Creates:
+    - vimwiki/tags.md (index)
+    - vimwiki/tags/{name}.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_tags_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all tags with eager loading of relationships
+        query = (
+            select(DBTag)
+            .options(
+                joinedload(DBTag.entries),
+            )
+        )
+
+        db_tags = session.execute(query).scalars().unique().all()
+
+        if not db_tags:
+            if logger:
+                logger.log_warning("No tags found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_tags)} tags in database")
+
+        # Export each tag
+        wiki_tags: List[WikiTag] = []
+        for db_tag in db_tags:
+            stats.files_processed += 1
+
+            try:
+                status = export_tag(db_tag, wiki_dir, journal_dir, force, logger)
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiTag for index building
+                wiki_tag = WikiTag.from_database(db_tag, wiki_dir, journal_dir)
+                wiki_tags.append(wiki_tag)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_tag",
+                        "tag": db_tag.tag
+                    })
+
+        # Build index
+        try:
+            index_status = build_tags_index(wiki_tags, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_tags_index"})
+
+    if logger:
+        logger.log_operation("export_tags_complete", {"stats": stats.summary()})
+
+    return stats
+
+
 # ----- CLI -----
 @click.group()
 @click.option(
@@ -668,20 +902,36 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
                 click.echo(f"  ⚠️  Errors: {stats.errors}")
             click.echo(f"  Duration: {stats.duration():.2f}s")
 
+        elif entity_type == "tags":
+            click.echo(f"📤 Exporting tags to {wiki_dir}/tags/")
+
+            stats = export_tags(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ Tags export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
         elif entity_type == "all":
             click.echo(f"📤 Exporting all entities to {wiki_dir}/")
 
             # Export all entity types
             people_stats = export_people(db, wiki_dir, journal_dir, force, logger)
             themes_stats = export_themes(db, wiki_dir, journal_dir, force, logger)
+            tags_stats = export_tags(db, wiki_dir, journal_dir, force, logger)
 
             # Combined stats
-            total_files = people_stats.files_processed + themes_stats.files_processed
-            total_created = people_stats.entries_created + themes_stats.entries_created
-            total_updated = people_stats.entries_updated + themes_stats.entries_updated
-            total_skipped = people_stats.entries_skipped + themes_stats.entries_skipped
-            total_errors = people_stats.errors + themes_stats.errors
-            total_duration = people_stats.duration() + themes_stats.duration()
+            all_stats = [people_stats, themes_stats, tags_stats]
+            total_files = sum(s.files_processed for s in all_stats)
+            total_created = sum(s.entries_created for s in all_stats)
+            total_updated = sum(s.entries_updated for s in all_stats)
+            total_skipped = sum(s.entries_skipped for s in all_stats)
+            total_errors = sum(s.errors for s in all_stats)
+            total_duration = sum(s.duration() for s in all_stats)
 
             click.echo("\n✅ Export complete:")
             click.echo(f"  Total files: {total_files}")
