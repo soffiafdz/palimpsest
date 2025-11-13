@@ -44,7 +44,9 @@ from sqlalchemy.orm import Session, joinedload
 from dev.dataclasses.wiki_person import Person as WikiPerson
 from dev.dataclasses.wiki_theme import Theme as WikiTheme
 from dev.dataclasses.wiki_tag import Tag as WikiTag
-from dev.database.models import Person as DBPerson, Entry, Tag as DBTag
+from dev.dataclasses.wiki_poem import Poem as WikiPoem
+from dev.dataclasses.wiki_reference import Reference as WikiReference
+from dev.database.models import Person as DBPerson, Entry, Tag as DBTag, Poem as DBPoem, ReferenceSource as DBReferenceSource
 from dev.database.models_manuscript import Theme as DBTheme
 from dev.database.manager import PalimpsestDB
 
@@ -804,6 +806,475 @@ def export_tags(
     return stats
 
 
+# ===== POEMS EXPORT =====
+
+def export_poem(
+    db_poem: DBPoem,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single poem from database to wiki page.
+
+    Args:
+        db_poem: Database Poem model with relationships loaded
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug(f"Exporting poem: {db_poem.title}")
+
+    # Create WikiPoem from database
+    try:
+        wiki_poem = WikiPoem.from_database(db_poem, wiki_dir, journal_dir)
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "create_wiki_poem",
+                "poem": db_poem.title
+            })
+        raise Sql2WikiError(f"Failed to create WikiPoem: {e}") from e
+
+    # Generate markdown
+    try:
+        lines = wiki_poem.to_wiki()
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "generate_wiki_markdown",
+                "poem": db_poem.title
+            })
+        raise Sql2WikiError(f"Failed to generate wiki markdown: {e}") from e
+
+    # Write to file
+    file_existed = wiki_poem.path.exists()
+
+    if force or _write_if_changed(wiki_poem.path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"poem_{status}",
+                {"poem": db_poem.title, "file": str(wiki_poem.path)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug(f"Poem unchanged: {db_poem.title}")
+        return "skipped"
+
+
+def build_poems_index(
+    poems: List[WikiPoem],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build the main poems index page (vimwiki/poems.md).
+
+    Lists poems sorted by most recent version date.
+
+    Args:
+        poems: List of WikiPoem objects
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug("Building poems index")
+
+    # Sort by most recent version (descending), then alphabetically
+    sorted_poems = sorted(poems, key=lambda p: (
+        -(p.latest_version.get("revision_date") or date.min).toordinal() if p.latest_version else 0,
+        p.title.lower()
+    ))
+
+    # Build index lines
+    lines = [
+        "# Palimpsest — Poems",
+        "",
+        "Original poems written throughout the journal, with version history.",
+        "",
+        "## All Poems",
+        "",
+    ]
+
+    for poem in sorted_poems:
+        # Format: - [[poems/title.md|Title]] (N versions)
+        rel_path = poem.path.relative_to(wiki_dir)
+        version_str = f"{poem.version_count} version" + ("s" if poem.version_count != 1 else "")
+
+        # Add latest revision date if available
+        date_str = ""
+        if poem.latest_version and poem.latest_version.get("revision_date"):
+            date_str = f" — {poem.latest_version['revision_date']}"
+
+        lines.append(f"- [[{rel_path}|{poem.title}]] ({version_str}){date_str}")
+
+    # Add statistics
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## Statistics",
+        "",
+        f"- Total poems: {len(poems)}",
+        f"- Total versions: {sum(p.version_count for p in poems)}",
+    ])
+
+    # Write to file
+    index_path = wiki_dir / "poems.md"
+    file_existed = index_path.exists()
+
+    if force or _write_if_changed(index_path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"poems_index_{status}",
+                {"file": str(index_path), "poems_count": len(poems)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug("Poems index unchanged")
+        return "skipped"
+
+
+def export_poems(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all poems from database to wiki pages.
+
+    Creates:
+    - vimwiki/poems.md (index)
+    - vimwiki/poems/{title}.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_poems_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all poems with eager loading of relationships
+        query = (
+            select(DBPoem)
+            .options(
+                joinedload(DBPoem.versions),
+            )
+        )
+
+        db_poems = session.execute(query).scalars().unique().all()
+
+        if not db_poems:
+            if logger:
+                logger.log_warning("No poems found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_poems)} poems in database")
+
+        # Export each poem
+        wiki_poems: List[WikiPoem] = []
+        for db_poem in db_poems:
+            stats.files_processed += 1
+
+            try:
+                status = export_poem(db_poem, wiki_dir, journal_dir, force, logger)
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiPoem for index building
+                wiki_poem = WikiPoem.from_database(db_poem, wiki_dir, journal_dir)
+                wiki_poems.append(wiki_poem)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_poem",
+                        "poem": db_poem.title
+                    })
+
+        # Build index
+        try:
+            index_status = build_poems_index(wiki_poems, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_poems_index"})
+
+    if logger:
+        logger.log_operation("export_poems_complete", {"stats": stats.summary()})
+
+    return stats
+
+
+# ===== REFERENCES EXPORT =====
+
+def export_reference(
+    db_source: DBReferenceSource,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single reference source from database to wiki page.
+
+    Args:
+        db_source: Database ReferenceSource model with relationships loaded
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug(f"Exporting reference source: {db_source.title}")
+
+    # Create WikiReference from database
+    try:
+        wiki_reference = WikiReference.from_database(db_source, wiki_dir, journal_dir)
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "create_wiki_reference",
+                "source": db_source.title
+            })
+        raise Sql2WikiError(f"Failed to create WikiReference: {e}") from e
+
+    # Generate markdown
+    try:
+        lines = wiki_reference.to_wiki()
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "generate_wiki_markdown",
+                "source": db_source.title
+            })
+        raise Sql2WikiError(f"Failed to generate wiki markdown: {e}") from e
+
+    # Write to file
+    file_existed = wiki_reference.path.exists()
+
+    if force or _write_if_changed(wiki_reference.path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"reference_{status}",
+                {"source": db_source.title, "file": str(wiki_reference.path)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug(f"Reference source unchanged: {db_source.title}")
+        return "skipped"
+
+
+def build_references_index(
+    references: List[WikiReference],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build the main references index page (vimwiki/references.md).
+
+    Lists reference sources sorted by citation count.
+
+    Args:
+        references: List of WikiReference objects
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug("Building references index")
+
+    # Sort by citation count (descending), then alphabetically
+    sorted_refs = sorted(references, key=lambda r: (-r.citation_count, r.source_name.lower()))
+
+    # Build index lines
+    lines = [
+        "# Palimpsest — References",
+        "",
+        "External sources cited throughout the journal (books, articles, films, etc.).",
+        "",
+        "## All Sources",
+        "",
+    ]
+
+    for ref in sorted_refs:
+        # Format: - [[references/source.md|Source Title]] by Author (N citations)
+        rel_path = ref.path.relative_to(wiki_dir)
+        citation_str = f"{ref.citation_count} citation" + ("s" if ref.citation_count != 1 else "")
+
+        # Add author if available
+        author_str = f" by {ref.author}" if ref.author else ""
+
+        # Add date range if available
+        date_range = ""
+        if ref.first_cited and ref.last_cited:
+            if ref.first_cited == ref.last_cited:
+                date_range = f" — {ref.first_cited}"
+            else:
+                date_range = f" — {ref.first_cited} to {ref.last_cited}"
+
+        lines.append(f"- [[{rel_path}|{ref.source_name}]]{author_str} ({citation_str}){date_range}")
+
+    # Add statistics
+    lines.extend([
+        "",
+        "---",
+        "",
+        "## Statistics",
+        "",
+        f"- Total sources: {len(references)}",
+        f"- Total citations: {sum(r.citation_count for r in references)}",
+    ])
+
+    # Write to file
+    index_path = wiki_dir / "references.md"
+    file_existed = index_path.exists()
+
+    if force or _write_if_changed(index_path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"references_index_{status}",
+                {"file": str(index_path), "references_count": len(references)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug("References index unchanged")
+        return "skipped"
+
+
+def export_references(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all reference sources from database to wiki pages.
+
+    Creates:
+    - vimwiki/references.md (index)
+    - vimwiki/references/{source}.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_references_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all reference sources with eager loading of relationships
+        query = (
+            select(DBReferenceSource)
+            .options(
+                joinedload(DBReferenceSource.references),
+            )
+        )
+
+        db_sources = session.execute(query).scalars().unique().all()
+
+        if not db_sources:
+            if logger:
+                logger.log_warning("No reference sources found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_sources)} reference sources in database")
+
+        # Export each reference source
+        wiki_references: List[WikiReference] = []
+        for db_source in db_sources:
+            stats.files_processed += 1
+
+            try:
+                status = export_reference(db_source, wiki_dir, journal_dir, force, logger)
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiReference for index building
+                wiki_reference = WikiReference.from_database(db_source, wiki_dir, journal_dir)
+                wiki_references.append(wiki_reference)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_reference",
+                        "source": db_source.title
+                    })
+
+        # Build index
+        try:
+            index_status = build_references_index(wiki_references, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_references_index"})
+
+    if logger:
+        logger.log_operation("export_references_complete", {"stats": stats.summary()})
+
+    return stats
+
+
 # ----- CLI -----
 @click.group()
 @click.option(
@@ -916,6 +1387,34 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
                 click.echo(f"  ⚠️  Errors: {stats.errors}")
             click.echo(f"  Duration: {stats.duration():.2f}s")
 
+        elif entity_type == "poems":
+            click.echo(f"📤 Exporting poems to {wiki_dir}/poems/")
+
+            stats = export_poems(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ Poems export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
+        elif entity_type == "references":
+            click.echo(f"📤 Exporting references to {wiki_dir}/references/")
+
+            stats = export_references(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ References export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
         elif entity_type == "all":
             click.echo(f"📤 Exporting all entities to {wiki_dir}/")
 
@@ -923,9 +1422,11 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
             people_stats = export_people(db, wiki_dir, journal_dir, force, logger)
             themes_stats = export_themes(db, wiki_dir, journal_dir, force, logger)
             tags_stats = export_tags(db, wiki_dir, journal_dir, force, logger)
+            poems_stats = export_poems(db, wiki_dir, journal_dir, force, logger)
+            references_stats = export_references(db, wiki_dir, journal_dir, force, logger)
 
             # Combined stats
-            all_stats = [people_stats, themes_stats, tags_stats]
+            all_stats = [people_stats, themes_stats, tags_stats, poems_stats, references_stats]
             total_files = sum(s.files_processed for s in all_stats)
             total_created = sum(s.entries_created for s in all_stats)
             total_updated = sum(s.entries_updated for s in all_stats)
@@ -933,7 +1434,7 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
             total_errors = sum(s.errors for s in all_stats)
             total_duration = sum(s.duration() for s in all_stats)
 
-            click.echo("\n✅ Export complete:")
+            click.echo("\n✅ All exports complete:")
             click.echo(f"  Total files: {total_files}")
             click.echo(f"  Created: {total_created}")
             click.echo(f"  Updated: {total_updated}")
@@ -941,11 +1442,6 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
             if total_errors > 0:
                 click.echo(f"  ⚠️  Errors: {total_errors}")
             click.echo(f"  Duration: {total_duration:.2f}s")
-
-        else:
-            click.echo(f"⚠️  {entity_type.title()} export not yet implemented")
-            click.echo("   Coming in Phase 2 of implementation")
-            sys.exit(1)
 
     except (Sql2WikiError, Exception) as e:
         handle_cli_error(ctx, e, "export", {"entity_type": entity_type})
