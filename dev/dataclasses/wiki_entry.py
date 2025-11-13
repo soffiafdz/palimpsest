@@ -330,15 +330,20 @@ class Entry(WikiEntity):
         lines.extend([
             f"## {self.date.isoformat()}",
             "",
+            "---",
+            "",
         ])
 
-        # Basic metadata
+        # Basic metadata in a more compact format
         lines.extend([
             "### Metadata",
-            f"- **Date:** {self.date.isoformat()}",
-            f"- **Word Count:** {self.word_count} words",
-            f"- **Reading Time:** {self.reading_time:.1f} minutes",
-            f"- **Age:** {self.age_display}",
+            "",
+            f"| Property | Value |",
+            f"| --- | --- |",
+            f"| **Date** | {self.date.isoformat()} |",
+            f"| **Word Count** | {self.word_count} words |",
+            f"| **Reading Time** | {self.reading_time:.1f} minutes |",
+            f"| **Age** | {self.age_display} |",
             "",
         ])
 
@@ -360,21 +365,21 @@ class Entry(WikiEntity):
 
         # People
         if self.people:
-            lines.extend(["### People", ""])
+            lines.extend([f"### People ({len(self.people)})", ""])
             for person in self.people:
                 lines.append(f"- [[{person['link']}|{person['name']}]] ({person['relation']})")
             lines.append("")
 
         # Locations
         if self.locations:
-            lines.extend(["### Locations", ""])
+            lines.extend([f"### Locations ({len(self.locations)})", ""])
             for location in self.locations:
                 lines.append(f"- [[{location['link']}|{location['name']}]] ({location['city']})")
             lines.append("")
 
         # Cities
         if self.cities:
-            lines.extend(["### Cities", ""])
+            lines.extend([f"### Cities ({len(self.cities)})", ""])
             for city in self.cities:
                 city_display = f"{city['name']}, {city['country']}" if city['country'] else city['name']
                 lines.append(f"- [[{city['link']}|{city_display}]]")
@@ -382,28 +387,28 @@ class Entry(WikiEntity):
 
         # Events
         if self.events:
-            lines.extend(["### Events", ""])
+            lines.extend([f"### Events ({len(self.events)})", ""])
             for event in self.events:
                 lines.append(f"- [[{event['link']}|{event['name']}]]")
             lines.append("")
 
         # Themes
         if self.themes:
-            lines.extend(["### Themes", ""])
+            lines.extend([f"### Themes ({len(self.themes)})", ""])
             for theme in self.themes:
                 lines.append(f"- [[{theme['link']}|{theme['name']}]]")
             lines.append("")
 
         # Tags
         if self.tags:
-            lines.extend(["### Tags", ""])
+            lines.extend([f"### Tags ({len(self.tags)})", ""])
             tag_str = " ".join([f"#{tag}" for tag in self.tags])
             lines.append(tag_str)
             lines.append("")
 
         # Poems
         if self.poems:
-            lines.extend(["### Poems Written", ""])
+            lines.extend([f"### Poems Written ({len(self.poems)})", ""])
             for poem in self.poems:
                 poem_str = f"- [[{poem['link']}|{poem['title']}]]"
                 if poem['revision_date']:
@@ -413,7 +418,7 @@ class Entry(WikiEntity):
 
         # References
         if self.references:
-            lines.extend(["### References Cited", ""])
+            lines.extend([f"### References Cited ({len(self.references)})", ""])
             for ref in self.references:
                 lines.append(f"- [[{ref['link']}|{ref['source']}]]")
                 if ref['content']:
@@ -422,7 +427,7 @@ class Entry(WikiEntity):
 
         # Mentioned dates
         if self.mentioned_dates:
-            lines.extend(["### Mentioned Dates", ""])
+            lines.extend([f"### Mentioned Dates ({len(self.mentioned_dates)})", ""])
             for md in self.mentioned_dates:
                 date_str = f"- {md['date'].isoformat()}"
                 if md['context']:
@@ -454,13 +459,24 @@ class Entry(WikiEntity):
         if self.next_entry:
             lines.append(f"- **Next:** [[{self.next_entry['link']}|{self.next_entry['date']}]]")
 
-        # Related entries
+        # Related entries (manual/explicit relationships)
         if self.related_entries:
-            lines.extend(["", "**Related Entries:**"])
+            lines.extend(["", f"**Related Entries ({len(self.related_entries)}):**"])
             for rel in self.related_entries:
                 lines.append(f"- [[{rel['link']}|{rel['date']}]]")
 
         lines.append("")
+
+        # Add tag cloud / quick metadata summary
+        if self.tags or len(self.people) > 0 or len(self.themes) > 0:
+            lines.extend(["### Quick Summary", ""])
+            if self.tags:
+                tag_cloud = " · ".join([f"`{tag}`" for tag in sorted(self.tags)])
+                lines.append(f"**Tags**: {tag_cloud}")
+            if len(self.themes) > 0:
+                theme_names = " · ".join([theme["name"] for theme in self.themes])
+                lines.append(f"**Themes**: {theme_names}")
+            lines.append("")
 
         # User notes (wiki-editable)
         lines.extend(["### Notes", ""])
