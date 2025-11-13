@@ -139,28 +139,10 @@ We discussed my anxiety and relationship with Alice.
         # (This is heuristic-based in our implementation)
 
 
-@pytest.mark.skipif(not SPACY_AVAILABLE, reason="spaCy not installed")
+@pytest.mark.skipif(not TRANSFORMERS_AVAILABLE, reason="Transformers not installed")
 class TestThemeExtraction:
-    """Test theme extraction (Level 2-3)."""
+    """Test semantic theme extraction (Level 3)."""
 
-    def test_keyword_theme_extraction(self):
-        """Test keyword-based theme extraction."""
-        from dev.ai.extractors import ThemeExtractor
-
-        text = """
-        I've been feeling a lot of anxiety lately about my identity.
-        Who am I really? This question keeps me up at night.
-        I'm worried about my relationships and whether I'm growing as a person.
-        """
-
-        extractor = ThemeExtractor(use_transformers=False)
-        suggestions = extractor.extract_themes(text)
-
-        # Should detect anxiety, identity, relationships, growth
-        themes = [s.theme for s in suggestions]
-        assert 'anxiety' in themes or 'identity' in themes
-
-    @pytest.mark.skipif(not TRANSFORMERS_AVAILABLE, reason="Transformers not installed")
     def test_semantic_theme_extraction(self):
         """Test semantic theme extraction with transformers."""
         from dev.ai.extractors import ThemeExtractor
@@ -171,7 +153,7 @@ class TestThemeExtraction:
         Feeling like I'm not progressing.
         """
 
-        extractor = ThemeExtractor(use_transformers=True)
+        extractor = ThemeExtractor()
         suggestions = extractor.extract_themes(text)
 
         # Should detect themes even without exact keywords
@@ -181,13 +163,34 @@ class TestThemeExtraction:
         for suggestion in suggestions:
             assert 0.0 <= suggestion.confidence <= 1.0
 
+    def test_theme_extraction_with_keywords(self):
+        """Test that semantic extraction works even with direct keyword mentions."""
+        from dev.ai.extractors import ThemeExtractor
+
+        text = """
+        I've been feeling a lot of anxiety lately about my identity.
+        Who am I really? This question keeps me up at night.
+        I'm worried about my relationships and whether I'm growing as a person.
+        """
+
+        extractor = ThemeExtractor()
+        suggestions = extractor.extract_themes(text)
+
+        # Should detect anxiety, identity, relationships, growth
+        themes = [s.theme for s in suggestions]
+        assert len(themes) > 0
+        # At least some of the expected themes should be detected
+        expected_themes = {'anxiety', 'identity', 'relationships', 'growth'}
+        detected = set(themes) & expected_themes
+        assert len(detected) > 0
+
     def test_min_confidence_threshold(self):
         """Test minimum confidence filtering."""
         from dev.ai.extractors import ThemeExtractor
 
         text = "Just a normal day, nothing special happened."
 
-        extractor = ThemeExtractor(use_transformers=False)
+        extractor = ThemeExtractor()
 
         # Low threshold: should get some matches
         suggestions_low = extractor.extract_themes(text, min_confidence=0.1)

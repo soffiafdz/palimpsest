@@ -28,7 +28,6 @@ Usage:
 from typing import List, Dict, Set, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass, field
-import re
 
 try:
     import spacy
@@ -232,83 +231,34 @@ class EntityExtractor:
 
 class ThemeExtractor:
     """
-    Extract themes using keyword patterns and semantic similarity.
+    Extract themes using semantic similarity with sentence transformers.
 
     Intelligence Level: ⭐⭐⭐⭐☆
 
-    Combines:
-    - Keyword pattern matching
-    - Semantic similarity with sentence transformers
-    - Context analysis
+    Uses ML-based semantic similarity to identify themes without relying on
+    keyword patterns. Understands context and meaning.
+
+    Requires sentence-transformers: pip install sentence-transformers
     """
 
-    # Theme patterns (Level 1: Keyword-based)
-    THEME_PATTERNS = {
-        'identity': [
-            r'\bidentity\b', r'\bself\b', r'\bwho (I|i) am\b',
-            r'\bpersonality\b', r'\bcharacter\b'
-        ],
-        'relationships': [
-            r'\brelationship\b', r'\bfriend\b', r'\bfamily\b',
-            r'\blove\b', r'\bconnection\b', r'\btrust\b'
-        ],
-        'growth': [
-            r'\bgrowth\b', r'\bdevelop\b', r'\blearn\b',
-            r'\bprogress\b', r'\bevolve\b', r'\bchange\b'
-        ],
-        'anxiety': [
-            r'\banxiety\b', r'\bworry\b', r'\bstress\b',
-            r'\bnervous\b', r'\bfear\b', r'\bpanic\b'
-        ],
-        'creativity': [
-            r'\bcreativity\b', r'\bcreative\b', r'\bart\b',
-            r'\bwriting\b', r'\bimagination\b', r'\binspiration\b'
-        ],
-        'work': [
-            r'\bwork\b', r'\bjob\b', r'\bcareer\b',
-            r'\bproject\b', r'\bprofessional\b'
-        ],
-        'memory': [
-            r'\bmemory\b', r'\bremember\b', r'\brecall\b',
-            r'\bnostalgia\b', r'\bpast\b'
-        ],
-        'home': [
-            r'\bhome\b', r'\bhouse\b', r'\bapartment\b',
-            r'\bliving space\b', r'\bdomestic\b'
-        ],
-        'travel': [
-            r'\btravel\b', r'\bjourney\b', r'\btrip\b',
-            r'\bexplore\b', r'\badventure\b'
-        ],
-        'health': [
-            r'\bhealth\b', r'\bsick\b', r'\bwellness\b',
-            r'\bexercise\b', r'\bfitness\b'
-        ],
-        'reflection': [
-            r'\breflect\b', r'\bcontemplat\b', r'\bponder\b',
-            r'\bthink about\b', r'\bconsider\b'
-        ],
-        'loss': [
-            r'\bloss\b', r'\bgrief\b', r'\bmourn\b',
-            r'\bmissing\b', r'\bgone\b', r'\bdeath\b'
-        ],
-    }
-
-    def __init__(self, use_transformers: bool = True):
+    def __init__(self):
         """
         Initialize theme extractor.
 
-        Args:
-            use_transformers: Use sentence transformers for semantic analysis
+        Raises:
+            ImportError: If sentence-transformers not installed
         """
-        self.use_transformers = use_transformers and TRANSFORMERS_AVAILABLE
+        if not TRANSFORMERS_AVAILABLE:
+            raise ImportError(
+                "Sentence transformers required for theme extraction. "
+                "Install with: pip install sentence-transformers"
+            )
 
-        if self.use_transformers:
-            # Load sentence transformer model
-            self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Load sentence transformer model
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
-            # Pre-compute theme embeddings
-            self.theme_embeddings = self._compute_theme_embeddings()
+        # Pre-compute theme embeddings
+        self.theme_embeddings = self._compute_theme_embeddings()
 
     def _compute_theme_embeddings(self) -> Dict[str, Any]:
         """Pre-compute embeddings for theme descriptions."""
@@ -339,84 +289,20 @@ class ThemeExtractor:
         min_confidence: float = 0.3
     ) -> List[ThemeSuggestion]:
         """
-        Extract themes from text.
+        Extract themes from text using semantic similarity.
 
         Args:
             text: Text to analyze
-            min_confidence: Minimum confidence threshold
+            min_confidence: Minimum confidence threshold (0-1)
 
         Returns:
-            List of ThemeSuggestion objects
+            List of ThemeSuggestion objects sorted by confidence
         """
-        suggestions = []
-
-        # Method 1: Keyword pattern matching
-        keyword_matches = self._extract_themes_keywords(text)
-
-        # Method 2: Semantic similarity (if transformers available)
-        if self.use_transformers:
-            semantic_matches = self._extract_themes_semantic(text)
-
-            # Combine scores
-            all_themes = set(keyword_matches.keys()) | set(semantic_matches.keys())
-
-            for theme in all_themes:
-                keyword_score = keyword_matches.get(theme, 0.0)
-                semantic_score = semantic_matches.get(theme, 0.0)
-
-                # Weighted combination
-                combined_score = (keyword_score * 0.4) + (semantic_score * 0.6)
-
-                if combined_score >= min_confidence:
-                    suggestions.append(ThemeSuggestion(
-                        theme=theme,
-                        confidence=combined_score,
-                        evidence=[]
-                    ))
-        else:
-            # Only keyword matching
-            for theme, score in keyword_matches.items():
-                if score >= min_confidence:
-                    suggestions.append(ThemeSuggestion(
-                        theme=theme,
-                        confidence=score,
-                        evidence=[]
-                    ))
-
-        # Sort by confidence
-        suggestions.sort(key=lambda x: x.confidence, reverse=True)
-
-        return suggestions
-
-    def _extract_themes_keywords(self, text: str) -> Dict[str, float]:
-        """Extract themes using keyword patterns."""
-        text_lower = text.lower()
-        scores = {}
-
-        for theme, patterns in self.THEME_PATTERNS.items():
-            match_count = 0
-
-            for pattern in patterns:
-                matches = re.findall(pattern, text_lower)
-                match_count += len(matches)
-
-            if match_count > 0:
-                # Normalize score (cap at 1.0)
-                score = min(match_count * 0.2, 1.0)
-                scores[theme] = score
-
-        return scores
-
-    def _extract_themes_semantic(self, text: str) -> Dict[str, float]:
-        """Extract themes using semantic similarity."""
-        if not self.use_transformers:
-            return {}
-
         # Encode text
         text_embedding = self.model.encode(text)
 
         # Compute similarity with each theme
-        scores = {}
+        suggestions = []
 
         for theme, theme_embedding in self.theme_embeddings.items():
             # Cosine similarity
@@ -425,11 +311,19 @@ class ThemeExtractor:
             )
 
             # Normalize to 0-1
-            normalized_score = (similarity + 1) / 2
+            confidence = (similarity + 1) / 2
 
-            scores[theme] = float(normalized_score)
+            if confidence >= min_confidence:
+                suggestions.append(ThemeSuggestion(
+                    theme=theme,
+                    confidence=float(confidence),
+                    evidence=[]
+                ))
 
-        return scores
+        # Sort by confidence
+        suggestions.sort(key=lambda x: x.confidence, reverse=True)
+
+        return suggestions
 
 
 def check_dependencies() -> Dict[str, bool]:

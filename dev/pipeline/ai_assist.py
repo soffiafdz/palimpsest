@@ -115,7 +115,7 @@ def analyze_entry(args):
         try:
             from dev.ai.extractors import ThemeExtractor
 
-            theme_extractor = ThemeExtractor(use_transformers=(level >= 3))
+            theme_extractor = ThemeExtractor()
             suggestions = theme_extractor.extract_themes(
                 extractor._extract_entry_text(entry)
             )
@@ -211,7 +211,7 @@ def batch_analyze(args):
             from dev.ai.extractors import EntityExtractor, ThemeExtractor
 
             extractor = EntityExtractor()
-            theme_extractor = ThemeExtractor(use_transformers=(level >= 3))
+            theme_extractor = ThemeExtractor()
 
             for i, entry in enumerate(entries, 1):
                 print(f"[{i}/{len(entries)}] {entry.date}...")

@@ -10,9 +10,13 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 
 ## Features
 
-- **Multi-stage processing pipeline**: Raw exports → Formatted text → Markdown → Database → PDFs
+- **Multi-stage processing pipeline**: Raw exports → Formatted text → Markdown → Database → Wiki → PDFs
 - **Rich metadata extraction**: Track people, locations, events, themes, dates, and references
 - **Database-backed queries**: SQLAlchemy ORM with relationship mapping and analytics
+- **Wiki system**: Bidirectional sync between database and Markdown wiki for editing and curation
+- **Full-text search**: SQLite FTS5 with advanced filtering (people, dates, themes, word count, etc.)
+- **AI-assisted analysis** (optional): Entity extraction, theme detection, semantic search with 4 intelligence levels
+- **Manuscript subwiki**: Dedicated wiki for curating journal entries into literary material
 - **PDF generation**: Create clean reading copies and annotated review versions
 - **Vim/Neovim integration**: Vimwiki templates and automation (optional)
 - **Makefile orchestration**: Simple commands for batch processing and year-based builds
@@ -93,12 +97,28 @@ inbox/ (raw exports) → source2txt → txt/     (formatted text)
                                      ↓            ↑
                                     yaml2sql  sql2yaml
                                      ↓            ↑
-                                    database (SQLite + metadata)
-                                     ↓
+                                    database (SQLite + metadata + FTS5)
+                                     ↓            ↑
+                                    sql2wiki  wiki2sql
+                                     ↓            ↑
+                                    wiki/    (editable wiki pages)
+                                     ├── entries/
+                                     ├── people/
+                                     ├── events/
+                                     └── manuscript/
+
                                     md2pdf
                                      ↓
                                     pdf/     (annotated PDFs)
 ```
+
+### Data Flow Paths
+
+1. **Journal → Database**: `inbox → txt → md → database` (via YAML frontmatter)
+2. **Database → Wiki**: `database → wiki` (for editing and curation)
+3. **Wiki → Database**: `wiki → database` (import edits back)
+4. **Search & AI**: Query database with FTS5, extract metadata with AI
+5. **Export**: `database → pdf` (annotated reading copies)
 
 ---
 
@@ -107,14 +127,37 @@ inbox/ (raw exports) → source2txt → txt/     (formatted text)
 ```
 palimpsest/
 ├── dev/                        # Source code
+│   ├── ai/                     # AI analysis (optional)
+│   │   ├── extractors.py      # spaCy NER, theme extraction
+│   │   ├── semantic_search.py # Sentence transformers
+│   │   └── claude_assistant.py # Claude API integration
 │   ├── bin/                    # CLI wrappers (journal, metadb)
 │   ├── builders/               # PDF and text builders
 │   ├── core/                   # Logging, validation, paths
 │   ├── database/               # SQLAlchemy ORM and managers
+│   │   ├── models.py          # Main database models
+│   │   ├── models_manuscript.py # Manuscript models
+│   │   ├── search.py          # Search query engine
+│   │   └── search_index.py    # FTS5 index manager
 │   ├── dataclasses/            # Entry data structures
+│   │   ├── md_entry.py        # YAML frontmatter
+│   │   ├── wiki_*.py          # Wiki page classes
+│   │   └── manuscript_*.py    # Manuscript wiki classes
 │   ├── pipeline/               # Processing scripts
+│   │   ├── yaml2sql.py        # YAML → Database
+│   │   ├── sql2yaml.py        # Database → YAML
+│   │   ├── sql2wiki.py        # Database → Wiki
+│   │   ├── wiki2sql.py        # Wiki → Database
+│   │   ├── search.py          # Search CLI
+│   │   └── ai_assist.py       # AI analysis CLI
 │   └── utils/                  # Utilities (fs, md, parsers)
 ├── templates/                  # LaTeX preambles, wiki templates
+├── tests/                      # Integration tests
+│   └── integration/
+│       ├── test_search.py     # Search tests
+│       ├── test_ai_extraction.py # AI tests
+│       ├── test_sql_to_wiki.py # Wiki export tests
+│       └── test_wiki_to_sql.py # Wiki import tests
 ├── data/                       # Personal content (git submodule)
 │   ├── journal/
 │   │   ├── inbox/
@@ -122,9 +165,16 @@ palimpsest/
 │   │   ├── content/md/
 │   │   └── annotations/
 │   ├── manuscript/
-│   ├── wiki/
+│   ├── wiki/                   # Generated wiki
+│   │   ├── entries/
+│   │   ├── people/
+│   │   ├── events/
+│   │   ├── cities/
+│   │   └── manuscript/
 │   └── metadata/
 │       └── palimpsest.db
+├── docs/
+│   └── BIDIRECTIONAL_SYNC_GUIDE.md # Wiki sync documentation
 ├── environment.yaml
 ├── Makefile
 └── README.md
@@ -191,6 +241,229 @@ metadb optimize
 metadb export-csv OUTPUT_DIR
 metadb export-json OUTPUT_FILE
 metadb analyze
+```
+
+### Search Commands
+
+```bash
+# Text search with filters
+palimpsest search "query text" [filters]
+palimpsest search "therapy" person:alice in:2024 words:100-500
+palimpsest search "reflection" city:montreal has:manuscript
+
+# Index management
+palimpsest search index --create
+palimpsest search index --rebuild
+palimpsest search index --status
+
+# Available filters:
+# person:NAME, tag:TAG, event:EVENT, city:CITY, theme:THEME
+# in:YEAR, year:YEAR, month:MONTH
+# from:DATE, to:DATE
+# words:MIN-MAX, time:MIN-MAX
+# has:manuscript, status:STATUS
+# sort:relevance|date|word_count, limit:N
+```
+
+### AI Analysis Commands
+
+```bash
+# Check AI capabilities
+palimpsest ai status
+
+# Analyze single entry (Level 2: spaCy NER)
+palimpsest ai analyze 2024-11-01 --level 2
+
+# Analyze with Claude API (Level 4)
+palimpsest ai analyze 2024-11-01 --level 4 --manuscript
+
+# Batch analyze entries
+palimpsest ai batch --level 2 --limit 10
+
+# Find semantically similar entries (Level 3)
+palimpsest ai similar 2024-11-01 --limit 10
+
+# Cluster entries by theme
+palimpsest ai cluster --num-clusters 10
+```
+
+**AI Intelligence Levels:**
+- **Level 2**: spaCy NER (free) - Entity extraction, theme detection
+- **Level 3**: Sentence Transformers (free) - Semantic similarity search
+- **Level 4**: Claude API (paid) - Advanced analysis, manuscript curation
+
+See [Search & AI Documentation](#search--ai-features) for details.
+
+---
+
+## Wiki System
+
+The wiki provides an editable interface for curating and annotating your journal:
+
+### Export Database to Wiki
+
+```bash
+# Export everything
+journal wiki-export
+
+# Export specific year
+journal wiki-export --year 2024
+
+# Force overwrite
+journal wiki-export --force
+```
+
+### Import Wiki Edits to Database
+
+```bash
+# Import all wiki edits
+journal wiki-import
+
+# Import specific entity type
+journal wiki-import --type people
+journal wiki-import --type entries
+journal wiki-import --type manuscript
+```
+
+### Wiki Structure
+
+```
+wiki/
+├── index.md                    # Main index
+├── people/
+│   ├── index.md               # People index
+│   └── alice.md               # Person page (editable notes)
+├── entries/
+│   ├── index.md               # Entries index
+│   └── 2024-11-01.md          # Entry page (editable notes)
+├── events/
+│   └── therapy-session.md     # Event page
+├── cities/
+│   └── montreal.md            # City page
+└── manuscript/
+    ├── index.md               # Manuscript index
+    ├── entries/
+    │   └── 2024-11-01.md      # Manuscript entry (adaptation notes)
+    └── characters/
+        └── alexandra.md        # Character page (voice, arc, description)
+```
+
+### Editable Fields
+
+**Main Wiki** (only `notes` fields are editable):
+- Person pages: Add biographical notes, relationship context
+- Entry pages: Add editorial notes, manuscript potential
+- Event/City pages: Add context notes
+
+**Manuscript Wiki** (detailed curation fields):
+- Manuscript entries: Entry type, narrative arc, character notes, adaptation notes
+- Characters: Character description, arc, voice notes, appearance notes
+- Themes, arcs, and other manuscript-specific metadata
+
+See [BIDIRECTIONAL_SYNC_GUIDE.md](BIDIRECTIONAL_SYNC_GUIDE.md) for complete documentation.
+
+---
+
+## Search & AI Features
+
+### Full-Text Search (FTS5)
+
+**Built-in**, free, fast full-text search with advanced filters:
+
+```bash
+# Search entry text
+palimpsest search "anxiety therapy"
+
+# Combine text + metadata
+palimpsest search "alice" person:alice in:2024
+
+# Complex filtering
+palimpsest search "reflection" city:montreal words:500-1000 has:manuscript
+```
+
+**How it works:**
+- SQLite FTS5 virtual table with Porter stemming
+- BM25 ranking for relevance scoring
+- Searches actual entry content, not just metadata
+- Auto-sync triggers keep index up-to-date
+
+**Create search index:**
+```bash
+palimpsest search index --create
+```
+
+### AI-Assisted Analysis (Optional)
+
+Progressive intelligence levels - use what you need:
+
+#### Level 2: spaCy NER (Free) ⭐⭐⭐⭐☆
+
+**Entity extraction using ML:**
+- Detects people, locations, cities, organizations, events
+- Theme identification
+- Confidence scoring
+
+**Install:**
+```bash
+pip install spacy
+python -m spacy download en_core_web_sm
+```
+
+**Usage:**
+```bash
+palimpsest ai analyze 2024-11-01 --level 2
+```
+
+#### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
+
+**Semantic similarity search:**
+- Find similar entries by meaning (not just keywords)
+- Theme clustering
+- Understanding context
+
+**Install:**
+```bash
+pip install sentence-transformers
+pip install faiss-cpu  # optional, for faster search
+```
+
+**Usage:**
+```bash
+# Find similar entries
+palimpsest ai similar 2024-11-01 --limit 10
+
+# Cluster by theme
+palimpsest ai cluster --num-clusters 10
+```
+
+#### Level 4: Claude API (Paid) ⭐⭐⭐⭐⭐
+
+**Most accurate analysis:**
+- Advanced entity extraction
+- Manuscript narrative analysis
+- Character voice and arc suggestions
+- Theme identification with context
+
+**Cost:** ~$0.007/entry (Haiku), ~$0.075/entry (Sonnet)
+
+**Install:**
+```bash
+pip install anthropic
+export ANTHROPIC_API_KEY='your-key'
+```
+
+**Usage:**
+```bash
+# Analyze with manuscript insights
+palimpsest ai analyze 2024-11-01 --level 4 --manuscript
+
+# Batch analyze (with cost estimation)
+palimpsest ai batch --level 4 --limit 10
+```
+
+**Check what's installed:**
+```bash
+palimpsest ai status
 ```
 
 ---
@@ -297,6 +570,8 @@ Uses Ruff for linting. Code follows:
 
 ## Dependencies
 
+### Core Dependencies
+
 - Python 3.10+
 - SQLAlchemy 2.0+
 - Click 8.0+
@@ -305,6 +580,26 @@ Uses Ruff for linting. Code follows:
 - Cormorant Garamond font (for PDFs)
 
 See `environment.yaml` for complete list.
+
+### Optional AI Dependencies
+
+**Level 2 (spaCy NER):**
+```bash
+pip install spacy
+python -m spacy download en_core_web_sm
+```
+
+**Level 3 (Semantic Search):**
+```bash
+pip install sentence-transformers
+pip install faiss-cpu  # optional, faster search
+```
+
+**Level 4 (Claude API):**
+```bash
+pip install anthropic
+# Set API key: export ANTHROPIC_API_KEY='your-key'
+```
 
 ---
 
