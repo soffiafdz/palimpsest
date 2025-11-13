@@ -919,6 +919,9 @@ class EntryManager(BaseManager):
         """
         Update locations associated with a mentioned date.
 
+        Auto-creates locations that don't exist yet, similar to how
+        entry locations are handled.
+
         Args:
             mentioned_date: MentionedDate to update
             locations_data: List of location names
@@ -935,20 +938,11 @@ class EntryManager(BaseManager):
             if not norm_name:
                 continue
 
-            # Find location by name
-            location = self.session.query(Location).filter_by(name=norm_name).first()
-
-            if not location:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Location '{norm_name}' not found for date {mentioned_date.date}",
-                        {
-                            "date_id": mentioned_date.id,
-                            "date": str(mentioned_date.date),
-                            "location": norm_name,
-                        },
-                    )
-                continue
+            # Get or create location (auto-create like we do for entries)
+            # If no city is specified, use "Unknown" as default
+            from dev.database.managers import LocationManager
+            location_mgr = LocationManager(self.session, self.logger)
+            location = location_mgr.get_or_create_location(norm_name, city_name="Unknown")
 
             # Link if not already linked
             if location.id not in existing_location_ids:
@@ -965,8 +959,11 @@ class EntryManager(BaseManager):
         """
         Update people associated with a mentioned date.
 
+        Auto-creates people that don't exist yet, similar to how
+        entry people are handled.
+
         Supports both simple names and full person specifications:
-        - String: "John" (looks up by name)
+        - String: "John" (auto-creates if needed)
         - Dict: {"name": "John"} or {"full_name": "John Smith"}
 
         Args:
@@ -983,51 +980,24 @@ class EntryManager(BaseManager):
             person = None
 
             if isinstance(person_spec, str):
-                # Simple name lookup - need to delegate to PersonManager
+                # Simple name - use get_or_create
                 norm_name = DataValidator.normalize_string(person_spec)
                 if not norm_name:
                     continue
 
-                try:
-                    from dev.database import PalimpsestDB
-                    person = PalimpsestDB._get_person_static(
-                        self.session, norm_name, None
-                    )
-                except ValidationError as e:
-                    if self.logger:
-                        self.logger.log_warning(
-                            f"Could not resolve person '{norm_name}' for date: {e}",
-                            {
-                                "date_id": mentioned_date.id,
-                                "date": str(mentioned_date.date),
-                                "person_spec": norm_name,
-                            },
-                        )
-                    continue
+                from dev.database.managers import PersonManager
+                person_mgr = PersonManager(self.session, self.logger)
+                person = person_mgr.get_or_create(norm_name)
 
             elif isinstance(person_spec, dict):
-                # Dict with name or full_name
+                # Dict with name or full_name - use get_or_create
                 name = DataValidator.normalize_string(person_spec.get("name"))
                 full_name = DataValidator.normalize_string(person_spec.get("full_name"))
 
-                # Try to resolve by name/full_name
                 if name or full_name:
-                    try:
-                        from dev.database import PalimpsestDB
-                        person = PalimpsestDB._get_person_static(
-                            self.session, name, full_name
-                        )
-                    except ValidationError as e:
-                        if self.logger:
-                            self.logger.log_warning(
-                                f"Could not resolve person for date: {e}",
-                                {
-                                    "date_id": mentioned_date.id,
-                                    "date": str(mentioned_date.date),
-                                    "person_spec": person_spec,
-                                },
-                            )
-                        continue
+                    from dev.database.managers import PersonManager
+                    person_mgr = PersonManager(self.session, self.logger)
+                    person = person_mgr.get_or_create(name or full_name, full_name)
 
             if person and person.id not in existing_person_ids:
                 mentioned_date.people.append(person)
