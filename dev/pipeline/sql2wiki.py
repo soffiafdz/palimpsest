@@ -704,7 +704,7 @@ def register_all_entities():
         eager_loads=["entries", "manuscript"],
         index_builder=build_people_index,  # Custom
         sort_by="name",
-        order_by="display_name",
+        order_by="name",  # Use database column, not property
     ))
 
     # Themes (default index)
