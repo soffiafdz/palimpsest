@@ -243,18 +243,48 @@ class City(WikiEntity):
         return lines
 
     @classmethod
-    def from_file(cls, file_path: Path) -> "City":
+    def from_file(cls, file_path: Path) -> Optional["City"]:
         """
-        Parse City from existing wiki file.
+        Parse City from existing wiki file to extract editable fields.
+
+        Only extracts:
+        - notes: User notes about the city
+
+        Other fields (country, entries, locations, visit_freq) are read-only and come from database.
 
         Args:
             file_path: Path to existing wiki file
 
         Returns:
-            City instance (partial - only editable fields populated)
+            City instance (partial - only editable fields populated), or None if file doesn't exist
         """
-        # TODO: Implement in Phase 3 (wiki2sql)
-        raise NotImplementedError("from_file() will be implemented in Phase 3")
+        if not file_path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+
+            sections = parse_wiki_file(file_path)
+
+            # Extract city name from filename
+            name = file_path.stem.replace("_", " ")
+
+            # Extract notes (editable field)
+            notes = extract_notes(sections)
+
+            return cls(
+                path=file_path,
+                name=name,
+                country=None,  # Not parsed from wiki, comes from database
+                entries=[],  # Not parsed from wiki, comes from database
+                locations=[],  # Not parsed from wiki, comes from database
+                visit_freq={},  # Not parsed from wiki, comes from database
+                notes=notes,
+            )
+        except Exception as e:
+            import sys
+            sys.stderr.write(f"Error parsing {file_path}: {e}\n")
+            return None
 
     # Computed properties
     @property

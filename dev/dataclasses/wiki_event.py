@@ -246,18 +246,51 @@ class Event(WikiEntity):
         return lines
 
     @classmethod
-    def from_file(cls, file_path: Path) -> "Event":
+    def from_file(cls, file_path: Path) -> Optional["Event"]:
         """
-        Parse Event from existing wiki file.
+        Parse Event from existing wiki file to extract editable fields.
+
+        Only extracts:
+        - notes: User notes about the event
+
+        Other fields (entries, people, themes, dates) are read-only and come from database.
 
         Args:
             file_path: Path to existing wiki file
 
         Returns:
-            Event instance (partial - only editable fields populated)
+            Event instance (partial - only editable fields populated), or None if file doesn't exist
         """
-        # TODO: Implement in Phase 3 (wiki2sql)
-        raise NotImplementedError("from_file() will be implemented in Phase 3")
+        if not file_path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+
+            sections = parse_wiki_file(file_path)
+
+            # Extract event name from filename
+            event_name = file_path.stem.replace("_", " ")
+
+            # Extract notes (editable field)
+            notes = extract_notes(sections)
+
+            return cls(
+                path=file_path,
+                event=event_name,
+                title=None,  # Not parsed from wiki, comes from database
+                entries=[],  # Not parsed from wiki, comes from database
+                people=[],  # Not parsed from wiki, comes from database
+                themes=[],  # Not parsed from wiki, comes from database
+                start_date=None,  # Not parsed from wiki, comes from database
+                end_date=None,  # Not parsed from wiki, comes from database
+                manuscript_status=None,  # Not parsed from wiki, comes from database
+                notes=notes,
+            )
+        except Exception as e:
+            import sys
+            sys.stderr.write(f"Error parsing {file_path}: {e}\n")
+            return None
 
     # Computed properties
     @property

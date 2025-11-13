@@ -47,9 +47,43 @@ class Poem(WikiEntity):
     # ---- Public constructors ----
     @classmethod
     def from_file(cls, path: Path) -> Optional["Poem"]:
-        """Parse a poems/poem.md file to create a Poem object."""
-        # TODO: Implement parsing from existing wiki files (Phase 3)
-        raise NotImplementedError("Poem.from_file() not yet implemented")
+        """
+        Parse a poems/poem.md file to extract editable fields.
+
+        Only extracts:
+        - notes: User notes about the poem
+
+        Other fields (versions, content) are read-only and come from database.
+
+        Args:
+            path: Path to poem wiki file
+
+        Returns:
+            Poem with only editable fields populated, or None if file doesn't exist
+        """
+        if not path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+
+            sections = parse_wiki_file(path)
+
+            # Extract title from filename
+            title = path.stem.replace("_", " ").replace("-", "/")
+
+            # Extract notes (editable field)
+            notes = extract_notes(sections)
+
+            return cls(
+                path=path,
+                title=title,
+                versions=[],  # Not parsed from wiki, comes from database
+                notes=notes,
+            )
+        except Exception as e:
+            sys.stderr.write(f"Error parsing {path}: {e}\n")
+            return None
 
     @classmethod
     def from_database(

@@ -52,9 +52,45 @@ class Reference(WikiEntity):
     # ---- Public constructors ----
     @classmethod
     def from_file(cls, path: Path) -> Optional["Reference"]:
-        """Parse a references/source.md file to create a Reference object."""
-        # TODO: Implement parsing from existing wiki files (Phase 3)
-        raise NotImplementedError("Reference.from_file() not yet implemented")
+        """
+        Parse a references/source.md file to extract editable fields.
+
+        Only extracts:
+        - notes: User notes about the reference source
+
+        Other fields (source_type, author, citations) are read-only and come from database.
+
+        Args:
+            path: Path to reference wiki file
+
+        Returns:
+            Reference with only editable fields populated, or None if file doesn't exist
+        """
+        if not path.exists():
+            return None
+
+        try:
+            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+
+            sections = parse_wiki_file(path)
+
+            # Extract source name from filename
+            source_name = path.stem.replace("_", " ").replace("-", "/")
+
+            # Extract notes (editable field)
+            notes = extract_notes(sections)
+
+            return cls(
+                path=path,
+                source_name=source_name,
+                source_type="",  # Not parsed from wiki, comes from database
+                author=None,  # Not parsed from wiki, comes from database
+                citations=[],  # Not parsed from wiki, comes from database
+                notes=notes,
+            )
+        except Exception as e:
+            sys.stderr.write(f"Error parsing {path}: {e}\n")
+            return None
 
     @classmethod
     def from_database(
