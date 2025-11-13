@@ -528,8 +528,7 @@ class ExportManager:
 
                 f.write("\n  ],\n")
 
-                # Export other tables (people, locations, events) in batches
-                # TODO: Add missing tables here
+                # Export all entity tables
                 f.write('  "people": [\n')
                 people = session.query(Person).all()
                 for i, person in enumerate(people):
@@ -573,6 +572,261 @@ class ExportManager:
                                 "event": event.event,
                                 "title": event.title,
                                 "description": event.description,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Tags
+                f.write('  "tags": [\n')
+                tags = session.query(Tag).all()
+                for i, tag in enumerate(tags):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": tag.id,
+                                "tag": tag.tag,
+                                "entry_count": len(tag.entries),
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Reference Sources
+                f.write('  "reference_sources": [\n')
+                sources = session.query(ReferenceSource).all()
+                for i, source in enumerate(sources):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": source.id,
+                                "title": source.title,
+                                "type": source.type.value if source.type else None,
+                                "author": source.author,
+                                "year": source.year,
+                                "url": source.url,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # References
+                f.write('  "references": [\n')
+                references = session.query(Reference).all()
+                for i, ref in enumerate(references):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": ref.id,
+                                "entry_id": ref.entry_id,
+                                "source_id": ref.source_id,
+                                "content": ref.content,
+                                "description": ref.description,
+                                "mode": ref.mode.value if ref.mode else "direct",
+                                "speaker": ref.speaker,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Mentioned Dates
+                f.write('  "mentioned_dates": [\n')
+                dates = session.query(MentionedDate).all()
+                for i, md in enumerate(dates):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": md.id,
+                                "entry_id": md.entry_id,
+                                "date": md.date.isoformat() if md.date else None,
+                                "context": md.context,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Poems
+                f.write('  "poems": [\n')
+                poems = session.query(Poem).all()
+                for i, poem in enumerate(poems):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": poem.id,
+                                "title": poem.title,
+                                "content_hash": poem.content_hash,
+                                "version_count": len(poem.versions),
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Poem Versions
+                f.write('  "poem_versions": [\n')
+                versions = session.query(PoemVersion).all()
+                for i, pv in enumerate(versions):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": pv.id,
+                                "poem_id": pv.poem_id,
+                                "entry_id": pv.entry_id,
+                                "content": pv.content,
+                                "notes": pv.notes,
+                                "revision_date": pv.revision_date.isoformat() if pv.revision_date else None,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Aliases
+                f.write('  "aliases": [\n')
+                aliases = session.query(Alias).all()
+                for i, alias in enumerate(aliases):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": alias.id,
+                                "person_id": alias.person_id,
+                                "alias": alias.alias,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Manuscript Entries
+                f.write('  "manuscript_entries": [\n')
+                ms_entries = session.query(ManuscriptEntry).all()
+                for i, me in enumerate(ms_entries):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": me.id,
+                                "entry_id": me.entry_id,
+                                "status": me.status.value if me.status else None,
+                                "edited": me.edited,
+                                "notes": me.notes,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Manuscript People
+                f.write('  "manuscript_people": [\n')
+                ms_people = session.query(ManuscriptPerson).all()
+                for i, mp in enumerate(ms_people):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": mp.id,
+                                "person_id": mp.person_id,
+                                "character": mp.character,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Manuscript Events
+                f.write('  "manuscript_events": [\n')
+                ms_events = session.query(ManuscriptEvent).all()
+                for i, mev in enumerate(ms_events):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": mev.id,
+                                "event_id": mev.event_id,
+                                "ms_title": mev.ms_title,
+                                "ms_description": mev.ms_description,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Themes
+                f.write('  "themes": [\n')
+                themes = session.query(Theme).all()
+                for i, theme in enumerate(themes):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": theme.id,
+                                "theme": theme.theme,
+                                "description": theme.description,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                    )
+                f.write("\n  ],\n")
+
+                # Arcs
+                f.write('  "arcs": [\n')
+                arcs = session.query(Arc).all()
+                for i, arc in enumerate(arcs):
+                    if i > 0:
+                        f.write(",\n")
+                    f.write("    ")
+                    f.write(
+                        json.dumps(
+                            {
+                                "id": arc.id,
+                                "arc": arc.arc,
+                                "description": arc.description,
                             },
                             ensure_ascii=False,
                             default=str,
