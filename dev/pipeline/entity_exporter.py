@@ -67,6 +67,9 @@ class EntityConfig:
     # Index building
     index_builder: Optional[Callable] = None  # Custom builder or None for default
 
+    # Custom export (for entities needing special export logic, e.g., prev/next navigation)
+    custom_export_all: Optional[Callable] = None  # Custom export_all function or None for default
+
     # Sorting
     sort_by: str = "name"                   # Field to sort wiki entities by
     order_by: str = "name"                  # Field to order database query by
@@ -286,6 +289,12 @@ class GenericEntityExporter:
         Returns:
             ConversionStats with results
         """
+        # Use custom export function if provided
+        if self.config.custom_export_all:
+            return self.config.custom_export_all(
+                self, db, wiki_dir, journal_dir, force, logger
+            )
+
         stats = ConversionStats()
 
         if logger:

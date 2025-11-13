@@ -69,6 +69,7 @@ class Entry(WikiEntity):
     """
 
     path: Path
+    wiki_dir: Path  # Wiki root directory for breadcrumb generation
     date: date
     source_path: Path
     word_count: int = 0
@@ -279,6 +280,7 @@ class Entry(WikiEntity):
 
         return cls(
             path=path,
+            wiki_dir=wiki_dir,
             date=db_entry.date,
             source_path=source_path,
             word_count=db_entry.word_count,
@@ -315,9 +317,20 @@ class Entry(WikiEntity):
         lines = [
             "# Palimpsest — Entry",
             "",
+        ]
+
+        # Add breadcrumbs
+        breadcrumbs = self.generate_breadcrumbs(self.wiki_dir)
+        if breadcrumbs:
+            lines.extend([
+                f"*{breadcrumbs}*",
+                "",
+            ])
+
+        lines.extend([
             f"## {self.date.isoformat()}",
             "",
-        ]
+        ])
 
         # Basic metadata
         lines.extend([
@@ -488,6 +501,7 @@ class Entry(WikiEntity):
 
             return cls(
                 path=file_path,
+                wiki_dir=Path("."),  # Placeholder (not used in from_file)
                 date=entry_date,
                 source_path=file_path,  # Placeholder
                 notes=notes,

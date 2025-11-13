@@ -57,6 +57,7 @@ class Person(WikiEntity):
     Tracks mentions, presence, and narrative weight.
     """
     path:         Path
+    wiki_dir:     Path                 # Wiki root for breadcrumbs
     name:         str
     category:     Optional[str]        = None
     alias:        Set[str]             = field(default_factory = set)
@@ -92,6 +93,7 @@ class Person(WikiEntity):
 
         return cls(
             path=path,
+            wiki_dir=Path("."),  # Placeholder for from_file
             name=name,
             category=category,
             alias=alias,
@@ -184,6 +186,7 @@ class Person(WikiEntity):
 
         return cls(
             path=path,
+            wiki_dir=wiki_dir,
             name=db_person.display_name,
             category=category,
             alias=alias_set,
@@ -199,9 +202,20 @@ class Person(WikiEntity):
         # -- header --
         lines = [
             "# Palimpsest — People", "",
+        ]
+
+        # Add breadcrumbs
+        breadcrumbs = self.generate_breadcrumbs(self.wiki_dir)
+        if breadcrumbs:
+            lines.extend([
+                f"*{breadcrumbs}*",
+                "",
+            ])
+
+        lines.extend([
             f"## {self.name.title()}", "",
             "### Category", f"{self.category or 'Unsorted'}", "",
-        ]
+        ])
 
         # -- alias(es) --
         lines.append(f"### Alias")
