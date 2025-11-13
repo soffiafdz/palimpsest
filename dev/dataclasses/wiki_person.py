@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Set, Pattern
 
 # --- Local ---
 from .wiki_entity import WikiEntity
-from .md_utils import extract_section, parse_bullets, resolve_relative_link
+from dev.utils.wiki import extract_section, parse_bullets, resolve_relative_link, relative_link
 
 
 @dataclass
@@ -66,7 +66,7 @@ class Person(WikiEntity):
     notes:        Optional[str]        = None
 
 
-    # ---- Public constructor ----
+    # ---- Public constructors ----
     @classmethod
     def from_file(cls, path: Path) -> Optional["Person"]:
         """Parse a people/person.md file to create a Person object."""
@@ -99,6 +99,98 @@ class Person(WikiEntity):
             themes=themes,
             vignettes=vignettes,
             notes=notes
+        )
+
+    @classmethod
+    def from_database(
+        cls,
+        db_person: Any,  # models.Person type
+        wiki_dir: Path,
+        journal_dir: Path,
+    ) -> "Person":
+        """
+        Construct a Person wiki entity from a database Person model.
+
+        Args:
+            db_person: SQLAlchemy Person ORM instance with relationships loaded
+            wiki_dir: Base vimwiki directory (e.g., /path/to/vimwiki)
+            journal_dir: Base journal directory (e.g., /path/to/journal/md)
+
+        Returns:
+            Person wiki entity ready for serialization
+
+        Notes:
+            - Generates appearances from db_person.dates (MentionedDate objects)
+            - Generates themes from related entries
+            - Preserves category and notes from existing wiki file if present
+            - Creates relative links from wiki/people/{name}.md to entries
+        """
+        # Determine output path
+        person_filename = db_person.display_name.lower().replace(" ", "_") + ".md"
+        path = wiki_dir / "people" / person_filename
+
+        # Get category and notes from existing file if it exists, otherwise use database
+        category = None
+        existing_notes = None
+        vignettes = []
+
+        if path.exists():
+            try:
+                existing = cls.from_file(path)
+                if existing:
+                    category = existing.category
+                    existing_notes = existing.notes
+                    vignettes = existing.vignettes
+            except Exception as e:
+                sys.stderr.write(f"Warning: Could not parse existing {path}: {e}\n")
+
+        # Use database relation_type as category if no existing category
+        if not category and db_person.relation_type:
+            category = db_person.relation_type.display_name
+
+        # Build appearances from database dates
+        appearances: List[Dict[str, Any]] = []
+        for mentioned_date in sorted(db_person.dates, key=lambda d: d.date):
+            # Find entry for this date
+            entry = next(
+                (e for e in mentioned_date.entries if e.date == mentioned_date.date),
+                None
+            )
+            if entry:
+                entry_path = Path(entry.file_path)
+                # Generate relative link from people/person.md to entry
+                link = relative_link(path, entry_path)
+
+                appearances.append({
+                    "date": mentioned_date.date,
+                    "md": entry_path,
+                    "link": link,
+                    "note": mentioned_date.context or "",
+                })
+
+        # Collect aliases from database
+        alias_set: Set[str] = {alias_obj.alias for alias_obj in db_person.aliases}
+
+        # Collect themes from entries
+        themes: Set[str] = set()
+        for entry in db_person.entries:
+            # Check if entry has manuscript themes
+            if hasattr(entry, 'manuscript') and entry.manuscript:
+                if hasattr(entry.manuscript, 'themes') and entry.manuscript.themes:
+                    themes.update(entry.manuscript.themes)
+
+        # Use database notes if no existing notes
+        notes = existing_notes if existing_notes else (db_person.notes if hasattr(db_person, 'notes') else None)
+
+        return cls(
+            path=path,
+            name=db_person.display_name,
+            category=category,
+            alias=alias_set,
+            appearances=appearances,
+            themes=themes,
+            vignettes=vignettes,
+            notes=notes,
         )
 
     # ---- Serialization ----
