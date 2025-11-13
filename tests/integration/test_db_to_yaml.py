@@ -188,8 +188,8 @@ class TestRelationshipExport:
         )
 
         # Add events
-        therapy = Event(event="therapy-session", display_name="Therapy Session")
-        conference = Event(event="pycon-2024", display_name="PyCon 2024")
+        therapy = Event(event="therapy-session", title="Therapy Session")
+        conference = Event(event="pycon-2024", title="PyCon 2024")
 
         entry.events.extend([therapy, conference])
 
