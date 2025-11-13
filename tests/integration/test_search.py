@@ -317,6 +317,9 @@ class TestSearchEngine:
         file1 = tmp_path / "entry1.md"
         file1.write_text("Content")
 
+        file2 = tmp_path / "entry2.md"
+        file2.write_text("Content")
+
         entry1 = Entry(
             date=date(2024, 11, 1),
             file_path=str(file1),
@@ -326,7 +329,7 @@ class TestSearchEngine:
 
         entry2 = Entry(
             date=date(2024, 11, 2),
-            file_path=str(file1),
+            file_path=str(file2),
             word_count=100,
             reading_time=0.5,
         )
@@ -349,6 +352,9 @@ class TestSearchEngine:
         file1 = tmp_path / "entry1.md"
         file1.write_text("Content")
 
+        file2 = tmp_path / "entry2.md"
+        file2.write_text("Content")
+
         entry1 = Entry(
             date=date(2024, 11, 1),
             file_path=str(file1),
@@ -364,7 +370,7 @@ class TestSearchEngine:
 
         entry2 = Entry(
             date=date(2024, 11, 2),
-            file_path=str(file1),
+            file_path=str(file2),
             word_count=100,
             reading_time=0.5,
         )
@@ -432,6 +438,9 @@ class TestSearchEngine:
         file1 = tmp_path / "entry1.md"
         file1.write_text("Content")
 
+        file2 = tmp_path / "entry2.md"
+        file2.write_text("Content")
+
         entry1 = Entry(
             date=date(2024, 11, 1),
             file_path=str(file1),
@@ -441,7 +450,7 @@ class TestSearchEngine:
 
         entry2 = Entry(
             date=date(2024, 11, 5),
-            file_path=str(file1),
+            file_path=str(file2),
             word_count=500,
             reading_time=2.5,
         )

@@ -77,19 +77,22 @@ class TestPersonExport:
 
     def test_export_person_with_entries(self, test_db, tmp_path):
         """Test exporting person with entry appearances."""
-        file_path = tmp_path / "source.md"
-        file_path.write_text("Content")
+        file_path1 = tmp_path / "source1.md"
+        file_path1.write_text("Content")
+
+        file_path2 = tmp_path / "source2.md"
+        file_path2.write_text("Content")
 
         person = Person(name="Alice", relation_type=RelationType.FRIEND)
         entry1 = Entry(
             date=date(2024, 11, 1),
-            file_path=str(file_path),
+            file_path=str(file_path1),
             word_count=100,
             reading_time=0.5,
         )
         entry2 = Entry(
             date=date(2024, 11, 5),
-            file_path=str(file_path),
+            file_path=str(file_path2),
             word_count=200,
             reading_time=1.0,
         )
@@ -171,24 +174,30 @@ class TestEntryExport:
 
     def test_export_entry_with_navigation(self, test_db, tmp_path):
         """Test exporting entry with prev/next navigation."""
-        file_path = tmp_path / "source.md"
-        file_path.write_text("Content")
+        file_path1 = tmp_path / "source1.md"
+        file_path1.write_text("Content")
+
+        file_path2 = tmp_path / "source2.md"
+        file_path2.write_text("Content")
+
+        file_path3 = tmp_path / "source3.md"
+        file_path3.write_text("Content")
 
         entry1 = Entry(
             date=date(2024, 11, 1),
-            file_path=str(file_path),
+            file_path=str(file_path1),
             word_count=100,
             reading_time=0.5,
         )
         entry2 = Entry(
             date=date(2024, 11, 5),
-            file_path=str(file_path),
+            file_path=str(file_path2),
             word_count=100,
             reading_time=0.5,
         )
         entry3 = Entry(
             date=date(2024, 11, 10),
-            file_path=str(file_path),
+            file_path=str(file_path3),
             word_count=100,
             reading_time=0.5,
         )

@@ -346,8 +346,8 @@ class TestContentPreservation:
         entry.word_count = 200
         test_db.commit()
 
-        # Export again with preserve_body=True
-        export_entry_to_markdown(entry, output_dir, preserve_body=True)
+        # Export again with preserve_body=True and force_overwrite=True to update metadata
+        export_entry_to_markdown(entry, output_dir, preserve_body=True, force_overwrite=True)
 
         # Body should be preserved, metadata should update
         content = exported_file.read_text()
