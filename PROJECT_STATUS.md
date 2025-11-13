@@ -93,12 +93,14 @@ The system has evolved from a simple journal processor to a sophisticated multi-
 - [x] Optional FAISS integration for fast vector search
 - [x] Intelligence level: ⭐⭐⭐⭐☆
 
-#### Level 4: Claude API (Paid, Optional) ⭐⭐⭐⭐⭐
+#### Level 4: LLM APIs (Paid, Optional) ⭐⭐⭐⭐⭐
 - [x] ClaudeAssistant for advanced metadata extraction
+- [x] OpenAIAssistant for advanced metadata extraction
 - [x] Manuscript narrative analysis
 - [x] Character voice and arc suggestions
 - [x] Theme identification with context
-- [x] Cost estimation utility
+- [x] Cost estimation utilities for both providers
+- [x] Provider selection via --provider flag
 - [x] Intelligence level: ⭐⭐⭐⭐⭐
 
 #### CLI Interface
@@ -166,12 +168,13 @@ The system has evolved from a simple journal processor to a sophisticated multi-
 - `dev/database/search.py` (404 lines) - Query parser and search engine
 - `dev/pipeline/search.py` (267 lines) - Search CLI
 
-**AI System (4 files, 1,276 lines):**
+**AI System (5 files, 1,600+ lines):**
 - `dev/ai/extractors.py` (302 lines) - spaCy NER, semantic theme extraction
 - `dev/ai/semantic_search.py` (385 lines) - Sentence transformers
 - `dev/ai/claude_assistant.py` (455 lines) - Claude API integration
-- `dev/ai/__init__.py` (56 lines) - Module initialization
-- `dev/pipeline/ai_assist.py` (448 lines) - AI CLI
+- `dev/ai/openai_assistant.py` (324 lines) - OpenAI API integration
+- `dev/ai/__init__.py` (77 lines) - Module initialization
+- `dev/pipeline/ai_assist.py` (530 lines) - AI CLI
 
 **Tests (2 files, 954 lines):**
 - `tests/integration/test_search.py` (473 lines)
@@ -215,7 +218,7 @@ The system has evolved from a simple journal processor to a sophisticated multi-
 ### Optional AI Dependencies
 - **Level 2:** spacy, en_core_web_sm model
 - **Level 3:** sentence-transformers, faiss-cpu (optional)
-- **Level 4:** anthropic, ANTHROPIC_API_KEY
+- **Level 4:** anthropic (Claude) or openai (GPT-4), with respective API keys
 
 ---
 

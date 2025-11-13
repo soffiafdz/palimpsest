@@ -130,7 +130,8 @@ palimpsest/
 │   ├── ai/                     # AI analysis (optional)
 │   │   ├── extractors.py      # spaCy NER, theme extraction
 │   │   ├── semantic_search.py # Sentence transformers
-│   │   └── claude_assistant.py # Claude API integration
+│   │   ├── claude_assistant.py # Claude API integration
+│   │   └── openai_assistant.py # OpenAI API integration
 │   ├── bin/                    # CLI wrappers (journal, metadb)
 │   ├── builders/               # PDF and text builders
 │   ├── core/                   # Logging, validation, paths
@@ -290,7 +291,7 @@ palimpsest ai cluster --num-clusters 10
 **AI Intelligence Levels:**
 - **Level 2**: spaCy NER (free) - Entity extraction, theme detection
 - **Level 3**: Sentence Transformers (free) - Semantic similarity search
-- **Level 4**: Claude API (paid) - Advanced analysis, manuscript curation
+- **Level 4**: LLM APIs (paid) - Advanced analysis, manuscript curation (Claude or OpenAI)
 
 See [Search & AI Documentation](#search--ai-features) for details.
 
@@ -436,7 +437,7 @@ palimpsest ai similar 2024-11-01 --limit 10
 palimpsest ai cluster --num-clusters 10
 ```
 
-#### Level 4: Claude API (Paid) ⭐⭐⭐⭐⭐
+#### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
 
 **Most accurate analysis:**
 - Advanced entity extraction
@@ -444,21 +445,28 @@ palimpsest ai cluster --num-clusters 10
 - Character voice and arc suggestions
 - Theme identification with context
 
-**Cost:** ~$0.007/entry (Haiku), ~$0.075/entry (Sonnet)
+**Two providers supported:**
 
-**Install:**
-```bash
-pip install anthropic
-export ANTHROPIC_API_KEY='your-key'
-```
+**Claude (Anthropic):**
+- Cost: ~$0.007/entry (Haiku), ~$0.075/entry (Sonnet)
+- Install: `pip install anthropic`
+- API Key: `export ANTHROPIC_API_KEY='your-key'`
+
+**OpenAI (GPT-4):**
+- Cost: ~$0.003/entry (GPT-4o mini), ~$0.025/entry (GPT-4o)
+- Install: `pip install openai`
+- API Key: `export OPENAI_API_KEY='your-key'`
 
 **Usage:**
 ```bash
-# Analyze with manuscript insights
+# Analyze with Claude (default)
 palimpsest ai analyze 2024-11-01 --level 4 --manuscript
 
-# Batch analyze (with cost estimation)
-palimpsest ai batch --level 4 --limit 10
+# Analyze with OpenAI
+palimpsest ai analyze 2024-11-01 --level 4 --provider openai --manuscript
+
+# Batch analyze with OpenAI
+palimpsest ai batch --level 4 --provider openai --limit 10
 ```
 
 **Check what's installed:**
@@ -595,10 +603,15 @@ pip install sentence-transformers
 pip install faiss-cpu  # optional, faster search
 ```
 
-**Level 4 (Claude API):**
+**Level 4 (LLM APIs):**
 ```bash
+# Claude (Anthropic)
 pip install anthropic
-# Set API key: export ANTHROPIC_API_KEY='your-key'
+export ANTHROPIC_API_KEY='your-key'
+
+# OpenAI (GPT-4)
+pip install openai
+export OPENAI_API_KEY='your-key'
 ```
 
 ---

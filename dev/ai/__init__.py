@@ -5,7 +5,7 @@ Provides progressive levels of AI intelligence:
 - Level 1: Keyword pattern matching (free, built-in)
 - Level 2: spaCy NER (free, ML-based entity extraction)
 - Level 3: Sentence Transformers (free, semantic search)
-- Level 4: Claude API (paid, most accurate)
+- Level 4: LLM APIs (paid, most accurate) - Claude or OpenAI
 """
 from dev.ai.extractors import (
     EntityExtractor,
@@ -28,7 +28,7 @@ try:
         ClaudeAssistant,
         ClaudeMetadata,
         ManuscriptAnalysis,
-        estimate_cost,
+        estimate_cost as estimate_claude_cost,
     )
     CLAUDE_AVAILABLE = True
 except ImportError:
@@ -36,7 +36,22 @@ except ImportError:
     ClaudeAssistant = None
     ClaudeMetadata = None
     ManuscriptAnalysis = None
-    estimate_cost = None
+    estimate_claude_cost = None
+
+try:
+    from dev.ai.openai_assistant import (
+        OpenAIAssistant,
+        OpenAIMetadata,
+        OpenAIManuscriptAnalysis,
+        estimate_cost as estimate_openai_cost,
+    )
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    OpenAIAssistant = None
+    OpenAIMetadata = None
+    OpenAIManuscriptAnalysis = None
+    estimate_openai_cost = None
 
 
 __all__ = [
@@ -49,8 +64,13 @@ __all__ = [
     'ClaudeAssistant',
     'ClaudeMetadata',
     'ManuscriptAnalysis',
-    'estimate_cost',
+    'OpenAIAssistant',
+    'OpenAIMetadata',
+    'OpenAIManuscriptAnalysis',
+    'estimate_claude_cost',
+    'estimate_openai_cost',
     'check_extractor_deps',
     'SEMANTIC_AVAILABLE',
     'CLAUDE_AVAILABLE',
+    'OPENAI_AVAILABLE',
 ]

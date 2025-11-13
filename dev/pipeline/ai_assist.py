@@ -133,59 +133,108 @@ def analyze_entry(args):
             print(f"⚠ Theme extraction failed: {e}")
             print()
 
-    # Level 4: Claude API
+    # Level 4: LLM API (Claude or OpenAI)
     if level >= 4:
-        try:
-            from dev.ai.claude_assistant import ClaudeAssistant
+        provider = args.provider.lower()
 
-            assistant = ClaudeAssistant()
+        # Read entry text
+        from dev.ai.extractors import EntityExtractor
+        extractor = EntityExtractor()
+        text = extractor._extract_entry_text(entry)
 
-            # Read entry text
-            from dev.ai.extractors import EntityExtractor
-            extractor = EntityExtractor()
-            text = extractor._extract_entry_text(entry)
+        if provider == 'claude':
+            try:
+                from dev.ai.claude_assistant import ClaudeAssistant
 
-            print("=== Claude Analysis ===")
+                assistant = ClaudeAssistant()
+                print("=== Claude Analysis ===")
 
-            # Extract metadata
-            metadata = assistant.extract_metadata(text)
+                # Extract metadata
+                metadata = assistant.extract_metadata(text)
 
-            print(f"\n📝 Summary: {metadata.summary}")
-            print(f"😊 Mood: {metadata.mood}")
+                print(f"\n📝 Summary: {metadata.summary}")
+                print(f"😊 Mood: {metadata.mood}")
 
-            if metadata.people:
-                print(f"\n👥 People: {', '.join(metadata.people)}")
+                if metadata.people:
+                    print(f"\n👥 People: {', '.join(metadata.people)}")
 
-            if metadata.themes:
-                print(f"\n🎨 Themes: {', '.join(metadata.themes)}")
+                if metadata.themes:
+                    print(f"\n🎨 Themes: {', '.join(metadata.themes)}")
 
-            if metadata.tags:
-                print(f"\n🏷️  Tags: {', '.join(metadata.tags)}")
+                if metadata.tags:
+                    print(f"\n🏷️  Tags: {', '.join(metadata.tags)}")
 
-            # Manuscript analysis
-            if args.manuscript:
-                print("\n=== Manuscript Analysis ===")
-                ms_analysis = assistant.analyze_for_manuscript(text)
+                # Manuscript analysis
+                if args.manuscript:
+                    print("\n=== Manuscript Analysis ===")
+                    ms_analysis = assistant.analyze_for_manuscript(text)
 
-                print(f"\n📖 Entry Type: {ms_analysis.entry_type}")
-                print(f"⭐ Narrative Potential: {ms_analysis.narrative_potential:.2f}")
+                    print(f"\n📖 Entry Type: {ms_analysis.entry_type}")
+                    print(f"⭐ Narrative Potential: {ms_analysis.narrative_potential:.2f}")
 
-                if ms_analysis.suggested_arc:
-                    print(f"\n🎭 Suggested Arc: {ms_analysis.suggested_arc}")
+                    if ms_analysis.suggested_arc:
+                        print(f"\n🎭 Suggested Arc: {ms_analysis.suggested_arc}")
 
-                if ms_analysis.adaptation_notes:
-                    print(f"\n✏️  Adaptation Notes:\n{ms_analysis.adaptation_notes}")
+                    if ms_analysis.adaptation_notes:
+                        print(f"\n✏️  Adaptation Notes:\n{ms_analysis.adaptation_notes}")
 
-            print()
+                print()
 
-        except ImportError:
-            print("⚠ Level 4 (Claude API) not available")
-            print("Install with: pip install anthropic")
-            print("Set API key: export ANTHROPIC_API_KEY='your-key'")
-            print()
-        except Exception as e:
-            print(f"⚠ Claude analysis failed: {e}")
-            print()
+            except ImportError:
+                print("⚠ Claude API not available")
+                print("Install with: pip install anthropic")
+                print("Set API key: export ANTHROPIC_API_KEY='your-key'")
+                print()
+            except Exception as e:
+                print(f"⚠ Claude analysis failed: {e}")
+                print()
+
+        elif provider == 'openai':
+            try:
+                from dev.ai.openai_assistant import OpenAIAssistant
+
+                assistant = OpenAIAssistant()
+                print("=== OpenAI Analysis ===")
+
+                # Extract metadata
+                metadata = assistant.extract_metadata(text)
+
+                print(f"\n📝 Summary: {metadata.summary}")
+                print(f"😊 Mood: {metadata.mood}")
+
+                if metadata.people:
+                    print(f"\n👥 People: {', '.join(metadata.people)}")
+
+                if metadata.themes:
+                    print(f"\n🎨 Themes: {', '.join(metadata.themes)}")
+
+                if metadata.tags:
+                    print(f"\n🏷️  Tags: {', '.join(metadata.tags)}")
+
+                # Manuscript analysis
+                if args.manuscript:
+                    print("\n=== Manuscript Analysis ===")
+                    ms_analysis = assistant.analyze_for_manuscript(text)
+
+                    print(f"\n📖 Entry Type: {ms_analysis.entry_type}")
+                    print(f"⭐ Narrative Potential: {ms_analysis.narrative_potential:.2f}")
+
+                    if ms_analysis.suggested_arc:
+                        print(f"\n🎭 Suggested Arc: {ms_analysis.suggested_arc}")
+
+                    if ms_analysis.adaptation_notes:
+                        print(f"\n✏️  Adaptation Notes:\n{ms_analysis.adaptation_notes}")
+
+                print()
+
+            except ImportError:
+                print("⚠ OpenAI API not available")
+                print("Install with: pip install openai")
+                print("Set API key: export OPENAI_API_KEY='your-key'")
+                print()
+            except Exception as e:
+                print(f"⚠ OpenAI analysis failed: {e}")
+                print()
 
 
 def batch_analyze(args):
@@ -367,28 +416,58 @@ def status_command(args):
         print("✗ Level 3: Semantic search - Not installed")
         print("  Install: pip install sentence-transformers")
 
-    # Level 4: Claude API
+    # Level 4: LLM APIs
+    print("\nLevel 4: LLM APIs (paid)")
+
+    # Claude API
     try:
         import anthropic
         import os
         if os.environ.get('ANTHROPIC_API_KEY'):
-            print("✓ Level 4: Claude API (paid, API key configured)")
+            print("  ✓ Claude API (API key configured)")
         else:
-            print("⚠ Level 4: Claude API - Package installed but no API key")
-            print("  Set key: export ANTHROPIC_API_KEY='your-key'")
+            print("  ⚠ Claude API - Package installed but no API key")
+            print("    Set key: export ANTHROPIC_API_KEY='your-key'")
     except ImportError:
-        print("✗ Level 4: Claude API - Not installed")
-        print("  Install: pip install anthropic")
+        print("  ✗ Claude API - Not installed")
+        print("    Install: pip install anthropic")
+
+    # OpenAI API
+    try:
+        import openai
+        import os
+        if os.environ.get('OPENAI_API_KEY'):
+            print("  ✓ OpenAI API (API key configured)")
+        else:
+            print("  ⚠ OpenAI API - Package installed but no API key")
+            print("    Set key: export OPENAI_API_KEY='your-key'")
+    except ImportError:
+        print("  ✗ OpenAI API - Not installed")
+        print("    Install: pip install openai")
 
     # Cost estimates
     print("\n--- Cost Estimates (Level 4) ---")
 
+    # Claude costs
     try:
-        from dev.ai.claude_assistant import estimate_cost
+        from dev.ai.claude_assistant import estimate_cost as estimate_claude
 
+        print("\nClaude:")
         for model in ['haiku', 'sonnet']:
-            costs = estimate_cost(100, model=model)
-            print(f"{model.title()}: ${costs['total_cost']:.2f} for 100 entries "
+            costs = estimate_claude(100, model=model)
+            print(f"  {model.title()}: ${costs['total_cost']:.2f} for 100 entries "
+                  f"(${costs['cost_per_entry']:.6f} per entry)")
+    except ImportError:
+        pass
+
+    # OpenAI costs
+    try:
+        from dev.ai.openai_assistant import estimate_cost as estimate_openai
+
+        print("\nOpenAI:")
+        for model in ['gpt-4o-mini', 'gpt-4o']:
+            costs = estimate_openai(100, model=model)
+            print(f"  {model}: ${costs['total_cost']:.2f} for 100 entries "
                   f"(${costs['cost_per_entry']:.6f} per entry)")
     except ImportError:
         pass
@@ -410,7 +489,13 @@ def main():
         type=int,
         choices=[1, 2, 3, 4],
         default=2,
-        help='AI level (1=keywords, 2=spaCy, 3=transformers, 4=Claude)'
+        help='AI level (1=keywords, 2=spaCy, 3=transformers, 4=LLM)'
+    )
+    analyze_parser.add_argument(
+        '--provider',
+        choices=['claude', 'openai'],
+        default='claude',
+        help='LLM provider for level 4 (default: claude)'
     )
     analyze_parser.add_argument(
         '--manuscript',
