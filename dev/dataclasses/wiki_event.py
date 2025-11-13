@@ -152,7 +152,7 @@ class Event(WikiEntity):
             manuscript_status=manuscript_status,
             manuscript_narrative_arc=manuscript_narrative_arc,
             manuscript_themes=manuscript_themes,
-            notes=None,  # Will be preserved from existing file if present
+            notes=db_event.notes,  # Export Event.notes from database
         )
 
     def to_wiki(self) -> List[str]:

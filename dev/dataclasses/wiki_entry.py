@@ -272,9 +272,10 @@ class Entry(WikiEntity):
         if hasattr(db_entry, "manuscript") and db_entry.manuscript:
             ms = db_entry.manuscript
             manuscript_status = ms.status.value if hasattr(ms, "status") and ms.status else None
-            manuscript_type = ms.entry_type.value if hasattr(ms, "entry_type") and ms.entry_type else None
-            manuscript_characters = ms.character_notes
-            manuscript_narrative_arc = ms.narrative_arc
+            # TODO: Add entry_type and character_notes fields to ManuscriptEntry model for manuscript subwiki
+            manuscript_type = None  # ms.entry_type.value if hasattr(ms, "entry_type") else None
+            manuscript_characters = None  # ms.character_notes if hasattr(ms, "character_notes") else None
+            manuscript_narrative_arc = ms.narrative_arc if hasattr(ms, "narrative_arc") else None
 
         return cls(
             path=path,
@@ -301,7 +302,7 @@ class Entry(WikiEntity):
             manuscript_type=manuscript_type,
             manuscript_characters=manuscript_characters,
             manuscript_narrative_arc=manuscript_narrative_arc,
-            notes=None,  # Will be preserved from existing file if present
+            notes=db_entry.notes,  # Export Entry.notes from database
         )
 
     def to_wiki(self) -> List[str]:

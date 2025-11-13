@@ -287,14 +287,8 @@ def import_entry(
 
             # Update editable fields
             updated = False
-            if wiki_entry.notes and wiki_entry.notes != db_entry.manuscript.notes if db_entry.manuscript else True:
-                if not db_entry.manuscript:
-                    from dev.database.models_manuscript import ManuscriptEntry
-
-                    db_entry.manuscript = ManuscriptEntry(entry=db_entry)
-                    session.add(db_entry.manuscript)
-
-                db_entry.manuscript.notes = wiki_entry.notes
+            if wiki_entry.notes and wiki_entry.notes != db_entry.notes:
+                db_entry.notes = wiki_entry.notes
                 updated = True
 
             if updated:
@@ -357,14 +351,8 @@ def import_event(
 
             # Update editable fields
             updated = False
-            if wiki_event.notes and wiki_event.notes != db_event.manuscript.notes if db_event.manuscript else True:
-                if not db_event.manuscript:
-                    from dev.database.models_manuscript import ManuscriptEvent
-
-                    db_event.manuscript = ManuscriptEvent(event=db_event)
-                    session.add(db_event.manuscript)
-
-                db_event.manuscript.notes = wiki_event.notes
+            if wiki_event.notes and wiki_event.notes != db_event.notes:
+                db_event.notes = wiki_event.notes
                 updated = True
 
             if updated:
