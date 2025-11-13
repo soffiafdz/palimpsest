@@ -1,72 +1,198 @@
 #!/usr/bin/env python3
 """
-poem.py
+wiki_poem.py
 -------------------
 
-Defines the Poem class.
-To track original poems written during or alongside the journal.
-Each poem has a finalized version. It may have been quoted or referenced in
-prior entries, and can optionally link to its initial draft or source moments.
-
-Poems can be related to-, but are distinct from References
-in that they represent self-contained authored works,
-often stored in dedicated wiki pages.
+Defines the WikiPoem class for tracking original poems written during or alongside the journal.
+Each poem has a title and potentially multiple versions/revisions.
+Poems can be referenced in journal entries and stored in dedicated wiki pages.
 """
+from __future__ import annotations
+
+# --- Standard Library ---
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List
-import datetime
+from datetime import date
+from typing import Any, Dict, List, Optional
 
+# --- Local ---
 from .wiki_entity import WikiEntity
+from dev.utils.wiki import relative_link
+
 
 @dataclass
 class Poem(WikiEntity):
     """
-    Represents a finalized poem authored within or adjacent to the journal.
+    Represents a poem with potentially multiple versions.
 
-    Attributes:
-        path: Path to the poem's wiki file.
-        title: Title of the poem.
-        body: Final text of the poem.
-        date_written: Date the poem was completed or solidified.
-        date_first_referenced: Date the poem first appeared in draft or partial form.
-        draft_link: Link to a journal entry or draft version, if applicable.
-        related_refs: List of dates or links where this poem was referenced or quoted.
-        notes: Commentary on influences, revision history, or contextual notes.
+    Fields:
+    - path:        Path to poem's vimwiki file (wiki/poems/<title>.md)
+    - title:       Title of the poem
+    - versions:    List of poem versions with metadata
+        - revision_date: Date of this version
+        - content:       Poem text
+        - entry_date:    Date of entry where it appears (if any)
+        - entry_link:    Link to entry
+        - notes:         Notes about this version
+    - notes:       Optional editorial notes about the poem overall
+
+    Poems track creative writing within the journal system.
     """
-    # TODO: review these
-    path: Path
-    title: str
-    body: str
-    date_written: datetime.date
-    date_first_referenced: Optional[datetime.date] = None
-    draft_link: Optional[str] = None
-    related_refs: List[str] = field(default_factory=list)
-    notes: Optional[str] = None
+    path:     Path
+    title:    str
+    versions: List[Dict[str, Any]] = field(default_factory=list)
+    notes:    Optional[str]        = None
 
-    # TODO: Check/change this
+    # ---- Public constructors ----
+    @classmethod
+    def from_file(cls, path: Path) -> Optional["Poem"]:
+        """Parse a poems/poem.md file to create a Poem object."""
+        # TODO: Implement parsing from existing wiki files (Phase 3)
+        raise NotImplementedError("Poem.from_file() not yet implemented")
+
+    @classmethod
+    def from_database(
+        cls,
+        db_poem: Any,  # models.Poem type
+        wiki_dir: Path,
+        journal_dir: Path,
+    ) -> "Poem":
+        """
+        Construct a Poem wiki entity from a database Poem model.
+
+        Args:
+            db_poem: SQLAlchemy Poem ORM instance with versions loaded
+            wiki_dir: Base vimwiki directory
+            journal_dir: Base journal directory
+
+        Returns:
+            Poem wiki entity ready for serialization
+
+        Notes:
+            - Generates version list from db_poem.versions
+            - Sorts versions chronologically
+            - Links to journal entries where poems appear
+            - Creates relative links from wiki/poems/{title}.md to entries
+        """
+        # Determine output path
+        poem_filename = db_poem.title.lower().replace(" ", "_").replace("/", "-") + ".md"
+        path = wiki_dir / "poems" / poem_filename
+
+        # Get notes from existing file if it exists
+        existing_notes = None
+
+        if path.exists():
+            try:
+                existing = cls.from_file(path)
+                if existing:
+                    existing_notes = existing.notes
+            except NotImplementedError:
+                pass
+            except Exception as e:
+                sys.stderr.write(f"Warning: Could not parse existing {path}: {e}\n")
+
+        # Build versions list from database
+        versions: List[Dict[str, Any]] = []
+
+        for poem_version in sorted(db_poem.versions, key=lambda v: v.revision_date or date.min):
+            version_data = {
+                "revision_date": poem_version.revision_date,
+                "content": poem_version.content,
+                "entry_date": None,
+                "entry_link": None,
+                "notes": poem_version.notes,
+            }
+
+            # Add entry link if this version is linked to an entry
+            if poem_version.entry and poem_version.entry.file_path:
+                entry_path = Path(poem_version.entry.file_path)
+                link = relative_link(path, entry_path)
+                version_data["entry_date"] = poem_version.entry.date
+                version_data["entry_link"] = link
+
+            versions.append(version_data)
+
+        # Use existing notes if available
+        notes = existing_notes if existing_notes else None
+
+        return cls(
+            path=path,
+            title=db_poem.title,
+            versions=versions,
+            notes=notes,
+        )
+
+    # ---- Serialization ----
     def to_wiki(self) -> List[str]:
+        """Generate vimwiki markdown for this poem."""
         lines = [
-            f"# {self.title}",
+            "# Palimpsest — Poems",
             "",
-            f"**Date written**: {self.date_written.isoformat()}",
+            f"## {self.title}",
+            "",
         ]
-        if self.date_first_referenced:
-            lines.append(f"**First draft referenced**: [{self.date_first_referenced}](../journal/md/{self.date_first_referenced.year}/{self.date_first_referenced.isoformat()}.md)")
-        if self.draft_link:
-            lines.append(f"**Draft link**: {self.draft_link}")
-        if self.related_refs:
-            joined = ", ".join(f"[{d}](../journal/md/{d[:4]}/{d}.md)" for d in self.related_refs)
-            lines.append(f"**Related entries**: {joined}")
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-        lines.append(self.body.strip())
-        lines.append("")
-        if self.notes:
-            lines.append("---\n")
-            lines.append("*Notes*:")
-            lines.append(self.notes.strip())
+
+        # Version history
+        if len(self.versions) > 1:
+            lines.append(f"### Version History ({len(self.versions)} versions)")
             lines.append("")
+
+        for i, version in enumerate(self.versions, 1):
+            # Version header
+            if len(self.versions) > 1:
+                lines.append(f"#### Version {i}")
+                if version.get("revision_date"):
+                    lines.append(f"*Revision date: {version['revision_date']}*")
+                if version.get("entry_date") and version.get("entry_link"):
+                    entry_date = version["entry_date"]
+                    lines.append(f"*From entry: [[{version['entry_link']}|{entry_date}]]*")
+                lines.append("")
+            else:
+                # Single version - show metadata inline
+                if version.get("revision_date"):
+                    lines.append(f"**Date:** {version['revision_date']}")
+                if version.get("entry_date") and version.get("entry_link"):
+                    entry_date = version["entry_date"]
+                    lines.append(f"**Entry:** [[{version['entry_link']}|{entry_date}]]")
+                lines.append("")
+
+            # Poem content
+            lines.append("```")
+            lines.append(version["content"].strip())
+            lines.append("```")
+            lines.append("")
+
+            # Version notes
+            if version.get("notes"):
+                lines.append(f"*Note: {version['notes']}*")
+                lines.append("")
+
+        # Overall notes
+        if self.notes:
+            lines.append("### Notes")
+            lines.append(self.notes)
+            lines.append("")
+
         return lines
 
+    # ---- Properties ----
+    @property
+    def version_count(self) -> int:
+        """Number of versions of this poem."""
+        return len(self.versions)
+
+    @property
+    def latest_version(self) -> Optional[Dict[str, Any]]:
+        """Get the most recent version."""
+        if not self.versions:
+            return None
+        return max(self.versions, key=lambda v: v.get("revision_date") or date.min)
+
+    @property
+    def first_written(self) -> Optional[date]:
+        """Date of first version."""
+        if not self.versions:
+            return None
+        dates = [v.get("revision_date") for v in self.versions if v.get("revision_date")]
+        return min(dates) if dates else None
