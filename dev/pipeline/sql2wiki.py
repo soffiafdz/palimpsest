@@ -46,7 +46,17 @@ from dev.dataclasses.wiki_theme import Theme as WikiTheme
 from dev.dataclasses.wiki_tag import Tag as WikiTag
 from dev.dataclasses.wiki_poem import Poem as WikiPoem
 from dev.dataclasses.wiki_reference import Reference as WikiReference
-from dev.database.models import Person as DBPerson, Entry, Tag as DBTag, Poem as DBPoem, ReferenceSource as DBReferenceSource
+from dev.dataclasses.wiki_entry import Entry as WikiEntry
+from dev.database.models import (
+    Person as DBPerson,
+    Entry as DBEntry,
+    Tag as DBTag,
+    Poem as DBPoem,
+    ReferenceSource as DBReferenceSource,
+    Location as DBLocation,
+    City as DBCity,
+    Event as DBEvent,
+)
 from dev.database.models_manuscript import Theme as DBTheme
 from dev.database.manager import PalimpsestDB
 
@@ -1275,6 +1285,285 @@ def export_references(
     return stats
 
 
+# ===== ENTRIES EXPORT =====
+
+def export_entry(
+    db_entry: DBEntry,
+    wiki_dir: Path,
+    journal_dir: Path,
+    prev_entry: Optional[DBEntry] = None,
+    next_entry: Optional[DBEntry] = None,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export a single entry from database to wiki page.
+
+    Args:
+        db_entry: Database Entry model with relationships loaded
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        prev_entry: Previous entry (chronological) for navigation
+        next_entry: Next entry (chronological) for navigation
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug(f"Exporting entry: {db_entry.date}")
+
+    # Create WikiEntry from database
+    try:
+        wiki_entry = WikiEntry.from_database(
+            db_entry, wiki_dir, journal_dir, prev_entry, next_entry
+        )
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "create_wiki_entry",
+                "date": db_entry.date
+            })
+        raise Sql2WikiError(f"Failed to create WikiEntry: {e}") from e
+
+    # Generate markdown
+    try:
+        lines = wiki_entry.to_wiki()
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {
+                "operation": "generate_wiki_markdown",
+                "date": db_entry.date
+            })
+        raise Sql2WikiError(f"Failed to generate wiki markdown: {e}") from e
+
+    # Write to file
+    file_existed = wiki_entry.path.exists()
+
+    if force or _write_if_changed(wiki_entry.path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"entry_{status}",
+                {"date": db_entry.date, "file": str(wiki_entry.path)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug(f"Entry unchanged: {db_entry.date}")
+        return "skipped"
+
+
+def build_entries_index(
+    entries: List[WikiEntry],
+    wiki_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Build the main entries index page (vimwiki/entries.md).
+
+    Lists entries chronologically by year and month.
+
+    Args:
+        entries: List of WikiEntry objects
+        wiki_dir: Vimwiki root directory
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    if logger:
+        logger.log_debug("Building entries index")
+
+    # Sort by date (descending - most recent first)
+    sorted_entries = sorted(entries, key=lambda e: e.date, reverse=True)
+
+    # Build index lines
+    lines = [
+        "# Palimpsest — Entries",
+        "",
+        "Chronological index of all journal entries.",
+        "",
+    ]
+
+    # Group by year
+    from itertools import groupby
+
+    for year, year_entries in groupby(sorted_entries, key=lambda e: e.date.year):
+        year_entries_list = list(year_entries)
+        lines.extend([
+            f"## {year}",
+            "",
+            f"**Total entries:** {len(year_entries_list)}",
+            "",
+        ])
+
+        # Group by month within year
+        for month, month_entries in groupby(year_entries_list, key=lambda e: e.date.month):
+            month_entries_list = list(month_entries)
+            month_name = month_entries_list[0].date.strftime("%B")
+
+            lines.extend([f"### {month_name}", ""])
+
+            for entry in month_entries_list:
+                rel_path = entry.path.relative_to(wiki_dir)
+                word_count_str = f"{entry.word_count} words" if entry.word_count else "no content"
+
+                # Add entity count indicator
+                entity_indicator = ""
+                if entry.entity_count > 0:
+                    entity_indicator = f" ({entry.entity_count} entities)"
+
+                lines.append(
+                    f"- [[{rel_path}|{entry.date.isoformat()}]] "
+                    f"— {word_count_str}{entity_indicator}"
+                )
+
+            lines.append("")
+
+    # Add statistics
+    total_words = sum(e.word_count for e in sorted_entries)
+    total_reading_time = sum(e.reading_time for e in sorted_entries)
+
+    lines.extend([
+        "---",
+        "",
+        "## Statistics",
+        "",
+        f"- Total entries: {len(sorted_entries)}",
+        f"- Total words: {total_words:,}",
+        f"- Total reading time: {total_reading_time:.1f} minutes ({total_reading_time/60:.1f} hours)",
+        f"- Average words per entry: {total_words/len(sorted_entries):.0f}" if sorted_entries else "- Average words per entry: 0",
+    ])
+
+    # Write to file
+    index_path = wiki_dir / "entries.md"
+    file_existed = index_path.exists()
+
+    if force or _write_if_changed(index_path, lines):
+        status = "updated" if file_existed else "created"
+        if logger:
+            logger.log_operation(
+                f"entries_index_{status}",
+                {"file": str(index_path), "entries_count": len(sorted_entries)}
+            )
+        return status
+    else:
+        if logger:
+            logger.log_debug("Entries index unchanged")
+        return "skipped"
+
+
+def export_entries(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ConversionStats:
+    """
+    Export all entries from database to wiki pages.
+
+    Creates:
+    - vimwiki/entries.md (index)
+    - vimwiki/entries/YYYY/YYYY-MM-DD.md (individual pages)
+
+    Args:
+        db: Database manager
+        wiki_dir: Vimwiki root directory
+        journal_dir: Journal entries directory
+        force: Force write all files
+        logger: Optional logger
+
+    Returns:
+        ConversionStats with results
+    """
+    stats = ConversionStats()
+
+    if logger:
+        logger.log_operation("export_entries_start", {"wiki_dir": str(wiki_dir)})
+
+    with db.session_scope() as session:
+        # Query all entries with eager loading of ALL relationships
+        query = (
+            select(DBEntry)
+            .options(
+                joinedload(DBEntry.dates),
+                joinedload(DBEntry.cities),
+                joinedload(DBEntry.locations).joinedload(DBLocation.city),
+                joinedload(DBEntry.people),
+                joinedload(DBEntry.events),
+                joinedload(DBEntry.tags),
+                joinedload(DBEntry.poems),
+                joinedload(DBEntry.references),
+                joinedload(DBEntry.manuscript),
+                joinedload(DBEntry.related_entries),
+            )
+            .order_by(DBEntry.date)  # Chronological order for prev/next
+        )
+
+        db_entries = session.execute(query).scalars().unique().all()
+
+        if not db_entries:
+            if logger:
+                logger.log_warning("No entries found in database")
+            return stats
+
+        if logger:
+            logger.log_info(f"Found {len(db_entries)} entries in database")
+
+        # Export each entry with prev/next navigation
+        wiki_entries: List[WikiEntry] = []
+        for i, db_entry in enumerate(db_entries):
+            stats.files_processed += 1
+
+            # Determine prev/next entries
+            prev_entry = db_entries[i - 1] if i > 0 else None
+            next_entry = db_entries[i + 1] if i < len(db_entries) - 1 else None
+
+            try:
+                status = export_entry(
+                    db_entry, wiki_dir, journal_dir, prev_entry, next_entry, force, logger
+                )
+
+                if status == "created":
+                    stats.entries_created += 1
+                elif status == "updated":
+                    stats.entries_updated += 1
+                elif status == "skipped":
+                    stats.entries_skipped += 1
+
+                # Create WikiEntry for index building
+                wiki_entry = WikiEntry.from_database(
+                    db_entry, wiki_dir, journal_dir, prev_entry, next_entry
+                )
+                wiki_entries.append(wiki_entry)
+
+            except Exception as e:
+                stats.errors += 1
+                if logger:
+                    logger.log_error(e, {
+                        "operation": "export_entry",
+                        "date": db_entry.date
+                    })
+
+        # Build index
+        try:
+            index_status = build_entries_index(wiki_entries, wiki_dir, force, logger)
+        except Exception as e:
+            stats.errors += 1
+            if logger:
+                logger.log_error(e, {"operation": "build_entries_index"})
+
+    if logger:
+        logger.log_operation("export_entries_complete", {"stats": stats.summary()})
+
+    return stats
+
+
 # ----- CLI -----
 @click.group()
 @click.option(
@@ -1333,7 +1622,7 @@ def cli(
 @cli.command()
 @click.argument(
     "entity_type",
-    type=click.Choice(["people", "themes", "tags", "poems", "references", "all"]),
+    type=click.Choice(["entries", "people", "themes", "tags", "poems", "references", "all"]),
 )
 @click.option("-f", "--force", is_flag=True, help="Force regenerate all files")
 @click.pass_context
@@ -1345,7 +1634,21 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
     journal_dir: Path = ctx.obj["journal_dir"]
 
     try:
-        if entity_type == "people":
+        if entity_type == "entries":
+            click.echo(f"📤 Exporting entries to {wiki_dir}/entries/")
+
+            stats = export_entries(db, wiki_dir, journal_dir, force, logger)
+
+            click.echo("\n✅ Entries export complete:")
+            click.echo(f"  Files processed: {stats.files_processed}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Skipped: {stats.entries_skipped}")
+            if stats.errors > 0:
+                click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  Duration: {stats.duration():.2f}s")
+
+        elif entity_type == "people":
             click.echo(f"📤 Exporting people to {wiki_dir}/people/")
 
             stats = export_people(db, wiki_dir, journal_dir, force, logger)
@@ -1419,6 +1722,7 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
             click.echo(f"📤 Exporting all entities to {wiki_dir}/")
 
             # Export all entity types
+            entries_stats = export_entries(db, wiki_dir, journal_dir, force, logger)
             people_stats = export_people(db, wiki_dir, journal_dir, force, logger)
             themes_stats = export_themes(db, wiki_dir, journal_dir, force, logger)
             tags_stats = export_tags(db, wiki_dir, journal_dir, force, logger)
@@ -1426,7 +1730,7 @@ def export(ctx: click.Context, entity_type: str, force: bool) -> None:
             references_stats = export_references(db, wiki_dir, journal_dir, force, logger)
 
             # Combined stats
-            all_stats = [people_stats, themes_stats, tags_stats, poems_stats, references_stats]
+            all_stats = [entries_stats, people_stats, themes_stats, tags_stats, poems_stats, references_stats]
             total_files = sum(s.files_processed for s in all_stats)
             total_created = sum(s.entries_created for s in all_stats)
             total_updated = sum(s.entries_updated for s in all_stats)
