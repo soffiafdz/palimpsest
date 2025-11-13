@@ -14,13 +14,12 @@ dev/database/managers/
 ├── tag_manager.py           # ✅ COMPLETE - Simple M2M relationships
 ├── event_manager.py         # ✅ COMPLETE - Soft delete + M2M relationships
 ├── date_manager.py          # ✅ COMPLETE - M2M with entries/locations/people
-├── location_manager.py      # 🔄 TODO - City + Location (parent-child)
-├── reference_manager.py     # 🔄 TODO - ReferenceSource + Reference (parent-child)
-├── poem_manager.py          # 🔄 TODO - Poem + PoemVersion (versioning)
-├── person_manager.py        # 🔄 TODO - Person + Alias (name disambiguation)
-├── manuscript_manager.py    # 🔄 TODO - Multiple manuscript entities
-├── entry_relationship_handler.py  # 🔄 TODO - Complex entry relationships
-└── entry_manager.py         # 🔄 TODO - Entry CRUD (most complex)
+├── location_manager.py      # ✅ COMPLETE - City + Location (parent-child)
+├── reference_manager.py     # ✅ COMPLETE - ReferenceSource + Reference (parent-child)
+├── poem_manager.py          # ✅ COMPLETE - Poem + PoemVersion (versioning)
+├── person_manager.py        # ✅ COMPLETE - Person + Alias (name disambiguation)
+├── manuscript_manager.py    # ✅ COMPLETE - Multiple manuscript entities
+└── entry_manager.py         # ✅ COMPLETE - Entry CRUD (most complex)
 ```
 
 ### BaseManager Pattern
@@ -184,12 +183,12 @@ See: `date_manager.py:1-506`
 
 ## Migration Strategy
 
-### Phase 1: Create Managers (Current)
+### Phase 1: Create Managers ✅ COMPLETE
 1. Create `BaseManager` with common utilities ✅
-2. Implement individual entity managers following patterns ✅ (3/9 complete)
-3. Test managers independently
+2. Implement individual entity managers following patterns ✅ (9/9 complete)
+3. Test managers independently ✅
 
-### Phase 2: Integrate with PalimpsestDB (TODO)
+### Phase 2: Integrate with PalimpsestDB ✅ COMPLETE
 ```python
 class PalimpsestDB:
     """Slim database manager that delegates to entity managers."""
@@ -212,7 +211,7 @@ class PalimpsestDB:
         self.entries = EntryManager(session, self.logger)
 ```
 
-### Phase 3: Update Calling Code (TODO)
+### Phase 3: Update Calling Code ✅ COMPLETE
 **Before:**
 ```python
 db = PalimpsestDB(...)
@@ -226,68 +225,50 @@ db = PalimpsestDB(...)
 person = db.people.create(metadata)
 ```
 
-### Phase 4: Backward Compatibility (TODO)
-Add compatibility shims during transition:
-```python
-def create_person(self, session, metadata):
-    """Deprecated: Use db.people.create() instead."""
-    import warnings
-    warnings.warn("Use db.people.create() instead", DeprecationWarning)
-    return self.people.create(metadata)
-```
+### Phase 4: Remove Legacy Code ✅ COMPLETE
+Legacy backward compatibility methods have been removed. The new modular
+API (db.entries, db.people, db.events, etc.) is now the standard interface.
 
-## Remaining Work
+## Completed Work
 
-### TODO: LocationManager
+### ✅ LocationManager
 - Manages both `City` and `Location` entities
 - Parent-child relationship (Location belongs to City)
 - M2M with entries and mentioned dates
 - Reference implementation in `manager.py:2221-2465`
 
-### TODO: ReferenceManager
+### ✅ ReferenceManager
 - Manages `ReferenceSource` and `Reference` entities
 - Parent-child relationship (Reference belongs to ReferenceSource)
 - Handles `ReferenceMode` and `ReferenceType` enums
-- Reference implementation in `manager.py:2606-2873`
+- Implementation: `reference_manager.py`
 
-### TODO: PoemManager
+### ✅ PoemManager
 - Manages `Poem` and `PoemVersion` entities
 - Parent-child relationship (PoemVersion belongs to Poem)
 - Version deduplication via hash
-- Reference implementation in `manager.py:2606-2997`
+- Implementation: `poem_manager.py`
 
-### TODO: PersonManager
+### ✅ PersonManager
 - Manages `Person` and `Alias` entities (one-to-many)
 - Complex: name disambiguation with `name_fellow` field
 - Soft delete support
 - M2M with events, entries, and mentioned dates
-- Reference implementation in `manager.py:1699-2220`
+- Implementation: `person_manager.py`
 
-### TODO: ManuscriptManager
+### ✅ ManuscriptManager
 - Manages multiple entities: `ManuscriptEntry`, `ManuscriptPerson`, `ManuscriptEvent`
 - Manages `Arc` and `Theme` entities
 - Complex one-to-one relationships with core entities
-- Reference implementation in `manager.py:2998-3160`
+- Implementation: `manuscript_manager.py`
 
-### TODO: EntryRelationshipHandler
-- Handles complex entry relationship updates
-- Methods to extract from `manager.py`:
-  - `_update_entry_relationships()` - Main coordinator
-  - `_process_entry_aliases()` - Alias resolution
-  - `_process_mentioned_dates()` - Date processing
-  - `_update_entry_locations()` - Location linking
-  - `_update_entry_tags()` - Tag linking
-  - `_process_related_entries()` - Entry cross-references
-  - `_process_references()` - Reference creation
-  - `_process_poems()` - Poem version creation
-
-### TODO: EntryManager
-- Most complex manager
-- Core entry CRUD operations
-- Delegates relationship updates to `EntryRelationshipHandler`
+### ✅ EntryManager
+- Most complex manager - handles all entry CRUD operations
+- Manages entry relationships via integrated methods
 - Bulk operations support
 - File hash management
-- Reference implementation in `manager.py:619-1143, 1208-1400`
+- String resolution for YAML imports (people, events, cities as strings)
+- Implementation: `entry_manager.py`
 
 ## Testing Strategy
 

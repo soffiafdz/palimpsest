@@ -58,7 +58,6 @@ from dev.database.decorators import (
     validate_metadata,
 )
 from dev.database.models import Person, Alias, Entry, Event, MentionedDate, RelationType
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 
@@ -314,6 +313,51 @@ class PersonManager(BaseManager):
         return person
 
     @handle_db_errors
+    @log_database_operation("get_or_create_person")
+    def get_or_create(self, person_name: str, full_name: Optional[str] = None) -> Person:
+        """
+        Get existing person or create new one if not found.
+
+        This is a convenience method for use when processing YAML metadata that
+        contains person names as strings. It handles name disambiguation and
+        creates persons with minimal metadata.
+
+        Args:
+            person_name: Primary name to search for or create
+            full_name: Optional full name (required if name_fellows exist)
+
+        Returns:
+            Existing or newly created Person object
+
+        Raises:
+            ValidationError: If name is ambiguous and full_name not provided
+        """
+        person_name = DataValidator.normalize_string(person_name)
+        if not person_name:
+            raise ValidationError("Person name cannot be empty")
+
+        # Try to get existing person
+        try:
+            person = self.get(person_name=person_name)
+            if person:
+                return person
+        except ValidationError as e:
+            # Multiple people with same name - need full_name
+            if full_name:
+                person = self.get(person_full_name=full_name)
+                if person:
+                    return person
+            else:
+                raise  # Re-raise ValidationError about ambiguity
+
+        # Person doesn't exist - create it
+        metadata = {"name": person_name}
+        if full_name:
+            metadata["full_name"] = full_name
+
+        return self.create(metadata)
+
+    @handle_db_errors
     @log_database_operation("update_person")
     def update(self, person: Person, metadata: Dict[str, Any]) -> Person:
         """
@@ -503,15 +547,33 @@ class PersonManager(BaseManager):
 
         for rel_name, meta_key, model_class in many_to_many_configs:
             if meta_key in metadata:
-                RelationshipManager.update_many_to_many(
-                    session=self.session,
-                    parent_obj=person,
-                    relationship_name=rel_name,
-                    items=metadata[meta_key],
-                    model_class=model_class,
-                    incremental=incremental,
-                    remove_items=metadata.get(f"remove_{meta_key}", []),
-                )
+                items = metadata[meta_key]
+                remove_items = metadata.get(f"remove_{meta_key}", [])
+
+                # Get the collection
+                collection = getattr(person, rel_name)
+
+                # Replacement mode: clear and add all
+                if not incremental:
+                    collection.clear()
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+                else:
+                    # Incremental mode: add new items
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+
+                    # Remove specified items
+                    for item in remove_items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item in collection:
+                            collection.remove(resolved_item)
+
+                self.session.flush()
 
     def _update_person_aliases(
         self,

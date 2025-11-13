@@ -157,8 +157,8 @@ def process_entry_file(
 
     Database Operations:
     - Uses session_scope() for transaction management
-    - Create: db.create_entry() handles ORM object creation
-    - Update: db.update_entry() manages relationship changes
+    - Create: db.entries.create() handles ORM object creation
+    - Update: db.entries.update() manages relationship changes
     - Automatic rollback on exception
     - File hash stored in Entry.file_hash field
 
@@ -226,7 +226,7 @@ def process_entry_file(
 
         # Check if entry exists
         with db.session_scope() as session:
-            existing = db.get_entry(session, md_entry.date)
+            existing = db.entries.get(entry_date=md_entry.date)
 
             if existing:
                 if fs.should_skip_file(file_path, existing.file_hash, force_update):
@@ -236,7 +236,7 @@ def process_entry_file(
 
                 # Update existing entry
                 try:
-                    db.update_entry(session, existing, db_metadata)
+                    db.entries.update(existing, db_metadata)
                     if logger:
                         logger.log_operation(
                             "entry_updated",
@@ -252,7 +252,7 @@ def process_entry_file(
             else:
                 # Create new entry
                 try:
-                    db.create_entry(session, db_metadata)
+                    db.entries.create(db_metadata)
                     if logger:
                         logger.log_operation(
                             "entry_created",
@@ -394,7 +394,7 @@ def sync_directory(
             for entry in all_entries:
                 if entry.file_path and entry.file_path not in file_paths:
                     try:
-                        db.delete_entry(session, entry)
+                        db.entries.delete(entry)
                         stats.entries_skipped += 1  # Reuse as "deleted" counter
                         if logger:
                             logger.log_operation(

@@ -459,7 +459,7 @@ def show(ctx, entry_date, full):
                 if summary["tags"]:
                     click.echo(f"\n🏷️  Tags: {summary['tags']}")
             else:
-                entry = db.get_entry_for_display(session, entry_date)
+                entry = db.entries.get_for_display(entry_date)
                 if not entry:
                     click.echo(f"❌ No entry found for {entry_date}", err=True)
                     sys.exit(1)

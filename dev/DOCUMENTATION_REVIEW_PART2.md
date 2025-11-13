@@ -70,8 +70,8 @@ No critical issues found. Documentation is comprehensive, accurate, and producti
 
 ---
 
-#### md2wiki.py, md2json.py ✅ **GOOD**
-**Module Docstrings:** 10-15 lines each
+#### md2wiki.py ✅ **GOOD**
+**Module Docstring:** ~15 lines
 
 **Strengths:**
 - Purpose clearly stated
@@ -84,6 +84,8 @@ No critical issues found. Documentation is comprehensive, accurate, and producti
 
 **Accuracy:** 100%
 **Completeness:** 80%
+
+**Note:** md2json.py has been removed (deprecated). JSON export functionality is now handled by `metadb export-json` command from the database ExportManager.
 
 ---
 

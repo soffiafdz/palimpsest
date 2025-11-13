@@ -50,7 +50,6 @@ from dev.database.decorators import (
     validate_metadata,
 )
 from dev.database.models import City, Location, Entry, MentionedDate
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 
@@ -296,27 +295,61 @@ class LocationManager(BaseManager):
         """Update relationships for a city."""
         # Many-to-many with entries
         if "entries" in metadata:
-            RelationshipManager.update_many_to_many(
-                session=self.session,
-                parent_obj=city,
-                relationship_name="entries",
-                items=metadata["entries"],
-                model_class=Entry,
-                incremental=incremental,
-                remove_items=metadata.get("remove_entries", []),
-            )
+            items = metadata["entries"]
+            remove_items = metadata.get("remove_entries", [])
+            collection = city.entries
+
+            # Replacement mode: clear and add all
+            if not incremental:
+                collection.clear()
+                for item in items:
+                    resolved_item = self._resolve_object(item, Entry)
+                    if resolved_item and resolved_item not in collection:
+                        collection.append(resolved_item)
+            else:
+                # Incremental mode: add new items
+                for item in items:
+                    resolved_item = self._resolve_object(item, Entry)
+                    if resolved_item and resolved_item not in collection:
+                        collection.append(resolved_item)
+
+                # Remove specified items
+                for item in remove_items:
+                    resolved_item = self._resolve_object(item, Entry)
+                    if resolved_item and resolved_item in collection:
+                        collection.remove(resolved_item)
+
+            self.session.flush()
 
         # One-to-many with locations (handled differently)
         if "locations" in metadata:
-            RelationshipManager.update_one_to_many(
-                session=self.session,
-                parent_obj=city,
-                items=metadata["locations"],
-                model_class=Location,
-                foreign_key_attr="city_id",
-                incremental=incremental,
-                remove_items=metadata.get("remove_locations", []),
-            )
+            items = metadata["locations"]
+            remove_items = metadata.get("remove_locations", [])
+
+            # Get existing IDs for comparison
+            existing_ids = {loc.id for loc in city.locations}
+
+            # Replacement mode: clear and add all
+            if not incremental:
+                city.locations.clear()
+                for item in items:
+                    resolved_item = self._resolve_object(item, Location)
+                    if resolved_item:
+                        city.locations.append(resolved_item)
+            else:
+                # Incremental mode: add new items
+                for item in items:
+                    resolved_item = self._resolve_object(item, Location)
+                    if resolved_item and resolved_item.id not in existing_ids:
+                        city.locations.append(resolved_item)
+
+                # Remove specified items
+                for item in remove_items:
+                    resolved_item = self._resolve_object(item, Location)
+                    if resolved_item and resolved_item.id in existing_ids:
+                        city.locations.remove(resolved_item)
+
+            self.session.flush()
 
     # =========================================================================
     # LOCATION OPERATIONS
@@ -579,15 +612,33 @@ class LocationManager(BaseManager):
 
         for rel_name, meta_key, model_class in many_to_many_configs:
             if meta_key in metadata:
-                RelationshipManager.update_many_to_many(
-                    session=self.session,
-                    parent_obj=location,
-                    relationship_name=rel_name,
-                    items=metadata[meta_key],
-                    model_class=model_class,
-                    incremental=incremental,
-                    remove_items=metadata.get(f"remove_{meta_key}", []),
-                )
+                items = metadata[meta_key]
+                remove_items = metadata.get(f"remove_{meta_key}", [])
+
+                # Get the collection
+                collection = getattr(location, rel_name)
+
+                # Replacement mode: clear and add all
+                if not incremental:
+                    collection.clear()
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+                else:
+                    # Incremental mode: add new items
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+
+                    # Remove specified items
+                    for item in remove_items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item in collection:
+                            collection.remove(resolved_item)
+
+                self.session.flush()
 
     # =========================================================================
     # QUERY METHODS

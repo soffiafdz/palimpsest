@@ -153,6 +153,42 @@ class ValidationError(Exception):
     pass
 
 
+class EntryValidationError(ValidationError):
+    """
+    Exception for entry-specific validation failures.
+
+    Raised when journal entry data fails validation:
+    - Missing required entry fields
+    - Invalid entry metadata
+    - Malformed entry structure
+
+    Examples:
+        >>> raise EntryValidationError("Entry missing required date field")
+        >>> raise EntryValidationError("Invalid people metadata format")
+    """
+
+    pass
+
+
+class EntryParseError(Exception):
+    """
+    Exception for entry parsing failures.
+
+    Raised when parsing journal entries from files or text fails:
+    - YAML parsing errors
+    - File reading errors
+    - Malformed entry format
+    - Encoding issues
+
+    Examples:
+        >>> raise EntryParseError("Cannot parse YAML frontmatter: invalid syntax")
+        >>> raise EntryParseError("File not found or not readable")
+        >>> raise EntryParseError("Invalid entry format: missing frontmatter")
+    """
+
+    pass
+
+
 class TxtBuildError(Exception):
     """
     Exception for raw export to text conversion errors.

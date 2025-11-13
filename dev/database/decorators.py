@@ -90,13 +90,14 @@ def validate_metadata(required_fields: List[str]):
 
     def decorator(function: Callable) -> Callable:
         @wraps(function)
-        def wrapper(self, session: Session, *args, **kwargs):
-            # Find metadata as last positional arg or in kwargs
-            metadata = args[-1] if args else kwargs.get("metadata", {})
+        def wrapper(self, *args, **kwargs):
+            # Find metadata as first positional arg or in kwargs
+            # Manager methods have signature: create(self, metadata)
+            metadata = args[0] if args else kwargs.get("metadata", {})
 
             DataValidator.validate_required_fields(metadata, required_fields)
 
-            return function(self, session, *args, **kwargs)
+            return function(self, *args, **kwargs)
 
         return wrapper
 

@@ -27,18 +27,15 @@ elif isinstance(raw, str):
 
 ---
 
-### 2. Fixed Variable Name Bug in md2json.py
-**File:** `dev/pipeline/md2json.py:85`
-**Issue:** Referenced undefined variable `args.out` instead of `args.output`
-**Impact:** Script would crash with AttributeError
+### 2. ~~Fixed Variable Name Bug in md2json.py~~ **DEPRECATED - REMOVED**
+**File:** `dev/pipeline/md2json.py` (DELETED)
+**Status:** This script has been removed as deprecated. The JSON export functionality is now handled by the database ExportManager (`metadb export-json`), which exports from the SQLite database rather than parsing Markdown files.
+**Reason for deprecation:**
+- Used old `code.*` import paths (incompatible with current `dev.*` structure)
+- Duplicated functionality now covered by database export pipeline
+- Maintained a separate JSON registry that could drift out of sync with the database
 
-```python
-# Before (BROKEN)
-meta_path = Path(args.out)
-
-# After (FIXED)
-meta_path = Path(args.output)
-```
+**Replacement:** Use `metadb export-json <output-file>` to export database metadata to JSON format.
 
 ---
 
@@ -273,9 +270,9 @@ def cli(ctx):
 
 ## Statistics
 
-### Files Modified: 6
+### Files Modified: 5
 1. `dev/pipeline/md2wiki.py` - Fixed syntax error
-2. `dev/pipeline/md2json.py` - Fixed variable name bug
+2. ~~`dev/pipeline/md2json.py`~~ - **REMOVED (deprecated)**
 3. `dev/pipeline/cli.py` - Fixed error context
 4. `dev/database/cli.py` - Fixed 2 error contexts
 5. `dev/pipeline/md2pdf.py` - Fixed typo
@@ -337,10 +334,10 @@ def cli(ctx):
    - yaml2sql.py: update, batch, sync
 
 ### MEDIUM Priority (Future):
-4. **Migrate md2json.py to Click**
-   - Currently uses argparse (inconsistent)
-   - Rewrite using Click framework
-   - Add proper logging integration
+4. ~~**Migrate md2json.py to Click**~~ **DEPRECATED - NOT NEEDED**
+   - md2json.py has been removed (deprecated)
+   - Functionality replaced by `metadb export-json` command
+   - No migration needed
 
 5. **Complete md2wiki.py implementation**
    - Fix remaining issues
@@ -379,8 +376,8 @@ def cli(ctx):
 # Test md2wiki.py syntax fix
 python3 -m dev.pipeline.md2wiki --help
 
-# Test md2json.py bug fix
-python3 -m dev.pipeline.md2json --help
+# md2json.py - REMOVED (deprecated)
+# Use: metadb export-json <output-file> instead
 
 # Test error contexts
 python3 -m dev.pipeline.cli backup-data --help
@@ -550,7 +547,7 @@ All critical fixes, standardization, and shared utilities migration have been co
 **Next Steps (Module 1 - Remaining):**
 1. Add comprehensive docstrings to all CLI scripts (explaining implementation and logic)
 2. Add missing features (--dry-run, progress indicators, --quiet mode)
-3. Migrate md2json.py and md2wiki.py to Click framework
+3. ~~Migrate md2json.py~~ (deprecated - removed) and md2wiki.py to Click framework
 
 ---
 
