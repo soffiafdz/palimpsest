@@ -276,6 +276,50 @@ class Yaml2SqlError(Exception):
     pass
 
 
+class Sql2WikiError(Exception):
+    """
+    Exception for database to vimwiki export errors.
+
+    Raised during sql2wiki when exporting database entities (people, themes,
+    tags, etc.) to vimwiki pages fails:
+    - Database query failures
+    - Wiki page generation errors
+    - File writing issues
+    - Entity serialization problems
+
+    Pipeline Stage: database → wiki (Step 6)
+
+    Examples:
+        >>> raise Sql2WikiError("Cannot generate wiki page for person: 'Alice'")
+        >>> raise Sql2WikiError("Failed to build people index")
+        >>> raise Sql2WikiError("Database connection lost during export")
+    """
+
+    pass
+
+
+class Wiki2SqlError(Exception):
+    """
+    Exception for vimwiki to database sync errors.
+
+    Raised during wiki2sql when parsing manually edited vimwiki entity
+    pages and syncing changes back to database fails:
+    - Wiki page parsing errors
+    - Database update conflicts
+    - Invalid wiki structure
+    - Field ownership violations
+
+    Pipeline Stage: wiki → database (Step 7)
+
+    Examples:
+        >>> raise Wiki2SqlError("Cannot parse person wiki page: malformed structure")
+        >>> raise Wiki2SqlError("Conflict: wiki edited computed field 'mentions'")
+        >>> raise Wiki2SqlError("Person not found in database: 'Unknown'")
+    """
+
+    pass
+
+
 class PdfBuildError(Exception):
     """
     Exception for PDF generation errors.

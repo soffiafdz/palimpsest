@@ -133,12 +133,30 @@ def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
 # Relative links
 # ----------------------------------------------------------------------
 def relative_link(from_path: Path, to_path: Path) -> str:
-    """Computes a Markdown-style relative link from one file to another."""
-    try:
-        return str(to_path.relative_to(from_path.parent))
-    except ValueError:
-        # fallback for unrelated paths
-        return str(to_path)
+    """
+    Computes a Markdown-style relative link from one file to another.
+
+    Args:
+        from_path: Source file path (the file containing the link)
+        to_path: Target file path (the file being linked to)
+
+    Returns:
+        Relative path from from_path to to_path
+
+    Example:
+        >>> relative_link(Path("/wiki/people/alice.md"), Path("/journal/md/2024-01-01.md"))
+        '../../journal/md/2024-01-01.md'
+    """
+    import os
+    # Convert to absolute paths first
+    from_abs = from_path.resolve()
+    to_abs = to_path.resolve()
+
+    # Get relative path from parent directory of source file
+    rel_path = os.path.relpath(to_abs, from_abs.parent)
+
+    # Convert backslashes to forward slashes for consistency (Windows)
+    return rel_path.replace(os.sep, '/')
 
 
 def resolve_relative_link(from_path: Path, rel_link: str) -> Path:

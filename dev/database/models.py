@@ -1540,6 +1540,7 @@ class Event(Base, SoftDeleteMixin):
     )
     title: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ---- Relationships ----
     entries: Mapped[List[Entry]] = relationship(
