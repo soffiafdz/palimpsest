@@ -29,6 +29,12 @@ function M.setup()
 				{ "<leader>pV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
 				{ "<leader>ps", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
 				{ "<leader>ph", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
+				-- Manuscript commands
+				{ "<leader>pm", group = "manuscript" },
+				{ "<leader>pme", "<cmd>PalimpsestManuscriptExport<cr>", desc = "Export manuscript" },
+				{ "<leader>pmE", "<cmd>PalimpsestManuscriptExport ", desc = "Export manuscript entity..." },
+				{ "<leader>pmi", "<cmd>PalimpsestManuscriptImport<cr>", desc = "Import manuscript edits" },
+				{ "<leader>pmh", "<cmd>PalimpsestManuscriptIndex<cr>", desc = "Manuscript homepage" },
 				-- Telescope wiki browser
 				{ "<leader>pf", "<cmd>Telescope palimpsest<cr>", desc = "Find wiki pages" },
 				{ "<leader>pF", "<cmd>lua require('palimpsest.telescope').browse('people')<cr>", desc = "Browse people" },
@@ -55,6 +61,12 @@ function M.setup()
 				{ "<leader>vV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
 				{ "<leader>vs", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
 				{ "<leader>vh", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
+				-- Manuscript commands
+				{ "<leader>vm", group = "manuscript" },
+				{ "<leader>vme", "<cmd>PalimpsestManuscriptExport<cr>", desc = "Export manuscript" },
+				{ "<leader>vmE", "<cmd>PalimpsestManuscriptExport ", desc = "Export manuscript entity..." },
+				{ "<leader>vmi", "<cmd>PalimpsestManuscriptImport<cr>", desc = "Import manuscript edits" },
+				{ "<leader>vmh", "<cmd>PalimpsestManuscriptIndex<cr>", desc = "Manuscript homepage" },
 				-- Telescope wiki browser
 				{ "<leader>vf", "<cmd>Telescope palimpsest<cr>", desc = "Find wiki pages" },
 				{ "<leader>vF", "<cmd>lua require('palimpsest.telescope').browse('people')<cr>", desc = "Browse people" },

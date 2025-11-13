@@ -158,6 +158,79 @@ function M.index()
 	end
 end
 
+-- Export manuscript entities to wiki
+function M.manuscript_export(entity_type)
+	entity_type = entity_type or "all"
+
+	local valid_types = {
+		"all",
+		"entries",
+		"characters",
+		"events",
+		"arcs",
+		"themes",
+	}
+
+	-- Validate entity type
+	if not vim.tbl_contains(valid_types, entity_type) then
+		vim.notify("Invalid manuscript entity type: " .. entity_type, vim.log.levels.ERROR)
+		vim.notify("Valid types: " .. table.concat(valid_types, ", "), vim.log.levels.INFO)
+		return
+	end
+
+	local root = get_project_root()
+	local cmd = string.format("cd %s && python -m dev.pipeline.manuscript2wiki export %s", root, entity_type)
+
+	execute_command(cmd, { show_output = true })
+end
+
+-- Import manuscript wiki edits to database
+function M.manuscript_import(entity_type)
+	entity_type = entity_type or "manuscript-all"
+
+	local valid_types = {
+		"manuscript-all",
+		"manuscript-entries",
+		"manuscript-characters",
+		"manuscript-events",
+	}
+
+	-- Validate entity type
+	if not vim.tbl_contains(valid_types, entity_type) then
+		vim.notify("Invalid import entity type: " .. entity_type, vim.log.levels.ERROR)
+		vim.notify("Valid types: " .. table.concat(valid_types, ", "), vim.log.levels.INFO)
+		return
+	end
+
+	local root = get_project_root()
+	local cmd = string.format("cd %s && python -m dev.pipeline.wiki2sql import %s", root, entity_type)
+
+	execute_command(cmd, { show_output = true })
+end
+
+-- Open manuscript index
+function M.manuscript_index()
+	local root = get_project_root()
+	local index_path = root .. "/data/wiki/manuscript/index.md"
+
+	-- Check if index exists
+	if vim.fn.filereadable(index_path) == 0 then
+		-- Generate it first
+		vim.notify("Manuscript index not found, generating...", vim.log.levels.INFO)
+		M.manuscript_export("all")
+
+		-- Wait a moment for generation
+		vim.wait(1000)
+	end
+
+	-- Open index file
+	if vim.fn.filereadable(index_path) == 1 then
+		vim.cmd("edit " .. index_path)
+	else
+		vim.notify("Failed to generate manuscript index", vim.log.levels.ERROR)
+	end
+end
+
 -- Setup user commands
 function M.setup()
 	-- Export command with completion
@@ -208,6 +281,47 @@ function M.setup()
 		M.index()
 	end, {
 		desc = "Open wiki index/homepage",
+	})
+
+	-- Manuscript export command with completion
+	vim.api.nvim_create_user_command("PalimpsestManuscriptExport", function(opts)
+		M.manuscript_export(opts.args)
+	end, {
+		nargs = "?",
+		desc = "Export manuscript entities to wiki",
+		complete = function()
+			return {
+				"all",
+				"entries",
+				"characters",
+				"events",
+				"arcs",
+				"themes",
+			}
+		end,
+	})
+
+	-- Manuscript import command with completion
+	vim.api.nvim_create_user_command("PalimpsestManuscriptImport", function(opts)
+		M.manuscript_import(opts.args)
+	end, {
+		nargs = "?",
+		desc = "Import manuscript wiki edits to database",
+		complete = function()
+			return {
+				"manuscript-all",
+				"manuscript-entries",
+				"manuscript-characters",
+				"manuscript-events",
+			}
+		end,
+	})
+
+	-- Manuscript index command
+	vim.api.nvim_create_user_command("PalimpsestManuscriptIndex", function()
+		M.manuscript_index()
+	end, {
+		desc = "Open manuscript wiki index/homepage",
 	})
 end
 

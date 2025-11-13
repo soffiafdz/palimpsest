@@ -486,6 +486,166 @@ def export_themes(
     return stats
 
 
+def export_manuscript_index(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    journal_dir: Path,
+    force: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Export manuscript homepage (index.md).
+
+    Args:
+        db: Database manager
+        wiki_dir: Wiki root directory
+        journal_dir: Journal directory (unused)
+        force: Force write even if unchanged
+        logger: Optional logger
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    path = wiki_dir / "manuscript" / "index.md"
+
+    if logger:
+        logger.log_operation("export_manuscript_index_start", {"path": str(path)})
+
+    with db.session_scope() as session:
+        # Count manuscript entities
+        entry_count = session.execute(
+            select(DBManuscriptEntry)
+        ).scalars().all()
+
+        character_count = session.execute(
+            select(DBManuscriptPerson)
+        ).scalars().all()
+
+        event_count = session.execute(
+            select(DBManuscriptEvent)
+        ).scalars().all()
+
+        arc_count = session.execute(
+            select(DBArc)
+        ).scalars().all()
+
+        theme_count = session.execute(
+            select(DBTheme)
+        ).scalars().all()
+
+        # Get recent entries
+        recent_entries = session.execute(
+            select(DBEntry)
+            .join(DBManuscriptEntry)
+            .order_by(DBEntry.date.desc())
+            .limit(5)
+        ).scalars().all()
+
+        # Build content
+        lines = [
+            "# Palimpsest — Manuscript",
+            "",
+            "*[[../index.md|Home]] > Manuscript*",
+            "",
+            "## Manuscript Workspace",
+            "",
+            "This is the manuscript adaptation workspace, separate from the main journal wiki.",
+            "Here you plan and track the adaptation of journal content into auto-fiction.",
+            "",
+            "## Quick Navigation",
+            "",
+            f"- [[entries.md|Entries]] — {len(entry_count)} manuscript entries",
+            f"- [[characters.md|Characters]] — {len(character_count)} fictional characters",
+            f"- [[events.md|Events]] — {len(event_count)} adapted events",
+            f"- [[arcs.md|Arcs]] — {len(arc_count)} story arcs",
+            f"- [[themes.md|Themes]] — {len(theme_count)} manuscript themes",
+            "",
+            "## Statistics",
+            "",
+            f"- **Total Manuscript Entries**: {len(entry_count)}",
+            f"- **Characters Developed**: {len(character_count)}",
+            f"- **Narrative Arcs**: {len(arc_count)}",
+            f"- **Thematic Elements**: {len(theme_count)}",
+            "",
+        ]
+
+        # Recent manuscript entries
+        if recent_entries:
+            lines.extend([
+                "## Recent Manuscript Entries",
+                "",
+            ])
+            for entry in recent_entries:
+                year = entry.date.year
+                entry_link = f"entries/{year}/{entry.date.isoformat()}.md"
+                status = entry.manuscript.status.value if entry.manuscript else "unknown"
+                lines.append(f"- [[{entry_link}|{entry.date.isoformat()}]] — Status: {status}")
+            lines.append("")
+
+        # Ensure directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write content
+        content = "\n".join(lines)
+        status = write_if_changed(path, content, force)
+
+        if logger:
+            if status in ("created", "updated"):
+                logger.log_info(f"Manuscript index {status}")
+            else:
+                logger.log_debug("Manuscript index unchanged")
+
+    return status
+
+
+def build_entity_index(
+    entity_name: str,
+    entity_plural: str,
+    items: List[Dict[str, str]],
+    wiki_dir: Path,
+    force: bool = False,
+) -> str:
+    """
+    Build a generic entity index page.
+
+    Args:
+        entity_name: Entity name (singular)
+        entity_plural: Entity name (plural)
+        items: List of items with 'name', 'link', and optional 'info'
+        wiki_dir: Wiki root directory
+        force: Force write even if unchanged
+
+    Returns:
+        Status: "created", "updated", or "skipped"
+    """
+    path = wiki_dir / "manuscript" / f"{entity_plural.lower()}.md"
+
+    lines = [
+        f"# Palimpsest — Manuscript {entity_plural.title()}",
+        "",
+        f"*[[../index.md|Home]] > [[index.md|Manuscript]] > {entity_plural.title()}*",
+        "",
+        f"## All {entity_plural.title()}",
+        "",
+    ]
+
+    if items:
+        for item in items:
+            info = f" — {item['info']}" if item.get('info') else ""
+            lines.append(f"- [[{item['link']}|{item['name']}]]{info}")
+    else:
+        lines.append(f"No {entity_plural} found.")
+
+    lines.append("")
+
+    # Ensure directory exists
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write content
+    content = "\n".join(lines)
+    return write_if_changed(path, content, force)
+
+
 # ===== CLI =====
 
 
@@ -534,6 +694,84 @@ def export(entity_type: str, force: bool, verbose: bool):
 
             stats = export_themes(db, wiki_dir, journal_dir, force, logger)
             all_stats.append(("themes", stats))
+
+            # Export manuscript homepage
+            export_manuscript_index(db, wiki_dir, journal_dir, force, logger)
+
+            # Build entity indexes
+            # Note: We could build these from the wiki entities collected during export,
+            # but for simplicity we'll query the database again
+            with db.session_scope() as session:
+                # Entries index
+                entries = session.execute(
+                    select(DBEntry).join(DBManuscriptEntry).order_by(DBEntry.date.desc())
+                ).scalars().all()
+                entry_items = []
+                for entry in entries:
+                    year = entry.date.year
+                    entry_items.append({
+                        "name": entry.date.isoformat(),
+                        "link": f"entries/{year}/{entry.date.isoformat()}.md",
+                        "info": f"Status: {entry.manuscript.status.value}"
+                    })
+                build_entity_index("entry", "entries", entry_items, wiki_dir, force)
+
+                # Characters index
+                characters = session.execute(
+                    select(DBManuscriptPerson).join(DBPerson).order_by(DBManuscriptPerson.character)
+                ).scalars().all()
+                char_items = []
+                for char in characters:
+                    char_slug = char.character.lower().replace(" ", "_")
+                    char_items.append({
+                        "name": char.character,
+                        "link": f"characters/{char_slug}.md",
+                        "info": f"based on {char.person.display_name}"
+                    })
+                build_entity_index("character", "characters", char_items, wiki_dir, force)
+
+                # Events index
+                events = session.execute(
+                    select(DBManuscriptEvent).join(DBEvent).order_by(DBEvent.event)
+                ).scalars().all()
+                event_items = []
+                for event in events:
+                    event_slug = event.event.event.lower().replace(" ", "_")
+                    arc_info = f"Arc: {event.arc.arc}" if event.arc else "No arc"
+                    event_items.append({
+                        "name": event.event.event,
+                        "link": f"events/{event_slug}.md",
+                        "info": arc_info
+                    })
+                build_entity_index("event", "events", event_items, wiki_dir, force)
+
+                # Arcs index
+                arcs = session.execute(
+                    select(DBArc).order_by(DBArc.arc)
+                ).scalars().all()
+                arc_items = []
+                for arc in arcs:
+                    arc_slug = arc.arc.lower().replace(" ", "_")
+                    arc_items.append({
+                        "name": arc.arc,
+                        "link": f"arcs/{arc_slug}.md",
+                        "info": f"{len(arc.events)} events"
+                    })
+                build_entity_index("arc", "arcs", arc_items, wiki_dir, force)
+
+                # Themes index
+                themes = session.execute(
+                    select(DBTheme).order_by(DBTheme.theme)
+                ).scalars().all()
+                theme_items = []
+                for theme in themes:
+                    theme_slug = theme.theme.lower().replace(" ", "_")
+                    theme_items.append({
+                        "name": theme.theme,
+                        "link": f"themes/{theme_slug}.md",
+                        "info": f"{len(theme.entries)} entries"
+                    })
+                build_entity_index("theme", "themes", theme_items, wiki_dir, force)
 
             # Summary
             total_files = sum(s[1].files_processed for s in all_stats)

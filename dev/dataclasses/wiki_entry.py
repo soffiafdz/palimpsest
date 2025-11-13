@@ -431,10 +431,14 @@ class Entry(WikiEntity):
             lines.append("")
 
         # Manuscript metadata
-        if self.manuscript_status or self.manuscript_type:
+        if self.manuscript_status:
             lines.extend(["### Manuscript", ""])
-            if self.manuscript_status:
-                lines.append(f"- **Status:** {self.manuscript_status}")
+            lines.append(f"- **Status:** {self.manuscript_status}")
+
+            # Add link to manuscript wiki version
+            manuscript_link = f"../../manuscript/entries/{self.date.year}/{self.date.isoformat()}.md"
+            lines.append(f"- **View in Manuscript Wiki:** [[{manuscript_link}|Manuscript Version]]")
+
             if self.manuscript_type:
                 lines.append(f"- **Type:** {self.manuscript_type}")
             if self.manuscript_narrative_arc:

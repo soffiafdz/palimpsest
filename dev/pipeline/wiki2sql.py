@@ -426,6 +426,293 @@ def import_all(
     return combined_stats
 
 
+# ===== MANUSCRIPT IMPORT FUNCTIONS =====
+
+
+def import_manuscript_entry(
+    wiki_file: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
+) -> str:
+    """
+    Import manuscript entry edits from wiki to database.
+
+    Updates ManuscriptEntry fields: notes, character_notes, entry_type, narrative_arc.
+
+    Args:
+        wiki_file: Path to manuscript entry wiki file
+        db: Database manager
+        logger: Optional logger
+
+    Returns:
+        Status: "updated", "skipped", or "error"
+    """
+    try:
+        # Import manuscript dataclasses
+        from dev.dataclasses.manuscript_entry import ManuscriptEntry as WikiManuscriptEntry
+        from dev.database.models_manuscript import ManuscriptEntry as DBManuscriptEntry, EntryType
+        from datetime import datetime
+
+        # Parse wiki file
+        wiki_entry = WikiManuscriptEntry.from_file(wiki_file)
+        if not wiki_entry:
+            return "skipped"
+
+        # Find corresponding database records
+        with db.session_scope() as session:
+            # Find Entry by date
+            query = select(DBEntry).where(DBEntry.date == wiki_entry.date)
+            db_entry = session.execute(query).scalar_one_or_none()
+
+            if not db_entry:
+                if logger:
+                    logger.log_warning(f"Entry not found for date {wiki_entry.date}")
+                return "skipped"
+
+            # Find or create ManuscriptEntry
+            if not db_entry.manuscript:
+                if logger:
+                    logger.log_warning(f"Entry {wiki_entry.date} has no manuscript record")
+                return "skipped"
+
+            ms_entry = db_entry.manuscript
+
+            # Update editable fields
+            updated = False
+
+            if wiki_entry.notes != ms_entry.notes:
+                ms_entry.notes = wiki_entry.notes
+                updated = True
+
+            if wiki_entry.character_notes != ms_entry.character_notes:
+                ms_entry.character_notes = wiki_entry.character_notes
+                updated = True
+
+            if updated:
+                session.commit()
+                return "updated"
+
+            return "skipped"
+
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {"operation": "import_manuscript_entry", "file": str(wiki_file)})
+        return "error"
+
+
+def import_manuscript_character(
+    wiki_file: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
+) -> str:
+    """
+    Import manuscript character edits from wiki to database.
+
+    Updates ManuscriptPerson fields: character_description, character_arc,
+    voice_notes, appearance_notes.
+
+    Args:
+        wiki_file: Path to manuscript character wiki file
+        db: Database manager
+        logger: Optional logger
+
+    Returns:
+        Status: "updated", "skipped", or "error"
+    """
+    try:
+        # Import manuscript dataclasses
+        from dev.dataclasses.manuscript_character import Character as WikiCharacter
+        from dev.database.models_manuscript import ManuscriptPerson as DBManuscriptPerson
+
+        # Parse wiki file
+        wiki_char = WikiCharacter.from_file(wiki_file)
+        if not wiki_char:
+            return "skipped"
+
+        # Find corresponding database record by character name
+        with db.session_scope() as session:
+            query = select(DBManuscriptPerson).where(
+                DBManuscriptPerson.character == wiki_char.name
+            )
+            ms_person = session.execute(query).scalar_one_or_none()
+
+            if not ms_person:
+                if logger:
+                    logger.log_warning(f"Character not found: {wiki_char.name}")
+                return "skipped"
+
+            # Update editable fields
+            updated = False
+
+            if wiki_char.character_description != ms_person.character_description:
+                ms_person.character_description = wiki_char.character_description
+                updated = True
+
+            if wiki_char.character_arc != ms_person.character_arc:
+                ms_person.character_arc = wiki_char.character_arc
+                updated = True
+
+            if wiki_char.voice_notes != ms_person.voice_notes:
+                ms_person.voice_notes = wiki_char.voice_notes
+                updated = True
+
+            if wiki_char.appearance_notes != ms_person.appearance_notes:
+                ms_person.appearance_notes = wiki_char.appearance_notes
+                updated = True
+
+            if updated:
+                session.commit()
+                return "updated"
+
+            return "skipped"
+
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {"operation": "import_manuscript_character", "file": str(wiki_file)})
+        return "error"
+
+
+def import_manuscript_event(
+    wiki_file: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
+) -> str:
+    """
+    Import manuscript event edits from wiki to database.
+
+    Updates ManuscriptEvent.notes field.
+
+    Args:
+        wiki_file: Path to manuscript event wiki file
+        db: Database manager
+        logger: Optional logger
+
+    Returns:
+        Status: "updated", "skipped", or "error"
+    """
+    try:
+        # Import manuscript dataclasses
+        from dev.dataclasses.manuscript_event import ManuscriptEvent as WikiManuscriptEvent
+        from dev.database.models_manuscript import ManuscriptEvent as DBManuscriptEvent
+
+        # Parse wiki file
+        wiki_event = WikiManuscriptEvent.from_file(wiki_file)
+        if not wiki_event:
+            return "skipped"
+
+        # Find corresponding database record by event name
+        with db.session_scope() as session:
+            # Find Event by name, then get its ManuscriptEvent
+            query = select(DBEvent).where(DBEvent.event == wiki_event.name)
+            db_event = session.execute(query).scalar_one_or_none()
+
+            if not db_event:
+                if logger:
+                    logger.log_warning(f"Event not found: {wiki_event.name}")
+                return "skipped"
+
+            # Find ManuscriptEvent
+            ms_query = select(DBManuscriptEvent).where(
+                DBManuscriptEvent.event_id == db_event.id
+            )
+            ms_event = session.execute(ms_query).scalar_one_or_none()
+
+            if not ms_event:
+                if logger:
+                    logger.log_warning(f"Event {wiki_event.name} has no manuscript record")
+                return "skipped"
+
+            # Update editable fields
+            updated = False
+
+            if wiki_event.notes != ms_event.notes:
+                ms_event.notes = wiki_event.notes
+                updated = True
+
+            if updated:
+                session.commit()
+                return "updated"
+
+            return "skipped"
+
+    except Exception as e:
+        if logger:
+            logger.log_error(e, {"operation": "import_manuscript_event", "file": str(wiki_file)})
+        return "error"
+
+
+def import_all_manuscript_entries(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ImportStats:
+    """Import all manuscript entries from wiki."""
+    stats = ImportStats()
+    manuscript_entries_dir = wiki_dir / "manuscript" / "entries"
+
+    if not manuscript_entries_dir.exists():
+        return stats
+
+    for wiki_file in manuscript_entries_dir.rglob("*.md"):
+        stats.files_processed += 1
+        result = import_manuscript_entry(wiki_file, db, logger)
+
+        if result == "updated":
+            stats.records_updated += 1
+        elif result == "skipped":
+            stats.records_skipped += 1
+        elif result == "error":
+            stats.errors += 1
+
+    return stats
+
+
+def import_all_manuscript_characters(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ImportStats:
+    """Import all manuscript characters from wiki."""
+    stats = ImportStats()
+    characters_dir = wiki_dir / "manuscript" / "characters"
+
+    if not characters_dir.exists():
+        return stats
+
+    for wiki_file in characters_dir.glob("*.md"):
+        stats.files_processed += 1
+        result = import_manuscript_character(wiki_file, db, logger)
+
+        if result == "updated":
+            stats.records_updated += 1
+        elif result == "skipped":
+            stats.records_skipped += 1
+        elif result == "error":
+            stats.errors += 1
+
+    return stats
+
+
+def import_all_manuscript_events(
+    db: PalimpsestDB,
+    wiki_dir: Path,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ImportStats:
+    """Import all manuscript events from wiki."""
+    stats = ImportStats()
+    events_dir = wiki_dir / "manuscript" / "events"
+
+    if not events_dir.exists():
+        return stats
+
+    for wiki_file in events_dir.glob("*.md"):
+        stats.files_processed += 1
+        result = import_manuscript_event(wiki_file, db, logger)
+
+        if result == "updated":
+            stats.records_updated += 1
+        elif result == "skipped":
+            stats.records_skipped += 1
+        elif result == "error":
+            stats.errors += 1
+
+    return stats
+
+
 # ===== CLI =====
 
 
@@ -470,7 +757,11 @@ def cli(ctx: click.Context, db_path: str, wiki_dir: str, log_dir: str) -> None:
 @cli.command()
 @click.argument(
     "entity_type",
-    type=click.Choice(["people", "themes", "tags", "entries", "events", "all"]),
+    type=click.Choice([
+        "people", "themes", "tags", "entries", "events",
+        "manuscript-entries", "manuscript-characters", "manuscript-events",
+        "all", "manuscript-all"
+    ]),
 )
 @click.pass_context
 def import_cmd(ctx: click.Context, entity_type: str) -> None:
@@ -493,6 +784,26 @@ def import_cmd(ctx: click.Context, entity_type: str) -> None:
             stats = import_entries(wiki_dir, db, logger)
         elif entity_type == "events":
             stats = import_events(wiki_dir, db, logger)
+        elif entity_type == "manuscript-entries":
+            stats = import_all_manuscript_entries(db, wiki_dir, logger)
+        elif entity_type == "manuscript-characters":
+            stats = import_all_manuscript_characters(db, wiki_dir, logger)
+        elif entity_type == "manuscript-events":
+            stats = import_all_manuscript_events(db, wiki_dir, logger)
+        elif entity_type == "manuscript-all":
+            # Import all manuscript entities
+            combined_stats = ImportStats()
+            for import_func in [
+                import_all_manuscript_entries,
+                import_all_manuscript_characters,
+                import_all_manuscript_events,
+            ]:
+                stats = import_func(db, wiki_dir, logger)
+                combined_stats.files_processed += stats.files_processed
+                combined_stats.records_updated += stats.records_updated
+                combined_stats.records_skipped += stats.records_skipped
+                combined_stats.errors += stats.errors
+            stats = combined_stats
         elif entity_type == "all":
             stats = import_all(wiki_dir, db, logger)
         else:
