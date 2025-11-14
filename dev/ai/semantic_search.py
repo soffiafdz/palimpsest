@@ -30,10 +30,13 @@ Usage:
     # Cluster by theme
     clusters = semantic.cluster_entries(entries, num_clusters=5)
 """
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional, Tuple, Any, TYPE_CHECKING
 from pathlib import Path
 from dataclasses import dataclass
 import pickle
+
+if TYPE_CHECKING:
+    import numpy as np
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -106,7 +109,7 @@ class SemanticSearch:
         self.use_faiss = use_faiss and FAISS_AVAILABLE
 
         # Index storage
-        self.embeddings: Optional[np.ndarray] = None
+        self.embeddings: Optional["np.ndarray"] = None
         self.entry_ids: List[int] = []
         self.entry_dates: List[str] = []
         self.entry_texts: List[str] = []
@@ -305,7 +308,7 @@ class SemanticSearch:
 
     def _search_numpy(
         self,
-        query_embedding: np.ndarray,
+        query_embedding: "np.ndarray",
         limit: int
     ) -> List[SemanticResult]:
         """Search using numpy (slower but always available)."""
@@ -331,7 +334,7 @@ class SemanticSearch:
 
     def _search_faiss(
         self,
-        query_embedding: np.ndarray,
+        query_embedding: "np.ndarray",
         limit: int
     ) -> List[SemanticResult]:
         """Search using FAISS (faster)."""

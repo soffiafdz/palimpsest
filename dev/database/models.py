@@ -1118,6 +1118,7 @@ class Person(Base, SoftDeleteMixin):
         full_name: Full legal name (unique, optional)
         name_fellow: Flag indicating multiple people share this name
         relation_type: Category of relationship (enum)
+        notes: Editorial notes about this person (for wiki curation)
 
     Relationships:
         aliases: One-to-many with Alias (alternative names)
@@ -1153,6 +1154,7 @@ class Person(Base, SoftDeleteMixin):
         nullable=True,
         index=True,
     )
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ---- Relationships ----
     aliases: Mapped[List[Alias]] = relationship(

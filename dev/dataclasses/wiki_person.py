@@ -108,7 +108,7 @@ class Person(WikiEntity):
         cls,
         db_person: Any,  # models.Person type
         wiki_dir: Path,
-        journal_dir: Path,
+        journal_dir: Optional[Path] = None,
     ) -> "Person":
         """
         Construct a Person wiki entity from a database Person model.

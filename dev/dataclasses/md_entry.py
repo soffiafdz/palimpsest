@@ -1321,7 +1321,7 @@ class MdEntry:
         # Required fields
         parts.append(f"date: {self.date.isoformat()}")
         parts.append(f"word_count: {self.metadata.get('word_count', 0)}")
-        parts.append(f"reading_time: {self.metadata.get('reading_time', 0.0):.1f}")
+        parts.append(f"reading_time: {self.metadata.get('reading_time', 0.0):.2f}")
 
         # Optional core metadata
         if self.metadata.get("epigraph"):

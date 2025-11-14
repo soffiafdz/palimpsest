@@ -2,6 +2,13 @@
 
 **A personal journal metadata management and PDF compilation system.**
 
+[![Tests](https://github.com/soffiafdz/palimpsest/actions/workflows/test.yml/badge.svg)](https://github.com/soffiafdz/palimpsest/actions/workflows/test.yml)
+[![Integration Tests](https://github.com/soffiafdz/palimpsest/actions/workflows/integration.yml/badge.svg)](https://github.com/soffiafdz/palimpsest/actions/workflows/integration.yml)
+[![Security](https://github.com/soffiafdz/palimpsest/actions/workflows/security.yml/badge.svg)](https://github.com/soffiafdz/palimpsest/actions/workflows/security.yml)
+[![codecov](https://codecov.io/gh/soffiafdz/palimpsest/branch/main/graph/badge.svg)](https://codecov.io/gh/soffiafdz/palimpsest)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
 Palimpsest is a personal project consisting of a Python-based toolkit for processing, organizing, and analyzing journal entries with rich metadata. It converts raw text exports into structured Markdown files with YAML frontmatter, maintains a SQLite database of relationships and themes, and generates annotated PDFs for review and curation.
 
 Originally built for managing my decade+ archive from [750words.com](https://750words.com), Palimpsest provides me the infrastructure for transforming my personal documentary writings into searchable, cross-referenced material suitable for memoir or creative non-fiction projects.
@@ -552,6 +559,25 @@ Manuscript tables:
 ```bash
 pytest tests/
 ```
+
+### Continuous Integration
+
+The project uses GitHub Actions for automated testing and quality checks:
+
+**Test Workflow** (runs on every push/PR):
+- Linting with Ruff
+- Unit tests on Python 3.10, 3.11, 3.12
+- Coverage reporting (80% minimum)
+
+**Integration Workflow** (runs on main branch):
+- Full integration tests with system dependencies
+- Daily scheduled runs
+
+**Security Workflow** (runs weekly):
+- Dependency vulnerability scanning with pip-audit
+- CodeQL security analysis
+
+All workflows are defined in `.github/workflows/`. Status badges are displayed at the top of this README.
 
 ### Adding Migrations
 
