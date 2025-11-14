@@ -30,6 +30,8 @@ dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "ruff>=0.2.0"]
 [project.scripts]
 plm = "dev.pipeline.cli:cli"
 metadb = "dev.database.cli:cli"
+plm-search = "dev.pipeline.search:main"
+plm-ai = "dev.pipeline.ai_assist:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

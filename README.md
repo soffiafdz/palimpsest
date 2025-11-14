@@ -255,14 +255,14 @@ metadb analyze
 
 ```bash
 # Text search with filters
-palimpsest search "query text" [filters]
-palimpsest search "therapy" person:alice in:2024 words:100-500
-palimpsest search "reflection" city:montreal has:manuscript
+plm-search "query text" [filters]
+plm-search "therapy" person:alice in:2024 words:100-500
+plm-search "reflection" city:montreal has:manuscript
 
 # Index management
-palimpsest search index --create
-palimpsest search index --rebuild
-palimpsest search index --status
+plm-search index --create
+plm-search index --rebuild
+plm-search index --status
 
 # Available filters:
 # person:NAME, tag:TAG, event:EVENT, city:CITY, theme:THEME
@@ -277,22 +277,22 @@ palimpsest search index --status
 
 ```bash
 # Check AI capabilities
-palimpsest ai status
+plm-ai status
 
 # Analyze single entry (Level 2: spaCy NER)
-palimpsest ai analyze 2024-11-01 --level 2
+plm-ai analyze 2024-11-01 --level 2
 
 # Analyze with Claude API (Level 4)
-palimpsest ai analyze 2024-11-01 --level 4 --manuscript
+plm-ai analyze 2024-11-01 --level 4 --manuscript
 
 # Batch analyze entries
-palimpsest ai batch --level 2 --limit 10
+plm-ai batch --level 2 --limit 10
 
 # Find semantically similar entries (Level 3)
-palimpsest ai similar 2024-11-01 --limit 10
+plm-ai similar 2024-11-01 --limit 10
 
 # Cluster entries by theme
-palimpsest ai cluster --num-clusters 10
+plm-ai cluster --num-clusters 10
 ```
 
 **AI Intelligence Levels:**
@@ -311,26 +311,28 @@ The wiki provides an editable interface for curating and annotating your journal
 ### Export Database to Wiki
 
 ```bash
-# Export everything
-journal wiki-export
+# Export everything (via Python module)
+python -m dev.pipeline.sql2wiki export all
 
-# Export specific year
-journal wiki-export --year 2024
+# Export specific entity types
+python -m dev.pipeline.sql2wiki export people
+python -m dev.pipeline.sql2wiki export entries
+python -m dev.pipeline.sql2wiki export manuscript
 
-# Force overwrite
-journal wiki-export --force
+# Force overwrite existing files
+python -m dev.pipeline.sql2wiki export all --force
 ```
 
 ### Import Wiki Edits to Database
 
 ```bash
-# Import all wiki edits
-journal wiki-import
+# Import all wiki edits (via Python module)
+python -m dev.pipeline.wiki2sql import all
 
 # Import specific entity type
-journal wiki-import --type people
-journal wiki-import --type entries
-journal wiki-import --type manuscript
+python -m dev.pipeline.wiki2sql import people
+python -m dev.pipeline.wiki2sql import entries
+python -m dev.pipeline.wiki2sql import manuscript
 ```
 
 ### Wiki Structure
@@ -380,13 +382,13 @@ See [BIDIRECTIONAL_SYNC_GUIDE.md](BIDIRECTIONAL_SYNC_GUIDE.md) for complete docu
 
 ```bash
 # Search entry text
-palimpsest search "anxiety therapy"
+plm-search "anxiety therapy"
 
 # Combine text + metadata
-palimpsest search "alice" person:alice in:2024
+plm-search "alice" person:alice in:2024
 
 # Complex filtering
-palimpsest search "reflection" city:montreal words:500-1000 has:manuscript
+plm-search "reflection" city:montreal words:500-1000 has:manuscript
 ```
 
 **How it works:**
@@ -397,7 +399,7 @@ palimpsest search "reflection" city:montreal words:500-1000 has:manuscript
 
 **Create search index:**
 ```bash
-palimpsest search index --create
+plm-search index --create
 ```
 
 ### AI-Assisted Analysis (Optional)
@@ -419,7 +421,7 @@ python -m spacy download en_core_web_sm
 
 **Usage:**
 ```bash
-palimpsest ai analyze 2024-11-01 --level 2
+plm-ai analyze 2024-11-01 --level 2
 ```
 
 #### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
@@ -438,10 +440,10 @@ pip install faiss-cpu  # optional, for faster search
 **Usage:**
 ```bash
 # Find similar entries
-palimpsest ai similar 2024-11-01 --limit 10
+plm-ai similar 2024-11-01 --limit 10
 
 # Cluster by theme
-palimpsest ai cluster --num-clusters 10
+plm-ai cluster --num-clusters 10
 ```
 
 #### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
@@ -467,18 +469,18 @@ palimpsest ai cluster --num-clusters 10
 **Usage:**
 ```bash
 # Analyze with Claude (default)
-palimpsest ai analyze 2024-11-01 --level 4 --manuscript
+plm-ai analyze 2024-11-01 --level 4 --manuscript
 
 # Analyze with OpenAI
-palimpsest ai analyze 2024-11-01 --level 4 --provider openai --manuscript
+plm-ai analyze 2024-11-01 --level 4 --provider openai --manuscript
 
 # Batch analyze with OpenAI
-palimpsest ai batch --level 4 --provider openai --limit 10
+plm-ai batch --level 4 --provider openai --limit 10
 ```
 
 **Check what's installed:**
 ```bash
-palimpsest ai status
+plm-ai status
 ```
 
 ---

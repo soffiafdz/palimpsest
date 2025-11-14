@@ -77,7 +77,7 @@ pdf: md $(YEAR_PDFS)
 $(MD_DIR)/%.stamp: $(TXT_DIR)/%.txt
 	$(Q)echo "[Make] Converting $*"
 	$(Q)mkdir -p $(dir $@)
-	$(Q)$(TXT2MD) convert $< -o $(MD_DIR) $(PY_VERBOSE)
+	$(Q)$(TXT2MD) -i $< -o $(MD_DIR) $(PY_VERBOSE)
 	$(Q)touch $@
 
 # ─── Per-Year Targets ─────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ $(PDF_DIR)/$(1).pdf $(PDF_DIR)/$(1)-notes.pdf &: \
 	$(patsubst $(TXT_DIR)/%.txt,$(MD_DIR)/%.stamp,$(wildcard $(TXT_DIR)/$(1)/*.txt))
 	$(Q)echo "[Make] Building PDFs for year $(1)"
 	$(Q)mkdir -p $(PDF_DIR)
-	$(Q)$(MD2PDF) build $(1) -i $(MD_DIR) -o $(PDF_DIR) $(PY_VERBOSE)
+	$(Q)$(MD2PDF) $(1) -i $(MD_DIR) -o $(PDF_DIR) $(PY_VERBOSE)
 endef
 
 # Instantiate PDF build rule for each year
