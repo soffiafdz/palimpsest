@@ -17,11 +17,11 @@ else
 endif
 
 # ─── Pipeline Commands ────────────────────────────────────────────────────────
-PYTHON        := python3
-PIPELINE      := $(PYTHON) -m dev.pipeline.cli
-METADB        := $(PYTHON) -m dev.database.cli
-TXT2MD        := $(PIPELINE) convert
-MD2PDF        := $(PIPELINE) build-pdf
+# Use installed entry points (no python -m needed)
+PLM           := plm
+METADB        := metadb
+TXT2MD        := $(PLM) convert
+MD2PDF        := $(PLM) build-pdf
 
 # ─── Directories ──────────────────────────────────────────────────────────────
 INBOX_DIR     := journal/inbox
@@ -58,7 +58,7 @@ all: inbox txt md db pdf
 # Step 1: Process inbox (raw exports → formatted text)
 inbox:
 	$(Q)echo "[Make] Processing inbox..."
-	$(Q)$(PIPELINE) inbox $(PY_VERBOSE)
+	$(Q)$(PLM) inbox $(PY_VERBOSE)
 
 # Step 2: Convert text to markdown
 txt: inbox
@@ -67,7 +67,7 @@ md: txt $(ALL_MD_STAMPS)
 # Step 3: Sync database from markdown
 db: md
 	$(Q)echo "[Make] Syncing database..."
-	$(Q)$(PIPELINE) sync-db $(PY_VERBOSE)
+	$(Q)$(PLM) sync-db $(PY_VERBOSE)
 
 # Step 4: Build PDFs
 pdf: md $(YEAR_PDFS)
@@ -115,19 +115,19 @@ backup:
 
 backup-full:
 	$(Q)echo "[Make] Creating full data backup..."
-	$(Q)$(PIPELINE) backup-full
+	$(Q)$(PLM) backup-full
 
 backup-list:
 	$(Q)$(METADB) backups
 
 backup-list-full:
-	$(Q)$(PIPELINE) backup-list-full
+	$(Q)$(PLM) backup-list-full
 
 status:
-	$(Q)$(PIPELINE) status
+	$(Q)$(PLM) status
 
 validate:
-	$(Q)$(PIPELINE) validate
+	$(Q)$(PLM) validate
 
 stats:
 	$(Q)$(METADB) stats --verbose
@@ -140,22 +140,20 @@ analyze:
 
 # ─── Installation ─────────────────────────────────────────────────────────────
 install:
-	$(Q)echo "[Make] Installing CLI commands to ~/.local/bin..."
-	$(Q)mkdir -p $(HOME)/.local/bin
-	$(Q)ln -sf $(PWD)/dev/bin/journal $(HOME)/.local/bin/journal
-	$(Q)ln -sf $(PWD)/dev/bin/metadb $(HOME)/.local/bin/metadb
-	$(Q)echo "✅ Installed: journal, metadb"
+	$(Q)echo "[Make] Installing package with entry points..."
+	$(Q)pip install --user -e .
+	$(Q)echo "✅ Installed entry points: plm, metadb, plm-search, plm-ai, plm-wiki-export, plm-wiki-import"
 	$(Q)echo "💡 Ensure ~/.local/bin is in your PATH"
 
 install-dev: install
-	$(Q)echo "[Make] Installing development environment..."
-	$(Q)echo "💡 Activate conda environment: conda activate palimpsest"
+	$(Q)echo "[Make] Installing development dependencies..."
+	$(Q)pip install --user -e ".[dev]"
+	$(Q)echo "✅ Development environment ready"
 
 uninstall:
-	$(Q)echo "[Make] Removing CLI commands..."
-	$(Q)rm -f $(HOME)/.local/bin/journal
-	$(Q)rm -f $(HOME)/.local/bin/metadb
-	$(Q)echo "✅ Uninstalled: journal, metadb"
+	$(Q)echo "[Make] Uninstalling package..."
+	$(Q)pip uninstall -y palimpsest
+	$(Q)echo "✅ Uninstalled all entry points"
 
 # ─── Cleaning ─────────────────────────────────────────────────────────────────
 clean-txt:
@@ -212,9 +210,9 @@ help:
 	@echo "  make analyze       # Generate analytics report"
 	@echo ""
 	@echo "Installation:"
-	@echo "  make install       # Install CLI commands (journal, metadb)"
-	@echo "  make install-dev   # Install with dev environment setup"
-	@echo "  make uninstall     # Remove CLI commands"
+	@echo "  make install       # Install package with all entry points"
+	@echo "  make install-dev   # Install with development dependencies"
+	@echo "  make uninstall     # Uninstall package and entry points"
 	@echo ""
 	@echo "Cleaning:"
 	@echo "  make clean         # Remove markdown and PDFs"

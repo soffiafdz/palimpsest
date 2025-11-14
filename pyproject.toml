@@ -32,6 +32,8 @@ plm = "dev.pipeline.cli:cli"
 metadb = "dev.database.cli:cli"
 plm-search = "dev.pipeline.search:main"
 plm-ai = "dev.pipeline.ai_assist:main"
+plm-wiki-export = "dev.pipeline.sql2wiki:cli"
+plm-wiki-import = "dev.pipeline.wiki2sql:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

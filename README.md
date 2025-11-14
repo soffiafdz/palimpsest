@@ -311,28 +311,28 @@ The wiki provides an editable interface for curating and annotating your journal
 ### Export Database to Wiki
 
 ```bash
-# Export everything (via Python module)
-python -m dev.pipeline.sql2wiki export all
+# Export everything
+plm-wiki-export export all
 
 # Export specific entity types
-python -m dev.pipeline.sql2wiki export people
-python -m dev.pipeline.sql2wiki export entries
-python -m dev.pipeline.sql2wiki export manuscript
+plm-wiki-export export people
+plm-wiki-export export entries
+plm-wiki-export export manuscript
 
 # Force overwrite existing files
-python -m dev.pipeline.sql2wiki export all --force
+plm-wiki-export export all --force
 ```
 
 ### Import Wiki Edits to Database
 
 ```bash
-# Import all wiki edits (via Python module)
-python -m dev.pipeline.wiki2sql import all
+# Import all wiki edits
+plm-wiki-import import all
 
 # Import specific entity type
-python -m dev.pipeline.wiki2sql import people
-python -m dev.pipeline.wiki2sql import entries
-python -m dev.pipeline.wiki2sql import manuscript
+plm-wiki-import import people
+plm-wiki-import import entries
+plm-wiki-import import manuscript
 ```
 
 ### Wiki Structure
