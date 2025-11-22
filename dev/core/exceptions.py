@@ -153,6 +153,42 @@ class ValidationError(Exception):
     pass
 
 
+class EntryValidationError(ValidationError):
+    """
+    Exception for entry-specific validation failures.
+
+    Raised when journal entry data fails validation:
+    - Missing required entry fields
+    - Invalid entry metadata
+    - Malformed entry structure
+
+    Examples:
+        >>> raise EntryValidationError("Entry missing required date field")
+        >>> raise EntryValidationError("Invalid people metadata format")
+    """
+
+    pass
+
+
+class EntryParseError(Exception):
+    """
+    Exception for entry parsing failures.
+
+    Raised when parsing journal entries from files or text fails:
+    - YAML parsing errors
+    - File reading errors
+    - Malformed entry format
+    - Encoding issues
+
+    Examples:
+        >>> raise EntryParseError("Cannot parse YAML frontmatter: invalid syntax")
+        >>> raise EntryParseError("File not found or not readable")
+        >>> raise EntryParseError("Invalid entry format: missing frontmatter")
+    """
+
+    pass
+
+
 class TxtBuildError(Exception):
     """
     Exception for raw export to text conversion errors.
@@ -235,6 +271,50 @@ class Yaml2SqlError(Exception):
         >>> raise Yaml2SqlError("Invalid YAML frontmatter: malformed syntax")
         >>> raise Yaml2SqlError("Cannot resolve person reference: 'Unknown Person'")
         >>> raise Yaml2SqlError("Database integrity error: duplicate entry")
+    """
+
+    pass
+
+
+class Sql2WikiError(Exception):
+    """
+    Exception for database to vimwiki export errors.
+
+    Raised during sql2wiki when exporting database entities (people, themes,
+    tags, etc.) to vimwiki pages fails:
+    - Database query failures
+    - Wiki page generation errors
+    - File writing issues
+    - Entity serialization problems
+
+    Pipeline Stage: database → wiki (Step 6)
+
+    Examples:
+        >>> raise Sql2WikiError("Cannot generate wiki page for person: 'Alice'")
+        >>> raise Sql2WikiError("Failed to build people index")
+        >>> raise Sql2WikiError("Database connection lost during export")
+    """
+
+    pass
+
+
+class Wiki2SqlError(Exception):
+    """
+    Exception for vimwiki to database sync errors.
+
+    Raised during wiki2sql when parsing manually edited vimwiki entity
+    pages and syncing changes back to database fails:
+    - Wiki page parsing errors
+    - Database update conflicts
+    - Invalid wiki structure
+    - Field ownership violations
+
+    Pipeline Stage: wiki → database (Step 7)
+
+    Examples:
+        >>> raise Wiki2SqlError("Cannot parse person wiki page: malformed structure")
+        >>> raise Wiki2SqlError("Conflict: wiki edited computed field 'mentions'")
+        >>> raise Wiki2SqlError("Person not found in database: 'Unknown'")
     """
 
     pass

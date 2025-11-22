@@ -62,6 +62,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -1117,6 +1118,7 @@ class Person(Base, SoftDeleteMixin):
         full_name: Full legal name (unique, optional)
         name_fellow: Flag indicating multiple people share this name
         relation_type: Category of relationship (enum)
+        notes: Editorial notes about this person (for wiki curation)
 
     Relationships:
         aliases: One-to-many with Alias (alternative names)
@@ -1152,6 +1154,7 @@ class Person(Base, SoftDeleteMixin):
         nullable=True,
         index=True,
     )
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ---- Relationships ----
     aliases: Mapped[List[Alias]] = relationship(
@@ -1539,6 +1542,7 @@ class Event(Base, SoftDeleteMixin):
     )
     title: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ---- Relationships ----
     entries: Mapped[List[Entry]] = relationship(
@@ -1678,7 +1682,7 @@ class PoemVersion(Base):
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    revision_date: Mapped[date] = mapped_column(Date, index=True)
+    revision_date: Mapped[Optional[date]] = mapped_column(Date, index=True, nullable=True)
     version_hash: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 

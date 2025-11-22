@@ -48,7 +48,6 @@ from dev.database.decorators import (
     log_database_operation,
     validate_metadata,
 )
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 
@@ -412,6 +411,59 @@ class EntryManager(BaseManager):
     # Relationship Processing Methods
     # -------------------------------------------------------------------------
 
+    def _resolve_or_create(
+        self, item: Union[Any, int, str], model_class: type
+    ) -> Optional[Any]:
+        """
+        Resolve an item to an ORM object, creating it if it's a string.
+
+        This extends the base _resolve_object() to handle string inputs from
+        YAML parsing by delegating to get_or_create methods.
+
+        Args:
+            item: Object instance, ID, or string name
+            model_class: Target model class
+
+        Returns:
+            Resolved ORM object, or None if item is None
+
+        Raises:
+            ValueError: If object not found
+            TypeError: If item type is unsupported
+        """
+        if item is None:
+            return None
+
+        # Handle ORM instances and IDs using base method
+        if isinstance(item, (model_class, int)):
+            return self._resolve_object(item, model_class)
+
+        # Handle strings by delegating to appropriate get_or_create
+        if isinstance(item, str):
+            from dev.database.managers import (
+                PersonManager,
+                EventManager,
+                LocationManager,
+            )
+
+            if model_class == Person:
+                person_mgr = PersonManager(self.session, self.logger)
+                return person_mgr.get_or_create(item)
+            elif model_class == Event:
+                event_mgr = EventManager(self.session, self.logger)
+                return event_mgr.get_or_create(item)
+            elif model_class == City:
+                location_mgr = LocationManager(self.session, self.logger)
+                return location_mgr.get_or_create_city(item)
+            else:
+                raise TypeError(
+                    f"String resolution not supported for {model_class.__name__}"
+                )
+        else:
+            raise TypeError(
+                f"Expected {model_class.__name__} instance, int, or str, got {type(item)}"
+            )
+
     def update_relationships(
         self,
         entry: Entry,
@@ -474,15 +526,33 @@ class EntryManager(BaseManager):
 
             for rel_name, meta_key, model_class in many_to_many_configs:
                 if meta_key in metadata:
-                    RelationshipManager.update_many_to_many(
-                        session=self.session,
-                        parent_obj=entry,
-                        relationship_name=rel_name,
-                        items=metadata[meta_key],
-                        model_class=model_class,
-                        incremental=incremental,
-                        remove_items=metadata.get(f"remove_{meta_key}", []),
-                    )
+                    items = metadata[meta_key]
+                    remove_items = metadata.get(f"remove_{meta_key}", [])
+
+                    # Get the collection
+                    collection = getattr(entry, rel_name)
+
+                    # Replacement mode: clear and add all
+                    if not incremental:
+                        collection.clear()
+                        for item in items:
+                            resolved_item = self._resolve_or_create(item, model_class)
+                            if resolved_item and resolved_item not in collection:
+                                collection.append(resolved_item)
+                    else:
+                        # Incremental mode: add new items
+                        for item in items:
+                            resolved_item = self._resolve_or_create(item, model_class)
+                            if resolved_item and resolved_item not in collection:
+                                collection.append(resolved_item)
+
+                        # Remove specified items
+                        for item in remove_items:
+                            resolved_item = self._resolve_or_create(item, model_class)
+                            if resolved_item and resolved_item in collection:
+                                collection.remove(resolved_item)
+
+                    self.session.flush()
 
             # --- Aliases ---
             if "alias" in metadata:
@@ -748,14 +818,12 @@ class EntryManager(BaseManager):
         # Link all collected aliases to entry
         if alias_orms:
             try:
-                RelationshipManager.update_many_to_many(
-                    session=self.session,
-                    parent_obj=entry,
-                    relationship_name="aliases_used",
-                    items=alias_orms,
-                    model_class=Alias,
-                    incremental=True,
-                )
+                # Incremental mode: add new aliases
+                for alias_orm in alias_orms:
+                    resolved_alias = self._resolve_object(alias_orm, Alias)
+                    if resolved_alias and resolved_alias not in entry.aliases_used:
+                        entry.aliases_used.append(resolved_alias)
+                self.session.flush()
 
                 if self.logger:
                     self.logger.log_debug(
@@ -851,6 +919,9 @@ class EntryManager(BaseManager):
         """
         Update locations associated with a mentioned date.
 
+        Auto-creates locations that don't exist yet, similar to how
+        entry locations are handled.
+
         Args:
             mentioned_date: MentionedDate to update
             locations_data: List of location names
@@ -867,20 +938,11 @@ class EntryManager(BaseManager):
             if not norm_name:
                 continue
 
-            # Find location by name
-            location = self.session.query(Location).filter_by(name=norm_name).first()
-
-            if not location:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Location '{norm_name}' not found for date {mentioned_date.date}",
-                        {
-                            "date_id": mentioned_date.id,
-                            "date": str(mentioned_date.date),
-                            "location": norm_name,
-                        },
-                    )
-                continue
+            # Get or create location (auto-create like we do for entries)
+            # If no city is specified, use "Unknown" as default
+            from dev.database.managers import LocationManager
+            location_mgr = LocationManager(self.session, self.logger)
+            location = location_mgr.get_or_create_location(norm_name, city_name="Unknown")
 
             # Link if not already linked
             if location.id not in existing_location_ids:
@@ -897,8 +959,11 @@ class EntryManager(BaseManager):
         """
         Update people associated with a mentioned date.
 
+        Auto-creates people that don't exist yet, similar to how
+        entry people are handled.
+
         Supports both simple names and full person specifications:
-        - String: "John" (looks up by name)
+        - String: "John" (auto-creates if needed)
         - Dict: {"name": "John"} or {"full_name": "John Smith"}
 
         Args:
@@ -915,51 +980,24 @@ class EntryManager(BaseManager):
             person = None
 
             if isinstance(person_spec, str):
-                # Simple name lookup - need to delegate to PersonManager
+                # Simple name - use get_or_create
                 norm_name = DataValidator.normalize_string(person_spec)
                 if not norm_name:
                     continue
 
-                try:
-                    from dev.database import PalimpsestDB
-                    person = PalimpsestDB._get_person_static(
-                        self.session, norm_name, None
-                    )
-                except ValidationError as e:
-                    if self.logger:
-                        self.logger.log_warning(
-                            f"Could not resolve person '{norm_name}' for date: {e}",
-                            {
-                                "date_id": mentioned_date.id,
-                                "date": str(mentioned_date.date),
-                                "person_spec": norm_name,
-                            },
-                        )
-                    continue
+                from dev.database.managers import PersonManager
+                person_mgr = PersonManager(self.session, self.logger)
+                person = person_mgr.get_or_create(norm_name)
 
             elif isinstance(person_spec, dict):
-                # Dict with name or full_name
+                # Dict with name or full_name - use get_or_create
                 name = DataValidator.normalize_string(person_spec.get("name"))
                 full_name = DataValidator.normalize_string(person_spec.get("full_name"))
 
-                # Try to resolve by name/full_name
                 if name or full_name:
-                    try:
-                        from dev.database import PalimpsestDB
-                        person = PalimpsestDB._get_person_static(
-                            self.session, name, full_name
-                        )
-                    except ValidationError as e:
-                        if self.logger:
-                            self.logger.log_warning(
-                                f"Could not resolve person for date: {e}",
-                                {
-                                    "date_id": mentioned_date.id,
-                                    "date": str(mentioned_date.date),
-                                    "person_spec": person_spec,
-                                },
-                            )
-                        continue
+                    from dev.database.managers import PersonManager
+                    person_mgr = PersonManager(self.session, self.logger)
+                    person = person_mgr.get_or_create(name or full_name, full_name)
 
             if person and person.id not in existing_person_ids:
                 mentioned_date.people.append(person)

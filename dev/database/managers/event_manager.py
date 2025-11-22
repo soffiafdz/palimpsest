@@ -53,7 +53,6 @@ from dev.database.decorators import (
     validate_metadata,
 )
 from dev.database.models import Event, Entry, Person
-from dev.database.relationship_manager import RelationshipManager
 from .base_manager import BaseManager
 
 
@@ -206,6 +205,36 @@ class EventManager(BaseManager):
         self._update_relationships(event, metadata, incremental=False)
 
         return event
+
+    @handle_db_errors
+    @log_database_operation("get_or_create_event")
+    def get_or_create(self, event_name: str) -> Event:
+        """
+        Get existing event or create new one if not found.
+
+        This is a convenience method for use when processing YAML metadata that
+        contains event names as strings. It creates events with minimal metadata.
+
+        Args:
+            event_name: Event identifier to search for or create
+
+        Returns:
+            Existing or newly created Event object
+
+        Raises:
+            ValidationError: If event_name is empty or invalid
+        """
+        event_name = DataValidator.normalize_string(event_name)
+        if not event_name:
+            raise ValidationError("Event name cannot be empty")
+
+        # Try to get existing event
+        event = self.get(event_name=event_name)
+        if event:
+            return event
+
+        # Event doesn't exist - create it
+        return self.create({"event": event_name})
 
     @handle_db_errors
     @log_database_operation("update_event")
@@ -377,15 +406,33 @@ class EventManager(BaseManager):
 
         for rel_name, meta_key, model_class in many_to_many_configs:
             if meta_key in metadata:
-                RelationshipManager.update_many_to_many(
-                    session=self.session,
-                    parent_obj=event,
-                    relationship_name=rel_name,
-                    items=metadata[meta_key],
-                    model_class=model_class,
-                    incremental=incremental,
-                    remove_items=metadata.get(f"remove_{meta_key}", []),
-                )
+                items = metadata[meta_key]
+                remove_items = metadata.get(f"remove_{meta_key}", [])
+
+                # Get the collection
+                collection = getattr(event, rel_name)
+
+                # Replacement mode: clear and add all
+                if not incremental:
+                    collection.clear()
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+                else:
+                    # Incremental mode: add new items
+                    for item in items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item not in collection:
+                            collection.append(resolved_item)
+
+                    # Remove specified items
+                    for item in remove_items:
+                        resolved_item = self._resolve_object(item, model_class)
+                        if resolved_item and resolved_item in collection:
+                            collection.remove(resolved_item)
+
+                self.session.flush()
 
     @handle_db_errors
     @log_database_operation("link_event_to_entry")

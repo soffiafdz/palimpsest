@@ -47,7 +47,6 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 
 from dev.core.exceptions import DatabaseError
 from dev.core.logging_manager import PalimpsestLogger
-from dev.database.relationship_manager import RelationshipManager
 
 
 class HasId(Protocol):
@@ -193,8 +192,8 @@ class BaseManager(ABC):
         """
         Resolve an item to an ORM object.
 
-        Delegates to RelationshipManager for consistent object resolution
-        across all managers.
+        Handles both ORM instances and integer IDs, ensuring the object
+        is persisted and retrieving it from the database if needed.
 
         Args:
             item: Object instance or ID
@@ -207,7 +206,19 @@ class BaseManager(ABC):
             ValueError: If object not found or not persisted
             TypeError: If item type is invalid
         """
-        return RelationshipManager._resolve_object(self.session, item, model_class)
+        if isinstance(item, model_class):
+            if item.id is None:
+                raise ValueError(f"{model_class.__name__} instance must be persisted")
+            return item
+        elif isinstance(item, int):
+            obj = self.session.get(model_class, item)
+            if obj is None:
+                raise ValueError(f"No {model_class.__name__} found with id: {item}")
+            return obj
+        else:
+            raise TypeError(
+                f"Expected {model_class.__name__} instance or int, got {type(item)}"
+            )
 
     # -------------------------------------------------------------------------
     # Abstract CRUD Methods (to be implemented by subclasses)

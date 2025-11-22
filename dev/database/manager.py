@@ -82,11 +82,11 @@ from contextlib import contextmanager
 from datetime import date, datetime, timezone
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Sequence
+from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Sequence, Protocol
 
 # --- Third party ---
 from sqlalchemy import create_engine, Engine, insert
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, Mapped
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from alembic.config import Config
@@ -135,7 +135,6 @@ from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
 from .query_optimizer import QueryOptimizer
-from .relationship_manager import RelationshipManager, HasId
 
 # Modular entity managers (Phase 2 & Phase 3)
 from .managers import (
@@ -149,6 +148,12 @@ from .managers import (
     ManuscriptManager,
     EntryManager,
 )
+
+
+class HasId(Protocol):
+    """Protocol for objects that have an id attribute."""
+
+    id: Mapped[int]
 
 
 T = TypeVar("T", bound=HasId)
@@ -801,8 +806,34 @@ class PalimpsestDB:
     def _resolve_object(
         self, session: Session, item: Union[T, int], model_class: Type[T]
     ) -> T:
-        """Resolve an item to an ORM object."""
-        return RelationshipManager._resolve_object(session, item, model_class)
+        """
+        Resolve an item to an ORM object.
+
+        Args:
+            session: SQLAlchemy session
+            item: Object instance or ID
+            model_class: Target model class
+
+        Returns:
+            Resolved ORM object
+
+        Raises:
+            ValueError: If object not found or not persisted
+            TypeError: If item type is invalid
+        """
+        if isinstance(item, model_class):
+            if item.id is None:
+                raise ValueError(f"{model_class.__name__} instance must be persisted")
+            return item
+        elif isinstance(item, int):
+            obj = session.get(model_class, item)
+            if obj is None:
+                raise ValueError(f"No {model_class.__name__} found with id: {item}")
+            return obj
+        else:
+            raise TypeError(
+                f"Expected {model_class.__name__} instance or int, got {type(item)}"
+            )
 
     @handle_db_errors
     def _get_or_create_lookup_item(
@@ -867,55 +898,6 @@ class PalimpsestDB:
     #
     # Stable facade methods that delegate to EntryManager:
     # -------------------------------------------------------------------------
-
-    @handle_db_errors
-    @log_database_operation("create_entry")
-    @validate_metadata(["date", "file_path"])
-    def create_entry(self, session: Session, metadata: Dict[str, Any]) -> Entry:
-        """Create entry - delegates to EntryManager."""
-        return self.entries.create(metadata)
-
-    @handle_db_errors
-    @log_database_operation("update_entry")
-    def update_entry(
-        self, session: Session, entry: Entry, metadata: Dict[str, Any]
-    ) -> Entry:
-        """Update entry - delegates to EntryManager."""
-        return self.entries.update(entry, metadata)
-
-    @handle_db_errors
-    @log_database_operation("get_entry")
-    def get_entry(
-        self, session: Session, entry_date: Union[str, date]
-    ) -> Optional[Entry]:
-        """Get entry - delegates to EntryManager."""
-        return self.entries.get(entry_date=entry_date)
-
-    @handle_db_errors
-    @log_database_operation("delete_entry")
-    def delete_entry(self, session: Session, entry: Entry) -> None:
-        """Delete entry - delegates to EntryManager."""
-        self.entries.delete(entry)
-
-    @handle_db_errors
-    @log_database_operation("get_entry_for_display")
-    def get_entry_for_display(
-        self, session: Session, entry_date: Union[str, date]
-    ) -> Optional[Entry]:
-        """Get entry for display - delegates to EntryManager."""
-        return self.entries.get_for_display(entry_date)
-
-    @handle_db_errors
-    @log_database_operation("bulk_create_entries")
-    def bulk_create_entries(
-        self,
-        session: Session,
-        entries_metadata: List[Dict[str, Any]],
-        batch_size: int = 100,
-    ) -> List[int]:
-        """Bulk create entries - delegates to EntryManager."""
-        return self.entries.bulk_create(entries_metadata, batch_size)
-
     # ---- Static Helper Methods for EntryManager ----
     # These allow EntryManager to call back to modular managers without circular dependencies
 

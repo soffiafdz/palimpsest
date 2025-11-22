@@ -1236,10 +1236,13 @@ class MdEntry:
         {
             "title": str (required),
             "content": str (required),
-            "revision_date": str|date (optional),
+            "revision_date": str|date (optional, defaults to entry.date),
             "notes": str (optional),
             "version_hash": str (optional, auto-generated if not provided)
         }
+
+        If revision_date is not provided or is invalid, it defaults to the
+        entry's date, ensuring all poems have a documented revision date.
 
         Args:
             poems_data: List of poem dictionaries
@@ -1281,15 +1284,19 @@ class MdEntry:
                 "content": DataValidator.normalize_string(poem["content"]),
             }
 
-            # Optional revision_date
+            # Optional revision_date (defaults to entry date if not provided)
             if "revision_date" in poem:
                 rev_date = DataValidator.normalize_date(poem["revision_date"])
                 if rev_date:
                     poem_dict["revision_date"] = rev_date
                 else:
                     logger.warning(
-                        f"Invalid revision_date in poem '{poem['title']}': {poem['revision_date']}"
+                        f"Invalid revision_date in poem '{poem['title']}': {poem['revision_date']} - using entry date"
                     )
+                    poem_dict["revision_date"] = self.date
+            else:
+                # Default to entry date when revision_date is not specified
+                poem_dict["revision_date"] = self.date
 
             # Optional notes
             if "notes" in poem:
@@ -1314,7 +1321,7 @@ class MdEntry:
         # Required fields
         parts.append(f"date: {self.date.isoformat()}")
         parts.append(f"word_count: {self.metadata.get('word_count', 0)}")
-        parts.append(f"reading_time: {self.metadata.get('reading_time', 0.0):.1f}")
+        parts.append(f"reading_time: {self.metadata.get('reading_time', 0.0):.2f}")
 
         # Optional core metadata
         if self.metadata.get("epigraph"):

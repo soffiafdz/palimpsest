@@ -65,7 +65,7 @@ entry_themes = Table(
 )
 
 
-# ----- Status Enum -----
+# ----- Enums -----
 class ManuscriptStatus(str, Enum):
     """
     Enumeration of manuscript entry statuses.
@@ -117,6 +117,30 @@ class ManuscriptStatus(str, Enum):
         return priority_map.get(self, 0)
 
 
+class EntryType(str, Enum):
+    """
+    Enumeration of manuscript entry types.
+
+    Defines the narrative form an entry takes in the manuscript:
+    - VIGNETTE: Self-contained narrative moment
+    - SCENE: Dramatic scene with dialogue and action
+    - SUMMARY: Summarized narrative passage
+    - REFLECTION: Introspective or philosophical reflection
+    - DIALOGUE: Dialogue-focused passage
+    """
+
+    VIGNETTE = "vignette"
+    SCENE = "scene"
+    SUMMARY = "summary"
+    REFLECTION = "reflection"
+    DIALOGUE = "dialogue"
+
+    @classmethod
+    def choices(cls) -> List[str]:
+        """Get all available entry type choices."""
+        return [entry_type.value for entry_type in cls]
+
+
 # ----- Models -----
 class ManuscriptEntry(Base):
     """
@@ -132,6 +156,9 @@ class ManuscriptEntry(Base):
         status: How this entry is used in the manuscript
         edited: Whether the entry has been edited for manuscript
         notes: Editorial notes about this entry's usage
+        entry_type: Narrative form (vignette, scene, summary, reflection, dialogue)
+        character_notes: Notes about character development in this entry
+        narrative_arc: Name of narrative arc this entry belongs to
 
     Relationships:
         themes: Many-to-many with Theme (thematic elements)
@@ -158,6 +185,15 @@ class ManuscriptEntry(Base):
     )
     edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # ---- Manuscript-specific fields ----
+    entry_type: Mapped[Optional[EntryType]] = mapped_column(
+        SQLEnum(EntryType, values_callable=lambda x: [e.value for e in x]),
+        nullable=True,
+        index=True,
+    )
+    character_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    narrative_arc: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     # ---- Foreign key ----
     entry_id: Mapped[int] = mapped_column(
@@ -239,6 +275,10 @@ class ManuscriptPerson(Base, SoftDeleteMixin):
         id: Primary key
         person_id: Foreign key to Person (unique - one-to-one)
         character: Name of the fictional character
+        character_description: Physical description of the character
+        character_arc: Character development notes
+        voice_notes: Notes about character's narrative voice
+        appearance_notes: Notes about how character appears in manuscript
 
     Relationships:
         person: One-to-one with Person (real person being adapted)
@@ -261,6 +301,12 @@ class ManuscriptPerson(Base, SoftDeleteMixin):
     # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     character: Mapped[str] = mapped_column(String, nullable=False, index=True)
+
+    # ---- Manuscript-specific fields ----
+    character_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    character_arc: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    voice_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    appearance_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # ---- Foreign key ----
     person_id: Mapped[int] = mapped_column(

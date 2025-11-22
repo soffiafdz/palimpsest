@@ -22,6 +22,24 @@ function M.setup()
 				{ "<leader>p<leader>w", "<cmd>1VimwikiMakeDiaryNote<cr>", desc = "Palimpsest Log (Today)" },
 				{ "<leader>p<leader>t", "<cmd>1VimwikiTabMakeDiaryNote<cr>", desc = "Palimpsest Log (Today, new tab)" },
 				{ "<leader>pr", "<Plug>VimwikiDiaryGenerateLinks", desc = "Rebuild log links" },
+				-- Wiki export/validation commands
+				{ "<leader>pe", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
+				{ "<leader>pE", "<cmd>PalimpsestExport ", desc = "Export specific entity..." },
+				{ "<leader>pv", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
+				{ "<leader>pV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
+				{ "<leader>ps", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
+				{ "<leader>pa", "<cmd>PalimpsestAnalysis<cr>", desc = "Analysis report" },
+				{ "<leader>ph", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
+				-- Manuscript commands
+				{ "<leader>pm", group = "manuscript" },
+				{ "<leader>pme", "<cmd>PalimpsestManuscriptExport<cr>", desc = "Export manuscript" },
+				{ "<leader>pmE", "<cmd>PalimpsestManuscriptExport ", desc = "Export manuscript entity..." },
+				{ "<leader>pmi", "<cmd>PalimpsestManuscriptImport<cr>", desc = "Import manuscript edits" },
+				{ "<leader>pmh", "<cmd>PalimpsestManuscriptIndex<cr>", desc = "Manuscript homepage" },
+				-- Telescope wiki browser
+				{ "<leader>pf", "<cmd>Telescope palimpsest<cr>", desc = "Find wiki pages" },
+				{ "<leader>pF", "<cmd>lua require('palimpsest.telescope').browse('people')<cr>", desc = "Browse people" },
+				{ "<leader>p/", "<cmd>lua require('palimpsest.telescope').search('all')<cr>", desc = "Search wiki content" },
 			},
 		})
 	else
@@ -37,10 +55,27 @@ function M.setup()
 				{ "<leader>v<leader>w", "<Plug>VimwikiMakeDiaryNote", desc = "Palimpsest Log (Today)" },
 				{ "<leader>v<leader>t", "<Plug>VimwikiTabMakeDiaryNote", desc = "Palimpsest Log (Today, new tab)" },
 				{ "<leader>v<leader>i", "<Plug>VimwikiDiaryGenerateLinks", desc = "Rebuild log links" },
+				-- Wiki export/validation commands
+				{ "<leader>ve", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
+				{ "<leader>vE", "<cmd>PalimpsestExport ", desc = "Export specific entity..." },
+				{ "<leader>vv", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
+				{ "<leader>vV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
+				{ "<leader>vs", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
+				{ "<leader>va", "<cmd>PalimpsestAnalysis<cr>", desc = "Analysis report" },
+				{ "<leader>vh", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
+				-- Manuscript commands
+				{ "<leader>vm", group = "manuscript" },
+				{ "<leader>vme", "<cmd>PalimpsestManuscriptExport<cr>", desc = "Export manuscript" },
+				{ "<leader>vmE", "<cmd>PalimpsestManuscriptExport ", desc = "Export manuscript entity..." },
+				{ "<leader>vmi", "<cmd>PalimpsestManuscriptImport<cr>", desc = "Import manuscript edits" },
+				{ "<leader>vmh", "<cmd>PalimpsestManuscriptIndex<cr>", desc = "Manuscript homepage" },
+				-- Telescope wiki browser
+				{ "<leader>vf", "<cmd>Telescope palimpsest<cr>", desc = "Find wiki pages" },
+				{ "<leader>vF", "<cmd>lua require('palimpsest.telescope').browse('people')<cr>", desc = "Browse people" },
+				{ "<leader>v/", "<cmd>lua require('palimpsest.telescope').search('all')<cr>", desc = "Search wiki content" },
 			},
 		})
 		-- Remove unnecessary keymaps
-		vim.api.nvim_del_keymap("n", "<leader>vs") -- Select vimwikis
 		vim.api.nvim_del_keymap("n", "<leader>v<leader>y") -- Diary (yesterday)
 		vim.api.nvim_del_keymap("n", "<leader>v<leader>m") -- Diary (tomorrow)
 	end
