@@ -115,9 +115,8 @@ def _validate_critical_paths() -> None:
 
     if missing_paths:
         print(
-            f"Warning: Critical paths missing:\n  "
-            + "\n  ".join(missing_paths),
-            file=sys.stderr
+            "Warning: Critical paths missing:\n  " + "\n  ".join(missing_paths),
+            file=sys.stderr,
         )
 
 
