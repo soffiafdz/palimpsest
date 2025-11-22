@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-manuscript2wiki.py
-------------------
+ms2wiki.py
+----------
 Export manuscript entities to wiki pages (manuscript subwiki).
 
 This pipeline exports only manuscript-designated content (entries, characters,
@@ -11,15 +11,15 @@ This is separate from sql2wiki.py which exports ALL journal content to the main 
 
 Usage:
     # Export specific manuscript entity type
-    python -m dev.pipeline.manuscript2wiki export entries
-    python -m dev.pipeline.manuscript2wiki export characters
-    python -m dev.pipeline.manuscript2wiki export arcs
+    python -m dev.pipeline.ms2wiki export entries
+    python -m dev.pipeline.ms2wiki export characters
+    python -m dev.pipeline.ms2wiki export arcs
 
     # Export all manuscript entities
-    python -m dev.pipeline.manuscript2wiki export all
+    python -m dev.pipeline.ms2wiki export all
 
     # Force regeneration
-    python -m dev.pipeline.manuscript2wiki export all --force
+    python -m dev.pipeline.ms2wiki export all --force
 """
 from __future__ import annotations
 
@@ -50,10 +50,10 @@ from dev.database.models_manuscript import (
 from dev.database.manager import PalimpsestDB
 from dev.core.paths import LOG_DIR, DB_PATH, WIKI_DIR, MD_DIR, ALEMBIC_DIR
 from dev.core.logging_manager import PalimpsestLogger
-from dev.core.cli_utils import setup_logger
-from dev.core.cli_stats import ConversionStats
+from dev.core.cli import setup_logger
+from dev.core.cli import ConversionStats
 
-from dev.pipeline.entity_exporter import write_if_changed
+from dev.builders.wiki import write_if_changed
 
 
 def export_manuscript_entries_with_navigation(

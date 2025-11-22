@@ -25,10 +25,9 @@ def upgrade() -> None:
     Change from globally unique name to composite unique (name, city_id).
     This allows the same location name in different cities (e.g., "Central Park" in NYC and SF).
     """
-    # Drop the old unique constraint on name
+    # Drop the old unique index on name (serves as both index and uniqueness constraint in SQLite)
     with op.batch_alter_table('locations', schema=None) as batch_op:
-        batch_op.drop_index('ix_locations_name')  # Drop index first
-        batch_op.drop_constraint('uq_locations_name', type_='unique')  # Drop unique constraint
+        batch_op.drop_index('ix_locations_name')  # Drop unique index
 
         # Recreate the index without unique constraint
         batch_op.create_index('ix_locations_name', ['name'], unique=False)

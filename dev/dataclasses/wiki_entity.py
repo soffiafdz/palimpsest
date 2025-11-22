@@ -66,7 +66,7 @@ class WikiEntity(ABC):
         Returns:
             Breadcrumb string with wiki links (e.g., "[[index.md|Home]] > [[entries.md|Entries]] > 2024-11-01")
         """
-        from dev.utils.wiki import relative_link
+        from dev.utils.md import relative_link
 
         # Get path relative to wiki root
         try:

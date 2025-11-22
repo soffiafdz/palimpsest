@@ -1,237 +1,286 @@
-#!/usr/bin/env python3
 """
 wiki.py
--------------------
-Set of utilities for parsing, extracting, and modifying Markdown documents.
+-------
+Utilities for parsing vimwiki markdown files for import to database.
 
-This module provides functions to:
-- extract Markdown sections based on header names and levels
-- parse bullet list items
-- read YAML front-matter blocks
-- compute relative links between files
-- compute absolute links back from relative
-- update or locate sections within a document by header
-
-It is designed to work with the markdown documents used in the
-Palimpsest project, especially those generated from journal entries and used
-to populate vimwiki files.
-
-Intended to be imported by both txt2md and md2wiki workflows.
+Used by wiki2sql phase to extract editable fields from wiki pages
+and sync them back to the database.
 """
-from __future__ import annotations
 
-# --- Standard Library ---
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Set
-
-# --- Third-party ---
-import yaml
-import logging
-
-# --- Project imports ---
-from dev.utils.md import split_frontmatter
-
-# Module logger
-logger = logging.getLogger(__name__)
+from typing import Dict, Optional, List
+import re
 
 
-# ----------------------------------------------------------------------
-# Extract a specific section
-# ----------------------------------------------------------------------
-def extract_section(lines: List[str], header_name: str) -> List[str]:
+def parse_wiki_file(file_path: Path) -> Dict[str, str]:
     """
-    Extracts lines under a Markdown section (e.g., '### Themes'),
-    stopping at the next header of the same or higher level.
-    The `header_name` can be 'Themes', 'Category', etc.
-    Returns a list of lines belonging to that section
-    (excluding the header itself).
-    """
-    section: List[str] = []
-    in_section: bool = False
-    header_level: Optional[int] = None
+    Parse wiki file into sections.
 
-    # Remove leading '#' and whitespace for matching section titles
-    clean_header: str = header_name.lstrip("#").strip()
-
-    for ln in lines:
-        stripped: str = ln.strip()
-
-        # Match any Markdown header
-        if m := re.match(r"^(#+)\s+(.*)", stripped):
-            level: int = len(m.group(1))
-            title: str = m.group(2).strip()
-
-            if in_section:
-                if level <= header_level:
-                    break  # stop at same or higher header level
-            elif title == clean_header:
-                in_section = True
-                header_level = level
-                continue  # skip the header line itself
-
-        elif in_section:
-            section.append(ln.rstrip())
-    return section
-
-
-# ----------------------------------------------------------------------
-# Obtain all the headers present
-# ----------------------------------------------------------------------
-def get_all_headers(lines: List[str]) -> List[Tuple[int, str]]:
-    """
-    Returns a list of (level, title) tuples for all headers in the document.
-    """
-    headers: List[Tuple[int, str]] = []
-    for ln in lines:
-        if m := re.match(r"^(#+)\s+(.*)", ln):
-            level: int = len(m.group(1))
-            title: str = m.group(2).strip()
-            headers.append((level, title))
-    return headers
-
-
-# ----------------------------------------------------------------------
-# Parse elements in a list (bullets)
-# ----------------------------------------------------------------------
-def parse_bullets(lines: List[str]) -> Set[str]:
-    """
-    Returns all bullet items (lines starting with '-') in the given lines.
-    """
-    elements: Set[str] = {
-        ln[1:].strip()
-        for ln in lines
-        if ln.strip().startswith("-") and ln.strip() != "-"
-    }
-    return elements
-
-
-# ----------------------------------------------------------------------
-# Parse YAML
-# ----------------------------------------------------------------------
-def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
-    """
-    Reads YAML front-matter (delimited by ---) from a markdown file.
-
-    Uses split_frontmatter() utility for consistent parsing behavior.
-    Returns a dict or empty dict on failure.
-    """
-    try:
-        content = path.read_text(encoding="utf-8")
-        yaml_text, _ = split_frontmatter(content)
-
-        if not yaml_text:
-            return {}
-
-        return yaml.safe_load(yaml_text) or {}
-    except Exception as exc:
-        logger.warning(f"YAML parse error in {path.name}: {exc}")
-        return {}
-
-
-# ----------------------------------------------------------------------
-# Relative links
-# ----------------------------------------------------------------------
-def relative_link(from_path: Path, to_path: Path) -> str:
-    """
-    Computes a Markdown-style relative link from one file to another.
+    Extracts content under each ### header into a dictionary.
 
     Args:
-        from_path: Source file path (the file containing the link)
-        to_path: Target file path (the file being linked to)
+        file_path: Path to wiki markdown file
 
     Returns:
-        Relative path from from_path to to_path
+        Dictionary mapping header names to section content
 
     Example:
-        >>> relative_link(Path("/wiki/people/alice.md"), Path("/journal/md/2024-01-01.md"))
-        '../../journal/md/2024-01-01.md'
+        {
+            "Notes": "User notes content...",
+            "Vignette": "Character description...",
+            "Metadata": "- Date: 2024-01-15\\n- Word Count: 500"
+        }
     """
-    import os
-    # Convert to absolute paths first
-    from_abs = from_path.resolve()
-    to_abs = to_path.resolve()
+    if not file_path.exists():
+        return {}
 
-    # Get relative path from parent directory of source file
-    rel_path = os.path.relpath(to_abs, from_abs.parent)
+    content = file_path.read_text(encoding="utf-8")
+    sections = {}
 
-    # Convert backslashes to forward slashes for consistency (Windows)
-    return rel_path.replace(os.sep, '/')
+    # Split by ### headers (level 3)
+    # Pattern: ### Header Name
+    pattern = r'^###\s+(.+?)$'
+    lines = content.split('\n')
+
+    current_header = None
+    current_content = []
+
+    for line in lines:
+        match = re.match(pattern, line)
+        if match:
+            # Save previous section
+            if current_header:
+                sections[current_header] = '\n'.join(current_content).strip()
+
+            # Start new section
+            current_header = match.group(1).strip()
+            current_content = []
+        else:
+            if current_header:
+                current_content.append(line)
+
+    # Save last section
+    if current_header:
+        sections[current_header] = '\n'.join(current_content).strip()
+
+    return sections
 
 
-def resolve_relative_link(from_path: Path, rel_link: str) -> Path:
-    """Resolves a Markdown-style relative link back to absolute."""
-    combined = from_path.parent / rel_link
-    # Resolve any '..' or '.' parts and return absolute path
-    return combined.resolve()
-
-
-# ----------------------------------------------------------------------
-# Search for a section and obtain its place in document (line numbers)
-# ----------------------------------------------------------------------
-def find_section_line_indexes(
-    lines: List[str],
-    header_name: str,
-) -> Optional[Tuple[int, int]]:
+def extract_section(sections: Dict[str, str], header: str) -> Optional[str]:
     """
-    Returns (start, end) line indexes for a given section.
-    Section header is not included.
-    End is exclusive.
-    Returns None if not found.
+    Extract content from a specific section.
+
+    Args:
+        sections: Dictionary from parse_wiki_file()
+        header: Section header to extract
+
+    Returns:
+        Section content or None if not found
     """
-    clean_header: str = header_name.lstrip("#").strip()
-    start: Optional[int] = None
-    header_level: Optional[int] = None
-    for idx, ln in enumerate(lines):
-        if m := re.match(r"^(#+)\s+(.*)", ln.strip()):
-            level: int = len(m.group(1))
-            title: str = m.group(2).strip()
-            if start is not None and level <= header_level:
-                return (start, idx)
-            if start is None and title == clean_header:
-                start = idx + 1  # section starts after header
-                header_level = level
-    if start is not None:
-        return (start, len(lines))
+    return sections.get(header)
+
+
+def extract_notes(sections: Dict[str, str]) -> Optional[str]:
+    """
+    Extract Notes section content.
+
+    Handles placeholder text like "[Add notes...]" by returning None.
+
+    Args:
+        sections: Dictionary from parse_wiki_file()
+
+    Returns:
+        Notes content or None if empty/placeholder
+    """
+    notes = extract_section(sections, "Notes")
+
+    if not notes:
+        return None
+
+    # Check for placeholder text
+    placeholders = [
+        "[Add notes",
+        "[Add your notes",
+        "[User notes",
+    ]
+
+    for placeholder in placeholders:
+        if notes.strip().startswith(placeholder):
+            return None
+
+    return notes.strip()
+
+
+def extract_vignette(sections: Dict[str, str]) -> Optional[str]:
+    """
+    Extract Vignette section content (Person only).
+
+    Handles placeholder text by returning None.
+
+    Args:
+        sections: Dictionary from parse_wiki_file()
+
+    Returns:
+        Vignette content or None if empty/placeholder
+    """
+    vignette = extract_section(sections, "Vignette")
+
+    if not vignette:
+        return None
+
+    # Check for placeholder text
+    placeholders = [
+        "[Add character",
+        "[Describe character",
+        "[Character description",
+    ]
+
+    for placeholder in placeholders:
+        if vignette.strip().startswith(placeholder):
+            return None
+
+    return vignette.strip()
+
+
+def extract_category(sections: Dict[str, str]) -> Optional[str]:
+    """
+    Extract category from Metadata section (Person only).
+
+    Looks for "- **Category:** VALUE" in metadata.
+
+    Args:
+        sections: Dictionary from parse_wiki_file()
+
+    Returns:
+        Category value or None
+    """
+    metadata = extract_section(sections, "Metadata")
+
+    if not metadata:
+        return None
+
+    # Look for category line
+    pattern = r'-\s*\*\*Category:\*\*\s*(.+?)$'
+    for line in metadata.split('\n'):
+        match = re.search(pattern, line, re.MULTILINE)
+        if match:
+            return match.group(1).strip()
+
     return None
 
 
-# ----------------------------------------------------------------------
-# Rewrite a whole section with new content
-# ----------------------------------------------------------------------
-def update_section(
-    lines: List[str],
-    header_name: str,
-    new_lines: List[str],
-) -> List[str]:
+def extract_list_items(section_content: str) -> List[str]:
     """
-    Replaces the section under header_name with new_lines.
-    Preserves the header and rest of the document.
-    Returns a new list of lines.
-    """
-    clean_header: str = header_name.lstrip("#").strip()
-    out: List[str] = []
-    in_section: bool = False
-    header_level: Optional[int] = None
+    Extract list items from markdown section.
 
-    for ln in lines:
-        stripped: str = ln.strip()
-        if m := re.match(r"^(#+)\s+(.*)", stripped):
-            level: int = len(m.group(1))
-            title: str = m.group(2).strip()
-            if in_section:
-                if level <= header_level:
-                    # Insert new section and continue
-                    out.extend(new_lines)
-                    in_section = False
-            if not in_section and title == clean_header:
-                out.append(ln)
-                in_section = True
-                header_level = level
-                continue
-        if not in_section:
-            out.append(ln)
-    # If the section was at the end, append new_lines
-    if in_section:
-        out.extend(new_lines)
-    return out
+    Extracts items starting with "- " or "* ".
+
+    Args:
+        section_content: Section content with list items
+
+    Returns:
+        List of item texts (without bullet points)
+    """
+    if not section_content:
+        return []
+
+    items = []
+    for line in section_content.split('\n'):
+        line = line.strip()
+        if line.startswith('- '):
+            items.append(line[2:].strip())
+        elif line.startswith('* '):
+            items.append(line[2:].strip())
+
+    return items
+
+
+def is_placeholder(text: Optional[str]) -> bool:
+    """
+    Check if text is a placeholder.
+
+    Returns True if text is None, empty, or looks like placeholder text.
+
+    Args:
+        text: Text to check
+
+    Returns:
+        True if placeholder, False otherwise
+    """
+    if not text:
+        return True
+
+    text = text.strip()
+
+    # Common placeholder patterns
+    placeholders = [
+        "[Add ",
+        "[User ",
+        "[Describe ",
+        "[Character ",
+        "[Write ",
+    ]
+
+    for placeholder in placeholders:
+        if text.startswith(placeholder):
+            return True
+
+    return False
+
+
+def extract_metadata_field(sections: Dict[str, str], field_name: str) -> Optional[str]:
+    """
+    Extract a specific field from Metadata section.
+
+    Looks for "- **FieldName:** VALUE" pattern.
+
+    Args:
+        sections: Dictionary from parse_wiki_file()
+        field_name: Field name to extract (e.g., "Category", "Status")
+
+    Returns:
+        Field value or None
+    """
+    metadata = extract_section(sections, "Metadata")
+
+    if not metadata:
+        return None
+
+    # Look for field line (case insensitive)
+    pattern = rf'-\s*\*\*{re.escape(field_name)}:\*\*\s*(.+?)$'
+    for line in metadata.split('\n'):
+        match = re.search(pattern, line, re.IGNORECASE | re.MULTILINE)
+        if match:
+            value = match.group(1).strip()
+            return value if value else None
+
+    return None
+
+
+def parse_wiki_links(text: str) -> List[Dict[str, str]]:
+    """
+    Parse vimwiki links from text.
+
+    Vimwiki link format: [[path/to/file.md|Display Text]]
+
+    Args:
+        text: Text containing wiki links
+
+    Returns:
+        List of dicts with 'path' and 'text' keys
+    """
+    links = []
+
+    # Pattern: [[path|text]]
+    pattern = r'\[\[([^\]|]+)(?:\|([^\]]+))?\]\]'
+
+    for match in re.finditer(pattern, text):
+        path = match.group(1).strip()
+        display_text = match.group(2).strip() if match.group(2) else path
+
+        links.append({
+            'path': path,
+            'text': display_text
+        })
+
+    return links

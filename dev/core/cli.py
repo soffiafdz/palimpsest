@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-cli_stats.py
--------------------
-Statistics tracking for CLI operations.
+cli.py
+------
+Shared CLI utilities and statistics for Palimpsest commands.
 
-Provides base and specialized stats classes for tracking operation metrics
-across different CLI commands. All stats classes include timing and basic
-metrics, with specialized subclasses for different operation types.
+Consolidates CLI helper functions and statistics tracking classes used across
+all CLI scripts to reduce duplication and ensure consistency.
+
+Functions:
+    setup_logger: Initialize PalimpsestLogger for CLI operations
 
 Classes:
     OperationStats: Base class for all statistics
@@ -15,17 +17,53 @@ Classes:
     BuildStats: For build operations (md2pdf, src2txt)
 
 Usage:
-    from dev.core.cli_stats import ConversionStats
+    from dev.core.cli import setup_logger, ConversionStats
 
+    logger = setup_logger(log_dir, "my_component")
     stats = ConversionStats()
     stats.files_processed += 1
-    stats.entries_created += 1
     print(stats.summary())
 """
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+from dev.core.logging_manager import PalimpsestLogger
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LOGGER SETUP
+# ═══════════════════════════════════════════════════════════════════════════
+
+def setup_logger(log_dir: Path, component_name: str) -> PalimpsestLogger:
+    """
+    Setup logging for CLI operations.
+
+    Creates the operations log directory if it doesn't exist and initializes
+    a PalimpsestLogger instance for the specified component.
+
+    Args:
+        log_dir: Base log directory (typically from paths.LOG_DIR)
+        component_name: Component identifier for logging (e.g., 'txt2md', 'yaml2sql')
+
+    Returns:
+        Configured PalimpsestLogger instance
+
+    Examples:
+        >>> from pathlib import Path
+        >>> from dev.core.paths import LOG_DIR
+        >>> logger = setup_logger(LOG_DIR, "txt2md")
+        >>> logger.log_info("Starting conversion...")
+    """
+    operations_log_dir = log_dir / "operations"
+    operations_log_dir.mkdir(parents=True, exist_ok=True)
+    return PalimpsestLogger(operations_log_dir, component_name=component_name)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STATISTICS CLASSES
+# ═══════════════════════════════════════════════════════════════════════════
 
 @dataclass
 class OperationStats:

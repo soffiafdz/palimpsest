@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Set, Pattern
 
 # --- Local ---
 from .wiki_entity import WikiEntity
-from dev.utils.wiki import extract_section, parse_bullets, resolve_relative_link, relative_link
+from dev.utils.md import extract_section, parse_bullets, resolve_relative_link, relative_link
 
 
 @dataclass

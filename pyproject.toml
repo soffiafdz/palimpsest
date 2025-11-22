@@ -29,11 +29,10 @@ dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "ruff>=0.2.0"]
 
 [project.scripts]
 plm = "dev.pipeline.cli:cli"
+jsearch = "dev.search.cli:cli"
+jai = "dev.ai.cli:cli"
 metadb = "dev.database.cli:cli"
-plm-search = "dev.pipeline.search:main"
-plm-ai = "dev.pipeline.ai_assist:main"
-plm-wiki-export = "dev.pipeline.sql2wiki:cli"
-plm-wiki-import = "dev.pipeline.wiki2sql:cli"
+validate = "dev.validators.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

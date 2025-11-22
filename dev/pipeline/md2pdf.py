@@ -35,7 +35,7 @@ from pathlib import Path
 from dev.core.paths import TEX_DIR, MD_DIR, PDF_DIR, LOG_DIR
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
+from dev.core.cli import setup_logger
 from dev.builders.pdfbuilder import PdfBuilder, BuildStats
 
 

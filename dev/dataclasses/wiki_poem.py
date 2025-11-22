@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 # --- Local ---
 from .wiki_entity import WikiEntity
-from dev.utils.wiki import relative_link
+from dev.utils.md import relative_link
 
 
 @dataclass
@@ -65,7 +65,7 @@ class Poem(WikiEntity):
             return None
 
         try:
-            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+            from dev.utils.wiki import parse_wiki_file, extract_notes
 
             sections = parse_wiki_file(path)
 

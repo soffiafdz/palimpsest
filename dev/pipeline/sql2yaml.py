@@ -42,8 +42,8 @@ from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR, MD_DIR
 from dev.core.exceptions import Sql2YamlError
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.validators import DataValidator
-from dev.core.cli_utils import setup_logger
-from dev.core.cli_stats import ExportStats
+from dev.core.cli import setup_logger
+from dev.core.cli import ExportStats
 
 from dev.utils import md
 

@@ -41,8 +41,8 @@ from dev.core.exceptions import Txt2MdError
 from dev.core.paths import LOG_DIR, MD_DIR  # , TMP_DIR  , ROOT
 from dev.core.temporal_files import TemporalFileManager
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
-from dev.core.cli_stats import ConversionStats
+from dev.core.cli import setup_logger
+from dev.core.cli import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
 
 

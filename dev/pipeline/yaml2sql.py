@@ -110,8 +110,8 @@ from dev.database.models import Entry
 from dev.core.exceptions import Yaml2SqlError
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
-from dev.core.cli_stats import ConversionStats
+from dev.core.cli import setup_logger
+from dev.core.cli import ConversionStats
 from dev.utils import fs
 
 

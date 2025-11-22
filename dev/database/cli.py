@@ -161,6 +161,37 @@ def get_db(ctx) -> PalimpsestDB:
     return ctx.obj["db"]
 
 
+# ===== COMMAND GROUPS =====
+
+
+@cli.group()
+@click.pass_context
+def migration(ctx: click.Context) -> None:
+    """Database migration management (Alembic operations)."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def query(ctx: click.Context) -> None:
+    """Browse and query database content."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def export(ctx: click.Context) -> None:
+    """Export database to various formats."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def maintenance(ctx: click.Context) -> None:
+    """Database maintenance and optimization."""
+    pass
+
+
 # ===== Setup & Initialization =====
 @cli.command()
 @click.option("--alembic-only", is_flag=True, help="Initialize Alembic only")
@@ -223,7 +254,7 @@ def reset(ctx, keep_backups):
 
 
 # ===== Migration Management =====
-@cli.command()
+@migration.command("create")
 @click.argument("message")
 @click.option(
     "--autogenerate", is_flag=True, help="Auto-generate migration from models"
@@ -247,7 +278,7 @@ def migration_create(ctx, message, autogenerate):
         handle_cli_error(ctx, e, "migration_create")
 
 
-@cli.command()
+@migration.command("upgrade")
 @click.option("--revision", default="head", help="Target revision (default: head)")
 @click.pass_context
 def migration_upgrade(ctx, revision):
@@ -267,7 +298,7 @@ def migration_upgrade(ctx, revision):
         )
 
 
-@cli.command()
+@migration.command("downgrade")
 @click.argument("revision")
 @click.pass_context
 def migration_downgrade(ctx, revision):
@@ -287,7 +318,7 @@ def migration_downgrade(ctx, revision):
         )
 
 
-@cli.command()
+@migration.command("status")
 @click.pass_context
 def migration_status(ctx):
     """Show current migration status."""
@@ -307,7 +338,7 @@ def migration_status(ctx):
         handle_cli_error(ctx, e, "migration_status")
 
 
-@cli.command()
+@migration.command("history")
 @click.pass_context
 def migration_history(ctx):
     """Show migration history."""
@@ -410,7 +441,7 @@ def restore(ctx, backup_path):
 
 
 # ===== Monitoring =====
-@cli.command()
+@query.command("show")
 @click.argument("entry_date")
 @click.option(
     "--full", is_flag=True, help="Show all details including references/poems"
@@ -480,7 +511,7 @@ def show(ctx, entry_date, full):
         )
 
 
-@cli.command()
+@query.command("years")
 @click.pass_context
 def years(ctx):
     """List all years with entry counts."""
@@ -503,7 +534,7 @@ def years(ctx):
         handle_cli_error(ctx, e, "years")
 
 
-@cli.command()
+@query.command("months")
 @click.argument("year", type=int)
 @click.pass_context
 def months(ctx, year):
@@ -558,7 +589,7 @@ def months(ctx, year):
         )
 
 
-@cli.command()
+@query.command("batches")
 @click.option("--threshold", type=int, default=500, help="Batch threshold")
 @click.pass_context
 def batches(ctx, threshold):
@@ -704,7 +735,7 @@ def health(ctx, fix):
         )
 
 
-@cli.command()
+@maintenance.command("validate")
 @click.pass_context
 def validate(ctx):
     """Validate database integrity."""
@@ -742,7 +773,7 @@ def validate(ctx):
 
 
 # ===== Maintenance =====
-@cli.command()
+@maintenance.command("cleanup")
 @click.confirmation_option(prompt="This will remove orphaned records. Continue?")
 @click.pass_context
 def cleanup(ctx):
@@ -804,7 +835,7 @@ def optimize(ctx):
 
 
 # ===== Export =====
-@cli.command()
+@export.command("csv")
 @click.argument("output_dir", type=click.Path())
 @click.pass_context
 def export_csv(ctx, output_dir):
@@ -829,7 +860,7 @@ def export_csv(ctx, output_dir):
         )
 
 
-@cli.command()
+@export.command("json")
 @click.argument("output_file", type=click.Path())
 @click.pass_context
 def export_json(ctx, output_file):
@@ -852,7 +883,7 @@ def export_json(ctx, output_file):
         )
 
 
-@cli.command()
+@maintenance.command("analyze")
 @click.pass_context
 def analyze(ctx):
     """Generate detailed analytics report."""

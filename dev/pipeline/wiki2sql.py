@@ -54,7 +54,7 @@ from dev.dataclasses.wiki_event import Event as WikiEvent
 
 from dev.core.paths import LOG_DIR, DB_PATH, WIKI_DIR, ALEMBIC_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
+from dev.core.cli import setup_logger
 from dev.core.exceptions import Wiki2SqlError
 
 from sqlalchemy import select
