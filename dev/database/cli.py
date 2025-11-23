@@ -42,6 +42,18 @@ Command Groups:
         - export-csv: Export to CSV files
         - export-json: Export to JSON
 
+    Tombstone Management:
+        - tombstone list: List association tombstones
+        - tombstone stats: Show tombstone statistics
+        - tombstone cleanup: Remove expired tombstones
+        - tombstone remove: Manually remove specific tombstone
+
+    Sync State Management:
+        - sync conflicts: List unresolved/resolved conflicts
+        - sync resolve: Mark conflict as resolved
+        - sync stats: Show sync statistics
+        - sync status: Show sync state for entity or summary
+
 Features:
     - Comprehensive error handling with context
     - Optional verbose logging
@@ -78,6 +90,18 @@ Usage:
     # Export data
     metadb export-csv output/
     metadb export-json output/data.json
+
+    # Tombstone management
+    metadb tombstone list --table entry_people
+    metadb tombstone stats
+    metadb tombstone cleanup --dry-run
+    metadb tombstone remove entry_people 123 45
+
+    # Sync state management
+    metadb sync conflicts
+    metadb sync resolve Entry 123
+    metadb sync stats
+    metadb sync status Entry 123
 
 Notes:
     - All commands support --verbose flag for detailed output
@@ -161,6 +185,51 @@ def get_db(ctx) -> PalimpsestDB:
     return ctx.obj["db"]
 
 
+# ===== COMMAND GROUPS =====
+
+
+@cli.group()
+@click.pass_context
+def migration(ctx: click.Context) -> None:
+    """Database migration management (Alembic operations)."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def query(ctx: click.Context) -> None:
+    """Browse and query database content."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def export(ctx: click.Context) -> None:
+    """Export database to various formats."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def maintenance(ctx: click.Context) -> None:
+    """Database maintenance and optimization."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def tombstone(ctx: click.Context) -> None:
+    """Manage association tombstones for deletion tracking."""
+    pass
+
+
+@cli.group()
+@click.pass_context
+def sync(ctx: click.Context) -> None:
+    """Manage synchronization state and conflict detection."""
+    pass
+
+
 # ===== Setup & Initialization =====
 @cli.command()
 @click.option("--alembic-only", is_flag=True, help="Initialize Alembic only")
@@ -223,7 +292,7 @@ def reset(ctx, keep_backups):
 
 
 # ===== Migration Management =====
-@cli.command()
+@migration.command("create")
 @click.argument("message")
 @click.option(
     "--autogenerate", is_flag=True, help="Auto-generate migration from models"
@@ -247,7 +316,7 @@ def migration_create(ctx, message, autogenerate):
         handle_cli_error(ctx, e, "migration_create")
 
 
-@cli.command()
+@migration.command("upgrade")
 @click.option("--revision", default="head", help="Target revision (default: head)")
 @click.pass_context
 def migration_upgrade(ctx, revision):
@@ -267,7 +336,7 @@ def migration_upgrade(ctx, revision):
         )
 
 
-@cli.command()
+@migration.command("downgrade")
 @click.argument("revision")
 @click.pass_context
 def migration_downgrade(ctx, revision):
@@ -287,7 +356,7 @@ def migration_downgrade(ctx, revision):
         )
 
 
-@cli.command()
+@migration.command("status")
 @click.pass_context
 def migration_status(ctx):
     """Show current migration status."""
@@ -307,7 +376,7 @@ def migration_status(ctx):
         handle_cli_error(ctx, e, "migration_status")
 
 
-@cli.command()
+@migration.command("history")
 @click.pass_context
 def migration_history(ctx):
     """Show migration history."""
@@ -410,7 +479,7 @@ def restore(ctx, backup_path):
 
 
 # ===== Monitoring =====
-@cli.command()
+@query.command("show")
 @click.argument("entry_date")
 @click.option(
     "--full", is_flag=True, help="Show all details including references/poems"
@@ -480,7 +549,7 @@ def show(ctx, entry_date, full):
         )
 
 
-@cli.command()
+@query.command("years")
 @click.pass_context
 def years(ctx):
     """List all years with entry counts."""
@@ -503,7 +572,7 @@ def years(ctx):
         handle_cli_error(ctx, e, "years")
 
 
-@cli.command()
+@query.command("months")
 @click.argument("year", type=int)
 @click.pass_context
 def months(ctx, year):
@@ -558,7 +627,7 @@ def months(ctx, year):
         )
 
 
-@cli.command()
+@query.command("batches")
 @click.option("--threshold", type=int, default=500, help="Batch threshold")
 @click.pass_context
 def batches(ctx, threshold):
@@ -704,7 +773,7 @@ def health(ctx, fix):
         )
 
 
-@cli.command()
+@maintenance.command("validate")
 @click.pass_context
 def validate(ctx):
     """Validate database integrity."""
@@ -742,7 +811,7 @@ def validate(ctx):
 
 
 # ===== Maintenance =====
-@cli.command()
+@maintenance.command("cleanup")
 @click.confirmation_option(prompt="This will remove orphaned records. Continue?")
 @click.pass_context
 def cleanup(ctx):
@@ -804,7 +873,7 @@ def optimize(ctx):
 
 
 # ===== Export =====
-@cli.command()
+@export.command("csv")
 @click.argument("output_dir", type=click.Path())
 @click.pass_context
 def export_csv(ctx, output_dir):
@@ -829,7 +898,7 @@ def export_csv(ctx, output_dir):
         )
 
 
-@cli.command()
+@export.command("json")
 @click.argument("output_file", type=click.Path())
 @click.pass_context
 def export_json(ctx, output_file):
@@ -852,7 +921,7 @@ def export_json(ctx, output_file):
         )
 
 
-@cli.command()
+@maintenance.command("analyze")
 @click.pass_context
 def analyze(ctx):
     """Generate detailed analytics report."""
@@ -874,6 +943,284 @@ def analyze(ctx):
 
     except DatabaseError as e:
         handle_cli_error(ctx, e, "analyze")
+
+
+# ===== Tombstone Management =====
+
+
+@tombstone.command("list")
+@click.option("--table", help="Filter by table name (e.g., 'entry_people')")
+@click.option("--limit", default=100, help="Maximum number to display (default: 100)")
+@click.pass_context
+def tombstone_list(ctx, table, limit):
+    """List association tombstones."""
+    from dev.database.tombstone_manager import TombstoneManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            tombstone_mgr = TombstoneManager(session, db.logger)
+            tombstones = tombstone_mgr.list_all(table_name=table, limit=limit)
+
+            if not tombstones:
+                click.echo("No tombstones found")
+                return
+
+            click.echo(f"\n🪦 Association Tombstones ({len(tombstones)})")
+            click.echo("=" * 70)
+
+            for t in tombstones:
+                click.echo(f"\nTable: {t.table_name}")
+                click.echo(f"  Left ID: {t.left_id}")
+                click.echo(f"  Right ID: {t.right_id}")
+                click.echo(f"  Removed at: {t.removed_at.isoformat()}")
+                click.echo(f"  Removed by: {t.removed_by}")
+                click.echo(f"  Source: {t.sync_source}")
+                if t.removal_reason:
+                    click.echo(f"  Reason: {t.removal_reason}")
+                if t.expires_at:
+                    click.echo(f"  Expires at: {t.expires_at.isoformat()}")
+                else:
+                    click.echo(f"  Expires: Never (permanent)")
+
+            if len(tombstones) == limit:
+                click.echo(f"\n(Showing first {limit} tombstones. Use --limit to see more)")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "tombstone_list")
+
+
+@tombstone.command("stats")
+@click.pass_context
+def tombstone_stats(ctx):
+    """Show tombstone statistics."""
+    from dev.database.tombstone_manager import TombstoneManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            tombstone_mgr = TombstoneManager(session, db.logger)
+            stats = tombstone_mgr.get_statistics()
+
+            click.echo("\n📊 Tombstone Statistics")
+            click.echo("=" * 70)
+
+            click.echo(f"\nTotal tombstones: {stats['total']}")
+            click.echo(f"Expired tombstones: {stats['expired']}")
+
+            if stats['by_table']:
+                click.echo("\nBy table:")
+                for table, count in sorted(stats['by_table'].items()):
+                    click.echo(f"  {table}: {count}")
+
+            if stats['by_source']:
+                click.echo("\nBy sync source:")
+                for source, count in sorted(stats['by_source'].items()):
+                    click.echo(f"  {source}: {count}")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "tombstone_stats")
+
+
+@tombstone.command("cleanup")
+@click.option("--dry-run", is_flag=True, help="Show what would be deleted without deleting")
+@click.pass_context
+def tombstone_cleanup(ctx, dry_run):
+    """Remove expired tombstones."""
+    from dev.database.tombstone_manager import TombstoneManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            tombstone_mgr = TombstoneManager(session, db.logger)
+            count = tombstone_mgr.cleanup_expired(dry_run=dry_run)
+
+            if dry_run:
+                click.echo(f"\n🔍 Dry run: Would delete {count} expired tombstones")
+                click.echo("Run without --dry-run to actually delete")
+            else:
+                click.echo(f"\n✅ Cleaned up {count} expired tombstones")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "tombstone_cleanup")
+
+
+@tombstone.command("remove")
+@click.argument("table_name")
+@click.argument("left_id", type=int)
+@click.argument("right_id", type=int)
+@click.confirmation_option(prompt="Remove this tombstone?")
+@click.pass_context
+def tombstone_remove(ctx, table_name, left_id, right_id):
+    """Manually remove a specific tombstone."""
+    from dev.database.tombstone_manager import TombstoneManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            tombstone_mgr = TombstoneManager(session, db.logger)
+
+            if tombstone_mgr.remove_tombstone(table_name, left_id, right_id):
+                click.echo(f"\n✅ Removed tombstone: {table_name}({left_id}, {right_id})")
+            else:
+                click.echo(f"\n⚠️  Tombstone not found: {table_name}({left_id}, {right_id})")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "tombstone_remove")
+
+
+# ===== Sync State Management =====
+
+
+@sync.command("conflicts")
+@click.option("--resolved", is_flag=True, help="Show resolved conflicts instead of unresolved")
+@click.pass_context
+def sync_conflicts(ctx, resolved):
+    """List conflicts (unresolved by default)."""
+    from dev.database.sync_state_manager import SyncStateManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            sync_mgr = SyncStateManager(session, db.logger)
+            conflicts = sync_mgr.list_conflicts(resolved=resolved)
+
+            if not conflicts:
+                status = "resolved" if resolved else "unresolved"
+                click.echo(f"No {status} conflicts found")
+                return
+
+            status_text = "Resolved" if resolved else "Unresolved"
+            click.echo(f"\n⚠️  {status_text} Conflicts ({len(conflicts)})")
+            click.echo("=" * 70)
+
+            for state in conflicts:
+                click.echo(f"\n{state.entity_type} ID: {state.entity_id}")
+                click.echo(f"  Last synced: {state.last_synced_at.isoformat()}")
+                click.echo(f"  Sync source: {state.sync_source}")
+                if state.machine_id:
+                    click.echo(f"  Machine: {state.machine_id}")
+                if state.sync_hash:
+                    click.echo(f"  Hash: {state.sync_hash[:12]}...")
+                click.echo(f"  Resolved: {state.conflict_resolved}")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "sync_conflicts")
+
+
+@sync.command("resolve")
+@click.argument("entity_type")
+@click.argument("entity_id", type=int)
+@click.pass_context
+def sync_resolve(ctx, entity_type, entity_id):
+    """Mark a conflict as resolved."""
+    from dev.database.sync_state_manager import SyncStateManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            sync_mgr = SyncStateManager(session, db.logger)
+
+            if sync_mgr.mark_conflict_resolved(entity_type, entity_id):
+                click.echo(f"\n✅ Marked conflict as resolved: {entity_type} {entity_id}")
+            else:
+                click.echo(f"\n⚠️  Sync state not found: {entity_type} {entity_id}")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "sync_resolve")
+
+
+@sync.command("stats")
+@click.pass_context
+def sync_stats(ctx):
+    """Show synchronization statistics."""
+    from dev.database.sync_state_manager import SyncStateManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            sync_mgr = SyncStateManager(session, db.logger)
+            stats = sync_mgr.get_statistics()
+
+            click.echo("\n📊 Sync State Statistics")
+            click.echo("=" * 70)
+
+            click.echo(f"\nTotal entities tracked: {stats['total']}")
+            click.echo(f"Conflicts (unresolved): {stats['conflicts_unresolved']}")
+            click.echo(f"Conflicts (resolved): {stats['conflicts_resolved']}")
+
+            if stats['by_entity_type']:
+                click.echo("\nBy entity type:")
+                for entity_type, count in sorted(stats['by_entity_type'].items()):
+                    click.echo(f"  {entity_type}: {count}")
+
+            if stats['by_source']:
+                click.echo("\nBy sync source:")
+                for source, count in sorted(stats['by_source'].items()):
+                    click.echo(f"  {source}: {count}")
+
+            if stats['by_machine']:
+                click.echo("\nBy machine:")
+                for machine, count in sorted(stats['by_machine'].items()):
+                    click.echo(f"  {machine}: {count}")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "sync_stats")
+
+
+@sync.command("status")
+@click.argument("entity_type", required=False)
+@click.argument("entity_id", type=int, required=False)
+@click.pass_context
+def sync_status(ctx, entity_type, entity_id):
+    """Show sync status for a specific entity or all entities."""
+    from dev.database.sync_state_manager import SyncStateManager
+
+    try:
+        db = get_db(ctx)
+
+        with db.session_scope() as session:
+            sync_mgr = SyncStateManager(session, db.logger)
+
+            if entity_type and entity_id:
+                # Show specific entity
+                state = sync_mgr.get(entity_type, entity_id)
+
+                if not state:
+                    click.echo(f"\n⚠️  No sync state for {entity_type} {entity_id}")
+                    return
+
+                click.echo(f"\n📊 Sync State: {entity_type} {entity_id}")
+                click.echo("=" * 70)
+                click.echo(f"Last synced: {state.last_synced_at.isoformat()}")
+                click.echo(f"Sync source: {state.sync_source}")
+                if state.sync_hash:
+                    click.echo(f"Hash: {state.sync_hash}")
+                if state.machine_id:
+                    click.echo(f"Machine: {state.machine_id}")
+                click.echo(f"Modified since sync: {state.modified_since_sync}")
+                click.echo(f"Conflict detected: {state.conflict_detected}")
+                click.echo(f"Conflict resolved: {state.conflict_resolved}")
+            else:
+                # Show summary
+                stats = sync_mgr.get_statistics()
+                click.echo("\n📊 Sync Status Summary")
+                click.echo("=" * 70)
+                click.echo(f"Total entities tracked: {stats['total']}")
+                click.echo(f"Active conflicts: {stats['conflicts_unresolved']}")
+
+                if stats['conflicts_unresolved'] > 0:
+                    click.echo("\n⚠️  Use 'metadb sync conflicts' to see details")
+
+    except DatabaseError as e:
+        handle_cli_error(ctx, e, "sync_status")
 
 
 if __name__ == "__main__":
