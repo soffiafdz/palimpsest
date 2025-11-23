@@ -18,8 +18,9 @@ from sqlalchemy.orm import sessionmaker
 
 from dev.database.models import Base, Entry, Person, Tag, Event, City, RelationType
 from dev.database.models_manuscript import ManuscriptEntry, ManuscriptStatus
-from dev.database.search import SearchQuery, SearchQueryParser, SearchEngine
-from dev.database.search_index import SearchIndexManager
+from dev.search.search import SearchQuery, SearchQueryParser
+from dev.search.search_engine import SearchEngine
+from dev.search.search_index import SearchIndexManager
 
 
 @pytest.fixture
