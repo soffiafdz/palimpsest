@@ -2,10 +2,10 @@
 Utilities package for Palimpsest project.
 
 This package provides commonly-used utilities organized by domain:
-- md: Markdown and YAML frontmatter processing
+- md: Markdown manipulation (sections, links, YAML, frontmatter)
 - fs: Filesystem operations and date parsing
 - parsers: Name, location, and context extraction
-- wiki: Markdown section manipulation and linking
+- wiki: Wiki file parsing for database import
 - txt: Text formatting and metrics
 
 Import commonly-used utilities directly from this package:
@@ -24,6 +24,14 @@ from .md import (
     get_text_hash,
     read_entry_body,
     generate_placeholder_body,
+    extract_section,
+    get_all_headers,
+    parse_bullets,
+    extract_yaml_front_matter,
+    relative_link,
+    resolve_relative_link,
+    find_section_line_indexes,
+    update_section,
 )
 
 # Filesystem utilities
@@ -46,17 +54,8 @@ from .parsers import (
     spaces_to_hyphenated,
 )
 
-# Wiki/Markdown section utilities
-from .wiki import (
-    extract_section,
-    get_all_headers,
-    parse_bullets,
-    extract_yaml_front_matter,
-    relative_link,
-    resolve_relative_link,
-    find_section_line_indexes,
-    update_section,
-)
+# Wiki parsing utilities (for wiki→database import)
+# Note: Section extraction functions moved to md.py
 
 # Text processing utilities
 from .txt import (

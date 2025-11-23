@@ -35,7 +35,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from dev.database.models import Entry, Person, Tag, Event, City
 from dev.database.models_manuscript import ManuscriptEntry, ManuscriptStatus, Theme
-from dev.database.search_index import SearchIndexManager
+from dev.search.search_index import SearchIndexManager
 
 
 @dataclass

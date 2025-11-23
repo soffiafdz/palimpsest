@@ -1,32 +1,56 @@
 #!/usr/bin/env python3
 """
 md.py
--------------------
-Markdown-specific utilities for the Palimpsest project.
+-----
+Markdown utilities for the Palimpsest project.
 
-Provides functions for parsing and formatting Markdown files with YAML
-frontmatter, including:
+This module provides comprehensive markdown manipulation functions including:
+
+**Frontmatter & YAML:**
 - Frontmatter extraction and splitting
-- YAML formatting helpers
+- YAML formatting helpers (escape, list, multiline)
+- YAML frontmatter reading from files
+
+**Section Extraction:**
+- Extract markdown sections by header name
+- Get all headers from document
+- Find section line indexes
+- Update/replace sections
+
+**Content Manipulation:**
+- Parse bullet list items
 - Content hashing for change detection
+- Read entry body content
 
-This module handles Markdown structure but delegates type conversion
-and validation to DataValidator.
+**Link Utilities:**
+- Compute relative links between files
+- Resolve relative links back to absolute paths
 
-Intended for use by md2wiki, metadata workflows, and MdEntry dataclass.
+Intended for use across txt2md, md2wiki, sql2wiki workflows and dataclasses.
 """
 from __future__ import annotations
 
 # --- Standard library imports ---
 import hashlib
+import logging
+import re
 from pathlib import Path
 from datetime import date
-from typing import Any, List
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+# --- Third-party imports ---
+import yaml
 
 from .parsers import spaces_to_hyphenated
 
+# Module logger
+logger = logging.getLogger(__name__)
 
-# ----- YAML Frontmatter Parsing -----
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FRONTMATTER & YAML
+# ═══════════════════════════════════════════════════════════════════════════
+
 def split_frontmatter(content: str) -> tuple[str, List[str]]:
     """
     Split markdown content into YAML frontmatter and body.
@@ -79,7 +103,32 @@ def split_frontmatter(content: str) -> tuple[str, List[str]]:
     return "\n".join(frontmatter_lines), body_lines
 
 
-# ----- YAML Formatting Helpers -----
+def extract_yaml_front_matter(path: Path) -> Dict[str, Any]:
+    """
+    Reads YAML front-matter (delimited by ---) from a markdown file.
+
+    Uses split_frontmatter() utility for consistent parsing behavior.
+    Returns a dict or empty dict on failure.
+
+    Args:
+        path: Path to markdown file
+
+    Returns:
+        Dictionary of YAML frontmatter fields, or empty dict if none/error
+    """
+    try:
+        content = path.read_text(encoding="utf-8")
+        yaml_text, _ = split_frontmatter(content)
+
+        if not yaml_text:
+            return {}
+
+        return yaml.safe_load(yaml_text) or {}
+    except Exception as exc:
+        logger.warning(f"YAML parse error in {path.name}: {exc}")
+        return {}
+
+
 def yaml_escape(value: str) -> str:
     """
     Escape string for safe YAML output.
@@ -170,7 +219,251 @@ def yaml_multiline(text: str) -> str:
         return f'"{yaml_escape(text)}"'
 
 
-# ----- Content Hashing -----
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION EXTRACTION
+# ═══════════════════════════════════════════════════════════════════════════
+
+def extract_section(lines: List[str], header_name: str) -> List[str]:
+    """
+    Extracts lines under a Markdown section (e.g., '### Themes'),
+    stopping at the next header of the same or higher level.
+
+    Args:
+        lines: List of content lines
+        header_name: Section header to find (e.g., 'Themes', '### Category')
+
+    Returns:
+        List of lines belonging to that section (excluding the header itself)
+
+    Examples:
+        >>> lines = ["# Title", "## Section", "Content here", "## Next"]
+        >>> extract_section(lines, "Section")
+        ['Content here']
+    """
+    section: List[str] = []
+    in_section: bool = False
+    header_level: Optional[int] = None
+
+    # Remove leading '#' and whitespace for matching section titles
+    clean_header: str = header_name.lstrip("#").strip()
+
+    for ln in lines:
+        stripped: str = ln.strip()
+
+        # Match any Markdown header
+        if m := re.match(r"^(#+)\s+(.*)", stripped):
+            level: int = len(m.group(1))
+            title: str = m.group(2).strip()
+
+            if in_section:
+                if level <= header_level:
+                    break  # stop at same or higher header level
+            elif title == clean_header:
+                in_section = True
+                header_level = level
+                continue  # skip the header line itself
+
+        elif in_section:
+            section.append(ln.rstrip())
+    return section
+
+
+def get_all_headers(lines: List[str]) -> List[Tuple[int, str]]:
+    """
+    Returns a list of (level, title) tuples for all headers in the document.
+
+    Args:
+        lines: List of content lines
+
+    Returns:
+        List of tuples (header_level, header_title)
+
+    Examples:
+        >>> lines = ["# Title", "## Section 1", "### Subsection"]
+        >>> get_all_headers(lines)
+        [(1, 'Title'), (2, 'Section 1'), (3, 'Subsection')]
+    """
+    headers: List[Tuple[int, str]] = []
+    for ln in lines:
+        if m := re.match(r"^(#+)\s+(.*)", ln):
+            level: int = len(m.group(1))
+            title: str = m.group(2).strip()
+            headers.append((level, title))
+    return headers
+
+
+def find_section_line_indexes(
+    lines: List[str],
+    header_name: str,
+) -> Optional[Tuple[int, int]]:
+    """
+    Returns (start, end) line indexes for a given section.
+
+    Section header is not included in the range.
+    End index is exclusive.
+
+    Args:
+        lines: List of content lines
+        header_name: Section header to find
+
+    Returns:
+        Tuple of (start_index, end_index) or None if not found
+
+    Examples:
+        >>> lines = ["# Title", "## Section", "Content", "## Next"]
+        >>> find_section_line_indexes(lines, "Section")
+        (2, 3)  # Content line only
+    """
+    clean_header: str = header_name.lstrip("#").strip()
+    start: Optional[int] = None
+    header_level: Optional[int] = None
+    for idx, ln in enumerate(lines):
+        if m := re.match(r"^(#+)\s+(.*)", ln.strip()):
+            level: int = len(m.group(1))
+            title: str = m.group(2).strip()
+            if start is not None and level <= header_level:
+                return (start, idx)
+            if start is None and title == clean_header:
+                start = idx + 1  # section starts after header
+                header_level = level
+    if start is not None:
+        return (start, len(lines))
+    return None
+
+
+def update_section(
+    lines: List[str],
+    header_name: str,
+    new_lines: List[str],
+) -> List[str]:
+    """
+    Replaces the section under header_name with new_lines.
+
+    Preserves the header and rest of the document.
+
+    Args:
+        lines: Original document lines
+        header_name: Section header to replace
+        new_lines: New content for the section
+
+    Returns:
+        New list of lines with updated section
+
+    Examples:
+        >>> lines = ["# Title", "## Section", "Old content", "## Next"]
+        >>> update_section(lines, "Section", ["New content"])
+        ['# Title', '## Section', 'New content', '## Next']
+    """
+    clean_header: str = header_name.lstrip("#").strip()
+    out: List[str] = []
+    in_section: bool = False
+    header_level: Optional[int] = None
+
+    for ln in lines:
+        stripped: str = ln.strip()
+        if m := re.match(r"^(#+)\s+(.*)", stripped):
+            level: int = len(m.group(1))
+            title: str = m.group(2).strip()
+            if in_section:
+                if level <= header_level:
+                    # Insert new section and continue
+                    out.extend(new_lines)
+                    in_section = False
+            if not in_section and title == clean_header:
+                out.append(ln)
+                in_section = True
+                header_level = level
+                continue
+        if not in_section:
+            out.append(ln)
+    # If the section was at the end, append new_lines
+    if in_section:
+        out.extend(new_lines)
+    return out
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# BULLET PARSING
+# ═══════════════════════════════════════════════════════════════════════════
+
+def parse_bullets(lines: List[str]) -> Set[str]:
+    """
+    Returns all bullet items (lines starting with '-') in the given lines.
+
+    Args:
+        lines: List of content lines
+
+    Returns:
+        Set of bullet item contents (without the '-' prefix)
+
+    Examples:
+        >>> lines = ["- Item 1", "- Item 2", "Not a bullet"]
+        >>> parse_bullets(lines)
+        {'Item 1', 'Item 2'}
+    """
+    elements: Set[str] = {
+        ln[1:].strip()
+        for ln in lines
+        if ln.strip().startswith("-") and ln.strip() != "-"
+    }
+    return elements
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LINK UTILITIES
+# ═══════════════════════════════════════════════════════════════════════════
+
+def relative_link(from_path: Path, to_path: Path) -> str:
+    """
+    Computes a Markdown-style relative link from one file to another.
+
+    Args:
+        from_path: Source file path (the file containing the link)
+        to_path: Target file path (the file being linked to)
+
+    Returns:
+        Relative path from from_path to to_path
+
+    Examples:
+        >>> relative_link(Path("/wiki/people/alice.md"), Path("/journal/md/2024-01-01.md"))
+        '../../journal/md/2024-01-01.md'
+    """
+    import os
+    # Convert to absolute paths first
+    from_abs = from_path.resolve()
+    to_abs = to_path.resolve()
+
+    # Get relative path from parent directory of source file
+    rel_path = os.path.relpath(to_abs, from_abs.parent)
+
+    # Convert backslashes to forward slashes for consistency (Windows)
+    return rel_path.replace(os.sep, '/')
+
+
+def resolve_relative_link(from_path: Path, rel_link: str) -> Path:
+    """
+    Resolves a Markdown-style relative link back to absolute path.
+
+    Args:
+        from_path: Source file path (the file containing the link)
+        rel_link: Relative link string
+
+    Returns:
+        Absolute path to the target file
+
+    Examples:
+        >>> resolve_relative_link(Path("/wiki/people/alice.md"), "../../journal/md/2024-01-01.md")
+        Path('/journal/md/2024-01-01.md')
+    """
+    combined = from_path.parent / rel_link
+    # Resolve any '..' or '.' parts and return absolute path
+    return combined.resolve()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CONTENT HASHING
+# ═══════════════════════════════════════════════════════════════════════════
+
 def get_text_hash(text: str) -> str:
     """
     Compute MD5 hash of text content for change detection.
@@ -191,9 +484,20 @@ def get_text_hash(text: str) -> str:
     return hashlib.md5(text.encode("utf-8")).hexdigest()
 
 
-# ----- Entries -----
+# ═══════════════════════════════════════════════════════════════════════════
+# ENTRY BODY UTILITIES
+# ═══════════════════════════════════════════════════════════════════════════
+
 def read_entry_body(file_path: Path) -> List[str]:
-    """Read body content from markdown file (everything after frontmatter)."""
+    """
+    Read body content from markdown file (everything after frontmatter).
+
+    Args:
+        file_path: Path to markdown file
+
+    Returns:
+        List of body lines (empty list if file doesn't exist)
+    """
     if not file_path.exists():
         return []
     content = file_path.read_text(encoding="utf-8")
@@ -202,7 +506,15 @@ def read_entry_body(file_path: Path) -> List[str]:
 
 
 def generate_placeholder_body(entry_date: date) -> List[str]:
-    """Generate placeholder body for entries without content."""
+    """
+    Generate placeholder body for entries without content.
+
+    Args:
+        entry_date: Date for the entry
+
+    Returns:
+        List of placeholder body lines
+    """
     return [
         f"# {entry_date.strftime('%A, %B %d, %Y')}",
         "",
