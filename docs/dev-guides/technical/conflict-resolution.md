@@ -7,9 +7,9 @@ This guide explains how Palimpsest detects and resolves conflicts when the same 
 **Audience**: Users working on Palimpsest across multiple machines (laptop, desktop, etc.)
 
 **Related Documents**:
-- User guide: `docs/multi-machine-sync.md`
-- Technical guide: `docs/tombstone-guide.md`
-- Migration guide: `docs/migration-guide.md`
+- User guide: `../../user-guides/multi-machine-sync.md`
+- Technical guide: `tombstone-guide.md`
+- Migration guide: `migration-guide.md`
 
 ---
 
@@ -234,16 +234,18 @@ def check_conflict(
 4. Conflict marked for user review
 5. User manually verifies changes
 
+*Design Rationale*: This strategy was chosen for its balance of simplicity and effectiveness in a single-user, multi-machine environment. It prioritizes forward progress, ensuring that synchronization never blocks due to conflicts. The explicit logging and requirement for user review acknowledge the potential for data loss while empowering the user to be the ultimate arbiter of truth.
+
 **Advantages**:
-- ✅ Simple to implement
-- ✅ Always makes progress (no blocking)
-- ✅ Works well for single-user multi-machine
-- ✅ Predictable behavior
+- ✅ **Simple to implement**: Reduces development overhead and introduces fewer potential bugs.
+- ✅ **Always makes progress (no blocking)**: Ensures the system remains operational even in the presence of conflicts, preventing deadlocks or stalled synchronization.
+- ✅ **Works well for single-user multi-machine**: In a single-user context, the "lost" changes are usually from the same user, making manual review manageable.
+- ✅ **Predictable behavior**: The outcome of a conflict (YAML overwrites DB) is clear and consistent.
 
 **Disadvantages**:
-- ❌ May lose changes from one machine
-- ❌ Requires manual review
-- ❌ No automatic merging
+- ❌ **May lose changes from one machine**: If concurrent edits are not carefully managed, one set of changes might be implicitly overwritten.
+- ❌ **Requires manual review**: Places the burden of resolution on the user, which can be tedious for frequent conflicts.
+- ❌ **No automatic merging**: Lacks intelligent merging capabilities, requiring the user to manually reconcile differing values.
 
 ### Example: Last-Write-Wins
 
@@ -274,22 +276,22 @@ Machine B (T3, after pulling):
 
 ### Alternative Strategy: Three-Way Merge (Phase 5)
 
-**Not currently implemented.** Would require snapshot system.
+**Not currently implemented.** Would require a robust snapshot system to record previous states and enable a three-way comparison.
 
 **How It Would Work**:
-1. Baseline: Last synced state
-2. Current: Database state
-3. Incoming: YAML file state
-4. Compare all three:
-   - Changed only in current → Keep current
-   - Changed only in incoming → Apply incoming
-   - Changed in both → Flag as conflict
-5. Auto-resolve non-conflicting fields
-6. User resolves conflicting fields
+1. **Baseline**: The last known synchronized state of the entry.
+2. **Current**: The current state of the entry in the database.
+3. **Incoming**: The state of the entry from the incoming YAML file.
+4. **Compare all three**: The system would intelligently compare these three versions to:
+   - Identify changes unique to the current database state (local changes).
+   - Identify changes unique to the incoming YAML file (remote changes).
+   - Identify conflicting changes where both current and incoming modified the same field differently.
+5. **Auto-resolve non-conflicting fields**: Automatically merge changes that do not directly conflict.
+6. **User resolves conflicting fields**: Present only the truly conflicting changes to the user for manual resolution.
 
-**Advantage**: Fewer lost changes
+**Advantage**: Significantly reduces the likelihood of lost changes and minimizes the manual effort required for conflict resolution by automating non-conflicting merges.
 
-**Disadvantage**: More complex, requires Phase 5 implementation
+**Disadvantage**: Substantially more complex to implement, requiring sophisticated change tracking, a historical snapshot system, and a more interactive resolution UI, placing it in a later development phase (Phase 5).
 
 ---
 
@@ -363,7 +365,7 @@ git diff HEAD~1 HEAD -- journal/md/2024/2024-11-01.md
 
 **If Changes Look Wrong**:
 - Edit YAML file to correct values
-- Re-sync: `python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md`
+- Re-sync: `plm sync-db --file journal/md/2024/2024-11-01.md`
 - Commit and push corrected version
 
 ### Step 4: Mark Conflict Resolved
@@ -395,7 +397,7 @@ metadb sync conflicts
 **Sync Entry Again**:
 ```bash
 # Update sync state with new baseline
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 
 # Output:
 # Processing: journal/md/2024/2024-11-01.md
@@ -512,7 +514,7 @@ git commit -m "Merge: keep 'excellent' mood"
 # Choose: mood: amazing
 
 # Then sync and resolve
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 metadb sync resolve Entry 123
 git push
 ```
@@ -594,7 +596,7 @@ metadb sync stats
 # START of work session
 cd ~/Documents/palimpsest
 git pull
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # NOW safe to edit
 vim journal/md/2024/2024-11-23.md
@@ -607,7 +609,7 @@ vim journal/md/2024/2024-11-23.md
 **Workflow**:
 ```bash
 # AFTER editing
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # Check for conflicts
 metadb sync conflicts
@@ -681,7 +683,7 @@ git merge --abort
 vim journal/md/2024/2024-11-01.md
 
 # Sync with manual version
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 
 # Mark conflict resolved
 metadb sync resolve Entry 123
@@ -789,7 +791,7 @@ metadb sync status Entry 123
 **Solution**:
 ```bash
 # Re-sync to establish baseline
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 
 # Verify hash stored
 metadb sync status Entry 123
@@ -809,6 +811,7 @@ metadb sync status Entry 123
 # Note hash value
 
 # Recompute hash
+# Recompute hash (for advanced debugging/development)
 python -c "
 from dev.utils import fs
 from pathlib import Path
@@ -828,7 +831,7 @@ print(fs.get_file_hash(Path('journal/md/2024/2024-11-01.md')))
 metadb sync resolve Entry 123
 
 # Re-sync to update baseline
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 ```
 
 ### Problem: Conflict Resolved But Still Listed
@@ -1020,10 +1023,10 @@ conflict_resolution:
 ```bash
 # Daily routine
 git pull
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 metadb sync conflicts  # Check for conflicts
 # ... edit files ...
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 metadb sync conflicts  # Check again
 # If conflicts, review and resolve
 git add . && git commit -m "..." && git push

@@ -6,8 +6,8 @@ Fast reference for Palimpsest metadata fields with examples.
 
 ## Navigation
 
-- **Full YAML↔SQL Guide:** [METADATA_GUIDE_YAML_SQL.md](METADATA_GUIDE_YAML_SQL.md)
-- **Full SQL↔Wiki Guide:** [METADATA_GUIDE_SQL_WIKI.md](METADATA_GUIDE_SQL_WIKI.md)
+- **Full YAML↔SQL Guide:** [Full YAML↔SQL Guide](../../dev-guides/technical/metadata-yaml-sql-guide.md)
+- **Full SQL↔Wiki Guide:** [Full SQL↔Wiki Guide](sql-wiki-guide.md)
 
 ---
 

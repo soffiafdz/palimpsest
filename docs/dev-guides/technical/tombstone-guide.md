@@ -7,9 +7,9 @@ This document provides technical details about the **tombstone pattern** impleme
 **Audience**: Developers and advanced users who want to understand the internals of the deletion tracking system.
 
 **Related Documents**:
-- User guide: `docs/multi-machine-sync.md`
-- Conflict resolution: `docs/conflict-resolution.md`
-- Migration guide: `docs/migration-guide.md`
+- User guide: `../../user-guides/multi-machine-sync.md`
+- Conflict resolution: `conflict-resolution.md`
+- Migration guide: `migration-guide.md`
 
 ---
 
@@ -19,29 +19,29 @@ A **tombstone** is a database record that marks when an association between two 
 
 ### The Problem Tombstones Solve
 
-In a multi-machine synchronization scenario, consider this timeline:
+In a multi-machine synchronization scenario, accurately propagating deletions is a complex challenge. Consider this timeline without tombstones:
 
 **Without Tombstones**:
 ```
-T0: Machine A - Entry has people: [Alice, Bob]
-T1: Machine A - User removes Bob → people: [Alice]
-T2: Machine A - Push to git
-T3: Machine B - Pull from git
-T4: Machine B - Sync from YAML → Sees people: [Alice]
-                                   → Database has: [Alice, Bob]
-                                   → Does it add Bob back? 🤔
+T0: Machine A - Entry has people: [Alice, Bob] (Both machines are in sync)
+T1: Machine A - User removes Bob from the entry's YAML file → people: [Alice]
+T2: Machine A - Pushes its changes (updated YAML and DB) to the central Git repository.
+T3: Machine B - Pulls changes from Git (gets the updated YAML with Bob removed).
+T4: Machine B - Performs a sync from its local YAML files to its database → Sees people: [Alice] in the YAML.
+                                   → At this point, Machine B's database *still* has Bob associated with the entry (from T0).
+                                   → The critical question arises: Should Machine B's sync logic re-add Bob to the database because the YAML no longer explicitly states his removal? 🤔
 ```
 
-**The Question**: When Machine B syncs and sees `people: [Alice]` in the YAML:
-- Option 1: **Overwrite** database → Remove Bob (loses data added via wiki)
-- Option 2: **Merge** with database → Keep Bob (deletion doesn't propagate!)
+**The Ambiguity of Deletions**: When Machine B syncs and sees `people: [Alice]` in the YAML, it faces a fundamental ambiguity:
+- Option 1: **Overwrite** its database state entirely based on the incoming YAML. If it does this, and another machine (or a wiki sync) had added "Bob" independently to Machine B's database *without* it being in the YAML, that change would be lost.
+- Option 2: **Merge** its current database state with the incoming YAML. This would mean keeping "Bob" in the database, effectively ignoring Machine A's deletion. This leads to deletion propagation failure and inconsistent data.
 
-**Neither option is correct.** We need to distinguish:
-- "Bob was never here" (don't add)
-- "Bob was removed" (keep removed)
-- "Bob was added elsewhere" (keep)
+**Neither naive option is correct** because they fail to capture the *intent* of a deletion. We need a mechanism to distinguish between:
+- "Bob was never associated with this entry" (Machine A never had Bob, so don't add him).
+- "Bob was explicitly removed from this entry" (Machine A intentionally removed Bob, so ensure he stays removed).
+- "Bob was added elsewhere" (another system added Bob, so keep him if no explicit deletion signal is present).
 
-**Solution**: Tombstones record "Bob was explicitly removed from this entry."
+**Solution**: Tombstones explicitly record "Bob was associated with this entry, but has been deliberately removed." This provides the necessary historical context to correctly interpret changes in distributed systems.
 
 ### With Tombstones
 
@@ -439,27 +439,31 @@ Tombstones track which sync source created them to handle parallel sync paths.
 
 ### Why Track Sync Source?
 
-Palimpsest has **two independent sync paths**:
-1. **YAML → SQL**: Metadata from daily journal markdown
-2. **Wiki → SQL**: Editorial notes from wiki entries
+Tracking the `sync_source` is critical because Palimpsest is designed with **multiple, independent data synchronization paths**, each potentially modifying different aspects of the same underlying data.
 
-These can modify different fields of the same entry:
-- YAML controls: `people`, `tags`, `events`, `cities`, `mood`, `rating`
-- Wiki controls: `editorial_note`, `title`, `summary`
+Palimpsest's primary sync paths are:
+1. **YAML → SQL**: This path processes structured metadata from daily journal Markdown files (e.g., people, events, tags, dates, manuscript status). Changes here are typically structural or data-driven.
+2. **Wiki → SQL**: This path imports editorial notes and specific manuscript-related fields from human-curated wiki pages. Changes here are typically qualitative, annotation-based, and limited to specific editable fields.
+
+While these paths often modify distinct sets of fields, there can be overlaps or interdependencies. For example, a person might be removed via a YAML edit, but then referenced in a wiki note that is subsequently imported. Without `sync_source` information, a tombstone created by the YAML path might not be respected by the Wiki path, leading to inconsistencies.
+
+**Implications of `sync_source`**:
+- **Cross-Source Deletion Enforcement**: A tombstone created by one sync source (e.g., YAML) needs to be respected by *all* other sync sources (e.g., Wiki) that might attempt to re-introduce the deleted association. This ensures that a deliberate deletion, regardless of its origin, is universally enforced.
+- **Auditing and Debugging**: Knowing the source of a deletion or a conflict can be invaluable for understanding data provenance and debugging complex synchronization issues.
+- **Future Flexibility**: As new data ingestion or modification pathways are introduced, the `sync_source` mechanism provides a robust way to integrate them into the existing tombstone logic.
 
 **Example**:
 ```
 Machine A:
-  - YAML removes person "Bob" from entry
-  - Creates tombstone (sync_source="yaml")
+  - YAML removes person "Bob" from entry.
+  - A tombstone is created with `sync_source="yaml"`.
 
 Machine B:
-  - Wiki updates editorial note
-  - Syncs via wiki2sql (sync_source="wiki")
-  - Tombstone from YAML sync still applies
+  - Updates an editorial note in a wiki page that happens to reference "Bob".
+  - Syncs via the `wiki2sql` path (`sync_source="wiki"`).
+  - The `yaml` tombstone for Bob *still applies*, preventing the wiki import from inadvertently re-associating Bob with the entry (unless explicitly overridden).
 ```
-
-Tombstones are **cross-source**: A YAML tombstone prevents wiki sync from re-adding the association.
+Tombstones are therefore **cross-source enforced**, ensuring that a deletion signal from any authoritative source is respected throughout the system.
 
 ---
 
@@ -467,10 +471,10 @@ Tombstones are **cross-source**: A YAML tombstone prevents wiki sync from re-add
 
 ### Default TTL: 90 Days
 
-**Rationale**:
-- **Short enough**: Prevents unbounded growth
-- **Long enough**: Covers typical sync delays (vacation, laptop repairs, etc.)
-- **Configurable**: Can be adjusted per tombstone
+**Rationale**: The 90-day default TTL strikes a balance between preventing indefinite database growth and accommodating typical user workflows.
+- **Prevents unbounded growth**: Ensures that deleted association records are eventually pruned from the database, maintaining performance and reducing storage footprint.
+- **Covers typical sync delays**: A 90-day window is generally sufficient to account for periods of inactivity on a secondary machine (e.g., a laptop used less frequently, or during a vacation), ensuring deletions are propagated correctly even if a machine goes offline for an extended period.
+- **Offers flexibility**: While default, the `ttl_days` parameter can be adjusted during tombstone creation for specific needs, or overridden to `None` for permanent deletions.
 
 ### Permanent Tombstones
 

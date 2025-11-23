@@ -59,19 +59,19 @@ metadb init
 
 ```bash
 # Process new journal exports
-journal inbox
+plm inbox
 
 # Convert to markdown
-journal convert
+plm convert
 
 # Sync database
-journal sync
+plm sync-db
 
 # Build PDFs for a year
-journal pdf 2024
+plm build-pdf 2024
 
 # Or run complete pipeline
-journal run-all 2024
+plm run-all 2024
 ```
 
 ### Using Make
@@ -220,26 +220,26 @@ palimpsest/
 
 ```bash
 # Process inbox (raw exports → formatted text)
-journal inbox [-i INBOX] [-o OUTPUT]
+plm inbox [-i INBOX] [-o OUTPUT]
 
 # Convert text to markdown
-journal convert [-i INPUT] [-o OUTPUT] [-f]
+plm convert [-i INPUT] [-o OUTPUT] [-f]
 
 # Sync database from markdown
-journal sync [-i INPUT] [-f]
+plm sync-db [-i INPUT] [-f]
 
 # Export database to markdown
-journal export [-o OUTPUT] [-f]
+plm export-db [-o OUTPUT] [-f]
 
 # Build PDFs
-journal pdf YEAR [-i INPUT] [-o OUTPUT] [-f]
+plm build-pdf YEAR [-i INPUT] [-o OUTPUT] [-f]
 
 # Complete pipeline
-journal run-all [--year YEAR] [--skip-inbox] [--skip-pdf]
+plm run-all [--year YEAR] [--skip-inbox] [--skip-pdf]
 
 # Status
-journal status
-journal validate
+plm status
+plm validate
 ```
 
 ### Database Commands
@@ -279,14 +279,14 @@ metadb analyze
 
 ```bash
 # Text search with filters
-plm-search "query text" [filters]
-plm-search "therapy" person:alice in:2024 words:100-500
-plm-search "reflection" city:montreal has:manuscript
+jsearch "query text" [filters]
+jsearch "therapy" person:alice in:2024 words:100-500
+jsearch "reflection" city:montreal has:manuscript
 
 # Index management
-plm-search index --create
-plm-search index --rebuild
-plm-search index --status
+jsearch index --create
+jsearch index --rebuild
+jsearch index --status
 
 # Available filters:
 # person:NAME, tag:TAG, event:EVENT, city:CITY, theme:THEME
@@ -301,22 +301,22 @@ plm-search index --status
 
 ```bash
 # Check AI capabilities
-plm-ai status
+jai status
 
 # Analyze single entry (Level 2: spaCy NER)
-plm-ai analyze 2024-11-01 --level 2
+jai analyze 2024-11-01 --level 2
 
 # Analyze with Claude API (Level 4)
-plm-ai analyze 2024-11-01 --level 4 --manuscript
+jai analyze 2024-11-01 --level 4 --manuscript
 
 # Batch analyze entries
-plm-ai batch --level 2 --limit 10
+jai batch --level 2 --limit 10
 
 # Find semantically similar entries (Level 3)
-plm-ai similar 2024-11-01 --limit 10
+jai similar 2024-11-01 --limit 10
 
 # Cluster entries by theme
-plm-ai cluster --num-clusters 10
+jai cluster --num-clusters 10
 ```
 
 **AI Intelligence Levels:**
@@ -336,27 +336,27 @@ The wiki provides an editable interface for curating and annotating your journal
 
 ```bash
 # Export everything
-plm-wiki-export export all
+plm export-wiki all
 
 # Export specific entity types
-plm-wiki-export export people
-plm-wiki-export export entries
-plm-wiki-export export manuscript
+plm export-wiki people
+plm export-wiki entries
+plm export-wiki manuscript
 
 # Force overwrite existing files
-plm-wiki-export export all --force
+plm export-wiki all --force
 ```
 
 ### Import Wiki Edits to Database
 
 ```bash
 # Import all wiki edits
-plm-wiki-import import all
+plm import-wiki all
 
 # Import specific entity type
-plm-wiki-import import people
-plm-wiki-import import entries
-plm-wiki-import import manuscript
+plm import-wiki people
+plm import-wiki entries
+plm import-wiki manuscript
 ```
 
 ### Wiki Structure
@@ -406,13 +406,13 @@ See [BIDIRECTIONAL_SYNC_GUIDE.md](BIDIRECTIONAL_SYNC_GUIDE.md) for complete docu
 
 ```bash
 # Search entry text
-plm-search "anxiety therapy"
+jsearch "anxiety therapy"
 
 # Combine text + metadata
-plm-search "alice" person:alice in:2024
+jsearch "alice" person:alice in:2024
 
 # Complex filtering
-plm-search "reflection" city:montreal words:500-1000 has:manuscript
+jsearch "reflection" city:montreal words:500-1000 has:manuscript
 ```
 
 **How it works:**
@@ -423,7 +423,7 @@ plm-search "reflection" city:montreal words:500-1000 has:manuscript
 
 **Create search index:**
 ```bash
-plm-search index --create
+jsearch index --create
 ```
 
 ### AI-Assisted Analysis (Optional)
@@ -445,7 +445,7 @@ python -m spacy download en_core_web_sm
 
 **Usage:**
 ```bash
-plm-ai analyze 2024-11-01 --level 2
+jai analyze 2024-11-01 --level 2
 ```
 
 #### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
@@ -464,10 +464,10 @@ pip install faiss-cpu  # optional, for faster search
 **Usage:**
 ```bash
 # Find similar entries
-plm-ai similar 2024-11-01 --limit 10
+jai similar 2024-11-01 --limit 10
 
 # Cluster by theme
-plm-ai cluster --num-clusters 10
+jai cluster --num-clusters 10
 ```
 
 #### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
@@ -493,18 +493,18 @@ plm-ai cluster --num-clusters 10
 **Usage:**
 ```bash
 # Analyze with Claude (default)
-plm-ai analyze 2024-11-01 --level 4 --manuscript
+jai analyze 2024-11-01 --level 4 --manuscript
 
 # Analyze with OpenAI
-plm-ai analyze 2024-11-01 --level 4 --provider openai --manuscript
+jai analyze 2024-11-01 --level 4 --provider openai --manuscript
 
 # Batch analyze with OpenAI
-plm-ai batch --level 4 --provider openai --limit 10
+jai batch --level 4 --provider openai --limit 10
 ```
 
 **Check what's installed:**
 ```bash
-plm-ai status
+jai status
 ```
 
 ---

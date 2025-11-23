@@ -7,6 +7,8 @@ The Palimpsest project will have **two separate wiki systems**:
 1. **Main Wiki** (`data/wiki/`) - Comprehensive metadata dashboard for ALL journal entities
 2. **Manuscript Subwiki** (`data/wiki/manuscript/`) - Focused workspace for manuscript adaptation
 
+*Design Rationale*: This architectural decision stems from the need to support distinct use cases: the Main Wiki provides a holistic, browseable view of all journal content for general reference and initial annotation, while the Manuscript Subwiki offers a highly specialized, uncluttered environment dedicated to the intensive creative process of adapting journal entries into literary works. This separation prevents the complexities of manuscript planning from overwhelming the general journaling workflow and ensures each system is optimized for its primary function.
+
 ## Separation of Concerns
 
 ### Main Wiki
@@ -50,16 +52,22 @@ The Palimpsest project will have **two separate wiki systems**:
 
 **Data Source**: Manuscript-specific models (`ManuscriptEntry`, `ManuscriptPerson`, `ManuscriptEvent`, `Arc`, `Theme`)
 
+*Design Rationale*: This clear delineation ensures that the complexities of manuscript development do not interfere with the core function of the Main Wiki as a comprehensive journal archive. Each wiki serves a specialized role, optimizing the user experience for general browsing and detailed creative adaptation, respectively, while maintaining a single, authoritative database as the source of truth.
+
 ## Database Schema Enhancements
 
 ### Fields to Add
+These fields are essential for enriching the manuscript adaptation process, allowing for detailed planning and tracking of narrative elements directly within the database schema.
 
 #### ManuscriptEntry
 **Existing**: status, edited, notes
 **To Add**:
 - `entry_type` (Enum): `vignette`, `scene`, `summary`, `reflection`, `dialogue`
+   *Rationale*: Categorizing entries helps structure the narrative and identify their primary role in the manuscript.
 - `character_notes` (Text): Notes about character development in this entry
+   *Rationale*: Allows for specific character-centric annotations tied to individual entries, aiding consistent character portrayal.
 - `narrative_arc` (FK): Link to Arc if part of a narrative thread
+   *Rationale*: Connects individual entries to overarching narrative arcs, providing structural coherence for the manuscript.
 
 #### ManuscriptEvent
 **Existing**: arc_id, notes
@@ -69,9 +77,14 @@ The Palimpsest project will have **two separate wiki systems**:
 **Existing**: character (fictional name)
 **To Add**:
 - `character_description` (Text): Physical description of character
+   *Rationale*: Stores detailed physical and personality traits for consistent character visualization.
 - `character_arc` (Text): Character development notes
+   *Rationale*: Tracks the evolution and transformation of characters throughout the narrative.
 - `voice_notes` (Text): Notes about character's narrative voice
+   *Rationale*: Captures nuances in dialogue and internal monologue to ensure a distinctive character voice.
 - `appearance_notes` (Text): Notes about how character appears in manuscript
+   *Rationale*: Records specific details about a character's role or portrayal in different parts of the manuscript.
+
 
 ## Directory Structure
 
@@ -227,16 +240,19 @@ This arc needs to show growth from professional admiration to genuine friendship
 ## Export Pipeline
 
 ### Two Separate Pipelines
+The use of two distinct pipelines for the Main Wiki and Manuscript Subwiki is a deliberate design choice to maintain separation of concerns and optimize for their respective purposes.
 
 #### sql2wiki.py (Main Wiki)
 **Entities**: All database entities
-**Command**: `python -m dev.pipeline.sql2wiki export {entity_type}`
+**Command**: `plm export-wiki {entity_type}`
 **Function**: Export comprehensive metadata for all journal content
+*Rationale*: This pipeline focuses on generating a complete and accurate representation of the entire journal database in wiki format, ensuring all entities and their relationships are reflected for general browsing and reference.
 
 #### manuscript2wiki.py (Manuscript Subwiki)
 **Entities**: Only manuscript-designated entities
-**Command**: `python -m dev.pipeline.manuscript2wiki export {entity_type}`
+**Command**: `plm export-wiki {entity_type}`
 **Function**: Export manuscript-specific metadata for adaptation workspace
+*Rationale*: This specialized pipeline selectively exports only content relevant to the manuscript development process. It filters out non-manuscript data and formats the output specifically for creative adaptation, avoiding clutter and focusing the workspace for authors.
 
 ### Export Logic
 

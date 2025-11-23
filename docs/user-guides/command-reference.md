@@ -6,7 +6,7 @@ Complete reference for all available commands in the Palimpsest system.
 
 Palimpsest provides **5 command-line entry points**:
 
-1. **`plm`** - Main pipeline commands (inbox, convert, sync-db, export-db, export-wiki, import-wiki, build-pdf, etc.)
+1. **`plm`** - Main pipeline commands (inbox, convert, sync-db, export-db, build-pdf, export-wiki, import-wiki, etc.)
 2. **`metadb`** - Database management (init, backup, health, migrations, etc.)
 3. **`jsearch`** - Full-text search with advanced filtering
 4. **`jai`** - AI-assisted analysis (optional, requires AI dependencies)

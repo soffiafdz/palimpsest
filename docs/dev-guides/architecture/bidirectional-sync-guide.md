@@ -37,9 +37,14 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 
 ### Data Flow Principles
 
-1. **Journal → Database**: Single source of truth for life events
-2. **Database → Wiki**: Auto-generated navigation & exploration
-3. **Wiki → Database**: Editable notes only (not structural data)
+1. **Journal → Database**: Single source of truth for life events.
+   *Rationale*: Journal entries (Markdown with YAML frontmatter) are considered the primary record for raw life events and their initial metadata. This ensures human-readability, version control (via Git), and allows for manual curation of source data before it's processed into a structured database. The database then acts as a derived, structured representation of this source.
+
+2. **Database → Wiki**: Auto-generated navigation & exploration.
+   *Rationale*: The wiki is designed as a browsable, interlinked interface for the structured data within the database. It is auto-generated to reflect the current state of the database accurately, providing a consistent view for exploration without requiring manual wiki upkeep. This one-way generation prevents the wiki from becoming a conflicting source of structural truth.
+
+3. **Wiki → Database**: Editable notes only (not structural data).
+   *Rationale*: While the wiki is primarily for browsing, it also serves as a workspace for adding editorial notes, planning manuscript adaptations, and enriching entities with free-form text. These specific "notes" fields are allowed to sync back to the database, ensuring that valuable human annotations are preserved and integrated, but without allowing the wiki to alter the core structural metadata (e.g., dates, relationships, core facts) which remains owned by the Journal YAML and managed by the database.
 
 ---
 
@@ -48,20 +53,25 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 ### Three Synchronization Paths
 
 #### Path 1: YAML ↔ SQL (Journal Entries)
-- **Purpose**: Capture and persist journal metadata
-- **Direction**: Fully bidirectional
+- **Purpose**: Capture and persist journal metadata. This path is crucial for integrating raw journal entries (the primary data source) with the structured database.
+- **Direction**: Fully bidirectional. This allows both:
+    - YAML → SQL: For processing new entries and updates made directly in Markdown files. This is the most common flow for daily journaling.
+    - SQL → YAML: For exporting data from the database back into Markdown, useful for backups, batch editing, or regenerating Markdown files if the database schema evolves.
 - **Primary Flow**: YAML → SQL (journaling workflow)
 - **Reverse Flow**: SQL → YAML (export/backup)
+   *Design Rationale*: A fully bidirectional sync for this core path ensures that Markdown files remain human-editable and version-controlled (via Git), while the database provides efficient querying and relationship management. The reverse flow (SQL → YAML) provides resilience and flexibility, allowing the Markdown files to be a derived representation that can be regenerated from the database's single source of truth when needed.
 
 #### Path 2: SQL → Wiki (Entity Export)
-- **Purpose**: Generate navigable wiki for exploration
-- **Direction**: One-way (SQL → Wiki)
-- **Update Mode**: Regenerate from database
+- **Purpose**: Generate navigable wiki for exploration. The wiki serves as a dynamic, interconnected interface for browsing the rich metadata stored in the database.
+- **Direction**: One-way (SQL → Wiki). This path ensures that the wiki always reflects the authoritative state of the database.
+- **Update Mode**: Regenerate from database.
+   *Design Rationale*: Making this flow strictly one-way and regeneration-based prevents the wiki from becoming a conflicting source of structural truth. Any structural changes (e.g., adding a person, defining an event) must originate in the Journal YAML and flow through the database to maintain data integrity. The wiki is a *view* of the data, not a primary editing interface for structural metadata.
 
 #### Path 3: Wiki → SQL (Entity Import)
-- **Purpose**: Sync user edits back to database
-- **Direction**: One-way (Wiki → SQL)
-- **Update Mode**: Import only editable fields
+- **Purpose**: Sync user edits back to database. This specifically targets human annotations and qualitative data added directly within the wiki environment.
+- **Direction**: One-way (Wiki → SQL). The import only updates specific, pre-defined "editable" fields.
+- **Update Mode**: Import only editable fields.
+   *Design Rationale*: This constrained import mechanism allows the wiki to function as an effective workspace for adding context, narrative notes, and manuscript-specific details without risking the integrity of the core, structured metadata. By limiting wiki-to-database sync to designated editable fields (e.g., `notes`), it reinforces the database as the central authority for structural data, while valuing the human element of annotation.
 
 ### Complete Data Flow
 
@@ -139,8 +149,8 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 **Purpose**: Bidirectional sync between journal markdown files and database
 
 **Files**:
-- `dev/pipeline/yaml2sql.py` - Import journal → database
-- `dev/pipeline/sql2yaml.py` - Export database → journal
+- `plm sync-db` - Import journal → database
+- `plm export-db` - Export database → journal
 - `dev/dataclasses/md_entry.py` - Intermediary dataclass
 
 ### YAML → SQL (Primary Flow)
@@ -174,7 +184,7 @@ You write a journal entry with YAML frontmatter and import it to the database.
 
 2. **Import to Database**
    ```bash
-   python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+   plm sync-db --file journal/md/2024/2024-11-01.md
    ```
 
 3. **What Happens**
@@ -300,13 +310,13 @@ Export database back to markdown files (backup, sharing, editing).
 1. **Export from Database**
    ```bash
    # Single entry
-   python -m dev.pipeline.sql2yaml export 2024-11-01 -o output/
+   plm export-db --date 2024-11-01 -o output/
 
    # Date range
-   python -m dev.pipeline.sql2yaml range 2024-01-01 2024-12-31 -o output/
+   plm export-db --start 2024-01-01 --end 2024-12-31 -o output/
 
    # All entries
-   python -m dev.pipeline.sql2yaml all -o output/
+   plm export-db --all -o output/
    ```
 
 2. **What Happens**
@@ -444,9 +454,9 @@ def should_skip_file(file_path: Path, stored_hash: str, force: bool) -> bool:
 **Purpose**: Generate navigable wiki and sync user edits
 
 **Files**:
-- `dev/pipeline/sql2wiki.py` - Export database → wiki
-- `dev/pipeline/wiki2sql.py` - Import wiki notes → database
-- `dev/pipeline/manuscript2wiki.py` - Export manuscript subwiki
+- `plm export-wiki` - Export database → wiki
+- `plm import-wiki` - Import wiki notes → database
+- `plm export-wiki` - Export manuscript subwiki
 - `dev/dataclasses/wiki_*.py` - Wiki entity dataclasses
 
 ### SQL → Wiki (Export Flow)
@@ -459,16 +469,16 @@ Generate or update vimwiki pages from database for browsing.
 1. **Export Entities**
    ```bash
    # Single entity type
-   python -m dev.pipeline.sql2wiki export people
-   python -m dev.pipeline.sql2wiki export entries
+   plm export-wiki people
+   plm export-wiki entries
 
    # Special pages
-   python -m dev.pipeline.sql2wiki export timeline
-   python -m dev.pipeline.sql2wiki export stats
-   python -m dev.pipeline.sql2wiki export analysis
+   plm export-wiki timeline
+   plm export-wiki stats
+   plm export-wiki analysis
 
    # Everything
-   python -m dev.pipeline.sql2wiki export all
+   plm export-wiki all
    ```
 
 2. **What Gets Exported**
@@ -553,11 +563,11 @@ Generate or update vimwiki pages from database for browsing.
 
    ```bash
    # Export manuscript entities
-   python -m dev.pipeline.manuscript2wiki export all
+   plm export-wiki all
 
    # Specific entities
-   python -m dev.pipeline.manuscript2wiki export entries
-   python -m dev.pipeline.manuscript2wiki export characters
+   plm export-wiki entries
+   plm export-wiki manuscript-characters
    ```
 
    **Manuscript Entry Page** (`data/wiki/manuscript/entries/2024/2024-11-01.md`):
@@ -619,16 +629,16 @@ You edit notes in wiki pages, sync changes back to database.
 2. **Import Changes**
    ```bash
    # Import single entity type
-   python -m dev.pipeline.wiki2sql import people
-   python -m dev.pipeline.wiki2sql import entries
+   plm import-wiki people
+   plm import-wiki entries
 
    # Import all main wiki
-   python -m dev.pipeline.wiki2sql import all
+   plm import-wiki all
 
    # Import manuscript wiki
-   python -m dev.pipeline.wiki2sql import manuscript-entries
-   python -m dev.pipeline.wiki2sql import manuscript-characters
-   python -m dev.pipeline.wiki2sql import manuscript-all
+   plm import-wiki manuscript-entries
+   plm import-wiki manuscript-characters
+   plm import-wiki manuscript-all
    ```
 
 3. **What Gets Imported**
@@ -995,7 +1005,7 @@ cat output/2024/2024-11-01.md
 
 ### Commands
 
-**Note:** These examples show direct script invocation using `python -m dev.pipeline.X` for developer reference. For user-facing workflows, see the [Command Reference](COMMAND_REFERENCE.md) which documents the installed CLI commands (`plm`, `metadb`, etc.).
+**Note:** These examples show direct script invocation using `python -m dev.pipeline.X` for developer reference. For user-facing workflows, see the [Command Reference](../../user-guides/command-reference.md) which documents the installed CLI commands (`plm`, `metadb`, etc.).
 
 **YAML → SQL** (standalone script: `yaml2sql.py`):
 ```bash
@@ -1064,10 +1074,10 @@ python -m dev.pipeline.wiki2sql import manuscript-all
 
 | What to Edit | Where | How to Sync |
 |--------------|-------|-------------|
-| Life events, relationships | Journal YAML | `yaml2sql update` |
-| Editorial notes | Main wiki | `wiki2sql import` |
-| Manuscript planning | Manuscript wiki | `wiki2sql import manuscript-*` |
-| Structural changes | Journal YAML | `yaml2sql update` |
+| Life events, relationships | Journal YAML | `plm sync-db` |
+| Editorial notes | Main wiki | `plm import-wiki` |
+| Manuscript planning | Manuscript wiki | `plm import-wiki manuscript-*` |
+| Structural changes | Journal YAML | `plm sync-db` |
 
 ### Best Practices
 

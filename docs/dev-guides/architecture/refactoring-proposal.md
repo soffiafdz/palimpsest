@@ -158,12 +158,12 @@ def upgrade_migration(ctx, revision):
 
 #### Benefits
 
-- Each file ~100-200 lines (manageable size)
-- Isolated concerns for easier testing and maintenance
-- Clearer ownership and navigation
-- Reusable command utilities in `__init__.py`
-- Easy to add new command groups in the future
-- Better IDE navigation and autocomplete
+- **Improved Manageability**: Each file reduced to ~100-200 lines, making them easier to read, understand, and manage.
+- **Enhanced Testability**: Isolated concerns mean each command group can be tested independently, reducing test complexity and improving reliability.
+- **Clearer Code Organization**: Provides clearer ownership of commands and improves navigation for developers, reducing cognitive load when working on specific CLI functionalities.
+- **Increased Reusability**: Centralized command utilities in `__init__.py` promote code reuse and consistency across the CLI.
+- **Future Scalability**: Simplifies the process of adding new command groups or modifying existing ones without impacting other functionalities.
+- **Better Developer Experience**: Improved IDE navigation and autocompletion due to modular structure.
 
 ---
 
@@ -297,12 +297,12 @@ def get_top_people(session, limit: int = 10) -> List[tuple]:
 
 #### Benefits
 
-- Each page builder in isolated, focused file
-- Reusable chart/visualization utilities across all pages
-- Easier to add new special pages (just add new module)
-- Database query logic testable independently
-- Presentation logic separated from data retrieval
-- Better unit test coverage possible
+- **Modular Design**: Each page builder resides in an isolated, focused file, significantly improving readability and maintainability.
+- **Enhanced Reusability**: Common functionalities like chart/visualization utilities can be reused across all wiki pages, reducing code duplication and ensuring consistency.
+- **Simplified Extension**: Adding new special wiki pages becomes much easier, requiring only the creation of a new module rather than modifying a monolithic file.
+- **Improved Testability**: Database query logic is decoupled from presentation logic, allowing for independent testing and more robust unit tests.
+- **Clear Separation of Concerns**: Clearly separates data retrieval, business logic, and presentation, making the codebase easier to understand and evolve.
+- **Higher Test Coverage**: The modular structure naturally encourages and facilitates better unit test coverage for individual components.
 
 ---
 
@@ -481,12 +481,12 @@ class SessionManager:
 
 #### Benefits
 
-- Main `PalimpsestDB` class reduced to ~300 lines (core coordination)
-- Service components independently testable and reusable
-- Clear separation: data access vs. business logic vs. utilities
-- Session management isolated for easier debugging
-- Services can evolve independently
-- Better dependency injection possibilities for testing
+- **Reduced Complexity**: The main `PalimpsestDB` class is significantly reduced (~300 lines), focusing solely on core coordination rather than monolithic functionality, improving its comprehensibility.
+- **Improved Testability & Reusability**: Service components become independently testable units, leading to more robust tests and easier reuse across different parts of the application.
+- **Clear Separation of Concerns**: Enforces a distinct separation between data access, business logic, and utility functions, making the codebase more organized and easier to navigate.
+- **Isolated Session Management**: Database session management is decoupled into its own module, simplifying debugging of transaction-related issues.
+- **Independent Evolution**: Services can evolve and be updated independently without affecting the core database manager, promoting agile development.
+- **Enhanced Testability with DI**: Facilitates better dependency injection, making it easier to mock services during testing and improving overall test coverage.
 
 ---
 
@@ -556,11 +556,11 @@ def validate_paths(ctx):
 
 #### Benefits
 
-- Clear separation by data flow direction
-- Shared utilities in `common.py` eliminate duplication
-- Each file ~150-250 lines
-- Easier to understand and maintain pipelines
-- Can add new pipeline directions easily
+- **Clearer Structure**: Commands are separated by data flow direction (YAML → SQL, SQL → Wiki, etc.), making the pipeline's logic more intuitive and easier to follow.
+- **Reduced Duplication**: Shared utilities centralized in `common.py` eliminate repetitive code, improving maintainability and consistency.
+- **Improved Readability**: Each command file is kept concise (~150-250 lines), enhancing readability and reducing cognitive overhead.
+- **Simplified Maintenance**: Modularization makes it easier to understand, debug, and update specific parts of the pipeline without affecting others.
+- **Increased Extensibility**: New pipeline directions or commands can be added easily by creating new modules, promoting a scalable architecture.
 
 ---
 
@@ -636,11 +636,11 @@ __all__ = [
 
 #### Benefits
 
-- Logical grouping by domain
-- Single import point maintains backward compatibility
-- Easier to find specific models
-- No breaking changes for existing code
-- Clear separation of concerns
+- **Logical Organization**: Models are grouped logically by domain (core, entities, geography, creative, manuscript, sync), making the schema easier to understand and navigate.
+- **Backward Compatibility**: A single import point in `__init__.py` ensures existing code can continue to function without immediate breaking changes, allowing for a phased migration.
+- **Improved Discoverability**: Developers can more easily locate specific models within the codebase, reducing search time and improving development efficiency.
+- **Stable API**: The refactoring is designed to introduce no breaking changes to the public API, ensuring a smooth transition for dependent modules.
+- **Clear Separation of Concerns**: Enforces better modularity by separating distinct sets of models, preventing a monolithic model definition file.
 
 ---
 
@@ -898,10 +898,10 @@ When adding new features:
 
 ### Related Documentation
 
-- `docs/tombstone-guide.md` - Tombstone pattern implementation
-- `docs/multi-machine-sync.md` - Multi-machine sync workflow
-- `docs/migration-guide.md` - Database migration guide
-- `docs/conflict-resolution.md` - Conflict resolution process
+- `../technical/tombstone-guide.md` - Tombstone pattern implementation
+- `../../user-guides/multi-machine-sync.md` - Multi-machine sync workflow
+- `../technical/migration-guide.md` - Database migration guide
+- `../technical/conflict-resolution.md` - Conflict resolution process
 
 ### External References
 

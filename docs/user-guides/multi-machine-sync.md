@@ -45,7 +45,7 @@ cd ~/Documents/palimpsest
 git pull
 
 # 2. Sync from YAML to database
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # 3. Check for conflicts (optional but recommended)
 metadb sync conflicts
@@ -65,7 +65,7 @@ vim journal/md/2024/2024-11-23.md
 
 ```bash
 # 1. Sync changes to database
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # 2. Commit changes to git
 git add journal/md/
@@ -96,7 +96,7 @@ vim journal/md/2024/2024-11-01.md
 # people: [Alice, Charlie]
 
 # Sync to database
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 
 # What happens:
 # - Tombstone created for Bob
@@ -115,7 +115,7 @@ git push
 git pull
 
 # Sync from YAML
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # What happens:
 # - Tombstone prevents Bob from being re-added
@@ -139,7 +139,7 @@ people: [Alice]
 New entry content" > journal/md/2024/2024-11-25.md
 
 # Sync
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-25.md
+plm sync-db --file journal/md/2024/2024-11-25.md
 
 # Push
 git add journal/md/2024/2024-11-25.md data/palimpsest.db
@@ -153,7 +153,7 @@ git push
 git pull
 
 # Sync
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # Entry now exists on Machine B
 ```
@@ -179,7 +179,7 @@ vim journal/md/2024/2024-11-01.md
 # Add person: people: [Alice, Bob, Charlie]
 
 # Sync and push
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 git add journal/md/2024/2024-11-01.md data/palimpsest.db
 git commit -m "Add Charlie to 2024-11-01"
 git push
@@ -192,7 +192,7 @@ vim journal/md/2024/2024-11-01.md
 # Add different person: people: [Alice, Bob, Dave]
 
 # Sync
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 # Sync state: hash_b stored
 
 # Commit
@@ -211,7 +211,7 @@ vim journal/md/2024/2024-11-01.md
 # Result: people: [Alice, Bob, Charlie, Dave]  (merged both changes)
 
 # Sync again
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 
 # WARNING logged:
 # "Conflict detected for entry 2024-11-01"
@@ -498,7 +498,7 @@ python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-23.md
 vim journal/md/2024/2024-11-01.md
 
 # Sync (creates new tombstone)
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
+plm sync-db --file journal/md/2024/2024-11-01.md
 
 # Verify tombstone exists
 metadb tombstone list --table entry_people
@@ -576,9 +576,9 @@ metadb sync conflicts
 ```bash
 # Daily workflow
 git pull
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 # ... make edits ...
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 git add . && git commit -m "Update journal"
 git push
 

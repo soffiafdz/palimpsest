@@ -15,22 +15,22 @@ Can run individual steps or the complete pipeline end-to-end.
 
 Usage:
     # Run complete pipeline
-    python -m dev.pipeline.pipeline run-all
+    plm run-all
 
     # Individual steps
-    python -m dev.pipeline.cli inbox
-    python -m dev.pipeline.cli convert
-    python -m dev.pipeline.cli sync-db
-    python -m dev.pipeline.cli export-db
-    python -m dev.pipeline.cli build-pdf 2025
+    plm inbox
+    plm convert
+    plm sync-db
+    plm export-db
+    plm build-pdf 2025
 
     # Backups
-    python -m dev.pipeline.cli backup-data
-    python -m dev.pipeline.cli backup-list
+    plm backup-full
+    plm backup-list-full
 
     # Status and validation
-    python -m dev.pipeline.cli status
-    python -m dev.pipeline.cli validate
+    plm status
+    plm validate
 """
 from __future__ import annotations
 

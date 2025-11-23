@@ -1435,7 +1435,8 @@ plm export-wiki all
 
 **Export specific entities:**
 ```bash
-plm export-wiki all
+plm export-wiki people
+plm export-wiki entries
 ```
 
 **Export manuscript wiki:**
@@ -1462,7 +1463,8 @@ plm import-wiki all
 
 **Import specific entities:**
 ```bash
-plm import-wiki all
+plm import-wiki people
+plm import-wiki entries
 ```
 
 **Import manuscript edits:**
@@ -1470,22 +1472,15 @@ plm import-wiki all
 plm import-wiki manuscript-all
 ```
 
-**Dry run (preview changes):**
-```bash
-plm import-wiki all
-```
-
 **Verbose output:**
 ```bash
-plm import-wiki all
+plm -v import-wiki all
 ```
 
 ### Query Commands
 
 **Check what's editable:**
-```bash
-validate wiki --help  # Check available options
-```
+See the "Editable vs Read-Only Fields" section in this guide.
 
 **Preview import changes:**
 ```bash
@@ -1548,10 +1543,7 @@ plm import-wiki manuscript-all
 
 **Problem:** Notes lost on re-export
 
-**Solution:** Use `--preserve-notes` flag
-```bash
-plm export-wiki all
-```
+**Solution:** The `plm export-wiki` command automatically preserves notes. If notes are being overwritten, it may be a bug.
 
 ### Import doesn't sync my edits
 
@@ -1564,7 +1556,9 @@ plm export-wiki all
 
 **Debug:**
 ```bash
-# Preview what will change
+# The import command currently does not have a dry-run feature.
+# You can back up your database before importing to be safe.
+metadb backup --suffix pre-import
 plm import-wiki all
 ```
 
@@ -1619,8 +1613,8 @@ validate wiki stats  # Validate wiki pages
 
 ## Support
 
-- **YAML↔SQL Guide:** See `METADATA_GUIDE_YAML_SQL.md` for database import/export
-- **Examples:** See `examples/` directory
+- **YAML↔SQL Guide:** See `../../dev-guides/technical/metadata-yaml-sql-guide.md` for database import/export
+- **Examples:** See `../../../examples/` directory
 - **Source Code:** Wiki generation in `dev/dataclasses/wiki_*.py`
 - **Issue Tracker:** Report bugs on GitHub
 

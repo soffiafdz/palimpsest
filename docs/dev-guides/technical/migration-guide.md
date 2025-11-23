@@ -57,10 +57,10 @@ This guide walks you through migrating your existing Palimpsest database to the 
 
 ```bash
 # Full backup (recommended)
-python -m dev.pipeline.cli backup-full --suffix pre-tombstone-migration
+plm backup-full --suffix pre-tombstone-migration
 
 # Verify backup created
-python -m dev.pipeline.cli backup-list-full
+plm backup-list-full
 
 # Output:
 # Available backups:
@@ -283,7 +283,7 @@ SELECT COUNT(*) FROM entries WHERE deleted_at IS NOT NULL;
 **Perform Initial Sync**:
 ```bash
 # Sync all entries from YAML
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # This will:
 # 1. Process all YAML files
@@ -489,7 +489,7 @@ git pull origin main
 alembic current
 
 # Sync from YAML
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # Should create sync states on this machine
 metadb sync stats
@@ -504,13 +504,13 @@ metadb tombstone list
 ```bash
 # START of session
 git pull
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 metadb sync conflicts  # Check for conflicts
 
 # ... edit files ...
 
 # END of session
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 metadb sync conflicts  # Check again
 git add . && git commit -m "..." && git push
 ```
@@ -518,8 +518,8 @@ git add . && git commit -m "..." && git push
 **Optional**: Create shell aliases:
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-alias journal-start="cd ~/Documents/palimpsest && git pull && python -m dev.pipeline.yaml2sql sync journal/md/ && metadb sync conflicts"
-alias journal-end="cd ~/Documents/palimpsest && python -m dev.pipeline.yaml2sql sync journal/md/ && metadb sync conflicts"
+alias palimpsest-start="cd ~/Documents/palimpsest && git pull && plm sync-db --input journal/md/ && metadb sync conflicts"
+alias palimpsest-end="cd ~/Documents/palimpsest && plm sync-db --input journal/md/ && metadb sync conflicts"
 ```
 
 ### 4. Set Up Maintenance
@@ -605,7 +605,7 @@ sqlite3 data/palimpsest.db ".tables"
 rm data/palimpsest.db
 
 # Rebuild from YAML
-python -m dev.pipeline.yaml2sql sync journal/md/ --force
+plm sync-db --input journal/md/ --force
 
 # This creates fresh database with all entries from YAML
 ```
@@ -670,7 +670,7 @@ alembic upgrade head
 **Diagnosis**:
 ```bash
 # Check if sync actually ran
-python -m dev.pipeline.yaml2sql sync journal/md/ --verbose
+plm sync-db --input journal/md/ --verbose
 
 # Check for errors in output
 ```
@@ -678,7 +678,7 @@ python -m dev.pipeline.yaml2sql sync journal/md/ --verbose
 **Solution**:
 ```bash
 # Force full sync
-python -m dev.pipeline.yaml2sql sync journal/md/ --force
+plm sync-db --input journal/md/ --force
 
 # Verify sync states created
 sqlite3 data/palimpsest.db "SELECT COUNT(*) FROM sync_states;"
@@ -790,7 +790,7 @@ cd palimpsest
 alembic upgrade head
 
 # Sync from YAML
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 ```
 
 ### Scenario 2: Multi-Machine Setup
@@ -799,7 +799,7 @@ python -m dev.pipeline.yaml2sql sync journal/md/
 ```bash
 # Follow standard migration steps above
 alembic upgrade head
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 git add data/palimpsest.db
 git commit -m "Apply tombstone migration"
 git push
@@ -814,7 +814,7 @@ git pull
 alembic current
 
 # Sync (creates sync states for this machine)
-python -m dev.pipeline.yaml2sql sync journal/md/
+plm sync-db --input journal/md/
 
 # Verify
 metadb sync stats
@@ -833,8 +833,8 @@ sqlite3 data/palimpsest.db "VACUUM;"
 alembic upgrade head
 
 # Batch sync (process in chunks)
-python -m dev.pipeline.yaml2sql sync journal/md/2024/ --verbose
-python -m dev.pipeline.yaml2sql sync journal/md/2023/ --verbose
+plm sync-db --input journal/md/2024/ --verbose
+plm sync-db --input journal/md/2023/ --verbose
 # ... etc
 
 # Verify
@@ -868,9 +868,9 @@ After migration, verify:
 
 ### Documentation
 
-- **User Guide**: `docs/multi-machine-sync.md`
-- **Technical Guide**: `docs/tombstone-guide.md`
-- **Conflict Resolution**: `docs/conflict-resolution.md`
+- User guide: `../../user-guides/multi-machine-sync.md`
+- Technical guide: `tombstone-guide.md`
+- Conflict resolution: `conflict-resolution.md`
 
 ### Validation Tools
 
@@ -912,11 +912,11 @@ If you encounter issues not covered in this guide:
 
 **Migration Steps** (Quick Reference):
 
-1. **Backup**: `python -m dev.pipeline.cli backup-full --suffix pre-tombstone-migration`
+1. **Backup**: `plm backup-full --suffix pre-tombstone-migration`
 2. **Commit**: `git add . && git commit -m "Pre-migration checkpoint"`
 3. **Migrate**: `alembic upgrade head`
 4. **Verify Schema**: `sqlite3 data/palimpsest.db ".tables"`
-5. **Initialize Sync**: `python -m dev.pipeline.yaml2sql sync journal/md/`
+5. **Initialize Sync**: `plm sync-db --input journal/md/`
 6. **Verify**: `metadb sync stats`
 7. **Test**: Create test tombstone, verify behavior
 8. **Commit**: `git add data/palimpsest.db && git commit && git push`
