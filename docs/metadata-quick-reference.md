@@ -622,35 +622,35 @@ locations:
 
 ```bash
 # YAML → SQL
-palimpsest yaml2sql --input md/
-palimpsest yaml2sql --file md/2024/2024-01-15.md
-palimpsest yaml2sql --input md/ --force
+plm sync-db --input md/
+plm sync-db --file md/2024/2024-01-15.md
+plm sync-db --input md/ --force
 
 # SQL → YAML
-palimpsest sql2yaml --output md/
-palimpsest sql2yaml --date 2024-01-15 --output md/
-palimpsest sql2yaml --output md/ --force --preserve-body
+plm export-db --output md/
+plm export-db --date 2024-01-15 --output md/
+plm export-db --output md/ --force --preserve-body
 
 # SQL → Wiki
-palimpsest sql2wiki --output wiki/
-palimpsest sql2wiki --output wiki/ --manuscript
+plm export-wiki
+plm export-wiki all
 
 # Wiki → SQL
-palimpsest wiki2sql --input wiki/
-palimpsest wiki2sql --input wiki/ --dry-run
+plm import-wiki
+plm import-wiki all
 ```
 
 ### Database Queries
 
 ```bash
 # Stats
-palimpsest db stats
+metadb stats
 
 # Query
-palimpsest db query "SELECT * FROM entries WHERE date='2024-01-15'"
+metadb query "SELECT * FROM entries WHERE date='2024-01-15'"
 
 # Update
-palimpsest db update-entry 2024-01-15 --add-tag philosophy
+metadb update-entry 2024-01-15 --add-tag philosophy
 ```
 
 ---

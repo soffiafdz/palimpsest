@@ -96,28 +96,52 @@ make stats
 ## Pipeline Architecture
 
 ```
-inbox/ (raw exports) → source2txt → txt/     (formatted text)
-                                     ↓
-                                    txt2md
-                                     ↓
-                                    md/      (markdown + YAML)
-                                     ↓            ↑
-                                    yaml2sql  sql2yaml
-                                     ↓            ↑
-                                    database (SQLite + metadata + FTS5)
-                                     ↓            ↑
-                                    sql2wiki  wiki2sql
-                                     ↓            ↑
-                                    wiki/    (editable wiki pages)
-                                     ├── entries/
-                                     ├── people/
-                                     ├── events/
-                                     └── manuscript/
+inbox/ (raw exports) → src2txt → txt/     (formatted text)
+                                   ↓
+                                 txt2md
+                                   ↓
+                                 md/      (markdown + YAML)
+                                   ↓            ↑
+                                yaml2sql   sql2yaml
+                                   ↓            ↑
+                                database (SQLite + metadata + FTS5)
+                                   ↓            ↑
+                                sql2wiki   wiki2sql
+                                   ↓            ↑
+                                 wiki/    (editable wiki pages)
+                                   ├── entries/
+                                   ├── people/
+                                   ├── events/
+                                   └── manuscript/
 
-                                    md2pdf
-                                     ↓
-                                    pdf/     (annotated PDFs)
+                                 md2pdf
+                                   ↓
+                                 pdf/     (annotated PDFs)
 ```
+
+### Pipeline Scripts (X2Y Pattern)
+
+Each pipeline step is implemented as a standalone script with both CLI and programmatic API:
+
+- **`src2txt.py`**: Process raw 750words exports → formatted text files
+  - Validates filenames, runs format script, archives originals
+  - Archives to: `data/journal/sources/archive/`
+
+- **`txt2md.py`**: Convert formatted text → Markdown with YAML frontmatter
+  - Parses entries, computes metadata (word count, reading time)
+
+- **`yaml2sql.py`**: Sync Markdown YAML → Database
+  - Parses complex metadata, manages relationships
+
+- **`sql2yaml.py`**: Export Database → Markdown YAML
+  - Regenerates frontmatter while preserving body content
+
+- **`md2pdf.py`**: Build Markdown → PDFs (clean & notes versions)
+  - Uses Pandoc + LaTeX for professional typography
+
+- **Wiki scripts**: Bidirectional sync between database and wiki
+  - `sql2wiki.py`: Database → Wiki pages
+  - `wiki2sql.py`: Wiki edits → Database
 
 ### Data Flow Paths
 
