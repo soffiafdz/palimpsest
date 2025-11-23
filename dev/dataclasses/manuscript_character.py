@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dev.dataclasses.wiki_entity import WikiEntity
-from dev.utils.wiki import relative_link
+from dev.utils.md import relative_link
 
 
 @dataclass
@@ -222,29 +222,31 @@ class Character(WikiEntity):
             return None
 
         try:
-            from dev.utils.wiki_parser import parse_wiki_file
+            from dev.utils.wiki import parse_wiki_file
 
             sections = parse_wiki_file(path)
 
             # Extract character name from filename
             name = path.stem.replace("_", " ").title()
 
-            # Extract editable fields
-            character_description = None
-            if "character description" in sections:
-                character_description = "\n".join(sections["character description"]).strip()
+            # Extract editable fields using extract_section for case-sensitive matching
+            from dev.utils.wiki import extract_section
 
-            character_arc = None
-            if "character arc" in sections:
-                character_arc = "\n".join(sections["character arc"]).strip()
+            character_description = extract_section(sections, "Character Description")
+            if character_description:
+                character_description = character_description.strip() or None
 
-            voice_notes = None
-            if "voice notes" in sections:
-                voice_notes = "\n".join(sections["voice notes"]).strip()
+            character_arc = extract_section(sections, "Character Arc")
+            if character_arc:
+                character_arc = character_arc.strip() or None
 
-            appearance_notes = None
-            if "appearance notes" in sections:
-                appearance_notes = "\n".join(sections["appearance notes"]).strip()
+            voice_notes = extract_section(sections, "Voice Notes")
+            if voice_notes:
+                voice_notes = voice_notes.strip() or None
+
+            appearance_notes = extract_section(sections, "Appearance Notes")
+            if appearance_notes:
+                appearance_notes = appearance_notes.strip() or None
 
             return cls(
                 path=path,

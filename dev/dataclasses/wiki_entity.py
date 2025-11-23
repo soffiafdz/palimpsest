@@ -66,7 +66,7 @@ class WikiEntity(ABC):
         Returns:
             Breadcrumb string with wiki links (e.g., "[[index.md|Home]] > [[entries.md|Entries]] > 2024-11-01")
         """
-        from dev.utils.wiki import relative_link
+        from dev.utils.md import relative_link
 
         # Get path relative to wiki root
         try:
@@ -79,11 +79,10 @@ class WikiEntity(ABC):
         parts = []
         current_path = wiki_dir
 
-        # Add Home link
+        # Add Home link (always include, even if index.md doesn't exist yet)
         home_path = wiki_dir / "index.md"
-        if home_path.exists():
-            home_link = relative_link(self.path, home_path)
-            parts.append(f"[[{home_link}|Home]]")
+        home_link = relative_link(self.path, home_path)
+        parts.append(f"[[{home_link}|Home]]")
 
         # Add intermediate directories
         for part in rel_path.parts[:-1]:
