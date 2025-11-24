@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-validate_wiki.py
-----------------
-Cross-reference validation tool for vimwiki files.
+wiki.py
+-------
+Wiki link integrity validator.
 
 Validates that all wiki links point to existing files and detects
 orphaned pages with no incoming links.
@@ -14,15 +14,16 @@ Features:
 - Find orphaned pages
 - Suggest fixes for common issues
 
-Usage:
-    # Check all links
-    python -m dev.pipeline.validate_wiki check
+This validator is part of the validators package and can be run through
+the unified `validate` CLI or imported for programmatic use.
 
-    # Find orphaned pages
-    python -m dev.pipeline.validate_wiki orphans
+Usage (through CLI):
+    validate wiki check
+    validate wiki orphans
+    validate wiki stats
 
-    # Show statistics
-    python -m dev.pipeline.validate_wiki stats
+Usage (programmatic):
+    from dev.validators.wiki import validate_wiki, ValidationResult
 """
 from __future__ import annotations
 
@@ -36,7 +37,7 @@ from collections import defaultdict
 
 from dev.core.paths import WIKI_DIR, LOG_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
+from dev.core.cli import setup_logger
 
 
 class WikiValidationError(Exception):

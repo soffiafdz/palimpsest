@@ -71,27 +71,35 @@ The Wiki export system generates a **Vimwiki-compatible knowledge base** from yo
 ### Export Database to Wiki
 
 ```bash
-# Basic export (creates wiki/ directory)
-palimpsest sql2wiki --output wiki/
+# Export all entities to wiki
+plm export-wiki all
 
 # Export specific entity types
-palimpsest sql2wiki --entities entries,people,locations --output wiki/
+plm export-wiki entries
+plm export-wiki people
 
-# Force overwrite existing wiki
-palimpsest sql2wiki --output wiki/ --force
+# Force overwrite existing wiki pages
+plm export-wiki all --force
+
+# Custom wiki directory
+plm export-wiki all --wiki-dir path/to/wiki/
 ```
 
 ### Import Edited Wiki Back to Database
 
 ```bash
-# Import editable fields from wiki
-palimpsest wiki2sql --input wiki/
+# Import editable fields from all wiki pages
+plm import-wiki all
 
-# Import specific entity type
-palimpsest wiki2sql --entities events --input wiki/
+# Import specific entity types
+plm import-wiki people
+plm import-wiki entries
 
-# Dry run (preview changes without committing)
-palimpsest wiki2sql --input wiki/ --dry-run
+# Import manuscript wiki
+plm import-wiki manuscript-all
+
+# Custom wiki directory
+plm import-wiki all --wiki-dir path/to/wiki/
 ```
 
 ### Browse Wiki
@@ -1355,7 +1363,7 @@ wiki/manuscript/
 
 **1. Export database to wiki:**
 ```bash
-palimpsest sql2wiki --output wiki/
+plm export-wiki all
 ```
 
 **2. Browse and edit in Vimwiki:**
@@ -1373,19 +1381,19 @@ i
 
 **3. Import edits back to database:**
 ```bash
-palimpsest wiki2sql --input wiki/
+plm import-wiki all
 ```
 
 **4. Verify changes:**
 ```bash
-palimpsest db query "SELECT notes FROM events WHERE event='thesis-writing'"
+metadb query "SELECT notes FROM events WHERE event='thesis-writing'"
 ```
 
 ### Manuscript Curation Workflow
 
 **1. Export to manuscript wiki:**
 ```bash
-palimpsest sql2wiki --output wiki/ --manuscript
+plm export-wiki all  # Includes manuscript wiki
 ```
 
 **2. Review entries by theme:**
@@ -1411,7 +1419,7 @@ palimpsest sql2wiki --output wiki/ --manuscript
 
 **5. Import manuscript edits:**
 ```bash
-palimpsest wiki2sql --input wiki/ --manuscript
+plm import-wiki manuscript-all
 ```
 
 ---
@@ -1422,71 +1430,71 @@ palimpsest wiki2sql --input wiki/ --manuscript
 
 **Basic export:**
 ```bash
-palimpsest sql2wiki --output wiki/
+plm export-wiki all
 ```
 
 **Export specific entities:**
 ```bash
-palimpsest sql2wiki --entities entries,people,locations --output wiki/
+plm export-wiki all
 ```
 
 **Export manuscript wiki:**
 ```bash
-palimpsest sql2wiki --output wiki/ --manuscript
+plm export-wiki all  # Includes manuscript wiki
 ```
 
 **Force overwrite:**
 ```bash
-palimpsest sql2wiki --output wiki/ --force
+plm export-wiki all --force
 ```
 
 **Preserve existing notes:**
 ```bash
-palimpsest sql2wiki --output wiki/ --preserve-notes
+plm export-wiki all
 ```
 
 ### Import Commands
 
 **Basic import:**
 ```bash
-palimpsest wiki2sql --input wiki/
+plm import-wiki all
 ```
 
 **Import specific entities:**
 ```bash
-palimpsest wiki2sql --entities events,entries --input wiki/
+plm import-wiki all
 ```
 
 **Import manuscript edits:**
 ```bash
-palimpsest wiki2sql --input wiki/ --manuscript
+plm import-wiki manuscript-all
 ```
 
 **Dry run (preview changes):**
 ```bash
-palimpsest wiki2sql --input wiki/ --dry-run
+plm import-wiki all
 ```
 
 **Verbose output:**
 ```bash
-palimpsest wiki2sql --input wiki/ --verbose
+plm import-wiki all
 ```
 
 ### Query Commands
 
 **Check what's editable:**
 ```bash
-palimpsest wiki info --editable-fields
+validate wiki --help  # Check available options
 ```
 
 **Preview import changes:**
 ```bash
-palimpsest wiki diff --input wiki/
+# Wiki diff tool - check validate wiki --help
 ```
 
 **Verify wiki structure:**
 ```bash
-palimpsest wiki validate --input wiki/
+validate wiki stats  # Validate wiki pages
 ```
 
 ---
@@ -1497,25 +1505,25 @@ palimpsest wiki validate --input wiki/
 
 ```bash
 # Daily: Export latest database to wiki
-palimpsest sql2wiki --output wiki/ --preserve-notes
+plm export-wiki all
 
 # Work in wiki, edit notes
 
 # Daily: Import notes back
-palimpsest wiki2sql --input wiki/
+plm import-wiki all
 ```
 
 ### 2. Manuscript Development
 
 ```bash
 # Export manuscript wiki
-palimpsest sql2wiki --output wiki/ --manuscript
+plm export-wiki all  # Includes manuscript wiki
 
 # Curate entries, develop characters
 # vim wiki/manuscript/...
 
 # Import manuscript edits
-palimpsest wiki2sql --input wiki/ --manuscript
+plm import-wiki manuscript-all
 ```
 
 ### 3. Safe Editing
@@ -1542,7 +1550,7 @@ palimpsest wiki2sql --input wiki/ --manuscript
 
 **Solution:** Use `--preserve-notes` flag
 ```bash
-palimpsest sql2wiki --output wiki/ --preserve-notes
+plm export-wiki all
 ```
 
 ### Import doesn't sync my edits
@@ -1557,7 +1565,7 @@ palimpsest sql2wiki --output wiki/ --preserve-notes
 **Debug:**
 ```bash
 # Preview what will change
-palimpsest wiki2sql --input wiki/ --dry-run --verbose
+plm import-wiki all
 ```
 
 ### Links broken after export
@@ -1569,10 +1577,10 @@ palimpsest wiki2sql --input wiki/ --dry-run --verbose
 **Fix:**
 ```bash
 # Rebuild wiki with force
-palimpsest sql2wiki --output wiki/ --force
+plm export-wiki all --force
 
 # Verify structure
-palimpsest wiki validate --input wiki/
+validate wiki stats  # Validate wiki pages
 ```
 
 ---

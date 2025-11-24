@@ -29,8 +29,8 @@ from datetime import date as Date
 from typing import Optional
 
 from dev.database.manager import PalimpsestDB
-from dev.database.search import SearchQueryParser, SearchEngine
-from dev.database.search_index import SearchIndexManager
+from dev.search.search_engine import SearchQueryParser, SearchEngine
+from dev.search.search_index import SearchIndexManager
 from dev.core.logging_manager import PalimpsestLogger
 
 

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dev.dataclasses.wiki_entity import WikiEntity
-from dev.utils.wiki import relative_link
+from dev.utils.md import relative_link
 
 
 @dataclass
@@ -296,7 +296,7 @@ class ManuscriptEntry(WikiEntity):
             return None
 
         try:
-            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+            from dev.utils.wiki import parse_wiki_file, extract_section
             from datetime import datetime
 
             sections = parse_wiki_file(path)
@@ -306,12 +306,15 @@ class ManuscriptEntry(WikiEntity):
             entry_date = datetime.strptime(date_str, "%Y-%m-%d").date()
 
             # Extract editable fields
-            notes = extract_notes(sections)
+            # For manuscript entries, "Adaptation Notes" maps to notes field
+            notes = extract_section(sections, "Adaptation Notes")
+            if notes:
+                notes = notes.strip() or None
 
             # Extract character notes
-            character_notes = None
-            if "character notes" in sections:
-                character_notes = "\n".join(sections["character notes"]).strip()
+            character_notes = extract_section(sections, "Character Notes")
+            if character_notes:
+                character_notes = character_notes.strip() or None
 
             return cls(
                 path=path,

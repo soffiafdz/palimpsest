@@ -12,6 +12,8 @@ Features:
 - Update database records while preserving computed fields
 - Batch import with statistics
 - CLI interface for selective imports
+- Sync state tracking with conflict detection
+- Multi-machine synchronization support
 
 Usage:
     # Import specific entity type
@@ -25,7 +27,9 @@ from __future__ import annotations
 
 import sys
 import click
+import socket
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Optional, List
 from dataclasses import dataclass
 
@@ -41,6 +45,7 @@ from dev.database.models import (
     Event as DBEvent,
 )
 from dev.database.models_manuscript import Theme as DBTheme
+from dev.database.sync_state_manager import SyncStateManager
 
 from dev.dataclasses.wiki_person import Person as WikiPerson
 from dev.dataclasses.wiki_theme import Theme as WikiTheme
@@ -54,7 +59,7 @@ from dev.dataclasses.wiki_event import Event as WikiEvent
 
 from dev.core.paths import LOG_DIR, DB_PATH, WIKI_DIR, ALEMBIC_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
+from dev.core.cli import setup_logger
 from dev.core.exceptions import Wiki2SqlError
 
 from sqlalchemy import select
@@ -276,6 +281,13 @@ def import_entry(
         if not wiki_entry:
             return "skipped"
 
+        # Compute file hash for conflict detection
+        from dev.utils import fs
+        file_hash = fs.get_file_hash(wiki_file)
+
+        # Get machine ID for sync state tracking
+        machine_id = socket.gethostname()
+
         with db.session_scope() as session:
             query = select(DBEntry).where(DBEntry.date == wiki_entry.date)
             db_entry = session.execute(query).scalar_one_or_none()
@@ -285,6 +297,20 @@ def import_entry(
                     logger.log_warning(f"Entry not found in database: {wiki_entry.date}")
                 return "skipped"
 
+            # Initialize sync state manager
+            sync_mgr = SyncStateManager(session, logger)
+
+            # Check for conflicts before updating
+            if sync_mgr.check_conflict("Entry", db_entry.id, file_hash):
+                if logger:
+                    logger.log_warning(
+                        f"Conflict detected for entry {wiki_entry.date}",
+                        {
+                            "file": str(wiki_file),
+                            "action": "proceeding_with_update"
+                        }
+                    )
+
             # Update editable fields
             updated = False
             if wiki_entry.notes and wiki_entry.notes != db_entry.notes:
@@ -292,6 +318,16 @@ def import_entry(
                 updated = True
 
             if updated:
+                # Update sync state after successful update
+                sync_mgr.update_or_create(
+                    entity_type="Entry",
+                    entity_id=db_entry.id,
+                    last_synced_at=datetime.now(timezone.utc),
+                    sync_source="wiki",
+                    sync_hash=file_hash,
+                    machine_id=machine_id
+                )
+
                 session.commit()
                 if logger:
                     logger.log_info(f"Updated entry: {wiki_entry.date}")
@@ -340,6 +376,13 @@ def import_event(
         if not wiki_event:
             return "skipped"
 
+        # Compute file hash for conflict detection
+        from dev.utils import fs
+        file_hash = fs.get_file_hash(wiki_file)
+
+        # Get machine ID for sync state tracking
+        machine_id = socket.gethostname()
+
         with db.session_scope() as session:
             query = select(DBEvent).where(DBEvent.event == wiki_event.event)
             db_event = session.execute(query).scalar_one_or_none()
@@ -349,6 +392,20 @@ def import_event(
                     logger.log_warning(f"Event not found in database: {wiki_event.event}")
                 return "skipped"
 
+            # Initialize sync state manager
+            sync_mgr = SyncStateManager(session, logger)
+
+            # Check for conflicts before updating
+            if sync_mgr.check_conflict("Event", db_event.id, file_hash):
+                if logger:
+                    logger.log_warning(
+                        f"Conflict detected for event {wiki_event.event}",
+                        {
+                            "file": str(wiki_file),
+                            "action": "proceeding_with_update"
+                        }
+                    )
+
             # Update editable fields
             updated = False
             if wiki_event.notes and wiki_event.notes != db_event.notes:
@@ -356,6 +413,16 @@ def import_event(
                 updated = True
 
             if updated:
+                # Update sync state after successful update
+                sync_mgr.update_or_create(
+                    entity_type="Event",
+                    entity_id=db_event.id,
+                    last_synced_at=datetime.now(timezone.utc),
+                    sync_source="wiki",
+                    sync_hash=file_hash,
+                    machine_id=machine_id
+                )
+
                 session.commit()
                 if logger:
                     logger.log_info(f"Updated event: {wiki_event.event}")

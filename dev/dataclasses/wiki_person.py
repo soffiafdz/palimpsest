@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Set, Pattern
 
 # --- Local ---
 from .wiki_entity import WikiEntity
-from dev.utils.wiki import extract_section, parse_bullets, resolve_relative_link, relative_link
+from dev.utils.md import extract_section, parse_bullets, resolve_relative_link, relative_link
 
 
 @dataclass
@@ -150,24 +150,39 @@ class Person(WikiEntity):
         if not category and db_person.relation_type:
             category = db_person.relation_type.display_name
 
-        # Build appearances from database dates
+        # Build appearances from database dates (preferred) or entries (fallback)
         appearances: List[Dict[str, Any]] = []
-        for mentioned_date in sorted(db_person.dates, key=lambda d: d.date):
-            # Find entry for this date
-            entry = next(
-                (e for e in mentioned_date.entries if e.date == mentioned_date.date),
-                None
-            )
-            if entry:
+
+        # Try to use dates first (semantic relationship with context)
+        if db_person.dates:
+            for mentioned_date in sorted(db_person.dates, key=lambda d: d.date):
+                # Find entry for this date
+                entry = next(
+                    (e for e in mentioned_date.entries if e.date == mentioned_date.date),
+                    None
+                )
+                if entry:
+                    entry_path = Path(entry.file_path)
+                    # Generate relative link from people/person.md to entry
+                    link = relative_link(path, entry_path)
+
+                    appearances.append({
+                        "date": mentioned_date.date,
+                        "md": entry_path,
+                        "link": link,
+                        "note": mentioned_date.context or "",
+                    })
+        # Fallback to entries if dates not populated
+        elif db_person.entries:
+            for entry in sorted(db_person.entries, key=lambda e: e.date):
                 entry_path = Path(entry.file_path)
-                # Generate relative link from people/person.md to entry
                 link = relative_link(path, entry_path)
 
                 appearances.append({
-                    "date": mentioned_date.date,
+                    "date": entry.date,
                     "md": entry_path,
                     "link": link,
-                    "note": mentioned_date.context or "",
+                    "note": "",
                 })
 
         # Collect aliases from database
@@ -201,7 +216,7 @@ class Person(WikiEntity):
         """Replace people/<person>.md from current Person metadata."""
         # -- header --
         lines = [
-            "# Palimpsest — People", "",
+            "# Palimpsest — Person", "",
         ]
 
         # Add breadcrumbs
@@ -225,7 +240,7 @@ class Person(WikiEntity):
             lines.append("- ")
 
         # -- presence --
-        lines += ["", "### Presence"]
+        lines += ["", "### Appearances"]
         if self.mentions == 0:
             lines.append("- No appearances recorded")
         elif self.mentions == 1:
@@ -258,7 +273,7 @@ class Person(WikiEntity):
 
         # -- notes --
         lines += ["", "### Notes"]
-        lines.append(self.notes or "")
+        lines.append(self.notes or "[Add your notes here]")
         return lines
 
 
@@ -449,9 +464,17 @@ class Person(WikiEntity):
     # -- notes --
     @staticmethod
     def _parse_notes(lines: List[str]) -> Optional[str]:
-        """Extract notes writte in People/<person>.md"""
+        """Extract notes written in People/<person>.md"""
         notes_section: List = extract_section(lines, "### Notes")
         if notes_section:
-            return "\n".join(notes_section)
+            # Strip leading/trailing empty lines
+            while notes_section and not notes_section[0].strip():
+                notes_section.pop(0)
+            while notes_section and not notes_section[-1].strip():
+                notes_section.pop()
+
+            # Join and return, or None if empty after stripping
+            content = "\n".join(notes_section).strip()
+            return content if content else None
         else:
             return None

@@ -30,13 +30,80 @@ from __future__ import annotations
 import click
 import sys
 from pathlib import Path
+from typing import Optional
 
 # --- Local imports ---
 from dev.core.paths import TEX_DIR, MD_DIR, PDF_DIR, LOG_DIR
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
+from dev.core.cli import setup_logger
 from dev.builders.pdfbuilder import PdfBuilder, BuildStats
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROGRAMMATIC API (for use by pipeline)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def build_pdf(
+    year: str,
+    md_dir: Path,
+    pdf_dir: Path,
+    preamble: Optional[Path] = None,
+    preamble_notes: Optional[Path] = None,
+    force_overwrite: bool = False,
+    keep_temp_on_error: bool = False,
+    logger: Optional[PalimpsestLogger] = None,
+) -> BuildStats:
+    """
+    Build clean and notes PDFs for a specific year.
+
+    This is the programmatic API for md2pdf processing, used by:
+    - The pipeline CLI (python -m dev.pipeline.cli build-pdf)
+    - The standalone CLI (python -m dev.pipeline.md2pdf build)
+
+    Args:
+        year: Year to build (YYYY format)
+        md_dir: Markdown source directory
+        pdf_dir: PDF output directory
+        preamble: LaTeX preamble for clean PDF (defaults to TEX_DIR/preamble.tex)
+        preamble_notes: LaTeX preamble for notes PDF (defaults to TEX_DIR/preamble_notes.tex)
+        force_overwrite: Force overwrite existing PDFs
+        keep_temp_on_error: Keep temp files on error for debugging
+        logger: Optional logger instance
+
+    Returns:
+        BuildStats with files_processed, pdfs_created, etc.
+
+    Raises:
+        PdfBuildError: If build fails
+    """
+    # Validate year format
+    if not year.isdigit() or len(year) != 4:
+        raise PdfBuildError(f"Invalid year format: {year} (expected YYYY)")
+
+    # Apply defaults
+    if preamble is None:
+        preamble = TEX_DIR / "preamble.tex"
+    if preamble_notes is None:
+        preamble_notes = TEX_DIR / "preamble_notes.tex"
+
+    # Create builder
+    builder = PdfBuilder(
+        year=year,
+        md_dir=md_dir,
+        pdf_dir=pdf_dir,
+        preamble=preamble,
+        preamble_notes=preamble_notes,
+        force_overwrite=force_overwrite,
+        keep_temp_on_error=keep_temp_on_error,
+        logger=logger,
+    )
+
+    # Execute build
+    stats: BuildStats = builder.build()
+
+    return stats
 
 
 @click.group()
@@ -101,10 +168,6 @@ def build(
     logger: PalimpsestLogger = ctx.obj["logger"]
 
     try:
-        # Validate year format
-        if not year.isdigit() or len(year) != 4:
-            raise PdfBuildError(f"Invalid year format: {year} (expected YYYY)")
-
         input_dir = Path(input)
         output_dir = Path(output)
         preamble_path = Path(preamble) if preamble else None
@@ -112,8 +175,8 @@ def build(
 
         click.echo(f"📚 Building PDFs for year {year}")
 
-        # Create builder
-        builder = PdfBuilder(
+        # Call programmatic API
+        stats = build_pdf(
             year=year,
             md_dir=input_dir,
             pdf_dir=output_dir,
@@ -123,9 +186,6 @@ def build(
             keep_temp_on_error=debug,
             logger=logger,
         )
-
-        # Execute build
-        stats: BuildStats = builder.build()
 
         # Report results
         click.echo("\n✅ PDF build complete:")

@@ -995,21 +995,23 @@ cat output/2024/2024-11-01.md
 
 ### Commands
 
-**YAML → SQL**:
+**Note:** These examples show direct script invocation using `python -m dev.pipeline.X` for developer reference. For user-facing workflows, see the [Command Reference](COMMAND_REFERENCE.md) which documents the installed CLI commands (`plm`, `metadb`, etc.).
+
+**YAML → SQL** (standalone script: `yaml2sql.py`):
 ```bash
 python -m dev.pipeline.yaml2sql update file.md
 python -m dev.pipeline.yaml2sql batch journal/md/2024/
 python -m dev.pipeline.yaml2sql sync journal/md/ --delete-missing
 ```
 
-**SQL → YAML**:
+**SQL → YAML** (standalone script: `sql2yaml.py`):
 ```bash
 python -m dev.pipeline.sql2yaml export 2024-11-01 -o output/
 python -m dev.pipeline.sql2yaml range 2024-01-01 2024-12-31 -o output/
 python -m dev.pipeline.sql2yaml all -o output/
 ```
 
-**SQL → Wiki**:
+**SQL → Wiki** (standalone script: `sql2wiki.py`):
 ```bash
 python -m dev.pipeline.sql2wiki export people
 python -m dev.pipeline.sql2wiki export entries
@@ -1017,7 +1019,7 @@ python -m dev.pipeline.sql2wiki export all --force
 python -m dev.pipeline.manuscript2wiki export all
 ```
 
-**Wiki → SQL**:
+**Wiki → SQL** (standalone script: `wiki2sql.py`):
 ```bash
 python -m dev.pipeline.wiki2sql import people
 python -m dev.pipeline.wiki2sql import entries

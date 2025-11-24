@@ -32,11 +32,64 @@ import sys
 import click
 from pathlib import Path
 
-from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR
+from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR, FORMATTING_SCRIPT
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.exceptions import TxtBuildError
-from dev.core.cli_utils import setup_logger
+from dev.core.cli import setup_logger
 from dev.builders.txtbuilder import TxtBuilder, ProcessingStats
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROGRAMMATIC API (for use by pipeline)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def process_inbox(
+    inbox_dir: Path,
+    output_dir: Path,
+    archive_dir: Optional[Path] = None,
+    format_script: Optional[Path] = None,
+    logger: Optional[PalimpsestLogger] = None,
+) -> ProcessingStats:
+    """
+    Process inbox: format and organize raw 750words exports.
+
+    This is the programmatic API for src2txt processing, used by:
+    - The pipeline CLI (python -m dev.pipeline.cli pipeline)
+    - The standalone CLI (python -m dev.pipeline.src2txt process)
+
+    Args:
+        inbox_dir: Directory containing raw exports
+        output_dir: Base output directory for formatted files
+        archive_dir: Archive directory (defaults to ARCHIVE_DIR)
+        format_script: Format script path (defaults to FORMATTING_SCRIPT)
+        logger: Optional logger instance
+
+    Returns:
+        ProcessingStats with files_found, files_processed, etc.
+
+    Raises:
+        TxtBuildError: If processing fails
+    """
+    # Apply defaults
+    if archive_dir is None:
+        archive_dir = ARCHIVE_DIR
+    if format_script is None:
+        format_script = FORMATTING_SCRIPT
+
+    # Create builder
+    builder = TxtBuilder(
+        inbox_dir=inbox_dir,
+        output_dir=output_dir,
+        archive_dir=archive_dir,
+        format_script=format_script,
+        logger=logger,
+    )
+
+    # Execute build
+    stats: ProcessingStats = builder.build()
+
+    return stats
 
 
 @click.group()
@@ -102,17 +155,14 @@ def process(
 
         click.echo(f"📥 Processing inbox: {inbox_dir}")
 
-        # Create builder
-        builder = TxtBuilder(
+        # Call programmatic API
+        stats = process_inbox(
             inbox_dir=inbox_dir,
             output_dir=output_dir,
             archive_dir=archive_dir,
             format_script=script_path,
             logger=logger,
         )
-
-        # Execute build
-        stats: ProcessingStats = builder.build()
 
         # Report results
         click.echo("\n✅ Inbox processing complete:")

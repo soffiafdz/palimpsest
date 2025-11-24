@@ -136,13 +136,13 @@ health:
 	$(Q)$(METADB) health
 
 analyze:
-	$(Q)$(METADB) analyze
+	$(Q)$(METADB) maintenance analyze
 
 # ─── Installation ─────────────────────────────────────────────────────────────
 install:
 	$(Q)echo "[Make] Installing package with entry points..."
 	$(Q)pip install --user -e .
-	$(Q)echo "✅ Installed entry points: plm, metadb, plm-search, plm-ai, plm-wiki-export, plm-wiki-import"
+	$(Q)echo "✅ Installed entry points: plm, jsearch, jai, metadb, validate"
 	$(Q)echo "💡 Ensure ~/.local/bin is in your PATH"
 
 install-dev: install

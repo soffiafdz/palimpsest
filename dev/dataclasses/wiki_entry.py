@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 
 from dev.dataclasses.wiki_entity import WikiEntity
-from dev.utils.wiki import relative_link
+from dev.utils.md import relative_link
 
 
 @dataclass
@@ -506,7 +506,7 @@ class Entry(WikiEntity):
             return None
 
         try:
-            from dev.utils.wiki_parser import parse_wiki_file, extract_notes
+            from dev.utils.wiki import parse_wiki_file, extract_notes
             import sys
             from datetime import date as Date
 

@@ -47,7 +47,7 @@ The conversion system keeps these in sync:
 
 **YAML → SQL (Import):**
 ```bash
-palimpsest yaml2sql --input md/ --force
+plm sync-db --input md/ --force
 ```
 - Parses YAML frontmatter
 - Creates/updates database entries
@@ -56,7 +56,7 @@ palimpsest yaml2sql --input md/ --force
 
 **SQL → YAML (Export):**
 ```bash
-palimpsest sql2yaml --output md/ --force --preserve-body
+plm export-db --output md/ --force --preserve-body
 ```
 - Exports database entries to Markdown
 - Rebuilds YAML frontmatter from database
@@ -1831,20 +1831,20 @@ notes: >
 
 ```bash
 # First import
-palimpsest yaml2sql --input md/
+plm sync-db --input md/
 
 # Modify entry metadata in database
-palimpsest db update-entry 2024-01-15 --word-count 500
+metadb update-entry 2024-01-15 --word-count 500
 
 # Try to re-import (file unchanged)
-palimpsest yaml2sql --input md/
+plm sync-db --input md/
 # Result: File skipped (hash unchanged)
 ```
 
 **Fix:** Use `--force` flag
 
 ```bash
-palimpsest yaml2sql --input md/ --force
+plm sync-db --input md/ --force
 # Result: All files processed, database updated from files
 ```
 
@@ -1852,17 +1852,17 @@ palimpsest yaml2sql --input md/ --force
 
 ```bash
 # Export creates file
-palimpsest sql2yaml --output md/
+plm export-db --output md/
 
 # Export again (overwrites)
-palimpsest sql2yaml --output md/
+plm export-db --output md/
 # Result: File overwritten with database values
 ```
 
 **To preserve manual edits:**
 
 ```bash
-palimpsest sql2yaml --output md/ --preserve-body
+plm export-db --output md/ --preserve-body
 # Result: Metadata updated, body content preserved
 ```
 
@@ -1874,22 +1874,22 @@ palimpsest sql2yaml --output md/ --preserve-body
 
 **Basic import:**
 ```bash
-palimpsest yaml2sql --input md/
+plm sync-db --input md/
 ```
 
 **Force update (ignore file hash):**
 ```bash
-palimpsest yaml2sql --input md/ --force
+plm sync-db --input md/ --force
 ```
 
 **Import specific file:**
 ```bash
-palimpsest yaml2sql --file md/2024/2024-01-15.md
+plm sync-db --file md/2024/2024-01-15.md
 ```
 
 **Import with verbose logging:**
 ```bash
-palimpsest yaml2sql --input md/ --verbose
+plm sync-db --input md/ --verbose
 ```
 
 ---
@@ -1898,27 +1898,27 @@ palimpsest yaml2sql --input md/ --verbose
 
 **Basic export:**
 ```bash
-palimpsest sql2yaml --output md/
+plm export-db --output md/
 ```
 
 **Force overwrite existing files:**
 ```bash
-palimpsest sql2yaml --output md/ --force
+plm export-db --output md/ --force
 ```
 
 **Preserve existing body content:**
 ```bash
-palimpsest sql2yaml --output md/ --preserve-body
+plm export-db --output md/ --preserve-body
 ```
 
 **Export specific date:**
 ```bash
-palimpsest sql2yaml --date 2024-01-15 --output md/
+plm export-db --date 2024-01-15 --output md/
 ```
 
 **Export date range:**
 ```bash
-palimpsest sql2yaml --start 2024-01-01 --end 2024-01-31 --output md/
+plm export-db --start 2024-01-01 --end 2024-01-31 --output md/
 ```
 
 ---
@@ -1928,10 +1928,10 @@ palimpsest sql2yaml --start 2024-01-01 --end 2024-01-31 --output md/
 **Workflow 1: Initial Import**
 ```bash
 # Import all entries
-palimpsest yaml2sql --input md/ --verbose
+plm sync-db --input md/ --verbose
 
 # Verify in database
-palimpsest db stats
+metadb stats
 ```
 
 **Workflow 2: Daily Entry Addition**
@@ -1946,16 +1946,16 @@ tags: [personal]
 Entry content..." > md/2024/2024-01-15.md
 
 # Import new entry
-palimpsest yaml2sql --file md/2024/2024-01-15.md
+plm sync-db --file md/2024/2024-01-15.md
 ```
 
 **Workflow 3: Database Edit → YAML Sync**
 ```bash
 # Edit in database (via web UI or direct query)
-palimpsest db update-entry 2024-01-15 --add-tag philosophy
+metadb update-entry 2024-01-15 --add-tag philosophy
 
 # Export updated metadata back to YAML
-palimpsest sql2yaml --date 2024-01-15 --output md/ --force --preserve-body
+plm export-db --date 2024-01-15 --output md/ --force --preserve-body
 ```
 
 **Workflow 4: Bulk Re-import After Manual Edits**
@@ -1964,16 +1964,16 @@ palimpsest sql2yaml --date 2024-01-15 --output md/ --force --preserve-body
 vim md/2024/2024-01-15.md
 
 # Re-import all (force update)
-palimpsest yaml2sql --input md/ --force
+plm sync-db --input md/ --force
 ```
 
 **Workflow 5: Backup and Restore**
 ```bash
 # Export all entries from database
-palimpsest sql2yaml --output md-backup/ --force
+plm export-db --output md-backup/ --force
 
 # Restore from backup
-palimpsest yaml2sql --input md-backup/ --force
+plm sync-db --input md-backup/ --force
 ```
 
 ---

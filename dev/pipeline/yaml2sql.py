@@ -17,6 +17,10 @@ Features:
     - Comprehensive logging and statistics
     - Hash-based change detection
     - Incremental and full synchronization modes
+    - Tombstone tracking for reliable deletion propagation
+    - Sync state tracking with conflict detection
+    - Soft delete support for removed entries
+    - Multi-machine synchronization support
 
 Supported Metadata Fields:
     Core Fields:
@@ -100,19 +104,21 @@ Notes:
 from __future__ import annotations
 
 import click
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
+from dev.database.sync_state_manager import SyncStateManager
 from dev.core.exceptions import Yaml2SqlError
 from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli_utils import setup_logger
-from dev.core.cli_stats import ConversionStats
+from dev.core.cli import setup_logger
+from dev.core.cli import ConversionStats
 from dev.utils import fs
+import socket
 
 
 def process_entry_file(
@@ -224,11 +230,32 @@ def process_entry_file(
         # Convert to database format
         db_metadata: Dict[str, Any] = md_entry.to_database_metadata()
 
+        # Compute file hash for conflict detection
+        file_hash = fs.get_file_hash(file_path)
+
+        # Get machine ID for sync state tracking
+        machine_id = socket.gethostname()
+
         # Check if entry exists
         with db.session_scope() as session:
             existing = db.entries.get(entry_date=md_entry.date)
 
+            # Initialize sync state manager
+            sync_mgr = SyncStateManager(session, logger)
+
             if existing:
+                # Check for conflicts before updating
+                if sync_mgr.check_conflict("Entry", existing.id, file_hash):
+                    if logger:
+                        logger.log_warning(
+                            f"Conflict detected for entry {md_entry.date}",
+                            {
+                                "file": str(file_path),
+                                "action": "proceeding_with_update"
+                            }
+                        )
+                    # Continue with update - conflict logged for user review
+
                 if fs.should_skip_file(file_path, existing.file_hash, force_update):
                     if logger:
                         logger.log_debug(f"Entry {md_entry.date} unchanged, skipping")
@@ -236,7 +263,23 @@ def process_entry_file(
 
                 # Update existing entry
                 try:
-                    db.entries.update(existing, db_metadata)
+                    db.entries.update(
+                        existing,
+                        db_metadata,
+                        sync_source="yaml",
+                        removed_by="yaml2sql"
+                    )
+
+                    # Update sync state after successful update
+                    sync_mgr.update_or_create(
+                        entity_type="Entry",
+                        entity_id=existing.id,
+                        last_synced_at=datetime.now(timezone.utc),
+                        sync_source="yaml",
+                        sync_hash=file_hash,
+                        machine_id=machine_id
+                    )
+
                     if logger:
                         logger.log_operation(
                             "entry_updated",
@@ -252,7 +295,22 @@ def process_entry_file(
             else:
                 # Create new entry
                 try:
-                    db.entries.create(db_metadata)
+                    entry = db.entries.create(
+                        db_metadata,
+                        sync_source="yaml",
+                        removed_by="yaml2sql"
+                    )
+
+                    # Create initial sync state for new entry
+                    sync_mgr.update_or_create(
+                        entity_type="Entry",
+                        entity_id=entry.id,
+                        last_synced_at=datetime.now(timezone.utc),
+                        sync_source="yaml",
+                        sync_hash=file_hash,
+                        machine_id=machine_id
+                    )
+
                     if logger:
                         logger.log_operation(
                             "entry_created",
@@ -394,11 +452,15 @@ def sync_directory(
             for entry in all_entries:
                 if entry.file_path and entry.file_path not in file_paths:
                     try:
-                        db.entries.delete(entry)
+                        db.entries.delete(
+                            entry,
+                            deleted_by="yaml2sql",
+                            reason="removed_from_source"
+                        )
                         stats.entries_skipped += 1  # Reuse as "deleted" counter
                         if logger:
                             logger.log_operation(
-                                "entry_deleted",
+                                "entry_soft_deleted",
                                 {"date": str(entry.date), "file": entry.file_path},
                             )
                     except Exception as e:

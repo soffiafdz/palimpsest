@@ -1,7 +1,7 @@
 """
-entity_exporter.py
-------------------
-Generic entity exporter for wiki pages.
+wiki.py
+-------
+Wiki entity builder for exporting database entities to vimwiki pages.
 
 This module provides a generic, configuration-driven approach to exporting
 database entities to vimwiki pages. Instead of duplicating export logic for
@@ -13,8 +13,7 @@ Architecture:
 - GenericEntityExporter: Generic exporter that works with any EntityConfig
 - ENTITY_REGISTRY: Registry of all entity configurations
 
-This reduces sql2wiki.py from ~2,600 lines to ~800 lines by eliminating
-repetitive export functions.
+Used by sql2wiki.py and ms2wiki.py for entity export operations.
 """
 
 from __future__ import annotations
@@ -29,8 +28,8 @@ from sqlalchemy.orm import joinedload
 
 from dev.database.manager import PalimpsestDB
 from dev.core.logging_manager import PalimpsestLogger
-from dev.core.cli_stats import ConversionStats
-from dev.utils.wiki import relative_link
+from dev.core.cli import ConversionStats
+from dev.utils.md import relative_link
 
 
 @dataclass

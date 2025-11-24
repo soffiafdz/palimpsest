@@ -48,6 +48,7 @@ from dev.database.decorators import (
     log_database_operation,
     validate_metadata,
 )
+from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
 
 
@@ -76,6 +77,7 @@ class EntryManager(BaseManager):
             logger: Optional logger for operation tracking
         """
         super().__init__(session, logger)
+        self.tombstones = TombstoneManager(session, logger)
 
     # -------------------------------------------------------------------------
     # Core CRUD Operations
@@ -112,6 +114,7 @@ class EntryManager(BaseManager):
         entry_date: Union[str, date] = None,
         entry_id: int = None,
         file_path: str = None,
+        include_deleted: bool = False,
     ) -> Optional[Entry]:
         """
         Retrieve an entry by date, ID, or file path.
@@ -120,27 +123,52 @@ class EntryManager(BaseManager):
             entry_date: Entry date
             entry_id: Entry ID
             file_path: File path
+            include_deleted: If True, include soft-deleted entries (default False)
 
         Returns:
             Entry if found, None otherwise
+
+        Examples:
+            >>> # Get entry (excludes deleted)
+            >>> entry = entry_mgr.get(entry_date=date(2024, 11, 1))
+
+            >>> # Get entry including deleted
+            >>> entry = entry_mgr.get(entry_date=date(2024, 11, 1), include_deleted=True)
         """
         if entry_id is not None:
-            return self.session.get(Entry, entry_id)
+            entry = self.session.get(Entry, entry_id)
+            if entry and not include_deleted and entry.is_deleted:
+                return None
+            return entry
+
+        query = self.session.query(Entry)
 
         if entry_date is not None:
             if isinstance(entry_date, str):
                 entry_date = DataValidator.normalize_date(entry_date)
-            return self.session.query(Entry).filter_by(date=entry_date).first()
+            query = query.filter_by(date=entry_date)
 
-        if file_path is not None:
+        elif file_path is not None:
             file_path = DataValidator.normalize_string(file_path)
-            return self.session.query(Entry).filter_by(file_path=file_path).first()
+            query = query.filter_by(file_path=file_path)
 
-        return None
+        else:
+            return None
+
+        # Filter out soft-deleted entries unless explicitly requested
+        if not include_deleted:
+            query = query.filter(Entry.deleted_at.is_(None))
+
+        return query.first()
 
     @handle_db_errors
     @log_database_operation("create_entry")
-    def create(self, metadata: Dict[str, Any]) -> Entry:
+    def create(
+        self,
+        metadata: Dict[str, Any],
+        sync_source: str = "manual",
+        removed_by: str = "system",
+    ) -> Entry:
         """
         Create a new Entry in the database with its associated relationships.
 
@@ -224,12 +252,24 @@ class EntryManager(BaseManager):
         entry = self._execute_with_retry(_do_create)
 
         # --- Relationships ---
-        self.update_relationships(entry, metadata)
+        self.update_relationships(
+            entry,
+            metadata,
+            incremental=True,
+            sync_source=sync_source,
+            removed_by=removed_by
+        )
         return entry
 
     @handle_db_errors
     @log_database_operation("update_entry")
-    def update(self, entry: Entry, metadata: Dict[str, Any]) -> Entry:
+    def update(
+        self,
+        entry: Entry,
+        metadata: Dict[str, Any],
+        sync_source: str = "manual",
+        removed_by: str = "system",
+    ) -> Entry:
         """
         Update an existing Entry in the database and refresh its relationships.
 
@@ -289,19 +329,85 @@ class EntryManager(BaseManager):
         entry = self._execute_with_retry(_do_update)
 
         # --- Update relationships ---
-        self.update_relationships(entry, metadata)
+        self.update_relationships(
+            entry,
+            metadata,
+            incremental=False,  # Update mode uses replacement
+            sync_source=sync_source,
+            removed_by=removed_by
+        )
         return entry
 
     @handle_db_errors
     @log_database_operation("delete_entry")
-    def delete(self, entry: Entry) -> None:
-        """Delete an entry and its associated data."""
+    def delete(
+        self,
+        entry: Entry,
+        deleted_by: str = "system",
+        reason: Optional[str] = None,
+        hard_delete: bool = False,
+    ) -> None:
+        """
+        Delete an entry (soft delete by default).
+
+        Soft delete marks the entry as deleted without removing it from the
+        database, enabling recovery and proper multi-machine synchronization.
+
+        Args:
+            entry: Entry to delete
+            deleted_by: Who/what is deleting (user, system, sync process)
+            reason: Optional reason for deletion
+            hard_delete: If True, permanently delete (use with caution!)
+
+        Examples:
+            >>> # Soft delete (default)
+            >>> entry_mgr.delete(entry, deleted_by='yaml2sql', reason='removed_from_source')
+
+            >>> # Hard delete (permanent)
+            >>> entry_mgr.delete(entry, hard_delete=True, reason='duplicate')
+        """
 
         def _do_delete():
-            self.session.delete(entry)
+            if hard_delete:
+                # Permanent deletion - cannot be recovered
+                self.session.delete(entry)
+                if self.logger:
+                    self.logger.log_warning(
+                        f"HARD DELETE: Entry {entry.date}",
+                        {"reason": reason, "deleted_by": deleted_by}
+                    )
+            else:
+                # Soft delete - mark as deleted
+                entry.soft_delete(deleted_by=deleted_by, reason=reason)
+                if self.logger:
+                    self.logger.log_info(
+                        f"Soft deleted entry {entry.date}",
+                        {"deleted_by": deleted_by, "reason": reason}
+                    )
+
             self.session.flush()
 
         self._execute_with_retry(_do_delete)
+
+    def restore(self, entry: Entry) -> None:
+        """
+        Restore a soft-deleted entry.
+
+        Args:
+            entry: Entry to restore
+
+        Examples:
+            >>> # Restore deleted entry
+            >>> entry_mgr.restore(entry)
+        """
+
+        def _do_restore():
+            entry.restore()
+            if self.logger:
+                self.logger.log_info(f"Restored entry {entry.date}")
+            self.session.flush()
+
+        self._execute_with_retry(_do_restore)
 
     @handle_db_errors
     @log_database_operation("bulk_create_entries")
@@ -469,6 +575,8 @@ class EntryManager(BaseManager):
         entry: Entry,
         metadata: Dict[str, Any],
         incremental: bool = True,
+        sync_source: str = "manual",
+        removed_by: str = "system",
     ) -> None:
         """
         Update relationships for an Entry object in the database.
@@ -476,6 +584,9 @@ class EntryManager(BaseManager):
         Supports both incremental updates (default) and full overwrite.
         This function handles relationships only. No I/O or Markdown parsing.
         Prevents duplicates and ensures lookup tables are updated.
+
+        Creates tombstones for removed associations to enable proper multi-machine
+        synchronization.
 
         Args:
             entry (Entry): Entry ORM object to update relationships for.
@@ -500,6 +611,8 @@ class EntryManager(BaseManager):
                     - remove_locations (List[Location|int])
             incremental (bool): If True, add/remove specified items.
                                 If False, replace all relationships.
+            sync_source (str): Source of sync ('yaml', 'wiki', 'manual') for tombstones
+            removed_by (str): Who/what is making changes ('yaml2sql', 'wiki2sql', etc.)
 
         Behavior:
             - Incremental mode:
@@ -519,12 +632,12 @@ class EntryManager(BaseManager):
         try:
             # --- Many to many ---
             many_to_many_configs = [
-                ("cities", "cities", City),
-                ("people", "people", Person),
-                ("events", "events", Event),
+                ("cities", "cities", City, "entry_cities"),
+                ("people", "people", Person, "entry_people"),
+                ("events", "events", Event, "entry_events"),
             ]
 
-            for rel_name, meta_key, model_class in many_to_many_configs:
+            for rel_name, meta_key, model_class, table_name in many_to_many_configs:
                 if meta_key in metadata:
                     items = metadata[meta_key]
                     remove_items = metadata.get(f"remove_{meta_key}", [])
@@ -534,22 +647,51 @@ class EntryManager(BaseManager):
 
                     # Replacement mode: clear and add all
                     if not incremental:
+                        # Create tombstones for all removed items
+                        for existing_item in list(collection):
+                            self.tombstones.create(
+                                table_name=table_name,
+                                left_id=entry.id,
+                                right_id=existing_item.id,
+                                removed_by=removed_by,
+                                sync_source=sync_source,
+                                reason="replacement_mode"
+                            )
+
                         collection.clear()
+
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
+                                # Remove tombstone if re-adding
+                                self.tombstones.remove_tombstone(
+                                    table_name, entry.id, resolved_item.id
+                                )
                                 collection.append(resolved_item)
                     else:
                         # Incremental mode: add new items
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
+                                # Remove tombstone if re-adding previously removed item
+                                self.tombstones.remove_tombstone(
+                                    table_name, entry.id, resolved_item.id
+                                )
                                 collection.append(resolved_item)
 
                         # Remove specified items
                         for item in remove_items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item in collection:
+                                # Create tombstone before removing
+                                self.tombstones.create(
+                                    table_name=table_name,
+                                    left_id=entry.id,
+                                    right_id=resolved_item.id,
+                                    removed_by=removed_by,
+                                    sync_source=sync_source,
+                                    reason="removed_from_source"
+                                )
                                 collection.remove(resolved_item)
 
                     self.session.flush()
