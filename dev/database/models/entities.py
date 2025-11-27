@@ -11,6 +11,7 @@ Models:
 
 These models track who appears in the journal and how entries are categorized.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -20,7 +21,13 @@ from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Te
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .associations import entry_aliases, entry_people, entry_tags, event_people, people_dates
+from .associations import (
+    entry_aliases,
+    entry_people,
+    entry_tags,
+    event_people,
+    people_dates,
+)
 from .base import Base, SoftDeleteMixin
 from .enums import RelationType
 
@@ -134,13 +141,13 @@ class Person(Base, SoftDeleteMixin):
         return len(self.events)
 
     @property
-    def first_appearance_date(self) -> Optional[date]:
+    def first_appearance(self) -> Optional[date]:
         """Earliest date this person was mentioned."""
         dates = [md.date for md in self.dates]
         return min(dates) if dates else None
 
     @property
-    def last_appearance_date(self) -> Optional[date]:
+    def last_appearance(self) -> Optional[date]:
         """Most recent date this person was mentioned."""
         dates = [md.date for md in self.dates]
         return max(dates) if dates else None

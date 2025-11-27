@@ -11,12 +11,13 @@ Models:
 
 These models enable geographic and temporal analysis of journal entries.
 """
+
 from __future__ import annotations
 
 from datetime import date
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Date, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .associations import (
@@ -172,7 +173,9 @@ class City(Base):
     country: Mapped[Optional[str]] = mapped_column(String(255), index=True)
 
     # ---- Relationship ----
-    locations: Mapped[List["Location"]] = relationship("Location", back_populates="city")
+    locations: Mapped[List["Location"]] = relationship(
+        "Location", back_populates="city"
+    )
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_cities, back_populates="cities"
     )
