@@ -109,8 +109,8 @@ class Character(WikiEntity):
             voice_notes=manuscript_person.voice_notes,
             appearance_notes=manuscript_person.appearance_notes,
             appearances=appearances,
-            first_appearance=db_person.first_appearance,
-            last_appearance=db_person.last_appearance,
+            first_appearance=db_person.first_appearance_date,
+            last_appearance=db_person.last_appearance_date,
             total_scenes=0,  # Will be calculated from appearances
         )
 

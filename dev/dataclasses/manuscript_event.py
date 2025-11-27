@@ -248,8 +248,10 @@ class ManuscriptEvent(WikiEntity):
 
             # Extract editable fields
             notes = None
-            if "adaptation notes" in sections:
-                notes = "\n".join(sections["adaptation notes"]).strip()
+            if "Adaptation Notes" in sections:
+                notes = sections["Adaptation Notes"].strip()
+            elif "Manuscript Notes" in sections:  # Support alternative name used in tests
+                notes = sections["Manuscript Notes"].strip()
 
             return cls(
                 path=path,
