@@ -140,54 +140,48 @@ class Location(WikiEntity):
 
     def to_wiki(self) -> List[str]:
         """
-        Convert location to vimwiki markdown.
+        Convert location to vimwiki markdown using template.
 
         Returns:
             List of markdown lines
         """
-        lines = [
-            "# Palimpsest — Location",
-            "",
-            f"## {self.name}",
-            "",
-        ]
+        from dev.utils.templates import render_template
+        from itertools import groupby
 
-        # City and location info
+        # Generate location info
         city_slug = self.city.lower().replace(" ", "_")
         city_path = Path("../../cities") / f"{city_slug}.md"
         city_display = f"{self.city}, {self.city_country}" if self.city_country else self.city
 
-        lines.extend([
-            "### Location Info",
+        location_info_lines = [
             f"- **City:** [[{city_path}|{city_display}]]",
             f"- **Total Visits:** {len(self.visits)}",
-            "",
-        ])
+        ]
+        location_info = "\n".join(location_info_lines)
 
-        # Visit statistics
+        # Generate visit history
+        visit_history = ""
         if self.visits:
             first_visit = self.visits[0]["date"]
             last_visit = self.visits[-1]["date"]
             span_days = (last_visit - first_visit).days
 
-            lines.extend([
-                "### Visit History",
+            visit_history_lines = [
                 f"- **First Visit:** {first_visit.isoformat()}",
                 f"- **Last Visit:** {last_visit.isoformat()}",
                 f"- **Span:** {span_days} days",
-                "",
-            ])
+            ]
+            visit_history = "\n".join(visit_history_lines)
 
-        # Visit timeline (grouped by year)
+        # Generate timeline (grouped by year)
+        timeline = ""
         if self.visits:
-            lines.extend(["### Timeline", ""])
-
-            # Group by year
-            from itertools import groupby
+            timeline_lines = []
 
             for year, year_visits in groupby(reversed(self.visits), key=lambda v: v["date"].year):
                 year_visits_list = list(year_visits)
-                lines.extend([f"#### {year}", ""])
+                timeline_lines.append(f"#### {year}")
+                timeline_lines.append("")
 
                 for visit in year_visits_list:
                     date_str = visit["date"].isoformat()
@@ -199,27 +193,33 @@ class Location(WikiEntity):
                     if visit["context"]:
                         line += f" — {visit['context']}"
 
-                    lines.append(line)
+                    timeline_lines.append(line)
 
-                lines.append("")
+                timeline_lines.append("")
 
-        # People encountered
+            timeline = "\n".join(timeline_lines)
+
+        # Generate people encountered
+        people_encountered = ""
         if self.people:
-            lines.extend(["### People Encountered", ""])
+            people_lines = []
             for person in self.people:
                 visit_str = f"{person['count']} visit" + ("s" if person["count"] != 1 else "")
-                lines.append(f"- [[{person['link']}|{person['name']}]] ({visit_str})")
-            lines.append("")
+                people_lines.append(f"- [[{person['link']}|{person['name']}]] ({visit_str})")
+            people_encountered = "\n".join(people_lines)
 
-        # User notes (wiki-editable)
-        lines.extend(["### Notes", ""])
-        if self.notes:
-            lines.append(self.notes)
-        else:
-            lines.append("[Add notes about this location for manuscript use]")
-        lines.append("")
+        # Prepare template variables
+        variables = {
+            "name": self.name,
+            "location_info": location_info,
+            "visit_history": visit_history,
+            "timeline": timeline,
+            "people_encountered": people_encountered,
+            "notes": self.notes or "[Add notes about this location for manuscript use]",
+        }
 
-        return lines
+        # Render template
+        return render_template("location", variables)
 
     @classmethod
     def from_file(cls, file_path: Path) -> Optional["Location"]:

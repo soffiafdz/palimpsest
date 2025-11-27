@@ -27,7 +27,6 @@ from typing import TypeVar, Optional, Type, List
 T = TypeVar("T", bound="WikiEntity")
 
 class WikiEntity(ABC):
-    # TODO: Add the other new classes to docstring
     """
     Abstract base class for all Markdown-based wiki entities.
 
@@ -36,7 +35,17 @@ class WikiEntity(ABC):
     - an instance method `to_wiki()` to serialize the object to Markdown lines
     - a `write_to_file()` helper to write the Markdown to the associated path
 
-    Subclasses include Entry, Person, Theme, and Vignette.
+    Subclasses include:
+    - Entry: Journal entries
+    - Person: People/characters
+    - Event: Events
+    - Location: Locations/venues
+    - City: Cities
+    - Poem: Poems
+    - Reference: References/citations
+    - Tag: Tags
+    - Theme: Themes
+    - Vignette: Vignettes
     """
     @classmethod
     @abstractmethod

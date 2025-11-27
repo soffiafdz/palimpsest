@@ -18,7 +18,6 @@ It also integrates with journal entries to track mentions and presence.
 from __future__ import annotations
 
 # --- Standard Library ---
-# TODO: Check that there are no imports missing
 import re
 import sys
 from dataclasses import dataclass, field
@@ -213,68 +212,64 @@ class Person(WikiEntity):
 
     # ---- Serialization ----
     def to_wiki(self) -> List[str]:
-        """Replace people/<person>.md from current Person metadata."""
-        # -- header --
-        lines = [
-            "# Palimpsest — Person", "",
-        ]
+        """Replace people/<person>.md from current Person metadata using template."""
+        from dev.utils.templates import render_template
 
-        # Add breadcrumbs
-        breadcrumbs = self.generate_breadcrumbs(self.wiki_dir)
-        if breadcrumbs:
-            lines.extend([
-                f"*{breadcrumbs}*",
-                "",
-            ])
+        # Generate breadcrumbs
+        breadcrumbs_content = self.generate_breadcrumbs(self.wiki_dir)
+        breadcrumbs = f"*{breadcrumbs_content}*\n" if breadcrumbs_content else ""
 
-        lines.extend([
-            f"## {self.name.title()}", "",
-            "### Category", f"{self.category or 'Unsorted'}", "",
-        ])
-
-        # -- alias(es) --
-        lines.append(f"### Alias")
+        # Generate aliases list
         if self.alias:
-            lines += [f"- {a}" for a in sorted(self.alias)]
+            aliases = "\n".join(f"- {a}" for a in sorted(self.alias))
         else:
-            lines.append("- ")
+            aliases = "- "
 
-        # -- presence --
-        lines += ["", "### Appearances"]
+        # Generate appearances section
+        appearances_lines = []
         if self.mentions == 0:
-            lines.append("- No appearances recorded")
+            appearances_lines.append("- No appearances recorded")
         elif self.mentions == 1:
-            lines.extend([
+            appearances_lines.extend([
                 f"- Appearance: {self.first_app_date}",
                 "- Mentions: 1 entry",
                 self._appearance_line("entry")
             ])
         else:
-            lines.extend([
+            appearances_lines.extend([
                 f"- Range: {self.first_app_date} -> {self.last_app_date}",
                 f"- Mentions: {self.mentions} entries",
                 self._appearance_line("first"),
                 self._appearance_line("last")
             ])
+        appearances = "\n".join(appearances_lines)
 
-        # -- themes --
-        lines += ["", "### Themes"]
+        # Generate themes list
         if self.themes:
-            lines += [f"- {t}" for t in sorted(self.themes)]
+            themes = "\n".join(f"- {t}" for t in sorted(self.themes))
         else:
-            lines.append("- ")
+            themes = "- "
 
-        # -- vignettes --
-        lines += ["", "### Vignettes"]
+        # Generate vignettes list
         if self.vignettes:
-            lines += self._vignette_lines()
+            vignettes = "\n".join(self._vignette_lines())
         else:
-            lines.append("- ")
+            vignettes = "- "
 
-        # -- notes --
-        lines += ["", "### Notes"]
-        lines.append(self.notes or "[Add your notes here]")
-        return lines
+        # Prepare template variables
+        variables = {
+            "breadcrumbs": breadcrumbs,
+            "name": self.name.title(),
+            "category": self.category or "Unsorted",
+            "aliases": aliases,
+            "appearances": appearances,
+            "themes": themes,
+            "vignettes": vignettes,
+            "notes": self.notes or "[Add your notes here]",
+        }
+
+        # Render template
+        return render_template("person", variables)
 
 
     # ---- properties----

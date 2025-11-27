@@ -159,56 +159,61 @@ class Poem(WikiEntity):
 
     # ---- Serialization ----
     def to_wiki(self) -> List[str]:
-        """Generate vimwiki markdown for this poem."""
-        lines = [
-            "# Palimpsest — Poems",
-            "",
-            f"## {self.title}",
-            "",
-        ]
+        """Generate vimwiki markdown for this poem using template."""
+        from dev.utils.templates import render_template
 
-        # Version history
+        # Generate version history content
+        version_history_lines = []
+
         if len(self.versions) > 1:
-            lines.append(f"### Version History ({len(self.versions)} versions)")
-            lines.append("")
+            version_history_lines.append(f"### Version History ({len(self.versions)} versions)")
+            version_history_lines.append("")
 
         for i, version in enumerate(self.versions, 1):
             # Version header
             if len(self.versions) > 1:
-                lines.append(f"#### Version {i}")
+                version_history_lines.append(f"#### Version {i}")
                 if version.get("revision_date"):
-                    lines.append(f"*Revision date: {version['revision_date']}*")
+                    version_history_lines.append(f"*Revision date: {version['revision_date']}*")
                 if version.get("entry_date") and version.get("entry_link"):
                     entry_date = version["entry_date"]
-                    lines.append(f"*From entry: [[{version['entry_link']}|{entry_date}]]*")
-                lines.append("")
+                    version_history_lines.append(f"*From entry: [[{version['entry_link']}|{entry_date}]]*")
+                version_history_lines.append("")
             else:
                 # Single version - show metadata inline
                 if version.get("revision_date"):
-                    lines.append(f"**Date:** {version['revision_date']}")
+                    version_history_lines.append(f"**Date:** {version['revision_date']}")
                 if version.get("entry_date") and version.get("entry_link"):
                     entry_date = version["entry_date"]
-                    lines.append(f"**Entry:** [[{version['entry_link']}|{entry_date}]]")
-                lines.append("")
+                    version_history_lines.append(f"**Entry:** [[{version['entry_link']}|{entry_date}]]")
+                version_history_lines.append("")
 
             # Poem content
-            lines.append("```")
-            lines.append(version["content"].strip())
-            lines.append("```")
-            lines.append("")
+            version_history_lines.append("```")
+            version_history_lines.append(version["content"].strip())
+            version_history_lines.append("```")
+            version_history_lines.append("")
 
             # Version notes
             if version.get("notes"):
-                lines.append(f"*Note: {version['notes']}*")
-                lines.append("")
+                version_history_lines.append(f"*Note: {version['notes']}*")
+                version_history_lines.append("")
 
         # Overall notes
         if self.notes:
-            lines.append("### Notes")
-            lines.append(self.notes)
-            lines.append("")
+            version_history_lines.append("### Notes")
+            version_history_lines.append(self.notes)
+            version_history_lines.append("")
 
-        return lines
+        version_history = "\n".join(version_history_lines)
+
+        # Prepare template variables
+        variables = {
+            "title": self.title,
+            "version_history": version_history,
+        }
+
+        return render_template("poem", variables)
 
     # ---- Properties ----
     @property

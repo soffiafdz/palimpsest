@@ -165,32 +165,26 @@ class Reference(WikiEntity):
 
     # ---- Serialization ----
     def to_wiki(self) -> List[str]:
-        """Generate vimwiki markdown for this reference source."""
-        lines = [
-            "# Palimpsest — References",
-            "",
-            f"## {self.source_name}",
-            "",
-        ]
+        """Generate vimwiki markdown for this reference source using template."""
+        from dev.utils.templates import render_template
 
-        # Source metadata
-        lines.append("### Source Information")
-        lines.append(f"- **Type:** {self.source_type}")
+        # Generate source info section
+        source_info_lines = [f"- **Type:** {self.source_type}"]
         if self.author:
-            lines.append(f"- **Author:** {self.author}")
-        lines.append(f"- **Citations:** {len(self.citations)}")
-        lines.append("")
+            source_info_lines.append(f"- **Author:** {self.author}")
+        source_info_lines.append(f"- **Citations:** {len(self.citations)}")
+        source_info = "\n".join(source_info_lines)
 
-        # Citations
+        # Generate citations section
+        citations_content = ""
         if self.citations:
-            lines.append("### Citations")
-            lines.append("")
+            citations_lines = []
 
             for citation in self.citations:
                 # Citation header with date and entry link
                 entry_date = citation["entry_date"]
-                lines.append(f"#### [[{citation['entry_link']}|{entry_date}]]")
-                lines.append("")
+                citations_lines.append(f"#### [[{citation['entry_link']}|{entry_date}]]")
+                citations_lines.append("")
 
                 # Mode and speaker if available
                 metadata_parts = []
@@ -200,29 +194,38 @@ class Reference(WikiEntity):
                     metadata_parts.append(f"*Speaker: {citation['speaker']}*")
 
                 if metadata_parts:
-                    lines.append(" • ".join(metadata_parts))
-                    lines.append("")
+                    citations_lines.append(" • ".join(metadata_parts))
+                    citations_lines.append("")
 
                 # Content or description
                 if citation.get("content"):
-                    lines.append("> " + citation["content"].replace("\n", "\n> "))
+                    citations_lines.append("> " + citation["content"].replace("\n", "\n> "))
                 elif citation.get("description"):
-                    lines.append(f"*{citation['description']}*")
+                    citations_lines.append(f"*{citation['description']}*")
 
-                lines.append("")
+                citations_lines.append("")
 
+            # Add notes at the end of citations if present
+            if self.notes:
+                citations_lines.append("### Notes")
+                citations_lines.append(self.notes)
+                citations_lines.append("")
+
+            citations_content = "\n".join(citations_lines)
         else:
-            lines.append("### Citations")
-            lines.append("No citations recorded.")
-            lines.append("")
+            if self.notes:
+                citations_content = f"No citations recorded.\n\n### Notes\n{self.notes}\n"
+            else:
+                citations_content = "No citations recorded."
 
-        # Notes
-        if self.notes:
-            lines.append("### Notes")
-            lines.append(self.notes)
-            lines.append("")
+        # Prepare template variables
+        variables = {
+            "source_name": self.source_name,
+            "source_info": source_info,
+            "citations": citations_content,
+        }
 
-        return lines
+        return render_template("reference", variables)
 
     # ---- Properties ----
     @property

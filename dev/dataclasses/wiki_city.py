@@ -136,111 +136,103 @@ class City(WikiEntity):
 
     def to_wiki(self) -> List[str]:
         """
-        Convert city to vimwiki markdown.
+        Convert city to vimwiki markdown using template.
 
         Returns:
             List of markdown lines
         """
-        lines = [
-            "# Palimpsest — City",
-            "",
-            f"## {self.name}",
-            "",
-        ]
+        from dev.utils.templates import render_template
 
-        # City info
-        lines.extend(["### Location Info", ""])
+        # Generate location info section
+        location_info_lines = []
         if self.state_province:
-            lines.append(f"- **State/Province:** {self.state_province}")
+            location_info_lines.append(f"- **State/Province:** {self.state_province}")
         if self.country:
-            lines.append(f"- **Country:** {self.country}")
-        lines.append(f"- **Total Entries:** {len(self.entries)}")
-        lines.append(f"- **Tracked Locations:** {len(self.locations)}")
-        lines.append("")
+            location_info_lines.append(f"- **Country:** {self.country}")
+        location_info_lines.append(f"- **Total Entries:** {len(self.entries)}")
+        location_info_lines.append(f"- **Tracked Locations:** {len(self.locations)}")
+        location_info = "\n".join(location_info_lines)
 
-        # Statistics
+        # Generate statistics section
+        statistics = ""
         if self.entries:
             first_entry = self.entries[-1]["date"]  # entries are reverse sorted
             last_entry = self.entries[0]["date"]
             span_days = (last_entry - first_entry).days
 
-            lines.extend([
-                "### Visit Statistics",
+            statistics_lines = [
                 f"- **First Entry:** {first_entry.isoformat()}",
                 f"- **Last Entry:** {last_entry.isoformat()}",
                 f"- **Span:** {span_days} days",
-                "",
-            ])
+            ]
 
-        # Locations
+            # Add visit frequency visualization
+            if self.visit_frequency:
+                statistics_lines.append("")
+                statistics_lines.append("**Visit Frequency by Year:**")
+                statistics_lines.append("")
+
+                # Group by year
+                freq_by_year = {}
+                for year_month, count in self.visit_frequency.items():
+                    year = year_month[:4]
+                    if year not in freq_by_year:
+                        freq_by_year[year] = {}
+                    month = year_month[5:7]
+                    freq_by_year[year][month] = count
+
+                # Output by year (most recent first)
+                for year in sorted(freq_by_year.keys(), reverse=True):
+                    months = freq_by_year[year]
+                    total = sum(months.values())
+                    statistics_lines.append(f"**{year}** ({total} entries):")
+                    statistics_lines.append("")
+
+                    # Month bars (simple visualization)
+                    for month_num in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]:
+                        if month_num in months:
+                            count = months[month_num]
+                            month_name = date(int(year), int(month_num), 1).strftime("%b")
+                            bar = "█" * min(count, 20)  # Max 20 blocks
+                            statistics_lines.append(f"- {month_name}: {bar} ({count})")
+
+                    statistics_lines.append("")
+
+            statistics = "\n".join(statistics_lines)
+
+        # Generate locations section
+        locations_content = ""
         if self.locations:
-            lines.extend(["### Locations", ""])
+            locations_lines = []
             # Sort by visit count (descending)
             sorted_locations = sorted(self.locations, key=lambda l: (-l["visit_count"], l["name"]))
             for loc in sorted_locations:
                 visit_str = f"{loc['visit_count']} visit" + ("s" if loc["visit_count"] != 1 else "")
-                lines.append(f"- [[{loc['link']}|{loc['name']}]] ({visit_str})")
-            lines.append("")
+                locations_lines.append(f"- [[{loc['link']}|{loc['name']}]] ({visit_str})")
+            locations_content = "\n".join(locations_lines)
 
-        # People
+        # Generate people encountered section
+        people_encountered = ""
         if self.people:
-            lines.extend(["### People Met", ""])
+            people_lines = []
             for person in self.people[:20]:  # Top 20
                 entry_str = f"{person['count']} entr" + ("ies" if person["count"] != 1 else "y")
-                lines.append(f"- [[{person['link']}|{person['name']}]] ({entry_str})")
+                people_lines.append(f"- [[{person['link']}|{person['name']}]] ({entry_str})")
             if len(self.people) > 20:
-                lines.append(f"- ... and {len(self.people) - 20} more")
-            lines.append("")
+                people_lines.append(f"- ... and {len(self.people) - 20} more")
+            people_encountered = "\n".join(people_lines)
 
-        # Visit frequency (by year)
-        if self.visit_frequency:
-            lines.extend(["### Visit Frequency", ""])
+        # Prepare template variables
+        variables = {
+            "name": self.name,
+            "location_info": location_info,
+            "statistics": statistics,
+            "locations": locations_content,
+            "people_encountered": people_encountered,
+            "notes": self.notes or "[Add notes about this city for manuscript use]",
+        }
 
-            # Group by year
-            freq_by_year = {}
-            for year_month, count in self.visit_frequency.items():
-                year = year_month[:4]
-                if year not in freq_by_year:
-                    freq_by_year[year] = {}
-                month = year_month[5:7]
-                freq_by_year[year][month] = count
-
-            # Output by year (most recent first)
-            for year in sorted(freq_by_year.keys(), reverse=True):
-                months = freq_by_year[year]
-                total = sum(months.values())
-                lines.append(f"#### {year} ({total} entries)")
-                lines.append("")
-
-                # Month bars (simple visualization)
-                for month_num in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]:
-                    if month_num in months:
-                        count = months[month_num]
-                        month_name = date(int(year), int(month_num), 1).strftime("%b")
-                        bar = "█" * min(count, 20)  # Max 20 blocks
-                        lines.append(f"- {month_name}: {bar} ({count})")
-
-                lines.append("")
-
-        # Recent entries
-        if self.entries:
-            lines.extend(["### Recent Entries", ""])
-            for entry in self.entries[:10]:  # Most recent 10
-                word_str = f"{entry['word_count']} words" if entry['word_count'] else "no content"
-                lines.append(f"- [[{entry['link']}|{entry['date'].isoformat()}]] — {word_str}")
-            if len(self.entries) > 10:
-                lines.append(f"- ... and {len(self.entries) - 10} more entries")
-            lines.append("")
-
-        # User notes (wiki-editable)
-        lines.extend(["### Notes", ""])
-        if self.notes:
-            lines.append(self.notes)
-        else:
-            lines.append("[Add notes about this city for manuscript use]")
-        lines.append("")
-
-        return lines
+        return render_template("city", variables)
 
     @classmethod
     def from_file(cls, file_path: Path) -> Optional["City"]:

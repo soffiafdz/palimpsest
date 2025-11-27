@@ -161,55 +161,54 @@ class Tag(WikiEntity):
 
     # ---- Serialization ----
     def to_wiki(self) -> List[str]:
-        """Generate vimwiki markdown for this tag."""
-        lines = [
-            "# Palimpsest — Tags",
-            "",
-            f"## {self.name}",
-            "",
-        ]
+        """Generate vimwiki markdown for this tag using template."""
+        from dev.utils.templates import render_template
 
-        # Description
-        lines.append("### Description")
+        # Generate description (include statistics here)
+        description_lines = []
         if self.description:
-            lines.append(self.description)
-        else:
-            lines.append("")
-        lines.append("")
+            description_lines.append(self.description)
+            description_lines.append("")
 
-        # Usage/Entries
-        lines.append("### Entries")
-        if self.entries:
-            for entry in self.entries:
-                date_str = entry["date"].isoformat() if isinstance(entry["date"], date) else str(entry["date"])
-                link_text = f"[[{entry['link']}|{date_str}]]"
-                note = f" — {entry['note']}" if entry.get('note') else ""
-                lines.append(f"- {link_text}{note}")
-        else:
-            lines.append("- No entries with this tag")
-        lines.append("")
-
-        # Statistics
-        lines.append("### Statistics")
+        # Add statistics
         if self.entries:
             first = self.first_used
             last = self.last_used
             span = (last - first).days if first and last else 0
-            lines.extend([
+            description_lines.extend([
+                "**Statistics:**",
                 f"- Usage count: {self.usage_count}",
                 f"- First used: {first}",
                 f"- Last used: {last}",
                 f"- Span: {span} days",
             ])
         else:
-            lines.append("- No usage data")
-        lines.append("")
+            description_lines.append("**Statistics:** No usage data")
 
-        # Notes
-        lines.append("### Notes")
-        lines.append(self.notes or "")
+        description = "\n".join(description_lines) if description_lines else ""
 
-        return lines
+        # Generate entries list
+        entries_content = ""
+        if self.entries:
+            entries_lines = []
+            for entry in self.entries:
+                date_str = entry["date"].isoformat() if isinstance(entry["date"], date) else str(entry["date"])
+                link_text = f"[[{entry['link']}|{date_str}]]"
+                note = f" — {entry['note']}" if entry.get('note') else ""
+                entries_lines.append(f"- {link_text}{note}")
+            entries_content = "\n".join(entries_lines)
+        else:
+            entries_content = "- No entries with this tag"
+
+        # Prepare template variables
+        variables = {
+            "name": self.name,
+            "description": description,
+            "entries": entries_content,
+            "notes": self.notes or "",
+        }
+
+        return render_template("tag", variables)
 
     # ---- Properties ----
     @property

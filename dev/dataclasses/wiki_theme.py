@@ -184,57 +184,37 @@ class Theme(WikiEntity):
 
     # ---- Serialization ----
     def to_wiki(self) -> List[str]:
-        """Generate vimwiki markdown for this theme."""
-        lines = [
-            "# Palimpsest — Themes",
-            "",
-            f"## {self.name.title()}",
-            "",
-        ]
+        """Generate vimwiki markdown for this theme using template."""
+        from dev.utils.templates import render_template
 
-        # Description
-        lines.append("### Description")
-        if self.description:
-            lines.append(self.description)
-        else:
-            lines.append("")
-        lines.append("")
-
-        # Appearances/Entries
-        lines.append("### Appearances")
+        # Generate appearances list
+        appearances_lines = []
         if self.entries:
             for entry in self.entries:
                 date_str = entry["date"].isoformat() if isinstance(entry["date"], date) else str(entry["date"])
                 link_text = f"[[{entry['link']}|{date_str}]]"
                 note = f" — {entry['note']}" if entry.get('note') else ""
-                lines.append(f"- {link_text}{note}")
+                appearances_lines.append(f"- {link_text}{note}")
         else:
-            lines.append("- No appearances recorded")
-        lines.append("")
+            appearances_lines.append("- No appearances recorded")
+        appearances = "\n".join(appearances_lines)
 
-        # People
-        lines.append("### People Involved")
+        # Generate people list
         if self.people:
-            for person in sorted(self.people):
-                lines.append(f"- {person}")
+            people_involved = "\n".join(f"- {person}" for person in sorted(self.people))
         else:
-            lines.append("- ")
-        lines.append("")
+            people_involved = "- "
 
-        # Related Themes
-        lines.append("### Related Themes")
-        if self.related_themes:
-            for theme in sorted(self.related_themes):
-                lines.append(f"- {theme}")
-        else:
-            lines.append("- ")
-        lines.append("")
+        # Prepare template variables
+        variables = {
+            "name": self.name.title(),
+            "description": self.description or "",
+            "appearances": appearances,
+            "people_involved": people_involved,
+            "notes": self.notes or "",
+        }
 
-        # Notes
-        lines.append("### Notes")
-        lines.append(self.notes or "")
-
-        return lines
+        return render_template("theme", variables)
 
     # ---- Properties ----
     @property

@@ -273,9 +273,8 @@ class Entry(WikiEntity):
         if hasattr(db_entry, "manuscript") and db_entry.manuscript:
             ms = db_entry.manuscript
             manuscript_status = ms.status.value if hasattr(ms, "status") and ms.status else None
-            # TODO: Add entry_type and character_notes fields to ManuscriptEntry model for manuscript subwiki
-            manuscript_type = None  # ms.entry_type.value if hasattr(ms, "entry_type") else None
-            manuscript_characters = None  # ms.character_notes if hasattr(ms, "character_notes") else None
+            manuscript_type = ms.entry_type.value if hasattr(ms, "entry_type") and ms.entry_type else None
+            manuscript_characters = ms.character_notes if hasattr(ms, "character_notes") else None
             manuscript_narrative_arc = ms.narrative_arc if hasattr(ms, "narrative_arc") else None
 
         return cls(
@@ -309,184 +308,163 @@ class Entry(WikiEntity):
 
     def to_wiki(self) -> List[str]:
         """
-        Convert entry to vimwiki markdown.
+        Convert entry to vimwiki markdown using template.
 
         Returns:
             List of markdown lines
         """
-        lines = [
-            "# Palimpsest — Entry",
-            "",
-        ]
+        from dev.utils.templates import render_template
 
-        # Add breadcrumbs
-        breadcrumbs = self.generate_breadcrumbs(self.wiki_dir)
-        if breadcrumbs:
-            lines.extend([
-                f"*{breadcrumbs}*",
-                "",
-            ])
+        # Generate breadcrumbs
+        breadcrumbs_content = self.generate_breadcrumbs(self.wiki_dir)
+        breadcrumbs = f"*{breadcrumbs_content}*\n" if breadcrumbs_content else ""
 
-        lines.extend([
-            f"## {self.date.isoformat()}",
-            "",
-            "---",
-            "",
-        ])
-
-        # Basic metadata in a more compact format
-        lines.extend([
-            "### Metadata",
-            "",
-            f"| Property | Value |",
-            f"| --- | --- |",
+        # Generate metadata table
+        metadata = "\n".join([
+            "| Property | Value |",
+            "| --- | --- |",
             f"| **Date** | {self.date.isoformat()} |",
             f"| **Word Count** | {self.word_count} words |",
             f"| **Reading Time** | {self.reading_time:.1f} minutes |",
             f"| **Age** | {self.age_display} |",
-            "",
         ])
 
-        # Epigraph if present
+        # Epigraph
+        epigraph = ""
         if self.epigraph:
-            lines.extend(["### Epigraph", ""])
-            lines.append(f"> {self.epigraph}")
+            ep_lines = [f"> {self.epigraph}"]
             if self.epigraph_attribution:
-                lines.append(f"> — {self.epigraph_attribution}")
-            lines.append("")
+                ep_lines.append(f"> — {self.epigraph_attribution}")
+            epigraph = "\n".join(ep_lines)
 
         # Source link
         source_link = relative_link(self.path, self.source_path)
-        lines.extend([
-            "### Source",
-            f"[[{source_link}|Read Full Entry]]",
-            "",
-        ])
+        source = f"[[{source_link}|Read Full Entry]]"
 
         # People
-        if self.people:
-            lines.extend([f"### People ({len(self.people)})", ""])
-            for person in self.people:
-                lines.append(f"- [[{person['link']}|{person['name']}]] ({person['relation']})")
-            lines.append("")
+        people = self._generate_people_section()
 
         # Locations
-        if self.locations:
-            lines.extend([f"### Locations ({len(self.locations)})", ""])
-            for location in self.locations:
-                lines.append(f"- [[{location['link']}|{location['name']}]] ({location['city']})")
-            lines.append("")
-
-        # Cities
-        if self.cities:
-            lines.extend([f"### Cities ({len(self.cities)})", ""])
-            for city in self.cities:
-                city_display = f"{city['name']}, {city['country']}" if city['country'] else city['name']
-                lines.append(f"- [[{city['link']}|{city_display}]]")
-            lines.append("")
+        locations = self._generate_locations_section()
 
         # Events
-        if self.events:
-            lines.extend([f"### Events ({len(self.events)})", ""])
-            for event in self.events:
-                lines.append(f"- [[{event['link']}|{event['name']}]]")
-            lines.append("")
+        events = self._generate_events_section()
 
         # Themes
-        if self.themes:
-            lines.extend([f"### Themes ({len(self.themes)})", ""])
-            for theme in self.themes:
-                lines.append(f"- [[{theme['link']}|{theme['name']}]]")
-            lines.append("")
-
-        # Tags
-        if self.tags:
-            lines.extend([f"### Tags ({len(self.tags)})", ""])
-            tag_str = " ".join([f"#{tag}" for tag in self.tags])
-            lines.append(tag_str)
-            lines.append("")
+        themes = self._generate_themes_section()
 
         # Poems
-        if self.poems:
-            lines.extend([f"### Poems Written ({len(self.poems)})", ""])
-            for poem in self.poems:
-                poem_str = f"- [[{poem['link']}|{poem['title']}]]"
-                if poem['revision_date']:
-                    poem_str += f" ({poem['revision_date']})"
-                lines.append(poem_str)
-            lines.append("")
+        poems = self._generate_poems_section()
 
         # References
-        if self.references:
-            lines.extend([f"### References Cited ({len(self.references)})", ""])
-            for ref in self.references:
-                lines.append(f"- [[{ref['link']}|{ref['source']}]]")
-                if ref['content']:
-                    lines.append(f"  > {ref['content'][:100]}...")
-            lines.append("")
+        references = self._generate_references_section()
 
-        # Mentioned dates
-        if self.mentioned_dates:
-            lines.extend([f"### Mentioned Dates ({len(self.mentioned_dates)})", ""])
-            for md in self.mentioned_dates:
-                date_str = f"- {md['date'].isoformat()}"
-                if md['context']:
-                    date_str += f" — {md['context']}"
-                lines.append(date_str)
-            lines.append("")
+        # Tags
+        tags = self._generate_tags_section()
 
-        # Manuscript metadata
-        if self.manuscript_status:
-            lines.extend(["### Manuscript", ""])
-            lines.append(f"- **Status:** {self.manuscript_status}")
+        # Related entries (including navigation)
+        related_entries = self._generate_related_section()
 
-            # Add link to manuscript wiki version
-            manuscript_link = f"../../manuscript/entries/{self.date.year}/{self.date.isoformat()}.md"
-            lines.append(f"- **View in Manuscript Wiki:** [[{manuscript_link}|Manuscript Version]]")
+        # Prepare template variables
+        variables = {
+            "breadcrumbs": breadcrumbs,
+            "date": self.date.isoformat(),
+            "metadata": metadata,
+            "epigraph": epigraph,
+            "source": source,
+            "people": people,
+            "locations": locations,
+            "events": events,
+            "themes": themes,
+            "poems": poems,
+            "references": references,
+            "tags": tags,
+            "related_entries": related_entries,
+            "notes": self.notes or "[Add your notes about this entry for manuscript use]",
+        }
 
-            if self.manuscript_type:
-                lines.append(f"- **Type:** {self.manuscript_type}")
-            if self.manuscript_narrative_arc:
-                lines.append(f"- **Narrative Arc:** {self.manuscript_narrative_arc}")
-            if self.manuscript_characters:
-                lines.append(f"- **Character Notes:** {self.manuscript_characters}")
-            lines.append("")
+        return render_template("entry", variables)
 
-        # Navigation
-        lines.extend(["### Navigation", ""])
+    def _generate_people_section(self) -> str:
+        """Generate people section content."""
+        if not self.people:
+            return ""
+        lines = [f"**People ({len(self.people)})**", ""]
+        for person in self.people:
+            lines.append(f"- [[{person['link']}|{person['name']}]] ({person['relation']})")
+        return "\n".join(lines)
+
+    def _generate_locations_section(self) -> str:
+        """Generate locations section content."""
+        if not self.locations:
+            return ""
+        lines = [f"**Locations ({len(self.locations)})**", ""]
+        for location in self.locations:
+            lines.append(f"- [[{location['link']}|{location['name']}]] ({location['city']})")
+        return "\n".join(lines)
+
+    def _generate_events_section(self) -> str:
+        """Generate events section content."""
+        if not self.events:
+            return ""
+        lines = [f"**Events ({len(self.events)})**", ""]
+        for event in self.events:
+            lines.append(f"- [[{event['link']}|{event['name']}]]")
+        return "\n".join(lines)
+
+    def _generate_themes_section(self) -> str:
+        """Generate themes section content."""
+        if not self.themes:
+            return ""
+        lines = [f"**Themes ({len(self.themes)})**", ""]
+        for theme in self.themes:
+            lines.append(f"- [[{theme['link']}|{theme['name']}]]")
+        return "\n".join(lines)
+
+    def _generate_poems_section(self) -> str:
+        """Generate poems section content."""
+        if not self.poems:
+            return ""
+        lines = [f"**Poems Written ({len(self.poems)})**", ""]
+        for poem in self.poems:
+            poem_str = f"- [[{poem['link']}|{poem['title']}]]"
+            if poem['revision_date']:
+                poem_str += f" ({poem['revision_date']})"
+            lines.append(poem_str)
+        return "\n".join(lines)
+
+    def _generate_references_section(self) -> str:
+        """Generate references section content."""
+        if not self.references:
+            return ""
+        lines = [f"**References Cited ({len(self.references)})**", ""]
+        for ref in self.references:
+            lines.append(f"- [[{ref['link']}|{ref['source']}]]")
+            if ref['content']:
+                lines.append(f"  > {ref['content'][:100]}...")
+        return "\n".join(lines)
+
+    def _generate_tags_section(self) -> str:
+        """Generate tags section content."""
+        if not self.tags:
+            return ""
+        tag_str = " ".join([f"#{tag}" for tag in self.tags])
+        return f"**Tags ({len(self.tags)})**\n\n{tag_str}"
+
+    def _generate_related_section(self) -> str:
+        """Generate related entries and navigation section."""
+        lines = ["**Navigation**", ""]
         if self.prev_entry:
             lines.append(f"- **Previous:** [[{self.prev_entry['link']}|{self.prev_entry['date']}]]")
         if self.next_entry:
             lines.append(f"- **Next:** [[{self.next_entry['link']}|{self.next_entry['date']}]]")
 
-        # Related entries (manual/explicit relationships)
         if self.related_entries:
             lines.extend(["", f"**Related Entries ({len(self.related_entries)}):**"])
             for rel in self.related_entries:
                 lines.append(f"- [[{rel['link']}|{rel['date']}]]")
 
-        lines.append("")
-
-        # Add tag cloud / quick metadata summary
-        if self.tags or len(self.people) > 0 or len(self.themes) > 0:
-            lines.extend(["### Quick Summary", ""])
-            if self.tags:
-                tag_cloud = " · ".join([f"`{tag}`" for tag in sorted(self.tags)])
-                lines.append(f"**Tags**: {tag_cloud}")
-            if len(self.themes) > 0:
-                theme_names = " · ".join([theme["name"] for theme in self.themes])
-                lines.append(f"**Themes**: {theme_names}")
-            lines.append("")
-
-        # User notes (wiki-editable)
-        lines.extend(["### Notes", ""])
-        if self.notes:
-            lines.append(self.notes)
-        else:
-            lines.append("[Add your notes about this entry for manuscript use]")
-        lines.append("")
-
-        return lines
+        return "\n".join(lines)
 
     @classmethod
     def from_file(cls, file_path: Path) -> "Entry":
