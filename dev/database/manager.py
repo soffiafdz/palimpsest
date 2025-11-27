@@ -159,6 +159,51 @@ class HasId(Protocol):
 T = TypeVar("T", bound=HasId)
 
 
+class ManagerProperty:
+    """
+    Descriptor for lazy manager properties with automatic session validation.
+
+    This eliminates boilerplate property definitions by automatically checking
+    if the manager is None and raising appropriate errors.
+
+    Usage:
+        class MyDB:
+            tags = ManagerProperty("_tag_manager", "TagManager")
+
+            def __init__(self):
+                self._tag_manager = None
+    """
+
+    def __init__(self, attr_name: str, manager_name: str):
+        """
+        Initialize the descriptor.
+
+        Args:
+            attr_name: Name of the private attribute (e.g., "_tag_manager")
+            manager_name: Display name for error messages (e.g., "TagManager")
+        """
+        self.attr_name = attr_name
+        self.manager_name = manager_name
+
+    def __get__(self, obj: Any, objtype: Optional[Type] = None) -> Any:
+        """Get the manager or raise an error if accessed outside session."""
+        if obj is None:
+            return self
+
+        manager = getattr(obj, self.attr_name)
+        if manager is None:
+            raise DatabaseError(
+                f"{self.manager_name} requires active session. "
+                "Use within session_scope: "
+                f"with db.session_scope() as session: db.{self.attr_name[1:]}.create(...)"
+            )
+        return manager
+
+    def __set__(self, obj: Any, value: Any) -> None:
+        """Set the manager value."""
+        setattr(obj, self.attr_name, value)
+
+
 # ----- Main Database Manager -----
 class PalimpsestDB:
     """
@@ -185,11 +230,22 @@ class PalimpsestDB:
             entries = db.get_all_entries(session)
     """
 
+    # Manager descriptors - automatically validate session context
+    tags = ManagerProperty("_tag_manager", "TagManager")
+    people = ManagerProperty("_person_manager", "PersonManager")
+    events = ManagerProperty("_event_manager", "EventManager")
+    dates = ManagerProperty("_date_manager", "DateManager")
+    locations = ManagerProperty("_location_manager", "LocationManager")
+    references = ManagerProperty("_reference_manager", "ReferenceManager")
+    poems = ManagerProperty("_poem_manager", "PoemManager")
+    manuscripts = ManagerProperty("_manuscript_manager", "ManuscriptManager")
+    entries = ManagerProperty("_entry_manager", "EntryManager")
+
     # ---- Initialization ----
     def __init__(
         self,
         db_path: Union[str, Path],
-        alembic_dir: Union[str, Path],
+        alembic_dir: Optional[Union[str, Path]] = None,
         log_dir: Optional[Union[str, Path]] = None,
         backup_dir: Optional[Union[str, Path]] = None,
         enable_auto_backup: bool = True,
@@ -199,14 +255,14 @@ class PalimpsestDB:
 
         Args:
             db_path (str | Path): Path to the SQLite  file.
-            alembic_dir (str | Path): Path to the Alembic directory.
+            alembic_dir (str | Path): Path to the Alembic directory (optional, None for tests).
             log_dir (str | Path): Directory for log files (optional)
             backup_dir (str | Path): Directory for backups (optional)
             enable_auto_backup (bool): Whether to enable automatic backups
 
         """
         self.db_path = Path(db_path).expanduser().resolve()
-        self.alembic_dir = Path(alembic_dir).expanduser().resolve()
+        self.alembic_dir = Path(alembic_dir).expanduser().resolve() if alembic_dir else None
 
         # --- Logging ---
         if log_dir:
@@ -366,184 +422,6 @@ class PalimpsestDB:
             yield session
 
     # -------------------------------------------------------------------------
-    # Modular Entity Manager Properties (Phase 2)
-    # -------------------------------------------------------------------------
-
-    @property
-    def tags(self) -> TagManager:
-        """
-        Access TagManager for tag operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                tag = db.tags.get_or_create("python")
-                db.tags.link_to_entry(entry, "coding")
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._tag_manager is None:
-            raise DatabaseError(
-                "TagManager requires active session. "
-                "Use within session_scope: "
-                "with db.session_scope() as session: db.tags.create(...)"
-            )
-        return self._tag_manager
-
-    @property
-    def people(self) -> PersonManager:
-        """
-        Access PersonManager for person operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                person = db.people.create({"name": "Alice", "relation_type": "friend"})
-                alice = db.people.get(person_name="Alice")
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._person_manager is None:
-            raise DatabaseError(
-                "PersonManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._person_manager
-
-    @property
-    def events(self) -> EventManager:
-        """
-        Access EventManager for event operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                event = db.events.create({"name": "PyCon 2024"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._event_manager is None:
-            raise DatabaseError(
-                "EventManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._event_manager
-
-    @property
-    def dates(self) -> DateManager:
-        """
-        Access DateManager for mentioned date operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                date = db.dates.get_or_create("2024-01-15")
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._date_manager is None:
-            raise DatabaseError(
-                "DateManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._date_manager
-
-    @property
-    def locations(self) -> LocationManager:
-        """
-        Access LocationManager for location operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                location = db.locations.create({"name": "Central Park", "city": "NYC"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._location_manager is None:
-            raise DatabaseError(
-                "LocationManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._location_manager
-
-    @property
-    def references(self) -> ReferenceManager:
-        """
-        Access ReferenceManager for reference operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                ref = db.references.create({"title": "Book Title", "author": "Author"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._reference_manager is None:
-            raise DatabaseError(
-                "ReferenceManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._reference_manager
-
-    @property
-    def poems(self) -> PoemManager:
-        """
-        Access PoemManager for poem operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                poem = db.poems.create({"title": "Poem Title", "text": "..."})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._poem_manager is None:
-            raise DatabaseError(
-                "PoemManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._poem_manager
-
-    @property
-    def manuscripts(self) -> ManuscriptManager:
-        """
-        Access ManuscriptManager for manuscript operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                ms = db.manuscripts.create_entry(entry, {"status": "draft"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._manuscript_manager is None:
-            raise DatabaseError(
-                "ManuscriptManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._manuscript_manager
-
-    @property
-    def entries(self) -> EntryManager:
-        """
-        Access EntryManager for entry operations.
-
-        Recommended usage:
-            with db.session_scope() as session:
-                entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
-                entry = db.entries.get(entry_date="2024-01-15")
-                db.entries.update(entry, {"notes": "Updated notes"})
-
-        Raises:
-            DatabaseError: If accessed outside of session_scope context
-        """
-        if self._entry_manager is None:
-            raise DatabaseError(
-                "EntryManager requires active session. "
-                "Use within session_scope."
-            )
-        return self._entry_manager
 
     # ---- Alembic setup ----
     def _setup_alembic(self) -> Config:
