@@ -320,6 +320,7 @@ jai cluster --num-clusters 10
 ```
 
 **AI Intelligence Levels:**
+
 - **Level 2**: spaCy NER (free) - Entity extraction, theme detection
 - **Level 3**: Sentence Transformers (free) - Semantic similarity search
 - **Level 4**: LLM APIs (paid) - Advanced analysis, manuscript curation (Claude or OpenAI)
@@ -385,16 +386,18 @@ wiki/
 ### Editable Fields
 
 **Main Wiki** (only `notes` fields are editable):
+
 - Person pages: Add biographical notes, relationship context
 - Entry pages: Add editorial notes, manuscript potential
 - Event/City pages: Add context notes
 
 **Manuscript Wiki** (detailed curation fields):
+
 - Manuscript entries: Entry type, narrative arc, character notes, adaptation notes
 - Characters: Character description, arc, voice notes, appearance notes
 - Themes, arcs, and other manuscript-specific metadata
 
-See [BIDIRECTIONAL_SYNC_GUIDE.md](BIDIRECTIONAL_SYNC_GUIDE.md) for complete documentation.
+See [docs/bidirectional-sync-guide.md](docs/bidirectional-sync-guide.md) for complete documentation.
 
 ---
 
@@ -416,12 +419,14 @@ jsearch "reflection" city:montreal words:500-1000 has:manuscript
 ```
 
 **How it works:**
+
 - SQLite FTS5 virtual table with Porter stemming
 - BM25 ranking for relevance scoring
 - Searches actual entry content, not just metadata
 - Auto-sync triggers keep index up-to-date
 
 **Create search index:**
+
 ```bash
 jsearch index --create
 ```
@@ -433,17 +438,20 @@ Progressive intelligence levels - use what you need:
 #### Level 2: spaCy NER (Free) ⭐⭐⭐⭐☆
 
 **Entity extraction using ML:**
+
 - Detects people, locations, cities, organizations, events
 - Theme identification
 - Confidence scoring
 
 **Install:**
+
 ```bash
 pip install spacy
 python -m spacy download en_core_web_sm
 ```
 
 **Usage:**
+
 ```bash
 jai analyze 2024-11-01 --level 2
 ```
@@ -451,17 +459,20 @@ jai analyze 2024-11-01 --level 2
 #### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
 
 **Semantic similarity search:**
+
 - Find similar entries by meaning (not just keywords)
 - Theme clustering
 - Understanding context
 
 **Install:**
+
 ```bash
 pip install sentence-transformers
 pip install faiss-cpu  # optional, for faster search
 ```
 
 **Usage:**
+
 ```bash
 # Find similar entries
 jai similar 2024-11-01 --limit 10
@@ -473,6 +484,7 @@ jai cluster --num-clusters 10
 #### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
 
 **Most accurate analysis:**
+
 - Advanced entity extraction
 - Manuscript narrative analysis
 - Character voice and arc suggestions
@@ -481,16 +493,19 @@ jai cluster --num-clusters 10
 **Two providers supported:**
 
 **Claude (Anthropic):**
+
 - Cost: ~$0.007/entry (Haiku), ~$0.075/entry (Sonnet)
 - Install: `pip install anthropic`
 - API Key: `export ANTHROPIC_API_KEY='your-key'`
 
 **OpenAI (GPT-4):**
+
 - Cost: ~$0.003/entry (GPT-4o mini), ~$0.025/entry (GPT-4o)
 - Install: `pip install openai`
 - API Key: `export OPENAI_API_KEY='your-key'`
 
 **Usage:**
+
 ```bash
 # Analyze with Claude (default)
 jai analyze 2024-11-01 --level 4 --manuscript
@@ -503,6 +518,7 @@ jai batch --level 4 --provider openai --limit 10
 ```
 
 **Check what's installed:**
+
 ```bash
 jai status
 ```
@@ -591,15 +607,18 @@ pytest tests/
 The project uses GitHub Actions for automated testing and quality checks:
 
 **Test Workflow** (runs on every push/PR):
+
 - Linting with Ruff
 - Unit tests on Python 3.10, 3.11, 3.12
 - Coverage reporting (80% minimum)
 
 **Integration Workflow** (runs on main branch):
+
 - Full integration tests with system dependencies
 - Daily scheduled runs
 
 **Security Workflow** (runs weekly):
+
 - Dependency vulnerability scanning with pip-audit
 - CodeQL security analysis
 
@@ -644,18 +663,21 @@ See `environment.yaml` for complete list.
 ### Optional AI Dependencies
 
 **Level 2 (spaCy NER):**
+
 ```bash
 pip install spacy
 python -m spacy download en_core_web_sm
 ```
 
 **Level 3 (Semantic Search):**
+
 ```bash
 pip install sentence-transformers
 pip install faiss-cpu  # optional, faster search
 ```
 
 **Level 4 (LLM APIs):**
+
 ```bash
 # Claude (Anthropic)
 pip install anthropic
