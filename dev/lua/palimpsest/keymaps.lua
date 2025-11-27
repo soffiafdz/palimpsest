@@ -36,10 +36,21 @@ function M.setup()
 				{ "<leader>pmE", "<cmd>PalimpsestManuscriptExport ", desc = "Export manuscript entity..." },
 				{ "<leader>pmi", "<cmd>PalimpsestManuscriptImport<cr>", desc = "Import manuscript edits" },
 				{ "<leader>pmh", "<cmd>PalimpsestManuscriptIndex<cr>", desc = "Manuscript homepage" },
-				-- Telescope wiki browser
-				{ "<leader>pf", "<cmd>Telescope palimpsest<cr>", desc = "Find wiki pages" },
-				{ "<leader>pF", "<cmd>lua require('palimpsest.telescope').browse('people')<cr>", desc = "Browse people" },
-				{ "<leader>p/", "<cmd>lua require('palimpsest.telescope').search('all')<cr>", desc = "Search wiki content" },
+				-- fzf-lua wiki browser
+				{ "<leader>pf", "<cmd>PalimpsestQuickAccess<cr>", desc = "Quick access wiki pages" },
+				{ "<leader>pF", group = "browse entities" },
+				{ "<leader>pFa", "<cmd>lua require('palimpsest.fzf').browse('all')<cr>", desc = "Browse wiki" },
+				{ "<leader>pFj", "<cmd>lua require('palimpsest.fzf').browse('journal')<cr>", desc = "Browse journal" },
+				{ "<leader>pFp", "<cmd>lua require('palimpsest.fzf').browse('people')<cr>", desc = "Browse people" },
+				{ "<leader>pFe", "<cmd>lua require('palimpsest.fzf').browse('entries')<cr>", desc = "Browse entries" },
+				{ "<leader>pFl", "<cmd>lua require('palimpsest.fzf').browse('locations')<cr>", desc = "Browse locations" },
+				{ "<leader>pFc", "<cmd>lua require('palimpsest.fzf').browse('cities')<cr>", desc = "Browse cities" },
+				{ "<leader>pFv", "<cmd>lua require('palimpsest.fzf').browse('events')<cr>", desc = "Browse events" },
+				{ "<leader>pFt", "<cmd>lua require('palimpsest.fzf').browse('themes')<cr>", desc = "Browse themes" },
+				{ "<leader>pFT", "<cmd>lua require('palimpsest.fzf').browse('tags')<cr>", desc = "Browse tags" },
+				{ "<leader>pFP", "<cmd>lua require('palimpsest.fzf').browse('poems')<cr>", desc = "Browse poems" },
+				{ "<leader>pFr", "<cmd>lua require('palimpsest.fzf').browse('references')<cr>", desc = "Browse references" },
+				{ "<leader>p/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
 			},
 		})
 	else
@@ -69,10 +80,21 @@ function M.setup()
 				{ "<leader>vmE", "<cmd>PalimpsestManuscriptExport ", desc = "Export manuscript entity..." },
 				{ "<leader>vmi", "<cmd>PalimpsestManuscriptImport<cr>", desc = "Import manuscript edits" },
 				{ "<leader>vmh", "<cmd>PalimpsestManuscriptIndex<cr>", desc = "Manuscript homepage" },
-				-- Telescope wiki browser
-				{ "<leader>vf", "<cmd>Telescope palimpsest<cr>", desc = "Find wiki pages" },
-				{ "<leader>vF", "<cmd>lua require('palimpsest.telescope').browse('people')<cr>", desc = "Browse people" },
-				{ "<leader>v/", "<cmd>lua require('palimpsest.telescope').search('all')<cr>", desc = "Search wiki content" },
+				-- fzf-lua wiki browser
+				{ "<leader>vf", "<cmd>PalimpsestQuickAccess<cr>", desc = "Quick access wiki pages" },
+				{ "<leader>vF", group = "browse entities" },
+				{ "<leader>vFa", "<cmd>lua require('palimpsest.fzf').browse('all')<cr>", desc = "Browse wiki" },
+				{ "<leader>vFj", "<cmd>lua require('palimpsest.fzf').browse('journal')<cr>", desc = "Browse journal" },
+				{ "<leader>vFp", "<cmd>lua require('palimpsest.fzf').browse('people')<cr>", desc = "Browse people" },
+				{ "<leader>vFe", "<cmd>lua require('palimpsest.fzf').browse('entries')<cr>", desc = "Browse entries" },
+				{ "<leader>vFl", "<cmd>lua require('palimpsest.fzf').browse('locations')<cr>", desc = "Browse locations" },
+				{ "<leader>vFc", "<cmd>lua require('palimpsest.fzf').browse('cities')<cr>", desc = "Browse cities" },
+				{ "<leader>vFv", "<cmd>lua require('palimpsest.fzf').browse('events')<cr>", desc = "Browse events" },
+				{ "<leader>vFt", "<cmd>lua require('palimpsest.fzf').browse('themes')<cr>", desc = "Browse themes" },
+				{ "<leader>vFT", "<cmd>lua require('palimpsest.fzf').browse('tags')<cr>", desc = "Browse tags" },
+				{ "<leader>vFP", "<cmd>lua require('palimpsest.fzf').browse('poems')<cr>", desc = "Browse poems" },
+				{ "<leader>vFr", "<cmd>lua require('palimpsest.fzf').browse('references')<cr>", desc = "Browse references" },
+				{ "<leader>v/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
 			},
 		})
 		-- Remove unnecessary keymaps

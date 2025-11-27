@@ -7,8 +7,9 @@ local M = {}
 
 M.paths = {
 	root = root,
-	wiki = root .. "/wiki",
-	log = root .. "/wiki/log",
+	wiki = root .. "/data/wiki",
+	log = root .. "/data/wiki/log",
+	journal = root .. "/data/journal/content/md",
 	templates = templates_dir,
 }
 

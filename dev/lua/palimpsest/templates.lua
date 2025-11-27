@@ -105,8 +105,8 @@ function M.insert_template(template_name, variables, cursor_position)
 	end
 end
 
--- Specific template functions
--- Log
+-- Specific template functions (for backend use only)
+-- Log template for diary entries
 function M.populate_log()
 	M.insert_template("log", {})
 end
