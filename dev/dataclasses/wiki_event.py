@@ -157,63 +157,44 @@ class Event(WikiEntity):
 
     def to_wiki(self) -> List[str]:
         """
-        Convert event to vimwiki markdown.
+        Convert event to vimwiki markdown using template.
 
         Returns:
             List of markdown lines
         """
+        from dev.utils.templates import render_template
+
+        # Display name (title or event ID)
         display_name = self.title or self.event
 
-        lines = [
-            "# Palimpsest — Event",
-            "",
-            f"## {display_name}",
-            "",
-        ]
-
-        # Event info
-        lines.extend(["### Event Info", ""])
-        lines.append(f"- **Event ID:** {self.event}")
+        # Generate event info section
+        event_info_lines = [f"- **Event ID:** {self.event}"]
         if self.title:
-            lines.append(f"- **Title:** {self.title}")
-        lines.append(f"- **Total Entries:** {len(self.entries)}")
+            event_info_lines.append(f"- **Title:** {self.title}")
+        event_info_lines.append(f"- **Total Entries:** {len(self.entries)}")
         if self.start_date and self.end_date:
-            lines.append(f"- **Date Range:** {self.start_date.isoformat()} to {self.end_date.isoformat()}")
-            lines.append(f"- **Duration:** {self.duration_days} days")
-        lines.append("")
+            event_info_lines.append(f"- **Date Range:** {self.start_date.isoformat()} to {self.end_date.isoformat()}")
+            event_info_lines.append(f"- **Duration:** {self.duration_days} days")
 
-        # Description
-        if self.description:
-            lines.extend(["### Description", ""])
-            lines.append(self.description)
-            lines.append("")
+        # Add manuscript metadata to event info
+        if self.manuscript_status:
+            event_info_lines.append(f"- **Manuscript Status:** {self.manuscript_status}")
+        if self.manuscript_narrative_arc:
+            event_info_lines.append(f"- **Narrative Arc:** {self.manuscript_narrative_arc}")
+        if self.manuscript_themes:
+            event_info_lines.append("- **Themes:**")
+            for theme in self.manuscript_themes:
+                event_info_lines.append(f"  - [[{theme['link']}|{theme['name']}]]")
 
-        # People involved
-        if self.people:
-            lines.extend(["### People Involved", ""])
-            for person in self.people[:20]:  # Top 20
-                entry_str = f"{person['entry_count']} entr" + ("ies" if person["entry_count"] != 1 else "y")
-                lines.append(f"- [[{person['link']}|{person['name']}]] ({entry_str})")
-            if len(self.people) > 20:
-                lines.append(f"- ... and {len(self.people) - 20} more")
-            lines.append("")
+        event_info = "\n".join(event_info_lines)
 
-        # Manuscript metadata
-        if self.manuscript_status or self.manuscript_narrative_arc or self.manuscript_themes:
-            lines.extend(["### Manuscript", ""])
-            if self.manuscript_status:
-                lines.append(f"- **Status:** {self.manuscript_status}")
-            if self.manuscript_narrative_arc:
-                lines.append(f"- **Narrative Arc:** {self.manuscript_narrative_arc}")
-            if self.manuscript_themes:
-                lines.append("- **Themes:**")
-                for theme in self.manuscript_themes:
-                    lines.append(f"  - [[{theme['link']}|{theme['name']}]]")
-            lines.append("")
+        # Generate description
+        description = self.description if self.description else ""
 
-        # Timeline (chronological entries)
+        # Generate entries timeline (grouped by year)
+        entries_content = ""
         if self.entries:
-            lines.extend(["### Timeline", ""])
+            entries_lines = []
 
             # Group by year
             entries_by_year = {}
@@ -226,24 +207,43 @@ class Event(WikiEntity):
             # Output by year (most recent first)
             for year in sorted(entries_by_year.keys(), reverse=True):
                 year_entries = entries_by_year[year]
-                lines.append(f"#### {year} ({len(year_entries)} entries)")
-                lines.append("")
+                entries_lines.append(f"#### {year} ({len(year_entries)} entries)")
+                entries_lines.append("")
 
                 for entry in reversed(year_entries):  # Most recent first within year
                     word_str = f"{entry['word_count']} words" if entry['word_count'] else "no content"
-                    lines.append(f"- [[{entry['link']}|{entry['date'].isoformat()}]] — {word_str}")
+                    entries_lines.append(f"- [[{entry['link']}|{entry['date'].isoformat()}]] — {word_str}")
 
-                lines.append("")
+                entries_lines.append("")
 
-        # User notes (wiki-editable)
-        lines.extend(["### Notes", ""])
-        if self.notes:
-            lines.append(self.notes)
-        else:
-            lines.append("[Add notes about this event for manuscript use]")
-        lines.append("")
+            entries_content = "\n".join(entries_lines)
 
-        return lines
+        # Generate people involved section
+        people_involved = ""
+        if self.people:
+            people_lines = []
+            for person in self.people[:20]:  # Top 20
+                entry_str = f"{person['entry_count']} entr" + ("ies" if person["entry_count"] != 1 else "y")
+                people_lines.append(f"- [[{person['link']}|{person['name']}]] ({entry_str})")
+            if len(self.people) > 20:
+                people_lines.append(f"- ... and {len(self.people) - 20} more")
+            people_involved = "\n".join(people_lines)
+
+        # Locations section (placeholder for future implementation)
+        locations = ""
+
+        # Prepare template variables
+        variables = {
+            "display_name": display_name,
+            "event_info": event_info,
+            "description": description,
+            "entries": entries_content,
+            "people_involved": people_involved,
+            "locations": locations,
+            "notes": self.notes or "[Add notes about this event for manuscript use]",
+        }
+
+        return render_template("event", variables)
 
     @classmethod
     def from_file(cls, file_path: Path) -> Optional["Event"]:
@@ -281,7 +281,7 @@ class Event(WikiEntity):
                 title=None,  # Not parsed from wiki, comes from database
                 entries=[],  # Not parsed from wiki, comes from database
                 people=[],  # Not parsed from wiki, comes from database
-                themes=[],  # Not parsed from wiki, comes from database
+                manuscript_themes=[],  # Not parsed from wiki, comes from database
                 start_date=None,  # Not parsed from wiki, comes from database
                 end_date=None,  # Not parsed from wiki, comes from database
                 manuscript_status=None,  # Not parsed from wiki, comes from database
