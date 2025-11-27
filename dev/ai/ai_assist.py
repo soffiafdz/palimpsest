@@ -277,8 +277,32 @@ def batch_analyze(args):
                       f"Cities: {len(entities.cities)}, "
                       f"Themes: {len(themes)}")
 
-                # TODO: Save extracted data to database
-                # This would update Entry with suggested people, themes, etc.
+                # Save extracted data to database if level >= 3
+                if level >= 3:
+                    try:
+                        # Link people to entry
+                        for person_name in entities.people:
+                            person = db.people.get_or_create(person_name, session=db.session)
+                            if person and person not in entry.people:
+                                entry.people.append(person)
+
+                        # Link cities to entry
+                        for city_name in entities.cities:
+                            city = db.locations.get_or_create_city(city_name, session=db.session)
+                            if city and city not in entry.cities:
+                                entry.cities.append(city)
+
+                        # Link themes to entry
+                        for theme_name in themes:
+                            tag = db.tags.get_or_create(theme_name, session=db.session)
+                            if tag and tag not in entry.tags:
+                                entry.tags.append(tag)
+
+                        db.session.commit()
+                        print("  ✓ Saved to database")
+                    except Exception as e:
+                        print(f"  ⚠ Error saving to database: {e}")
+                        db.session.rollback()
 
             print()
             print(f"✓ Analyzed {len(entries)} entries")

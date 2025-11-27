@@ -297,3 +297,68 @@ def handle_cli_error(
     # Display and exit
     click.echo(error_msg, err=True)
     sys.exit(exit_code)
+
+
+class NullLogger:
+    """
+    Null Object pattern logger that implements the PalimpsestLogger interface
+    but performs no operations.
+
+    This eliminates the need for `if logger:` conditionals throughout the codebase.
+    Instead, code can always call logger methods safely.
+    """
+
+    def log_operation(self, operation: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """No-op operation logger."""
+        pass
+
+    def log_error(self, error: Exception, context: Optional[Dict[str, Any]] = None) -> None:
+        """No-op error logger."""
+        pass
+
+    def log_debug(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """No-op debug logger."""
+        pass
+
+    def log_info(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """No-op info logger."""
+        pass
+
+    def log_warning(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """No-op warning logger."""
+        pass
+
+    def log_cli_error(
+        self,
+        error: Exception,
+        context: Optional[Dict[str, Any]] = None,
+        show_traceback: bool = False,
+    ) -> str:
+        """No-op CLI error logger."""
+        error_type = type(error).__name__
+        return f"❌ {error_type}: {error}"
+
+
+# Singleton null logger instance
+_null_logger = NullLogger()
+
+
+def safe_logger(logger: Optional[PalimpsestLogger]) -> PalimpsestLogger:
+    """
+    Return the provided logger or a null logger if None.
+
+    This function eliminates the need for `if logger:` conditionals.
+    Instead of:
+        if logger:
+            logger.log_info("message")
+
+    Use:
+        safe_logger(logger).log_info("message")
+
+    Args:
+        logger: PalimpsestLogger instance or None
+
+    Returns:
+        The provided logger or a NullLogger instance
+    """
+    return logger if logger is not None else _null_logger

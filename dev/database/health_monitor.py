@@ -94,6 +94,7 @@ from dev.core.exceptions import HealthCheckError
 from dev.core.logging_manager import PalimpsestLogger
 from .decorators import handle_db_errors, log_database_operation
 from .query_optimizer import QueryOptimizer
+from .configs.integrity_check_configs import ALL_INTEGRITY_CHECK_GROUPS
 
 # Import models for health checks
 from .models import (
@@ -345,6 +346,23 @@ class HealthMonitor:
 
         return issues
 
+    def _run_integrity_check_group(self, session: Session, check_group) -> Dict[str, Any]:
+        """
+        Run a group of integrity checks using configuration.
+
+        Args:
+            session: SQLAlchemy session
+            check_group: IntegrityCheckGroup with checks to run
+
+        Returns:
+            Dictionary with check results
+        """
+        results = {}
+        for check in check_group.checks:
+            count = check.query_builder(session)
+            results[check.check_name] = count
+        return results
+
     def _check_reference_integrity(self, session: Session) -> Dict[str, Any]:
         """
         Check reference and reference source integrity.
@@ -355,26 +373,8 @@ class HealthMonitor:
         Returns:
             Dictionary with reference integrity results
         """
-        integrity = {}
-
-        # Check references with invalid source IDs
-        refs_invalid_source = (
-            session.query(Reference)
-            .filter(Reference.source_id.isnot(None))
-            .filter(~Reference.source_id.in_(session.query(ReferenceSource.id)))
-            .count()
-        )
-        integrity["references_with_invalid_source"] = refs_invalid_source
-
-        # Check references without content
-        refs_no_content = (
-            session.query(Reference)
-            .filter((Reference.content.is_(None)) | (Reference.content == ""))
-            .count()
-        )
-        integrity["references_without_content"] = refs_no_content
-
-        return integrity
+        from .configs.integrity_check_configs import REFERENCE_INTEGRITY_CHECKS
+        return self._run_integrity_check_group(session, REFERENCE_INTEGRITY_CHECKS)
 
     def _check_poem_integrity(self, session: Session) -> Dict[str, Any]:
         """
@@ -386,43 +386,8 @@ class HealthMonitor:
         Returns:
             Dictionary with poem integrity results
         """
-        integrity = {}
-
-        # Check poems without versions
-        poems_no_versions = (
-            session.query(Poem)
-            .filter(~Poem.id.in_(session.query(PoemVersion.poem_id)))
-            .count()
-        )
-        integrity["poems_without_versions"] = poems_no_versions
-
-        # Check duplicate version hashes (potential duplicates)
-        duplicate_hashes = (
-            session.query(PoemVersion.version_hash, func.count(PoemVersion.id))
-            .filter(PoemVersion.version_hash.isnot(None))
-            .group_by(PoemVersion.version_hash)
-            .having(func.count(PoemVersion.id) > 1)
-            .count()
-        )
-        integrity["duplicate_poem_versions"] = duplicate_hashes
-
-        # Check poem versions without content
-        versions_no_content = (
-            session.query(PoemVersion)
-            .filter((PoemVersion.content.is_(None)) | (PoemVersion.content == ""))
-            .count()
-        )
-        integrity["poem_versions_without_content"] = versions_no_content
-
-        # Check orphaned poem versions (poem deleted)
-        orphaned_versions = (
-            session.query(PoemVersion)
-            .filter(~PoemVersion.poem_id.in_(session.query(Poem.id)))
-            .count()
-        )
-        integrity["orphaned_poem_versions"] = orphaned_versions
-
-        return integrity
+        from .configs.integrity_check_configs import POEM_INTEGRITY_CHECKS
+        return self._run_integrity_check_group(session, POEM_INTEGRITY_CHECKS)
 
     def _check_manuscript_integrity(self, session: Session) -> Dict[str, Any]:
         """
@@ -434,25 +399,8 @@ class HealthMonitor:
         Returns:
             Dictionary with manuscript integrity results
         """
-        integrity = {}
-
-        # Check orphaned themes (not linked to any entries)
-        orphaned_themes = (
-            session.query(Theme)
-            .filter(~Theme.id.in_(session.query(entry_themes.c.theme_id)))
-            .count()
-        )
-        integrity["orphaned_themes"] = orphaned_themes
-
-        # Check orphaned arcs (not linked to any events)
-        orphaned_arcs = (
-            session.query(Arc)
-            .filter(~Arc.id.in_(session.query(ManuscriptEvent.arc_id)))
-            .count()
-        )
-        integrity["orphaned_arcs"] = orphaned_arcs
-
-        return integrity
+        from .configs.integrity_check_configs import MANUSCRIPT_INTEGRITY_CHECKS
+        return self._run_integrity_check_group(session, MANUSCRIPT_INTEGRITY_CHECKS)
 
     def _check_mentioned_date_integrity(self, session: Session) -> Dict[str, Any]:
         """
@@ -464,37 +412,8 @@ class HealthMonitor:
         Returns:
             Dictionary with mentioned date integrity results
         """
-        integrity = {}
-
-        # Check orphaned mentioned dates (not linked to any entries)
-        orphaned_dates = (
-            session.query(MentionedDate)
-            .filter(~MentionedDate.id.in_(session.query(entry_dates.c.date_id)))
-            .count()
-        )
-        integrity["orphaned_mentioned_dates"] = orphaned_dates
-
-        # Check for duplicate date+context combinations
-        duplicate_date_contexts = (
-            session.query(
-                MentionedDate.date, MentionedDate.context, func.count(MentionedDate.id)
-            )
-            .group_by(MentionedDate.date, MentionedDate.context)
-            .having(func.count(MentionedDate.id) > 1)
-            .count()
-        )
-        integrity["duplicate_date_contexts"] = duplicate_date_contexts
-
-        # Check for dates far in the future (potential data entry errors)
-        future_threshold = date.today() + timedelta(days=365 * 10)  # 10 years ahead
-        far_future_dates = (
-            session.query(MentionedDate)
-            .filter(MentionedDate.date > future_threshold)
-            .count()
-        )
-        integrity["far_future_mentioned_dates"] = far_future_dates
-
-        return integrity
+        from .configs.integrity_check_configs import MENTIONED_DATE_INTEGRITY_CHECKS
+        return self._run_integrity_check_group(session, MENTIONED_DATE_INTEGRITY_CHECKS)
 
     def _check_file_references(self, session: Session) -> Dict[str, Any]:
         """

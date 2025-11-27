@@ -526,17 +526,6 @@ class ManuscriptManager(BaseManager):
 
         return self._get_or_create(Theme, {"theme": normalized})
 
-    @handle_db_errors
-    @log_database_operation("get_all_themes")
-    def get_all_themes(self, include_deleted: bool = False) -> List[Theme]:
-        """Get all themes."""
-        query = self.session.query(Theme)
-
-        if not include_deleted:
-            query = query.filter(Theme.deleted_at.is_(None))
-
-        return query.order_by(Theme.theme).all()
-
     # =========================================================================
     # QUERY METHODS
     # =========================================================================
