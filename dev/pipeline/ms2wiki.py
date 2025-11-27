@@ -30,12 +30,10 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
+# Only needed for export_manuscript_entries_with_navigation (special case with nav)
 from dev.dataclasses.manuscript_entry import ManuscriptEntry as WikiManuscriptEntry
-from dev.dataclasses.manuscript_character import Character as WikiCharacter
-from dev.dataclasses.manuscript_event import ManuscriptEvent as WikiManuscriptEvent
-from dev.dataclasses.manuscript_arc import Arc as WikiArc
-from dev.dataclasses.manuscript_theme import Theme as WikiTheme
 
+# Only needed for index/CLI functions
 from dev.database.models import Entry as DBEntry
 from dev.database.models import Person as DBPerson
 from dev.database.models import Event as DBEvent
@@ -54,6 +52,13 @@ from dev.core.cli import setup_logger
 from dev.core.cli import ConversionStats
 
 from dev.builders.wiki import write_if_changed
+from dev.pipeline.entity_exporter import EntityExporter
+from dev.pipeline.configs.manuscript_entity_configs import (
+    CHARACTER_EXPORT_CONFIG,
+    MANUSCRIPT_EVENT_EXPORT_CONFIG,
+    ARC_EXPORT_CONFIG,
+    MANUSCRIPT_THEME_EXPORT_CONFIG,
+)
 
 
 def export_manuscript_entries_with_navigation(
@@ -172,67 +177,8 @@ def export_characters(
     Returns:
         ConversionStats with results
     """
-    stats = ConversionStats()
-
-    if logger:
-        logger.log_operation("export_characters_start", {"wiki_dir": str(wiki_dir)})
-
-    with db.session_scope() as session:
-        # Query manuscript people with relationships
-        query = (
-            select(DBManuscriptPerson)
-            .join(DBPerson)
-            .options(joinedload(DBManuscriptPerson.person))
-            .order_by(DBManuscriptPerson.character)
-        )
-
-        db_characters = session.execute(query).unique().scalars().all()
-
-        if not db_characters:
-            if logger:
-                logger.log_warning("No manuscript characters found in database")
-            return stats
-
-        if logger:
-            logger.log_info(f"Found {len(db_characters)} manuscript characters in database")
-
-        # Export each character
-        for ms_person in db_characters:
-            stats.files_processed += 1
-
-            try:
-                wiki_character = WikiCharacter.from_database(
-                    ms_person.person, ms_person, wiki_dir, journal_dir
-                )
-
-                # Ensure output directory exists
-                wiki_character.path.parent.mkdir(parents=True, exist_ok=True)
-
-                # Generate wiki content
-                content = "\n".join(wiki_character.to_wiki())
-
-                # Write if changed
-                status = write_if_changed(wiki_character.path, content, force)
-
-                if status == "created":
-                    stats.entries_created += 1
-                elif status == "updated":
-                    stats.entries_updated += 1
-                elif status == "skipped":
-                    stats.entries_skipped += 1
-
-                if logger:
-                    logger.log_debug(f"character {wiki_character.name}: {status}")
-
-            except Exception as e:
-                stats.errors += 1
-                if logger:
-                    logger.log_error(e, {
-                        "operation": "export_character",
-                        "entity": str(ms_person)
-                    })
-
-    return stats
+    exporter = EntityExporter(db, wiki_dir, journal_dir, logger)
+    return exporter.export_entities(CHARACTER_EXPORT_CONFIG, force)
 
 
 def export_events(
@@ -255,71 +201,8 @@ def export_events(
     Returns:
         ConversionStats with results
     """
-    stats = ConversionStats()
-
-    if logger:
-        logger.log_operation("export_manuscript_events_start", {"wiki_dir": str(wiki_dir)})
-
-    with db.session_scope() as session:
-        # Query manuscript events with relationships
-        query = (
-            select(DBManuscriptEvent)
-            .join(DBEvent)
-            .options(
-                joinedload(DBManuscriptEvent.event).joinedload(DBEvent.entries),
-                joinedload(DBManuscriptEvent.event).joinedload(DBEvent.people).joinedload(DBPerson.manuscript),
-                joinedload(DBManuscriptEvent.arc),
-            )
-            .order_by(DBEvent.event)
-        )
-
-        db_events = session.execute(query).unique().scalars().all()
-
-        if not db_events:
-            if logger:
-                logger.log_warning("No manuscript events found in database")
-            return stats
-
-        if logger:
-            logger.log_info(f"Found {len(db_events)} manuscript events in database")
-
-        # Export each event
-        for ms_event in db_events:
-            stats.files_processed += 1
-
-            try:
-                wiki_event = WikiManuscriptEvent.from_database(
-                    ms_event.event, ms_event, wiki_dir, journal_dir
-                )
-
-                # Ensure output directory exists
-                wiki_event.path.parent.mkdir(parents=True, exist_ok=True)
-
-                # Generate wiki content
-                content = "\n".join(wiki_event.to_wiki())
-
-                # Write if changed
-                status = write_if_changed(wiki_event.path, content, force)
-
-                if status == "created":
-                    stats.entries_created += 1
-                elif status == "updated":
-                    stats.entries_updated += 1
-                elif status == "skipped":
-                    stats.entries_skipped += 1
-
-                if logger:
-                    logger.log_debug(f"manuscript event {wiki_event.name}: {status}")
-
-            except Exception as e:
-                stats.errors += 1
-                if logger:
-                    logger.log_error(e, {
-                        "operation": "export_manuscript_event",
-                        "entity": str(ms_event)
-                    })
-
-    return stats
+    exporter = EntityExporter(db, wiki_dir, journal_dir, logger)
+    return exporter.export_entities(MANUSCRIPT_EVENT_EXPORT_CONFIG, force)
 
 
 def export_arcs(
@@ -342,66 +225,8 @@ def export_arcs(
     Returns:
         ConversionStats with results
     """
-    stats = ConversionStats()
-
-    if logger:
-        logger.log_operation("export_arcs_start", {"wiki_dir": str(wiki_dir)})
-
-    with db.session_scope() as session:
-        # Query arcs with relationships
-        query = (
-            select(DBArc)
-            .options(
-                joinedload(DBArc.events).joinedload(DBManuscriptEvent.event),
-            )
-            .order_by(DBArc.arc)
-        )
-
-        db_arcs = session.execute(query).unique().scalars().all()
-
-        if not db_arcs:
-            if logger:
-                logger.log_warning("No arcs found in database")
-            return stats
-
-        if logger:
-            logger.log_info(f"Found {len(db_arcs)} arcs in database")
-
-        # Export each arc
-        for arc in db_arcs:
-            stats.files_processed += 1
-
-            try:
-                wiki_arc = WikiArc.from_database(arc, wiki_dir, journal_dir)
-
-                # Ensure output directory exists
-                wiki_arc.path.parent.mkdir(parents=True, exist_ok=True)
-
-                # Generate wiki content
-                content = "\n".join(wiki_arc.to_wiki())
-
-                # Write if changed
-                status = write_if_changed(wiki_arc.path, content, force)
-
-                if status == "created":
-                    stats.entries_created += 1
-                elif status == "updated":
-                    stats.entries_updated += 1
-                elif status == "skipped":
-                    stats.entries_skipped += 1
-
-                if logger:
-                    logger.log_debug(f"arc {wiki_arc.name}: {status}")
-
-            except Exception as e:
-                stats.errors += 1
-                if logger:
-                    logger.log_error(e, {
-                        "operation": "export_arc",
-                        "entity": str(arc)
-                    })
-
-    return stats
+    exporter = EntityExporter(db, wiki_dir, journal_dir, logger)
+    return exporter.export_entities(ARC_EXPORT_CONFIG, force)
 
 
 def export_themes(
@@ -424,66 +249,8 @@ def export_themes(
     Returns:
         ConversionStats with results
     """
-    stats = ConversionStats()
-
-    if logger:
-        logger.log_operation("export_manuscript_themes_start", {"wiki_dir": str(wiki_dir)})
-
-    with db.session_scope() as session:
-        # Query themes with relationships
-        query = (
-            select(DBTheme)
-            .options(
-                joinedload(DBTheme.entries).joinedload(DBManuscriptEntry.entry),
-            )
-            .order_by(DBTheme.theme)
-        )
-
-        db_themes = session.execute(query).unique().scalars().all()
-
-        if not db_themes:
-            if logger:
-                logger.log_warning("No manuscript themes found in database")
-            return stats
-
-        if logger:
-            logger.log_info(f"Found {len(db_themes)} manuscript themes in database")
-
-        # Export each theme
-        for theme in db_themes:
-            stats.files_processed += 1
-
-            try:
-                wiki_theme = WikiTheme.from_database(theme, wiki_dir, journal_dir)
-
-                # Ensure output directory exists
-                wiki_theme.path.parent.mkdir(parents=True, exist_ok=True)
-
-                # Generate wiki content
-                content = "\n".join(wiki_theme.to_wiki())
-
-                # Write if changed
-                status = write_if_changed(wiki_theme.path, content, force)
-
-                if status == "created":
-                    stats.entries_created += 1
-                elif status == "updated":
-                    stats.entries_updated += 1
-                elif status == "skipped":
-                    stats.entries_skipped += 1
-
-                if logger:
-                    logger.log_debug(f"manuscript theme {wiki_theme.name}: {status}")
-
-            except Exception as e:
-                stats.errors += 1
-                if logger:
-                    logger.log_error(e, {
-                        "operation": "export_manuscript_theme",
-                        "entity": str(theme)
-                    })
-
-    return stats
+    exporter = EntityExporter(db, wiki_dir, journal_dir, logger)
+    return exporter.export_entities(MANUSCRIPT_THEME_EXPORT_CONFIG, force)
 
 
 def export_manuscript_index(
