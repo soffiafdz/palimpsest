@@ -62,17 +62,23 @@ from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.cli import setup_logger
 from dev.core.exceptions import Wiki2SqlError
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 
-
-@dataclass
-class ImportStats:
-    """Statistics from import operation."""
-
-    files_processed: int = 0
-    records_updated: int = 0
-    records_skipped: int = 0
-    errors: int = 0
+from dev.pipeline.entity_importer import EntityImporter, ImportStats
+from dev.pipeline.configs.entity_import_configs import (
+    PERSON_IMPORT_CONFIG,
+    THEME_IMPORT_CONFIG,
+    TAG_IMPORT_CONFIG,
+    ENTRY_IMPORT_CONFIG,
+    EVENT_IMPORT_CONFIG,
+    ALL_JOURNAL_CONFIGS,
+)
+from dev.pipeline.configs.manuscript_entity_import_configs import (
+    MANUSCRIPT_ENTRY_IMPORT_CONFIG,
+    MANUSCRIPT_CHARACTER_IMPORT_CONFIG,
+    MANUSCRIPT_EVENT_IMPORT_CONFIG,
+    ALL_MANUSCRIPT_CONFIGS,
+)
 
 
 # ===== IMPORT FUNCTIONS =====
@@ -140,28 +146,8 @@ def import_people(
     Returns:
         ImportStats with summary
     """
-    stats = ImportStats()
-    people_dir = wiki_dir / "people"
-
-    if not people_dir.exists():
-        if logger:
-            logger.log_warning(f"People directory not found: {people_dir}")
-        return stats
-
-    # Find all person wiki files
-    wiki_files = list(people_dir.glob("*.md"))
-    stats.files_processed = len(wiki_files)
-
-    for wiki_file in wiki_files:
-        status = import_person(wiki_file, db, logger)
-        if status == "updated":
-            stats.records_updated += 1
-        elif status == "skipped":
-            stats.records_skipped += 1
-        elif status == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(PERSON_IMPORT_CONFIG)
 
 
 def import_theme(
@@ -197,25 +183,8 @@ def import_themes(
     wiki_dir: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
 ) -> ImportStats:
     """Batch import all themes from wiki."""
-    stats = ImportStats()
-    themes_dir = wiki_dir / "themes"
-
-    if not themes_dir.exists():
-        return stats
-
-    wiki_files = list(themes_dir.glob("*.md"))
-    stats.files_processed = len(wiki_files)
-
-    for wiki_file in wiki_files:
-        status = import_theme(wiki_file, db, logger)
-        if status == "updated":
-            stats.records_updated += 1
-        elif status == "skipped":
-            stats.records_skipped += 1
-        elif status == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(THEME_IMPORT_CONFIG)
 
 
 def import_tag(
@@ -251,25 +220,8 @@ def import_tags(
     wiki_dir: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
 ) -> ImportStats:
     """Batch import all tags from wiki."""
-    stats = ImportStats()
-    tags_dir = wiki_dir / "tags"
-
-    if not tags_dir.exists():
-        return stats
-
-    wiki_files = list(tags_dir.glob("*.md"))
-    stats.files_processed = len(wiki_files)
-
-    for wiki_file in wiki_files:
-        status = import_tag(wiki_file, db, logger)
-        if status == "updated":
-            stats.records_updated += 1
-        elif status == "skipped":
-            stats.records_skipped += 1
-        elif status == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(TAG_IMPORT_CONFIG)
 
 
 def import_entry(
@@ -345,26 +297,8 @@ def import_entries(
     wiki_dir: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
 ) -> ImportStats:
     """Batch import all entries from wiki."""
-    stats = ImportStats()
-    entries_dir = wiki_dir / "entries"
-
-    if not entries_dir.exists():
-        return stats
-
-    # Find all entry wiki files (recursively in year subdirs)
-    wiki_files = list(entries_dir.rglob("*.md"))
-    stats.files_processed = len(wiki_files)
-
-    for wiki_file in wiki_files:
-        status = import_entry(wiki_file, db, logger)
-        if status == "updated":
-            stats.records_updated += 1
-        elif status == "skipped":
-            stats.records_skipped += 1
-        elif status == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(ENTRY_IMPORT_CONFIG)
 
 
 def import_event(
@@ -384,7 +318,7 @@ def import_event(
         machine_id = socket.gethostname()
 
         with db.session_scope() as session:
-            query = select(DBEvent).where(DBEvent.event == wiki_event.event)
+            query = select(DBEvent).where(func.lower(DBEvent.event) == wiki_event.event.lower())
             db_event = session.execute(query).scalar_one_or_none()
 
             if not db_event:
@@ -440,25 +374,8 @@ def import_events(
     wiki_dir: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
 ) -> ImportStats:
     """Batch import all events from wiki."""
-    stats = ImportStats()
-    events_dir = wiki_dir / "events"
-
-    if not events_dir.exists():
-        return stats
-
-    wiki_files = list(events_dir.glob("*.md"))
-    stats.files_processed = len(wiki_files)
-
-    for wiki_file in wiki_files:
-        status = import_event(wiki_file, db, logger)
-        if status == "updated":
-            stats.records_updated += 1
-        elif status == "skipped":
-            stats.records_skipped += 1
-        elif status == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(EVENT_IMPORT_CONFIG)
 
 
 # Note: Poems, References, Locations, and Cities have no database-stored notes fields.
@@ -664,7 +581,7 @@ def import_manuscript_event(
         # Find corresponding database record by event name
         with db.session_scope() as session:
             # Find Event by name, then get its ManuscriptEvent
-            query = select(DBEvent).where(DBEvent.event == wiki_event.name)
+            query = select(DBEvent).where(func.lower(DBEvent.event) == wiki_event.name.lower())
             db_event = session.execute(query).scalar_one_or_none()
 
             if not db_event:
@@ -708,24 +625,8 @@ def import_all_manuscript_entries(
     logger: Optional[PalimpsestLogger] = None,
 ) -> ImportStats:
     """Import all manuscript entries from wiki."""
-    stats = ImportStats()
-    manuscript_entries_dir = wiki_dir / "manuscript" / "entries"
-
-    if not manuscript_entries_dir.exists():
-        return stats
-
-    for wiki_file in manuscript_entries_dir.rglob("*.md"):
-        stats.files_processed += 1
-        result = import_manuscript_entry(wiki_file, db, logger)
-
-        if result == "updated":
-            stats.records_updated += 1
-        elif result == "skipped":
-            stats.records_skipped += 1
-        elif result == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(MANUSCRIPT_ENTRY_IMPORT_CONFIG)
 
 
 def import_all_manuscript_characters(
@@ -734,24 +635,8 @@ def import_all_manuscript_characters(
     logger: Optional[PalimpsestLogger] = None,
 ) -> ImportStats:
     """Import all manuscript characters from wiki."""
-    stats = ImportStats()
-    characters_dir = wiki_dir / "manuscript" / "characters"
-
-    if not characters_dir.exists():
-        return stats
-
-    for wiki_file in characters_dir.glob("*.md"):
-        stats.files_processed += 1
-        result = import_manuscript_character(wiki_file, db, logger)
-
-        if result == "updated":
-            stats.records_updated += 1
-        elif result == "skipped":
-            stats.records_skipped += 1
-        elif result == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(MANUSCRIPT_CHARACTER_IMPORT_CONFIG)
 
 
 def import_all_manuscript_events(
@@ -760,24 +645,8 @@ def import_all_manuscript_events(
     logger: Optional[PalimpsestLogger] = None,
 ) -> ImportStats:
     """Import all manuscript events from wiki."""
-    stats = ImportStats()
-    events_dir = wiki_dir / "manuscript" / "events"
-
-    if not events_dir.exists():
-        return stats
-
-    for wiki_file in events_dir.glob("*.md"):
-        stats.files_processed += 1
-        result = import_manuscript_event(wiki_file, db, logger)
-
-        if result == "updated":
-            stats.records_updated += 1
-        elif result == "skipped":
-            stats.records_skipped += 1
-        elif result == "error":
-            stats.errors += 1
-
-    return stats
+    importer = EntityImporter(db, wiki_dir, logger)
+    return importer.import_entities(MANUSCRIPT_EVENT_IMPORT_CONFIG)
 
 
 # ===== CLI =====
