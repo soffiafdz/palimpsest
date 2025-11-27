@@ -18,7 +18,7 @@ from dev.core.paths import WIKI_DIR, LOG_DIR
 @click.group()
 @click.option(
     "--wiki-dir",
-    type=click.Path(exists=True),
+    type=click.Path(),
     default=str(WIKI_DIR),
     help="Wiki directory to validate",
 )
@@ -54,6 +54,11 @@ def check(ctx: click.Context) -> None:
     from dev.validators.wiki import validate_wiki, print_validation_report
 
     wiki_dir = ctx.obj["wiki_dir"]
+
+    # Check if wiki directory exists
+    if not wiki_dir.exists():
+        click.echo(f"⚠ Wiki directory does not exist: {wiki_dir}", err=True)
+        raise click.ClickException(f"Wiki directory not found: {wiki_dir}")
 
     click.echo(f"🔍 Validating wiki links in {wiki_dir}\n")
 
@@ -96,6 +101,11 @@ def stats(ctx: click.Context) -> None:
     from dev.validators.wiki import validate_wiki, print_stats_report
 
     wiki_dir = ctx.obj["wiki_dir"]
+
+    # Check if wiki directory exists
+    if not wiki_dir.exists():
+        click.echo(f"⚠ Wiki directory does not exist: {wiki_dir}", err=True)
+        raise click.ClickException(f"Wiki directory not found: {wiki_dir}")
 
     click.echo(f"📊 Wiki statistics for {wiki_dir}\n")
 
