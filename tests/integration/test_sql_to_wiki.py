@@ -166,7 +166,7 @@ class TestEntryExport:
         wiki_content = "\n".join(wiki_lines)
 
         # Verify people section with counts
-        assert "### People (2)" in wiki_content
+        assert "**People (2)**" in wiki_content
         assert "Alice" in wiki_content
         assert "Bob" in wiki_content
         assert "friend" in wiki_content.lower()
@@ -214,7 +214,7 @@ class TestEntryExport:
         wiki_lines = wiki_entry.to_wiki()
         wiki_content = "\n".join(wiki_lines)
 
-        assert "### Navigation" in wiki_content
+        assert "**Navigation**" in wiki_content
         assert "Previous" in wiki_content
         assert "Next" in wiki_content
         assert "2024-11-01" in wiki_content
@@ -362,8 +362,8 @@ class TestWikiFormatting:
         wiki_content = "\n".join(wiki_lines)
 
         # Verify counts in headers
-        assert "### People (3)" in wiki_content
-        assert "### Tags (2)" in wiki_content
+        assert "**People (3)**" in wiki_content
+        assert "**Tags (2)**" in wiki_content
 
     def test_table_formatted_metadata(self, test_db, tmp_path):
         """Test that metadata is formatted as table."""

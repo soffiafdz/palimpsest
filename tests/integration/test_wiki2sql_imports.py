@@ -55,7 +55,7 @@ def temp_db():
         MSBase.metadata.create_all(db.engine)
 
         yield db
-        db.close()
+        db.engine.dispose()
 
 
 class TestImportPerson:
@@ -560,7 +560,7 @@ Use as turning point in narrative arc.
         # Verify
         with temp_db.session_scope() as session:
             event = session.query(Event).filter_by(event="Paris Trip").first()
-            ms_event = event.manuscript_events[0]
+            ms_event = event.manuscript
             assert "turning point" in ms_event.notes
 
 
@@ -569,12 +569,13 @@ class TestBatchManuscriptImports:
 
     def test_import_all_manuscript_entries(self, temp_db, tmp_path):
         """Test batch importing manuscript entries."""
-        source = tmp_path / "source.md"
-        source.write_text("Content")
-
         # Create entries with manuscripts
         with temp_db.session_scope() as session:
             for day in [1, 2]:
+                # Create unique source file for each entry
+                source = tmp_path / f"source{day}.md"
+                source.write_text("Content")
+
                 entry = Entry(
                     date=date(2024, 11, day),
                     file_path=str(source),
