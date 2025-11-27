@@ -30,12 +30,13 @@ Usage:
     analysis = assistant.analyze_for_manuscript(entry_text)
 """
 import os
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 import json
 
 try:
     import openai
+
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -45,6 +46,7 @@ except ImportError:
 @dataclass
 class OpenAIMetadata:
     """Metadata extracted by OpenAI."""
+
     people: List[str] = field(default_factory=list)
     locations: List[str] = field(default_factory=list)
     cities: List[str] = field(default_factory=list)
@@ -59,6 +61,7 @@ class OpenAIMetadata:
 @dataclass
 class OpenAIManuscriptAnalysis:
     """Manuscript analysis from OpenAI."""
+
     entry_type: str = ""  # vignette, scene, reflection, etc.
     narrative_potential: float = 0.0  # 0-1 score
     suggested_arc: str = ""
@@ -81,11 +84,7 @@ class OpenAIAssistant:
           ~$0.025 per entry (GPT-4o) - most capable
     """
 
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        model: str = "gpt-4o-mini"
-    ):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
         """
         Initialize OpenAI assistant.
 
@@ -102,11 +101,10 @@ class OpenAIAssistant:
         """
         if not OPENAI_AVAILABLE:
             raise ImportError(
-                "OpenAI package not installed. "
-                "Install with: pip install openai"
+                "OpenAI package not installed. " "Install with: pip install openai"
             )
 
-        api_key = api_key or os.environ.get('OPENAI_API_KEY')
+        api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise ValueError(
                 "API key required. Set OPENAI_API_KEY environment variable "
@@ -149,7 +147,7 @@ Be thoughtful and accurate. Only include entities and themes that are clearly pr
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
 
         # Parse response
@@ -162,14 +160,14 @@ Be thoughtful and accurate. Only include entities and themes that are clearly pr
             data = {}
 
         return OpenAIMetadata(
-            people=data.get('people', []),
-            locations=data.get('locations', []),
-            cities=data.get('cities', []),
-            events=data.get('events', []),
-            themes=data.get('themes', []),
-            tags=data.get('tags', []),
-            summary=data.get('summary', ''),
-            mood=data.get('mood', ''),
+            people=data.get("people", []),
+            locations=data.get("locations", []),
+            cities=data.get("cities", []),
+            events=data.get("events", []),
+            themes=data.get("themes", []),
+            tags=data.get("tags", []),
+            summary=data.get("summary", ""),
+            mood=data.get("mood", ""),
         )
 
     def analyze_for_manuscript(self, text: str) -> OpenAIManuscriptAnalysis:
@@ -204,7 +202,7 @@ Be thoughtful about narrative potential and literary quality.
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
 
         # Parse response
@@ -216,13 +214,13 @@ Be thoughtful about narrative potential and literary quality.
             data = {}
 
         return OpenAIManuscriptAnalysis(
-            entry_type=data.get('entry_type', ''),
-            narrative_potential=data.get('narrative_potential', 0.0),
-            suggested_arc=data.get('suggested_arc', ''),
-            character_notes=data.get('character_notes', ''),
-            adaptation_notes=data.get('adaptation_notes', ''),
-            themes=data.get('themes', []),
-            voice_notes=data.get('voice_notes', ''),
+            entry_type=data.get("entry_type", ""),
+            narrative_potential=data.get("narrative_potential", 0.0),
+            suggested_arc=data.get("suggested_arc", ""),
+            character_notes=data.get("character_notes", ""),
+            adaptation_notes=data.get("adaptation_notes", ""),
+            themes=data.get("themes", []),
+            voice_notes=data.get("voice_notes", ""),
         )
 
     def suggest_themes(self, text: str) -> List[str]:
@@ -248,14 +246,14 @@ Common themes: identity, relationships, growth, anxiety, creativity, work, memor
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
 
         content = response.choices[0].message.content
 
         try:
             data = json.loads(content)
-            themes = data.get('themes', [])
+            themes = data.get("themes", [])
             if isinstance(themes, list):
                 return themes
         except json.JSONDecodeError:
@@ -264,9 +262,7 @@ Common themes: identity, relationships, growth, anxiety, creativity, work, memor
         return []
 
     def batch_extract_metadata(
-        self,
-        texts: List[str],
-        batch_size: int = 5
+        self, texts: List[str], batch_size: int = 5
     ) -> List[OpenAIMetadata]:
         """
         Extract metadata for multiple entries (with batching).
@@ -281,7 +277,7 @@ Common themes: identity, relationships, growth, anxiety, creativity, work, memor
         results = []
 
         for i in range(0, len(texts), batch_size):
-            batch = texts[i:i+batch_size]
+            batch = texts[i : i + batch_size]
 
             for text in batch:
                 metadata = self.extract_metadata(text)
@@ -291,9 +287,7 @@ Common themes: identity, relationships, growth, anxiety, creativity, work, memor
 
 
 def estimate_cost(
-    num_entries: int,
-    avg_entry_length: int = 500,
-    model: str = "gpt-4o-mini"
+    num_entries: int, avg_entry_length: int = 500, model: str = "gpt-4o-mini"
 ) -> Dict[str, float]:
     """
     Estimate API costs.
@@ -329,23 +323,23 @@ def estimate_cost(
     total_cost = input_cost + output_cost
 
     return {
-        'model': model,
-        'num_entries': num_entries,
-        'total_input_tokens': int(total_input_tokens),
-        'total_output_tokens': int(total_output_tokens),
-        'input_cost': round(input_cost, 4),
-        'output_cost': round(output_cost, 4),
-        'total_cost': round(total_cost, 4),
-        'cost_per_entry': round(total_cost / num_entries, 6),
+        "model": model,
+        "num_entries": num_entries,
+        "total_input_tokens": int(total_input_tokens),
+        "total_output_tokens": int(total_output_tokens),
+        "input_cost": round(input_cost, 4),
+        "output_cost": round(output_cost, 4),
+        "total_cost": round(total_cost, 4),
+        "cost_per_entry": round(total_cost / num_entries, 6),
     }
 
 
 def check_api_key() -> bool:
     """Check if API key is configured."""
-    return bool(os.environ.get('OPENAI_API_KEY'))
+    return bool(os.environ.get("OPENAI_API_KEY"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("OpenAI Assistant Status:")
     print(f"  OpenAI package: {'✓' if OPENAI_AVAILABLE else '✗'}")
     print(f"  API key configured: {'✓' if check_api_key() else '✗'}")
@@ -357,6 +351,8 @@ if __name__ == '__main__':
         print("\nSet API key: export OPENAI_API_KEY='your-key'")
 
     print("\nCost estimates:")
-    for model in ['gpt-4o-mini', 'gpt-4o']:
+    for model in ["gpt-4o-mini", "gpt-4o"]:
         costs = estimate_cost(100, model=model)
-        print(f"  {model}: ${costs['total_cost']:.2f} for 100 entries (${costs['cost_per_entry']:.6f}/entry)")
+        print(
+            f"  {model}: ${costs['total_cost']:.2f} for 100 entries (${costs['cost_per_entry']:.6f}/entry)"
+        )

@@ -25,13 +25,14 @@ Usage:
     theme_extractor = ThemeExtractor()
     themes = theme_extractor.extract_themes(entry_text)
 """
-from typing import List, Dict, Set, Optional, Any
+from typing import List, Dict, Set, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 
 try:
     import spacy
     from spacy.language import Language
+
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
@@ -41,6 +42,7 @@ except ImportError:
 try:
     from sentence_transformers import SentenceTransformer
     import numpy as np
+
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
@@ -51,6 +53,7 @@ except ImportError:
 @dataclass
 class ExtractedEntities:
     """Container for extracted entities."""
+
     people: Set[str] = field(default_factory=set)
     locations: Set[str] = field(default_factory=set)
     cities: Set[str] = field(default_factory=set)
@@ -63,6 +66,7 @@ class ExtractedEntities:
 @dataclass
 class ThemeSuggestion:
     """Theme suggestion with confidence score."""
+
     theme: str
     confidence: float
     evidence: List[str] = field(default_factory=list)
@@ -205,11 +209,11 @@ class EntityExtractor:
         if entry.file_path:
             file_path = Path(entry.file_path)
             if file_path.exists():
-                content = file_path.read_text(encoding='utf-8')
+                content = file_path.read_text(encoding="utf-8")
 
                 # Extract body (skip YAML frontmatter)
-                if content.startswith('---'):
-                    parts = content.split('---', 2)
+                if content.startswith("---"):
+                    parts = content.split("---", 2)
                     if len(parts) >= 3:
                         text_parts.append(parts[2].strip())
                     else:
@@ -255,7 +259,7 @@ class ThemeExtractor:
             )
 
         # Load sentence transformer model
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
 
         # Pre-compute theme embeddings
         self.theme_embeddings = self._compute_theme_embeddings()
@@ -263,18 +267,18 @@ class ThemeExtractor:
     def _compute_theme_embeddings(self) -> Dict[str, Any]:
         """Pre-compute embeddings for theme descriptions."""
         theme_descriptions = {
-            'identity': "sense of self, personal identity, who I am, self-concept",
-            'relationships': "connections with others, friendships, family, love, trust",
-            'growth': "personal development, learning, progress, change, evolution",
-            'anxiety': "worry, stress, nervousness, fear, panic, anxious feelings",
-            'creativity': "creative work, art, writing, imagination, inspiration",
-            'work': "professional life, career, job, projects, work environment",
-            'memory': "memories, remembering, nostalgia, past experiences",
-            'home': "living space, house, apartment, domestic life",
-            'travel': "journeys, trips, exploration, adventure, places visited",
-            'health': "physical health, wellness, illness, exercise, fitness",
-            'reflection': "thinking deeply, contemplation, self-reflection",
-            'loss': "grief, mourning, loss, missing someone or something",
+            "identity": "sense of self, personal identity, who I am, self-concept",
+            "relationships": "connections with others, friendships, family, love, trust",
+            "growth": "personal development, learning, progress, change, evolution",
+            "anxiety": "worry, stress, nervousness, fear, panic, anxious feelings",
+            "creativity": "creative work, art, writing, imagination, inspiration",
+            "work": "professional life, career, job, projects, work environment",
+            "memory": "memories, remembering, nostalgia, past experiences",
+            "home": "living space, house, apartment, domestic life",
+            "travel": "journeys, trips, exploration, adventure, places visited",
+            "health": "physical health, wellness, illness, exercise, fitness",
+            "reflection": "thinking deeply, contemplation, self-reflection",
+            "loss": "grief, mourning, loss, missing someone or something",
         }
 
         embeddings = {}
@@ -284,9 +288,7 @@ class ThemeExtractor:
         return embeddings
 
     def extract_themes(
-        self,
-        text: str,
-        min_confidence: float = 0.3
+        self, text: str, min_confidence: float = 0.3
     ) -> List[ThemeSuggestion]:
         """
         Extract themes from text using semantic similarity.
@@ -314,11 +316,11 @@ class ThemeExtractor:
             confidence = (similarity + 1) / 2
 
             if confidence >= min_confidence:
-                suggestions.append(ThemeSuggestion(
-                    theme=theme,
-                    confidence=float(confidence),
-                    evidence=[]
-                ))
+                suggestions.append(
+                    ThemeSuggestion(
+                        theme=theme, confidence=float(confidence), evidence=[]
+                    )
+                )
 
         # Sort by confidence
         suggestions.sort(key=lambda x: x.confidence, reverse=True)
@@ -329,8 +331,8 @@ class ThemeExtractor:
 def check_dependencies() -> Dict[str, bool]:
     """Check which AI dependencies are available."""
     return {
-        'spacy': SPACY_AVAILABLE,
-        'sentence_transformers': TRANSFORMERS_AVAILABLE,
+        "spacy": SPACY_AVAILABLE,
+        "sentence_transformers": TRANSFORMERS_AVAILABLE,
     }
 
 
@@ -340,14 +342,14 @@ def get_installation_instructions() -> str:
 
     instructions = []
 
-    if not deps['spacy']:
+    if not deps["spacy"]:
         instructions.append(
             "spaCy (Level 2 - Entity Extraction):\n"
             "  pip install spacy\n"
             "  python -m spacy download en_core_web_sm"
         )
 
-    if not deps['sentence_transformers']:
+    if not deps["sentence_transformers"]:
         instructions.append(
             "Sentence Transformers (Level 3 - Semantic Search):\n"
             "  pip install sentence-transformers"
@@ -359,6 +361,6 @@ def get_installation_instructions() -> str:
     return "Missing dependencies:\n\n" + "\n\n".join(instructions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Print dependency status
     print(get_installation_instructions())

@@ -34,7 +34,7 @@ Examples:
 import sys
 import click
 from pathlib import Path
-from typing import Optional
+import importlib.util
 
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger
@@ -42,7 +42,9 @@ from dev.core.cli import setup_logger
 
 
 @click.group()
-@click.option("--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files")
+@click.option(
+    "--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files"
+)
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
 @click.pass_context
 def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
@@ -77,22 +79,20 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     "--level",
     type=click.Choice(["1", "2", "3", "4"]),
     default="2",
-    help="AI level (1=keywords, 2=spaCy, 3=transformers, 4=LLM)"
+    help="AI level (1=keywords, 2=spaCy, 3=transformers, 4=LLM)",
 )
 @click.option(
     "--provider",
     type=click.Choice(["claude", "openai"]),
     default="claude",
-    help="LLM provider for level 4"
+    help="LLM provider for level 4",
 )
-@click.option("--manuscript", is_flag=True, help="Include manuscript analysis (level 4)")
+@click.option(
+    "--manuscript", is_flag=True, help="Include manuscript analysis (level 4)"
+)
 @click.pass_context
 def ai_analyze(
-    ctx: click.Context,
-    date: str,
-    level: str,
-    provider: str,
-    manuscript: bool
+    ctx: click.Context, date: str, level: str, provider: str, manuscript: bool
 ) -> None:
     """
     Analyze a single journal entry with AI.
@@ -135,7 +135,7 @@ def ai_analyze(
     from datetime import date as Date
     from dev.database.manager import PalimpsestDB
 
-    logger: PalimpsestLogger = ctx.obj["logger"]
+
     level_int = int(level)
 
     # Parse date
@@ -156,6 +156,7 @@ def ai_analyze(
 
     # Get entry
     from dev.database.models import Entry
+
     entry = db.session.query(Entry).filter_by(date=entry_date).first()
 
     if not entry:
@@ -217,12 +218,15 @@ def ai_analyze(
 
         except ImportError as e:
             click.echo(f"⚠ Level 2 (spaCy) not available: {e}")
-            click.echo("Install with: pip install spacy && python -m spacy download en_core_web_sm")
+            click.echo(
+                "Install with: pip install spacy && python -m spacy download en_core_web_sm"
+            )
             click.echo()
 
     # Level 4: LLM API
     if level_int >= 4:
         from dev.ai.extractors import EntityExtractor
+
         extractor = EntityExtractor()
         text = extractor._extract_entry_text(entry)
 
@@ -254,13 +258,17 @@ def ai_analyze(
                     ms_analysis = assistant.analyze_for_manuscript(text)
 
                     click.echo(f"\n📖 Entry Type: {ms_analysis.entry_type}")
-                    click.echo(f"⭐ Narrative Potential: {ms_analysis.narrative_potential:.2f}")
+                    click.echo(
+                        f"⭐ Narrative Potential: {ms_analysis.narrative_potential:.2f}"
+                    )
 
                     if ms_analysis.suggested_arc:
                         click.echo(f"\n🎭 Suggested Arc: {ms_analysis.suggested_arc}")
 
                     if ms_analysis.adaptation_notes:
-                        click.echo(f"\n✏️  Adaptation Notes:\n{ms_analysis.adaptation_notes}")
+                        click.echo(
+                            f"\n✏️  Adaptation Notes:\n{ms_analysis.adaptation_notes}"
+                        )
 
                 click.echo()
 
@@ -320,18 +328,18 @@ def ai_status(ctx: click.Context) -> None:
     click.echo("✓ Level 1: Keyword matching (free, built-in)")
 
     # Level 2: spaCy
-    try:
-        import spacy
+    if importlib.util.find_spec("spacy"):
         click.echo("✓ Level 2: spaCy NER (free, ML-based)")
-    except ImportError:
+    else:
         click.echo("✗ Level 2: spaCy NER - Not installed")
-        click.echo("  Install: pip install spacy && python -m spacy download en_core_web_sm")
+        click.echo(
+            "  Install: pip install spacy && python -m spacy download en_core_web_sm"
+        )
 
     # Level 3: Sentence Transformers
-    try:
-        import sentence_transformers
+    if importlib.util.find_spec("sentence_transformers"):
         click.echo("✓ Level 3: Semantic search (free, transformers)")
-    except ImportError:
+    else:
         click.echo("✗ Level 3: Semantic search - Not installed")
         click.echo("  Install: pip install sentence-transformers")
 
@@ -339,28 +347,26 @@ def ai_status(ctx: click.Context) -> None:
     click.echo("\nLevel 4: LLM APIs (paid)")
 
     # Claude API
-    try:
-        import anthropic
-        import os
-        if os.environ.get('ANTHROPIC_API_KEY'):
+    if importlib.util.find_spec("anthropic"):
+        import os # os needs to be imported to check environment variables
+        if os.environ.get("ANTHROPIC_API_KEY"):
             click.echo("  ✓ Claude API (API key configured)")
         else:
             click.echo("  ⚠ Claude API - Package installed but no API key")
             click.echo("    Set key: export ANTHROPIC_API_KEY='your-key'")
-    except ImportError:
+    else:
         click.echo("  ✗ Claude API - Not installed")
         click.echo("    Install: pip install anthropic")
 
     # OpenAI API
-    try:
-        import openai
-        import os
-        if os.environ.get('OPENAI_API_KEY'):
+    if importlib.util.find_spec("openai"):
+        import os # os needs to be imported to check environment variables
+        if os.environ.get("OPENAI_API_KEY"):
             click.echo("  ✓ OpenAI API (API key configured)")
         else:
             click.echo("  ⚠ OpenAI API - Package installed but no API key")
             click.echo("    Set key: export OPENAI_API_KEY='your-key'")
-    except ImportError:
+    else:
         click.echo("  ✗ OpenAI API - Not installed")
         click.echo("    Install: pip install openai")
 

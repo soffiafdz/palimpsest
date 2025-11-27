@@ -30,7 +30,7 @@ Usage:
     # Cluster by theme
     clusters = semantic.cluster_entries(entries, num_clusters=5)
 """
-from typing import List, Dict, Optional, Tuple, Any, TYPE_CHECKING
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
 from pathlib import Path
 from dataclasses import dataclass
 import pickle
@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 try:
     from sentence_transformers import SentenceTransformer
     import numpy as np
+
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
@@ -49,6 +50,7 @@ except ImportError:
 
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -58,6 +60,7 @@ except ImportError:
 @dataclass
 class SemanticResult:
     """Semantic search result."""
+
     entry_id: int
     date: str
     similarity: float
@@ -82,11 +85,7 @@ class SemanticSearch:
         (Note: No shared keywords, but similar meaning!)
     """
 
-    def __init__(
-        self,
-        model_name: str = "all-MiniLM-L6-v2",
-        use_faiss: bool = True
-    ):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2", use_faiss: bool = True):
         """
         Initialize semantic search.
 
@@ -150,9 +149,7 @@ class SemanticSearch:
         # Encode all texts
         print(f"Encoding {len(texts)} entries...")
         embeddings = self.model.encode(
-            texts,
-            show_progress_bar=True,
-            convert_to_numpy=True
+            texts, show_progress_bar=True, convert_to_numpy=True
         )
 
         # Store
@@ -170,10 +167,7 @@ class SemanticSearch:
             self._save_cache(cache_path)
 
     def find_similar(
-        self,
-        query: str,
-        limit: int = 10,
-        min_similarity: float = 0.3
+        self, query: str, limit: int = 10, min_similarity: float = 0.3
     ) -> List[SemanticResult]:
         """
         Find semantically similar entries.
@@ -206,9 +200,7 @@ class SemanticSearch:
         return results
 
     def find_similar_to_entry(
-        self,
-        entry_id: int,
-        limit: int = 10
+        self, entry_id: int, limit: int = 10
     ) -> List[SemanticResult]:
         """
         Find entries similar to a specific entry.
@@ -242,10 +234,7 @@ class SemanticSearch:
 
         return results[:limit]
 
-    def cluster_entries(
-        self,
-        num_clusters: int = 10
-    ) -> Dict[int, List[int]]:
+    def cluster_entries(self, num_clusters: int = 10) -> Dict[int, List[int]]:
         """
         Cluster entries by semantic similarity.
 
@@ -283,11 +272,11 @@ class SemanticSearch:
             file_path = Path(entry.file_path)
             if file_path.exists():
                 try:
-                    content = file_path.read_text(encoding='utf-8')
+                    content = file_path.read_text(encoding="utf-8")
 
                     # Extract body (skip YAML frontmatter)
-                    if content.startswith('---'):
-                        parts = content.split('---', 2)
+                    if content.startswith("---"):
+                        parts = content.split("---", 2)
                         if len(parts) >= 3:
                             text_parts.append(parts[2].strip())
                         else:
@@ -307,9 +296,7 @@ class SemanticSearch:
         return "\n\n".join(text_parts)
 
     def _search_numpy(
-        self,
-        query_embedding: "np.ndarray",
-        limit: int
+        self, query_embedding: "np.ndarray", limit: int
     ) -> List[SemanticResult]:
         """Search using numpy (slower but always available)."""
         # Compute cosine similarity
@@ -323,19 +310,19 @@ class SemanticSearch:
         results = []
         for idx in top_indices:
             idx = int(idx)
-            results.append(SemanticResult(
-                entry_id=self.entry_ids[idx],
-                date=self.entry_dates[idx],
-                similarity=float(similarities[idx]),
-                snippet=self._get_snippet(self.entry_texts[idx])
-            ))
+            results.append(
+                SemanticResult(
+                    entry_id=self.entry_ids[idx],
+                    date=self.entry_dates[idx],
+                    similarity=float(similarities[idx]),
+                    snippet=self._get_snippet(self.entry_texts[idx]),
+                )
+            )
 
         return results
 
     def _search_faiss(
-        self,
-        query_embedding: "np.ndarray",
-        limit: int
+        self, query_embedding: "np.ndarray", limit: int
     ) -> List[SemanticResult]:
         """Search using FAISS (faster)."""
         # Ensure 2D array
@@ -351,12 +338,14 @@ class SemanticSearch:
             # similarity = 1 - (distance / 2)
             similarity = 1 - (distances[0][i] / 2)
 
-            results.append(SemanticResult(
-                entry_id=self.entry_ids[idx],
-                date=self.entry_dates[idx],
-                similarity=float(similarity),
-                snippet=self._get_snippet(self.entry_texts[idx])
-            ))
+            results.append(
+                SemanticResult(
+                    entry_id=self.entry_ids[idx],
+                    date=self.entry_dates[idx],
+                    similarity=float(similarity),
+                    snippet=self._get_snippet(self.entry_texts[idx]),
+                )
+            )
 
         return results
 
@@ -377,7 +366,7 @@ class SemanticSearch:
 
     def _get_snippet(self, text: str, max_length: int = 100) -> str:
         """Extract snippet from text."""
-        text = text.replace('\n', ' ').strip()
+        text = text.replace("\n", " ").strip()
         if len(text) <= max_length:
             return text
         return text[:max_length] + "..."
@@ -387,24 +376,24 @@ class SemanticSearch:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
 
         cache_data = {
-            'embeddings': self.embeddings,
-            'entry_ids': self.entry_ids,
-            'entry_dates': self.entry_dates,
-            'entry_texts': self.entry_texts,
+            "embeddings": self.embeddings,
+            "entry_ids": self.entry_ids,
+            "entry_dates": self.entry_dates,
+            "entry_texts": self.entry_texts,
         }
 
-        with open(cache_path, 'wb') as f:
+        with open(cache_path, "wb") as f:
             pickle.dump(cache_data, f)
 
     def _load_cache(self, cache_path: Path):
         """Load embeddings from cache."""
-        with open(cache_path, 'rb') as f:
+        with open(cache_path, "rb") as f:
             cache_data = pickle.load(f)
 
-        self.embeddings = cache_data['embeddings']
-        self.entry_ids = cache_data['entry_ids']
-        self.entry_dates = cache_data['entry_dates']
-        self.entry_texts = cache_data['entry_texts']
+        self.embeddings = cache_data["embeddings"]
+        self.entry_ids = cache_data["entry_ids"]
+        self.entry_dates = cache_data["entry_dates"]
+        self.entry_texts = cache_data["entry_texts"]
 
         # Rebuild FAISS index
         if self.use_faiss:
@@ -414,20 +403,20 @@ class SemanticSearch:
 def check_dependencies() -> Dict[str, bool]:
     """Check semantic search dependencies."""
     return {
-        'sentence_transformers': TRANSFORMERS_AVAILABLE,
-        'faiss': FAISS_AVAILABLE,
+        "sentence_transformers": TRANSFORMERS_AVAILABLE,
+        "faiss": FAISS_AVAILABLE,
     }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     deps = check_dependencies()
 
     print("Semantic Search Dependencies:")
     print(f"  Sentence Transformers: {'✓' if deps['sentence_transformers'] else '✗'}")
     print(f"  FAISS (optional):      {'✓' if deps['faiss'] else '✗'}")
 
-    if not deps['sentence_transformers']:
+    if not deps["sentence_transformers"]:
         print("\nInstall with: pip install sentence-transformers")
 
-    if not deps['faiss']:
+    if not deps["faiss"]:
         print("Install FAISS (optional) with: pip install faiss-cpu")
