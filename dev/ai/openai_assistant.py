@@ -288,7 +288,7 @@ Common themes: identity, relationships, growth, anxiety, creativity, work, memor
 
 def estimate_cost(
     num_entries: int, avg_entry_length: int = 500, model: str = "gpt-4o-mini"
-) -> Dict[str, float]:
+) -> Dict[str, str | int | float]:
     """
     Estimate API costs.
 

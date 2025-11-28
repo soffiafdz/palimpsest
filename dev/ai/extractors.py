@@ -192,15 +192,15 @@ class EntityExtractor:
 
         return min(score, 1.0)
 
-    def extract_from_entry(self, entry) -> ExtractedEntities:
+    def get_entry_text(self, entry) -> str:
         """
-        Extract entities from Entry object.
+        Extract all text content from an Entry object.
 
         Args:
             entry: Entry database object
 
         Returns:
-            ExtractedEntities
+            Combined text from entry body, epigraph, and notes
         """
         # Combine all text fields
         text_parts = []
@@ -228,8 +228,19 @@ class EntityExtractor:
         if entry.notes:
             text_parts.append(entry.notes)
 
-        full_text = "\n\n".join(text_parts)
+        return "\n\n".join(text_parts)
 
+    def extract_from_entry(self, entry) -> ExtractedEntities:
+        """
+        Extract entities from Entry object.
+
+        Args:
+            entry: Entry database object
+
+        Returns:
+            ExtractedEntities
+        """
+        full_text = self.get_entry_text(entry)
         return self.extract_from_text(full_text)
 
 

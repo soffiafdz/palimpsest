@@ -13,6 +13,8 @@ Each vignette includes:
 
 Used primarily to enrich `Person` or `Theme` entries by attaching curated textual fragments.
 """
+from dataclasses import dataclass
+from dev.dataclasses.wiki_entity import WikiEntity
 
 @dataclass
 class Vignette(WikiEntity):

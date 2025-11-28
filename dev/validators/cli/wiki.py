@@ -83,6 +83,11 @@ def orphans(ctx: click.Context) -> None:
 
     wiki_dir = ctx.obj["wiki_dir"]
 
+    # Check if wiki directory exists
+    if not wiki_dir.exists():
+        click.echo(f"⚠ Wiki directory does not exist: {wiki_dir}", err=True)
+        raise click.ClickException(f"Wiki directory not found: {wiki_dir}")
+
     click.echo(f"🔍 Finding orphaned pages in {wiki_dir}\n")
 
     result = validate_wiki(wiki_dir)

@@ -9,8 +9,8 @@ Functions:
     - monthly_heatmap: Generate monthly activity heatmap
     - intensity_indicator: Get intensity indicator for counts
 """
+
 from typing import Dict, List, Optional
-from datetime import datetime
 import calendar
 
 
@@ -170,7 +170,9 @@ def monthly_heatmap(
 
             # Month abbreviations row
             month_names = [calendar.month_abbr[m[2]] for m in row_months]
-            year_lines.append(f"{year}: " + " ".join(f"{name:>3s}" for name in month_names))
+            year_lines.append(
+                f"{year}: " + " ".join(f"{name:>3s}" for name in month_names)
+            )
 
             # Intensity indicators row
             intensities = [

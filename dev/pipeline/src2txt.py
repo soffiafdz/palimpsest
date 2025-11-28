@@ -31,6 +31,7 @@ from __future__ import annotations
 import sys
 import click
 from pathlib import Path
+from typing import Optional
 
 from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR, FORMATTING_SCRIPT
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error

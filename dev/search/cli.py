@@ -123,8 +123,10 @@ def search_query(ctx: click.Context, query: tuple, limit: Optional[int], sort: O
     )
 
     # Execute search
-    engine = SearchEngine(db.session)
+    session = db.get_session()
+    engine = SearchEngine(session)
     results = engine.search(parsed_query)
+    session.close()
 
     # Display results
     if not results:
@@ -236,7 +238,9 @@ def index_create(ctx: click.Context) -> None:
         return
 
     mgr.create_index()
-    count = mgr.populate_index(db.session)
+    session = db.get_session()
+    count = mgr.populate_index(session)
+    session.close()
     mgr.setup_triggers()
 
     click.echo(f"✓ Created search index: {count} entries indexed")
@@ -284,7 +288,9 @@ def index_rebuild(ctx: click.Context) -> None:
     )
 
     mgr = SearchIndexManager(db.engine, logger)
-    count = mgr.rebuild_index(db.session)
+    session = db.get_session()
+    count = mgr.rebuild_index(session)
+    session.close()
 
     click.echo(f"✓ Rebuilt search index: {count} entries indexed")
 

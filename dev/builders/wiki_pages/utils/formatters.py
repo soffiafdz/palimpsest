@@ -10,8 +10,9 @@ Functions:
     - format_count: Format count with label
     - format_percentage: Format percentage
 """
+
 from typing import Optional
-from datetime import date, datetime
+from datetime import date
 from dev.utils.md import relative_link
 
 

@@ -37,7 +37,6 @@ from pathlib import Path
 import importlib.util
 
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
-from dev.core.logging_manager import PalimpsestLogger
 from dev.core.cli import setup_logger
 
 
@@ -157,7 +156,8 @@ def ai_analyze(
     # Get entry
     from dev.database.models import Entry
 
-    entry = db.session.query(Entry).filter_by(date=entry_date).first()
+    session = db.get_session()
+    entry = session.query(Entry).filter_by(date=entry_date).first()
 
     if not entry:
         click.echo(f"Error: Entry not found for {date}")
@@ -204,7 +204,7 @@ def ai_analyze(
             # Theme extraction
             theme_extractor = ThemeExtractor()
             suggestions = theme_extractor.extract_themes(
-                extractor._extract_entry_text(entry)
+                extractor.get_entry_text(entry)
             )
 
             click.echo("=== Theme Suggestions ===")
@@ -228,7 +228,7 @@ def ai_analyze(
         from dev.ai.extractors import EntityExtractor
 
         extractor = EntityExtractor()
-        text = extractor._extract_entry_text(entry)
+        text = extractor.get_entry_text(entry)
 
         if provider == "claude":
             try:

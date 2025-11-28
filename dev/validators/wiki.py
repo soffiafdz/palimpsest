@@ -31,7 +31,7 @@ import re
 import sys
 import click
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
+from typing import List, Set, Optional
 from dataclasses import dataclass, field
 from collections import defaultdict
 

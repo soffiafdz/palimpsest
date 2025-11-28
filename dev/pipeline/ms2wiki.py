@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import click
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload

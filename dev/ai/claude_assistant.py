@@ -33,12 +33,14 @@ import os
 from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 import json
+import importlib.util
 
-try:
-    import anthropic
-
+_anthropic_spec = importlib.util.find_spec("anthropic")
+if _anthropic_spec is not None and _anthropic_spec.loader is not None:
     ANTHROPIC_AVAILABLE = True
-except ImportError:
+    anthropic = importlib.util.module_from_spec(_anthropic_spec)
+    _anthropic_spec.loader.exec_module(anthropic)
+else:
     ANTHROPIC_AVAILABLE = False
     anthropic = None
 
@@ -113,7 +115,12 @@ class ClaudeAssistant:
                 "or pass api_key parameter."
             )
 
-        self.client = anthropic.Anthropic(api_key=api_key)
+        if anthropic is not None:
+            self.client = anthropic.Anthropic(api_key=api_key)
+        else:
+            # This branch should ideally not be reached due to the ImportError check above
+            # but is added for explicit type safety and linter satisfaction.
+            raise ImportError("Anthropic client could not be initialized.")
         self.model = model
 
     def extract_metadata(self, text: str) -> ClaudeMetadata:
