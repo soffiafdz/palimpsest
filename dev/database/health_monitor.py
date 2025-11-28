@@ -85,7 +85,7 @@ See Also:
 """
 from pathlib import Path
 from typing import Dict, Any, Optional
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import text, func
 from sqlalchemy.orm import Session
@@ -94,7 +94,6 @@ from dev.core.exceptions import HealthCheckError
 from dev.core.logging_manager import PalimpsestLogger
 from .decorators import handle_db_errors, log_database_operation
 from .query_optimizer import QueryOptimizer
-from .configs.integrity_check_configs import ALL_INTEGRITY_CHECK_GROUPS
 
 # Import models for health checks
 from .models import (
@@ -110,15 +109,11 @@ from .models import (
     Poem,
     PoemVersion,
     Alias,
-    entry_dates,
 )
 from .models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
     ManuscriptEvent,
-    Theme,
-    Arc,
-    entry_themes,
 )
 
 

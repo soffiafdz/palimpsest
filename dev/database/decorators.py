@@ -10,7 +10,6 @@ from typing import Callable, List
 from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import Session
 
 from dev.core.validators import DataValidator
 from dev.core.exceptions import DatabaseError

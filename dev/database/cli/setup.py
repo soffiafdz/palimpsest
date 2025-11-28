@@ -9,7 +9,6 @@ Commands:
     - reset: Reset database (dangerous!)
 """
 import click
-from pathlib import Path
 
 from dev.core.logging_manager import handle_cli_error
 from dev.core.exceptions import DatabaseError

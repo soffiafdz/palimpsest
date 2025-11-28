@@ -675,13 +675,13 @@ class ExportManager:
             "aliases": [alias.alias for alias in person.aliases],
             "entry_count": person.entry_count,
             "first_appearance": (
-                person.first_appearance_date.isoformat()
-                if person.first_appearance_date
+                person.first_appearance.isoformat()
+                if person.first_appearance
                 else None
             ),
             "last_appearance": (
-                person.last_appearance_date.isoformat()
-                if person.last_appearance_date
+                person.last_appearance.isoformat()
+                if person.last_appearance
                 else None
             ),
             "manuscript": (

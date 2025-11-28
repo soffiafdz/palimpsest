@@ -79,13 +79,13 @@ from __future__ import annotations
 # --- Standard library imports ---
 import time
 from contextlib import contextmanager
-from datetime import date, datetime, timezone
+from datetime import datetime
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Sequence, Protocol
+from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Protocol
 
 # --- Third party ---
-from sqlalchemy import create_engine, Engine, insert
+from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session, sessionmaker, Mapped
 from sqlalchemy.exc import IntegrityError, OperationalError
 
@@ -95,46 +95,28 @@ from alembic.runtime.migration import MigrationContext
 
 # --- Local imports ---
 from dev.core.backup_manager import BackupManager
-from dev.core.exceptions import DatabaseError, ValidationError
+from dev.core.exceptions import DatabaseError
 from dev.core.paths import ROOT
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
-from dev.utils import md, fs
 from .models import (
     Base,
     Entry,
     MentionedDate,
-    City,
     Location,
     Person,
-    Alias,
     Reference,
-    ReferenceSource,
-    ReferenceMode,
-    ReferenceType,
-    Event,
-    Poem,
     PoemVersion,
     Tag,
-)
-from .models_manuscript import (
-    ManuscriptStatus,
-    ManuscriptEntry,
-    ManuscriptEvent,
-    ManuscriptPerson,
-    Arc,
-    Theme,
 )
 
 from .decorators import (
     handle_db_errors,
     log_database_operation,
-    validate_metadata,
 )
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
-from .query_optimizer import QueryOptimizer
 
 # Modular entity managers (Phase 2 & Phase 3)
 from .managers import (

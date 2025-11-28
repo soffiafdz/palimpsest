@@ -115,7 +115,7 @@ def _serialize_mentioned_date(md: MentionedDate) -> Dict[str, Any]:
     """Serialize MentionedDate entity."""
     return {
         "id": md.id,
-        "entry_id": md.entry_id,
+        "entry_ids": [e.id for e in md.entries] if md.entries else [],
         "date": md.date.isoformat() if md.date else None,
         "context": md.context,
     }

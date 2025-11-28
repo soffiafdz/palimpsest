@@ -11,25 +11,22 @@ duplication in health_monitor.py's _check_*_integrity methods.
 from dataclasses import dataclass
 from typing import Callable, List
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, select
 
 from ..models import (
     Entry,
     Person,
     Location,
-    City,
     Reference,
     ReferenceSource,
     Poem,
     PoemVersion,
-    Tag,
     MentionedDate,
 )
+from ..models.associations import entry_dates
 from ..models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
-    ManuscriptEvent,
-    Theme,
 )
 
 
@@ -229,9 +226,14 @@ MANUSCRIPT_INTEGRITY_CHECKS = IntegrityCheckGroup(
 
 def _count_orphaned_mentioned_dates(session: Session) -> int:
     """Count mentioned dates without parent entry."""
+    # Query dates that don't appear in the entry_dates association table
     return (
         session.query(MentionedDate)
-        .filter(~MentionedDate.entry_id.in_(session.query(Entry.id)))
+        .filter(
+            ~MentionedDate.id.in_(
+                select(entry_dates.c.date_id)
+            )
+        )
         .count()
     )
 
