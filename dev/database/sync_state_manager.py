@@ -33,7 +33,7 @@ Usage:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, List
 from sqlalchemy.orm import Session
 

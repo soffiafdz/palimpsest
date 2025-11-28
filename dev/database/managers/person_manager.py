@@ -341,7 +341,7 @@ class PersonManager(BaseManager):
             person = self.get(person_name=normalized_name)
             if person:
                 return person
-        except ValidationError as e:
+        except ValidationError:
             # Multiple people with same name - need full_name
             if full_name:
                 person = self.get(person_full_name=full_name)

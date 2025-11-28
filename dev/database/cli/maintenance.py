@@ -95,8 +95,8 @@ def validate(ctx):
     try:
         db = get_db(ctx)
         with db.session_scope() as session:
-            orphans = db.health_monitor._check_orphaned_records(session)
-            integrity = db.health_monitor._check_data_integrity(session)
+            orphans = db.health_monitor.check_orphaned_records(session)
+            integrity = db.health_monitor.check_data_integrity(session)
 
             click.echo("\n🔍 Database Validation")
             click.echo("=" * 50)

@@ -701,8 +701,9 @@ class MdEntry:
             poem_dict: Dict[str, Any] = {
                 "title": pv.poem.title if pv.poem else "Untitled",
                 "content": pv.content,
-                "revision_date": pv.revision_date.isoformat(),
             }
+            if pv.revision_date:
+                poem_dict["revision_date"] = pv.revision_date.isoformat()
             if pv.notes:
                 poem_dict["notes"] = pv.notes
             poems_list.append(poem_dict)

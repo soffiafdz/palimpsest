@@ -30,18 +30,13 @@ import click
 import socket
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Optional, List
-from dataclasses import dataclass
+from typing import Optional
 
 from dev.database.manager import PalimpsestDB
 from dev.database.models import (
     Person as DBPerson,
     Entry as DBEntry,
     Tag as DBTag,
-    Poem as DBPoem,
-    ReferenceSource as DBReferenceSource,
-    Location as DBLocation,
-    City as DBCity,
     Event as DBEvent,
 )
 from dev.database.models_manuscript import Theme as DBTheme
@@ -50,11 +45,7 @@ from dev.database.sync_state_manager import SyncStateManager
 from dev.dataclasses.wiki_person import Person as WikiPerson
 from dev.dataclasses.wiki_theme import Theme as WikiTheme
 from dev.dataclasses.wiki_tag import Tag as WikiTag
-from dev.dataclasses.wiki_poem import Poem as WikiPoem
-from dev.dataclasses.wiki_reference import Reference as WikiReference
 from dev.dataclasses.wiki_entry import Entry as WikiEntry
-from dev.dataclasses.wiki_location import Location as WikiLocation
-from dev.dataclasses.wiki_city import City as WikiCity
 from dev.dataclasses.wiki_event import Event as WikiEvent
 
 from dev.core.paths import LOG_DIR, DB_PATH, WIKI_DIR, ALEMBIC_DIR, BACKUP_DIR
@@ -71,14 +62,12 @@ from dev.pipeline.configs.entity_import_configs import (
     TAG_IMPORT_CONFIG,
     ENTRY_IMPORT_CONFIG,
     EVENT_IMPORT_CONFIG,
-    ALL_JOURNAL_CONFIGS,
-)
+    )
 from dev.pipeline.configs.manuscript_entity_import_configs import (
     MANUSCRIPT_ENTRY_IMPORT_CONFIG,
     MANUSCRIPT_CHARACTER_IMPORT_CONFIG,
     MANUSCRIPT_EVENT_IMPORT_CONFIG,
-    ALL_MANUSCRIPT_CONFIGS,
-)
+    )
 
 
 # ===== IMPORT FUNCTIONS =====
@@ -432,8 +421,6 @@ def import_manuscript_entry(
     try:
         # Import manuscript dataclasses
         from dev.dataclasses.manuscript_entry import ManuscriptEntry as WikiManuscriptEntry
-        from dev.database.models_manuscript import ManuscriptEntry as DBManuscriptEntry, EntryType
-        from datetime import datetime
 
         # Parse wiki file
         wiki_entry = WikiManuscriptEntry.from_file(wiki_file)

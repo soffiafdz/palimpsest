@@ -16,7 +16,6 @@ from sqlalchemy import func, select
 from ..models import (
     Entry,
     Person,
-    Location,
     Reference,
     ReferenceSource,
     Poem,

@@ -16,7 +16,7 @@ from sqlalchemy import select, func
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry as DBEntry
 from dev.database.models_manuscript import (
-    ManuscriptEntry as DBManuscriptEntry,
+    
     ManuscriptPerson as DBManuscriptPerson,
     ManuscriptEvent as DBManuscriptEvent,
 )

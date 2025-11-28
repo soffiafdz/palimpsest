@@ -20,7 +20,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 from collections import defaultdict
-from itertools import groupby
 
 from dev.core.logging_manager import PalimpsestLogger
 from dev.builders.wiki import write_if_changed

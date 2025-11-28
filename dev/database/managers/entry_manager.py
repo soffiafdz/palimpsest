@@ -27,9 +27,8 @@ from typing import Any, Dict, List, Optional, Union, Sequence
 
 from sqlalchemy.orm import Session
 from sqlalchemy import insert
-from sqlalchemy.exc import IntegrityError
 
-from dev.core.exceptions import DatabaseError, ValidationError
+from dev.core.exceptions import ValidationError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.validators import DataValidator
 from dev.utils import fs
@@ -37,7 +36,6 @@ from dev.database.models import (
     Entry,
     MentionedDate,
     City,
-    Location,
     Person,
     Alias,
     Event,
@@ -46,7 +44,6 @@ from dev.database.models import (
 from dev.database.decorators import (
     handle_db_errors,
     log_database_operation,
-    validate_metadata,
 )
 from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
@@ -848,7 +845,7 @@ class EntryManager(BaseManager):
                         try:
                             # Need PersonManager here - will delegate to manager.py
                             from dev.database import PalimpsestDB
-                            person = PalimpsestDB._get_person_static(
+                            person = PalimpsestDB.get_person_static(
                                 self.session, name, full_name
                             )
                         except ValidationError as e:
@@ -1231,7 +1228,7 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses LocationManager
         from dev.database import PalimpsestDB
-        PalimpsestDB._update_entry_locations_static(
+        PalimpsestDB.update_entry_locations_static(
             self.session, entry, locations_data, incremental
         )
 
@@ -1252,7 +1249,7 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses ReferenceManager
         from dev.database import PalimpsestDB
-        PalimpsestDB._process_references_static(
+        PalimpsestDB.process_references_static(
             self.session, entry, references_data
         )
 
@@ -1273,7 +1270,7 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses PoemManager
         from dev.database import PalimpsestDB
-        PalimpsestDB._process_poems_static(
+        PalimpsestDB.process_poems_static(
             self.session, entry, poems_data
         )
 
@@ -1294,6 +1291,6 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses ManuscriptManager
         from dev.database import PalimpsestDB
-        PalimpsestDB._create_or_update_manuscript_entry_static(
+        PalimpsestDB.create_or_update_manuscript_entry_static(
             self.session, entry, manuscript_data
         )

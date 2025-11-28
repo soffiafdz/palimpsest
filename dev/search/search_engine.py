@@ -30,7 +30,7 @@ from datetime import date as Date
 from typing import List, Optional, Dict, Any
 from calendar import monthrange
 
-from sqlalchemy import select, and_, or_, func
+from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, joinedload
 
 from dev.database.models import Entry, Person, Tag, Event, City
@@ -241,7 +241,6 @@ class SearchEngine:
             bind = self.session.bind
             if bind is None:
                 raise ValueError("Database session has no bind (engine)")
-            from sqlalchemy.engine import Engine
             from sqlalchemy import Connection
             if isinstance(bind, Connection):
                 engine = bind.engine

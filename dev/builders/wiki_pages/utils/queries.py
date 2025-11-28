@@ -11,8 +11,7 @@ Functions:
     - get_location_statistics: Get location statistics
     - get_tag_statistics: Get tag statistics
 """
-from typing import List, Dict, Tuple, Optional
-from datetime import datetime
+from typing import List, Dict, Tuple
 from collections import Counter
 
 from sqlalchemy import select, func

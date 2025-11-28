@@ -26,7 +26,7 @@ Usage:
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
-from sqlalchemy import text, Engine, create_engine
+from sqlalchemy import text, Engine
 from sqlalchemy.orm import Session
 
 from dev.core.logging_manager import PalimpsestLogger

@@ -217,7 +217,7 @@ def validate(ctx: click.Context, inbox: str) -> None:
         invalid = []
 
         for file_path in txt_files:
-            parsed = builder._parse_filename(file_path.name)
+            parsed = builder.parse_filename(file_path.name)
             if parsed:
                 year, month = parsed
                 valid.append((file_path.name, year, month))

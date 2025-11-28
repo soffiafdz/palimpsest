@@ -28,7 +28,6 @@ from dev.database.models import (
 from dev.database.models_manuscript import Theme as DBTheme
 from dev.core.logging_manager import PalimpsestLogger
 from dev.builders.wiki import write_if_changed
-from .utils import ascii_bar_chart, yearly_bar_chart
 
 
 def export_stats(

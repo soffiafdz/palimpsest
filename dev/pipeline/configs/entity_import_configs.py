@@ -13,20 +13,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, func
 
 from dev.database.manager import PalimpsestDB
 from dev.database.models import (
-    Person as DBPerson,
+    
     Entry as DBEntry,
     Event as DBEvent,
-    Tag as DBTag,
-    Poem as DBPoem,
-    ReferenceSource as DBReferenceSource,
-    Location as DBLocation,
-    City as DBCity,
 )
-from dev.database.models_manuscript import Theme as DBTheme
+
 from dev.database.sync_state_manager import SyncStateManager
 from dev.core.logging_manager import PalimpsestLogger
 

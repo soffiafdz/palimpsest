@@ -28,9 +28,9 @@ from __future__ import annotations
 
 import re
 import yaml
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional
 
 from dev.utils.md import split_frontmatter
 from dev.core.validators import DataValidator
@@ -58,11 +58,7 @@ class MarkdownValidationReport:
     files_with_warnings: int = 0
     total_errors: int = 0
     total_warnings: int = 0
-    issues: Optional[List[MarkdownIssue]] = None
-
-    def __post_init__(self):
-        if self.issues is None:
-            self.issues = []
+    issues: List[MarkdownIssue] = field(default_factory=list)
 
     def add_issue(self, issue: MarkdownIssue) -> None:
         """Add an issue to the report."""
@@ -442,7 +438,6 @@ class MarkdownValidator:
             List of broken link issues
         """
         issues = []
-        md_files = {f.stem: f for f in self.md_dir.glob("**/*.md")}
 
         # Pattern for markdown links: [text](path)
         link_pattern = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
@@ -545,7 +540,6 @@ def format_markdown_report(report: MarkdownValidationReport) -> str:
         for file_path in sorted(issues_by_file.keys()):
             file_issues = issues_by_file[file_path]
             errors = [i for i in file_issues if i.severity == "error"]
-            warnings = [i for i in file_issues if i.severity == "warning"]
 
             icon = "❌" if errors else "⚠️"
             lines.append(f"{icon} {file_path.name}")

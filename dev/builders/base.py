@@ -15,7 +15,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 from dev.core.logging_manager import PalimpsestLogger

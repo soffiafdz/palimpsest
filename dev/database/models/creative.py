@@ -386,5 +386,5 @@ class PoemVersion(Base):
         return f"<PoemVersion(id={self.id}, poem_id={self.poem_id})>"
 
     def __str__(self) -> str:
-        date_str = self.revision_date.isoformat()
+        date_str = self.revision_date.isoformat() if self.revision_date else "no date"
         return f"Version of '{self.poem.title}' ({date_str})"

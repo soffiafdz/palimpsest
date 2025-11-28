@@ -16,9 +16,7 @@ dataclasses (dataclasses.manuscript_*).
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from dev.database.models import Entry as DBEntry
-from dev.database.models import Person as DBPerson
-from dev.database.models import Event as DBEvent
+from dev.database.models import Person as DBPerson, Event as DBEvent
 from dev.database.models_manuscript import (
     ManuscriptEntry as DBManuscriptEntry,
     ManuscriptPerson as DBManuscriptPerson,
@@ -27,7 +25,6 @@ from dev.database.models_manuscript import (
     Theme as DBTheme,
 )
 
-from dev.dataclasses.manuscript_entry import ManuscriptEntry as WikiManuscriptEntry
 from dev.dataclasses.manuscript_character import Character as WikiCharacter
 from dev.dataclasses.manuscript_event import ManuscriptEvent as WikiManuscriptEvent
 from dev.dataclasses.manuscript_arc import Arc as WikiArc

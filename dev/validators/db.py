@@ -28,10 +28,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import List, Optional
 
 from sqlalchemy import inspect, text
-from sqlalchemy.engine import Engine
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 
@@ -298,9 +297,6 @@ class DatabaseValidator:
 
         for table_name in self.inspector.get_table_names():
             unique_constraints = self.inspector.get_unique_constraints(table_name)
-            indexes = [
-                idx for idx in self.inspector.get_indexes(table_name) if idx["unique"]
-            ]
 
             # Check unique constraints
             for constraint in unique_constraints:

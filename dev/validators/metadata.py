@@ -31,9 +31,9 @@ Usage:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional
 
 from dev.utils.md import split_frontmatter
 from dev.core.logging_manager import PalimpsestLogger
@@ -60,11 +60,7 @@ class MetadataValidationReport:
     files_with_warnings: int = 0
     total_errors: int = 0
     total_warnings: int = 0
-    issues: Optional[List[MetadataIssue]] = None
-
-    def __post_init__(self):
-        if self.issues is None:
-            self.issues = []
+    issues: List[MetadataIssue] = field(default_factory=list)
 
     def add_issue(self, issue: MetadataIssue) -> None:
         """Add an issue to the report."""
@@ -773,7 +769,7 @@ class MetadataValidator:
             if not isinstance(metadata, dict):
                 return issues  # Not valid YAML dict
 
-        except Exception as e:
+        except Exception:
             return issues  # Let frontmatter validator handle syntax errors
 
         # Validate each field
@@ -874,7 +870,6 @@ def format_metadata_report(report: MetadataValidationReport) -> str:
         for file_path in sorted(issues_by_file.keys()):
             file_issues = issues_by_file[file_path]
             errors = [i for i in file_issues if i.severity == "error"]
-            warnings = [i for i in file_issues if i.severity == "warning"]
 
             icon = "❌" if errors else "⚠️"
             lines.append(f"{icon} {file_path.name}")

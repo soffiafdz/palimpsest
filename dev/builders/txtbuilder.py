@@ -29,7 +29,6 @@ import re
 import subprocess
 import zipfile
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
@@ -138,7 +137,7 @@ class TxtBuilder:
         )
         self.logger = logger
 
-    def _parse_filename(self, filename: str) -> Optional[tuple[str, str]]:
+    def parse_filename(self, filename: str) -> Optional[tuple[str, str]]:
         """
         Extract year and month from filename.
 
@@ -166,7 +165,7 @@ class TxtBuilder:
             New path if renamed, original if already standard, None if invalid
         """
         filename = file_path.name
-        parsed = self._parse_filename(filename)
+        parsed = self.parse_filename(filename)
 
         if not parsed:
             if self.logger:
@@ -470,7 +469,7 @@ class TxtBuilder:
                 continue
 
             # Parse year/month
-            parsed = self._parse_filename(renamed.name)
+            parsed = self.parse_filename(renamed.name)
             if not parsed:
                 stats.files_skipped += 1
                 continue
@@ -489,7 +488,7 @@ class TxtBuilder:
             processed_files = []
 
             for file_path in files:
-                parsed = self._parse_filename(file_path.name)
+                parsed = self.parse_filename(file_path.name)
                 if not parsed:
                     continue
 

@@ -441,7 +441,7 @@ class PalimpsestDB:
             Prints instructions for first migration
         """
         try:
-            if not self.alembic_dir.is_dir():
+            if self.alembic_dir is not None and not self.alembic_dir.is_dir():
                 command.init(self.alembic_cfg, str(self.alembic_dir))
                 self._update_alembic_env()
             else:
@@ -765,7 +765,7 @@ class PalimpsestDB:
     # These allow EntryManager to call back to modular managers without circular dependencies
 
     @staticmethod
-    def _get_person_static(
+    def get_person_static(
         session: Session,
         person_name: Optional[str] = None,
         person_full_name: Optional[str] = None,
@@ -776,7 +776,7 @@ class PalimpsestDB:
         return person_mgr.get(person_name=person_name, full_name=person_full_name)
 
     @staticmethod
-    def _update_entry_locations_static(
+    def update_entry_locations_static(
         session: Session,
         entry: Entry,
         locations_data: List[Any],
@@ -830,7 +830,7 @@ class PalimpsestDB:
         session.flush()
 
     @staticmethod
-    def _process_references_static(
+    def process_references_static(
         session: Session,
         entry: Entry,
         references_data: List[Dict[str, Any]],
@@ -876,7 +876,7 @@ class PalimpsestDB:
             reference_mgr.create_reference(ref_metadata)
 
     @staticmethod
-    def _process_poems_static(
+    def process_poems_static(
         session: Session,
         entry: Entry,
         poems_data: List[Dict[str, Any]],
@@ -910,7 +910,7 @@ class PalimpsestDB:
             })
 
     @staticmethod
-    def _create_or_update_manuscript_entry_static(
+    def create_or_update_manuscript_entry_static(
         session: Session,
         entry: Entry,
         manuscript_data: Dict[str, Any],

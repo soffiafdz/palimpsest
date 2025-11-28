@@ -27,12 +27,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Set, Optional
-from datetime import date, timedelta
 from collections import defaultdict
 
 from dev.database.manager import PalimpsestDB
 from dev.dataclasses.md_entry import MdEntry
-from dev.database.models import Entry, Person, Location, City, Event, Tag, Poem, PoemVersion
+from dev.database.models import Entry
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
 
@@ -45,7 +44,7 @@ class ConsistencyIssue:
     severity: str  # error, warning
     system: str  # md, db, wiki, md-db, db-wiki, md-db-wiki
     entity_type: str  # entry, person, location, etc.
-    entity_id: str  # date, name, etc.
+    entity_id: str  # name, etc.
     message: str
     suggestion: Optional[str] = None
 
@@ -452,9 +451,8 @@ class ConsistencyValidator:
         md_people = entry_md.metadata.get("people", [])
         md_people_count = len(md_people) if isinstance(md_people, list) else 0
 
-        # Get DB people + aliases count
+        # Get DB people count
         db_people_count = len(entry_db.people)
-        db_aliases_count = len(entry_db.aliases_used)
 
         # Compare counts (approximate check)
         if md_people_count > 0 and db_people_count == 0:

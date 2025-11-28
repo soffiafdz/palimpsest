@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import click
 from pathlib import Path
-from typing import Optional
 
 from dev.core.paths import (
     MD_DIR,

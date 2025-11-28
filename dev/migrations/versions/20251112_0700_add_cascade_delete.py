@@ -8,7 +8,6 @@ Create Date: 2025-11-12 07:00:00
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
@@ -31,23 +30,23 @@ def upgrade() -> None:
     # Note: SQLite foreign keys need to be recreated by rebuilding the table
     # Alembic's batch mode does this automatically when we recreate foreign keys
 
-    with op.batch_alter_table('entry_dates', schema=None) as batch_op:
+    with op.batch_alter_table('entry_dates', schema=None) as _batch_op:
         # Recreate the table with CASCADE on both foreign keys
         pass  # Constraints updated in models.py, Alembic will detect
 
-    with op.batch_alter_table('entry_cities', schema=None) as batch_op:
+    with op.batch_alter_table('entry_cities', schema=None) as _batch_op:
         pass
 
-    with op.batch_alter_table('entry_locations', schema=None) as batch_op:
+    with op.batch_alter_table('entry_locations', schema=None) as _batch_op:
         pass
 
-    with op.batch_alter_table('entry_people', schema=None) as batch_op:
+    with op.batch_alter_table('entry_people', schema=None) as _batch_op:
         pass
 
-    with op.batch_alter_table('entry_tags', schema=None) as batch_op:
+    with op.batch_alter_table('entry_tags', schema=None) as _batch_op:
         pass
 
-    with op.batch_alter_table('event_people', schema=None) as batch_op:
+    with op.batch_alter_table('event_people', schema=None) as _batch_op:
         # This one is critical - fixes SET NULL on primary key bug
         pass
 

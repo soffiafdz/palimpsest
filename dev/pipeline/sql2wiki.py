@@ -36,8 +36,7 @@ from pathlib import Path
 # Builder imports
 from dev.builders.wiki import (
     EntityConfig,
-    GenericEntityExporter,
-    register_entity,
+        register_entity,
     get_exporter,
 )
 from dev.builders.wiki_indexes import (

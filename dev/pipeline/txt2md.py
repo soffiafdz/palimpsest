@@ -32,7 +32,7 @@ from __future__ import annotations
 import click
 import logging
 
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import List, Optional
 

@@ -133,11 +133,11 @@ def export_entries_with_navigation(
 
         # Build index
         if exporter.config.index_builder:
-            index_status = exporter.config.index_builder(
+            exporter.config.index_builder(
                 wiki_entities, wiki_dir, force, logger
             )
         else:
-            index_status = exporter.build_index(
+            exporter.build_index(
                 wiki_entities, wiki_dir, force, logger
             )
 

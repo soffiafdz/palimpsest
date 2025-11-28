@@ -28,7 +28,6 @@ Examples:
     plm-search index rebuild
     plm-search index status
 """
-import sys
 import click
 from pathlib import Path
 from typing import Optional
@@ -100,8 +99,6 @@ def search_query(ctx: click.Context, query: tuple, limit: Optional[int], sort: O
     """
     from dev.database.manager import PalimpsestDB
     from dev.search.search_engine import SearchQueryParser, SearchEngine
-
-    logger: PalimpsestLogger = ctx.obj["logger"]
 
     # Parse query
     query_string = " ".join(query)

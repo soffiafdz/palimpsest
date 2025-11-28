@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import sys
 import click
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import List, Optional
 
@@ -43,7 +43,6 @@ from dev.core.exceptions import Sql2YamlError
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.validators import DataValidator
 from dev.core.cli import setup_logger
-from dev.core.cli import ExportStats
 
 from dev.utils import md
 

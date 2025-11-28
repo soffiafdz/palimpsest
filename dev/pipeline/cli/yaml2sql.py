@@ -195,7 +195,7 @@ def sync_db(ctx: click.Context, input: str, force: bool, dry_run: bool) -> None:
             label="Scanning files",
             show_pos=True
         ) as files:
-            for md_file in files:
+            for _md_file in files:
                 pass  # Progress visualization
 
         if len(md_files) > 10:

@@ -47,7 +47,7 @@ Usage:
             print(f"Recommendations: {health_report['recommendations']}")
 
         # Check for specific issues
-        orphans = monitor._check_orphaned_records(session)
+        orphans = monitor.check_orphaned_records(session)
         if orphans["total"] > 0:
             print(f"Found {orphans['total']} orphaned records")
 
@@ -167,11 +167,11 @@ class HealthMonitor:
             session.execute(text("SELECT 1"))
 
             # Check for orphaned records
-            orphan_results = self._check_orphaned_records(session)
+            orphan_results = self.check_orphaned_records(session)
             health["metrics"]["orphaned_records"] = orphan_results
 
             # Check for data integrity issues
-            integrity_results = self._check_data_integrity(session)
+            integrity_results = self.check_data_integrity(session)
             health["metrics"]["integrity"] = integrity_results
 
             # Check relationship integrity
@@ -215,7 +215,7 @@ class HealthMonitor:
 
         return health
 
-    def _check_orphaned_records(self, session: Session) -> Dict[str, int]:
+    def check_orphaned_records(self, session: Session) -> Dict[str, int]:
         """
         Check for orphaned records across all tables.
 
@@ -272,7 +272,7 @@ class HealthMonitor:
 
         return orphans
 
-    def _check_data_integrity(self, session: Session) -> Dict[str, Any]:
+    def check_data_integrity(self, session: Session) -> Dict[str, Any]:
         """
         Check for data integrity issues.
 
