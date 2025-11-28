@@ -128,7 +128,7 @@ def import_person(
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error importing {wiki_file}: {e}")
+            logger.log_error(e, {"operation": "import_person", "file": str(wiki_file)})
         return "error"
 
 
@@ -175,7 +175,7 @@ def import_theme(
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error importing {wiki_file}: {e}")
+            logger.log_error(e, {"operation": "import_theme", "file": str(wiki_file)})
         return "error"
 
 
@@ -212,7 +212,7 @@ def import_tag(
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error importing {wiki_file}: {e}")
+            logger.log_error(e, {"operation": "import_tag", "file": str(wiki_file)})
         return "error"
 
 
@@ -289,7 +289,7 @@ def import_entry(
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error importing {wiki_file}: {e}")
+            logger.log_error(e, {"operation": "import_entry", "file": str(wiki_file)})
         return "error"
 
 
@@ -366,7 +366,7 @@ def import_event(
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error importing {wiki_file}: {e}")
+            logger.log_error(e, {"operation": "import_event", "file": str(wiki_file)})
         return "error"
 
 

@@ -58,7 +58,7 @@ class MarkdownValidationReport:
     files_with_warnings: int = 0
     total_errors: int = 0
     total_warnings: int = 0
-    issues: List[MarkdownIssue] = None
+    issues: Optional[List[MarkdownIssue]] = None
 
     def __post_init__(self):
         if self.issues is None:
@@ -234,10 +234,12 @@ class MarkdownValidator:
         try:
             frontmatter = yaml.safe_load(frontmatter_text)
         except yaml.YAMLError as e:
+            problem_mark = getattr(e, 'problem_mark', None)
+            line_num = problem_mark.line + 1 if problem_mark else None
             issues.append(
                 MarkdownIssue(
                     file_path=file_path,
-                    line_number=getattr(e, 'problem_mark', None) and e.problem_mark.line + 1,
+                    line_number=line_num,
                     severity="error",
                     category="frontmatter",
                     message=f"Invalid YAML syntax: {e}",
@@ -425,7 +427,7 @@ class MarkdownValidator:
 
         if not md_files:
             if self.logger:
-                self.logger.warning(f"No markdown files found in {self.md_dir}")
+                self.logger.log_warning(f"No markdown files found in {self.md_dir}")
 
         for md_file in md_files:
             self.validate_file(md_file)

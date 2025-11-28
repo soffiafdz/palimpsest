@@ -97,7 +97,7 @@ class PoemManager(BaseManager):
     @handle_db_errors
     @log_database_operation("get_poem")
     def get_poem(
-        self, title: str = None, poem_id: int = None
+        self, title: Optional[str] = None, poem_id: Optional[int] = None
     ) -> Optional[Poem]:
         """
         Retrieve a poem by title or ID.
@@ -113,7 +113,7 @@ class PoemManager(BaseManager):
             - If both provided, ID takes precedence
             - Title lookup returns first match (titles are not unique)
         """
-        if poem_id is not None:
+        if poem_id is not None:  # type: ignore[reportUnnecessaryComparison]
             return self.session.get(Poem, poem_id)
 
         if title is not None:
@@ -253,7 +253,7 @@ class PoemManager(BaseManager):
             - Use with caution if versions exist
         """
         if isinstance(poem, int):
-            poem = self.session.get(Poem, poem)
+            poem = self.session.get(Poem, poem)  # type: ignore[assignment]
             if not poem:
                 raise DatabaseError(f"Poem not found with id: {poem}")
 
@@ -552,7 +552,7 @@ class PoemManager(BaseManager):
             - Does not affect the parent Poem
         """
         if isinstance(version, int):
-            version = self.session.get(PoemVersion, version)
+            version = self.session.get(PoemVersion, version)  # type: ignore[assignment]
             if not version:
                 raise DatabaseError(f"PoemVersion not found with id: {version}")
 
@@ -581,7 +581,7 @@ class PoemManager(BaseManager):
         Returns:
             List of PoemVersion objects, ordered by revision_date
         """
-        return sorted(poem.versions, key=lambda v: v.revision_date)
+        return sorted(poem.versions, key=lambda v: v.revision_date or date.min)  # type: ignore[arg-type]
 
     @handle_db_errors
     @log_database_operation("get_versions_for_entry")

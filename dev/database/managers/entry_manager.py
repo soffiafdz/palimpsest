@@ -85,7 +85,7 @@ class EntryManager(BaseManager):
 
     @handle_db_errors
     @log_database_operation("entry_exists")
-    def exists(self, entry_date: Union[str, date] = None, file_path: str = None) -> bool:
+    def exists(self, entry_date: Optional[Union[str, date]] = None, file_path: Optional[str] = None) -> bool:
         """
         Check if an entry exists by date or file path.
 
@@ -98,7 +98,10 @@ class EntryManager(BaseManager):
         """
         if entry_date is not None:
             if isinstance(entry_date, str):
-                entry_date = DataValidator.normalize_date(entry_date)
+                normalized_date = DataValidator.normalize_date(entry_date)
+                if normalized_date is None:
+                    return False
+                entry_date = normalized_date
             return self.session.query(Entry).filter_by(date=entry_date).first() is not None
 
         if file_path is not None:
@@ -111,9 +114,9 @@ class EntryManager(BaseManager):
     @log_database_operation("get_entry")
     def get(
         self,
-        entry_date: Union[str, date] = None,
-        entry_id: int = None,
-        file_path: str = None,
+        entry_date: Optional[Union[str, date]] = None,
+        entry_id: Optional[int] = None,
+        file_path: Optional[str] = None,
         include_deleted: bool = False,
     ) -> Optional[Entry]:
         """
@@ -540,10 +543,6 @@ class EntryManager(BaseManager):
         if item is None:
             return None
 
-        # Handle ORM instances and IDs using base method
-        if isinstance(item, (model_class, int)):
-            return self._resolve_object(item, model_class)
-
         # Handle strings by delegating to appropriate get_or_create
         if isinstance(item, str):
             from dev.database.managers import (
@@ -565,10 +564,15 @@ class EntryManager(BaseManager):
                 raise TypeError(
                     f"String resolution not supported for {model_class.__name__}"
                 )
-        else:
-            raise TypeError(
-                f"Expected {model_class.__name__} instance, int, or str, got {type(item)}"
-            )
+
+        # Handle ORM instances and IDs using base method (after string check to narrow type)
+        if isinstance(item, (model_class, int)):
+            return self._resolve_object(item, model_class)  # type: ignore[arg-type]
+
+        # Unknown type
+        raise TypeError(
+            f"Expected {model_class.__name__} instance, int, or str, got {type(item)}"
+        )
 
     def update_relationships(
         self,

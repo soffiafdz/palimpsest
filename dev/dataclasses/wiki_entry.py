@@ -467,7 +467,7 @@ class Entry(WikiEntity):
         return "\n".join(lines)
 
     @classmethod
-    def from_file(cls, file_path: Path) -> "Entry":
+    def from_file(cls, file_path: Path) -> Optional["Entry"]:  # type: ignore[override]
         """
         Parse Entry from existing wiki file.
 

@@ -256,7 +256,7 @@ def extract_section(lines: List[str], header_name: str) -> List[str]:
             title: str = m.group(2).strip()
 
             if in_section:
-                if level <= header_level:
+                if header_level is not None and level <= header_level:
                     break  # stop at same or higher header level
             elif title == clean_header:
                 in_section = True
@@ -321,7 +321,7 @@ def find_section_line_indexes(
         if m := re.match(r"^(#+)\s+(.*)", ln.strip()):
             level: int = len(m.group(1))
             title: str = m.group(2).strip()
-            if start is not None and level <= header_level:
+            if start is not None and header_level is not None and level <= header_level:
                 return (start, idx)
             if start is None and title == clean_header:
                 start = idx + 1  # section starts after header
@@ -365,7 +365,7 @@ def update_section(
             level: int = len(m.group(1))
             title: str = m.group(2).strip()
             if in_section:
-                if level <= header_level:
+                if header_level is not None and level <= header_level:
                     # Insert new section and continue
                     out.extend(new_lines)
                     in_section = False

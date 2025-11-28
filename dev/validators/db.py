@@ -201,16 +201,21 @@ class DatabaseValidator:
             if current_rev != head_rev:
                 # Get pending migrations
                 pending = []
+                base_revision = current_rev if current_rev is not None else "base"
+                head_revision = head_rev if head_rev is not None else "head"
                 for script in script_dir.walk_revisions(
-                    base=current_rev, head=head_rev
+                    base=base_revision, head=head_revision
                 ):
                     if script.revision != current_rev:
-                        pending.append(f"  • {script.revision[:8]}: {script.doc}")
+                        rev_id = script.revision[:8] if script.revision else "unknown"
+                        pending.append(f"  • {rev_id}: {script.doc}")
 
+                current_short = current_rev[:8] if current_rev else "none"
+                head_short = head_rev[:8] if head_rev else "none"
                 return ValidationResult(
                     check_name="Migration Status",
                     passed=False,
-                    message=f"Database needs migration (current: {current_rev[:8]}, head: {head_rev[:8]})",
+                    message=f"Database needs migration (current: {current_short}, head: {head_short})",
                     details=[f"Pending migrations ({len(pending)}):"] + pending + ["", "Run: metadb migration upgrade"],
                     severity="error",
                 )

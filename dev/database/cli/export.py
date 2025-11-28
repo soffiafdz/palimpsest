@@ -57,8 +57,9 @@ def export_json(ctx, output_file):
         db = get_db(ctx)
         click.echo(f"📤 Exporting to JSON: {output_file}")
 
+        export_mgr = ExportManager()
         with db.session_scope() as session:
-            exported = ExportManager.export_to_json(session, output_file)
+            exported = export_mgr.export_to_json(session, output_file)
 
         click.echo(f"✅ Export complete: {exported}")
 

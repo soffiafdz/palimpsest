@@ -222,7 +222,7 @@ class Location(WikiEntity):
         return render_template("location", variables)
 
     @classmethod
-    def from_file(cls, file_path: Path) -> Optional["Location"]:
+    def from_file(cls, file_path: Path) -> Optional["Location"]:  # type: ignore[override]
         """
         Parse Location from existing wiki file to extract editable fields.
 
@@ -289,4 +289,8 @@ class Location(WikiEntity):
         """Days between first and last visit."""
         if not self.visits or len(self.visits) < 2:
             return 0
-        return (self.last_visit - self.first_visit).days
+        last = self.last_visit
+        first = self.first_visit
+        if last is None or first is None:
+            return 0
+        return (last - first).days

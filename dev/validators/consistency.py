@@ -379,7 +379,7 @@ class ConsistencyValidator:
                     try:
                         from dev.utils import fs
 
-                        current_hash = fs.hash_file(file_path)
+                        current_hash = fs.get_file_hash(file_path)
                         if current_hash != entry.file_hash:
                             issue = ConsistencyIssue(
                                 check_type="integrity",

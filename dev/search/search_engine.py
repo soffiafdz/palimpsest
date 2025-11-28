@@ -238,7 +238,16 @@ class SearchEngine:
 
         if query.text:
             # Execute FTS search
-            search_mgr = SearchIndexManager(self.session.bind)
+            bind = self.session.bind
+            if bind is None:
+                raise ValueError("Database session has no bind (engine)")
+            from sqlalchemy.engine import Engine
+            from sqlalchemy import Connection
+            if isinstance(bind, Connection):
+                engine = bind.engine
+            else:
+                engine = bind
+            search_mgr = SearchIndexManager(engine)
 
             try:
                 fts_results = search_mgr.search(

@@ -106,7 +106,7 @@ def _update_entry(wiki_entry: WikiEntry, wiki_file: Path, db: PalimpsestDB, logg
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error updating entry: {e}")
+            logger.log_error(e, {"operation": "update_entry_edits", "file": str(wiki_file)})
         return "error"
 
 
@@ -169,7 +169,7 @@ def _update_event(wiki_event: WikiEvent, wiki_file: Path, db: PalimpsestDB, logg
 
     except Exception as e:
         if logger:
-            logger.log_error(f"Error updating event: {e}")
+            logger.log_error(e, {"operation": "update_event_edits", "file": str(wiki_file)})
         return "error"
 
 

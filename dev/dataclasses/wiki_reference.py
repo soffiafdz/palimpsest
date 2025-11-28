@@ -238,13 +238,15 @@ class Reference(WikiEntity):
         """Date of first citation."""
         if not self.citations:
             return None
-        dates = [c.get("entry_date") for c in self.citations if c.get("entry_date")]
-        return min(dates) if dates else None
+        dates = [c.get("entry_date") for c in self.citations]
+        valid_dates = [d for d in dates if d is not None]
+        return min(valid_dates) if valid_dates else None
 
     @property
     def last_cited(self) -> Optional[date]:
         """Date of last citation."""
         if not self.citations:
             return None
-        dates = [c.get("entry_date") for c in self.citations if c.get("entry_date")]
-        return max(dates) if dates else None
+        dates = [c.get("entry_date") for c in self.citations]
+        valid_dates = [d for d in dates if d is not None]
+        return max(valid_dates) if valid_dates else None

@@ -409,28 +409,31 @@ class SyncStateManager:
         ).count()
 
         # By entity type
-        by_entity_type = dict(
-            self.session.query(
+        by_entity_type = {
+            entity_type: count
+            for entity_type, count in self.session.query(
                 SyncState.entity_type,
                 func.count(SyncState.id)
             ).group_by(SyncState.entity_type).all()
-        )
+        }
 
         # By sync source
-        by_source = dict(
-            self.session.query(
+        by_source = {
+            sync_source: count
+            for sync_source, count in self.session.query(
                 SyncState.sync_source,
                 func.count(SyncState.id)
             ).group_by(SyncState.sync_source).all()
-        )
+        }
 
         # By machine
-        by_machine = dict(
-            self.session.query(
+        by_machine = {
+            machine_id: count
+            for machine_id, count in self.session.query(
                 SyncState.machine_id,
                 func.count(SyncState.id)
             ).group_by(SyncState.machine_id).all()
-        )
+        }
 
         return {
             'total': total,

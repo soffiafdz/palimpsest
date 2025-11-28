@@ -246,7 +246,7 @@ class Event(WikiEntity):
         return render_template("event", variables)
 
     @classmethod
-    def from_file(cls, file_path: Path) -> Optional["Event"]:
+    def from_file(cls, file_path: Path) -> Optional["Event"]:  # type: ignore[override]
         """
         Parse Event from existing wiki file to extract editable fields.
 

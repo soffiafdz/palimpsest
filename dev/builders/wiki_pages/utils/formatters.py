@@ -51,7 +51,7 @@ def format_entity_link(
     }
 
     subdir = type_map.get(entity_type.lower(), entity_type)
-    return relative_link(wiki_dir / subdir / f"{name}.md", wiki_dir, journal_dir)
+    return relative_link(wiki_dir / subdir / f"{name}.md", wiki_dir)
 
 
 def format_date_link(
@@ -77,7 +77,6 @@ def format_date_link(
     return relative_link(
         wiki_dir / str(year) / month / day_file,
         wiki_dir,
-        journal_dir,
     )
 
 

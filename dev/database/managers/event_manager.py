@@ -95,7 +95,7 @@ class EventManager(BaseManager):
     @handle_db_errors
     @log_database_operation("get_event")
     def get(
-        self, event_name: str = None, event_id: int = None, include_deleted: bool = False
+        self, event_name: Optional[str] = None, event_id: Optional[int] = None, include_deleted: bool = False
     ) -> Optional[Event]:
         """
         Retrieve an event by name or ID.
@@ -224,9 +224,10 @@ class EventManager(BaseManager):
         Raises:
             ValidationError: If event_name is empty or invalid
         """
-        event_name = DataValidator.normalize_string(event_name)
-        if not event_name:
+        normalized_name = DataValidator.normalize_string(event_name)
+        if not normalized_name:
             raise ValidationError("Event name cannot be empty")
+        event_name = normalized_name
 
         # Try to get existing event
         event = self.get(event_name=event_name)

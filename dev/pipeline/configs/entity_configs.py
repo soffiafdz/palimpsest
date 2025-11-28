@@ -9,7 +9,7 @@ This module defines configuration objects for all exportable entity types,
 replacing the need for separate export functions in ms2wiki.py.
 """
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from dev.database.models_manuscript import (
     ManuscriptEntry as DBManuscriptEntry,
@@ -61,7 +61,7 @@ def _build_manuscript_event_query(session: Session):
         .join(DBEvent)
         .options(
             joinedload(DBManuscriptEvent.event).joinedload(DBEvent.entries),
-            joinedload(DBManuscriptEvent.themes),
+            selectinload(DBManuscriptEvent.themes),  # type: ignore[attr-defined]
         )
     )
 

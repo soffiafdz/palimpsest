@@ -187,7 +187,7 @@ class EntityImporter:
 
         except Exception as e:
             if self.logger:
-                self.logger.log_error(f"Error importing {wiki_file}: {e}")
+                self.logger.log_error(e, {"operation": "import_entity", "file": str(wiki_file)})
             return "error"
 
     def _update_stats(self, stats: ImportStats, status: str) -> None:

@@ -47,6 +47,9 @@ class WikiEntity(ABC):
     - Theme: Themes
     - Vignette: Vignettes
     """
+    # Required attribute that all subclasses must have
+    path: Path
+
     @classmethod
     @abstractmethod
     def from_file(cls: Type[T], path: Path) -> Optional[T]:

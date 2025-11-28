@@ -151,7 +151,7 @@ class EntityExporter:
             List of ORM entity instances
         """
         query = config.query_builder(session)
-        return session.execute(query).unique().scalars().all()
+        return list(session.execute(query).unique().scalars().all())
 
     def _process_entity(
         self,

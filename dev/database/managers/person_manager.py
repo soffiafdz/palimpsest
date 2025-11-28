@@ -47,7 +47,7 @@ Usage:
     person_mgr.add_alias(person, "Ali")
     person_mgr.add_aliases(person, ["Allie", "A."])
 """
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, cast
 from datetime import datetime, timezone
 
 from dev.core.validators import DataValidator
@@ -77,8 +77,8 @@ class PersonManager(BaseManager):
     @log_database_operation("person_exists")
     def exists(
         self,
-        person_name: str = None,
-        person_full_name: str = None,
+        person_name: Optional[str] = None,
+        person_full_name: Optional[str] = None,
         include_deleted: bool = False,
     ) -> bool:
         """
@@ -118,9 +118,9 @@ class PersonManager(BaseManager):
     @log_database_operation("get_person")
     def get(
         self,
-        person_name: str = None,
-        person_full_name: str = None,
-        person_id: int = None,
+        person_name: Optional[str] = None,
+        person_full_name: Optional[str] = None,
+        person_id: Optional[int] = None,
         include_deleted: bool = False,
     ) -> Optional[Person]:
         """
@@ -332,13 +332,13 @@ class PersonManager(BaseManager):
         Raises:
             ValidationError: If name is ambiguous and full_name not provided
         """
-        person_name = DataValidator.normalize_string(person_name)
-        if not person_name:
+        normalized_name = DataValidator.normalize_string(person_name)
+        if not normalized_name:
             raise ValidationError("Person name cannot be empty")
 
         # Try to get existing person
         try:
-            person = self.get(person_name=person_name)
+            person = self.get(person_name=normalized_name)
             if person:
                 return person
         except ValidationError as e:
@@ -351,7 +351,7 @@ class PersonManager(BaseManager):
                 raise  # Re-raise ValidationError about ambiguity
 
         # Person doesn't exist - create it
-        metadata = {"name": person_name}
+        metadata: Dict[str, Any] = {"name": normalized_name}
         if full_name:
             metadata["full_name"] = full_name
 
@@ -429,7 +429,7 @@ class PersonManager(BaseManager):
                 metadata["relation_type"], RelationType, "relation_type"
             )
             if relation_type:
-                person.relation_type = relation_type
+                person.relation_type = relation_type  # type: ignore[misc]
 
         # Update relationships
         self._update_relationships(person, metadata, incremental=True)
@@ -805,15 +805,20 @@ class PersonManager(BaseManager):
             List of Person objects, ordered by name
         """
         # Normalize type
+        normalized_type: Optional[RelationType] = None
         if isinstance(relation_type, str):
-            relation_type = DataValidator.normalize_enum(
+            enum_result = DataValidator.normalize_enum(
                 relation_type, RelationType, "relation_type"
             )
+            if enum_result is not None:
+                normalized_type = cast(RelationType, enum_result)
+        else:
+            normalized_type = relation_type
 
-        if relation_type is None:
+        if normalized_type is None:
             return []
 
-        query = self.session.query(Person).filter_by(relation_type=relation_type)
+        query = self.session.query(Person).filter_by(relation_type=normalized_type)
 
         if not include_deleted:
             query = query.filter(Person.deleted_at.is_(None))

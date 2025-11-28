@@ -233,5 +233,6 @@ class Poem(WikiEntity):
         """Date of first version."""
         if not self.versions:
             return None
-        dates = [v.get("revision_date") for v in self.versions if v.get("revision_date")]
-        return min(dates) if dates else None
+        dates = [v.get("revision_date") for v in self.versions]
+        valid_dates = [d for d in dates if d is not None]
+        return min(valid_dates) if valid_dates else None

@@ -82,7 +82,7 @@ def frontmatter(ctx: click.Context, file_path: Optional[str]) -> None:
         report = validator.validate_all()
 
         # Filter to only frontmatter issues
-        frontmatter_issues = [i for i in report.issues if i.category == "frontmatter"]
+        frontmatter_issues = [i for i in (report.issues or []) if i.category == "frontmatter"]
         report.issues = frontmatter_issues
         report.total_errors = sum(1 for i in frontmatter_issues if i.severity == "error")
         report.total_warnings = sum(

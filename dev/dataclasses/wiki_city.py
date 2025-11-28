@@ -235,7 +235,7 @@ class City(WikiEntity):
         return render_template("city", variables)
 
     @classmethod
-    def from_file(cls, file_path: Path) -> Optional["City"]:
+    def from_file(cls, file_path: Path) -> Optional["City"]:  # type: ignore[override]
         """
         Parse City from existing wiki file to extract editable fields.
 
@@ -270,7 +270,7 @@ class City(WikiEntity):
                 country=None,  # Not parsed from wiki, comes from database
                 entries=[],  # Not parsed from wiki, comes from database
                 locations=[],  # Not parsed from wiki, comes from database
-                visit_freq={},  # Not parsed from wiki, comes from database
+                visit_frequency={},  # Not parsed from wiki, comes from database
                 notes=notes,
             )
         except Exception as e:

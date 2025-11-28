@@ -361,4 +361,4 @@ def safe_logger(logger: Optional[PalimpsestLogger]) -> PalimpsestLogger:
     Returns:
         The provided logger or a NullLogger instance
     """
-    return logger if logger is not None else _null_logger
+    return logger if logger is not None else _null_logger  # type: ignore[return-value]

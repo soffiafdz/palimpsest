@@ -393,20 +393,22 @@ class TombstoneManager:
         total = self.session.query(AssociationTombstone).count()
 
         # Count by table
-        by_table = dict(
-            self.session.query(
+        by_table = {
+            table_name: count
+            for table_name, count in self.session.query(
                 AssociationTombstone.table_name,
                 func.count(AssociationTombstone.id)
             ).group_by(AssociationTombstone.table_name).all()
-        )
+        }
 
         # Count by sync source
-        by_source = dict(
-            self.session.query(
+        by_source = {
+            sync_source: count
+            for sync_source, count in self.session.query(
                 AssociationTombstone.sync_source,
                 func.count(AssociationTombstone.id)
             ).group_by(AssociationTombstone.sync_source).all()
-        )
+        }
 
         # Expired count
         expired_count = self.session.query(AssociationTombstone).filter(

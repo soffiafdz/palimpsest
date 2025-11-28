@@ -40,7 +40,7 @@ def get_all_entries(session: Session) -> List[DBEntry]:
         List of all entries ordered by date
     """
     query = select(DBEntry).order_by(DBEntry.date)
-    return session.execute(query).scalars().all()
+    return list(session.execute(query).scalars().all())
 
 
 def get_entry_statistics(session: Session) -> Dict:
@@ -125,8 +125,8 @@ def get_people_statistics(session: Session) -> Dict:
     # Count by relation
     relation_counts = Counter()
     for person in all_people:
-        if person.relation:
-            relation_counts[person.relation] += 1
+        if hasattr(person, 'relation_type') and person.relation_type:
+            relation_counts[person.relation_type] += 1
 
     return {
         "total_people": total_people,
@@ -151,7 +151,7 @@ def get_location_statistics(session: Session) -> Dict:
 
     all_cities = session.execute(select(DBCity)).scalars().all()
     cities_with_counts = [(c, len(c.entries)) for c in all_cities]
-    cities_with_counts.sort(key=lambda x: (-x[1], x[0].name))
+    cities_with_counts.sort(key=lambda x: (-x[1], getattr(x[0], 'name', '')))
     top_cities = cities_with_counts[:10]
 
     return {
@@ -176,7 +176,7 @@ def get_tag_statistics(session: Session) -> Dict:
     total_tags = len(all_tags)
 
     tags_with_counts = [(t, len(t.entries)) for t in all_tags]
-    tags_with_counts.sort(key=lambda x: (-x[1], x[0].name))
+    tags_with_counts.sort(key=lambda x: (-x[1], getattr(x[0], 'name', '')))
     top_tags = tags_with_counts[:20]
 
     return {
@@ -188,12 +188,14 @@ def get_tag_statistics(session: Session) -> Dict:
 
 def get_event_count(session: Session) -> int:
     """Get total event count."""
-    return session.execute(select(func.count(DBEvent.id))).scalar()
+    result = session.execute(select(func.count(DBEvent.id))).scalar()
+    return result if result is not None else 0
 
 
 def get_theme_count(session: Session) -> int:
     """Get total theme count."""
-    return session.execute(select(func.count(DBTheme.id))).scalar()
+    result = session.execute(select(func.count(DBTheme.id))).scalar()
+    return result if result is not None else 0
 
 
 def get_top_entities(

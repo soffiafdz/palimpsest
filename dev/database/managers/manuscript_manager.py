@@ -256,7 +256,7 @@ class ManuscriptManager(BaseManager):
         else:
             # Create new manuscript person
             if not manuscript_data.get("delete", False):
-                child_data["person_id"] = person.id
+                child_data["person_id"] = str(person.id)
                 ms_person = ManuscriptPerson(**child_data)
                 self.session.add(ms_person)
                 self.session.flush()
@@ -534,15 +534,6 @@ class ManuscriptManager(BaseManager):
         if not include_deleted:
             query = query.filter(Theme.deleted_at.is_(None))
         return query.order_by(Theme.theme).all()
-
-    @handle_db_errors
-    @log_database_operation("get_all_arcs")
-    def get_all_arcs(self, include_deleted: bool = False) -> List[Arc]:
-        """Get all arcs."""
-        query = self.session.query(Arc)
-        if not include_deleted:
-            query = query.filter(Arc.deleted_at.is_(None))
-        return query.order_by(Arc.arc).all()
 
     # =========================================================================
     # QUERY METHODS

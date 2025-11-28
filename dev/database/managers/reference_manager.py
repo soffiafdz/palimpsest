@@ -40,7 +40,7 @@ Usage:
         "entry": entry
     })
 """
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, cast
 
 from dev.core.validators import DataValidator
 from dev.core.exceptions import ValidationError, DatabaseError
@@ -95,7 +95,7 @@ class ReferenceManager(BaseManager):
     @handle_db_errors
     @log_database_operation("get_source")
     def get_source(
-        self, title: str = None, source_id: int = None
+        self, title: Optional[str] = None, source_id: Optional[int] = None
     ) -> Optional[ReferenceSource]:
         """
         Retrieve a reference source by title or ID.
@@ -183,7 +183,7 @@ class ReferenceManager(BaseManager):
         author = DataValidator.normalize_string(metadata.get("author"))
 
         # Validate author requirement for certain types
-        if ref_type.requires_author and not author:
+        if cast(ReferenceType, ref_type).requires_author and not author:
             if self.logger:
                 self.logger.log_warning(
                     f"Source type '{ref_type.value}' typically requires an author",
@@ -235,7 +235,7 @@ class ReferenceManager(BaseManager):
                 metadata["type"], ReferenceType, "type"
             )
             if ref_type:
-                source.type = ref_type
+                source.type = ref_type  # type: ignore[misc]
 
         # Update title
         if "title" in metadata:
@@ -266,9 +266,10 @@ class ReferenceManager(BaseManager):
             - Use with caution if references exist
         """
         if isinstance(source, int):
-            source = self.session.get(ReferenceSource, source)
-            if not source:
+            fetched_source = self.session.get(ReferenceSource, source)
+            if not fetched_source:
                 raise DatabaseError(f"ReferenceSource not found with id: {source}")
+            source = fetched_source
 
         if self.logger:
             self.logger.log_debug(
@@ -507,7 +508,7 @@ class ReferenceManager(BaseManager):
         if "mode" in metadata:
             mode = DataValidator.normalize_enum(metadata["mode"], ReferenceMode, "mode")
             if mode:
-                reference.mode = mode
+                reference.mode = mode  # type: ignore[misc]
 
         # Update entry
         if "entry" in metadata:
@@ -549,9 +550,10 @@ class ReferenceManager(BaseManager):
             - Does not affect the ReferenceSource
         """
         if isinstance(reference, int):
-            reference = self.session.get(Reference, reference)
-            if not reference:
+            fetched_ref = self.session.get(Reference, reference)
+            if not fetched_ref:
                 raise DatabaseError(f"Reference not found with id: {reference}")
+            reference = fetched_ref
 
         if self.logger:
             self.logger.log_debug(
@@ -611,12 +613,16 @@ class ReferenceManager(BaseManager):
             List of ReferenceSource objects, ordered by title
         """
         # Normalize type
+        normalized_type: Union[ReferenceType, str, None] = source_type
         if isinstance(source_type, str):
-            source_type = DataValidator.normalize_enum(
-                source_type, ReferenceType, "source_type"
+            normalized_type = cast(
+                Optional[ReferenceType],
+                DataValidator.normalize_enum(
+                    source_type, ReferenceType, "source_type"
+                )
             )
 
-        if source_type is None:
+        if normalized_type is None:
             return []
 
-        return self.get_all_sources(source_type=source_type)
+        return self.get_all_sources(source_type=normalized_type)

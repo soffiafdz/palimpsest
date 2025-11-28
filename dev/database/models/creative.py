@@ -319,7 +319,7 @@ class Poem(Base):
         """Get the most recent version of this poem."""
         if not self.versions:
             return None
-        return max(self.versions, key=lambda v: v.revision_date)
+        return max(self.versions, key=lambda v: v.revision_date or date.min)
 
     def __repr__(self) -> str:
         return f"<Poem(id={self.id}, title={self.title})>"

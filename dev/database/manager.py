@@ -109,6 +109,7 @@ from .models import (
     PoemVersion,
     Tag,
 )
+from .models_manuscript import Theme
 
 from .decorators import (
     handle_db_errors,
@@ -453,6 +454,8 @@ class PalimpsestDB:
 
     def _update_alembic_env(self) -> None:
         """Update the generated alembic/env.py to import Palimpsest models."""
+        if self.alembic_dir is None:
+            raise DatabaseError("Alembic directory not configured")
         env_path = self.alembic_dir / "env.py"
 
         try:
@@ -811,9 +814,11 @@ class PalimpsestDB:
                 if not location_name:
                     continue
                 # Try to find existing location by name only
-                location = location_mgr.get(location_name=location_name)
-                if not location:
+                # Type narrowing: LocationManager.get returns Optional[Location]
+                location_result = location_mgr.get_location(location_name=location_name)  # type: ignore[attr-defined]
+                if not location_result:
                     continue
+                location = location_result
             elif isinstance(loc_spec, Location):
                 location = loc_spec
             else:
@@ -860,15 +865,15 @@ class PalimpsestDB:
                         })
 
             # Create reference via manager
-            reference_mgr.create({
+            ref_metadata = {
                 "content": content,
                 "description": description,
                 "mode": ref_data.get("mode", "direct"),
-                "type": ref_data.get("type"),
                 "speaker": ref_data.get("speaker"),
-                "entry_id": entry.id,
-                "source_id": source.id if source else None,
-            })
+                "entry": entry,
+                "source": source,
+            }
+            reference_mgr.create_reference(ref_metadata)
 
     @staticmethod
     def _process_poems_static(

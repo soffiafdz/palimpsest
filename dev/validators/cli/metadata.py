@@ -87,7 +87,7 @@ def people(ctx: click.Context, file_path: Optional[str]) -> None:
         report = validator.validate_all()
 
         # Filter to only people issues
-        people_issues = [i for i in report.issues if i.field_name.startswith("people")]
+        people_issues = [i for i in (report.issues or []) if i.field_name.startswith("people")]
         report.issues = people_issues
         report.total_errors = sum(1 for i in people_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in people_issues if i.severity == "warning")
@@ -145,7 +145,7 @@ def locations(ctx: click.Context, file_path: Optional[str]) -> None:
         # Filter to only locations issues
         location_issues = [
             i
-            for i in report.issues
+            for i in (report.issues or [])
             if i.field_name.startswith("locations") or i.field_name.startswith("city")
         ]
         report.issues = location_issues
@@ -200,7 +200,7 @@ def dates(ctx: click.Context, file_path: Optional[str]) -> None:
         report = validator.validate_all()
 
         # Filter to only dates issues
-        date_issues = [i for i in report.issues if i.field_name.startswith("dates")]
+        date_issues = [i for i in (report.issues or []) if i.field_name.startswith("dates")]
         report.issues = date_issues
         report.total_errors = sum(1 for i in date_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in date_issues if i.severity == "warning")
@@ -252,7 +252,7 @@ def references(ctx: click.Context, file_path: Optional[str]) -> None:
         report = validator.validate_all()
 
         # Filter to only references issues
-        ref_issues = [i for i in report.issues if i.field_name.startswith("references")]
+        ref_issues = [i for i in (report.issues or []) if i.field_name.startswith("references")]
         report.issues = ref_issues
         report.total_errors = sum(1 for i in ref_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in ref_issues if i.severity == "warning")
@@ -303,7 +303,7 @@ def poems(ctx: click.Context, file_path: Optional[str]) -> None:
         report = validator.validate_all()
 
         # Filter to only poems issues
-        poem_issues = [i for i in report.issues if i.field_name.startswith("poems")]
+        poem_issues = [i for i in (report.issues or []) if i.field_name.startswith("poems")]
         report.issues = poem_issues
         report.total_errors = sum(1 for i in poem_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in poem_issues if i.severity == "warning")

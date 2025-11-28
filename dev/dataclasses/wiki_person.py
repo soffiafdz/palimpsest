@@ -90,6 +90,9 @@ class Person(WikiEntity):
         # -- notes --
         notes = cls._parse_notes(lines)
 
+        if name is None:
+            raise ValueError(f"Could not extract person name from {path}")
+
         return cls(
             path=path,
             wiki_dir=Path("."),  # Placeholder for from_file
@@ -395,7 +398,7 @@ class Person(WikiEntity):
     # ---- parser helpers ----
     # -- name --
     @staticmethod
-    def _parse_name(lines: List[str]) -> str:
+    def _parse_name(lines: List[str]) -> Optional[str]:
         """Look into people/person.md to extract person's name."""
         name: Optional[str] = None
         for ln in lines:

@@ -60,7 +60,7 @@ class MetadataValidationReport:
     files_with_warnings: int = 0
     total_errors: int = 0
     total_warnings: int = 0
-    issues: List[MetadataIssue] = None
+    issues: Optional[List[MetadataIssue]] = None
 
     def __post_init__(self):
         if self.issues is None:

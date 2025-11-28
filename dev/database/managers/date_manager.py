@@ -78,7 +78,7 @@ class DateManager(BaseManager):
     @handle_db_errors
     @log_database_operation("get_mentioned_date")
     def get(
-        self, target_date: date = None, date_id: int = None
+        self, target_date: Optional[date] = None, date_id: Optional[int] = None
     ) -> Optional[MentionedDate]:
         """
         Retrieve a mentioned date by date value or ID.
@@ -240,9 +240,10 @@ class DateManager(BaseManager):
             - All relationships are cascade deleted
         """
         if isinstance(mentioned_date, int):
-            mentioned_date = self.session.get(MentionedDate, mentioned_date)
-            if not mentioned_date:
+            fetched_date = self.session.get(MentionedDate, mentioned_date)
+            if not fetched_date:
                 raise DatabaseError(f"MentionedDate not found with id: {mentioned_date}")
+            mentioned_date = fetched_date
 
         if self.logger:
             self.logger.log_debug(

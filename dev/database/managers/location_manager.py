@@ -40,7 +40,7 @@ Usage:
     # Query locations by city
     seattle_locations = loc_mgr.get_locations_for_city(city)
 """
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 
 from dev.core.validators import DataValidator
 from dev.core.exceptions import ValidationError, DatabaseError
@@ -86,7 +86,7 @@ class LocationManager(BaseManager):
     @handle_db_errors
     @log_database_operation("get_city")
     def get_city(
-        self, city_name: str = None, city_id: int = None
+        self, city_name: Optional[str] = None, city_id: Optional[int] = None
     ) -> Optional[City]:
         """
         Retrieve a city by name or ID.
@@ -101,7 +101,7 @@ class LocationManager(BaseManager):
         Notes:
             - If both provided, ID takes precedence
         """
-        if city_id is not None:
+        if city_id is not None:  # type: ignore[reportUnnecessaryComparison]
             return self.session.get(City, city_id)
 
         if city_name is not None:
@@ -235,7 +235,7 @@ class LocationManager(BaseManager):
             - Consider updating locations first or using cascading deletes
         """
         if isinstance(city, int):
-            city = self.session.get(City, city)
+            city = self.session.get(City, city)  # type: ignore[assignment]
             if not city:
                 raise DatabaseError(f"City not found with id: {city}")
 
@@ -378,7 +378,7 @@ class LocationManager(BaseManager):
     @handle_db_errors
     @log_database_operation("get_location")
     def get_location(
-        self, location_name: str = None, location_id: int = None
+        self, location_name: Optional[str] = None, location_id: Optional[int] = None
     ) -> Optional[Location]:
         """
         Retrieve a location by name or ID.
@@ -393,7 +393,7 @@ class LocationManager(BaseManager):
         Notes:
             - If both provided, ID takes precedence
         """
-        if location_id is not None:
+        if location_id is not None:  # type: ignore[reportUnnecessaryComparison]
             return self.session.get(Location, location_id)
 
         if location_name is not None:
@@ -541,7 +541,7 @@ class LocationManager(BaseManager):
             - All relationships are cascade deleted
         """
         if isinstance(location, int):
-            location = self.session.get(Location, location)
+            location = self.session.get(Location, location)  # type: ignore[assignment]
             if not location:
                 raise DatabaseError(f"Location not found with id: {location}")
 
