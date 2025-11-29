@@ -38,13 +38,13 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 ### Data Flow Principles
 
 1. **Journal → Database**: Single source of truth for life events.
-   *Rationale*: Journal entries (Markdown with YAML frontmatter) are considered the primary record for raw life events and their initial metadata. This ensures human-readability, version control (via Git), and allows for manual curation of source data before it's processed into a structured database. The database then acts as a derived, structured representation of this source.
+   _Rationale_: Journal entries (Markdown with YAML frontmatter) are considered the primary record for raw life events and their initial metadata. This ensures human-readability, version control (via Git), and allows for manual curation of source data before it's processed into a structured database. The database then acts as a derived, structured representation of this source.
 
 2. **Database → Wiki**: Auto-generated navigation & exploration.
-   *Rationale*: The wiki is designed as a browsable, interlinked interface for the structured data within the database. It is auto-generated to reflect the current state of the database accurately, providing a consistent view for exploration without requiring manual wiki upkeep. This one-way generation prevents the wiki from becoming a conflicting source of structural truth.
+   _Rationale_: The wiki is designed as a browsable, interlinked interface for the structured data within the database. It is auto-generated to reflect the current state of the database accurately, providing a consistent view for exploration without requiring manual wiki upkeep. This one-way generation prevents the wiki from becoming a conflicting source of structural truth.
 
 3. **Wiki → Database**: Editable notes only (not structural data).
-   *Rationale*: While the wiki is primarily for browsing, it also serves as a workspace for adding editorial notes, planning manuscript adaptations, and enriching entities with free-form text. These specific "notes" fields are allowed to sync back to the database, ensuring that valuable human annotations are preserved and integrated, but without allowing the wiki to alter the core structural metadata (e.g., dates, relationships, core facts) which remains owned by the Journal YAML and managed by the database.
+   _Rationale_: While the wiki is primarily for browsing, it also serves as a workspace for adding editorial notes, planning manuscript adaptations, and enriching entities with free-form text. These specific "notes" fields are allowed to sync back to the database, ensuring that valuable human annotations are preserved and integrated, but without allowing the wiki to alter the core structural metadata (e.g., dates, relationships, core facts) which remains owned by the Journal YAML and managed by the database.
 
 ---
 
@@ -53,25 +53,28 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 ### Three Synchronization Paths
 
 #### Path 1: YAML ↔ SQL (Journal Entries)
+
 - **Purpose**: Capture and persist journal metadata. This path is crucial for integrating raw journal entries (the primary data source) with the structured database.
 - **Direction**: Fully bidirectional. This allows both:
-    - YAML → SQL: For processing new entries and updates made directly in Markdown files. This is the most common flow for daily journaling.
-    - SQL → YAML: For exporting data from the database back into Markdown, useful for backups, batch editing, or regenerating Markdown files if the database schema evolves.
+  - YAML → SQL: For processing new entries and updates made directly in Markdown files. This is the most common flow for daily journaling.
+  - SQL → YAML: For exporting data from the database back into Markdown, useful for backups, batch editing, or regenerating Markdown files if the database schema evolves.
 - **Primary Flow**: YAML → SQL (journaling workflow)
 - **Reverse Flow**: SQL → YAML (export/backup)
-   *Design Rationale*: A fully bidirectional sync for this core path ensures that Markdown files remain human-editable and version-controlled (via Git), while the database provides efficient querying and relationship management. The reverse flow (SQL → YAML) provides resilience and flexibility, allowing the Markdown files to be a derived representation that can be regenerated from the database's single source of truth when needed.
+  _Design Rationale_: A fully bidirectional sync for this core path ensures that Markdown files remain human-editable and version-controlled (via Git), while the database provides efficient querying and relationship management. The reverse flow (SQL → YAML) provides resilience and flexibility, allowing the Markdown files to be a derived representation that can be regenerated from the database's single source of truth when needed.
 
 #### Path 2: SQL → Wiki (Entity Export)
+
 - **Purpose**: Generate navigable wiki for exploration. The wiki serves as a dynamic, interconnected interface for browsing the rich metadata stored in the database.
 - **Direction**: One-way (SQL → Wiki). This path ensures that the wiki always reflects the authoritative state of the database.
 - **Update Mode**: Regenerate from database.
-   *Design Rationale*: Making this flow strictly one-way and regeneration-based prevents the wiki from becoming a conflicting source of structural truth. Any structural changes (e.g., adding a person, defining an event) must originate in the Journal YAML and flow through the database to maintain data integrity. The wiki is a *view* of the data, not a primary editing interface for structural metadata.
+  _Design Rationale_: Making this flow strictly one-way and regeneration-based prevents the wiki from becoming a conflicting source of structural truth. Any structural changes (e.g., adding a person, defining an event) must originate in the Journal YAML and flow through the database to maintain data integrity. The wiki is a _view_ of the data, not a primary editing interface for structural metadata.
 
 #### Path 3: Wiki → SQL (Entity Import)
+
 - **Purpose**: Sync user edits back to database. This specifically targets human annotations and qualitative data added directly within the wiki environment.
 - **Direction**: One-way (Wiki → SQL). The import only updates specific, pre-defined "editable" fields.
 - **Update Mode**: Import only editable fields.
-   *Design Rationale*: This constrained import mechanism allows the wiki to function as an effective workspace for adding context, narrative notes, and manuscript-specific details without risking the integrity of the core, structured metadata. By limiting wiki-to-database sync to designated editable fields (e.g., `notes`), it reinforces the database as the central authority for structural data, while valuing the human element of annotation.
+  _Design Rationale_: This constrained import mechanism allows the wiki to function as an effective workspace for adding context, narrative notes, and manuscript-specific details without risking the integrity of the core, structured metadata. By limiting wiki-to-database sync to designated editable fields (e.g., `notes`), it reinforces the database as the central authority for structural data, while valuing the human element of annotation.
 
 ### Complete Data Flow
 
@@ -91,19 +94,19 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 ┌─────────────────────────────────────────────────────┐
 │                   SQL Database                      │
 │                                                     │
-│  ┌──────────┐  ┌─────────┐  ┌──────────┐          │
-│  │ Entries  │  │ People  │  │ Events   │          │
-│  └────┬─────┘  └────┬────┘  └────┬─────┘          │
-│       │             │            │                 │
-│       └─────────────┴────────────┘                 │
-│              Relationships                         │
+│  ┌──────────┐  ┌─────────┐  ┌──────────┐            │
+│  │ Entries  │  │ People  │  │ Events   │            │
+│  └────┬─────┘  └────┬────┘  └────┬─────┘            │
+│       │             │            │                  │
+│       └─────────────┴────────────┘                  │
+│              Relationships                          │
 │                                                     │
-│  ┌──────────────────────────────────────┐          │
-│  │  Manuscript Tables (Subwiki)         │          │
-│  │  - ManuscriptEntry                   │          │
-│  │  - ManuscriptPerson (Characters)     │          │
-│  │  - ManuscriptEvent (Plot points)     │          │
-│  └──────────────────────────────────────┘          │
+│  ┌──────────────────────────────────────┐           │
+│  │  Manuscript Tables (Subwiki)         │           │
+│  │  - ManuscriptEntry                   │           │
+│  │  - ManuscriptPerson (Characters)     │           │
+│  │  - ManuscriptEvent (Plot points)     │           │
+│  └──────────────────────────────────────┘           │
 └───────────┬─────────────────────┬───────────────────┘
             │                     │
             │ sql2wiki            │ manuscript2wiki
@@ -133,10 +136,10 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 ┌─────────────────────────────────────────────────────┐
 │         Database (Notes Updated)                    │
 │                                                     │
-│  Entry.notes ← wiki edits                          │
-│  Person.notes ← wiki edits                         │
-│  ManuscriptEntry.notes ← manuscript wiki edits     │
-│  ManuscriptEntry.character_notes ← manuscript wiki │
+│  Entry.notes ← wiki edits                           │
+│  Person.notes ← wiki edits                          │
+│  ManuscriptEntry.notes ← manuscript wiki edits      │
+│  ManuscriptEntry.character_notes ← manuscript wiki  │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -149,6 +152,7 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 **Purpose**: Bidirectional sync between journal markdown files and database
 
 **Files**:
+
 - `plm sync-db` - Import journal → database
 - `plm export-db` - Export database → journal
 - `dev/dataclasses/md_entry.py` - Intermediary dataclass
@@ -156,11 +160,13 @@ Palimpsest implements **three-layer bidirectional synchronization**:
 ### YAML → SQL (Primary Flow)
 
 #### Use Case
+
 You write a journal entry with YAML frontmatter and import it to the database.
 
 #### Process
 
 1. **Write Journal Entry**
+
    ```yaml
    # journal/md/2024/2024-11-01.md
    ---
@@ -178,11 +184,11 @@ You write a journal entry with YAML frontmatter and import it to the database.
      status: source
      edited: true
    ---
-
    Today was transformative. Met Alice at Café Olimpico...
    ```
 
 2. **Import to Database**
+
    ```bash
    plm sync-db --file journal/md/2024/2024-11-01.md
    ```
@@ -208,16 +214,18 @@ You write a journal entry with YAML frontmatter and import it to the database.
 #### Supported YAML Fields
 
 **Core Fields** (always synced):
+
 ```yaml
-date: 2024-11-01              # Required
-word_count: 500               # Required
-reading_time: 2.5             # Required
-epigraph: "Quote text"        # Optional
+date: 2024-11-01 # Required
+word_count: 500 # Required
+reading_time: 2.5 # Required
+epigraph: "Quote text" # Optional
 epigraph_attribution: "Author" # Optional
-notes: "Editorial notes"      # Optional
+notes: "Editorial notes" # Optional
 ```
 
 **Geographic Fields**:
+
 ```yaml
 # Single city
 city: Montreal
@@ -235,6 +243,7 @@ locations:
 ```
 
 **People Fields**:
+
 ```yaml
 # Simple list
 people: [Alice, Bob, Dr-Martinez]
@@ -254,6 +263,7 @@ people:
 ```
 
 **Relationship Fields**:
+
 ```yaml
 events: [therapy-session, conference-2024]
 tags: [reflection, milestone]
@@ -269,6 +279,7 @@ dates:
 ```
 
 **Complex Fields**:
+
 ```yaml
 references:
   - content: "To be or not to be"
@@ -288,13 +299,15 @@ poems:
 ```
 
 **Manuscript Fields** (minimal in YAML):
+
 ```yaml
 manuscript:
-  status: source      # Flag for inclusion
-  edited: true        # Editing state
+  status: source # Flag for inclusion
+  edited: true # Editing state
 ```
 
 **NOT in YAML** (manuscript wiki only):
+
 - `entry_type` - Use manuscript wiki
 - `character_notes` - Use manuscript wiki
 - `narrative_arc` - Use manuscript wiki
@@ -303,11 +316,13 @@ manuscript:
 ### SQL → YAML (Reverse Flow)
 
 #### Use Case
+
 Export database back to markdown files (backup, sharing, editing).
 
 #### Process
 
 1. **Export from Database**
+
    ```bash
    # Single entry
    plm export-db --date 2024-11-01 -o output/
@@ -329,25 +344,31 @@ Export database back to markdown files (backup, sharing, editing).
 3. **Content Preservation Strategies**
 
    **Strategy 1**: Preserve existing body (default)
+
    ```python
    export_entry_to_markdown(entry, output_dir, preserve_body=True)
    ```
+
    - Reads existing markdown file
    - Extracts body content (after frontmatter)
    - Combines with NEW frontmatter from database
    - Use case: Database edits, preserve text
 
    **Strategy 2**: Use source file
+
    ```python
    # If entry.file_path exists
    ```
+
    - Reads body from original journal file
    - Use case: Initial export from database
 
    **Strategy 3**: Generate placeholder
+
    ```python
    # If no existing content
    ```
+
    - Creates minimal body: "Entry for {date}"
    - Use case: New entries without source
 
@@ -406,7 +427,6 @@ notes: |
   Editorial notes
   Multiple lines
 ---
-
 Entry body content...
 ```
 
@@ -415,6 +435,7 @@ Entry body content...
 #### Change Detection
 
 **File Hash Strategy**:
+
 ```python
 def should_skip_file(file_path: Path, stored_hash: str, force: bool) -> bool:
     """Check if file needs processing."""
@@ -426,6 +447,7 @@ def should_skip_file(file_path: Path, stored_hash: str, force: bool) -> bool:
 ```
 
 **Hash Storage**:
+
 - Field: `Entry.file_hash`
 - Type: MD5 hex string
 - Updated: On every import
@@ -434,12 +456,14 @@ def should_skip_file(file_path: Path, stored_hash: str, force: bool) -> bool:
 #### Error Handling
 
 **yaml2sql**:
+
 - Validation errors logged with context
 - Parsing failures don't stop batch processing
 - Transaction rollback on database errors
 - Comprehensive error statistics
 
 **sql2yaml**:
+
 - Missing source files handled gracefully
 - Invalid paths logged as warnings
 - Relationship loading errors caught
@@ -454,6 +478,7 @@ def should_skip_file(file_path: Path, stored_hash: str, force: bool) -> bool:
 **Purpose**: Generate navigable wiki and sync user edits
 
 **Files**:
+
 - `plm export-wiki` - Export database → wiki
 - `plm import-wiki` - Import wiki notes → database
 - `plm export-wiki` - Export manuscript subwiki
@@ -462,11 +487,13 @@ def should_skip_file(file_path: Path, stored_hash: str, force: bool) -> bool:
 ### SQL → Wiki (Export Flow)
 
 #### Use Case
+
 Generate or update vimwiki pages from database for browsing.
 
 #### Process
 
 1. **Export Entities**
+
    ```bash
    # Single entity type
    plm export-wiki people
@@ -518,6 +545,7 @@ Generate or update vimwiki pages from database for browsing.
 4. **Entity Example: Person Page**
 
    **Database Query**:
+
    ```python
    person = session.query(Person).options(
        joinedload(Person.entries),
@@ -526,6 +554,7 @@ Generate or update vimwiki pages from database for browsing.
    ```
 
    **Conversion**:
+
    ```python
    wiki_person = WikiPerson.from_database(
        db_person=person,
@@ -534,10 +563,11 @@ Generate or update vimwiki pages from database for browsing.
    ```
 
    **Generated Wiki** (`data/wiki/people/alice.md`):
+
    ```markdown
    # Palimpsest — Person
 
-   *[[../index.md|Home]] > [[../people.md|People]] > Alice*
+   _[[../index.md|Home]] > [[../people.md|People]] > Alice_
 
    ## Alice
 
@@ -571,6 +601,7 @@ Generate or update vimwiki pages from database for browsing.
    ```
 
    **Manuscript Entry Page** (`data/wiki/manuscript/entries/2024/2024-11-01.md`):
+
    ```markdown
    # Palimpsest — Manuscript Entry
 
@@ -608,6 +639,7 @@ Generate or update vimwiki pages from database for browsing.
 ### Wiki → SQL (Import Flow)
 
 #### Use Case
+
 You edit notes in wiki pages, sync changes back to database.
 
 #### Process
@@ -627,6 +659,7 @@ You edit notes in wiki pages, sync changes back to database.
    ```
 
 2. **Import Changes**
+
    ```bash
    # Import single entity type
    plm import-wiki people
@@ -698,6 +731,7 @@ You edit notes in wiki pages, sync changes back to database.
 #### Generic Entity Exporter
 
 **Configuration-Driven Design**:
+
 ```python
 # dev/pipeline/entity_exporter.py
 
@@ -723,6 +757,7 @@ stats = exporter.export_all(db, wiki_dir, journal_dir, force, logger)
 ```
 
 **Benefits**:
+
 - Reduced from ~2,600 to ~900 lines in sql2wiki.py
 - Consistent export logic across entities
 - Easy to add new entity types
@@ -731,6 +766,7 @@ stats = exporter.export_all(db, wiki_dir, journal_dir, force, logger)
 #### File Change Detection
 
 **Content Hash Strategy**:
+
 ```python
 def write_if_changed(file_path: Path, content: str, force: bool) -> str:
     """Write file only if content changed."""
@@ -750,6 +786,7 @@ def write_if_changed(file_path: Path, content: str, force: bool) -> str:
 ```
 
 **Benefits**:
+
 - Minimal file system writes
 - Preserves timestamps when unchanged
 - Fast incremental updates
@@ -761,6 +798,7 @@ def write_if_changed(file_path: Path, content: str, force: bool) -> str:
 ### Principle: Separate Concerns
 
 **Database Fields** (never in wiki):
+
 - Primary keys (`id`)
 - Foreign keys (`entry_id`, `person_id`)
 - Timestamps (`created_at`, `updated_at`)
@@ -768,6 +806,7 @@ def write_if_changed(file_path: Path, content: str, force: bool) -> str:
 - Computed properties (`age_display`, `word_count`)
 
 **Wiki-Editable Fields** (user can modify):
+
 - `notes` - Editorial/manuscript planning notes
 - `character_notes` - Character development (manuscript entries)
 - `character_description` - Character description (manuscript people)
@@ -776,6 +815,7 @@ def write_if_changed(file_path: Path, content: str, force: bool) -> str:
 - `appearance_notes` - Appearance notes (manuscript people)
 
 **Database-Only Fields** (computed/derived):
+
 - Relationship counts
 - Statistics
 - Navigation links
@@ -784,19 +824,22 @@ def write_if_changed(file_path: Path, content: str, force: bool) -> str:
 ### Manuscript Field Ownership
 
 **YAML Frontmatter** (minimal):
+
 ```yaml
 manuscript:
-  status: source    # Flag: Is this being used?
-  edited: true      # Flag: Has it been edited?
+  status: source # Flag: Is this being used?
+  edited: true # Flag: Has it been edited?
 ```
 
 **Database** (structural):
+
 - `ManuscriptEntry.status` (enum)
 - `ManuscriptEntry.edited` (boolean)
 - `ManuscriptEntry.entry_type` (enum)
 - `ManuscriptEntry.narrative_arc` (string)
 
 **Manuscript Wiki** (detailed work):
+
 - `ManuscriptEntry.notes` ← adaptation notes
 - `ManuscriptEntry.character_notes` ← character notes
 - `ManuscriptPerson.character_description` ← description
@@ -807,16 +850,19 @@ manuscript:
 ### Why This Design?
 
 **Journal YAML**:
+
 - Focuses on capturing life events
 - Minimal manuscript metadata (just flags)
 - Clean, readable, focused
 
 **Database**:
+
 - Central source of truth
 - Enforces data integrity
 - Efficient queries and relationships
 
 **Manuscript Wiki**:
+
 - Dedicated workspace for adaptation
 - Separate from source material
 - Rich editing environment for fiction planning
@@ -867,6 +913,7 @@ pytest -x
 ### Writing Tests
 
 **Example: Test YAML → SQL**:
+
 ```python
 def test_entry_with_manuscript_metadata(entry_manager, test_db, tmp_path):
     """Test creating entry with manuscript metadata."""
@@ -895,6 +942,7 @@ Entry content
 ```
 
 **Example: Test SQL → Wiki**:
+
 ```python
 def test_export_person_to_wiki(test_db, tmp_path):
     """Test exporting person from database to wiki."""
@@ -924,6 +972,7 @@ def test_export_person_to_wiki(test_db, tmp_path):
 **Cause**: Trying to create entry that already exists in database
 
 **Solution**:
+
 ```bash
 # Use update instead
 python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
@@ -937,6 +986,7 @@ python -m dev.pipeline.yaml2sql batch journal/md/2024/
 **Cause**: Files haven't changed (content hash matches)
 
 **Solution**:
+
 ```bash
 # Force regeneration
 python -m dev.pipeline.sql2wiki export all --force
@@ -953,6 +1003,7 @@ python -m dev.pipeline.sql2wiki export all --force
 **This is correct behavior!** Wiki import only updates `notes` fields. All other metadata must be edited in the database or journal YAML.
 
 **Fields that wiki import updates**:
+
 - Main wiki: `notes` only
 - Manuscript wiki: `notes`, `character_notes`, `character_description`, etc.
 
@@ -961,6 +1012,7 @@ python -m dev.pipeline.sql2wiki export all --force
 **Cause**: You may have edited structural data in wiki (dates, names, relationships)
 
 **Solution**: Wiki is read-only for structural data. Edit in journal YAML and re-import:
+
 ```bash
 # Edit journal file's YAML frontmatter
 vim journal/md/2024/2024-11-01.md
@@ -972,6 +1024,7 @@ python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-01.md
 ### Debugging
 
 **Enable verbose logging**:
+
 ```bash
 # YAML pipeline
 python -m dev.pipeline.yaml2sql update file.md --verbose
@@ -981,6 +1034,7 @@ python -m dev.pipeline.sql2wiki export people --verbose
 ```
 
 **Check database state**:
+
 ```bash
 # SQLite CLI
 sqlite3 data/metadata.db
@@ -991,6 +1045,7 @@ sqlite> SELECT * FROM people;
 ```
 
 **Inspect generated files**:
+
 ```bash
 # View wiki file
 cat data/wiki/people/alice.md
@@ -1008,6 +1063,7 @@ cat output/2024/2024-11-01.md
 **Note:** These examples show direct script invocation using `python -m dev.pipeline.X` for developer reference. For user-facing workflows, see the [Command Reference](../../user-guides/command-reference.md) which documents the installed CLI commands (`plm`, `metadb`, etc.).
 
 **YAML → SQL** (standalone script: `yaml2sql.py`):
+
 ```bash
 python -m dev.pipeline.yaml2sql update file.md
 python -m dev.pipeline.yaml2sql batch journal/md/2024/
@@ -1015,6 +1071,7 @@ python -m dev.pipeline.yaml2sql sync journal/md/ --delete-missing
 ```
 
 **SQL → YAML** (standalone script: `sql2yaml.py`):
+
 ```bash
 python -m dev.pipeline.sql2yaml export 2024-11-01 -o output/
 python -m dev.pipeline.sql2yaml range 2024-01-01 2024-12-31 -o output/
@@ -1022,6 +1079,7 @@ python -m dev.pipeline.sql2yaml all -o output/
 ```
 
 **SQL → Wiki** (standalone script: `sql2wiki.py`):
+
 ```bash
 python -m dev.pipeline.sql2wiki export people
 python -m dev.pipeline.sql2wiki export entries
@@ -1030,6 +1088,7 @@ python -m dev.pipeline.manuscript2wiki export all
 ```
 
 **Wiki → SQL** (standalone script: `wiki2sql.py`):
+
 ```bash
 python -m dev.pipeline.wiki2sql import people
 python -m dev.pipeline.wiki2sql import entries
@@ -1041,6 +1100,7 @@ python -m dev.pipeline.wiki2sql import manuscript-all
 ### Neovim Integration
 
 **Commands**:
+
 - `:PalimpsestExport` - Export all to wiki
 - `:PalimpsestExport people` - Export specific entity
 - `:PalimpsestImport` - Import wiki edits
@@ -1051,6 +1111,7 @@ python -m dev.pipeline.wiki2sql import manuscript-all
 - `:PalimpsestIndex` - Open wiki homepage
 
 **Keymaps**:
+
 - `<leader>pe` - Export all to wiki
 - `<leader>pi` - Import wiki edits
 - `<leader>ps` - Statistics dashboard
@@ -1072,12 +1133,12 @@ python -m dev.pipeline.wiki2sql import manuscript-all
 
 ### Edit Where?
 
-| What to Edit | Where | How to Sync |
-|--------------|-------|-------------|
-| Life events, relationships | Journal YAML | `plm sync-db` |
-| Editorial notes | Main wiki | `plm import-wiki` |
-| Manuscript planning | Manuscript wiki | `plm import-wiki manuscript-*` |
-| Structural changes | Journal YAML | `plm sync-db` |
+| What to Edit               | Where           | How to Sync                    |
+| -------------------------- | --------------- | ------------------------------ |
+| Life events, relationships | Journal YAML    | `plm sync-db`                  |
+| Editorial notes            | Main wiki       | `plm import-wiki`              |
+| Manuscript planning        | Manuscript wiki | `plm import-wiki manuscript-*` |
+| Structural changes         | Journal YAML    | `plm sync-db`                  |
 
 ### Best Practices
 
