@@ -50,11 +50,11 @@ class TestTxtBuilder:
         )
 
         # Test YYYY-MM format
-        result = builder._parse_filename("2024-11.txt")
+        result = builder.parse_filename("2024-11.txt")
         assert result == ("2024", "11")
 
         # Test YYYY_MM format
-        result = builder._parse_filename("2024_11.txt")
+        result = builder.parse_filename("2024_11.txt")
         assert result == ("2024", "11")
 
     def test_filename_parsing_invalid(self):
@@ -65,9 +65,9 @@ class TestTxtBuilder:
         )
 
         # Invalid formats should return None
-        assert builder._parse_filename("invalid.txt") is None
-        assert builder._parse_filename("202411.txt") is None
-        assert builder._parse_filename("24-11.txt") is None  # Year too short
+        assert builder.parse_filename("invalid.txt") is None
+        assert builder.parse_filename("202411.txt") is None
+        assert builder.parse_filename("24-11.txt") is None  # Year too short
 
     def test_builder_initialization(self):
         """Test TxtBuilder initialization with defaults."""
