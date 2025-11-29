@@ -104,8 +104,7 @@ class TestPdfBuilder:
         mock_create_temp_file,
         mock_convert_file,
         mock_logger,
-        setup_real_paths,
-        mocker # pytest-mock fixture
+        setup_real_paths
     ):
         """Test the creation of a clean PDF."""
         
@@ -166,8 +165,7 @@ class TestPdfBuilder:
         mock_create_temp_file,
         mock_convert_file,
         mock_logger,
-        setup_real_paths,
-        mocker # pytest-mock fixture
+        setup_real_paths
     ):
         """Test the creation of a notes PDF."""
         # Create a real temp file path in the temp directory
