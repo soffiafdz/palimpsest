@@ -7,6 +7,7 @@ and handle basic argument validation.
 """
 import pytest
 from click.testing import CliRunner
+from unittest.mock import patch, MagicMock
 from dev.pipeline.cli import cli
 
 
@@ -106,8 +107,6 @@ class TestCLIWithTempDirs:
         # Should fail or show error about missing year
         assert result.exit_code != 0 or "year" in result.output.lower()
 
-
-from unittest.mock import patch, MagicMock
 
 class TestPipelineDataFlow:
     """Test pipeline step orchestration."""

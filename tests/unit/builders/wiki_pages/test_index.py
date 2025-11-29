@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from pathlib import Path
 from datetime import date
 
 from dev.builders.wiki_pages.index import export_index
@@ -61,13 +60,20 @@ class TestIndexBuilder:
         
         # Counts
         counts = sample_data["counts"]
-        mock_tags = MagicMock(); mock_tags.scalar.return_value = counts["tags"]
-        mock_poems = MagicMock(); mock_poems.scalar.return_value = counts["poems"]
-        mock_refs = MagicMock(); mock_refs.scalar.return_value = counts["refs"]
-        mock_locs = MagicMock(); mock_locs.scalar.return_value = counts["locs"]
-        mock_cities = MagicMock(); mock_cities.scalar.return_value = counts["cities"]
-        mock_events = MagicMock(); mock_events.scalar.return_value = counts["events"]
-        mock_themes = MagicMock(); mock_themes.scalar.return_value = counts["themes"]
+        mock_tags = MagicMock()
+        mock_tags.scalar.return_value = counts["tags"]
+        mock_poems = MagicMock()
+        mock_poems.scalar.return_value = counts["poems"]
+        mock_refs = MagicMock()
+        mock_refs.scalar.return_value = counts["refs"]
+        mock_locs = MagicMock()
+        mock_locs.scalar.return_value = counts["locs"]
+        mock_cities = MagicMock()
+        mock_cities.scalar.return_value = counts["cities"]
+        mock_events = MagicMock()
+        mock_events.scalar.return_value = counts["events"]
+        mock_themes = MagicMock()
+        mock_themes.scalar.return_value = counts["themes"]
 
         session.execute.side_effect = [
             mock_entries_result,

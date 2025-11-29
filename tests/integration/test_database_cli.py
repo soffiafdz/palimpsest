@@ -5,8 +5,6 @@ Integration tests for database CLI (metadb).
 Tests the database management CLI commands including init, backup, and maintenance.
 """
 import pytest
-import os
-from pathlib import Path
 from click.testing import CliRunner
 from dev.database.cli import cli
 
@@ -106,7 +104,7 @@ class TestDatabaseCLI:
         self.invoke_cli(runner, test_dirs, ["init"])
         
         # Write something to it? Or just check file timestamp
-        old_mtime = test_dirs["db_path"].stat().st_mtime
+        test_dirs["db_path"].stat().st_mtime
         
         # Run reset
         # We need to pass input "y" for confirmation

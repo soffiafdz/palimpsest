@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch, ANY
-from pathlib import Path
+from unittest.mock import MagicMock, patch
 from datetime import date
 
 from dev.builders.wiki_pages.analysis import export_analysis_report

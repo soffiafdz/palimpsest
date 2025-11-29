@@ -1,10 +1,9 @@
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, patch, mock_open, call
+from unittest.mock import MagicMock, patch
 
-from dev.builders.pdfbuilder import PdfBuilder, PdfBuildError, BuildStats
+from dev.builders.pdfbuilder import PdfBuilder, PdfBuildError
 from dev.core.temporal_files import TemporalFileManager
-from dev.utils.md import split_frontmatter
 
 class TestPdfBuilder:
     """Tests for the PdfBuilder class."""

@@ -1,11 +1,9 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from pathlib import Path
 from datetime import date
 
-from dev.validators.consistency import ConsistencyValidator, ConsistencyIssue
+from dev.validators.consistency import ConsistencyValidator
 from dev.database.manager import PalimpsestDB
-from dev.database.models import Entry
 
 class MockEntry:
     def __init__(self, date_obj, file_path=None, word_count=0, people=None, locations=None, tags=None, related_entries=None, poems=None, file_hash=None):

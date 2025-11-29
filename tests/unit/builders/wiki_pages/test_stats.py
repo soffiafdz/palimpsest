@@ -1,11 +1,10 @@
 import pytest
-from unittest.mock import MagicMock, patch, ANY
-from pathlib import Path
-from datetime import date, timedelta
+from unittest.mock import MagicMock, patch
+from datetime import date
 
 from dev.builders.wiki_pages.stats import export_stats
 from dev.database.manager import PalimpsestDB
-from dev.database.models import Entry, Person, Tag, Location, City, Event, RelationType
+from dev.database.models import Entry, Person, Tag, RelationType
 
 class TestStatsBuilder:
     

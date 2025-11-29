@@ -1,6 +1,5 @@
 import pytest
 from click.testing import CliRunner
-from pathlib import Path
 from datetime import date, datetime, timezone
 from unittest.mock import patch
 

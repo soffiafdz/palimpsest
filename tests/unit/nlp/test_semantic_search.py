@@ -1,14 +1,12 @@
 import pytest
 from unittest.mock import MagicMock, patch
-import sys
-from pathlib import Path
 from datetime import date
 
 # We need to mock numpy and sentence_transformers BEFORE importing the module
 # if they are not installed, to ensure we can test the 'success' paths.
 # However, the module uses a try-import block.
 
-from dev.nlp.semantic_search import SemanticSearch, SemanticResult
+from dev.nlp.semantic_search import SemanticSearch
 
 class TestSemanticSearch:
 

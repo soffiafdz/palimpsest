@@ -13,7 +13,7 @@ This module contains all association tables that connect:
 These are pure association tables with no additional metadata.
 """
 # --- Third party imports ---
-from sqlalchemy import Column, ForeignKey, Integer, Table
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Table
 
 # --- Local imports ---
 from .base import Base

@@ -1,9 +1,8 @@
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock
 import yaml
 
-from dev.validators.metadata import MetadataValidator, MetadataIssue, MetadataValidationReport
+from dev.validators.metadata import MetadataValidator
 
 class TestMetadataValidator:
     """Tests for the MetadataValidator class."""

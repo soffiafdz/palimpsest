@@ -1,10 +1,8 @@
 import pytest
-from unittest.mock import MagicMock, patch, call
-from pathlib import Path
+from unittest.mock import MagicMock, patch
 from sqlalchemy.exc import OperationalError, IntegrityError
 
 from dev.database.manager import PalimpsestDB, DatabaseError
-from dev.database.models import Base # Needed for schema creation
 from dev.database.managers import TagManager # Example manager
 from dev.core.logging_manager import PalimpsestLogger # For __init__
 

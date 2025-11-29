@@ -1,6 +1,5 @@
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 from datetime import date
 
 from dev.dataclasses.manuscript_arc import Arc

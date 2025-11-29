@@ -1,6 +1,5 @@
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import patch
 from datetime import date
 
 from dev.builders.wiki_indexes import (

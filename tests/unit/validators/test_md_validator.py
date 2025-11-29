@@ -1,9 +1,6 @@
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock
-import yaml
 
-from dev.validators.md import MarkdownValidator, MarkdownIssue, MarkdownValidationReport
+from dev.validators.md import MarkdownValidator
 
 class TestMarkdownValidator:
     """Tests for the MarkdownValidator class."""
