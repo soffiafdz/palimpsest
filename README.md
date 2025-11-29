@@ -30,28 +30,6 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 
 ---
 
-## 📝 About Automated Analysis Tools
-
-**The optional text analysis tools in this project (`dev/nlp/` and `nlp` command) use standard computational linguistics techniques**—specifically named entity recognition (NER), keyword extraction, and pattern matching to assist with metadata organization of existing journal content.
-
-**Technical approach:**
-- Uses spaCy for named entity recognition (local, open-source)
-- Employs regex and keyword matching for theme detection
-- Optional: sentence transformers for semantic similarity search
-- Optional: LLM APIs for structured metadata extraction (Level 4 only)
-
-**Important clarifications:**
-- ✅ Extracts entities, themes, and tags from already-written text
-- ✅ Suggests organizational structures based on text analysis
-- ✅ Assists with cataloging and searchability through pattern matching
-- ❌ **Does NOT generate, write, or modify any creative content**
-- ❌ **Does NOT contribute to manuscript writing**
-- ❌ **All journal entries and literary work are 100% human-written**
-
-These are standard text processing techniques used in digital humanities, archives, and library science for organizing large text corpora.
-
----
-
 ## Quick Start
 
 ### Installation
@@ -508,8 +486,6 @@ nlp cluster --num-clusters 10
 **Most accurate analysis:**
 
 - Advanced entity extraction
-- Manuscript narrative analysis
-- Character voice and arc suggestions
 - Theme identification with context
 
 **Two providers supported:**
@@ -544,6 +520,24 @@ nlp batch --level 4 --provider openai --limit 10
 ```bash
 nlp status
 ```
+
+#### Disclaimer About Automated Analysis Tools
+
+**The optional text analysis tools in this project (`dev/nlp/` and `nlp` command) use standard computational linguistics techniques**—specifically named entity recognition (NER), keyword extraction, and pattern matching to assist with metadata organization of existing journal content.
+
+**Technical approach:**
+- Uses spaCy for named entity recognition (local, open-source)
+- Employs regex and keyword matching for theme detection
+- Optional: sentence transformers for semantic similarity search
+
+**Important clarifications:**
+- ✅ Extracts entities, themes, and tags from already-written text
+- ✅ Suggests organizational structures based on text analysis
+- ✅ Assists with cataloging and searchability through pattern matching
+- ❌ **Does NOT generate, write, or modify any content**
+- ❌ **All journal entries are human-written and human-edited**
+
+These are standard text processing techniques used in digital humanities, archives, and library science for organizing large text corpora.
 
 ---
 
