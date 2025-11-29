@@ -30,13 +30,13 @@ The project's Pyright configuration is in `pyrightconfig.json` at the project ro
 
 The configuration uses **execution environments** to apply different rules to different parts of the codebase.
 
-### dev/ai Module (Special Treatment)
+### dev/nlp Module (Special Treatment)
 
-The `dev/ai` module has relaxed rules because it uses **optional dependencies** (spaCy, transformers, OpenAI, etc.) that aren't required for core functionality:
+The `dev/nlp` module has relaxed rules because it uses **optional dependencies** (spaCy, transformers, OpenAI, etc.) that aren't required for core functionality:
 
 ```json
 {
-  "root": "dev/ai",
+  "root": "dev/nlp",
   "reportMissingImports": "none",
   "reportOptionalMemberAccess": "none",
   "reportOptionalCall": "none",
@@ -71,7 +71,7 @@ These checks are enforced as errors:
 - `reportReturnType` - Return type mismatches
 - `reportAttributeAccessIssue` - Invalid attribute access
 - `reportIncompatibleMethodOverride` - Method signature mismatches
-- `reportConstantRedefinition` - Redefining constants (except in dev/ai)
+- `reportConstantRedefinition` - Redefining constants (except in dev/nlp)
 - `reportOptionalSubscript` - Subscripting optional types without checks
 
 ### Warnings (Informational)
@@ -105,7 +105,7 @@ except ImportError:
     spacy = None  # type: ignore
 ```
 
-This pattern is used extensively in `dev/ai/` and suppressed by the execution environment.
+This pattern is used extensively in `dev/nlp/` and suppressed by the execution environment.
 
 ### Type Hints with Optional Imports
 
@@ -167,7 +167,7 @@ If you see errors like `Cannot access attribute "x" for class "Y"`, verify:
 2. You're not accessing a method of an optional dependency
 3. The class is properly imported
 
-### Missing Import Errors in dev/ai
+### Missing Import Errors in dev/nlp
 
 These should be suppressed automatically. If not:
 
