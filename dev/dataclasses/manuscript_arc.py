@@ -254,13 +254,9 @@ class Arc(WikiEntity):
             name = path.stem.replace("_", " ").title()
 
             # Extract editable fields
-            description = None
-            if "description" in sections:
-                description = "\n".join(sections["description"]).strip()
+            description = sections.get("Description", "").strip() or None
 
-            notes = None
-            if "arc notes" in sections:
-                notes = "\n".join(sections["arc notes"]).strip()
+            notes = sections.get("Arc Notes", "").strip() or None
 
             return cls(
                 path=path,

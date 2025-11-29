@@ -646,25 +646,28 @@ class PalimpsestDB:
             except OperationalError as e:
                 error_msg = str(e).lower()
 
-                if (
-                    "locked" in error_msg or "busy" in error_msg
-                ) and attempt < max_retries - 1:
-                    wait_time = retry_delay * (2**attempt)  # Exponential backoff
+                if "locked" in error_msg or "busy" in error_msg:
+                    if attempt < max_retries - 1:
+                        wait_time = retry_delay * (2**attempt)  # Exponential backoff
 
-                    if self.logger:
-                        self.logger.log_debug(
-                            f"Database locked, retrying in {wait_time}s",
-                            {"attempt": attempt + 1, "max_retries": max_retries},
-                        )
+                        if self.logger:
+                            self.logger.log_debug(
+                                f"Database locked, retrying in {wait_time}s",
+                                {"attempt": attempt + 1, "max_retries": max_retries},
+                            )
 
-                    time.sleep(wait_time)
-                    continue
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        # Max retries exhausted for locked/busy error
+                        raise DatabaseError(f"Operation failed after {max_retries} attempts due to database lock/busy conditions: {e}") from e
+                else:
+                    # Non-lock OperationalError, re-raise immediately
+                    raise
 
-                # Re-raise the exception if not a lock error or retries exhausted
-                raise
-
-        # This should never be reached due to the raise in the except block
-        raise DatabaseError("Retry loop completed without success")
+        # This line should ideally not be reached if exceptions are always raised
+        # However, it serves as a fail-safe to ensure an error is always propagated
+        raise DatabaseError("Unexpected termination of retry loop without success or specific error.")
 
     def _resolve_object(
         self, session: Session, item: Union[T, int], model_class: Type[T]

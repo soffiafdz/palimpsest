@@ -167,6 +167,19 @@ class MetadataValidator:
 
         for idx, person in enumerate(people_data):
             if isinstance(person, str):
+                # Check for unbalanced parentheses
+                if ")" in person and "(" not in person:
+                    issues.append(
+                        MetadataIssue(
+                            file_path=file_path,
+                            field_name=f"people[{idx}]",
+                            severity="error",
+                            message=f"Unbalanced parenthesis in: '{person}'",
+                            suggestion="Check parentheses pairing",
+                            yaml_value=person,
+                        )
+                    )
+
                 # Check for parentheses format
                 if "(" in person:
                     if not person.endswith(")"):
@@ -181,14 +194,15 @@ class MetadataValidator:
                             )
                         )
                     # Check for space before parenthesis
-                    elif "(" in person and not re.search(r'\s+\(', person) and not person.startswith("@"):
+                    # Allow @Alias (Name) but catch @Alias(Name) and Name(Full Name)
+                    elif not re.search(r'\s+\(', person):
                         issues.append(
                             MetadataIssue(
                                 file_path=file_path,
                                 field_name=f"people[{idx}]",
                                 severity="warning",
                                 message=f"Missing space before parenthesis in: '{person}'",
-                                suggestion="Use format: Bob (Full Name) not Bob(Full Name)",
+                                suggestion="Use format: Name (Full Name) not Name(Full Name)",
                                 yaml_value=person,
                             )
                         )
