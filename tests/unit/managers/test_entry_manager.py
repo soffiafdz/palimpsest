@@ -10,8 +10,7 @@ Target Coverage: 90%+
 """
 import pytest
 from datetime import date
-from pathlib import Path
-from dev.database.models import Entry, Tag, City, Person, Event
+from dev.database.models import Entry, City, Person, Event
 from dev.core.exceptions import ValidationError, DatabaseError
 
 
@@ -277,7 +276,6 @@ class TestEntryManagerUpdate:
     def test_update_nonexistent_entry_raises_error(self, entry_manager, db_session):
         """Test updating non-existent entry raises error."""
         # Create a fake entry object not in database
-        from dev.database.models import Entry
         fake_entry = Entry()
         fake_entry.id = 99999
 
@@ -337,7 +335,6 @@ class TestEntryManagerRelationships:
         file_path.write_text("# Test")
 
         # Create city first (City uses 'city' field, not 'name')
-        from dev.database.models import City
         city = City(city="Montreal")
         db_session.add(city)
         db_session.commit()
@@ -361,7 +358,6 @@ class TestEntryManagerRelationships:
         file_path.write_text("# Test")
 
         # Create person first
-        from dev.database.models import Person
         person = Person(name="Alice", full_name="Alice Smith")
         db_session.add(person)
         db_session.commit()
@@ -385,7 +381,6 @@ class TestEntryManagerRelationships:
         file_path.write_text("# Test")
 
         # Create event first (Event uses 'event' and 'title', not 'name'/'full_name')
-        from dev.database.models import Event
         event = Event(event="conference", title="Annual Conference 2024")
         db_session.add(event)
         db_session.commit()

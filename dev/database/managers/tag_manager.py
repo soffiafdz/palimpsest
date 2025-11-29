@@ -260,7 +260,7 @@ class TagManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Linked tag to entry",
+                    "Linked tag to entry",
                     {"tag": tag.tag, "entry_date": entry.date},
                 )
 
@@ -294,7 +294,7 @@ class TagManager(BaseManager):
 
         if self.logger:
             self.logger.log_debug(
-                f"Unlinked tag from entry",
+                "Unlinked tag from entry",
                 {"tag": tag.tag, "entry_date": entry.date},
             )
 
@@ -353,7 +353,7 @@ class TagManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Updated entry tags",
+                    "Updated entry tags",
                     {
                         "entry_date": entry.date,
                         "added_count": len(new_tags),

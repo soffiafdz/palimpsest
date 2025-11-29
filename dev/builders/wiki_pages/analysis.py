@@ -142,8 +142,8 @@ def export_analysis_report(
         lines.extend([
             "## Overview",
             "",
-            f"| Metric | Count |",
-            f"| --- | --- |",
+            "| Metric | Count |",
+            "| --- | --- |",
             f"| **Total Entries** | {total_entries} |",
             f"| **Unique People** | {total_people} |",
             f"| **Unique Locations** | {total_locations} |",

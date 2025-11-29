@@ -90,14 +90,15 @@ def get_db(ctx) -> PalimpsestDB:
 
 
 # Import and register command modules
-from .setup import init, reset
-from .migration import migration
-from .backup import backup, backups, restore
-from .query import query
-from .maintenance import maintenance, stats, health, optimize
-from .export import export
-from .tombstone import tombstone
-from .sync import sync
+# These imports must come after CLI group definition
+from .setup import init, reset  # noqa: E402
+from .migration import migration  # noqa: E402
+from .backup import backup, backups, restore  # noqa: E402
+from .query import query  # noqa: E402
+from .maintenance import maintenance, stats, health, optimize  # noqa: E402
+from .export import export  # noqa: E402
+from .tombstone import tombstone  # noqa: E402
+from .sync import sync  # noqa: E402
 
 # Register top-level commands
 cli.add_command(init)

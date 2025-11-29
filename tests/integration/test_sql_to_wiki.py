@@ -12,12 +12,11 @@ Tests the sql2wiki export functionality including:
 """
 import pytest
 from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from dev.database.models import Base, Entry, Person, Event, City, Location, Tag, RelationType
+from dev.database.models import Base, Entry, Person, Tag, RelationType
 from dev.database.models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,

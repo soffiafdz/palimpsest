@@ -69,10 +69,11 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
 
 
 # Import and register commands from submodules
-from .yaml2sql import inbox, convert, sync_db
-from .sql2wiki import export_db, export_wiki, build_pdf
-from .wiki2sql import import_wiki
-from .maintenance import backup_full, backup_list_full, run_all, status, validate
+# These imports must come after CLI group definition
+from .yaml2sql import inbox, convert, sync_db  # noqa: E402
+from .sql2wiki import export_db, export_wiki, build_pdf  # noqa: E402
+from .wiki2sql import import_wiki  # noqa: E402
+from .maintenance import backup_full, backup_list_full, run_all, status, validate  # noqa: E402
 
 # Register commands
 cli.add_command(inbox)

@@ -11,12 +11,11 @@ Tests the wiki2sql import functionality including:
 """
 import pytest
 from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from dev.database.models import Base, Entry, Person, Event, RelationType
+from dev.database.models import Base, Entry, Person, RelationType
 from dev.database.models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
@@ -24,7 +23,6 @@ from dev.database.models_manuscript import (
 )
 from dev.dataclasses.wiki_person import Person as WikiPerson
 from dev.dataclasses.wiki_entry import Entry as WikiEntry
-from dev.pipeline.wiki2sql import import_person, import_entry, import_manuscript_entry
 
 
 @pytest.fixture
@@ -43,7 +41,6 @@ class TestPersonImport:
 
     def test_import_person_notes(self, test_db, tmp_path):
         """Test importing edited notes from wiki person page."""
-        from dev.database.manager import PalimpsestDB
 
         # Create person in database
         person = Person(name="Alice", relation_type=RelationType.FRIEND, notes=None)
@@ -404,7 +401,7 @@ New notes here.
         # Parse manuscript wiki
         from dev.dataclasses.manuscript_entry import ManuscriptEntry as WikiManuscriptEntry
 
-        wiki_ms_entry = WikiManuscriptEntry.from_file(wiki_file)
+        WikiManuscriptEntry.from_file(wiki_file)
 
         # In real import, would update entry_type and narrative_arc from manuscript wiki
         # This is allowed because it's the manuscript wiki, not journal YAML

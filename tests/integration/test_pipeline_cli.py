@@ -6,7 +6,6 @@ Tests the main CLI commands to ensure they can be invoked
 and handle basic argument validation.
 """
 import pytest
-from pathlib import Path
 from click.testing import CliRunner
 from dev.pipeline.cli import cli
 

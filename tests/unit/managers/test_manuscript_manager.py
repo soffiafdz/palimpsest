@@ -12,7 +12,6 @@ import pytest
 from datetime import date
 from dev.database.models import Entry, Person, Event
 from dev.database.models_manuscript import (
-    ManuscriptEntry,
     ManuscriptPerson,
     ManuscriptEvent,
     Arc,
@@ -325,7 +324,6 @@ class TestRestorePerson:
         db_session.commit()
 
         # Query database directly to verify soft delete
-        from dev.database.models_manuscript import ManuscriptPerson
         ms_person = db_session.query(ManuscriptPerson).filter_by(person_id=person_id).first()
         assert ms_person.deleted_at is not None
 
@@ -500,7 +498,6 @@ class TestRestoreEvent:
         db_session.commit()
 
         # Query database directly to verify soft delete
-        from dev.database.models_manuscript import ManuscriptEvent
         ms_event = db_session.query(ManuscriptEvent).filter_by(event_id=event_id).first()
         assert ms_event.deleted_at is not None
 

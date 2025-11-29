@@ -391,7 +391,7 @@ class PoemManager(BaseManager):
         if existing_version:
             if self.logger:
                 self.logger.log_debug(
-                    f"Duplicate poem version found, returning existing",
+                    "Duplicate poem version found, returning existing",
                     {
                         "poem": poem.title,
                         "version_id": existing_version.id,
@@ -558,7 +558,7 @@ class PoemManager(BaseManager):
 
         if self.logger:
             self.logger.log_debug(
-                f"Deleting poem version",
+                "Deleting poem version",
                 {"version_id": version.id, "poem": version.poem.title},
             )
 

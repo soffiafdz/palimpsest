@@ -630,17 +630,17 @@ class MdEntry:
             dates_list.append("~")
 
         # Build all date items as dicts
-        for md in entry.dates:
-            date_dict: Dict = {"date": md.date.isoformat()}
+        for mentioned_date in entry.dates:
+            date_dict: Dict = {"date": mentioned_date.date.isoformat()}
 
             # Add locations
-            if md.locations:
-                date_dict["locations"] = [loc.name for loc in md.locations]
+            if mentioned_date.locations:
+                date_dict["locations"] = [loc.name for loc in mentioned_date.locations]
 
             # Add people
-            if md.people:
+            if mentioned_date.people:
                 people_formatted = []
-                for person in md.people:
+                for person in mentioned_date.people:
                     if person.name_fellow:
                         people_formatted.append({"full_name": person.full_name})
                     else:
@@ -648,8 +648,8 @@ class MdEntry:
                 date_dict["people"] = people_formatted
 
             # Add context
-            if md.context:
-                date_dict["context"] = md.context
+            if mentioned_date.context:
+                date_dict["context"] = mentioned_date.context
 
             dates_list.append(date_dict)
 

@@ -8,8 +8,6 @@ and content hashing.
 
 Target Coverage: 95%+
 """
-import pytest
-from pathlib import Path
 from dev.utils.md import (
     split_frontmatter,
     yaml_escape,

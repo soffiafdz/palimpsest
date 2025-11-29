@@ -60,7 +60,7 @@ def tombstone_list(ctx, table, limit):
                 if t.expires_at:
                     click.echo(f"  Expires at: {t.expires_at.isoformat()}")
                 else:
-                    click.echo(f"  Expires: Never (permanent)")
+                    click.echo("  Expires: Never (permanent)")
 
             if len(tombstones) == limit:
                 click.echo(f"\n(Showing first {limit} tombstones. Use --limit to see more)")

@@ -257,26 +257,26 @@ class MarkdownValidator:
             return issues
 
         # Check required fields
-        for field in self.REQUIRED_FIELDS:
-            if field not in frontmatter:
+        for field_name in self.REQUIRED_FIELDS:
+            if field_name not in frontmatter:
                 issues.append(
                     MarkdownIssue(
                         file_path=file_path,
                         line_number=1,
                         severity="error",
                         category="frontmatter",
-                        message=f"Required field '{field}' missing",
-                        suggestion=f"Add '{field}: <value>' to frontmatter",
+                        message=f"Required field '{field_name}' missing",
+                        suggestion=f"Add '{field_name}: <value>' to frontmatter",
                     )
                 )
-            elif frontmatter[field] is None or frontmatter[field] == "":
+            elif frontmatter[field_name] is None or frontmatter[field_name] == "":
                 issues.append(
                     MarkdownIssue(
                         file_path=file_path,
                         line_number=1,
                         severity="error",
                         category="frontmatter",
-                        message=f"Required field '{field}' is empty",
+                        message=f"Required field '{field_name}' is empty",
                     )
                 )
 
@@ -296,9 +296,9 @@ class MarkdownValidator:
                 )
 
         # Check field types
-        for field, expected_type in self.OPTIONAL_FIELDS.items():
-            if field in frontmatter and frontmatter[field] is not None:
-                value = frontmatter[field]
+        for field_key, expected_type in self.OPTIONAL_FIELDS.items():
+            if field_key in frontmatter and frontmatter[field_key] is not None:
+                value = frontmatter[field_key]
                 if not isinstance(value, expected_type):
                     issues.append(
                         MarkdownIssue(
@@ -306,7 +306,7 @@ class MarkdownValidator:
                             line_number=1,
                             severity="warning",
                             category="frontmatter",
-                            message=f"Field '{field}' has unexpected type: {type(value).__name__}",
+                            message=f"Field '{field_key}' has unexpected type: {type(value).__name__}",
                             suggestion=f"Expected: {expected_type if isinstance(expected_type, type) else ' or '.join(t.__name__ for t in expected_type)}",
                         )
                     )

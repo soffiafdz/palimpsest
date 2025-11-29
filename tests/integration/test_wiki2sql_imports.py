@@ -17,7 +17,6 @@ from dev.database.models_manuscript import (
     ManuscriptPerson,
     ManuscriptEvent,
     ManuscriptStatus,
-    EntryType,
 )
 from dev.pipeline.wiki2sql import (
     import_person,

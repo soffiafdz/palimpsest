@@ -216,7 +216,7 @@ def print_validation_report(result: ValidationResult, wiki_dir: Path) -> None:
     click.echo("=" * 70)
 
     # Summary
-    click.echo(f"\n📊 Summary:")
+    click.echo("\n📊 Summary:")
     click.echo(f"  Total wiki files: {result.total_files}")
     click.echo(f"  Total links: {result.total_links}")
     click.echo(f"  Valid links: {result.valid_links} ✅")
@@ -304,12 +304,12 @@ def print_stats_report(result: ValidationResult, wiki_dir: Path) -> None:
     click.echo("WIKI STATISTICS")
     click.echo("=" * 70)
 
-    click.echo(f"\n📁 Files:")
+    click.echo("\n📁 Files:")
     click.echo(f"  Total wiki files: {result.total_files}")
     click.echo(f"  Files with incoming links: {len(result.files_with_incoming_links)}")
     click.echo(f"  Orphaned files: {len(result.orphaned_files)}")
 
-    click.echo(f"\n🔗 Links:")
+    click.echo("\n🔗 Links:")
     click.echo(f"  Total links: {result.total_links}")
     click.echo(f"  Valid links: {result.valid_links}")
     click.echo(f"  Broken links: {len(result.broken_links)}")

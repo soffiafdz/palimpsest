@@ -557,7 +557,7 @@ class ReferenceManager(BaseManager):
 
         if self.logger:
             self.logger.log_debug(
-                f"Deleting reference",
+                "Deleting reference",
                 {"reference_id": reference.id, "entry_id": reference.entry_id},
             )
 

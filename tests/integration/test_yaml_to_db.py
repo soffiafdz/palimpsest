@@ -6,13 +6,11 @@ These tests verify the full pipeline from YAML frontmatter with string
 relationship names to properly created and linked database entities.
 """
 import pytest
-from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from dev.database.models import Base, Entry, Person, Event, City, Location
+from dev.database.models import Base, Person, Event, City
 from dev.database.managers import EntryManager
 
 

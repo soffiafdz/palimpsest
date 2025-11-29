@@ -734,7 +734,7 @@ def import_cmd(ctx: click.Context, entity_type: str) -> None:
             sys.exit(1)
 
         # Print summary
-        click.echo(f"\n✅ Import complete:")
+        click.echo("\n✅ Import complete:")
         click.echo(f"  Files processed: {stats.files_processed}")
         click.echo(f"  Records updated: {stats.records_updated}")
         click.echo(f"  Records skipped: {stats.records_skipped}")

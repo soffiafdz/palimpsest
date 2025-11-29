@@ -11,14 +11,13 @@ Tests:
 """
 import pytest
 from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from dev.database.models import Base, Entry, Person, Tag, Event, City, RelationType
+from dev.database.models import Base, Entry, Person, RelationType
 from dev.database.models_manuscript import ManuscriptEntry, ManuscriptStatus
-from dev.search.search_engine import SearchQuery, SearchQueryParser, SearchEngine
+from dev.search.search_engine import SearchQueryParser, SearchEngine
 from dev.search.search_index import SearchIndexManager
 
 

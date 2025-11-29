@@ -151,7 +151,7 @@ class ConsistencyValidator:
                 system="md-db",
                 entity_type="entry",
                 entity_id=date_str,
-                message=f"Entry exists in markdown but not in database",
+                message="Entry exists in markdown but not in database",
                 suggestion="Run: python -m dev.pipeline.cli yaml2sql",
             )
             issues.append(issue)
@@ -184,7 +184,7 @@ class ConsistencyValidator:
                 system="db-wiki",
                 entity_type="entry",
                 entity_id=date_str,
-                message=f"Entry in database but not exported to wiki",
+                message="Entry in database but not exported to wiki",
                 suggestion="Run: python -m dev.pipeline.cli sql2wiki",
             )
             issues.append(issue)
@@ -199,7 +199,7 @@ class ConsistencyValidator:
                 system="wiki-db",
                 entity_type="entry",
                 entity_id=date_str,
-                message=f"Entry in wiki but not in database",
+                message="Entry in wiki but not in database",
                 suggestion="Import entry or remove wiki file",
             )
             issues.append(issue)
@@ -326,7 +326,7 @@ class ConsistencyValidator:
                             system="db",
                             entity_type="entry",
                             entity_id=entry.date.isoformat(),
-                            message=f"Entry has null related_entry reference",
+                            message="Entry has null related_entry reference",
                         )
                         issues.append(issue)
                         self.report.add_issue(issue)
@@ -386,7 +386,7 @@ class ConsistencyValidator:
                                 system="md-db",
                                 entity_type="entry",
                                 entity_id=entry.date.isoformat(),
-                                message=f"File hash mismatch (file modified since last sync)",
+                                message="File hash mismatch (file modified since last sync)",
                                 suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
                             )
                             issues.append(issue)

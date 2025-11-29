@@ -146,7 +146,7 @@ class Entry(WikiEntity):
 
         # Locations visited
         locations = []
-        for location in sorted(db_entry.locations, key=lambda l: l.name):
+        for location in sorted(db_entry.locations, key=lambda loc: loc.name):
             city_slug = location.city.city.lower().replace(" ", "_")
             location_slug = location.name.lower().replace(" ", "_")
             location_path = wiki_dir / "locations" / city_slug / f"{location_slug}.md"

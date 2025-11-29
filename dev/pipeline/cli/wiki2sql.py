@@ -106,7 +106,7 @@ def import_wiki(ctx: click.Context, entity_type: str, wiki_dir: str) -> None:
             click.echo(f"❌ Unknown entity type: {entity_type}")
             sys.exit(1)
 
-        click.echo(f"\n✅ Import complete:")
+        click.echo("\n✅ Import complete:")
         click.echo(f"  Files processed: {stats.files_processed}")
         click.echo(f"  Records updated: {stats.records_updated}")
         click.echo(f"  Records skipped: {stats.records_skipped}")

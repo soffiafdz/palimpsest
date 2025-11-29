@@ -118,7 +118,7 @@ def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: b
             for txt_file in txt_files:
                 click.echo(f"  • {txt_file.relative_to(input_path)}")
         elif input_path.is_file():
-            click.echo(f"Would process 1 file:")
+            click.echo("Would process 1 file:")
             click.echo(f"  • {input_path.name}")
 
         click.echo(f"\nOutput directory: {output}")
@@ -203,7 +203,7 @@ def sync_db(ctx: click.Context, input: str, force: bool, dry_run: bool) -> None:
 
         click.echo(f"\nDatabase: {DB_PATH}")
         click.echo(f"Force update: {force}")
-        click.echo(f"Auto-backup: Enabled")
+        click.echo("Auto-backup: Enabled")
         click.echo("\n💡 Run without --dry-run to execute database sync")
         return
 

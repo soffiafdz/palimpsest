@@ -8,7 +8,6 @@ including names, expansions, context references, and date contexts.
 
 Target Coverage: 95%+
 """
-import pytest
 from dev.utils.parsers import (
     extract_name_and_expansion,
     extract_context_refs,

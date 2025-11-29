@@ -8,7 +8,7 @@ Tests managing City and Location entities with their parent-child relationship.
 Target Coverage: 90%+
 """
 import pytest
-from dev.database.models import City, Location, Entry
+from dev.database.models import City
 from dev.core.exceptions import ValidationError, DatabaseError
 
 
@@ -62,7 +62,7 @@ class TestGetCity:
 
     def test_get_city_id_takes_precedence_over_name(self, location_manager, db_session):
         """Test ID takes precedence when both provided."""
-        city1 = location_manager.create_city({"city": "Montreal"})
+        location_manager.create_city({"city": "Montreal"})
         city2 = location_manager.create_city({"city": "Toronto"})
         db_session.commit()
 

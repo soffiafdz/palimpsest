@@ -126,7 +126,7 @@ class TxtEntry:
 
         try:
             all_lines = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError) as e:
+        except (OSError, UnicodeDecodeError):
             logger.error(f"Cannot read input file: {str(path)}")
             raise
 

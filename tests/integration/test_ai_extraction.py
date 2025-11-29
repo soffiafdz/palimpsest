@@ -12,7 +12,6 @@ Note: Some tests require optional dependencies and will be skipped if not instal
 """
 import pytest
 from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -21,24 +20,12 @@ from dev.database.models import Base, Entry
 
 
 # Check dependencies
-try:
-    import spacy
-    SPACY_AVAILABLE = True
-except ImportError:
-    SPACY_AVAILABLE = False
+import importlib.util
+import os
 
-try:
-    from sentence_transformers import SentenceTransformer
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
-
-try:
-    import anthropic
-    import os
-    CLAUDE_AVAILABLE = bool(os.environ.get('ANTHROPIC_API_KEY'))
-except ImportError:
-    CLAUDE_AVAILABLE = False
+SPACY_AVAILABLE = importlib.util.find_spec("spacy") is not None
+TRANSFORMERS_AVAILABLE = importlib.util.find_spec("sentence_transformers") is not None
+CLAUDE_AVAILABLE = importlib.util.find_spec("anthropic") is not None and bool(os.environ.get('ANTHROPIC_API_KEY'))
 
 
 @pytest.fixture

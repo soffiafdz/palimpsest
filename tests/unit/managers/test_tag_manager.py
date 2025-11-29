@@ -8,9 +8,7 @@ a many-to-many relationship to entries.
 
 Target Coverage: 90%+
 """
-import pytest
-from dev.database.models import Tag, Entry
-from dev.core.exceptions import ValidationError, DatabaseError
+from dev.database.models import Tag
 
 
 class TestTagManagerExists:
@@ -336,7 +334,7 @@ class TestTagManagerEdgeCases:
         # Create tags with different usage counts
         file_path1 = tmp_dir / "2024-01-15.md"
         file_path1.write_text("# Test")
-        entry1 = entry_manager.create({
+        entry_manager.create({
             "date": "2024-01-15",
             "file_path": str(file_path1),
             "tags": ["popular", "common"]
@@ -344,7 +342,7 @@ class TestTagManagerEdgeCases:
 
         file_path2 = tmp_dir / "2024-01-16.md"
         file_path2.write_text("# Test")
-        entry2 = entry_manager.create({
+        entry_manager.create({
             "date": "2024-01-16",
             "file_path": str(file_path2),
             "tags": ["popular", "rare"]

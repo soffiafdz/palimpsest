@@ -380,7 +380,7 @@ class DateManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Linked mentioned date to entry",
+                    "Linked mentioned date to entry",
                     {
                         "mentioned_date": mentioned_date.date.isoformat(),
                         "entry_date": entry.date,
@@ -410,7 +410,7 @@ class DateManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Linked mentioned date to location",
+                    "Linked mentioned date to location",
                     {
                         "mentioned_date": mentioned_date.date.isoformat(),
                         "location": location.name,
@@ -440,7 +440,7 @@ class DateManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Linked mentioned date to person",
+                    "Linked mentioned date to person",
                     {
                         "mentioned_date": mentioned_date.date.isoformat(),
                         "person": person.name,

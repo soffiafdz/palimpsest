@@ -5,10 +5,7 @@ Unit tests for wiki import/export functionality.
 Tests the dataclass parsing and serialization without full database integration.
 """
 import pytest
-from pathlib import Path
 from dev.dataclasses.wiki_person import Person as WikiPerson
-from dev.dataclasses.wiki_entry import Entry as WikiEntry
-from dev.dataclasses.wiki_event import Event as WikiEvent
 from dev.dataclasses.manuscript_entry import ManuscriptEntry
 from dev.dataclasses.manuscript_character import Character
 

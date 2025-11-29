@@ -9,7 +9,6 @@ Target Coverage: 90%+
 """
 import pytest
 from datetime import date
-from pathlib import Path
 from dev.dataclasses.txt_entry import TxtEntry
 from dev.core.exceptions import EntryParseError
 

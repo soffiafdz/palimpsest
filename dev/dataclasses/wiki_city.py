@@ -83,7 +83,7 @@ class City(WikiEntity):
 
         # Build locations list
         locations = []
-        for location in sorted(db_city.locations, key=lambda l: l.name):
+        for location in sorted(db_city.locations, key=lambda loc: loc.name):
             location_slug = location.name.lower().replace(" ", "_")
             location_path = wiki_dir / "locations" / city_slug / f"{location_slug}.md"
             location_link = relative_link(path, location_path)
@@ -205,7 +205,7 @@ class City(WikiEntity):
         if self.locations:
             locations_lines = []
             # Sort by visit count (descending)
-            sorted_locations = sorted(self.locations, key=lambda l: (-l["visit_count"], l["name"]))
+            sorted_locations = sorted(self.locations, key=lambda loc: (-loc["visit_count"], loc["name"]))
             for loc in sorted_locations:
                 visit_str = f"{loc['visit_count']} visit" + ("s" if loc["visit_count"] != 1 else "")
                 locations_lines.append(f"- [[{loc['link']}|{loc['name']}]] ({visit_str})")

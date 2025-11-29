@@ -10,7 +10,7 @@ Target Coverage: 90%+
 """
 import pytest
 from datetime import date
-from dev.database.models import Poem, PoemVersion, Entry
+from dev.database.models import Poem, PoemVersion
 from dev.core.exceptions import ValidationError, DatabaseError
 
 
@@ -70,7 +70,7 @@ class TestPoemManagerGetPoem:
     def test_get_poem_returns_first_when_multiple_same_title(self, poem_manager, db_session):
         """Test get_poem returns first match when multiple poems have same title."""
         poem1 = poem_manager.create_poem({"title": "Duplicate"})
-        poem2 = poem_manager.create_poem({"title": "Duplicate"})
+        poem_manager.create_poem({"title": "Duplicate"})
         db_session.commit()
 
         result = poem_manager.get_poem(title="Duplicate")
@@ -658,7 +658,7 @@ class TestPoemManagerGetVersionsForPoem:
         })
         db_session.commit()
 
-        version2 = poem_manager.create_version({
+        poem_manager.create_version({
             "title": "Timeline",
             "content": "Second version.",
             "poem": version1.poem,
@@ -667,7 +667,7 @@ class TestPoemManagerGetVersionsForPoem:
         })
         db_session.commit()
 
-        version3 = poem_manager.create_version({
+        poem_manager.create_version({
             "title": "Timeline",
             "content": "Third version.",
             "poem": version1.poem,
@@ -748,7 +748,7 @@ class TestPoemManagerGetLatestVersion:
         })
         db_session.commit()
 
-        version2 = poem_manager.create_version({
+        poem_manager.create_version({
             "title": "Latest Test",
             "content": "Second version.",
             "poem": version1.poem,

@@ -459,7 +459,7 @@ class EventManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Linked event to entry",
+                    "Linked event to entry",
                     {"event": event.event, "entry_date": entry.date},
                 )
 
@@ -490,7 +490,7 @@ class EventManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Unlinked event from entry",
+                    "Unlinked event from entry",
                     {"event": event.event, "entry_date": entry.date},
                 )
             return True
@@ -521,7 +521,7 @@ class EventManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Linked event to person",
+                    "Linked event to person",
                     {"event": event.event, "person": person.name},
                 )
 
@@ -552,7 +552,7 @@ class EventManager(BaseManager):
 
             if self.logger:
                 self.logger.log_debug(
-                    f"Unlinked event from person",
+                    "Unlinked event from person",
                     {"event": event.event, "person": person.name},
                 )
             return True

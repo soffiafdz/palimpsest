@@ -12,7 +12,6 @@ Tests the sql2yaml export functionality including:
 """
 import pytest
 from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -387,7 +386,6 @@ class TestRoundTrip:
 
     def test_round_trip_basic_entry(self, test_db, tmp_path):
         """Test that entry survives round-trip unchanged."""
-        from dev.database.managers import EntryManager
 
         # Create entry in database
         file_path = tmp_path / "source.md"
@@ -405,7 +403,6 @@ class TestRoundTrip:
         test_db.commit()
         test_db.refresh(entry)
 
-        original_id = entry.id
 
         # Export to YAML
         output_dir = tmp_path / "output"

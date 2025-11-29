@@ -10,12 +10,11 @@ Note: These tests assume that the YAML parsing layer has already cleaned
 """
 import pytest
 from datetime import date
-from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from dev.database.models import Base, Entry, Person, Location, MentionedDate
+from dev.database.models import Base, Person, Location
 from dev.database.managers import EntryManager
 
 

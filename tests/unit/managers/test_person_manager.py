@@ -9,8 +9,7 @@ multiple people with the same name.
 Target Coverage: 90%+
 """
 import pytest
-from datetime import datetime
-from dev.database.models import Person, Alias, RelationType
+from dev.database.models import Person, RelationType
 from dev.core.exceptions import ValidationError, DatabaseError
 
 

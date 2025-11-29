@@ -72,7 +72,7 @@ def export_db(ctx: click.Context, output: str, force: bool, dry_run: bool) -> No
                 click.echo(f"Would export {entry_count} database entries")
                 click.echo(f"Output directory: {output}")
                 click.echo(f"Force overwrite: {force}")
-                click.echo(f"Preserve body content: True")
+                click.echo("Preserve body content: True")
 
                 sample_entries = session.query(Entry).order_by(Entry.date.desc()).limit(5).all()
                 click.echo("\nSample entries that would be exported:")
