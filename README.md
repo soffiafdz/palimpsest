@@ -554,7 +554,7 @@ reading_time: 4.2
 city: Montreal
 locations: [Cafe X, Library]
 
-people: [Maria-Jose, "@Friend (Full Name)"]
+people: [Alda, "@Friend (Full Name)"]
 tags: [writing, reflection]
 events: [thesis-defense]
 
