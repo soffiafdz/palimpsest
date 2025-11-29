@@ -24,11 +24,16 @@ Usage:
     stats.files_processed += 1
     print(stats.summary())
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+# --- Local imports ---
 from dev.core.logging_manager import PalimpsestLogger
 
 

@@ -11,6 +11,25 @@ Commands:
     - analyze: Generate detailed analytics report
     - stats: Display database statistics
     - health: Run comprehensive health check
+
+Usage:
+    # Clean up orphaned records
+    metadb maintenance cleanup
+
+    # Optimize database performance
+    metadb optimize
+
+    # Validate database integrity (orphans, FKs)
+    metadb maintenance validate
+
+    # Generate detailed analytics report
+    metadb maintenance analyze
+
+    # Display database statistics
+    metadb stats --verbose
+
+    # Run comprehensive health check
+    metadb health --fix
 """
 import json
 import click

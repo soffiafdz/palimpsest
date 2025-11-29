@@ -29,12 +29,17 @@ Usage:
     # Analyze entry for manuscript
     analysis = assistant.analyze_for_manuscript(entry_text)
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 import os
 from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 import json
 import importlib.util
 
+# --- Third party imports ---
 _anthropic_spec = importlib.util.find_spec("anthropic")
 if _anthropic_spec is not None and _anthropic_spec.loader is not None:
     ANTHROPIC_AVAILABLE = True

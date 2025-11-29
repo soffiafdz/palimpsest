@@ -187,7 +187,7 @@ class ManagerProperty:
         setattr(obj, self.attr_name, value)
 
 
-# ----- Main Database Manager -----
+# --- Main Database Manager ---
 class PalimpsestDB:
     """
     Main database manager for the Palimpsest metadata database.
@@ -224,7 +224,7 @@ class PalimpsestDB:
     manuscripts = ManagerProperty("_manuscript_manager", "ManuscriptManager")
     entries = ManagerProperty("_entry_manager", "EntryManager")
 
-    # ---- Initialization ----
+    # --- Initialization ---
     def __init__(
         self,
         db_path: Union[str, Path],
@@ -331,7 +331,7 @@ class PalimpsestDB:
                 self.logger.log_error(e, {"operation": "database_init"})
             raise DatabaseError(f"Database initialization failed: {e}")
 
-    # ---- Session Management ----
+    # --- Session Management ---
     @contextmanager
     def session_scope(self):
         """
@@ -406,7 +406,7 @@ class PalimpsestDB:
 
     # -------------------------------------------------------------------------
 
-    # ---- Alembic setup ----
+    # --- Alembic setup ---
     def _setup_alembic(self) -> Config:
         """Setup Alembic configuration."""
         try:
@@ -618,7 +618,7 @@ class PalimpsestDB:
                 self.logger.log_error(e, {"operation": "get_migration_history"})
             return {"error": str(e)}
 
-    # ----  Helper methods ----
+    # --- Helper methods ---
     def _execute_with_retry(
         self,
         operation: Callable,
@@ -750,9 +750,7 @@ class PalimpsestDB:
                 return obj
             raise
 
-    # -------------------------------------------------------------------------
-    # Entry Operations - Delegated to EntryManager (Phase 3)
-    # -------------------------------------------------------------------------
+    # --- Entry Operations - Delegated to EntryManager (Phase 3) ---
     # All Entry CRUD and relationship operations are now handled by EntryManager.
     #
     # New recommended usage:
@@ -764,7 +762,7 @@ class PalimpsestDB:
     #
     # Stable facade methods that delegate to EntryManager:
     # -------------------------------------------------------------------------
-    # ---- Static Helper Methods for EntryManager ----
+    # --- Static Helper Methods for EntryManager ---
     # These allow EntryManager to call back to modular managers without circular dependencies
 
     @staticmethod
@@ -928,9 +926,7 @@ class PalimpsestDB:
         # Delegate to ManuscriptManager
         manuscript_mgr.create_or_update_entry(entry, manuscript_data)
 
-    # -------------------------------------------------------------------------
-    # Entity Operations Delegated to Modular Managers
-    # -------------------------------------------------------------------------
+    # --- Entity Operations Delegated to Modular Managers ---
     # All entity-specific CRUD operations are now handled by specialized managers.
     #
     # Use the manager properties within session_scope:
@@ -949,7 +945,7 @@ class PalimpsestDB:
     #       event = db.events.create({"name": "PyCon 2024"})
     # -------------------------------------------------------------------------
 
-    # ----- Cleanup Operations -----
+    # --- Cleanup Operations ---
     @handle_db_errors
     def bulk_cleanup_unused(
         self, session: Session, cleanup_config: Dict[str, tuple]
@@ -977,7 +973,7 @@ class PalimpsestDB:
                 self.logger.log_error(e, {"operation": "cleanup_all_metadata"})
             raise DatabaseError(f"Cleanup operation failed: {e}")
 
-    # ----- Backup Integration -----
+    # --- Backup Integration ---
     def create_backup(
         self, backup_type: str = "manual", suffix: Optional[str] = None
     ) -> Optional[Path]:
@@ -1001,7 +997,7 @@ class PalimpsestDB:
 
         self.backup_manager.restore_backup(Path(backup_path))
 
-    # ----- Context Manager Support -----
+    # --- Context Manager Support ---
     def __enter__(self) -> "PalimpsestDB":
         """Support for context manager usage."""
         return self

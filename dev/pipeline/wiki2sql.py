@@ -23,8 +23,10 @@ Usage:
     # Import all entities
     python -m dev.pipeline.wiki2sql import all
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import sys
 import click
 import socket
@@ -32,6 +34,10 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional
 
+# --- Third party imports ---
+from sqlalchemy import select, func
+
+# --- Local imports ---
 from dev.database.manager import PalimpsestDB
 from dev.database.models import (
     Person as DBPerson,
@@ -53,8 +59,6 @@ from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.cli import setup_logger
 from dev.core.exceptions import Wiki2SqlError
 
-from sqlalchemy import select, func
-
 from dev.pipeline.entity_importer import EntityImporter, ImportStats
 from dev.pipeline.configs.entity_import_configs import (
     PERSON_IMPORT_CONFIG,
@@ -70,7 +74,7 @@ from dev.pipeline.configs.manuscript_entity_import_configs import (
     )
 
 
-# ===== IMPORT FUNCTIONS =====
+# --- Import Functions ---
 
 
 def import_person(
@@ -399,7 +403,7 @@ def import_all(
     return combined_stats
 
 
-# ===== MANUSCRIPT IMPORT FUNCTIONS =====
+# --- Manuscript Import Functions ---
 
 
 def import_manuscript_entry(
@@ -636,7 +640,7 @@ def import_all_manuscript_events(
     return importer.import_entities(MANUSCRIPT_EVENT_IMPORT_CONFIG)
 
 
-# ===== CLI =====
+# --- CLI ---
 
 
 @click.group()

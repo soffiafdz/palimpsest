@@ -7,8 +7,16 @@ Database export commands to various formats.
 Commands:
     - csv: Export all tables to CSV files
     - json: Export complete database to JSON
+
+Usage:
+    # Export all database tables to CSV files in a directory
+    metadb export csv /path/to/output_dir
+
+    # Export complete database data to a single JSON file
+    metadb export json /path/to/output.json
 """
 import click
+from pathlib import Path
 
 from dev.core.logging_manager import handle_cli_error
 from dev.core.exceptions import ExportError

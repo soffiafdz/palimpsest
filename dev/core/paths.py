@@ -19,6 +19,10 @@ The project structure:
 All paths are resolved at import time and validated to ensure the project
 structure is intact.
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 import sys
 from pathlib import Path
 

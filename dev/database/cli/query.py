@@ -9,6 +9,19 @@ Commands:
     - years: List all years with entry counts
     - months: List months in a year with entry counts
     - batches: Show hierarchical export batches
+
+Usage:
+    # Show entry for a specific date
+    metadb query show 2024-01-01 --full
+
+    # List years with entry counts
+    metadb query years
+
+    # List months in a specific year
+    metadb query months 2024
+
+    # Show export batches
+    metadb query batches --threshold 1000
 """
 import sys
 import click

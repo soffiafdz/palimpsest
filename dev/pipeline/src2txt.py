@@ -26,13 +26,16 @@ Usage:
     # Validate inbox files
     python -m dev.pipeline.src2txt validate
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import sys
 import click
 from pathlib import Path
 from typing import Optional
 
+# --- Local imports ---
 from dev.core.paths import ARCHIVE_DIR, INBOX_DIR, TXT_DIR, LOG_DIR, FORMATTING_SCRIPT
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.exceptions import TxtBuildError
@@ -40,11 +43,7 @@ from dev.core.cli import setup_logger
 from dev.builders.txtbuilder import TxtBuilder, ProcessingStats
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# PROGRAMMATIC API (for use by pipeline)
-# ═══════════════════════════════════════════════════════════════════════════
-
-
+# --- Programmatic API ---
 def process_inbox(
     inbox_dir: Path,
     output_dir: Path,

@@ -40,9 +40,7 @@ from dev.core.cli import setup_logger
 from dev.builders.pdfbuilder import PdfBuilder, BuildStats
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# PROGRAMMATIC API (for use by pipeline)
-# ═══════════════════════════════════════════════════════════════════════════
+# --- Programmatic API ---
 
 
 def build_pdf(

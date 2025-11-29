@@ -11,8 +11,10 @@ Enums:
 
 These enums provide type safety and consistent categorization across the database.
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from enum import Enum
 from typing import List
 

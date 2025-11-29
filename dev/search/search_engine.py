@@ -25,14 +25,17 @@ Usage:
     for result in results:
         print(result['entry'].date, result['score'])
 """
+# --- Standard library imports ---
 from dataclasses import dataclass, field
 from datetime import date as Date
 from typing import List, Optional, Dict, Any
 from calendar import monthrange
 
+# --- Third party imports ---
 from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, joinedload
 
+# --- Local imports ---
 from dev.database.models import Entry, Person, Tag, Event, City
 from dev.database.models_manuscript import ManuscriptEntry, ManuscriptStatus, Theme
 from dev.search.search_index import SearchIndexManager

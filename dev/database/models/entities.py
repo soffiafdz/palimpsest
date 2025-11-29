@@ -12,15 +12,19 @@ Models:
 These models track who appears in the journal and how entries are categorized.
 """
 
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from datetime import date
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+# --- Third party imports ---
 from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+# --- Local imports ---
 from .associations import (
     entry_aliases,
     entry_people,

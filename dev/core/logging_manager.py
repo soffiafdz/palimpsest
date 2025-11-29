@@ -7,16 +7,23 @@ Centralized logging system for all palimpsest operations.
 Provides structured logging with rotation for database operations,
 conversion pipelines, and any process requiring comprehensive logging.
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 import json
 import logging
 import traceback
 import sys
-
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+# --- Third party imports ---
 import click
+
+# --- Local imports ---
+# (None)
 
 
 class PalimpsestLogger:

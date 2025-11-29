@@ -7,6 +7,22 @@ Database and Alembic initialization commands.
 Commands:
     - init: Initialize database and Alembic
     - reset: Reset database (dangerous!)
+
+Usage:
+    # Perform a complete database and Alembic setup
+    metadb init
+
+    # Initialize Alembic only
+    metadb init --alembic-only
+
+    # Initialize database schema only
+    metadb init --db-only
+
+    # Reset the entire database (DANGEROUS!)
+    metadb reset
+
+    # Reset, but keep existing backup files
+    metadb reset --keep-backups
 """
 import click
 

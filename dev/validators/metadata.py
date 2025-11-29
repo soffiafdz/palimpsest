@@ -28,13 +28,16 @@ Usage:
     validate metadata locations
     validate metadata references
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# --- Local imports ---
 from dev.utils.md import split_frontmatter
 from dev.core.logging_manager import PalimpsestLogger
 

@@ -25,10 +25,15 @@ Usage:
     theme_extractor = ThemeExtractor()
     themes = theme_extractor.extract_themes(entry_text)
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 from typing import List, Dict, Set, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 
+# --- Third party imports ---
 try:
     import spacy
     from spacy.language import Language

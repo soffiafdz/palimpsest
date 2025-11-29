@@ -25,16 +25,21 @@ Usage (through CLI):
 Usage (programmatic):
     from dev.validators.wiki import validate_wiki, ValidationResult
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import re
 import sys
-import click
 from pathlib import Path
 from typing import List, Set, Optional
 from dataclasses import dataclass, field
 from collections import defaultdict
 
+# --- Third party imports ---
+import click
+
+# --- Local imports ---
 from dev.core.paths import WIKI_DIR, LOG_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.core.cli import setup_logger

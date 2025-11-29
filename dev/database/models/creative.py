@@ -68,7 +68,7 @@ class Reference(Base):
         ),
     )
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[Optional[str]] = mapped_column(Text)
     description: Mapped[Optional[str]] = mapped_column(String(255))
@@ -80,7 +80,7 @@ class Reference(Base):
         index=True,
     )
 
-    # ---- Foreign keys ----
+    # --- Foreign keys ---
     entry_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("entries.id"), nullable=False
     )
@@ -88,13 +88,13 @@ class Reference(Base):
         Integer, ForeignKey("reference_sources.id")
     )
 
-    # ---- Relationships ----
+    # --- Relationships ---
     entry: Mapped["Entry"] = relationship("Entry", back_populates="references")
     source: Mapped[Optional["ReferenceSource"]] = relationship(
         "ReferenceSource", back_populates="references"
     )
 
-    # ---- Computed property ----
+    # --- Computed property ---
     @property
     def content_preview(self) -> str | None:
         """Get truncated content for display (max 100 chars)."""
@@ -144,7 +144,7 @@ class ReferenceSource(Base):
         CheckConstraint("title != ''", name="ck_ref_source_non_empty_title"),
     )
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     type: Mapped[ReferenceType] = mapped_column(
         SQLEnum(ReferenceType, values_callable=lambda x: [e.value for e in x]),
@@ -156,12 +156,12 @@ class ReferenceSource(Base):
     )
     author: Mapped[Optional[str]] = mapped_column(String(255), index=True)
 
-    # ---- Relationship ----
+    # --- Relationship ---
     references: Mapped[List["Reference"]] = relationship(
         "Reference", back_populates="source", cascade="all, delete-orphan"
     )
 
-    # ---- Computed property ----
+    # --- Computed property ---
     @property
     def display_name(self) -> str:
         """Get formatted display name with type."""
@@ -208,7 +208,7 @@ class Event(Base, SoftDeleteMixin):
     __tablename__ = "events"
     __table_args__ = (CheckConstraint("event != ''", name="ck_non_empty_event"),)
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     event: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
@@ -217,7 +217,7 @@ class Event(Base, SoftDeleteMixin):
     description: Mapped[Optional[str]] = mapped_column(Text)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # ---- Relationships ----
+    # --- Relationships ---
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_events, back_populates="events"
     )
@@ -228,7 +228,7 @@ class Event(Base, SoftDeleteMixin):
         "ManuscriptEvent", uselist=False, back_populates="event"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def display_name(self) -> str:
         """Get the best display name for this Event."""
@@ -299,16 +299,16 @@ class Poem(Base):
     __tablename__ = "poems"
     __table_args__ = (CheckConstraint("title != ''", name="ck_poem_non_empty_title"),)
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
-    # ---- Relationship ----
+    # --- Relationship ---
     versions: Mapped[List["PoemVersion"]] = relationship(
         "PoemVersion", back_populates="poem", cascade="all, delete-orphan"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def version_count(self) -> int:
         """Number of versions of this poem."""
@@ -352,24 +352,24 @@ class PoemVersion(Base):
         CheckConstraint("content != ''", name="ck_poem_version_non_empty_content"),
     )
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     revision_date: Mapped[Optional[date]] = mapped_column(Date, index=True, nullable=True)
     version_hash: Mapped[Optional[str]] = mapped_column(String)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
-    # ---- Foreign keys ----
+    # --- Foreign keys ---
     poem_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("poems.id"), nullable=False
     )
     entry_id: Mapped[int] = mapped_column(Integer, ForeignKey("entries.id"))
 
-    # ---- Relationships ----
+    # --- Relationships ---
     poem: Mapped["Poem"] = relationship("Poem", back_populates="versions")
     entry: Mapped[Optional["Entry"]] = relationship("Entry", back_populates="poems")
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def content_preview(self) -> str:
         """Get truncated content for display (max 100 chars)."""

@@ -23,7 +23,14 @@ Complex YAML metadata handling is deferred to yaml2sql/MdEntry pipeline.
                 └── <YYYY-MM-DD>.md
 
 Usage:
-    python txt2md.py -i input_file.txt [-o output_dir/]
+    # Convert single file
+    txt2md convert input.txt -o output_dir/
+
+    # Batch convert directory
+    txt2md batch input_dir/ -o output_dir/
+
+    # Validate file without converting
+    txt2md validate input.txt
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -46,7 +53,7 @@ from dev.core.cli import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
 
 
-# ----- Helper Functions -----
+# --- Helper Functions ---
 def configure_verbose_logging(logger: PalimpsestLogger) -> None:
     """Enable verbose/debug logging for a logger instance."""
     logger.main_logger.setLevel(logging.DEBUG)
@@ -55,7 +62,7 @@ def configure_verbose_logging(logger: PalimpsestLogger) -> None:
             handler.setLevel(logging.DEBUG)
 
 
-# ---- Conversion ----
+# --- Conversion ---
 def process_entry(
     entry: TxtEntry,
     output_dir: Path,
@@ -335,7 +342,7 @@ def convert_directory(
     return total_stats
 
 
-# ----- Helper -----
+# --- Helper ---
 def _generate_minimal_markdown(entry: TxtEntry) -> str:
     """Generate Markdown with minimal YAML frontmatter (date only)."""
     lines = [
@@ -350,7 +357,7 @@ def _generate_minimal_markdown(entry: TxtEntry) -> str:
     return "\n".join(lines)
 
 
-# ----- CLI -----
+# --- CLI ---
 @click.group()
 @click.option(
     "--log-dir",

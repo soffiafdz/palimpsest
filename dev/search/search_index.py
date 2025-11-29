@@ -23,12 +23,15 @@ Usage:
     # Rebuild entire index
     manager.rebuild_index(session)
 """
+# --- Standard library imports ---
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
+# --- Third party imports ---
 from sqlalchemy import text, Engine
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.logging_manager import PalimpsestLogger
 
 

@@ -41,12 +41,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # --- Third-party imports ---
 import yaml
 
+# --- Local imports ---
 from .parsers import spaces_to_hyphenated
 
 # Module logger
 logger = logging.getLogger(__name__)
 
 
+# --- Frontmatter & YAML ---
 # ═══════════════════════════════════════════════════════════════════════════
 # FRONTMATTER & YAML
 # ═══════════════════════════════════════════════════════════════════════════

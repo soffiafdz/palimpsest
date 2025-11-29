@@ -12,6 +12,22 @@ Commands:
     - stats: Show tombstone statistics
     - cleanup: Remove expired tombstones
     - remove: Manually remove specific tombstone
+
+Usage:
+    # List all current tombstones
+    metadb tombstone list
+
+    # List tombstones for a specific table
+    metadb tombstone list --table entry_people
+
+    # Show tombstone statistics
+    metadb tombstone stats
+
+    # Clean up expired tombstones (dry run)
+    metadb tombstone cleanup --dry-run
+
+    # Manually remove a specific tombstone
+    metadb tombstone remove entry_people 1 5
 """
 import click
 

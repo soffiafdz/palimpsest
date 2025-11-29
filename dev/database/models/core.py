@@ -11,14 +11,18 @@ Models:
 The Entry model is the heart of the system, containing metadata extracted from
 Markdown frontmatter and relationships to all other entities.
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from datetime import date, datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+# --- Third party imports ---
 from sqlalchemy import CheckConstraint, Date, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+# --- Local imports ---
 from .associations import (
     entry_aliases,
     entry_cities,
@@ -38,7 +42,7 @@ if TYPE_CHECKING:
     from ..models_manuscript import ManuscriptEntry
 
 
-# ----- Schema Versioning -----
+# --- Schema Versioning ---
 class SchemaInfo(Base):
     """
     Tracks schema versions for migration management.
@@ -67,7 +71,7 @@ class SchemaInfo(Base):
     )
 
 
-# ----- Entry Model -----
+# --- Entry Model ---
 class Entry(Base, SoftDeleteMixin):
     """
     Central model representing a journal entry's metadata.
@@ -117,7 +121,7 @@ class Entry(Base, SoftDeleteMixin):
         CheckConstraint("reading_time >= 0.0", name="positive_entry_reading_time"),
     )
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     file_path: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
@@ -128,7 +132,7 @@ class Entry(Base, SoftDeleteMixin):
     epigraph_attribution: Mapped[Optional[str]] = mapped_column(String(255))
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
-    # ---- Timestamps ----
+    # --- Timestamps ---
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -138,7 +142,7 @@ class Entry(Base, SoftDeleteMixin):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # ---- Many-to-many Relationships ----
+    # --- Many-to-many Relationships ---
     dates: Mapped[List["MentionedDate"]] = relationship(
         "MentionedDate", secondary=entry_dates, back_populates="entries"
     )
@@ -169,7 +173,7 @@ class Entry(Base, SoftDeleteMixin):
         "Tag", secondary=entry_tags, back_populates="entries"
     )
 
-    # ---- One-to-many Relationships ----
+    # --- One-to-many Relationships ---
     references: Mapped[List["Reference"]] = relationship(
         "Reference", back_populates="entry", cascade="all, delete-orphan"
     )
@@ -177,12 +181,12 @@ class Entry(Base, SoftDeleteMixin):
         "PoemVersion", back_populates="entry", cascade="all, delete-orphan"
     )
 
-    # ---- One-to-one Relationship ----
+    # --- One-to-one Relationship ---
     manuscript: Mapped[Optional["ManuscriptEntry"]] = relationship(
         "ManuscriptEntry", uselist=False, back_populates="entry"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def age_in_days(self) -> int:
         """Get the age of the entry in days."""

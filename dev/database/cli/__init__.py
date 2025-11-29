@@ -20,8 +20,14 @@ Command Structure:
     - Stats & Health (stats, health, optimize)
 
 Usage:
+    # Get general help
     metadb --help
-    metadb <command> --help
+
+    # Get help for a specific command group
+    metadb query --help
+
+    # Get help for a specific command
+    metadb query show --help
 """
 import click
 import logging

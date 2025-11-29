@@ -28,10 +28,14 @@ Examples:
     plm-search index rebuild
     plm-search index status
 """
-import click
+# --- Standard library imports ---
 from pathlib import Path
 from typing import Optional
 
+# --- Third party imports ---
+import click
+
+# --- Local imports ---
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.cli import setup_logger

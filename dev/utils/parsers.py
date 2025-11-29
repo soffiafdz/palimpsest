@@ -7,8 +7,10 @@ General parsing utilities for extracting structured data.
 Provides parsing functions used across multiple modules for extracting
 names, abbreviations, and other structured information from formatted text.
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from typing import Optional, Tuple, Dict, List
 
 

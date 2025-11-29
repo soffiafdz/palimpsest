@@ -12,6 +12,25 @@ Commands:
     - resolve: Mark conflict as resolved
     - stats: Show sync statistics
     - status: Show sync state for entity or summary
+
+Usage:
+    # List unresolved conflicts
+    metadb sync conflicts
+
+    # List resolved conflicts
+    metadb sync conflicts --resolved
+
+    # Resolve a specific conflict
+    metadb sync resolve Entry 1
+
+    # Show sync statistics
+    metadb sync stats
+
+    # Show sync status summary
+    metadb sync status
+
+    # Show sync status for a specific entity
+    metadb sync status Entry 1
 """
 import click
 

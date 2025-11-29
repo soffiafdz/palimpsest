@@ -29,11 +29,16 @@ Usage:
     # Analyze entry for manuscript
     analysis = assistant.analyze_for_manuscript(entry_text)
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 import os
 from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 import json
 
+# --- Third party imports ---
 try:
     import openai
 

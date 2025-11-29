@@ -10,8 +10,10 @@ Provides functionality to:
 
 Templates are stored in dev/lua/palimpsest/templates/ and use {{variable}} syntax.
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from pathlib import Path
 from typing import Dict, Any, List
 

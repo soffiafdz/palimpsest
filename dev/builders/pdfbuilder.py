@@ -45,7 +45,7 @@ from dev.core.temporal_files import TemporalFileManager
 from dev.utils.md import split_frontmatter
 
 
-# ----- LaTeX Command Constants -----
+# --- LaTeX Command Constants ---
 """LaTeX formatting commands for PDF generation."""
 
 LATEX_NEWPAGE = "\\newpage\n\n"
@@ -111,7 +111,7 @@ AUTHOR_BIRTH_YEAR = 1993
 """Birth year used to calculate age annotation in PDF metadata."""
 
 
-# ---- Classes ----
+# --- Classes ---
 class BuildStats(BaseStats):
     """
     Track PDF build statistics.

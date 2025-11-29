@@ -19,7 +19,7 @@ from typing import List, Tuple
 from textstat import lexicon_count  # type: ignore
 
 
-# ----- Entry Processing Constants -----
+# --- Entry Processing Constants ---
 ENTRY_MARKERS = {"------ ENTRY ------", "===== ENTRY ====="}
 """
 Valid entry separator markers used in 750words text exports.
@@ -30,7 +30,7 @@ These markers delimit individual journal entries in both:
 """
 
 
-# ----- Ordinal dates -----
+# --- Ordinal dates ---
 def ordinal(n: int) -> str:
     """
     Convert day of month to ordinal string.
@@ -62,7 +62,7 @@ def ordinal(n: int) -> str:
     return f"{n}th"
 
 
-# ----- Format body of text -----
+# --- Format body of text ---
 def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
     """
     Format raw body lines for Markdown processing.
@@ -110,7 +110,7 @@ def format_body(lines: List[str]) -> List[Tuple[str, bool]]:
     return out
 
 
-# ----- Wrap entry -> <80 chars -----
+# --- Wrap entry -> <80 chars ---
 def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
     """
     Wrap paragraph lines to specified character width.
@@ -138,7 +138,7 @@ def reflow_paragraph(paragraph: List[str], width: int = 80) -> List[str]:
     return wrapper.wrap(text)
 
 
-# ----- Word-count & ~reading time -----
+# --- Word-count & ~reading time ---
 def compute_metrics(lines: List[str]) -> Tuple[int, float]:
     """
     Compute word count and reading time metrics for text.

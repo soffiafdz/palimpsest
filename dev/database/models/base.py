@@ -22,7 +22,7 @@ from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-# ----- Base ORM class -----
+# --- Base ORM class ---
 class Base(DeclarativeBase):
     """
     Base class for all ORM models.
@@ -34,7 +34,7 @@ class Base(DeclarativeBase):
     pass
 
 
-# ----- Soft Delete -----
+# --- Soft Delete ---
 class SoftDeleteMixin:
     """
     Mixin providing soft delete functionality for models.

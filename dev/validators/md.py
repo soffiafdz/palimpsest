@@ -24,14 +24,19 @@ Usage:
     # Find orphaned files
     validate md orphans
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import re
-import yaml
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# --- Third party imports ---
+import yaml
+
+# --- Local imports ---
 from dev.utils.md import split_frontmatter
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger

@@ -24,16 +24,20 @@ Usage:
     # Run all checks
     validate db all
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
+# --- Third party imports ---
 from sqlalchemy import inspect, text
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 
+# --- Local imports ---
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Base
 from dev.core.logging_manager import PalimpsestLogger

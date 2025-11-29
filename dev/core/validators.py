@@ -10,13 +10,16 @@ used across database operations, conversion pipelines, and utilities.
 This module is format-agnostic and should not depend on specific file
 formats (Markdown, YAML, etc.). It provides pure data type conversions.
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import re
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
 
+# --- Local imports ---
 from .exceptions import ValidationError
 
 # Use TYPE_CHECKING to avoid circular imports

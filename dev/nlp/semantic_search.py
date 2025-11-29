@@ -30,6 +30,10 @@ Usage:
     # Cluster by theme
     clusters = semantic.cluster_entries(entries, num_clusters=5)
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 from pathlib import Path
 from dataclasses import dataclass
@@ -38,6 +42,7 @@ import pickle
 if TYPE_CHECKING:
     import numpy as np
 
+# --- Third party imports ---
 try:
     from sentence_transformers import SentenceTransformer
     import numpy as np

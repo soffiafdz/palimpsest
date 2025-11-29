@@ -69,12 +69,12 @@ class MentionedDate(Base):
 
     __tablename__ = "dates"
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     context: Mapped[Optional[str]] = mapped_column(Text)
 
-    # ---- Relationship ----
+    # --- Relationship ---
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_dates, back_populates="dates"
     )
@@ -85,7 +85,7 @@ class MentionedDate(Base):
         "Person", secondary=people_dates, back_populates="dates"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def date_formatted(self) -> str:
         """Get date in YYYY-MM-DD format"""
@@ -164,7 +164,7 @@ class City(Base):
     __tablename__ = "cities"
     __table_args__ = (CheckConstraint("city != ''", name="ck_city_non_empty_name"),)
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     city: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
@@ -172,7 +172,7 @@ class City(Base):
     state_province: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     country: Mapped[Optional[str]] = mapped_column(String(255), index=True)
 
-    # ---- Relationship ----
+    # --- Relationship ---
     locations: Mapped[List["Location"]] = relationship(
         "Location", back_populates="city"
     )
@@ -180,7 +180,7 @@ class City(Base):
         "Entry", secondary=entry_cities, back_populates="cities"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def entry_count(self) -> int:
         """Number of entries mentioning this location."""
@@ -256,17 +256,17 @@ class Location(Base):
         UniqueConstraint("name", "city_id", name="uq_location_name_city"),
     )
 
-    # ---- Primary fields ----
+    # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(
         String(255), nullable=False, index=True  # Removed unique=True (now composite)
     )
 
-    # ---- Geographical location ----
+    # --- Geographical location ---
     city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"))
     city: Mapped["City"] = relationship(back_populates="locations")
 
-    # ---- Relationship ----
+    # --- Relationship ---
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_locations, back_populates="locations"
     )
@@ -274,7 +274,7 @@ class Location(Base):
         "MentionedDate", secondary=location_dates, back_populates="locations"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def entry_count(self) -> int:
         """Number of entries mentioning this location."""

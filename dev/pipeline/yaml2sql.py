@@ -80,13 +80,13 @@ CLI Commands:
 
 Examples:
     # Update single entry
-    python -m dev.pipeline.yaml2sql update journal/md/2024/2024-01-15.md
+    yaml2sql update journal/md/2024/2024-01-15.md
 
     # Process year directory
-    python -m dev.pipeline.yaml2sql batch journal/md/2024/ --force
+    yaml2sql batch journal/md/2024/ --force
 
     # Full sync with cleanup
-    python -m dev.pipeline.yaml2sql sync journal/md/ --delete-missing
+    yaml2sql sync journal/md/ --delete-missing
 
 Error Handling:
     - Validation errors logged with context
@@ -477,7 +477,7 @@ def sync_directory(
     return stats
 
 
-# ----- CLI -----
+# --- CLI ---
 @click.group()
 @click.option(
     "--db-path",

@@ -10,6 +10,22 @@ Commands:
     - downgrade: Downgrade to a revision
     - status: Show migration status
     - history: Show migration history
+
+Usage:
+    # Create a new migration script
+    metadb migration create "Added new person entity"
+
+    # Upgrade database to the latest revision
+    metadb migration upgrade
+
+    # Downgrade database to a specific revision
+    metadb migration downgrade <revision_id>
+
+    # Show current migration status
+    metadb migration status
+
+    # Show full migration history
+    metadb migration history
 """
 import click
 

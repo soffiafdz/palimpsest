@@ -8,6 +8,16 @@ Commands:
     - backup: Create timestamped backup
     - backups: List all backups
     - restore: Restore from backup
+
+Usage:
+    # Create a manual backup
+    metadb backup --type manual --suffix "pre-update"
+
+    # List all backups
+    metadb backups
+
+    # Restore from a specific backup file
+    metadb restore /path/to/backup.db
 """
 import click
 from pathlib import Path

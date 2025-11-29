@@ -8,12 +8,16 @@ Provides secure temporary file creation with automatic tracking and cleanup.
 Used by database operations, conversion pipelines, and any process requiring
 temporary file management.
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 import shutil
 import tempfile
-
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, IO
 
+# --- Local imports ---
 from .exceptions import TemporalFileError
 
 

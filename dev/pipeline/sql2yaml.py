@@ -18,13 +18,13 @@ Features:
 
 Usage:
     # Export single entry
-    python -m dev.pipeline.sql2yaml export 2024-01-15 -o output/
+    sql2yaml export 2024-01-15 -o output/
 
     # Export date range
-    python -m dev.pipeline.sql2yaml range 2024-01-01 2024-01-31 -o output/
+    sql2yaml range 2024-01-01 2024-01-31 -o output/
 
     # Export all entries
-    python -m dev.pipeline.sql2yaml all -o output/
+    sql2yaml all -o output/
 """
 from __future__ import annotations
 
@@ -215,7 +215,7 @@ def export_entry_to_markdown(
         raise Sql2YamlError(f"Failed to write file: {e}") from e
 
 
-# ----- CLI -----
+# --- CLI ---
 @click.group()
 @click.option(
     "--db-path",

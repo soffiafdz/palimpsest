@@ -22,13 +22,16 @@ Usage:
     validate consistency metadata    # Check metadata sync
     validate consistency references  # Check referential integrity
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Set, Optional
 from collections import defaultdict
 
+# --- Local imports ---
 from dev.database.manager import PalimpsestDB
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
