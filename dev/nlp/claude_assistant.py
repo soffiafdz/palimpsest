@@ -2,7 +2,7 @@
 """
 claude_assistant.py
 -------------------
-Claude API integration for advanced AI analysis.
+Claude API integration for advanced text analysis.
 
 Level 4: Claude API (Optional, Paid)
 
@@ -75,7 +75,7 @@ class ManuscriptAnalysis:
 
 class ClaudeAssistant:
     """
-    Claude API assistant for advanced AI analysis.
+    Claude API assistant for advanced text analysis.
 
     Intelligence Level: ⭐⭐⭐⭐⭐
 

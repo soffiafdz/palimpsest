@@ -2,9 +2,9 @@
 """
 openai_assistant.py
 -------------------
-OpenAI API integration for advanced AI analysis.
+OpenLLM API integration for advanced text analysis.
 
-Level 4: OpenAI API (Optional, Paid)
+Level 4: OpenLLM API (Optional, Paid)
 
 Features:
 - Intelligent entity extraction
@@ -73,7 +73,7 @@ class OpenAIManuscriptAnalysis:
 
 class OpenAIAssistant:
     """
-    OpenAI API assistant for advanced AI analysis.
+    OpenLLM API assistant for advanced text analysis.
 
     Intelligence Level: ⭐⭐⭐⭐⭐
 
@@ -89,7 +89,7 @@ class OpenAIAssistant:
         Initialize OpenAI assistant.
 
         Args:
-            api_key: OpenAI API key (or set OPENAI_API_KEY env var)
+            api_key: OpenLLM API key (or set OPENAI_API_KEY env var)
             model: OpenAI model to use
                 - gpt-4o-mini: Fast, cheap ($0.15/$0.60 per MTok)
                 - gpt-4o: Most capable ($2.50/$10 per MTok)

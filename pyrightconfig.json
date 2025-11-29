@@ -73,7 +73,7 @@
   "pythonPlatform": "Linux",
   "executionEnvironments": [
     {
-      "root": "dev/ai",
+      "root": "dev/nlp",
       "extraPaths": [],
       "reportMissingImports": "none",
       "reportOptionalMemberAccess": "none",

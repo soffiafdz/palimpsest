@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 """
-ai_cli.py
----------
-Standalone CLI for AI-assisted analysis and extraction of journal entries.
+nlp_cli.py
+----------
+Standalone CLI for NLP-based analysis and extraction of journal entries.
 
-This provides AI-powered tools for analyzing journal entries, extracting
+This provides NLP-powered tools for analyzing journal entries, extracting
 entities (people, places, events), themes, and metadata using different
-AI levels from simple keyword matching to advanced LLM analysis.
+analysis levels from simple keyword matching to advanced LLM analysis.
 
-AI Levels:
+Analysis Levels:
     Level 1: Keyword matching (free, built-in)
     Level 2: spaCy NER (free, ML-based entity extraction)
     Level 3: Semantic search with transformers (free, similarity)
     Level 4: LLM APIs (paid, Claude or OpenAI for deep analysis)
 
 Commands:
-    plm-ai analyze <date> [options]
-    plm-ai status
+    nlp analyze <date> [options]
+    nlp status
 
 Examples:
     # Analyze with spaCy (free)
-    plm-ai analyze 2024-11-01 --level 2
+    nlp analyze 2024-11-01 --level 2
 
     # Analyze with Claude API (paid)
-    plm-ai analyze 2024-11-01 --level 4 --provider claude
+    nlp analyze 2024-11-01 --level 4 --provider claude
 
     # Include manuscript analysis
-    plm-ai analyze 2024-11-01 --level 4 --manuscript
+    nlp analyze 2024-11-01 --level 4 --manuscript
 
-    # Check AI capabilities
-    plm-ai status
+    # Check NLP capabilities
+    nlp status
 """
 import sys
 import click
@@ -48,28 +48,28 @@ from dev.core.cli import setup_logger
 @click.pass_context
 def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     """
-    AI-assisted analysis and extraction of journal entries.
+    NLP-based analysis and extraction of journal entries.
 
-    This command provides various AI-powered tools for analyzing journal
+    This command provides various NLP-powered tools for analyzing journal
     entries, extracting entities (people, places, events), themes, and
-    metadata using different AI levels from simple keyword matching to
+    metadata using different analysis levels from simple keyword matching to
     advanced LLM analysis.
 
-    AI Levels:
+    Analysis Levels:
         Level 1: Keyword matching (free, built-in)
         Level 2: spaCy NER (free, ML-based entity extraction)
         Level 3: Semantic search with transformers (free, similarity)
         Level 4: LLM APIs (paid, Claude or OpenAI for deep analysis)
 
     Examples:
-        plm-ai analyze 2024-11-01 --level 2
-        plm-ai analyze 2024-11-01 --level 4 --provider claude
-        plm-ai status
+        nlp analyze 2024-11-01 --level 2
+        nlp analyze 2024-11-01 --level 4 --provider claude
+        nlp status
     """
     ctx.ensure_object(dict)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir), "ai")
+    ctx.obj["logger"] = setup_logger(Path(log_dir), "nlp")
 
 
 @cli.command("analyze")
@@ -78,7 +78,7 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     "--level",
     type=click.Choice(["1", "2", "3", "4"]),
     default="2",
-    help="AI level (1=keywords, 2=spaCy, 3=transformers, 4=LLM)",
+    help="analysis level (1=keywords, 2=spaCy, 3=transformers, 4=LLM)",
 )
 @click.option(
     "--provider",
@@ -90,15 +90,15 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
     "--manuscript", is_flag=True, help="Include manuscript analysis (level 4)"
 )
 @click.pass_context
-def ai_analyze(
+def nlp_analyze(
     ctx: click.Context, date: str, level: str, provider: str, manuscript: bool
 ) -> None:
     """
-    Analyze a single journal entry with AI.
+    Analyze a single journal entry with NLP.
 
-    This command applies AI analysis to a single journal entry, extracting
+    This command applies text analysis to a single journal entry, extracting
     structured metadata such as people, places, events, themes, and mood
-    using various AI techniques depending on the specified level.
+    using various NLP techniques depending on the specified level.
 
     Analysis Levels:
 
@@ -120,16 +120,16 @@ def ai_analyze(
 
     Examples:
         # Analyze with spaCy (free)
-        plm-ai analyze 2024-11-01 --level 2
+        nlp analyze 2024-11-01 --level 2
 
         # Analyze with Claude API (paid)
-        plm-ai analyze 2024-11-01 --level 4 --provider claude
+        nlp analyze 2024-11-01 --level 4 --provider claude
 
         # Include manuscript analysis
-        plm-ai analyze 2024-11-01 --level 4 --manuscript
+        nlp analyze 2024-11-01 --level 4 --manuscript
 
         # Analyze with OpenAI
-        plm-ai analyze 2024-11-01 --level 4 --provider openai
+        nlp analyze 2024-11-01 --level 4 --provider openai
     """
     from datetime import date as Date
     from dev.database.manager import PalimpsestDB
@@ -168,7 +168,7 @@ def ai_analyze(
     # Level 2: spaCy NER
     if level_int >= 2:
         try:
-            from dev.ai.extractors import EntityExtractor, ThemeExtractor
+            from dev.nlp.extractors import EntityExtractor, ThemeExtractor
 
             extractor = EntityExtractor()
             entities = extractor.extract_from_entry(entry)
@@ -225,14 +225,14 @@ def ai_analyze(
 
     # Level 4: LLM API
     if level_int >= 4:
-        from dev.ai.extractors import EntityExtractor
+        from dev.nlp.extractors import EntityExtractor
 
         extractor = EntityExtractor()
         text = extractor.get_entry_text(entry)
 
         if provider == "claude":
             try:
-                from dev.ai.claude_assistant import ClaudeAssistant
+                from dev.nlp.claude_assistant import ClaudeAssistant
 
                 assistant = ClaudeAssistant()
                 click.echo("=== Claude Analysis ===")
@@ -284,11 +284,11 @@ def ai_analyze(
 
 @cli.command("status")
 @click.pass_context
-def ai_status(ctx: click.Context) -> None:
+def nlp_status(ctx: click.Context) -> None:
     """
-    Check AI capabilities and API configuration status.
+    Check NLP capabilities and API configuration status.
 
-    This command checks which AI analysis capabilities are available in
+    This command checks which text analysis capabilities are available in
     the current environment by attempting to import required packages and
     checking for API keys. Provides a diagnostic overview of what analysis
     levels can be used.
@@ -317,12 +317,12 @@ def ai_status(ctx: click.Context) -> None:
     - Reports configuration status for each provider
 
     Use Cases:
-    - Verify AI setup after installation
+    - Verify NLP setup after installation
     - Troubleshoot missing dependencies
     - Check API key configuration
     - Determine which analysis levels are available
     """
-    click.echo("AI Capabilities Status:\n")
+    click.echo("NLP Capabilities Status:\n")
 
     # Level 1: Always available
     click.echo("✓ Level 1: Keyword matching (free, built-in)")
@@ -358,16 +358,16 @@ def ai_status(ctx: click.Context) -> None:
         click.echo("  ✗ Claude API - Not installed")
         click.echo("    Install: pip install anthropic")
 
-    # OpenAI API
+    # OpenLLM API
     if importlib.util.find_spec("openai"):
         import os # os needs to be imported to check environment variables
         if os.environ.get("OPENAI_API_KEY"):
-            click.echo("  ✓ OpenAI API (API key configured)")
+            click.echo("  ✓ OpenLLM API (API key configured)")
         else:
-            click.echo("  ⚠ OpenAI API - Package installed but no API key")
+            click.echo("  ⚠ OpenLLM API - Package installed but no API key")
             click.echo("    Set key: export OPENAI_API_KEY='your-key'")
     else:
-        click.echo("  ✗ OpenAI API - Not installed")
+        click.echo("  ✗ OpenLLM API - Not installed")
         click.echo("    Install: pip install openai")
 
 

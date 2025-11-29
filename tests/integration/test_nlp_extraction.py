@@ -45,7 +45,7 @@ class TestEntityExtraction:
 
     def test_extract_people(self):
         """Test extracting person names."""
-        from dev.ai.extractors import EntityExtractor
+        from dev.nlp.extractors import EntityExtractor
 
         text = """
         Today I met with Alice Johnson for coffee.
@@ -61,7 +61,7 @@ class TestEntityExtraction:
 
     def test_extract_locations(self):
         """Test extracting locations."""
-        from dev.ai.extractors import EntityExtractor
+        from dev.nlp.extractors import EntityExtractor
 
         text = """
         I visited Montreal last weekend.
@@ -76,7 +76,7 @@ class TestEntityExtraction:
 
     def test_extract_from_entry(self, test_db, tmp_path):
         """Test extracting entities from Entry object."""
-        from dev.ai.extractors import EntityExtractor
+        from dev.nlp.extractors import EntityExtractor
 
         # Create entry file
         file_path = tmp_path / "entry.md"
@@ -108,7 +108,7 @@ We discussed my anxiety and relationship with Alice.
 
     def test_confidence_scores(self):
         """Test that confidence scores are assigned."""
-        from dev.ai.extractors import EntityExtractor
+        from dev.nlp.extractors import EntityExtractor
 
         text = """
         Alice is a very important person in my life.
@@ -132,7 +132,7 @@ class TestThemeExtraction:
 
     def test_semantic_theme_extraction(self):
         """Test semantic theme extraction with transformers."""
-        from dev.ai.extractors import ThemeExtractor
+        from dev.nlp.extractors import ThemeExtractor
 
         text = """
         I keep questioning my sense of self.
@@ -152,7 +152,7 @@ class TestThemeExtraction:
 
     def test_theme_extraction_with_keywords(self):
         """Test that semantic extraction works even with direct keyword mentions."""
-        from dev.ai.extractors import ThemeExtractor
+        from dev.nlp.extractors import ThemeExtractor
 
         text = """
         I've been feeling a lot of anxiety lately about my identity.
@@ -173,7 +173,7 @@ class TestThemeExtraction:
 
     def test_min_confidence_threshold(self):
         """Test minimum confidence filtering."""
-        from dev.ai.extractors import ThemeExtractor
+        from dev.nlp.extractors import ThemeExtractor
 
         text = "Just a normal day, nothing special happened."
 
@@ -194,7 +194,7 @@ class TestSemanticSearch:
 
     def test_build_index(self, test_db, tmp_path):
         """Test building semantic search index."""
-        from dev.ai.semantic_search import SemanticSearch
+        from dev.nlp.semantic_search import SemanticSearch
 
         # Create entries
         file1 = tmp_path / "entry1.md"
@@ -229,7 +229,7 @@ class TestSemanticSearch:
 
     def test_find_similar(self, test_db, tmp_path):
         """Test finding semantically similar entries."""
-        from dev.ai.semantic_search import SemanticSearch
+        from dev.nlp.semantic_search import SemanticSearch
 
         # Create entries with related content
         file1 = tmp_path / "entry1.md"
@@ -278,7 +278,7 @@ class TestSemanticSearch:
 
     def test_find_similar_to_entry(self, test_db, tmp_path):
         """Test finding entries similar to a specific entry."""
-        from dev.ai.semantic_search import SemanticSearch
+        from dev.nlp.semantic_search import SemanticSearch
 
         # Create entries
         file1 = tmp_path / "entry1.md"
@@ -327,7 +327,7 @@ class TestSemanticSearch:
 
     def test_cache_embeddings(self, test_db, tmp_path):
         """Test caching and loading embeddings."""
-        from dev.ai.semantic_search import SemanticSearch
+        from dev.nlp.semantic_search import SemanticSearch
 
         # Create entry
         file1 = tmp_path / "entry1.md"
@@ -365,7 +365,7 @@ class TestClaudeIntegration:
 
     def test_extract_metadata(self):
         """Test extracting metadata with Claude."""
-        from dev.ai.claude_assistant import ClaudeAssistant
+        from dev.nlp.claude_assistant import ClaudeAssistant
 
         text = """
         Today I had therapy with Dr. Sarah in Montreal.
@@ -387,7 +387,7 @@ class TestClaudeIntegration:
 
     def test_analyze_for_manuscript(self):
         """Test manuscript analysis with Claude."""
-        from dev.ai.claude_assistant import ClaudeAssistant
+        from dev.nlp.claude_assistant import ClaudeAssistant
 
         text = """
         She sat at the café, watching rain trace patterns on the window.
@@ -407,7 +407,7 @@ class TestClaudeIntegration:
 
     def test_suggest_themes(self):
         """Test theme suggestions with Claude."""
-        from dev.ai.claude_assistant import ClaudeAssistant
+        from dev.nlp.claude_assistant import ClaudeAssistant
 
         text = """
         I keep questioning who I am and what I want.
@@ -428,7 +428,7 @@ class TestDependencyChecks:
 
     def test_check_extractor_dependencies(self):
         """Test checking extractor dependencies."""
-        from dev.ai.extractors import check_dependencies
+        from dev.nlp.extractors import check_dependencies
 
         deps = check_dependencies()
 
@@ -439,7 +439,7 @@ class TestDependencyChecks:
 
     def test_check_semantic_dependencies(self):
         """Test checking semantic search dependencies."""
-        from dev.ai.semantic_search import check_dependencies
+        from dev.nlp.semantic_search import check_dependencies
 
         deps = check_dependencies()
 
@@ -448,7 +448,7 @@ class TestDependencyChecks:
 
     def test_installation_instructions(self):
         """Test getting installation instructions."""
-        from dev.ai.extractors import get_installation_instructions
+        from dev.nlp.extractors import get_installation_instructions
 
         instructions = get_installation_instructions()
 
@@ -461,7 +461,7 @@ class TestCostEstimation:
 
     def test_estimate_cost_haiku(self):
         """Test cost estimation for Haiku model."""
-        from dev.ai.claude_assistant import estimate_cost
+        from dev.nlp.claude_assistant import estimate_cost
 
         costs = estimate_cost(num_entries=100, model='haiku')
 
@@ -472,7 +472,7 @@ class TestCostEstimation:
 
     def test_estimate_cost_sonnet(self):
         """Test cost estimation for Sonnet model."""
-        from dev.ai.claude_assistant import estimate_cost
+        from dev.nlp.claude_assistant import estimate_cost
 
         costs_haiku = estimate_cost(num_entries=100, model='haiku')
         costs_sonnet = estimate_cost(num_entries=100, model='sonnet')

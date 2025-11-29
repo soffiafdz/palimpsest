@@ -2,7 +2,7 @@
 """
 extractors.py
 -------------
-AI-powered entity and theme extraction using local ML models.
+NLP-powered entity and theme extraction using local ML models.
 
 Level 2: spaCy NER for entity extraction
 Level 3: Sentence Transformers for semantic analysis
@@ -340,7 +340,7 @@ class ThemeExtractor:
 
 
 def check_dependencies() -> Dict[str, bool]:
-    """Check which AI dependencies are available."""
+    """Check which NLP dependencies are available."""
     return {
         "spacy": SPACY_AVAILABLE,
         "sentence_transformers": TRANSFORMERS_AVAILABLE,
@@ -367,7 +367,7 @@ def get_installation_instructions() -> str:
         )
 
     if not instructions:
-        return "✓ All AI dependencies installed!"
+        return "✓ All NLP dependencies installed!"
 
     return "Missing dependencies:\n\n" + "\n\n".join(instructions)
 

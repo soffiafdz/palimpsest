@@ -1,13 +1,13 @@
 """
-AI-assisted analysis and extraction module.
+NLP-based analysis and extraction module.
 
-Provides progressive levels of AI intelligence:
+Provides progressive levels of analysis capabilities:
 - Level 1: Keyword pattern matching (free, built-in)
 - Level 2: spaCy NER (free, ML-based entity extraction)
 - Level 3: Sentence Transformers (free, semantic search)
 - Level 4: LLM APIs (paid, most accurate) - Claude or OpenAI
 """
-from dev.ai.extractors import (
+from dev.nlp.extractors import (
     EntityExtractor,
     ThemeExtractor,
     ExtractedEntities,
@@ -16,7 +16,7 @@ from dev.ai.extractors import (
 )
 
 try:
-    from dev.ai.semantic_search import SemanticSearch, SemanticResult
+    from dev.nlp.semantic_search import SemanticSearch, SemanticResult
     SEMANTIC_AVAILABLE = True
 except ImportError:
     SEMANTIC_AVAILABLE = False
@@ -24,7 +24,7 @@ except ImportError:
     SemanticResult = None
 
 try:
-    from dev.ai.claude_assistant import (
+    from dev.nlp.claude_assistant import (
         ClaudeAssistant,
         ClaudeMetadata,
         ManuscriptAnalysis,
@@ -39,7 +39,7 @@ except ImportError:
     estimate_claude_cost = None
 
 try:
-    from dev.ai.openai_assistant import (
+    from dev.nlp.openai_assistant import (
         OpenAIAssistant,
         OpenAIMetadata,
         OpenAIManuscriptAnalysis,

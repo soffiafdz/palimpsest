@@ -30,7 +30,7 @@ dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "ruff>=0.2.0"]
 [project.scripts]
 plm = "dev.pipeline.cli:cli"
 jsearch = "dev.search.cli:cli"
-jai = "dev.ai.cli:cli"
+nlp = "dev.nlp.cli:cli"
 metadb = "dev.database.cli:cli"
 validate = "dev.validators.cli:cli"
 
