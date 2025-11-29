@@ -13,7 +13,7 @@
 4. [METADB - Database Management](#metadb---database-management)
 5. [VALIDATE - Validation Tools](#validate---validation-tools)
 6. [JSEARCH - Full-Text Search](#jsearch---full-text-search)
-7. [JAI - AI Analysis](#jai---ai-analysis)
+7. [NLP - Text Analysis](#nlp---ai-analysis)
 8. [Neovim Integration](#neovim-integration)
 
 ---
@@ -38,14 +38,14 @@ This installs 5 CLI entry points in `~/.local/bin/`:
 - `metadb` - Database management
 - `validate` - Validation tools
 - `jsearch` - Full-text search
-- `jai` - AI analysis (optional dependencies)
+- `nlp` - Text analysis (optional dependencies)
 
 Ensure `~/.local/bin` is in your PATH.
 
 ### Environment Variables
 
 ```bash
-# For AI Level 4 (optional)
+# For NLP Level 4 (optional)
 export ANTHROPIC_API_KEY='your-claude-api-key'
 export OPENAI_API_KEY='your-openai-api-key'
 ```
@@ -99,7 +99,7 @@ validate consistency all
 | Backup database | `metadb backup` |
 | List backups | `metadb backups` |
 | Search entries | `jsearch query "text" in:2024` |
-| AI analysis | `jai analyze 2024-11-01 --level 2` |
+| Text analysis | `nlp analyze 2024-11-01 --level 2` |
 | Build PDFs | `plm build-pdf 2024` |
 | Full pipeline | `plm run-all --year 2024` |
 | Check status | `plm status` or `metadb health` |
@@ -1297,17 +1297,17 @@ therapy session with alice discussing...
 
 ---
 
-## JAI - AI Analysis
+## JAI - Automated Text Analysis
 
-AI-powered analysis and extraction of journal entries.
+**About these tools:** These commands use computational linguistics techniques (named entity recognition, keyword extraction, pattern matching) to assist with metadata organization. These are standard text processing methods used in digital humanities and library science. **These tools analyze existing text only—they do not generate, modify, or contribute to any creative writing content.** All journal text and manuscript content is written entirely by the author.
 
-### AI Capabilities Check
+### Analysis Capabilities Check
 
-#### `jai status`
-Check AI capabilities and API configuration.
+#### `nlp status`
+Check analysis capabilities and API configuration.
 
 ```bash
-jai status
+nlp status
 ```
 
 **Checks performed:**
@@ -1332,27 +1332,27 @@ jai status
 - OPENAI_API_KEY set: Yes/No
 
 **Use cases:**
-- Verify AI setup after installation
+- Verify NLP setup after installation
 - Troubleshoot missing dependencies
 - Check API key configuration
 
 ### Entry Analysis
 
-#### `jai analyze`
-Analyze a single journal entry with AI.
+#### `nlp analyze`
+Analyze a single journal entry using NLP.
 
 ```bash
-jai analyze DATE [--level LEVEL] [--provider PROVIDER] [--manuscript]
+nlp analyze DATE [--level LEVEL] [--provider PROVIDER] [--manuscript]
 ```
 
 **Arguments:**
 - `DATE` - Entry date (YYYY-MM-DD)
 
-**AI Levels:**
+**Processing Levels:**
 
 **Level 2 (spaCy NER)** - Free, local, fast:
 ```bash
-jai analyze 2024-11-26 --level 2
+nlp analyze 2024-11-26 --level 2
 ```
 
 **Extracts:**
@@ -1371,8 +1371,8 @@ python -m spacy download en_core_web_sm
 
 **Level 4 (LLM API)** - Paid, cloud, advanced:
 ```bash
-jai analyze 2024-11-26 --level 4 --provider claude
-jai analyze 2024-11-26 --level 4 --provider openai
+nlp analyze 2024-11-26 --level 4 --provider claude
+nlp analyze 2024-11-26 --level 4 --provider openai
 ```
 
 **Extracts:**
@@ -1384,7 +1384,7 @@ jai analyze 2024-11-26 --level 4 --provider openai
 
 **With manuscript analysis:**
 ```bash
-jai analyze 2024-11-26 --level 4 --provider claude --manuscript
+nlp analyze 2024-11-26 --level 4 --provider claude --manuscript
 ```
 
 **Additional extracts:**
@@ -1406,7 +1406,7 @@ export OPENAI_API_KEY='sk-...'
 
 **Output format:**
 ```
-=== AI Analysis (Level 2) ===
+=== NLP Analysis (Level 2) ===
 
 People:
 - Alice (confidence: 0.95)
@@ -1423,7 +1423,7 @@ Themes:
 Events:
 - therapy session
 
-=== AI Analysis (Level 4) ===
+=== NLP Analysis (Level 4) ===
 
 Summary:
 Reflective entry about a breakthrough in therapy with Alice,
@@ -1612,7 +1612,7 @@ plm backup-full
 validate wiki orphans
 ```
 
-### Before Major Changes
+### Before Sofir Changes
 
 ```bash
 # Create backup
@@ -1658,9 +1658,9 @@ validate consistency metadata
 plm sync-db  # Re-sync from markdown
 ```
 
-### "AI analysis not working"
+### "Text analysis not working"
 ```bash
-jai status  # Check what's available
+nlp status  # Check what's available
 # Install missing dependencies based on output
 ```
 
@@ -1680,7 +1680,7 @@ plm --help
 metadb --help
 validate --help
 jsearch --help
-jai --help
+nlp --help
 
 # Subcommand help
 metadb backup --help
@@ -1692,7 +1692,7 @@ jsearch query --help
 ```bash
 plm status
 metadb health
-jai status
+nlp status
 ```
 
 **Documentation:**

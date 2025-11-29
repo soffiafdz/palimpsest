@@ -22,7 +22,7 @@ people:
   - Mom
   - Alice
   - Dr-Martinez # Will become "Dr Martinez" in DB
-  - María-José # Will become "María José" in DB
+  - Ana-Sofía # Will become "Ana Sofía" in DB
   - Anna-Lucia # Will become "Anna Lucia" in DB
   - "Sarah Thompson" # Full name preserved as-is
   - Jim # Single name
@@ -65,7 +65,7 @@ dates:
 # Cross-references to other journal entries
 related_entries: ["2024-03-10", "2024-02-28", "2024-01-15"]
 
-# Major narrative events/themes
+# Sofir narrative events/themes
 events:
   - therapy-breakthrough
   - alice-wedding-planning

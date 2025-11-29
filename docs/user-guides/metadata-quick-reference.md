@@ -59,10 +59,10 @@ locations:
 people:
   - John                     # Simple name
   - Jane Smith              # Full name
-  - María-José              # Hyphenated (→ "María José")
+  - Ana-Sofía              # Hyphenated (→ "Ana Sofía")
   - Bob (Robert Johnson)    # Name + expansion
   - "@Johnny (John)"        # Alias
-  - "@Majo (María-José)"    # Alias with hyphenated name
+  - "@Sofi (Ana-Sofía)"    # Alias with hyphenated name
 ```
 
 ### Dates and Timeline
@@ -170,7 +170,7 @@ locations:
   - Café Olimpico
   - Mont Royal
 people:
-  - "@Majo (María-José)"
+  - "@Sofi (Ana-Sofía)"
   - John
 tags:
   - social
@@ -227,7 +227,7 @@ Entry content here.
 date: 2024-01-15
 city: Montreal
 people:
-  - María José
+  - Ana Sofía
 tags:
   - identity
   - friendship
@@ -263,14 +263,14 @@ locations:
     - Robarts Library
 
 people:
-  - "@Majo (María-José)"
+  - "@Sofi (Ana-Sofía)"
   - John (John Smith)
   - Alice
   - Dr. Martinez
 
 dates:
   - "2024-01-20 (thesis defense at #McGill-campus)"
-  - "2024-01-10 (coffee with @Majo at #Café-Olimpico)"
+  - "2024-01-10 (coffee with @Sofi at #Café-Olimpico)"
 
 events:
   - phd-research
@@ -326,7 +326,7 @@ people:
 
 # Hyphenated names (hyphen → space)
 people:
-  - María-José        # → Person(name='María José')
+  - Ana-Sofía        # → Person(name='Ana Sofía')
   - Jean-Paul         # → Person(name='Jean Paul')
 
 # Name with expansion
@@ -337,7 +337,7 @@ people:
 # Aliases (requires @ prefix)
 people:
   - "@Johnny"         # → Alias(alias='Johnny')
-  - "@Majo (María-José)" # → Alias(alias='Majo'), Person(name='María José')
+  - "@Sofi (Ana-Sofía)" # → Alias(alias='Sofi'), Person(name='Ana Sofía')
 ```
 
 ### Location Patterns

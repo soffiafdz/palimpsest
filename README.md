@@ -22,11 +22,33 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 - **Database-backed queries**: SQLAlchemy ORM with relationship mapping and analytics
 - **Wiki system**: Bidirectional sync between database and Markdown wiki for editing and curation
 - **Full-text search**: SQLite FTS5 with advanced filtering (people, dates, themes, word count, etc.)
-- **AI-assisted analysis** (optional): Entity extraction, theme detection, semantic search with 4 intelligence levels
+- **Automated metadata extraction** (optional): NLP-based tagging, named entity recognition, and pattern matching for organizational purposes
 - **Manuscript subwiki**: Dedicated wiki for curating journal entries into literary material
 - **PDF generation**: Create clean reading copies and annotated review versions
 - **Vim/Neovim integration**: Vimwiki templates and automation (optional)
 - **Makefile orchestration**: Simple commands for batch processing and year-based builds
+
+---
+
+## 📝 About Automated Analysis Tools
+
+**The optional text analysis tools in this project (`dev/nlp/` and `nlp` command) use standard computational linguistics techniques**—specifically named entity recognition (NER), keyword extraction, and pattern matching to assist with metadata organization of existing journal content.
+
+**Technical approach:**
+- Uses spaCy for named entity recognition (local, open-source)
+- Employs regex and keyword matching for theme detection
+- Optional: sentence transformers for semantic similarity search
+- Optional: LLM APIs for structured metadata extraction (Level 4 only)
+
+**Important clarifications:**
+- ✅ Extracts entities, themes, and tags from already-written text
+- ✅ Suggests organizational structures based on text analysis
+- ✅ Assists with cataloging and searchability through pattern matching
+- ❌ **Does NOT generate, write, or modify any creative content**
+- ❌ **Does NOT contribute to manuscript writing**
+- ❌ **All journal entries and literary work are 100% human-written**
+
+These are standard text processing techniques used in digital humanities, archives, and library science for organizing large text corpora.
 
 ---
 
@@ -148,7 +170,7 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 1. **Journal → Database**: `inbox → txt → md → database` (via YAML frontmatter)
 2. **Database → Wiki**: `database → wiki` (for editing and curation)
 3. **Wiki → Database**: `wiki → database` (import edits back)
-4. **Search & AI**: Query database with FTS5, extract metadata with AI
+4. **Search & Analysis**: Query database with FTS5, extract metadata with NLP tools
 5. **Export**: `database → pdf` (annotated reading copies)
 
 ---
@@ -158,7 +180,7 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 ```
 palimpsest/
 ├── dev/                        # Source code
-│   ├── ai/                     # AI analysis (optional)
+│   ├── nlp/                    # NLP analysis (optional)
 │   │   ├── extractors.py      # spaCy NER, theme extraction
 │   │   ├── semantic_search.py # Sentence transformers
 │   │   ├── claude_assistant.py # Claude API integration
@@ -181,13 +203,13 @@ palimpsest/
 │   │   ├── sql2wiki.py        # Database → Wiki
 │   │   ├── wiki2sql.py        # Wiki → Database
 │   │   ├── search.py          # Search CLI
-│   │   └── ai_assist.py       # AI analysis CLI
+│   │   └── nlp_assist.py      # NLP analysis CLI
 │   └── utils/                  # Utilities (fs, md, parsers)
 ├── templates/                  # LaTeX preambles, wiki templates
 ├── tests/                      # Integration tests
 │   └── integration/
 │       ├── test_search.py     # Search tests
-│       ├── test_ai_extraction.py # AI tests
+│       ├── test_nlp_extraction.py # NLP tests
 │       ├── test_sql_to_wiki.py # Wiki export tests
 │       └── test_wiki_to_sql.py # Wiki import tests
 ├── data/                       # Personal content (git submodule)
@@ -297,35 +319,35 @@ jsearch index --status
 # sort:relevance|date|word_count, limit:N
 ```
 
-### AI Analysis Commands
+### Text Analysis Commands
 
 ```bash
-# Check AI capabilities
-jai status
+# Check analysis capabilities
+nlp status
 
 # Analyze single entry (Level 2: spaCy NER)
-jai analyze 2024-11-01 --level 2
+nlp analyze 2024-11-01 --level 2
 
-# Analyze with Claude API (Level 4)
-jai analyze 2024-11-01 --level 4 --manuscript
+# Analyze with LLM API (Level 4)
+nlp analyze 2024-11-01 --level 4 --manuscript
 
 # Batch analyze entries
-jai batch --level 2 --limit 10
+nlp batch --level 2 --limit 10
 
 # Find semantically similar entries (Level 3)
-jai similar 2024-11-01 --limit 10
+nlp similar 2024-11-01 --limit 10
 
 # Cluster entries by theme
-jai cluster --num-clusters 10
+nlp cluster --num-clusters 10
 ```
 
-**AI Intelligence Levels:**
+**Analysis Processing Levels:**
 
 - **Level 2**: spaCy NER (free) - Entity extraction, theme detection
 - **Level 3**: Sentence Transformers (free) - Semantic similarity search
 - **Level 4**: LLM APIs (paid) - Advanced analysis, manuscript curation (Claude or OpenAI)
 
-See [Search & AI Documentation](#search--ai-features) for details.
+See [Search & Analysis Documentation](#search--analysis-features) for details.
 
 ---
 
@@ -401,7 +423,7 @@ See [docs/bidirectional-sync-guide.md](docs/bidirectional-sync-guide.md) for com
 
 ---
 
-## Search & AI Features
+## Search & Analysis Features
 
 ### Full-Text Search (FTS5)
 
@@ -431,7 +453,7 @@ jsearch "reflection" city:montreal words:500-1000 has:manuscript
 jsearch index --create
 ```
 
-### AI-Assisted Analysis (Optional)
+### Automated Text Analysis (Optional)
 
 Progressive intelligence levels - use what you need:
 
@@ -453,7 +475,7 @@ python -m spacy download en_core_web_sm
 **Usage:**
 
 ```bash
-jai analyze 2024-11-01 --level 2
+nlp analyze 2024-11-01 --level 2
 ```
 
 #### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
@@ -475,10 +497,10 @@ pip install faiss-cpu  # optional, for faster search
 
 ```bash
 # Find similar entries
-jai similar 2024-11-01 --limit 10
+nlp similar 2024-11-01 --limit 10
 
 # Cluster by theme
-jai cluster --num-clusters 10
+nlp cluster --num-clusters 10
 ```
 
 #### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
@@ -508,19 +530,19 @@ jai cluster --num-clusters 10
 
 ```bash
 # Analyze with Claude (default)
-jai analyze 2024-11-01 --level 4 --manuscript
+nlp analyze 2024-11-01 --level 4 --manuscript
 
 # Analyze with OpenAI
-jai analyze 2024-11-01 --level 4 --provider openai --manuscript
+nlp analyze 2024-11-01 --level 4 --provider openai --manuscript
 
 # Batch analyze with OpenAI
-jai batch --level 4 --provider openai --limit 10
+nlp batch --level 4 --provider openai --limit 10
 ```
 
 **Check what's installed:**
 
 ```bash
-jai status
+nlp status
 ```
 
 ---
@@ -660,7 +682,7 @@ Uses Ruff for linting. Code follows:
 
 See `environment.yaml` for complete list.
 
-### Optional AI Dependencies
+### Optional NLP Dependencies
 
 **Level 2 (spaCy NER):**
 

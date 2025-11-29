@@ -39,7 +39,7 @@ The Palimpsest project has a **44% test coverage** across all tests (unit + inte
 - `dev/dataclasses/wiki_person.py` - 47%
 
 ❌ **Untested/Low Coverage (0-20% coverage):**
-- All AI modules (0-38%)
+- All NLP modules (0-38%)
 - All builder modules (0%)
 - All CLI modules (0%)
 - Most wiki dataclasses (0-26%)
@@ -162,7 +162,7 @@ The Palimpsest project has a **44% test coverage** across all tests (unit + inte
 - Import from Wiki severely undertested (13%)
 - Critical for bidirectional sync functionality
 
-### 6. AI Modules (Poor: 0-38%)
+### 6. NLP Modules (Poor: 0-38%)
 
 | Module | Coverage | Missing Lines | Priority |
 |--------|----------|---------------|----------|
@@ -172,7 +172,7 @@ The Palimpsest project has a **44% test coverage** across all tests (unit + inte
 | **openai_assistant.py** | 0% | 96 lines | Low |
 
 **Analysis:**
-- AI features are optional but largely untested
+- NLP features are optional but largely untested
 - Extractors have some coverage (38%)
 - LLM assistants completely untested (require API keys)
 - Semantic search needs more coverage
@@ -252,13 +252,13 @@ The Palimpsest project has a **44% test coverage** across all tests (unit + inte
 - **Error:** `property 'display_name' of 'Event' object has no setter`
 - **Fix Required:** Make property writable or change export logic
 
-### 4. AI Test Dependencies (Low Priority)
+### 4. NLP Test Dependencies (Low Priority)
 
-**Issue:** NumPy/AI dependencies not available
+**Issue:** NumPy/NLP dependencies not available
 - **Affected Tests:** 4 failures
 - **Files:** `test_ai_extraction.py`
 - **Error:** `AttributeError: 'NoneType' object has no attribute 'ndarray'`
-- **Fix Required:** Skip tests when AI dependencies unavailable (already partially done)
+- **Fix Required:** Skip tests when NLP dependencies unavailable (already partially done)
 
 ### 5. Data Consistency Issues (Medium Priority)
 
@@ -292,7 +292,7 @@ Based on codebase analysis, the following features have **no or minimal test cov
    - `journal` CLI (inbox, convert, sync, pdf, etc.)
    - `metadb` CLI (init, backup, stats, health, etc.)
    - `palimpsest` search CLI
-   - `palimpsest` AI CLI
+   - `palimpsest` NLP CLI
 
 3. **Wiki Bidirectional Sync** (13-42% coverage)
    - Wiki → SQL import for most entity types
@@ -338,7 +338,7 @@ Based on codebase analysis, the following features have **no or minimal test cov
    - Theme dataclass
    - Character dataclass (44%)
 
-10. **AI Semantic Search** (18% coverage)
+10. **NLP Semantic Search** (18% coverage)
     - Similarity search
     - Theme clustering
     - Embedding caching
@@ -417,9 +417,9 @@ Based on codebase analysis, the following features have **no or minimal test cov
    - Add proper test cleanup/isolation
    - Fix Person.from_database() calls
 
-3. **Skip AI Tests Properly**
+3. **Skip NLP Tests Properly**
    - Improve dependency checking
-   - Skip tests when NumPy/AI deps unavailable
+   - Skip tests when NumPy/NLP deps unavailable
    - Add clear skip messages
 
 **Deliverable:** All tests passing (807 passed → 831 passed)
@@ -483,7 +483,7 @@ Based on codebase analysis, the following features have **no or minimal test cov
    - Test journal CLI commands
    - Test metadb CLI commands
    - Test search CLI
-   - Test AI CLI
+   - Test NLP CLI
    - **Impact:** High for usability
 
 **Deliverable:** Coverage 60% → 70%
@@ -520,7 +520,7 @@ Based on codebase analysis, the following features have **no or minimal test cov
 **Priority: LOW**
 **Time: 8-12 hours**
 
-1. **AI Features (0-38% → 50%+)**
+1. **NLP Features (0-38% → 50%+)**
    - Test extractors thoroughly
    - Test semantic search
    - Mock LLM assistants
@@ -653,7 +653,7 @@ Based on test failures, these bugs should be fixed:
 - `.codecov.yml` configured with:
   - 80% project target (2% threshold)
   - 70% patch target (5% threshold)
-  - Component breakdown (core, database, pipeline, AI, builders, dataclasses, utils)
+  - Component breakdown (core, database, pipeline, NLP, builders, dataclasses, utils)
   - Ignore patterns (tests, setup, bin, etc.)
   - Flags for unit vs integration tests
 
@@ -705,7 +705,7 @@ Based on test failures, these bugs should be fixed:
 2. Wiki sync, DB manager, exports, health, backup (Phase 2)
 3. Builders and CLI (Phase 3)
 4. Dataclasses (Phase 4)
-5. AI and utilities (Phase 5)
+5. NLP and utilities (Phase 5)
 
 **Codecov Integration:** Ready to activate (needs token)
 

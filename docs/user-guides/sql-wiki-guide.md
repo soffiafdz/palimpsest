@@ -132,7 +132,7 @@ wiki/
 ├── people/
 │   ├── index.md              # People index (alphabetical)
 │   ├── john-smith.md
-│   ├── maria-jose.md
+│   ├── ana-sofia.md
 │   └── ...
 ├── locations/
 │   ├── index.md              # Locations index (by city)
@@ -306,7 +306,7 @@ All other fields are **read-only** (database-computed, regenerated on export).
 [[../../../md/2024/2024-01-15.md|Read Full Entry]]
 
 ### People (3)
-- [[../../people/maria-jose.md|María José]] — Friend
+- [[../../people/ana-sofia.md|Ana Sofía]] — Friend
 - [[../../people/john-smith.md|John Smith]] — Colleague
 - [[../../people/dr-martinez.md|Dr. Martinez]] — Academic Advisor
 
@@ -343,8 +343,8 @@ All other fields are **read-only** (database-computed, regenerated on export).
 - 2024-01-20 — Thesis defense at McGill campus
   - People: Dr. Smith, Dr. Johnson
   - Locations: McGill University
-- 2024-01-10 — Coffee with María José at Café Olimpico
-  - People: María José
+- 2024-01-10 — Coffee with Ana Sofía at Café Olimpico
+  - People: Ana Sofía
   - Locations: Café Olimpico
 - 2023-12-25 — Christmas dinner
 
@@ -367,7 +367,7 @@ All other fields are **read-only** (database-computed, regenerated on export).
 **Themes**: identity · academic-life · urban-isolation
 
 ### Notes
-Important entry for manuscript Chapter 3. Captures turning point in protagonist's journey. Consider expanding the conversation with María José for manuscript version.
+Important entry for manuscript Chapter 3. Captures turning point in protagonist's journey. Consider expanding the conversation with Ana Sofía for manuscript version.
 ```
 
 ---
@@ -434,16 +434,16 @@ Important entry for manuscript Chapter 3. Captures turning point in protagonist'
 ```markdown
 # Palimpsest — People
 
-*Breadcrumbs: [[../index.md|Home]] > [[index.md|People]] > María José*
+*Breadcrumbs: [[../index.md|Home]] > [[index.md|People]] > Ana Sofía*
 
-## María José
+## Ana Sofía
 
 ### Category
 Friend
 
 ### Alias
-- Majo
-- MJ
+- Sofi
+- AS
 
 ### Presence
 - **Range:** 2023-06-15 → 2024-01-20
@@ -561,7 +561,7 @@ For manuscript: Expand café conversations, add more cultural context, develop h
 ### Timeline
 
 #### 2024
-- **2024-01-20** — [[../../entries/2024/2024-01-20.md|Entry]] — Morning coffee with María José
+- **2024-01-20** — [[../../entries/2024/2024-01-20.md|Entry]] — Morning coffee with Ana Sofía
 - **2024-01-15** — [[../../entries/2024/2024-01-15.md|Entry]] — Solo writing session
 - **2024-01-10** — [[../../entries/2024/2024-01-10.md|Entry]] — Thesis work
 
@@ -571,19 +571,19 @@ For manuscript: Expand café conversations, add more cultural context, develop h
 ...
 
 ### People Encountered (4)
-- [[../../people/maria-jose.md|María José]] — 15 visits
+- [[../../people/ana-sofia.md|Ana Sofía]] — 15 visits
 - [[../../people/john-smith.md|John Smith]] — 5 visits
 - [[../../people/alice.md|Alice]] — 2 visits
 - [[../../people/bob.md|Bob]] — 1 visit
 
 ### Mentioned Dates (3)
-- 2024-01-10 — Coffee with María José
+- 2024-01-10 — Coffee with Ana Sofía
 - 2023-12-15 — Study session
 - 2023-11-20 — First meeting with Alice here
 
 ### Notes
 **Setting for Manuscript:**
-Small Italian café in Mile End. Central meeting place for protagonist and María José. Represents intellectual community and immigrant culture in Montreal.
+Small Italian café in Mile End. Central meeting place for protagonist and Ana Sofía. Represents intellectual community and immigrant culture in Montreal.
 
 **Sensory Details:**
 - Smell of espresso and fresh pastries
@@ -753,7 +753,7 @@ Café Olimpico (intellectual community), Mont Royal (nature/reflection), McGill 
 ...
 
 ### Notes
-Major narrative arc in manuscript. Represents protagonist's intellectual journey and struggle with identity.
+Sofir narrative arc in manuscript. Represents protagonist's intellectual journey and struggle with identity.
 
 **Phases:**
 1. Sept-Nov 2023: Initial research and outline
@@ -762,7 +762,7 @@ Major narrative arc in manuscript. Represents protagonist's intellectual journey
 4. Feb-Apr 2024: Final push to completion
 
 **Key Moments:**
-- 2024-01-15: Major conceptual breakthrough
+- 2024-01-15: Sofir conceptual breakthrough
 - 2023-12-10: Low point, considering quitting
 - 2024-03-20: Defense preparation begins
 
@@ -897,7 +897,7 @@ Core exploration of personal/cultural/academic identity. Links to immigrant expe
 **Key Entries:**
 - 2024-01-15: Breakthrough realization
 - 2023-11-10: Identity crisis during thesis work
-- 2023-08-05: Conversation with María José about belonging
+- 2023-08-05: Conversation with Ana Sofía about belonging
 
 **Development Arc:**
 Early entries: confusion, fragmentation
@@ -987,7 +987,7 @@ Discussion of existential dread and the absurd. Argument that existence precedes
 
 ### Notes
 **Key Text for Manuscript:**
-Major philosophical influence on protagonist. Cited frequently during thesis work on identity and freedom.
+Sofir philosophical influence on protagonist. Cited frequently during thesis work on identity and freedom.
 
 **Themes:**
 - Freedom and responsibility
@@ -995,7 +995,7 @@ Major philosophical influence on protagonist. Cited frequently during thesis wor
 - Existence precedes essence
 
 **Use in Manuscript:**
-Reference when protagonist grapples with choices and identity. Contrast with Latinx cultural context (collectivism vs. individualism). María José often challenges protagonist's Sartrean assumptions.
+Reference when protagonist grapples with choices and identity. Contrast with Latinx cultural context (collectivism vs. individualism). Ana Sofía often challenges protagonist's Sartrean assumptions.
 ```
 
 ---
@@ -1267,7 +1267,7 @@ wiki/manuscript/
 │   └── timeline.md
 ├── characters/
 │   ├── protagonist.md
-│   ├── maria-jose.md
+│   ├── ana-sofia.md
 │   └── ...
 ├── themes/
 │   ├── identity.md
@@ -1315,11 +1315,11 @@ wiki/manuscript/
 
 ## Character Development
 **Protagonist:**
-- Major turning point: realizes thesis anxiety is actually identity anxiety
+- Sofir turning point: realizes thesis anxiety is actually identity anxiety
 - Emotional arc: confusion → clarity
 - Growth: begins accepting dual identity
 
-**María José:**
+**Ana Sofía:**
 - Supporting role: wisdom figure
 - Catalyst for protagonist's realization
 - Relationship deepens (from acquaintance to confidante)
@@ -1327,14 +1327,14 @@ wiki/manuscript/
 ## Notes for Revision
 - Expand café conversation scene (currently 2 paragraphs → needs 2 pages)
 - Add more sensory details: smell of coffee, sound of Italian conversations
-- Develop María José's backstory subtly (reference her own immigration experience)
+- Develop Ana Sofía's backstory subtly (reference her own immigration experience)
 - Cut epigraph? Might be too on-the-nose
 - Move reflection on Sartre to earlier in chapter for better flow
 
 ## Scene Structure
 1. Morning walk to café (set mood, weather as metaphor)
 2. Café arrival (sensory grounding)
-3. Conversation with María José (philosophical → personal)
+3. Conversation with Ana Sofía (philosophical → personal)
 4. Protagonist's internal realization (climax)
 5. Walk home (changed perspective, same streets)
 
@@ -1344,7 +1344,7 @@ wiki/manuscript/
 - Timeline: Revise by Feb 1
 
 ## Character Notes
-**María José Development:**
+**Ana Sofía Development:**
 - First appearance: Chapter 1 (background character)
 - This entry: Becomes major supporting character
 - Later: Continues as intellectual companion through end
@@ -1403,7 +1403,7 @@ plm export-wiki all  # Includes manuscript wiki
 
 **3. Add character notes:**
 ```vim
-:e wiki/manuscript/characters/maria-jose.md
+:e wiki/manuscript/characters/ana-sofia.md
 
 # Add to character_description field
 ```

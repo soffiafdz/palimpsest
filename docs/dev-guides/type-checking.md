@@ -48,7 +48,7 @@ The `dev/ai` module has relaxed rules because it uses **optional dependencies** 
 
 **Why these suppressions?**
 
-1. **reportMissingImports: none** - AI libraries (spacy, sentence-transformers, etc.) are optional
+1. **reportMissingImports: none** - NLP libraries (spacy, sentence-transformers, etc.) are optional
 2. **reportOptionalMemberAccess: none** - Code gracefully handles missing dependencies
 3. **reportOptionalCall: none** - Methods on optional objects are checked at runtime
 4. **reportConstantRedefinition: none** - Pattern for feature flags (e.g., `SPACY_AVAILABLE = True`)

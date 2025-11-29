@@ -419,7 +419,7 @@ INSERT INTO entry_locations (entry_id, location_id) VALUES
 people:
   - John
   - Jane Smith
-  - María José
+  - Ana Sofía
 ```
 
 **Parsing Rules:**
@@ -435,15 +435,15 @@ Person(name='John', full_name=NULL)
 -- "Jane Smith" (multiple words)
 Person(name=NULL, full_name='Jane Smith')
 
--- "María José" (multiple words)
-Person(name=NULL, full_name='María José')
+-- "Ana Sofía" (multiple words)
+Person(name=NULL, full_name='Ana Sofía')
 ```
 
 ### Format 2: Hyphenated Names
 
 ```yaml
 people:
-  - María-José
+  - Ana-Sofía
   - Jean-Paul
   - Dr-Martinez
 ```
@@ -455,7 +455,7 @@ people:
 **Results:**
 ```sql
 -- Stored as:
-Person(name='María José')
+Person(name='Ana Sofía')
 Person(name='Jean Paul')
 Person(name='Dr Martinez')
 ```
@@ -463,7 +463,7 @@ Person(name='Dr Martinez')
 **Export (back to YAML):**
 ```yaml
 people:
-  - María-José  # Space → hyphen for YAML readability
+  - Ana-Sofía  # Space → hyphen for YAML readability
   - Jean-Paul
   - Dr-Martinez
 ```
@@ -474,7 +474,7 @@ people:
 people:
   - John (John Smith)
   - Bob (Robert Johnson)
-  - Majo (María José)
+  - Sofi (Ana Sofía)
 ```
 
 **Parsing Rules:**
@@ -485,7 +485,7 @@ people:
 ```sql
 Person(name='John', full_name='John Smith')
 Person(name='Bob', full_name='Robert Johnson')
-Person(name='Majo', full_name='María José')
+Person(name='Sofi', full_name='Ana Sofía')
 ```
 
 ### Format 4: Alias Notation
@@ -493,7 +493,7 @@ Person(name='Majo', full_name='María José')
 ```yaml
 people:
   - "@Johnny"
-  - "@Majo (María-José)"
+  - "@Sofi (Ana-Sofía)"
   - "@J (John Smith)"
 ```
 
@@ -508,9 +508,9 @@ people:
 Person(name='Johnny')
 Alias(alias='Johnny', person_id=person.id)
 
--- "@Majo (María-José)"
-Person(name='María José')
-Alias(alias='Majo', person_id=person.id)
+-- "@Sofi (Ana-Sofía)"
+Person(name='Ana Sofía')
+Alias(alias='Sofi', person_id=person.id)
 
 -- "@J (John Smith)"
 Person(full_name='John Smith')
@@ -538,8 +538,8 @@ people:
   - alias: Johnny
     name: John
 
-  - alias: [Majo, MJ]
-    full_name: María José
+  - alias: [Sofi, AS]
+    full_name: Ana Sofía
 ```
 
 **Rules:**
@@ -553,9 +553,9 @@ Person(name='John', full_name='John Smith')
 Person(name='John')
 Alias(alias='Johnny', person_id=person.id)
 
-Person(full_name='María José')
-Alias(alias='Majo', person_id=person.id)
-Alias(alias='MJ', person_id=person.id)
+Person(full_name='Ana Sofía')
+Alias(alias='Sofi', person_id=person.id)
+Alias(alias='AS', person_id=person.id)
 ```
 
 ### Complete People Examples
@@ -565,10 +565,10 @@ Alias(alias='MJ', person_id=person.id)
 people:
   - John                      # Simple name
   - Jane Smith               # Full name
-  - María-José               # Hyphenated → "María José"
+  - Ana-Sofía               # Hyphenated → "Ana Sofía"
   - Bob (Robert Johnson)     # Name + expansion
   - "@Johnny (John)"         # Alias
-  - "@Majo (María-José)"     # Alias with hyphenated name
+  - "@Sofi (Ana-Sofía)"     # Alias with hyphenated name
   - name: Alice
     full_name: Alice Anderson
     alias: [Al, Ally]
@@ -579,15 +579,15 @@ people:
 -- People table
 Person(name='John')
 Person(full_name='Jane Smith')
-Person(name='María José')  -- Hyphen → space
+Person(name='Ana Sofía')  -- Hyphen → space
 Person(name='Bob', full_name='Robert Johnson')
 Person(name='John')  -- For Johnny alias
-Person(name='María José')  -- For Majo alias
+Person(name='Ana Sofía')  -- For Sofi alias
 Person(name='Alice', full_name='Alice Anderson')
 
 -- Aliases table
 Alias(alias='Johnny', person_id=john.id)
-Alias(alias='Majo', person_id=maria_jose.id)
+Alias(alias='Sofi', person_id=maria_jose.id)
 Alias(alias='Al', person_id=alice.id)
 Alias(alias='Ally', person_id=alice.id)
 
@@ -653,7 +653,7 @@ MentionedDate(date='2024-03-20', context='dentist appointment')
 ```yaml
 dates:
   - "2024-01-15 (meeting with @John at #Café-Olimpico)"
-  - "2023-12-25 (dinner with @María-José and @Bob at #Mom's-place)"
+  - "2023-12-25 (dinner with @Ana-Sofía and @Bob at #Mom's-place)"
   - "2024-06-01 (@Alice's birthday at #Parc-La-Fontaine)"
 ```
 
@@ -744,7 +744,7 @@ dates:
 dates:
   - "~"  # Opt out of entry date auto-inclusion
   - "2024-01-20 (dentist)"
-  - "2024-01-25 (lunch with @María-José at #Café-Central)"
+  - "2024-01-25 (lunch with @Ana-Sofía at #Café-Central)"
   - date: "2023-12-25"
     context: "Christmas dinner"
     locations:
@@ -1455,7 +1455,7 @@ locations:
   - Café Olimpico
   - Mont Royal
 people:
-  - "@Majo (María-José)"
+  - "@Sofi (Ana-Sofía)"
   - John
   - Alice (Alice Anderson)
 tags:
@@ -1465,7 +1465,7 @@ events:
   - montreal-period
 ---
 
-Met with Majo at Café Olimpico this morning...
+Met with Sofi at Café Olimpico this morning...
 ```
 
 ### Entry with Timeline and References
@@ -1534,14 +1534,14 @@ locations:
     - Robarts Library
 
 people:
-  - "@Majo (María-José)"
+  - "@Sofi (Ana-Sofía)"
   - John (John Smith)
   - Alice
   - Dr. Martinez
 
 dates:
   - "2024-01-20 (thesis defense at #McGill-campus)"
-  - "2024-01-10 (coffee with @Majo at #Café-Olimpico)"
+  - "2024-01-10 (coffee with @Sofi at #Café-Olimpico)"
   - "2023-12-25 (Christmas dinner)"
 
 events:
@@ -1609,14 +1609,14 @@ Today marked a turning point in my research...
 ```yaml
 # INPUT
 people:
-  - María-José
+  - Ana-Sofía
 
 # DATABASE
-Person(name='María José')  # Hyphen → space
+Person(name='Ana Sofía')  # Hyphen → space
 
 # EXPORT (back to YAML)
 people:
-  - María-José  # Space → hyphen for readability
+  - Ana-Sofía  # Space → hyphen for readability
 ```
 
 **Gotcha:** Parentheses trigger name/full_name split

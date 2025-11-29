@@ -241,14 +241,14 @@ dev/search/cli.py                   106 lines   - Search CLI (deprecated?)
 
 **Note**: `search_engine.py` has 70% coverage, suggesting these are older modules.
 
-##### AI Modules (~1,000+ lines) - Intentionally Skipped
+##### NLP Modules (~1,000+ lines) - Intentionally Skipped
 **Status**: Optional dependencies, tests skipped by design
 
 ```
-All dev/ai/*.py                     1000+ lines - AI features (transformers, spacy, etc.)
+All dev/nlp/*.py                     1000+ lines - NLP features (transformers, spacy, etc.)
 ```
 
-**Note**: 14 tests intentionally skipped when AI dependencies not installed. This is correct behavior.
+**Note**: 14 tests intentionally skipped when NLP dependencies not installed. This is correct behavior.
 
 ##### Builder Modules (~1,000+ lines) - Low Priority
 **Status**: PDF/text builders, less critical
@@ -807,7 +807,7 @@ tests/
 - Coverage: 44.6%
 - Tests Passing: 897
 - Tests Failing: 0
-- Tests Skipped: 14 (AI dependencies)
+- Tests Skipped: 14 (NLP dependencies)
 
 ### Target Metrics (End of Phase 5)
 - Total Lines: ~15,500 (modest growth)

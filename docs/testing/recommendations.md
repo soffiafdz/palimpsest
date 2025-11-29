@@ -180,9 +180,9 @@ Ensure updated values are exported correctly:
 
 ---
 
-#### Bug 6: AI Test Dependencies
+#### Bug 6: NLP Test Dependencies
 
-**Issue:** Tests failing when NumPy/AI dependencies unavailable
+**Issue:** Tests failing when NumPy/NLP dependencies unavailable
 
 **Location:** `tests/integration/test_ai_extraction.py`
 
@@ -431,7 +431,7 @@ tests/integration/test_txtbuilder_integration.py
 - journal CLI commands
 - metadb CLI commands
 - palimpsest search CLI
-- palimpsest AI CLI
+- palimpsest NLP CLI
 - Exit codes
 - Error messages
 - Help text
@@ -536,7 +536,7 @@ Total Tests: ~1,550
 
 ## Optional Test Coverage (Future)
 
-### 12. AI Feature Testing
+### 12. NLP Feature Testing
 
 **Current Coverage:** 0-38%
 **Target Coverage:** 50%
@@ -643,7 +643,7 @@ Total Tests: ~1,550
 - **Result:** 78% coverage
 
 ### Future: Optional Features
-- AI features (8-12 hours)
+- NLP features (8-12 hours)
 - Logging & utilities (4-6 hours)
 - **Result:** 82% coverage
 
@@ -710,7 +710,7 @@ Total Tests: ~1,550
    - [ ] Implement dataclass tests
 
 4. **Long Term (Future):**
-   - [ ] Implement AI feature tests
+   - [ ] Implement NLP feature tests
    - [ ] Implement optional utility tests
    - [ ] Continuous test maintenance
 
