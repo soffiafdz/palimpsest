@@ -774,7 +774,7 @@ class PalimpsestDB:
         """Static method for PersonManager access from EntryManager."""
         from .managers import PersonManager
         person_mgr = PersonManager(session, None)
-        return person_mgr.get(person_name=person_name, full_name=person_full_name)
+        return person_mgr.get(person_name=person_name, person_full_name=person_full_name)
 
     @staticmethod
     def update_entry_locations_static(
@@ -858,12 +858,11 @@ class PalimpsestDB:
                     title = DataValidator.normalize_string(source_data.get("title"))
                     if title:
                         # Get or create source via manager
-                        source = reference_mgr.get_or_create_source({
-                            "title": title,
-                            "type": source_data.get("type"),
-                            "author": source_data.get("author"),
-                            "publication_date": source_data.get("publication_date"),
-                        })
+                        source = reference_mgr.get_or_create_source(
+                            title=title,
+                            source_type=source_data.get("type"),
+                            author=source_data.get("author"),
+                        )
 
             # Create reference via manager
             ref_metadata = {

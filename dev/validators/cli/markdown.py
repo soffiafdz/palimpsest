@@ -68,13 +68,20 @@ def frontmatter(ctx: click.Context, file_path: Optional[str]) -> None:
     if file_path:
         # Validate single file
         issues = validator.validate_file(Path(file_path))
-        if issues:
-            for issue in issues:
-                if issue.category == "frontmatter":
-                    icon = "❌" if issue.severity == "error" else "⚠️"
-                    click.echo(f"{icon} {issue.message}")
-                    if issue.suggestion:
-                        click.echo(f"   💡 {issue.suggestion}")
+        frontmatter_issues = [i for i in issues if i.category == "frontmatter"]
+        has_errors = any(i.severity == "error" for i in frontmatter_issues)
+
+        if frontmatter_issues:
+            for issue in frontmatter_issues:
+                icon = "❌" if issue.severity == "error" else "⚠️"
+                line_info = f":{issue.line_number}" if issue.line_number else ":1"
+                click.echo(f"{icon} [{issue.category}]{line_info} {issue.message}")
+                if issue.suggestion:
+                    click.echo(f"   💡 {issue.suggestion}")
+
+            if has_errors:
+                error_count = sum(1 for i in frontmatter_issues if i.severity == "error")
+                raise click.ClickException(f"Found {error_count} frontmatter error(s)")
         else:
             click.echo("✅ No frontmatter issues found")
     else:
@@ -88,6 +95,18 @@ def frontmatter(ctx: click.Context, file_path: Optional[str]) -> None:
         report.total_warnings = sum(
             1 for i in frontmatter_issues if i.severity == "warning"
         )
+
+        # Recalculate file counts based on filtered issues
+        files_with_errors = set()
+        files_with_warnings = set()
+        for issue in frontmatter_issues:
+            if issue.severity == "error":
+                files_with_errors.add(issue.file_path)
+            elif issue.severity == "warning":
+                files_with_warnings.add(issue.file_path)
+
+        report.files_with_errors = len(files_with_errors)
+        report.files_with_warnings = len(files_with_warnings)
 
         click.echo(format_markdown_report(report))
 

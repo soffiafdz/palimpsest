@@ -127,17 +127,18 @@ class MarkdownValidator:
     # Valid reference modes
     VALID_REFERENCE_MODES = ["direct", "indirect", "paraphrase", "visual"]
 
-    # Valid reference types
+    # Valid reference types (must match ReferenceType enum in models/enums.py)
     VALID_REFERENCE_TYPES = [
         "book",
+        "poem",
         "article",
         "film",
         "song",
-        "album",
-        "tv",
         "podcast",
+        "interview",
+        "speech",
+        "tv_show",
         "video",
-        "website",
         "other",
     ]
 
@@ -225,6 +226,26 @@ class MarkdownValidator:
 
         return issues
 
+    def _find_field_line_number(self, frontmatter_text: str, field_name: str) -> int:
+        """
+        Find the line number where a field appears in the frontmatter.
+
+        Args:
+            frontmatter_text: The YAML frontmatter text
+            field_name: The field name to search for
+
+        Returns:
+            Line number (1-indexed) where the field appears in the original file,
+            accounting for the opening "---" delimiter (adds 1 to the frontmatter line number)
+        """
+        lines = frontmatter_text.split('\n')
+        for i, line in enumerate(lines, start=1):
+            # Look for "field_name:" at the start of a line (possibly with indentation)
+            if re.match(rf'^\s*{re.escape(field_name)}\s*:', line):
+                # Add 1 to account for the opening "---" delimiter
+                return i + 1
+        return 1
+
     def _validate_frontmatter(
         self, file_path: Path, frontmatter_text: str
     ) -> List[MarkdownIssue]:
@@ -305,14 +326,22 @@ class MarkdownValidator:
             if field_key in frontmatter and frontmatter[field_key] is not None:
                 value = frontmatter[field_key]
                 if not isinstance(value, expected_type):
+                    # Fields that cause data loss if wrong type should be errors
+                    # Fields that are just formatting issues can be warnings
+                    data_loss_fields = {"locations", "people", "events", "tags", "references", "poems", "dates", "related_entries"}
+                    severity = "error" if field_key in data_loss_fields else "warning"
+
+                    # Find the actual line number for this field
+                    line_num = self._find_field_line_number(frontmatter_text, field_key)
+
                     issues.append(
                         MarkdownIssue(
                             file_path=file_path,
-                            line_number=1,
-                            severity="warning",
+                            line_number=line_num,
+                            severity=severity,
                             category="frontmatter",
                             message=f"Field '{field_key}' has unexpected type: {type(value).__name__}",
-                            suggestion=f"Expected: {expected_type if isinstance(expected_type, type) else ' or '.join(t.__name__ for t in expected_type)}",
+                            suggestion=f"Expected: {expected_type if isinstance(expected_type, type) else ' or '.join(t.__name__ for t in expected_type)}. Data will be lost if not fixed.",
                         )
                     )
 
@@ -321,10 +350,15 @@ class MarkdownValidator:
             manuscript = frontmatter["manuscript"]
             if "status" in manuscript:
                 if manuscript["status"] not in self.VALID_MANUSCRIPT_STATUS:
+                    # Find line number for manuscript or status field
+                    line_num = self._find_field_line_number(frontmatter_text, "status")
+                    if line_num == 1:  # If status not found, try manuscript
+                        line_num = self._find_field_line_number(frontmatter_text, "manuscript")
+
                     issues.append(
                         MarkdownIssue(
                             file_path=file_path,
-                            line_number=1,
+                            line_number=line_num,
                             severity="error",
                             category="frontmatter",
                             message=f"Invalid manuscript status: '{manuscript['status']}'",
@@ -334,6 +368,9 @@ class MarkdownValidator:
 
         # Validate references
         if "references" in frontmatter and isinstance(frontmatter["references"], list):
+            # Find line number for references field
+            ref_line_num = self._find_field_line_number(frontmatter_text, "references")
+
             for idx, ref in enumerate(frontmatter["references"]):
                 if isinstance(ref, dict):
                     # Check mode
@@ -341,7 +378,7 @@ class MarkdownValidator:
                         issues.append(
                             MarkdownIssue(
                                 file_path=file_path,
-                                line_number=1,
+                                line_number=ref_line_num,
                                 severity="error",
                                 category="frontmatter",
                                 message=f"Reference {idx+1}: Invalid mode '{ref['mode']}'",
@@ -355,11 +392,144 @@ class MarkdownValidator:
                             issues.append(
                                 MarkdownIssue(
                                     file_path=file_path,
-                                    line_number=1,
+                                    line_number=ref_line_num,
                                     severity="error",
                                     category="frontmatter",
                                     message=f"Reference {idx+1}: Invalid source type '{ref['source']['type']}'",
                                     suggestion=f"Valid types: {', '.join(self.VALID_REFERENCE_TYPES)}",
+                                )
+                            )
+
+        # Validate dates field structure
+        if "dates" in frontmatter and isinstance(frontmatter["dates"], list):
+            dates_line_num = self._find_field_line_number(frontmatter_text, "dates")
+
+            # Get the main people list for validation
+            main_people = []
+            if "people" in frontmatter and isinstance(frontmatter["people"], list):
+                for person in frontmatter["people"]:
+                    if isinstance(person, str):
+                        # Extract all name variations from the string
+                        # Formats: "Name", "Name (Full Name)", "@Alias", "@Alias (Name)"
+
+                        # Check for parenthetical expansion
+                        if '(' in person and person.endswith(')'):
+                            before_paren, in_paren = person.split('(', 1)
+                            before_paren = before_paren.strip().lstrip('@')
+                            in_paren = in_paren.rstrip(')').strip()
+
+                            # Add both parts (e.g., "@Majo (María)" → ["majo", "maría"])
+                            if before_paren:
+                                # Replace hyphens/underscores with spaces for matching
+                                normalized = before_paren.replace('_', ' ').replace('-', ' ') if '_' not in before_paren else before_paren.replace('_', ' ')
+                                main_people.append(normalized.lower())
+                            if in_paren:
+                                # Replace hyphens/underscores with spaces for matching
+                                normalized = in_paren.replace('_', ' ').replace('-', ' ') if '_' not in in_paren else in_paren.replace('_', ' ')
+                                main_people.append(normalized.lower())
+                        else:
+                            # Simple name without parentheses
+                            name = person.strip().lstrip('@')
+                            if name:
+                                # Replace hyphens/underscores with spaces for matching
+                                normalized = name.replace('_', ' ').replace('-', ' ') if '_' not in name else name.replace('_', ' ')
+                                main_people.append(normalized.lower())
+                    elif isinstance(person, dict):
+                        if "name" in person:
+                            main_people.append(person["name"].lower())
+                        if "full_name" in person:
+                            main_people.append(person["full_name"].lower())
+                        if "alias" in person:
+                            main_people.append(person["alias"].lower())
+
+            for idx, date_item in enumerate(frontmatter["dates"]):
+                # Skip the opt-out markers
+                if date_item == "~" or date_item is None:
+                    continue
+
+                # String dates are valid
+                if isinstance(date_item, str):
+                    continue
+
+                # Dict dates should have required fields
+                if isinstance(date_item, dict):
+                    import datetime
+                    date_value = date_item.get("date")
+
+                    # Check if date field is missing or None
+                    if "date" not in date_item or date_value is None:
+                        issues.append(
+                            MarkdownIssue(
+                                file_path=file_path,
+                                line_number=dates_line_num,
+                                severity="error",
+                                category="frontmatter",
+                                message=f"Date entry {idx+1}: Missing required 'date' field" + (" (date: ~ is invalid, use just ~ at list level)" if date_value is None else ""),
+                                suggestion="To exclude entry date, use '~' or 'null' as a list item, not as a dict value. Example: dates: [~, ...]",
+                            )
+                        )
+                    # Accept '.' as shorthand for entry date, or string, or datetime.date object
+                    elif date_value != "." and not isinstance(date_value, (str, datetime.date)):
+                        issues.append(
+                            MarkdownIssue(
+                                file_path=file_path,
+                                line_number=dates_line_num,
+                                severity="error",
+                                category="frontmatter",
+                                message=f"Date entry {idx+1}: 'date' field must be a string or date (or '.' for entry date)",
+                                suggestion="Use YYYY-MM-DD format or '.' for the entry's date",
+                            )
+                        )
+
+                    # Validate people field if present
+                    if "people" in date_item:
+                        people_field = date_item["people"]
+                        # Accept string or list for people in dates
+                        if not isinstance(people_field, (str, list)):
+                            issues.append(
+                                MarkdownIssue(
+                                    file_path=file_path,
+                                    line_number=dates_line_num,
+                                    severity="error",
+                                    category="frontmatter",
+                                    message=f"Date entry {idx+1}: Field 'people' must be string or list",
+                                    suggestion="Use a string for single person or list for multiple people",
+                                )
+                            )
+                        else:
+                            # Check that people exist in main people field
+                            people_list = [people_field] if isinstance(people_field, str) else people_field
+                            for person_name in people_list:
+                                if isinstance(person_name, str):
+                                    # Extract just the name part (handle @Alias format)
+                                    check_name = person_name.split('(')[0].strip().lstrip('@')
+                                    # Replace hyphens/underscores with spaces for matching (consistent with parser)
+                                    check_name = (check_name.replace('_', ' ').replace('-', ' ') if '_' not in check_name else check_name.replace('_', ' ')).lower()
+                                    if check_name and main_people and check_name not in main_people:
+                                        issues.append(
+                                            MarkdownIssue(
+                                                file_path=file_path,
+                                                line_number=dates_line_num,
+                                                severity="error",
+                                                category="frontmatter",
+                                                message=f"Date entry {idx+1}: Person '{person_name}' not found in main 'people' field",
+                                                suggestion=f"Add '{person_name}' to the main 'people' field at the top of the frontmatter",
+                                            )
+                                        )
+
+                    # Validate locations field if present
+                    if "locations" in date_item:
+                        locations_field = date_item["locations"]
+                        # Accept string or list for locations in dates
+                        if not isinstance(locations_field, (str, list)):
+                            issues.append(
+                                MarkdownIssue(
+                                    file_path=file_path,
+                                    line_number=dates_line_num,
+                                    severity="error",
+                                    category="frontmatter",
+                                    message=f"Date entry {idx+1}: Field 'locations' must be string or list",
+                                    suggestion="Use a string for single location or list for multiple locations",
                                 )
                             )
 

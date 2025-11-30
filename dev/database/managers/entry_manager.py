@@ -562,6 +562,17 @@ class EntryManager(BaseManager):
                     f"String resolution not supported for {model_class.__name__}"
                 )
 
+        # Handle dicts for Person model (from MdEntry people parsing)
+        if isinstance(item, dict) and model_class == Person:
+            from dev.database.managers import PersonManager
+            person_mgr = PersonManager(self.session, self.logger)
+            name = DataValidator.normalize_string(item.get("name"))
+            full_name = DataValidator.normalize_string(item.get("full_name"))
+
+            if name or full_name:
+                return person_mgr.get_or_create(name or full_name, full_name)
+            return None
+
         # Handle ORM instances and IDs using base method (after string check to narrow type)
         if isinstance(item, (model_class, int)):
             return self._resolve_object(item, model_class)  # type: ignore[arg-type]
