@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, Union, TYPE_CHECKING
 
 # --- Local imports ---
 from .exceptions import ValidationError
@@ -283,24 +283,32 @@ class DataValidator:
         return 0.0
 
     @staticmethod
-    def validate_date_string(date_str: str) -> bool:
+    def validate_date_string(date_input: Union[str, date]) -> bool:
         """
-        Check if string is valid ISO date format.
+        Check if input is a valid date (string in ISO format or datetime.date object).
 
         Args:
-            date_str: Date string to validate
+            date_input: Date string or datetime.date object to validate
 
         Returns:
-            True if valid YYYY-MM-DD format
+            True if valid YYYY-MM-DD format string or datetime.date object
 
         Examples:
             >>> DataValidator.validate_date_string("2024-01-15")
             True
             >>> DataValidator.validate_date_string("2024-1-5")
             False
+            >>> from datetime import date
+            >>> DataValidator.validate_date_string(date(2024, 1, 15))
+            True
         """
+        # Accept datetime.date objects directly
+        if isinstance(date_input, date):
+            return True
+
+        # Validate string format
         try:
-            datetime.strptime(date_str, "%Y-%m-%d")
+            datetime.strptime(date_input, "%Y-%m-%d")
             return True
         except (ValueError, TypeError, AttributeError):
             return False
