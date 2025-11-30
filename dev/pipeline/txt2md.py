@@ -299,7 +299,7 @@ def convert_directory(
     if not input_dir.exists():
         raise Txt2MdError(f"Input directory not found: {input_dir}")
 
-    txt_files = list(input_dir.glob(pattern))
+    txt_files = list(input_dir.rglob(pattern))
     if not txt_files:
         if logger:
             logger.log_info(f"No .txt files found in {input_dir}")
