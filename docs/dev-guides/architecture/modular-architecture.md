@@ -1,6 +1,6 @@
 # Palimpsest Modular Architecture
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-11-29
 
 ---
 
@@ -217,6 +217,108 @@ validate db all                # All database checks
 validate md frontmatter        # Validate YAML frontmatter
 validate metadata people       # Validate people metadata
 validate consistency all       # Cross-system consistency
+```
+
+---
+
+### 6. MdEntry Dataclass Parsers (`dev/dataclasses/`)
+
+**Purpose**: Separated parsing, export, and validation logic for journal entries
+
+**Structure**:
+```
+dev/dataclasses/
+├── md_entry.py              # Core dataclass (787 lines, down from 1,581)
+├── md_entry_validator.py    # Validation logic
+└── parsers/
+    ├── __init__.py          # Parser exports
+    ├── yaml_to_db.py        # YAML frontmatter → Database format
+    └── db_to_yaml.py        # Database → YAML frontmatter export
+```
+
+**Refactoring Summary** (2025-11-29):
+- **Original Size**: 1,581 lines
+- **New Size**: 787 lines (50% reduction)
+- **Extracted Code**: 794 lines into specialized modules
+- **Pattern**: Separation of concerns (parsing, export, validation)
+- **Result**: More maintainable, testable, and modular
+
+**Key Components**:
+
+1. **YamlToDbParser** (`yaml_to_db.py`):
+   - Parses YAML frontmatter to database-compatible format
+   - Handles complex field parsing (people, locations, dates, references, poems)
+   - Supports alias resolution, name parsing, date context extraction
+   - Methods: `parse_city_field()`, `parse_people_field()`, `parse_dates_field()`, etc.
+
+2. **DbToYamlExporter** (`db_to_yaml.py`):
+   - Exports database Entry ORM objects to YAML frontmatter format
+   - Builds human-readable metadata from normalized database structures
+   - Methods: `build_people_metadata()`, `build_dates_metadata()`, `build_references_metadata()`, etc.
+
+3. **MdEntryValidator** (`md_entry_validator.py`):
+   - Validates MdEntry structure and metadata
+   - Checks required fields, date formats, word counts
+   - Independent validation logic for testability
+
+**Key Patterns**:
+- **Parser Delegation**: `MdEntry` delegates to `YamlToDbParser` for YAML→DB conversion
+- **Exporter Delegation**: `MdEntry.from_database()` uses `DbToYamlExporter`
+- **Stateless Validators**: Validation logic separated from dataclass
+- **Entry Date Context**: Parsers receive entry date for defaulting revision dates
+
+**Import Examples**:
+```python
+# Core dataclass
+from dev.dataclasses.md_entry import MdEntry
+
+# Use parsers directly (advanced usage)
+from dev.dataclasses.parsers import YamlToDbParser, DbToYamlExporter
+from dev.dataclasses.md_entry_validator import MdEntryValidator
+
+# Normal usage - parsers called internally
+entry = MdEntry.from_file(Path("2024-01-15.md"))
+db_meta = entry.to_database_metadata()  # Uses YamlToDbParser internally
+```
+
+**Benefits**:
+- Reduced complexity in core dataclass
+- Easier to test parsing logic independently
+- Clear separation between YAML and database concerns
+- Simplified validation testing
+- Better code organization and navigation
+
+**Before/After Comparison**:
+```
+Before Refactoring:
+dev/dataclasses/md_entry.py (1,581 lines)
+  - Type definitions
+  - Dataclass definition
+  - Construction methods
+  - Database conversion helpers (_build_* methods)
+  - Parsing helpers (_parse_* methods)
+  - YAML generation
+  - Validation logic
+
+After Refactoring:
+dev/dataclasses/md_entry.py (787 lines)
+  - Type definitions
+  - Dataclass definition
+  - Construction methods
+  - YAML generation
+  - Simple method calls to parsers
+
+dev/dataclasses/parsers/yaml_to_db.py (207 lines)
+  - All YAML→DB parsing logic
+  - Complex field parsing (people, dates, locations)
+
+dev/dataclasses/parsers/db_to_yaml.py (114 lines)
+  - All DB→YAML export logic
+  - Metadata building from ORM objects
+
+dev/dataclasses/md_entry_validator.py (31 lines)
+  - Validation logic
+  - Stateless validator pattern
 ```
 
 ---
@@ -575,15 +677,21 @@ from dev.builders.wiki_pages import export_stats  # Loaded immediately
 
 The Palimpsest refactoring created a clean, modular architecture:
 
-✅ **40 focused modules** (average ~170 lines each)
+✅ **40+ focused modules** (average ~170 lines each)
 ✅ **Clear separation** of concerns
 ✅ **100% backward compatible**
 ✅ **Easy to extend** and maintain
 ✅ **Consistent patterns** across codebase
 
+**Recent Improvements**:
+- **2025-11-29**: MdEntry dataclass refactored (50% size reduction)
+  - Extracted parsers: `YamlToDbParser`, `DbToYamlExporter`
+  - Separated validation: `MdEntryValidator`
+  - All 70 tests passing
+
 **Key Takeaway**: Modular architecture improves maintainability without sacrificing compatibility.
 
 ---
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-11-29
 **Maintained By**: Palimpsest Development Team

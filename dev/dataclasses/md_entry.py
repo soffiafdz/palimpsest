@@ -28,12 +28,16 @@ import yaml
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union, Sequence, Tuple, TypedDict
+from typing import Dict, Any, List, Optional, Union, TypedDict
 
 from dev.core.exceptions import EntryParseError, EntryValidationError
 from dev.core.validators import DataValidator
 from dev.database.models import Entry
 from dev.utils import md, parsers
+
+# Import new parser modules
+from dev.dataclasses.md_entry_validator import MdEntryValidator
+from dev.dataclasses.parsers import DbToYamlExporter, YamlToDbParser
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +247,9 @@ class MdEntry:
         frontmatter_text, body_lines = md.split_frontmatter(content)
 
         if not frontmatter_text:
-            raise EntryValidationError("No YAML frontmatter found (must start with ---)")
+            raise EntryValidationError(
+                "No YAML frontmatter found (must start with ---)"
+            )
 
         try:
             metadata: Any = yaml.safe_load(frontmatter_text)
@@ -316,20 +322,22 @@ class MdEntry:
         if entry.notes:
             metadata["notes"] = entry.notes
 
-        # Complex metadata - use helper methods
-        city = cls._build_cities_metadata(entry)
+        # Complex metadata - use DbToYamlExporter
+        exporter = DbToYamlExporter()
+
+        city = exporter.build_cities_metadata(entry)
         if city is not None:
             metadata["city"] = city
 
-        locations = cls._build_locations_metadata(entry)
+        locations = exporter.build_locations_metadata(entry)
         if locations is not None:
             metadata["locations"] = locations
 
-        people = cls._build_people_metadata(entry)
+        people = exporter.build_people_metadata(entry)
         if people is not None:
             metadata["people"] = people
 
-        dates = cls._build_dates_metadata(entry)
+        dates = exporter.build_dates_metadata(entry)
         if dates is not None:
             metadata["dates"] = dates
 
@@ -346,15 +354,15 @@ class MdEntry:
             ]
 
         # Complex nested metadata
-        references = cls._build_references_metadata(entry)
+        references = exporter.build_references_metadata(entry)
         if references is not None:
             metadata["references"] = references
 
-        poems = cls._build_poems_metadata(entry)
+        poems = exporter.build_poems_metadata(entry)
         if poems is not None:
             metadata["poems"] = poems
 
-        manuscript = cls._build_manuscript_metadata(entry)
+        manuscript = exporter.build_manuscript_metadata(entry)
         if manuscript is not None:
             metadata["manuscript"] = manuscript
 
@@ -419,14 +427,17 @@ class MdEntry:
                 if DataValidator.validate_date_string(d)
             ]
 
+        # Create parser instance
+        parser = YamlToDbParser(self.date, self.metadata)
+
         # Parse city/cities
         if "city" in self.metadata and self.metadata["city"]:
-            db_meta["cities"] = self._parse_city_field(self.metadata["city"])
+            db_meta["cities"] = parser.parse_city_field(self.metadata["city"])
 
         # Parse locations
         locations_by_city = {}
         if "locations" in self.metadata and self.metadata["locations"]:
-            locations_by_city = self._parse_locations_field(
+            locations_by_city = parser.parse_locations_field(
                 self.metadata["locations"], db_meta.get("cities", [])
             )
 
@@ -441,7 +452,7 @@ class MdEntry:
         # Parse people
         people_parsed = None
         if "people" in self.metadata and self.metadata["people"]:
-            people_parsed = self._parse_people_field(self.metadata["people"])
+            people_parsed = parser.parse_people_field(self.metadata["people"])
 
             if "people" in people_parsed:
                 db_meta["people"] = people_parsed["people"]
@@ -454,7 +465,7 @@ class MdEntry:
         has_dates_field = "dates" in self.metadata and self.metadata["dates"]
 
         if has_dates_field:
-            parsed_dates, exclude_entry_date = self._parse_dates_field(
+            parsed_dates, exclude_entry_date = parser.parse_dates_field(
                 self.metadata["dates"],
                 people_parsed,
             )
@@ -488,13 +499,13 @@ class MdEntry:
 
         # References
         if "references" in self.metadata:
-            db_meta["references"] = self._parse_references_field(
+            db_meta["references"] = parser.parse_references_field(
                 self.metadata["references"]
             )
 
         # Poems
         if "poems" in self.metadata:
-            db_meta["poems"] = self._parse_poems_field(self.metadata["poems"])
+            db_meta["poems"] = parser.parse_poems_field(self.metadata["poems"])
 
         # Manuscript metadata
         if "manuscript" in self.metadata:
@@ -551,763 +562,6 @@ class MdEntry:
         lines.extend(self.body)
 
         return "\n".join(lines)
-
-    # ----- Database Conversion Helpers -----
-    @staticmethod
-    def _build_cities_metadata(entry: Entry) -> Optional[Union[str, List[str]]]:
-        """Extract city/cities metadata from database Entry."""
-        if not entry.cities:
-            return None
-        if len(entry.cities) == 1:
-            return entry.cities[0].city
-        return [c.city for c in entry.cities]
-
-    @staticmethod
-    def _build_locations_metadata(entry: Entry) -> Optional[Union[List[str], Dict[str, List[str]]]]:
-        """Extract locations metadata from database Entry."""
-        if not entry.locations:
-            return None
-
-        if not entry.cities or len(entry.cities) == 1:
-            # No cities or single city - flat list of locations
-            return [loc.name for loc in entry.locations]
-        else:
-            # Multiple cities - nested dict grouped by city
-            locations_dict = {}
-            for loc in entry.locations:
-                city_name = loc.city.city
-                if city_name not in locations_dict:
-                    locations_dict[city_name] = []
-                locations_dict[city_name].append(loc.name)
-            return locations_dict
-
-    @staticmethod
-    def _build_people_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
-        """Extract people and aliases metadata from database Entry."""
-        if not entry.people and not entry.aliases_used:
-            return None
-
-        people_list = []
-        aliases_by_person: Dict[int, Dict[str, Any]] = {}
-
-        if entry.aliases_used:
-            for alias in entry.aliases_used:
-                person_id = alias.person_id
-                if person_id not in aliases_by_person:
-                    aliases_by_person[person_id] = {
-                        "alias": [],
-                        "name": alias.person.name,
-                    }
-                    if alias.person.name_fellow and alias.person.full_name:
-                        fname = alias.person.full_name
-                        aliases_by_person[person_id]["full_name"] = fname
-                aliases_by_person[person_id]["alias"].append(alias.alias)
-
-        for p in entry.people:
-            if aliases_by_person and p.id in aliases_by_person:
-                continue
-            if p.name_fellow:
-                people_list.append({"full_name": p.full_name})
-            else:
-                people_list.append({"name": p.name})
-
-        people_list.extend(aliases_by_person.values())
-        return people_list
-
-    @staticmethod
-    def _build_dates_metadata(entry: Entry) -> Optional[List[Union[str, Dict[str, Any]]]]:
-        """Extract mentioned dates with context from database Entry."""
-        if not entry.dates:
-            return None
-
-        dates_list = []
-
-        # Check if entry date is in mentioned dates
-        entry_date_in_mentioned = any(md.date == entry.date for md in entry.dates)
-
-        # Add ~ if entry date NOT in mentioned dates
-        if not entry_date_in_mentioned:
-            dates_list.append("~")
-
-        # Build all date items as dicts
-        for mentioned_date in entry.dates:
-            date_dict: Dict = {"date": mentioned_date.date.isoformat()}
-
-            # Add locations
-            if mentioned_date.locations:
-                date_dict["locations"] = [loc.name for loc in mentioned_date.locations]
-
-            # Add people
-            if mentioned_date.people:
-                people_formatted = []
-                for person in mentioned_date.people:
-                    if person.name_fellow:
-                        people_formatted.append({"full_name": person.full_name})
-                    else:
-                        people_formatted.append({"name": person.name})
-                date_dict["people"] = people_formatted
-
-            # Add context
-            if mentioned_date.context:
-                date_dict["context"] = mentioned_date.context
-
-            dates_list.append(date_dict)
-
-        return dates_list
-
-    @staticmethod
-    def _build_references_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
-        """Extract references metadata from database Entry."""
-        if not entry.references:
-            return None
-
-        refs_list: List[Dict[str, Any]] = []
-        for ref in entry.references:
-            ref_dict: Dict[str, Any] = {}
-
-            # Content is now optional
-            if ref.content:
-                ref_dict["content"] = ref.content
-
-            # Add description if present
-            if ref.description:
-                ref_dict["description"] = ref.description
-
-            # Add mode (default is direct)
-            if ref.mode and ref.mode.value != "direct":
-                ref_dict["mode"] = ref.mode.value
-
-            if ref.speaker:
-                ref_dict["speaker"] = ref.speaker
-
-            if ref.source:
-                ref_dict["source"] = {
-                    "title": ref.source.title,
-                    "type": ref.source.type.value,
-                }
-                if ref.source.author:
-                    ref_dict["source"]["author"] = ref.source.author
-            refs_list.append(ref_dict)
-        return refs_list
-
-    @staticmethod
-    def _build_poems_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
-        """Extract poems metadata from database Entry."""
-        if not entry.poems:
-            return None
-
-        poems_list: List[Dict[str, Any]] = []
-        for pv in entry.poems:
-            poem_dict: Dict[str, Any] = {
-                "title": pv.poem.title if pv.poem else "Untitled",
-                "content": pv.content,
-            }
-            if pv.revision_date:
-                poem_dict["revision_date"] = pv.revision_date.isoformat()
-            if pv.notes:
-                poem_dict["notes"] = pv.notes
-            poems_list.append(poem_dict)
-        return poems_list
-
-    @staticmethod
-    def _build_manuscript_metadata(entry: Entry) -> Optional[Dict[str, Any]]:
-        """Extract manuscript metadata from database Entry."""
-        if not entry.manuscript:
-            return None
-
-        ms = entry.manuscript
-        ms_dict: Dict[str, Any] = {
-            "status": ms.status.value,
-            "edited": ms.edited,
-        }
-        if ms.themes:
-            ms_dict["themes"] = [theme.theme for theme in ms.themes]
-        if ms.notes:
-            ms_dict["notes"] = ms.notes
-        return ms_dict
-
-    # ----- Parsing Helpers -----
-    def _parse_city_field(self, city_data: Union[str, List[str]]) -> List[str]:
-        """
-        Parse city field (single city or list of cities).
-
-        Supports both formats:
-        - Single string: "Montreal"
-        - List of strings: ["Montreal", "Toronto"]
-
-        Returns:
-            List of city names (always a list, even for single city)
-
-        Examples:
-            >>> _parse_city_field("Montreal")
-            ["Montreal"]
-            >>> _parse_city_field(["Montreal", "Toronto"])
-            ["Montreal", "Toronto"]
-        """
-        if isinstance(city_data, str):
-            return [city_data.strip()]
-        if isinstance(city_data, list):
-            return [str(c).strip() for c in city_data if str(c).strip()]
-
-        # Explicit fallback for unexpected types
-        logger.warning(f"Invalid city_data type: {type(city_data)}")
-        return []
-
-    def _parse_locations_field(
-        self, locations_data: Union[List[str], Dict[str, List[str]]], cities: List[str]
-    ) -> Dict[str, List[str]]:
-        """
-        Parse locations field supporting both flat and nested formats.
-
-        Formats:
-        - Flat list (single city): ["Café X", "Park Y"]
-        - Nested dict (multiple cities): {"Montreal": ["Café X"], "Toronto": ["Park Y"]}
-
-        Args:
-            locations_data: Either flat list or nested dict
-            cities: List of cities from city field (for validation)
-
-        Returns:
-            Dict mapping city names to lists of location names
-
-        Examples:
-            >>> _parse_locations_field(["Café X", "Park Y"], ["Montreal"])
-            {"Montreal": ["Café X", "Park Y"]}
-
-            >>> _parse_locations_field(
-            ...     {"Montreal": ["Café X"], "Toronto": ["Park Y"]},
-            ...     ["Montreal", "Toronto"]
-            ... )
-            {"Montreal": ["Café X"], "Toronto": ["Park Y"]}
-        """
-        result = {}
-
-        if isinstance(locations_data, list):
-            # Flat list - all locations belong to single city
-            if len(cities) != 1:
-                logger.warning("Flat location list but multiple cities specified")
-                return {}
-            result[cities[0]] = [str(loc).strip() for loc in locations_data]
-
-        elif isinstance(locations_data, dict):
-            # Nested dict - locations grouped by city
-            for city, locs in locations_data.items():
-                city_name = str(city).strip()
-                if isinstance(locs, list):
-                    result[city_name] = [str(loc).strip() for loc in locs]
-                elif isinstance(locs, str):
-                    result[city_name] = [locs.strip()]
-
-        return result
-
-    def _parse_people_field(
-        self, people_list: List[Union[str, Dict]]
-    ) -> Dict[str, Any]:
-        """
-        Parse people field with name/full_name/alias logic.
-
-         Supports multiple formats:
-         - Simple name: "John" → {name: "John"}
-         - Hyphenated name: "Jean-Paul" → {name: "Jean Paul"}
-         - Full name: "John Smith" → {full_name: "John Smith"}
-         - Name with expansion: "John (John Smith)" → {name: "John", full_name: "John Smith"}
-         - Alias format: "@Johnny" → {alias: "Johnny"}
-         - Alias with name: "@Johnny (John)" → {alias: "Johnny", name: "John"}
-         - Dict format: {"name": "John", "full_name": "John Smith"}
-
-         Rules:
-         - Single word (may be hyphenated): treated as name only
-         - Multiple words: treated as full_name only
-         - Parentheses: name (full_name) format
-         - Starts with @: alias format
-         - Hyphens in single-word names converted to spaces
-
-         Args:
-             people_list: List of person specifications (strings or dicts)
-
-        Returns dict with:
-            - "people": List of person specs (strings/dicts)
-            - "alias": List of alias strings that were mentioned
-
-         Examples:
-             >>> _parse_people_field(["John", "Jane Smith", "Bob (Robert)", "@Bobby"])
-             {
-                "people": [
-                    {"name": "John"},
-                    {"full_name": "Jane Smith"},
-                    {"name": "Bob", "full_name": "Robert"},
-                ],
-                "alias": [{"alias": "Bobby"}]
-             }
-        """
-        normalized_people = []
-        aliases_mentioned = []
-
-        for person_item in people_list:
-            name: Optional[str] = None
-            full_name: Optional[str] = None
-            alias: Optional[Sequence[str]] = None
-
-            if isinstance(person_item, dict):
-                person_dict = {}
-                if "name" in person_item:
-                    name = DataValidator.normalize_string(person_item["name"])
-                if "full_name" in person_item:
-                    full_name = DataValidator.normalize_string(person_item["full_name"])
-                if "alias" in person_item:
-                    alias_raw = person_item["alias"]
-                    if isinstance(alias_raw, str):
-                        alias_raw = [alias_raw]
-
-                    aliases_raw = [
-                        DataValidator.normalize_string(a) for a in alias_raw if a
-                    ]
-                    alias = [a for a in aliases_raw if a]
-
-                if full_name:
-                    person_dict["full_name"] = full_name
-
-                if name:
-                    person_dict["name"] = name
-
-                if person_dict:
-                    normalized_people.append(person_dict)
-
-                if alias:
-                    alias_dict: Dict[str, Any] = {"alias": alias}
-                    if person_dict:
-                        alias_dict.update(person_dict)
-                    aliases_mentioned.append(alias_dict)
-
-                continue
-
-            person_str = DataValidator.normalize_string(person_item)
-            if not person_str:
-                continue
-
-            # Extract name and expansion
-            primary, expansion = parsers.extract_name_and_expansion(person_str)
-
-            # Check if alias
-            if primary.startswith("@"):
-                alias = parsers.split_hyphenated_to_spaces(primary[1:])
-                if expansion:
-                    if " " in expansion:
-                        full_name = expansion
-                    else:
-                        name = parsers.split_hyphenated_to_spaces(expansion)
-            elif " " in primary:
-                full_name = primary
-            else:
-                name = parsers.split_hyphenated_to_spaces(primary)
-                full_name = expansion
-
-            if alias:
-                if name or full_name:
-                    aliases_mentioned.append(
-                        {
-                            "alias": alias,
-                            "name": name,
-                            "full_name": full_name,
-                        }
-                    )
-                else:
-                    aliases_mentioned.append(alias)
-
-            if name or full_name:
-                normalized_people.append({"name": name, "full_name": full_name})
-
-        return {"people": normalized_people, "alias": aliases_mentioned}
-
-    @staticmethod
-    def _find_person_in_parsed(
-        person_str: str, people_parsed: Dict[str, List]
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Look up a person string in the people_parsed structure.
-
-        Searches both the "people" list and "alias" list to find a matching
-        person specification.
-
-        Args:
-            person_str: Person name or alias to find
-            people_parsed: Parsed people structure with "people" and/or "alias" keys
-
-        Returns:
-            Matching person dict if found, otherwise {"name": person_str}
-        """
-        # Check in people list
-        if "people" in people_parsed:
-            for person_spec in people_parsed["people"]:
-                if isinstance(person_spec, dict):
-                    # Check name or full_name matches
-                    if (
-                        person_spec.get("name") == person_str
-                        or person_spec.get("full_name") == person_str
-                    ):
-                        return person_spec
-                elif person_spec == person_str:
-                    return {"name": person_str}
-
-        # Check in alias list
-        if "alias" in people_parsed:
-            for alias_spec in people_parsed["alias"]:
-                if isinstance(alias_spec, dict):
-                    alias_vals = alias_spec.get("alias", [])
-                    if not isinstance(alias_vals, list):
-                        alias_vals = [alias_vals]
-
-                    if person_str in alias_vals:
-                        return alias_spec
-
-        # Not found - treat as simple name
-        return {"name": person_str}
-
-    def _parse_dates_field(
-        self,
-        dates_data: Union[List[Union[str, Dict]], Dict],
-        people_parsed: Optional[Dict[str, List]],
-    ) -> Tuple[List, bool]:
-        """
-        Parse dates field with inline or nested format.
-        Associates locations/people to specific dates.
-
-        For people values in dates, looks them up in people_parsed
-        in order to get their keys.
-
-        Supports:
-        - Simple date: "2025-06-01"
-        - Inline context: "2025-06-01 (thesis exam)"
-        - Nested format: {"date": "2025-06-01", "context": "thesis exam"}
-
-        Args:
-            dates_data: List of date specifications
-            locations_by_city: {city: [locations]} from locations field
-            people_parsed: Result from _parse_people_field() with keys already assigned
-                Example: {
-                    "people": [{"name": "Clara"}],
-                    "alias": [{"alias": "Majo", "name": "María-José"}]
-                }
-
-        Returns:
-            Tuple of (parsed_dates, exclude_entry_date_flag)
-
-        Examples:
-            >>> _parse_dates_field([
-            ...     "2025-06-01",
-            ...     "2025-06-15 (birthday party at #Church)",
-            ...     {"date": "2025-07-01", "context": "celebration", "person": "Alda"}
-            ... ])
-            [
-                {"date": "2025-06-01"},
-                {
-                    "date": "2025-06-15",
-                    "context": "birthday party at Church",
-                    "locations": "Church,
-                },
-                {
-                    "date": "2025-07-01",
-                    "context": "celebration",
-                    "people": "Alda",
-                }
-            ]
-        """
-        if isinstance(dates_data, dict):
-            dates_data = [dates_data]
-
-        normalized = []
-        exclude_entry_date = False
-
-        for item in dates_data:
-            # --- Opt-out trigger ---
-            if item == "~" or item is None:
-                exclude_entry_date = True
-                continue
-
-            # --- Inline string ---
-            if isinstance(item, str):
-                date_obj, raw_context = parsers.parse_date_context(item)
-
-                if not DataValidator.validate_date_string(date_obj):
-                    logger.warning(f"Invalid date format, skipping: {date_obj}")
-                    continue
-
-                date_dict: Dict[str, Union[date, str, List]] = {"date": date_obj}
-
-                if raw_context:
-                    context_dict = parsers.extract_context_refs(raw_context)
-                    date_dict.update(context_dict)
-
-                normalized.append(date_dict)
-
-            # --- Dictionary ---
-            if isinstance(item, dict):
-                if "date" not in item:
-                    logger.warning(f"Date dict missing 'date' field: {item}")
-                    continue
-
-                if not DataValidator.validate_date_string(item["date"]):
-                    logger.warning(f"Invalid date format, skipping: {item}")
-                    continue
-
-                date_dict = {"date": item["date"]}
-                all_locations = []
-                people_context = []
-
-                # Context
-                raw_context = item.get("context", "")
-                if raw_context:
-                    context_dict = parsers.extract_context_refs(raw_context)
-                    if "locations" in context_dict and context_dict["locations"]:
-                        all_locations.extend(context_dict["locations"])
-                    if "people" in context_dict and context_dict["people"]:
-                        people_context.extend(context_dict["people"])
-                    date_dict.update(context_dict)
-
-                # --- Locations ---
-                if "locations" in item:
-                    locs_field = item["locations"]
-                    if isinstance(locs_field, str):
-                        all_locations.append(locs_field)
-                    elif isinstance(locs_field, list):
-                        all_locations.extend(locs_field)
-
-                if all_locations:
-                    date_dict["locations"] = [
-                        DataValidator.normalize_string(loc)
-                        for loc in all_locations
-                        if DataValidator.normalize_string(loc)
-                    ]
-
-                # --- People - LOOKUP IN people_parsed ---
-                if ("people" in item or people_context) and people_parsed:
-                    people_field = item["people"]
-                    if not isinstance(people_field, list):
-                        people_field = [people_field]
-
-                    people_field.extend(people_context)
-
-                    people_list = []
-
-                    for person_value in people_field:
-                        # If already a dict, use as-is
-                        if isinstance(person_value, dict):
-                            people_list.append(person_value)
-                            continue
-
-                        # String value - look up in people_parsed using helper
-                        person_str = DataValidator.normalize_string(person_value)
-                        if not person_str:
-                            continue
-
-                        person_spec = self._find_person_in_parsed(person_str, people_parsed)
-                        if person_spec:
-                            people_list.append(person_spec)
-
-                    if people_list:
-                        date_dict["people"] = people_list
-
-                normalized.append(date_dict)
-
-        return normalized, exclude_entry_date
-
-    def _parse_references_field(
-        self, refs_data: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """
-        Parse and normalize references with source handling.
-
-        Reference format:
-        {
-            "content": str (optional, but content or description required),
-            "description": str (optional),
-            "mode": str (optional, default: "direct"),
-            "speaker": str (optional),
-            "source": {
-                "title": str (required),
-                "type": str (required: book/article/film/poem/etc),
-                "author": str (optional)
-            } (optional)
-        }
-
-        Args:
-            refs_data: List of reference dictionaries
-
-        Returns:
-            List of validated reference dicts with normalized types
-
-        Examples:
-            >>> _parse_references_field([{
-            ...     "content": "To be or not to be",
-            ...     "mode": "direct",
-            ...     "source": {
-            ...         "title": "Hamlet",
-            ...         "type": "book",
-            ...         "author": "Shakespeare"
-            ...     }
-            ... }])
-            [{
-                "content": "To be or not to be",
-                "mode": "direct",
-                "source": {
-                    "title": "Hamlet",
-                    "type": ReferenceType.BOOK,
-                    "author": "Shakespeare"
-                }
-            }]
-        """
-        normalized = []
-
-        for ref in refs_data:
-            if not isinstance(ref, dict):
-                logger.warning(f"Invalid reference format: {ref}")
-                continue
-
-            content = DataValidator.normalize_string(ref.get("content"))
-            description = DataValidator.normalize_string(ref.get("description"))
-            if not content and not description:
-                logger.warning(
-                    "Reference missing both 'content' and 'description' fields"
-                )
-                continue
-
-            ref_dict: Dict[str, Any] = {}
-
-            if content:
-                ref_dict["content"] = content
-
-            if description:
-                ref_dict["description"] = description
-
-            # Optional mode (default: direct)
-            mode = DataValidator.normalize_string(ref.get("mode", "direct"))
-            if mode in ["direct", "indirect", "paraphrase", "visual"]:
-                ref_dict["mode"] = mode
-            else:
-                logger.warning(
-                    f"Invalid reference mode '{mode}', defaulting to 'direct'"
-                )
-                ref_dict["mode"] = "direct"
-
-            # Optional speaker
-            if "speaker" in ref:
-                speaker = DataValidator.normalize_string(ref["speaker"])
-                if speaker:
-                    ref_dict["speaker"] = speaker
-
-            # Optional source
-            if "source" in ref and isinstance(ref["source"], dict):
-                source = ref["source"]
-
-                # Validate required source fields
-                if "title" not in source or not source["title"]:
-                    logger.warning(f"Source missing title: {source}")
-                elif "type" not in source:
-                    logger.warning(f"Source missing type: {source}")
-                else:
-                    # Normalize type enum (now includes 'poem')
-                    source_type = DataValidator.normalize_reference_type(source["type"])
-                    if source_type:
-                        ref_dict["source"] = {
-                            "title": DataValidator.normalize_string(source["title"]),
-                            "type": source_type,  # This is now ReferenceType enum
-                        }
-
-                        # Optional author
-                        if "author" in source:
-                            author = DataValidator.normalize_string(source["author"])
-                            if author:
-                                ref_dict["source"]["author"] = author
-                    else:
-                        logger.warning(
-                            f"Invalid source type '{source['type']}' in reference"
-                        )
-
-            normalized.append(ref_dict)
-
-        return normalized
-
-    def _parse_poems_field(
-        self, poems_data: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """
-        Parse and normalize poems with Poem parent handling.
-
-        Poem format:
-        {
-            "title": str (required),
-            "content": str (required),
-            "revision_date": str|date (optional, defaults to entry.date),
-            "notes": str (optional),
-            "version_hash": str (optional, auto-generated if not provided)
-        }
-
-        If revision_date is not provided or is invalid, it defaults to the
-        entry's date, ensuring all poems have a documented revision date.
-
-        Args:
-            poems_data: List of poem dictionaries
-
-        Returns:
-            List of validated poem dicts ready for database
-
-        Examples:
-            >>> _parse_poems_field([{
-            ...     "title": "Ode to Joy",
-            ...     "content": "Beautiful spark of divinity...",
-            ...     "revision_date": "2024-01-15",
-            ...     "notes": "First draft"
-            ... }])
-            [{
-                "title": "Ode to Joy",
-                "content": "Beautiful spark of divinity...",
-                "revision_date": date(2024, 1, 15),
-                "notes": "First draft"
-            }]
-        """
-        normalized = []
-
-        for poem in poems_data:
-            if not isinstance(poem, dict):
-                logger.warning(f"Invalid poem format: {poem}")
-                continue
-
-            if "title" not in poem or not poem["title"]:
-                logger.warning("Poem missing required 'title' field")
-                continue
-
-            if "content" not in poem or not poem["content"]:
-                logger.warning("Reference missing required 'content' field")
-                continue
-
-            poem_dict: Dict[str, Any] = {
-                "title": DataValidator.normalize_string(poem["title"]),
-                "content": DataValidator.normalize_string(poem["content"]),
-            }
-
-            # Optional revision_date (defaults to entry date if not provided)
-            if "revision_date" in poem:
-                rev_date = DataValidator.normalize_date(poem["revision_date"])
-                if rev_date:
-                    poem_dict["revision_date"] = rev_date
-                else:
-                    logger.warning(
-                        f"Invalid revision_date in poem '{poem['title']}': {poem['revision_date']} - using entry date"
-                    )
-                    poem_dict["revision_date"] = self.date
-            else:
-                # Default to entry date when revision_date is not specified
-                poem_dict["revision_date"] = self.date
-
-            # Optional notes
-            if "notes" in poem:
-                notes = DataValidator.normalize_string(poem["notes"])
-                if notes:
-                    poem_dict["notes"] = notes
-
-            normalized.append(poem_dict)
-
-        return normalized
 
     # ----- YAML Generation -----
     def _generate_yaml_frontmatter(self) -> str:
@@ -1519,39 +773,7 @@ class MdEntry:
         Returns:
             List of validation error messages (empty if valid)
         """
-        issues: List[str] = []
-
-        # Required fields
-        if not self.date:
-            issues.append("Missing date")
-
-        if not self.body:
-            issues.append("Empty body content")
-
-        # Validate word_count
-        if "word_count" in self.metadata:
-            wc = DataValidator.normalize_int(self.metadata["word_count"])
-            if wc is not None and wc < 0:
-                issues.append("Word count cannot be negative")
-            elif wc is None:
-                issues.append("Word count must be a number")
-
-        # Validate dates
-        if "dates" in self.metadata:
-            for date_item in self.metadata["dates"]:
-                if isinstance(date_item, dict):
-                    if "date" not in date_item:
-                        issues.append("Date item missing 'date' field")
-                    else:
-                        if not DataValidator.validate_date_string(
-                            str(date_item["date"])
-                        ):
-                            issues.append(f"Invalid date format: {date_item['date']}")
-                elif isinstance(date_item, str):
-                    if not DataValidator.validate_date_string(date_item):
-                        issues.append(f"Invalid date format: {date_item}")
-
-        return issues
+        return MdEntryValidator.validate_entry(self.date, self.body, self.metadata)
 
     @property
     def is_valid(self) -> bool:
