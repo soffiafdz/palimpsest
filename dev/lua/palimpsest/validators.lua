@@ -101,39 +101,39 @@ function M.validate_frontmatter(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && python -m dev.validators.cli.markdown frontmatter %s 2>&1",
+	local cmd = string.format("cd %s && validate md frontmatter %s 2>&1",
 		vim.fn.shellescape(root),
 		vim.fn.shellescape(filepath))
 
 	-- Run asynchronously
+	local diagnostics = {}
 	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		stderr_buffered = true,
 		on_stdout = function(_, data)
 			if data then
 				local output = table.concat(data, "\n")
-				local diagnostics = parse_validation_output(output, bufnr)
-
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
+				local parsed = parse_validation_output(output, bufnr)
+				vim.list_extend(diagnostics, parsed)
 			end
 		end,
 		on_stderr = function(_, data)
 			if data and #data > 0 and data[1] ~= "" then
 				local output = table.concat(data, "\n")
-				local diagnostics = parse_validation_output(output, bufnr)
-
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
+				local parsed = parse_validation_output(output, bufnr)
+				vim.list_extend(diagnostics, parsed)
 			end
 		end,
 		on_exit = function(_, exit_code)
 			if exit_code == 0 then
-				-- Validation passed - clear diagnostics
+				-- Validation passed - clear diagnostics and notify
 				vim.diagnostic.reset(ns, bufnr)
 				vim.notify("Frontmatter validation passed ✓", vim.log.levels.INFO)
+			else
+				-- Validation failed - set diagnostics
+				if #diagnostics > 0 then
+					vim.diagnostic.set(ns, bufnr, diagnostics, {})
+				end
 			end
 		end,
 	})
@@ -152,38 +152,39 @@ function M.validate_metadata(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && python -m dev.validators.cli.metadata validate %s 2>&1",
+	local cmd = string.format("cd %s && validate metadata all %s 2>&1",
 		vim.fn.shellescape(root),
 		vim.fn.shellescape(filepath))
 
 	-- Run asynchronously
+	local diagnostics = {}
 	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		stderr_buffered = true,
 		on_stdout = function(_, data)
 			if data then
 				local output = table.concat(data, "\n")
-				local diagnostics = parse_validation_output(output, bufnr)
-
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
+				local parsed = parse_validation_output(output, bufnr)
+				vim.list_extend(diagnostics, parsed)
 			end
 		end,
 		on_stderr = function(_, data)
 			if data and #data > 0 and data[1] ~= "" then
 				local output = table.concat(data, "\n")
-				local diagnostics = parse_validation_output(output, bufnr)
-
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
+				local parsed = parse_validation_output(output, bufnr)
+				vim.list_extend(diagnostics, parsed)
 			end
 		end,
 		on_exit = function(_, exit_code)
 			if exit_code == 0 then
+				-- Validation passed - clear diagnostics and notify
 				vim.diagnostic.reset(ns, bufnr)
 				vim.notify("Metadata validation passed ✓", vim.log.levels.INFO)
+			else
+				-- Validation failed - set diagnostics
+				if #diagnostics > 0 then
+					vim.diagnostic.set(ns, bufnr, diagnostics, {})
+				end
 			end
 		end,
 	})
@@ -202,27 +203,37 @@ function M.validate_links(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && python -m dev.validators.cli.markdown links %s 2>&1",
-		vim.fn.shellescape(root),
-		vim.fn.shellescape(filepath))
+	local cmd = string.format("cd %s && validate md links 2>&1",
+		vim.fn.shellescape(root))
 
 	-- Run asynchronously
+	local diagnostics = {}
 	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		stderr_buffered = true,
 		on_stdout = function(_, data)
 			if data then
 				local output = table.concat(data, "\n")
-				local diagnostics = parse_validation_output(output, bufnr)
-
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
+				local parsed = parse_validation_output(output, bufnr)
+				vim.list_extend(diagnostics, parsed)
+			end
+		end,
+		on_stderr = function(_, data)
+			if data and #data > 0 and data[1] ~= "" then
+				local output = table.concat(data, "\n")
+				local parsed = parse_validation_output(output, bufnr)
+				vim.list_extend(diagnostics, parsed)
 			end
 		end,
 		on_exit = function(_, exit_code)
 			if exit_code == 0 then
+				-- Validation passed - clear diagnostics
 				vim.diagnostic.reset(ns, bufnr)
+			else
+				-- Validation failed - set diagnostics
+				if #diagnostics > 0 then
+					vim.diagnostic.set(ns, bufnr, diagnostics, {})
+				end
 			end
 		end,
 	})

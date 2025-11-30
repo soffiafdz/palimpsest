@@ -25,8 +25,13 @@ function M.setup()
 				-- Wiki export/validation commands
 				{ "<leader>pe", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
 				{ "<leader>pE", "<cmd>PalimpsestExport ", desc = "Export specific entity..." },
-				{ "<leader>pv", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
-				{ "<leader>pV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
+				-- Validators
+				{ "<leader>pv", group = "validators" },
+				{ "<leader>pvw", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
+				{ "<leader>pvo", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
+				{ "<leader>pvf", "<cmd>PalimpsestValidateFrontmatter<cr>", desc = "Validate frontmatter" },
+				{ "<leader>pvm", "<cmd>PalimpsestValidateMetadata<cr>", desc = "Validate metadata" },
+				{ "<leader>pvl", "<cmd>PalimpsestValidateLinks<cr>", desc = "Validate markdown links" },
 				{ "<leader>ps", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
 				{ "<leader>pa", "<cmd>PalimpsestAnalysis<cr>", desc = "Analysis report" },
 				{ "<leader>ph", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },
@@ -69,8 +74,13 @@ function M.setup()
 				-- Wiki export/validation commands
 				{ "<leader>ve", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
 				{ "<leader>vE", "<cmd>PalimpsestExport ", desc = "Export specific entity..." },
-				{ "<leader>vv", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
-				{ "<leader>vV", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
+				-- Validators
+				{ "<leader>vv", group = "validators" },
+				{ "<leader>vvw", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
+				{ "<leader>vvo", "<cmd>PalimpsestValidate orphans<cr>", desc = "Find orphaned pages" },
+				{ "<leader>vvf", "<cmd>PalimpsestValidateFrontmatter<cr>", desc = "Validate frontmatter" },
+				{ "<leader>vvm", "<cmd>PalimpsestValidateMetadata<cr>", desc = "Validate metadata" },
+				{ "<leader>vvl", "<cmd>PalimpsestValidateLinks<cr>", desc = "Validate markdown links" },
 				{ "<leader>vs", "<cmd>PalimpsestStats<cr>", desc = "Statistics dashboard" },
 				{ "<leader>va", "<cmd>PalimpsestAnalysis<cr>", desc = "Analysis report" },
 				{ "<leader>vh", "<cmd>PalimpsestIndex<cr>", desc = "Wiki homepage" },

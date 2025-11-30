@@ -26,25 +26,21 @@ M.setup = function()
 	-- Validators
 	vim.api.nvim_create_augroup("palimpsest_validators", { clear = true })
 
-	-- Validate markdown frontmatter on save for entry files
+	-- Validate markdown frontmatter on save for journal entry files
 	vim.api.nvim_create_autocmd("BufWritePost", {
 		group = "palimpsest_validators",
-		pattern = palimpsest.paths.wiki .. "/entries/**/*.md",
+		pattern = palimpsest.paths.journal .. "/**/*.md",
 		callback = function(args)
 			validators.validate_frontmatter(args.buf)
 		end,
 	})
 
-	-- Validate all markdown files in wiki on save
+	-- Validate markdown links in journal entries on save
 	vim.api.nvim_create_autocmd("BufWritePost", {
 		group = "palimpsest_validators",
-		pattern = palimpsest.paths.wiki .. "/**/*.md",
+		pattern = palimpsest.paths.journal .. "/**/*.md",
 		callback = function(args)
-			-- Skip log entries (they have simpler structure)
-			local filepath = vim.api.nvim_buf_get_name(args.buf)
-			if not filepath:match("/log/") then
-				validators.validate_links(args.buf)
-			end
+			validators.validate_links(args.buf)
 		end,
 	})
 end
