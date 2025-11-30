@@ -137,13 +137,29 @@ def split_hyphenated_to_spaces(text: str) -> str:
     """
     Convert hyphens to spaces (for names and locations).
 
+    If the text contains underscores, use underscores as space markers
+    and preserve hyphens. This allows explicit control over spacing.
+
+    Rules:
+    - If text contains '_': replace '_' with space, preserve '-'
+    - Otherwise: replace '-' with space (default behavior)
+
     Examples:
         >>> split_hyphenated_to_spaces("María-José")
         'María José'
         >>> split_hyphenated_to_spaces("San-Diego")
         'San Diego'
+        >>> split_hyphenated_to_spaces("Rue_St-Hubert")
+        'Rue St-Hubert'
+        >>> split_hyphenated_to_spaces("Jean_Pierre-Marie")
+        'Jean Pierre-Marie'
     """
-    return text.replace("-", " ")
+    if "_" in text:
+        # Underscore mode: replace underscores with spaces, preserve hyphens
+        return text.replace("_", " ")
+    else:
+        # Default mode: replace hyphens with spaces
+        return text.replace("-", " ")
 
 
 def spaces_to_hyphenated(text: str) -> str:
