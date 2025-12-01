@@ -6,7 +6,7 @@ Fast reference for Palimpsest metadata fields with examples.
 
 ## Navigation
 
-- **Full YAML↔SQL Guide:** [Full YAML↔SQL Guide](../../dev-guides/technical/metadata-yaml-sql-guide.md)
+- **Full YAML↔SQL Guide:** [Full YAML↔SQL Guide](../dev-guides/technical/metadata-yaml-sql-guide.md)
 - **Full SQL↔Wiki Guide:** [Full SQL↔Wiki Guide](sql-wiki-guide.md)
 
 ---
@@ -16,9 +16,9 @@ Fast reference for Palimpsest metadata fields with examples.
 ### Core Fields (Required/Basic)
 
 ```yaml
-date: 2024-01-15              # Required (YYYY-MM-DD)
-word_count: 1543               # Optional (auto-calculated)
-reading_time: 7.5              # Optional (minutes)
+date: 2024-01-15 # Required (YYYY-MM-DD)
+word_count: 1543 # Optional (auto-calculated)
+reading_time: 7.5 # Optional (minutes)
 ```
 
 ### Text Fields
@@ -57,22 +57,22 @@ locations:
 
 ```yaml
 people:
-  - John                     # Simple name
-  - Jane Smith              # Full name
-  - Ana-Sofía              # Hyphenated (→ "Ana Sofía")
-  - Bob (Robert Johnson)    # Name + expansion
-  - "@Johnny (John)"        # Alias
-  - "@Sofi (Ana-Sofía)"    # Alias with hyphenated name
+  - John # Simple name
+  - Jane Smith # Full name
+  - Ana-Sofía # Hyphenated (→ "Ana Sofía")
+  - Bob (Robert Johnson) # Name + expansion
+  - "@Johnny (John)" # Alias
+  - "@Sofi (Ana-Sofía)" # Alias with hyphenated name
 ```
 
 ### Dates and Timeline
 
 ```yaml
 dates:
-  - "2024-01-20"                                    # Simple date
-  - "2024-01-15 (thesis defense)"                   # With context
-  - "2024-01-10 (meeting with @John at #Café-X)"   # With references
-  - date: "2024-01-05"                              # Explicit dict
+  - "2024-01-20" # Simple date
+  - "2024-01-15 (thesis defense)" # With context
+  - "2024-01-10 (meeting with @John at #Café-X)" # With references
+  - date: "2024-01-05" # Explicit dict
     context: "appointment"
     people: [John]
     locations: [Café Olimpico]
@@ -99,11 +99,11 @@ related_entries:
 ```yaml
 references:
   - content: "The quote text"
-    mode: direct              # direct, indirect, paraphrase, visual
+    mode: direct # direct, indirect, paraphrase, visual
     speaker: "Speaker Name"
     source:
       title: "Book Title"
-      type: book             # Required: book, article, film, etc.
+      type: book # Required: book, article, film, etc.
       author: "Author Name"
 ```
 
@@ -116,7 +116,7 @@ poems:
       Line 1
       Line 2
       Line 3
-    revision_date: "2024-01-15"  # Optional (defaults to entry date)
+    revision_date: "2024-01-15" # Optional (defaults to entry date)
     notes: "Editorial notes"
 ```
 
@@ -124,7 +124,7 @@ poems:
 
 ```yaml
 manuscript:
-  status: draft              # draft, reviewed, included, excluded, final
+  status: draft # draft, reviewed, included, excluded, final
   edited: true
   themes:
     - identity
@@ -142,7 +142,6 @@ manuscript:
 ---
 date: 2024-01-15
 ---
-
 Entry content here.
 ```
 
@@ -156,7 +155,6 @@ tags:
   - personal
   - reflection
 ---
-
 Entry content here.
 ```
 
@@ -177,7 +175,6 @@ tags:
 events:
   - montreal-period
 ---
-
 Entry content here.
 ```
 
@@ -197,7 +194,6 @@ references:
       type: book
       author: "Plato"
 ---
-
 Entry content here.
 ```
 
@@ -216,7 +212,6 @@ poems:
       Second line
       Third line
 ---
-
 Entry content here.
 ```
 
@@ -239,7 +234,6 @@ manuscript:
     - urban-isolation
   notes: "Key entry for Chapter 3"
 ---
-
 Entry content here.
 ```
 
@@ -308,7 +302,6 @@ manuscript:
     - urban-isolation
   notes: "Key entry for Chapter 3"
 ---
-
 Entry content here.
 ```
 
@@ -553,36 +546,38 @@ locations:
 
 ## Field Type Reference
 
-| Field | Type | Required | Auto | Default |
-|-------|------|----------|------|---------|
-| `date` | string (YYYY-MM-DD) | ✅ | No | N/A |
-| `word_count` | int | No | ✅ | 0 |
-| `reading_time` | float | No | ✅ | 0.0 |
-| `epigraph` | string | No | No | NULL |
-| `epigraph_attribution` | string | No | No | NULL |
-| `notes` | string | No | No | NULL |
-| `city` | string or list | No | No | NULL |
-| `locations` | list or dict | No | No | NULL |
-| `people` | list | No | No | NULL |
-| `dates` | list | No | No | NULL |
-| `events` | list | No | No | NULL |
-| `tags` | list | No | No | NULL |
-| `related_entries` | list | No | No | NULL |
-| `references` | list[dict] | No | No | NULL |
-| `poems` | list[dict] | No | No | NULL |
-| `manuscript` | dict | No | No | NULL |
+| Field                  | Type                | Required | Auto | Default |
+| ---------------------- | ------------------- | -------- | ---- | ------- |
+| `date`                 | string (YYYY-MM-DD) | ✅       | No   | N/A     |
+| `word_count`           | int                 | No       | ✅   | 0       |
+| `reading_time`         | float               | No       | ✅   | 0.0     |
+| `epigraph`             | string              | No       | No   | NULL    |
+| `epigraph_attribution` | string              | No       | No   | NULL    |
+| `notes`                | string              | No       | No   | NULL    |
+| `city`                 | string or list      | No       | No   | NULL    |
+| `locations`            | list or dict        | No       | No   | NULL    |
+| `people`               | list                | No       | No   | NULL    |
+| `dates`                | list                | No       | No   | NULL    |
+| `events`               | list                | No       | No   | NULL    |
+| `tags`                 | list                | No       | No   | NULL    |
+| `related_entries`      | list                | No       | No   | NULL    |
+| `references`           | list[dict]          | No       | No   | NULL    |
+| `poems`                | list[dict]          | No       | No   | NULL    |
+| `manuscript`           | dict                | No       | No   | NULL    |
 
 ---
 
 ## Enum Values
 
 ### Reference Mode
+
 - `direct` (default)
 - `indirect`
 - `paraphrase`
 - `visual`
 
 ### Reference Type
+
 - `book`
 - `article`
 - `film`
@@ -597,6 +592,7 @@ locations:
 - `other`
 
 ### Manuscript Status
+
 - `source`
 - `draft`
 - `in_progress`
@@ -606,6 +602,7 @@ locations:
 - `final`
 
 ### Person Relation Type
+
 - `Family`
 - `Friend`
 - `Romantic`
@@ -659,38 +656,40 @@ metadb update-entry 2024-01-15 --add-tag philosophy
 
 ### Database-Linked (Synced on Import)
 
-| Entity | Field | SQL Column |
-|--------|-------|-----------|
-| Entry | `notes` | `entries.notes` |
-| Event | `notes` | `events.notes` |
-| Manuscript Entry | `notes` | `manuscript_entries.notes` |
-| Manuscript Entry | `character_notes` | `manuscript_entries.character_notes` |
+| Entity               | Field                   | SQL Column                                |
+| -------------------- | ----------------------- | ----------------------------------------- |
+| Entry                | `notes`                 | `entries.notes`                           |
+| Event                | `notes`                 | `events.notes`                            |
+| Manuscript Entry     | `notes`                 | `manuscript_entries.notes`                |
+| Manuscript Entry     | `character_notes`       | `manuscript_entries.character_notes`      |
 | Manuscript Character | `character_description` | `manuscript_people.character_description` |
-| Manuscript Character | `character_arc` | `manuscript_people.character_arc` |
-| Manuscript Character | `voice_notes` | `manuscript_people.voice_notes` |
-| Manuscript Character | `appearance_notes` | `manuscript_people.appearance_notes` |
+| Manuscript Character | `character_arc`         | `manuscript_people.character_arc`         |
+| Manuscript Character | `voice_notes`           | `manuscript_people.voice_notes`           |
+| Manuscript Character | `appearance_notes`      | `manuscript_people.appearance_notes`      |
 
 ### Wiki-Only (NOT Synced)
 
-| Entity | Fields |
-|--------|--------|
-| Person | `notes`, `vignettes`, `category`, `themes` |
-| Location | `notes` |
-| City | `notes` |
-| Theme | `notes` |
-| Reference | `notes` |
-| Poem | `notes` |
+| Entity    | Fields                                     |
+| --------- | ------------------------------------------ |
+| Person    | `notes`, `vignettes`, `category`, `themes` |
+| Location  | `notes`                                    |
+| City      | `notes`                                    |
+| Theme     | `notes`                                    |
+| Reference | `notes`                                    |
+| Poem      | `notes`                                    |
 
 ---
 
 ## Validation Rules
 
 ### Date Format
+
 - Must be YYYY-MM-DD (ISO 8601)
 - Must be valid calendar date
 - Must be unique (one entry per date)
 
 ### Name Parsing
+
 - Single word → `name`
 - Multiple words → `full_name`
 - Hyphens in single word → spaces
@@ -698,17 +697,20 @@ metadb update-entry 2024-01-15 --add-tag philosophy
 - `@` prefix → alias
 
 ### Location Requirements
+
 - Flat list → exactly 1 city required
 - Nested dict → multiple cities allowed
 - Quoted strings → preserve special chars
 
 ### Reference Requirements
+
 - `content` OR `description` required (at least one)
 - If `source` present:
   - `title` required
   - `type` required (validated enum)
 
 ### Poem Requirements
+
 - `title` required
 - `content` required
 - `revision_date` defaults to entry date
@@ -750,13 +752,4 @@ metadb update-entry 2024-01-15 --add-tag philosophy
 
 ---
 
-## More Information
-
-- **Complete YAML↔SQL Guide:** [METADATA_GUIDE_YAML_SQL.md](METADATA_GUIDE_YAML_SQL.md)
-- **Complete SQL↔Wiki Guide:** [METADATA_GUIDE_SQL_WIKI.md](METADATA_GUIDE_SQL_WIKI.md)
-- **Examples Directory:** `examples/`
-- **Source Code:** `dev/pipeline/`, `dev/dataclasses/`
-
----
-
-*Last Updated: 2024-01-15*
+_Last Updated: 2024-01-15_

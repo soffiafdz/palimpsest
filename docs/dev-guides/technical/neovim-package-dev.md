@@ -60,12 +60,14 @@ M.paths = {
 Telescope extension implementation following the official Telescope extension API:
 
 **Key Functions:**
+
 - `M.browse(entity_type)` - Browse files by entity type
 - `M.search(entity_type)` - Search content with live_grep
 - `M.quick_access()` - Custom picker for special pages
 - `M.setup(ext_config, config)` - Extension registration (called by Telescope)
 
 **Extension Structure:**
+
 ```lua
 function M.setup(ext_config, config)
     return {
@@ -89,17 +91,20 @@ end
 Async validation integration with Python backend:
 
 **Architecture:**
+
 1. Runs Python validators via `vim.fn.jobstart()`
 2. Parses output (stdout/stderr)
 3. Converts to Neovim diagnostics
 4. Displays via diagnostic API
 
 **Key Functions:**
+
 - `M.validate_frontmatter(bufnr)` - YAML frontmatter validation
 - `M.validate_metadata(bufnr)` - Metadata field validation
 - `M.validate_links(bufnr)` - Link validation
 
 **Diagnostic Format:**
+
 ```lua
 {
     bufnr = bufnr,
@@ -116,11 +121,13 @@ Async validation integration with Python backend:
 Template system for VimWiki diary entries only:
 
 **Core Functions:**
+
 - `read_template(name)` - Load template file
 - `substitute_variables(lines, variables)` - Replace `{{var}}` placeholders
 - `M.insert_template(name, variables, cursor_pos)` - Insert processed template
 
 **Current Usage:**
+
 - `M.populate_log()` - Creates diary/log entries (triggered by VimWiki autocmd on `BufNewFile` for log files)
 
 **Important:** Entity wiki pages (people, locations, events, themes) are **NOT** generated from templates. They are fully constructed by Python builders via `WikiEntity.to_wiki()` methods when `plm export-wiki` is run.
@@ -130,6 +137,7 @@ Template system for VimWiki diary entries only:
 Autocommand definitions:
 
 **Template Formatting:**
+
 ```lua
 -- Set filetype for .template files
 pattern = palimpsest.paths.templates .. "*.template"
@@ -137,6 +145,7 @@ pattern = palimpsest.paths.templates .. "*.template"
 ```
 
 **Log Entry Population:**
+
 ```lua
 -- Populate new log entries from template
 pattern = palimpsest.paths.log .. "*.md"
@@ -145,6 +154,7 @@ event = "BufNewFile"
 ```
 
 **Validators:**
+
 ```lua
 -- Validate entry frontmatter on save
 pattern = palimpsest.paths.wiki .. "/entries/**/*.md"
@@ -162,6 +172,7 @@ event = "BufWritePost"
 User command definitions using `vim.api.nvim_create_user_command()`:
 
 **Command Structure:**
+
 ```lua
 vim.api.nvim_create_user_command("PalimpsestBrowse", function(opts)
     local entity_type = opts.args ~= "" and opts.args or "all"
@@ -180,10 +191,12 @@ end, {
 Key binding registration using `which-key.nvim`:
 
 **Dual Configuration:**
+
 - Single vimwiki → `<leader>v` prefix
 - Multiple vimwikis → `<leader>p` prefix
 
 **Structure:**
+
 ```lua
 wk.add({
     { "<leader>pF", group = "browse entities" },
@@ -207,6 +220,7 @@ python -m dev.validators.cli.markdown frontmatter <filepath>
 
 **Output Format:**
 The validator should output structured messages that Lua can parse:
+
 ```
 ❌ [frontmatter]:3 Required field 'date' missing
    💡 Add 'date: <value>' to frontmatter
@@ -226,6 +240,7 @@ Wiki pages are **NOT** generated from templates. They are fully constructed by P
 6. Complete markdown content written to wiki file
 
 **Example flow for Person entity:**
+
 ```python
 # In GenericEntityExporter.export_single()
 wiki_entity = Person.from_database(db_person, wiki_dir, journal_dir)
@@ -450,4 +465,4 @@ end
 
 - [Telescope Extension API](https://github.com/nvim-telescope/telescope.nvim/blob/master/developers.md)
 - [Neovim Diagnostic API](https://neovim.io/doc/user/diagnostic.html)
-- [User Guide](../user-guides/neovim-integration.md)
+- [User Guide](../../user-guides/neovim-integration.md)

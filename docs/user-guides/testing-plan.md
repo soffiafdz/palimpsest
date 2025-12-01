@@ -53,13 +53,15 @@ Tests are organized by **complexity level** so you can start simple and build co
 Use this checklist to track your progress:
 
 ### Core Pipeline
-- [ ] Database initialization
-- [ ] src2txt conversion
-- [ ] txt2md conversion
+
+- [x] Database initialization
+- [x] src2txt conversion
+- [x] txt2md conversion
 - [ ] yaml2sql database sync
 - [ ] sql2yaml export
 
 ### Metadata & Entities
+
 - [ ] People extraction
 - [ ] Location extraction
 - [ ] City tracking
@@ -72,6 +74,7 @@ Use this checklist to track your progress:
 - [ ] Manuscript metadata
 
 ### Wiki System
+
 - [ ] sql2wiki export
 - [ ] wiki2sql import
 - [ ] Editable field sync
@@ -80,6 +83,7 @@ Use this checklist to track your progress:
 - [ ] Manuscript wiki
 
 ### Search & Analysis
+
 - [ ] FTS5 search index
 - [ ] Basic text search
 - [ ] Filtered search (person, city, tag, etc.)
@@ -87,11 +91,13 @@ Use this checklist to track your progress:
 - [ ] NLP analysis (optional)
 
 ### PDF Generation
+
 - [ ] Clean PDF
 - [ ] Notes PDF
 - [ ] LaTeX formatting
 
 ### Database Management
+
 - [ ] Backup creation
 - [ ] Restore functionality
 - [ ] Health checks
@@ -100,6 +106,7 @@ Use this checklist to track your progress:
 - [ ] Validation
 
 ### Advanced Features
+
 - [ ] Sync state management
 - [ ] Conflict resolution
 - [ ] Tombstone tracking
@@ -108,6 +115,7 @@ Use this checklist to track your progress:
 - [ ] Neovim integration (optional)
 
 ### Error Handling
+
 - [ ] Invalid YAML handling
 - [ ] Missing dependency messages
 - [ ] Empty database operations
@@ -118,6 +126,71 @@ Use this checklist to track your progress:
 ## Phase 1: Environment & Setup Testing
 
 **Goal:** Verify your environment is correctly configured
+
+### 1.0 Initial Installation (New Machines Only)
+
+If setting up Palimpsest on a new machine, follow these steps:
+
+#### Core Installation
+
+```bash
+# Install the package in editable mode
+# This registers all CLI commands: plm, metadb, jsearch, validate, nlp
+pip install -e .
+```
+
+**Note:** If using micromamba/conda, ensure you're in the correct environment first.
+
+#### Verify Core Commands
+
+```bash
+# Test that all core commands are available
+plm --help
+metadb --help
+jsearch --help
+validate --help
+nlp --help
+```
+
+If any command shows "command not found", reinstall with `pip install -e .`
+
+#### Optional NLP Dependencies
+
+The NLP features are optional. Install based on the analysis level you want:
+
+**Using micromamba/conda:**
+
+```bash
+# Level 2 (spaCy) + Level 3 (transformers)
+micromamba install -c conda-forge spacy sentence-transformers
+python -m spacy download en_core_web_sm
+```
+
+**Using pip:**
+
+```bash
+# Level 2 (spaCy) + Level 3 (transformers)
+pip install spacy sentence-transformers
+python -m spacy download en_core_web_sm
+
+# Level 4: LLM APIs (optional, paid)
+pip install anthropic  # For Claude
+pip install openai     # For OpenAI
+```
+
+**Analysis Levels:**
+
+- Level 1: Keyword matching (always available, no install needed)
+- Level 2: spaCy NER (free, local ML-based entity extraction)
+- Level 3: Semantic search (free, transformer-based similarity)
+- Level 4: LLM APIs (paid, requires API keys)
+
+For Level 4, set environment variables:
+
+```bash
+export ANTHROPIC_API_KEY='your-key-here'  # For Claude
+export OPENAI_API_KEY='your-key-here'     # For OpenAI
+```
 
 ### 1.1 Database Initialization
 
@@ -212,10 +285,11 @@ plm convert
 
 # Check output
 ls -la data/journal/content/md/2024/
-cat data/journal/content/md/2024/2024-11-25.md
+cat data/journal/content/md/2025/2024-11-25.md
 ```
 
 **Expected:**
+
 - Markdown file with YAML frontmatter
 - Computed fields: `date`, `word_count`, `reading_time`
 - Body content preserved
@@ -308,6 +382,7 @@ metadb query show 2024-11-25
 ```
 
 **Expected:** All entities extracted:
+
 - People: Ana Sofía, Myself
 - Locations: Café Olimpico, McGill Library
 - City: Montreal
@@ -349,6 +424,7 @@ ls -R data/wiki/
 ```
 
 **Expected:** Wiki directory populated with:
+
 - `wiki/index.md`
 - `wiki/entries/2024/2024-11-25.md`
 - `wiki/people/ana-sofia.md`
@@ -527,6 +603,7 @@ cat data/wiki/manuscript/entries/2024/2024-11-25.md
 ```
 
 **Expected:** Manuscript wiki populated with:
+
 - Entry status: draft
 - Themes: identity, academic-life
 - Character notes sections
@@ -575,6 +652,7 @@ nlp analyze 2024-11-25 --level 2
 ```
 
 **Expected:** Entity extraction:
+
 - People: Ana Sofía
 - Locations: Montreal, McGill
 - Themes detected
@@ -608,12 +686,14 @@ ls -la data/journal/content/pdf/
 ```
 
 **Expected:** Two PDFs generated:
+
 - `2024.pdf` (clean reading version)
 - `2024-notes.pdf` (annotated version with line numbers)
 
 ### 8.2 Verify PDF Contents
 
 Open PDFs and check:
+
 - Title page
 - Table of contents
 - Entry formatting
@@ -635,6 +715,7 @@ plm run-all --year 2024
 ```
 
 **Expected:** Executes in order:
+
 1. Inbox processing
 2. Conversion
 3. Database sync
@@ -975,11 +1056,13 @@ jsearch query "anything"
 ### Before You Start
 
 1. **Backup your real data** before any testing:
+
    ```bash
    metadb backup --suffix "before-testing"
    ```
 
 2. **Consider using a separate testing environment:**
+
    ```bash
    # Copy entire project to test directory
    cp -r ~/Documents/palimpsest ~/Documents/palimpsest-test
@@ -1010,16 +1093,19 @@ jsearch query "anything"
 ## Common Issues & Solutions
 
 ### "Database not initialized"
+
 ```bash
 metadb init
 ```
 
 ### "Search index not found"
+
 ```bash
 jsearch index create
 ```
 
 ### "Broken wiki links"
+
 ```bash
 validate wiki check
 # Fix the reported links
@@ -1027,6 +1113,7 @@ plm export-wiki all  # Regenerate if needed
 ```
 
 ### "Metadata out of sync"
+
 ```bash
 validate consistency metadata
 # If drift detected:
@@ -1034,12 +1121,14 @@ plm sync-db  # Re-sync from markdown
 ```
 
 ### "Text analysis not working"
+
 ```bash
 nlp status  # Check what's available
 # Install missing dependencies based on output
 ```
 
 ### "Slow database queries"
+
 ```bash
 metadb optimize
 jsearch index rebuild
@@ -1068,6 +1157,7 @@ Once you've completed testing:
 - **Wiki Guide:** `docs/user-guides/sql-wiki-guide.md`
 
 For help with specific commands:
+
 ```bash
 plm --help
 metadb --help

@@ -397,7 +397,7 @@ wiki/
 - Characters: Character description, arc, voice notes, appearance notes
 - Themes, arcs, and other manuscript-specific metadata
 
-See [docs/bidirectional-sync-guide.md](docs/bidirectional-sync-guide.md) for complete documentation.
+See [docs/bidirectional-sync-guide.md](/docs/dev-guides/architecture/bidirectional-sync-guide.md) for complete documentation.
 
 ---
 
@@ -526,11 +526,13 @@ nlp status
 **The optional text analysis tools in this project (`dev/nlp/` and `nlp` command) use standard computational linguistics techniques**—specifically named entity recognition (NER), keyword extraction, and pattern matching to assist with metadata organization of existing journal content.
 
 **Technical approach:**
+
 - Uses spaCy for named entity recognition (local, open-source)
 - Employs regex and keyword matching for theme detection
 - Optional: sentence transformers for semantic similarity search
 
 **Important clarifications:**
+
 - ✅ Extracts entities, themes, and tags from already-written text
 - ✅ Suggests organizational structures based on text analysis
 - ✅ Assists with cataloging and searchability through pattern matching
