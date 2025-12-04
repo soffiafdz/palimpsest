@@ -15,8 +15,9 @@ function M.browse(entity_type)
 
 	-- Define search paths for each entity type
 	local entity_paths = {
-		all = wiki_dir,
+		all = { journal_dir, wiki_dir },
 		journal = journal_dir,
+		wiki = wiki_dir,
 		people = wiki_dir .. "/people",
 		entries = wiki_dir .. "/entries",
 		locations = wiki_dir .. "/locations",
@@ -65,7 +66,7 @@ function M.search(entity_type)
 
 	-- Define search paths for each entity type
 	local entity_paths = {
-		all = { wiki_dir, journal_dir },
+		all = { journal_dir, wiki_dir },
 		wiki = wiki_dir,
 		journal = journal_dir,
 		people = wiki_dir .. "/people",
