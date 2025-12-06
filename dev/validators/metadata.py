@@ -168,8 +168,46 @@ class MetadataValidator:
             )
             return issues
 
+        # Track referenced people to detect duplicates
+        referenced_people = []  # List of (name, full_name) tuples for comparison
+
         for idx, person in enumerate(people_data):
+            # Track the person being referenced for duplicate detection
+            person_name = None
+            person_full_name = None
+
             if isinstance(person, str):
+                # Extract name and full_name from string format
+                if "(" in person and person.endswith(")"):
+                    # Format: "Name (Full Name)" or "@Alias (Name)"
+                    parts = person.split("(", 1)
+                    prefix = parts[0].strip()
+                    expansion = parts[1].rstrip(")").strip()
+
+                    if prefix.startswith("@"):
+                        # Alias format: @Alias (Name)
+                        # The expansion is the person being referenced
+                        if " " in expansion:
+                            person_full_name = expansion.replace("-", " ")
+                        else:
+                            person_name = expansion.replace("-", " ")
+                    else:
+                        # Name expansion format: Name (Full Name)
+                        if " " in prefix:
+                            person_full_name = prefix.replace("-", " ")
+                        else:
+                            person_name = prefix.replace("-", " ")
+                        # Full name is in expansion
+                        if " " in expansion:
+                            person_full_name = expansion.replace("-", " ")
+                else:
+                    # Simple name or alias without expansion
+                    name_str = person.lstrip("@").replace("-", " ")
+                    if " " in name_str:
+                        person_full_name = name_str
+                    else:
+                        person_name = name_str
+
                 # Check for unbalanced parentheses
                 if ")" in person and "(" not in person:
                     issues.append(
@@ -229,6 +267,16 @@ class MetadataValidator:
                         )
 
             elif isinstance(person, dict):
+                # Extract name and full_name from dict format
+                person_name = person.get("name")
+                person_full_name = person.get("full_name")
+
+                # Normalize hyphens to spaces
+                if person_name:
+                    person_name = person_name.replace("-", " ")
+                if person_full_name:
+                    person_full_name = person_full_name.replace("-", " ")
+
                 # Check dict has at least one required field
                 if not any(key in person for key in ["name", "full_name", "alias"]):
                     issues.append(
@@ -266,6 +314,42 @@ class MetadataValidator:
                         yaml_value=str(person),
                     )
                 )
+
+            # Check for duplicate person references
+            if person_name or person_full_name:
+                person_id = (person_name, person_full_name)
+
+                # Check if this person was already referenced
+                for prev_idx, prev_person_id in enumerate(referenced_people):
+                    prev_name, prev_full_name = prev_person_id
+
+                    # Check for match on either name or full_name
+                    match = False
+                    if person_name and prev_name and person_name.lower() == prev_name.lower():
+                        match = True
+                    if person_full_name and prev_full_name and person_full_name.lower() == prev_full_name.lower():
+                        match = True
+                    # Also check if one's name matches the other's full_name
+                    if person_name and prev_full_name and person_name.lower() == prev_full_name.lower():
+                        match = True
+                    if person_full_name and prev_name and person_full_name.lower() == prev_name.lower():
+                        match = True
+
+                    if match:
+                        person_display = person_full_name or person_name
+                        issues.append(
+                            MetadataIssue(
+                                file_path=file_path,
+                                field_name=f"people[{idx}]",
+                                severity="warning",
+                                message=f"Person '{person_display}' appears multiple times in people field",
+                                suggestion="For multiple nicknames, use: {name: Person, alias: [Nick1, Nick2]}",
+                                yaml_value=str(person),
+                            )
+                        )
+                        break
+
+                referenced_people.append(person_id)
 
         return issues
 

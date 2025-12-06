@@ -49,13 +49,45 @@ class TestMetadataValidator:
             ]
         }
         self.create_md_file(file_path, frontmatter)
-        
+
         issues = validator.validate_file(file_path)
         assert len(issues) >= 5
         assert any("Missing space" in i.message for i in issues)
         assert any("Unbalanced parenthesis" in i.message for i in issues)
         assert any("missing required field" in i.message for i in issues)
         assert any("Invalid people entry type" in i.message for i in issues)
+
+    def test_validate_people_field_duplicates(self, validator, tmp_path):
+        """Test validation detects duplicate people in the field."""
+        file_path = tmp_path / "duplicate_people.md"
+        frontmatter = {
+            "people": [
+                "@Clarabelais (Clara)",
+                "@Ari (Clara)",  # Same person, different alias
+            ]
+        }
+        self.create_md_file(file_path, frontmatter)
+
+        issues = validator.validate_file(file_path)
+        assert len(issues) >= 1
+        assert any("appears multiple times" in i.message for i in issues)
+        assert any("alias: [Nick1, Nick2]" in i.suggestion for i in issues)
+
+    def test_validate_people_field_no_duplicates_different_people(self, validator, tmp_path):
+        """Test validation allows different people."""
+        file_path = tmp_path / "different_people.md"
+        frontmatter = {
+            "people": [
+                "Alice",
+                "Bob",
+                "@Charlie (Charles)",
+            ]
+        }
+        self.create_md_file(file_path, frontmatter)
+
+        issues = validator.validate_file(file_path)
+        # Should have no duplicate warnings
+        assert not any("appears multiple times" in i.message for i in issues)
 
     def test_validate_locations_field_valid(self, validator, tmp_path):
         """Test validation of valid locations field formats."""
