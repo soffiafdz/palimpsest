@@ -63,6 +63,10 @@ people:
   - Bob (Robert Johnson) # Name + expansion
   - "@Johnny (John)" # Alias
   - "@Sofi (Ana-Sofía)" # Alias with hyphenated name
+
+  # Multiple nicknames for same person (use alias array)
+  - name: Clara
+    alias: [Clarabelais, Ari]  # DON'T add person twice!
 ```
 
 ### Dates and Timeline
@@ -72,6 +76,7 @@ dates:
   - "2024-01-20" # Simple date
   - "2024-01-15 (thesis defense)" # With context
   - "2024-01-10 (meeting with @John at #Café-X)" # With references
+  - "~"  # MUST be quoted! Opt out of entry date auto-inclusion
   - date: "2024-01-05" # Explicit dict
     context: "appointment"
     people: [John]
@@ -464,6 +469,16 @@ people:
 # ✅ Creates Alias
 people:
   - "@Johnny"
+
+# ✅ Multiple nicknames for same person (use alias array)
+people:
+  - name: Clara
+    alias: [Clarabelais, Ari]
+
+# ❌ DON'T add same person twice with different nicknames
+people:
+  - "@Clarabelais (Clara)"
+  - "@Ari (Clara)"  # Wrong! Use alias array instead
 ```
 
 ### 2. Locations: Multiple Cities Need Nested Dict
@@ -494,9 +509,9 @@ dates:
   - "2024-01-20"
 # Result: Both 2024-01-15 AND 2024-01-20
 
-# To opt out:
+# To opt out (IMPORTANT: tilde must be quoted!):
 dates:
-  - "~"
+  - "~"  # MUST use quotes
   - "2024-01-20"
 # Result: Only 2024-01-20
 ```
@@ -537,9 +552,15 @@ locations:
   - "Café #5"          # Hash symbol
   - "Title: Subtitle"  # Colon
 
-# ❌ Without quotes → Syntax error
+dates:
+  - "~"  # Tilde MUST be quoted (YAML reserved character)
+
+# ❌ Without quotes → Syntax error or unexpected behavior
 locations:
   - Mom's apartment
+
+dates:
+  - ~  # Interpreted as null, not literal tilde!
 ```
 
 ---

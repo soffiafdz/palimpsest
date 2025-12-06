@@ -545,6 +545,7 @@ people:
 **Rules:**
 - Explicit dict with `name`, `full_name`, or `alias` keys
 - `alias` can be string or list
+- For multiple nicknames for the same person, use an alias array (NOT multiple entries)
 
 **Results:**
 ```sql
@@ -556,6 +557,19 @@ Alias(alias='Johnny', person_id=person.id)
 Person(full_name='Ana Sofía')
 Alias(alias='Sofi', person_id=person.id)
 Alias(alias='AS', person_id=person.id)
+```
+
+**Important:**
+```yaml
+# ✅ CORRECT - One person with multiple nicknames
+people:
+  - name: Clara
+    alias: [Clarabelais, Ari]
+
+# ❌ WRONG - Don't add the same person twice
+people:
+  - "@Clarabelais (Clara)"
+  - "@Ari (Clara)"  # Creates duplicate relationships!
 ```
 
 ### Complete People Examples
@@ -717,11 +731,14 @@ date: 2024-01-15
 **To opt out of auto-inclusion:**
 ```yaml
 dates:
-  - "~"  # Tilde symbol prevents entry date auto-inclusion
+  - "~"  # IMPORTANT: Tilde MUST be quoted! Prevents entry date auto-inclusion
   - "2024-01-20 (future appointment)"
 
 # Result: Only 2024-01-20 added, NOT 2024-01-15
 ```
+
+**Why quotes are required:**
+In YAML, an unquoted `~` is interpreted as `null`. The quoted `"~"` is treated as a literal string, which the parser recognizes as the opt-out signal.
 
 **Mixed scenario:**
 ```yaml
@@ -1702,14 +1719,25 @@ dates:
 # - 2024-01-20 (explicit)
 ```
 
-**To opt out:**
+**To opt out (tilde MUST be quoted!):**
 
 ```yaml
 dates:
-  - "~"  # Prevent auto-inclusion
+  - "~"  # MUST use quotes! Prevent auto-inclusion
   - "2024-01-20"
 
 # Result: Only 2024-01-20 added
+```
+
+**Why quotes matter:**
+```yaml
+# ❌ WRONG - Unquoted tilde is null
+dates:
+  - ~  # Interpreted as null, not opt-out signal
+
+# ✅ CORRECT - Quoted tilde is literal string
+dates:
+  - "~"  # Recognized as opt-out signal
 ```
 
 ---
@@ -1802,9 +1830,15 @@ locations:
   - "Café #5"          # Hash symbol
   - "Place: The Beginning"  # Colon
 
-# ❌ Without quotes (parsing error)
+dates:
+  - "~"  # Tilde MUST be quoted (YAML reserved character)
+
+# ❌ Without quotes (parsing error or unexpected behavior)
 locations:
   - Mom's apartment  # Syntax error
+
+dates:
+  - ~  # Interpreted as null, not literal tilde!
 ```
 
 **Gotcha:** Multi-line strings
