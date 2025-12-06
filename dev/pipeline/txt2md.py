@@ -22,21 +22,15 @@ Complex YAML metadata handling is deferred to yaml2sql/MdEntry pipeline.
             └── <YYYY>
                 └── <YYYY-MM-DD>.md
 
-Usage:
-    # Convert single file
-    txt2md convert input.txt -o output_dir/
-
-    # Batch convert directory
-    txt2md batch input_dir/ -o output_dir/
-
-    # Validate file without converting
-    txt2md validate input.txt
+Programmatic API:
+    from dev.pipeline.txt2md import convert_file, convert_directory
+    stats = convert_file(input_path, output_dir, force_overwrite, logger)
+    stats = convert_directory(input_dir, output_dir, force_overwrite, logger)
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
-import click
 import logging
 
 from datetime import date
@@ -45,10 +39,8 @@ from typing import List, Optional
 
 # --- Local imports ---
 from dev.core.exceptions import Txt2MdError
-from dev.core.paths import LOG_DIR, MD_DIR  # , TMP_DIR  , ROOT
 from dev.core.temporal_files import TemporalFileManager
-from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli import setup_logger
+from dev.core.logging_manager import PalimpsestLogger
 from dev.core.cli import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
 
@@ -357,146 +349,3 @@ def _generate_minimal_markdown(entry: TxtEntry) -> str:
     return "\n".join(lines)
 
 
-# --- CLI ---
-@click.group()
-@click.option(
-    "--log-dir",
-    type=click.Path(),
-    default=str(LOG_DIR),
-    help="Directory for log files",
-)
-@click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
-@click.pass_context
-def cli(ctx, log_dir, verbose):
-    """txt2md - Convert 750words .txt exports to Markdown"""
-    ctx.ensure_object(dict)
-    ctx.obj["log_dir"] = Path(log_dir)
-    ctx.obj["verbose"] = verbose
-    logger = setup_logger(Path(log_dir), "txt2md")
-    if verbose:
-        configure_verbose_logging(logger)
-    ctx.obj["logger"] = logger
-
-
-@cli.command()
-@click.argument("input_file", type=click.Path(exists=True))
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(),
-    default=str(MD_DIR),
-    help=f"Output directory (default: {MD_DIR})",
-)
-@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
-@click.option("--minimal", is_flag=True, help="Generate minimal YAML (date only)")
-@click.pass_context
-def convert(ctx, input_file, output, force, minimal):
-    """Convert a single .txt file to Markdown entries."""
-    logger = ctx.obj["logger"]
-
-    try:
-        input_path = Path(input_file)
-        output_dir = Path(output)
-
-        click.echo(f"📄 Converting {input_path.name}")
-
-        stats = convert_file(
-            input_path,
-            output_dir,
-            force_overwrite=force,
-            minimal_yaml=minimal,
-            logger=logger,
-        )
-
-        click.echo("\n✅ Conversion complete:")
-        click.echo(f"  Created: {stats.entries_created} entries")
-        if stats.entries_skipped > 0:
-            click.echo(f"  Skipped: {stats.entries_skipped} entries")
-        if stats.errors > 0:
-            click.echo(f"  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
-
-    except (Txt2MdError, Exception) as e:
-        handle_cli_error(ctx, e, "convert", {"input_file": input_file})
-
-
-@cli.command()
-@click.argument("input_dir", type=click.Path(exists=True))
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(),
-    default=str(MD_DIR),
-    help=f"Output directory (default: {MD_DIR})",
-)
-@click.option(
-    "-p", "--pattern", default="*.txt", help="File pattern to match (default: *.txt)"
-)
-@click.option("-f", "--force", is_flag=True, help="Overwrite existing files")
-@click.option("--minimal", is_flag=True, help="Generate minimal YAML (date only)")
-@click.pass_context
-def batch(ctx, input_dir, output, pattern, force, minimal):
-    """Convert all .txt files in a directory."""
-    logger = ctx.obj["logger"]
-
-    try:
-        input_path = Path(input_dir)
-        output_dir = Path(output)
-
-        click.echo(f"📁 Processing directory: {input_path}")
-
-        stats = convert_directory(
-            input_path,
-            output_dir,
-            pattern=pattern,
-            force_overwrite=force,
-            minimal_yaml=minimal,
-            logger=logger,
-        )
-
-        click.echo("\n✅ Batch conversion complete:")
-        click.echo(f"  Files processed: {stats.files_processed}")
-        click.echo(f"  Entries created: {stats.entries_created}")
-        if stats.entries_skipped > 0:
-            click.echo(f"  Entries skipped: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
-
-    except (Txt2MdError, Exception) as e:
-        handle_cli_error(ctx, e, "batch", {"input_dir": input_dir})
-
-
-@cli.command()
-@click.argument("input_file", type=click.Path(exists=True))
-@click.pass_context
-def validate(ctx, input_file):
-    """Validate a .txt file without converting."""
-    try:
-        input_path = Path(input_file)
-
-        click.echo(f"🔍 Validating {input_path.name}")
-
-        # Parse entries
-        entries: List[TxtEntry] = TxtEntry.from_file(input_path, verbose=False)
-
-        click.echo("\n✅ Validation successful:")
-        click.echo(f"  Entries found: {len(entries)}")
-
-        # Show date range
-        if entries:
-            dates: List[date] = [e.date for e in entries]
-            click.echo(f"  Date range: {min(dates)} to {max(dates)}")
-
-            # Show stats
-            total_words: int = sum(e.word_count for e in entries)
-            avg_words: float = total_words / len(entries)
-            click.echo(f"  Total words: {total_words:,}")
-            click.echo(f"  Average words/entry: {avg_words:.0f}")
-
-    except (Txt2MdError, Exception) as e:
-        handle_cli_error(ctx, e, "validate", {"input_file": input_file})
-
-
-if __name__ == "__main__":
-    cli(obj={})

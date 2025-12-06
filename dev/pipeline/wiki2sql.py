@@ -28,7 +28,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import sys
-import click
 import socket
 from pathlib import Path
 from datetime import datetime, timezone
@@ -55,8 +54,7 @@ from dev.dataclasses.wiki_entry import Entry as WikiEntry
 from dev.dataclasses.wiki_event import Event as WikiEvent
 
 from dev.core.paths import LOG_DIR, DB_PATH, WIKI_DIR, ALEMBIC_DIR, BACKUP_DIR
-from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli import setup_logger
+from dev.core.logging_manager import PalimpsestLogger
 from dev.core.exceptions import Wiki2SqlError
 
 from dev.pipeline.entity_importer import EntityImporter, ImportStats
@@ -643,115 +641,3 @@ def import_all_manuscript_events(
 # --- CLI ---
 
 
-@click.group()
-@click.option(
-    "--db-path",
-    type=click.Path(),
-    default=str(DB_PATH),
-    help="Path to database file",
-)
-@click.option(
-    "--wiki-dir",
-    type=click.Path(),
-    default=str(WIKI_DIR),
-    help="Wiki root directory",
-)
-@click.option(
-    "--log-dir",
-    type=click.Path(),
-    default=str(LOG_DIR),
-    help="Logging directory",
-)
-@click.pass_context
-def cli(ctx: click.Context, db_path: str, wiki_dir: str, log_dir: str) -> None:
-    """Import wiki edits back to database."""
-    ctx.ensure_object(dict)
-    ctx.obj["db_path"] = Path(db_path)
-    ctx.obj["wiki_dir"] = Path(wiki_dir)
-    ctx.obj["log_dir"] = Path(log_dir)
-    ctx.obj["logger"] = setup_logger(Path(log_dir), "wiki2sql")
-
-    # Initialize database
-    ctx.obj["db"] = PalimpsestDB(
-        db_path=Path(db_path),
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=Path(log_dir),
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
-
-
-@cli.command()
-@click.argument(
-    "entity_type",
-    type=click.Choice([
-        "people", "themes", "tags", "entries", "events",
-        "manuscript-entries", "manuscript-characters", "manuscript-events",
-        "all", "manuscript-all"
-    ]),
-)
-@click.pass_context
-def import_cmd(ctx: click.Context, entity_type: str) -> None:
-    """Import wiki edits to database."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
-    db: PalimpsestDB = ctx.obj["db"]
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-
-    try:
-        click.echo(f"📥 Importing {entity_type} from {wiki_dir}/")
-
-        # Run appropriate import function
-        if entity_type == "people":
-            stats = import_people(wiki_dir, db, logger)
-        elif entity_type == "themes":
-            stats = import_themes(wiki_dir, db, logger)
-        elif entity_type == "tags":
-            stats = import_tags(wiki_dir, db, logger)
-        elif entity_type == "entries":
-            stats = import_entries(wiki_dir, db, logger)
-        elif entity_type == "events":
-            stats = import_events(wiki_dir, db, logger)
-        elif entity_type == "manuscript-entries":
-            stats = import_all_manuscript_entries(db, wiki_dir, logger)
-        elif entity_type == "manuscript-characters":
-            stats = import_all_manuscript_characters(db, wiki_dir, logger)
-        elif entity_type == "manuscript-events":
-            stats = import_all_manuscript_events(db, wiki_dir, logger)
-        elif entity_type == "manuscript-all":
-            # Import all manuscript entities
-            combined_stats = ImportStats()
-            for import_func in [
-                import_all_manuscript_entries,
-                import_all_manuscript_characters,
-                import_all_manuscript_events,
-            ]:
-                stats = import_func(db, wiki_dir, logger)
-                combined_stats.files_processed += stats.files_processed
-                combined_stats.records_updated += stats.records_updated
-                combined_stats.records_skipped += stats.records_skipped
-                combined_stats.errors += stats.errors
-            stats = combined_stats
-        elif entity_type == "all":
-            stats = import_all(wiki_dir, db, logger)
-        else:
-            click.echo(f"❌ Unknown entity type: {entity_type}")
-            sys.exit(1)
-
-        # Print summary
-        click.echo("\n✅ Import complete:")
-        click.echo(f"  Files processed: {stats.files_processed}")
-        click.echo(f"  Records updated: {stats.records_updated}")
-        click.echo(f"  Records skipped: {stats.records_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-
-    except (Wiki2SqlError, Exception) as e:
-        handle_cli_error(ctx, e, "import", {"entity_type": entity_type})
-
-
-# Register import command with proper name
-cli.add_command(import_cmd, name="import")
-
-
-if __name__ == "__main__":
-    cli(obj={})
