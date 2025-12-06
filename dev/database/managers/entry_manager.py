@@ -82,7 +82,11 @@ class EntryManager(BaseManager):
 
     @handle_db_errors
     @log_database_operation("entry_exists")
-    def exists(self, entry_date: Optional[Union[str, date]] = None, file_path: Optional[str] = None) -> bool:
+    def exists(
+        self,
+        entry_date: Optional[Union[str, date]] = None,
+        file_path: Optional[str] = None,
+    ) -> bool:
         """
         Check if an entry exists by date or file path.
 
@@ -99,11 +103,16 @@ class EntryManager(BaseManager):
                 if normalized_date is None:
                     return False
                 entry_date = normalized_date
-            return self.session.query(Entry).filter_by(date=entry_date).first() is not None
+            return (
+                self.session.query(Entry).filter_by(date=entry_date).first() is not None
+            )
 
         if file_path is not None:
             file_path = DataValidator.normalize_string(file_path)
-            return self.session.query(Entry).filter_by(file_path=file_path).first() is not None
+            return (
+                self.session.query(Entry).filter_by(file_path=file_path).first()
+                is not None
+            )
 
         return False
 
@@ -257,7 +266,7 @@ class EntryManager(BaseManager):
             metadata,
             incremental=True,
             sync_source=sync_source,
-            removed_by=removed_by
+            removed_by=removed_by,
         )
         return entry
 
@@ -317,7 +326,11 @@ class EntryManager(BaseManager):
                     continue
 
                 value = normalizer(metadata[field])
-                if value is not None or field in ["epigraph", "epigraph_attribution", "notes"]:
+                if value is not None or field in [
+                    "epigraph",
+                    "epigraph_attribution",
+                    "notes",
+                ]:
                     if field == "file_path" and value is not None:
                         file_hash = fs.get_file_hash(value)
                         setattr(entry, "file_hash", file_hash)
@@ -334,7 +347,7 @@ class EntryManager(BaseManager):
             metadata,
             incremental=False,  # Update mode uses replacement
             sync_source=sync_source,
-            removed_by=removed_by
+            removed_by=removed_by,
         )
         return entry
 
@@ -374,7 +387,7 @@ class EntryManager(BaseManager):
                 if self.logger:
                     self.logger.log_warning(
                         f"HARD DELETE: Entry {entry.date}",
-                        {"reason": reason, "deleted_by": deleted_by}
+                        {"reason": reason, "deleted_by": deleted_by},
                     )
             else:
                 # Soft delete - mark as deleted
@@ -382,7 +395,7 @@ class EntryManager(BaseManager):
                 if self.logger:
                     self.logger.log_info(
                         f"Soft deleted entry {entry.date}",
-                        {"deleted_by": deleted_by, "reason": reason}
+                        {"deleted_by": deleted_by, "reason": reason},
                     )
 
             self.session.flush()
@@ -475,7 +488,9 @@ class EntryManager(BaseManager):
 
             # Get IDs of created entries
             dates = [m["date"] for m in mappings]
-            created_entries = self.session.query(Entry).filter(Entry.date.in_(dates)).all()
+            created_entries = (
+                self.session.query(Entry).filter(Entry.date.in_(dates)).all()
+            )
             created_ids.extend([e.id for e in created_entries])
 
             if self.logger:
@@ -508,6 +523,7 @@ class EntryManager(BaseManager):
         if entry:
             # Import here to avoid circular dependency
             from dev.database.query_optimizer import QueryOptimizer
+
             # Use optimized display query
             return QueryOptimizer.for_display(self.session, entry.id)
 
@@ -565,6 +581,7 @@ class EntryManager(BaseManager):
         # Handle dicts for Person model (from MdEntry people parsing)
         if isinstance(item, dict) and model_class == Person:
             from dev.database.managers import PersonManager
+
             person_mgr = PersonManager(self.session, self.logger)
             name = DataValidator.normalize_string(item.get("name"))
             full_name = DataValidator.normalize_string(item.get("full_name"))
@@ -667,7 +684,7 @@ class EntryManager(BaseManager):
                                 right_id=existing_item.id,
                                 removed_by=removed_by,
                                 sync_source=sync_source,
-                                reason="replacement_mode"
+                                reason="replacement_mode",
                             )
 
                         collection.clear()
@@ -702,7 +719,7 @@ class EntryManager(BaseManager):
                                     right_id=resolved_item.id,
                                     removed_by=removed_by,
                                     sync_source=sync_source,
-                                    reason="removed_from_source"
+                                    reason="removed_from_source",
                                 )
                                 collection.remove(resolved_item)
 
@@ -837,7 +854,9 @@ class EntryManager(BaseManager):
             unresolved_aliases = aliases.copy()
             alias_fellows = []
             for alias in aliases:
-                existing_aliases = self.session.query(Alias).filter_by(alias=alias).all()
+                existing_aliases = (
+                    self.session.query(Alias).filter_by(alias=alias).all()
+                )
 
                 if len(existing_aliases) == 1:
                     # Unique alias found - use it
@@ -856,6 +875,7 @@ class EntryManager(BaseManager):
                         try:
                             # Need PersonManager here - will delegate to manager.py
                             from dev.database import PalimpsestDB
+
                             person = PalimpsestDB.get_person_static(
                                 self.session, name, full_name
                             )
@@ -1037,9 +1057,7 @@ class EntryManager(BaseManager):
             if isinstance(date_item, str):
                 # Simple date string
                 date_obj = date.fromisoformat(date_item)
-                mentioned_date = self._get_or_create(
-                    MentionedDate, {"date": date_obj}
-                )
+                mentioned_date = self._get_or_create(MentionedDate, {"date": date_obj})
 
             elif isinstance(date_item, dict) and "date" in date_item:
                 # Date with context
@@ -1092,11 +1110,32 @@ class EntryManager(BaseManager):
             if not norm_name:
                 continue
 
+            # Handle possessive locations: check if this is a person's place
+            # If location ends with "'s", check if base name is a known person
+            # "#Alda's" → check if "Alda" is a person → "Alda's house"
+            # "#McDonald's" → "McDonald" not a person → "McDonald's" (keep as-is)
+            if norm_name.endswith("'s"):
+                base_name = norm_name[:-2]  # Remove "'s"
+
+                # Check if base_name matches a person in the database
+                from dev.database.managers import PersonManager
+
+                person_mgr = PersonManager(self.session, self.logger)
+                person = person_mgr.get(base_name)
+
+                if person is not None:
+                    # It's a person's place! Convert to "Name's house"
+                    norm_name = f"{base_name}'s house"
+                # else: keep as-is (it's a business/location name with apostrophe)
+
             # Get or create location (auto-create like we do for entries)
             # If no city is specified, use "Unknown" as default
             from dev.database.managers import LocationManager
+
             location_mgr = LocationManager(self.session, self.logger)
-            location = location_mgr.get_or_create_location(norm_name, city_name="Unknown")
+            location = location_mgr.get_or_create_location(
+                norm_name, city_name="Unknown"
+            )
 
             # Link if not already linked
             if location.id not in existing_location_ids:
@@ -1140,6 +1179,7 @@ class EntryManager(BaseManager):
                     continue
 
                 from dev.database.managers import PersonManager
+
                 person_mgr = PersonManager(self.session, self.logger)
                 person = person_mgr.get_or_create(norm_name)
 
@@ -1150,6 +1190,7 @@ class EntryManager(BaseManager):
 
                 if name or full_name:
                     from dev.database.managers import PersonManager
+
                     person_mgr = PersonManager(self.session, self.logger)
                     person = person_mgr.get_or_create(name or full_name, full_name)
 
@@ -1204,9 +1245,7 @@ class EntryManager(BaseManager):
         if norm_tags - existing_tags:
             self.session.flush()
 
-    def _process_related_entries(
-        self, entry: Entry, related_dates: List[str]
-    ) -> None:
+    def _process_related_entries(self, entry: Entry, related_dates: List[str]) -> None:
         """Process related entry connections (uni-directional)."""
         for date_str in related_dates:
             try:
@@ -1239,6 +1278,7 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses LocationManager
         from dev.database import PalimpsestDB
+
         PalimpsestDB.update_entry_locations_static(
             self.session, entry, locations_data, incremental
         )
@@ -1260,9 +1300,8 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses ReferenceManager
         from dev.database import PalimpsestDB
-        PalimpsestDB.process_references_static(
-            self.session, entry, references_data
-        )
+
+        PalimpsestDB.process_references_static(self.session, entry, references_data)
 
     def _process_poems(
         self,
@@ -1281,9 +1320,8 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses PoemManager
         from dev.database import PalimpsestDB
-        PalimpsestDB.process_poems_static(
-            self.session, entry, poems_data
-        )
+
+        PalimpsestDB.process_poems_static(self.session, entry, poems_data)
 
     def _process_manuscript(
         self,
@@ -1302,6 +1340,7 @@ class EntryManager(BaseManager):
         # This will be delegated to manager.py's helper method
         # which uses ManuscriptManager
         from dev.database import PalimpsestDB
+
         PalimpsestDB.create_or_update_manuscript_entry_static(
             self.session, entry, manuscript_data
         )

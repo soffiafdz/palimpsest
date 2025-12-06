@@ -77,13 +77,25 @@ def extract_context_refs(context: str) -> Dict[str, List | str]:
     for word in words:
         if word.startswith("@"):
             person = word[1:].strip(".,;:!?")
+
+            # Strip possessive apostrophes from people names
+            # "@Aliza's thesis" → "Aliza"
+            if person.endswith("'s"):
+                person = person[:-2]
+            elif person.endswith("'"):  # Handle trailing apostrophe without 's'
+                person = person[:-1]
+
             person = split_hyphenated_to_spaces(person)
             if person:
                 people.append(person)
                 cleaned_words.append(person)
         elif word.startswith("#"):
             loc_name = word[1:].strip(".,;:!?")
+
+            # Just dehyphenate normally - keep apostrophes as-is
+            # The database layer will handle checking if it's a person's house
             loc_name = split_hyphenated_to_spaces(loc_name)
+
             if loc_name:
                 locations.append(loc_name)
                 cleaned_words.append(loc_name)

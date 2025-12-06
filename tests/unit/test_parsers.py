@@ -99,6 +99,8 @@ class TestExtractContextRefs:
     def test_mixed_references(self):
         """Test extracting both people and location references."""
         result = extract_context_refs("Dinner with @Majo and @Aliza at #Aliza's")
+        # Location #Aliza's is kept as "Aliza's" at parse time
+        # The database layer will check if "Aliza" is a person and convert to "Aliza's house"
         assert result["context"] == "Dinner with Majo and Aliza at Aliza's"
         assert set(result["people"]) == {"Majo", "Aliza"}
         assert "Aliza's" in result["locations"]
