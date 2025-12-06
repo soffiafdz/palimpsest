@@ -677,7 +677,8 @@ class MdEntry:
                     parts.append(f"  - date: {date_str}")
 
                     if locations:
-                        parts.append(f"    locations: {md.yaml_list(locations)}")
+                        # Use smart_hyphenation for date locations (preserves existing hyphens with underscores)
+                        parts.append(f"    locations: {md.yaml_list(locations, smart_hyphenation=True)}")
 
                     if people:
                         parts.append("    people:")

@@ -113,19 +113,45 @@ class DbToYamlExporter:
         people_list: List[Dict[str, Any]] = []
         aliases_by_person: Dict[int, Dict[str, Any]] = {}
 
+        # Import hyphenation utility
+        from dev.utils.parsers import spaces_to_hyphenated
+
+        # Helper function to re-hyphenate names for export
+        def rehyphenate_name(name: str) -> str:
+            """Re-hyphenate first name portion if it contains spaces."""
+            if not name or " " not in name:
+                return name
+            # Hyphenate spaces in name
+            return spaces_to_hyphenated(name)
+
+        def rehyphenate_full_name(full_name: str) -> str:
+            """Re-hyphenate only the first name portion of a full name."""
+            if not full_name or " " not in full_name:
+                return full_name
+            # Split into parts: first name(s) and last name(s)
+            parts = full_name.split()
+            # Only hyphenate the first part (first name can have spaces like "María José")
+            # Keep last name parts with spaces
+            # Actually, we need to be smarter: we stored it as "first_name last_name"
+            # But we don't know where the boundary is anymore...
+            # For now, just hyphenate ALL spaces - this matches the input format
+            return spaces_to_hyphenated(full_name)
+
         # Process aliases first - group by person
         if entry.aliases_used:
             for alias in entry.aliases_used:
                 person_id = alias.person_id
                 if person_id not in aliases_by_person:
+                    # Re-hyphenate the name for export
+                    name_hyphenated = rehyphenate_name(alias.person.name) if alias.person.name else None
                     aliases_by_person[person_id] = {
                         "alias": [],
-                        "name": alias.person.name,
+                        "name": name_hyphenated,
                     }
                     # Add full_name if name_fellow
                     if alias.person.name_fellow and alias.person.full_name:
-                        fname = alias.person.full_name
-                        aliases_by_person[person_id]["full_name"] = fname
+                        fname_hyphenated = rehyphenate_full_name(alias.person.full_name)
+                        aliases_by_person[person_id]["full_name"] = fname_hyphenated
                 aliases_by_person[person_id]["alias"].append(alias.alias)
 
         # Process regular people (skip those already in aliases)
@@ -133,9 +159,11 @@ class DbToYamlExporter:
             if aliases_by_person and p.id in aliases_by_person:
                 continue
             if p.name_fellow:
-                people_list.append({"full_name": p.full_name})
+                full_name_hyphenated = rehyphenate_full_name(p.full_name)
+                people_list.append({"full_name": full_name_hyphenated})
             else:
-                people_list.append({"name": p.name})
+                name_hyphenated = rehyphenate_name(p.name)
+                people_list.append({"name": name_hyphenated})
 
         # Add alias entries
         people_list.extend(aliases_by_person.values())

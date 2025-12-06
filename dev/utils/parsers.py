@@ -106,8 +106,19 @@ def format_person_ref(person_ref: str) -> str:
 
 
 def format_location_ref(location_name: str) -> str:
-    """Format location name as @reference for YAML."""
-    hyphenated = spaces_to_hyphenated(location_name)
+    """
+    Format location name as #reference for YAML.
+
+    Uses smart hyphenation: if location contains hyphens (like "St-Hubert"),
+    uses underscores for spaces to preserve the distinction.
+
+    Examples:
+        >>> format_location_ref("Cinema Moderne")
+        '#Cinema-Moderne'
+        >>> format_location_ref("Rue St-Hubert")
+        '#Rue_St-Hubert'
+    """
+    hyphenated = spaces_to_hyphenated_smart(location_name)
     return f"#{hyphenated}"
 
 
@@ -173,3 +184,36 @@ def spaces_to_hyphenated(text: str) -> str:
         'San-Diego'
     """
     return text.replace(" ", "-")
+
+
+def spaces_to_hyphenated_smart(text: str) -> str:
+    """
+    Convert spaces to hyphens, but use underscores if hyphens already exist.
+
+    This preserves the distinction between original hyphens (part of the name)
+    and spaces (word separators).
+
+    Rules:
+    - If text contains NO hyphens: replace spaces with hyphens (standard)
+    - If text contains hyphens: replace spaces with underscores (preserve hyphens)
+
+    Examples:
+        >>> spaces_to_hyphenated_smart("María José")
+        'María-José'
+        >>> spaces_to_hyphenated_smart("Rue St-Hubert")
+        'Rue_St-Hubert'
+        >>> spaces_to_hyphenated_smart("Station Berri-UQAM")
+        'Station_Berri-UQAM'
+        >>> spaces_to_hyphenated_smart("San Diego")
+        'San-Diego'
+    """
+    if not text:
+        return text
+
+    # Check if text already contains hyphens
+    if "-" in text:
+        # Use underscores for spaces to preserve existing hyphens
+        return text.replace(" ", "_")
+    else:
+        # Use hyphens for spaces (standard case)
+        return text.replace(" ", "-")

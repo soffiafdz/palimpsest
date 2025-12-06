@@ -505,17 +505,31 @@ class MarkdownValidator:
                                     check_name = person_name.split('(')[0].strip().lstrip('@')
                                     # Replace hyphens/underscores with spaces for matching (consistent with parser)
                                     check_name = (check_name.replace('_', ' ').replace('-', ' ') if '_' not in check_name else check_name.replace('_', ' ')).lower()
-                                    if check_name and main_people and check_name not in main_people:
-                                        issues.append(
-                                            MarkdownIssue(
-                                                file_path=file_path,
-                                                line_number=dates_line_num,
-                                                severity="error",
-                                                category="frontmatter",
-                                                message=f"Date entry {idx+1}: Person '{person_name}' not found in main 'people' field",
-                                                suggestion=f"Add '{person_name}' to the main 'people' field at the top of the frontmatter",
+
+                                    if check_name and main_people:
+                                        # Try exact match first
+                                        found = check_name in main_people
+
+                                        # If not found, try matching as first name against full names
+                                        if not found:
+                                            for main_person in main_people:
+                                                # Check if check_name is the first word of a full name
+                                                first_word = main_person.split()[0] if ' ' in main_person else main_person
+                                                if first_word == check_name:
+                                                    found = True
+                                                    break
+
+                                        if not found:
+                                            issues.append(
+                                                MarkdownIssue(
+                                                    file_path=file_path,
+                                                    line_number=dates_line_num,
+                                                    severity="error",
+                                                    category="frontmatter",
+                                                    message=f"Date entry {idx+1}: Person '{person_name}' not found in main 'people' field",
+                                                    suggestion=f"Add '{person_name}' to the main 'people' field at the top of the frontmatter",
+                                                )
                                             )
-                                        )
 
                     # Validate locations field if present
                     if "locations" in date_item:

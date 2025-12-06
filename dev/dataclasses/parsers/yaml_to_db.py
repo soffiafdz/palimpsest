@@ -204,17 +204,36 @@ class YamlToDbParser:
                 continue
 
             # Simple name/full_name (no parentheses)
-            # Replace hyphens with spaces (or underscores if present)
-            from dev.utils.parsers import split_hyphenated_to_spaces
-            cleaned = split_hyphenated_to_spaces(person_str)
+            # CRITICAL: Split by spaces FIRST to identify entity boundaries
+            # Then dehyphenate each part for storage
+            # Example: "María-José Castro" → ["María-José", "Castro"] (2 entities)
+            #   First entity = first_name(s): "María-José"
+            #   Rest = last_name(s): "Castro"
+            #   Then dehyphenate: first_name="María José", last_name="Castro"
 
-            # Check if multiple words (full name) or single word (name)
-            if " " in cleaned:
-                # Multiple words → full_name
-                result["people"].append({"name": None, "full_name": cleaned})
+            from dev.utils.parsers import split_hyphenated_to_spaces
+
+            # Split by spaces to identify entity boundaries (BEFORE dehyphenation)
+            parts = person_str.split()
+
+            if len(parts) > 1:
+                # Multiple entities → construct full_name with proper structure
+                # First part is first_name(s), rest is last_name(s)
+                first_name_raw = parts[0]
+                last_name_raw = " ".join(parts[1:])
+
+                # Now dehyphenate each part for storage
+                first_name = split_hyphenated_to_spaces(first_name_raw)
+                last_name = split_hyphenated_to_spaces(last_name_raw)
+
+                # Construct full_name
+                full_name = f"{first_name} {last_name}"
+
+                result["people"].append({"name": first_name, "full_name": full_name})
             else:
-                # Single word → name
-                result["people"].append({"name": cleaned, "full_name": None})
+                # Single entity → just a name
+                name = split_hyphenated_to_spaces(person_str)
+                result["people"].append({"name": name, "full_name": None})
 
         return result
 
@@ -253,11 +272,25 @@ class YamlToDbParser:
             return None
 
         # Search in regular people
+        # Priority: exact name match > exact full_name match > first name of full_name
         for person_spec in people_parsed.get("people", []):
+            # Exact match on name field
             if person_spec.get("name") == search_str:
                 return person_spec
+            # Exact match on full_name field
             if person_spec.get("full_name") == search_str:
                 return person_spec
+
+        # Second pass: try matching against first name from full_name
+        # This allows "Daniel" to match {"name": "Daniel", "full_name": "Daniel Andrews"}
+        for person_spec in people_parsed.get("people", []):
+            name = person_spec.get("name")
+            if name and search_str:
+                # If name matches search exactly, already returned above
+                # Check if search_str matches first word of name (for compound first names)
+                first_word = name.split()[0] if " " in name else name
+                if first_word == search_str:
+                    return person_spec
 
         return None
 
