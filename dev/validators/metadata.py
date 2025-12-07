@@ -40,6 +40,7 @@ from typing import Any, Dict, List, Optional
 # --- Local imports ---
 from dev.utils.md import split_frontmatter
 from dev.core.logging_manager import PalimpsestLogger
+from dev.validators.schema import SchemaValidator
 
 
 @dataclass
@@ -92,33 +93,12 @@ class MetadataValidationReport:
 class MetadataValidator:
     """Validates metadata structure for parser compatibility."""
 
-    # Valid manuscript status values (from models_manuscript.py and validation)
-    VALID_MANUSCRIPT_STATUS = [
-        "unspecified",
-        "draft",
-        "reviewed",
-        "included",
-        "excluded",
-        "final",
-    ]
+    # Schema validator for enum and type checking
+    schema_validator = SchemaValidator()
 
-    # Valid reference modes (from models.py)
-    VALID_REFERENCE_MODES = ["direct", "indirect", "paraphrase", "visual"]
-
-    # Valid reference types (from models.py)
-    VALID_REFERENCE_TYPES = [
-        "book",
-        "poem",
-        "article",
-        "film",
-        "song",
-        "podcast",
-        "interview",
-        "speech",
-        "tv_show",
-        "video",
-        "other",
-    ]
+    # Note: Enum values are now imported from schema validator
+    # which gets them from the authoritative source (models/enums.py).
+    # No more hardcoded enum lists!
 
     def __init__(
         self,
@@ -325,28 +305,53 @@ class MetadataValidator:
 
                     # Check for match on either name or full_name
                     match = False
+                    match_type = None
                     if person_name and prev_name and person_name.lower() == prev_name.lower():
                         match = True
+                        match_type = "name"
                     if person_full_name and prev_full_name and person_full_name.lower() == prev_full_name.lower():
                         match = True
+                        match_type = "full_name"
                     # Also check if one's name matches the other's full_name
                     if person_name and prev_full_name and person_name.lower() == prev_full_name.lower():
                         match = True
+                        match_type = "cross_reference"
                     if person_full_name and prev_name and person_full_name.lower() == prev_name.lower():
                         match = True
+                        match_type = "cross_reference"
 
                     if match:
                         person_display = person_full_name or person_name
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="warning",
-                                message=f"Person '{person_display}' appears multiple times in people field",
-                                suggestion="For multiple nicknames, use: {name: Person, alias: [Nick1, Nick2]}",
-                                yaml_value=str(person),
+                        prev_person_value = people_data[prev_idx]
+
+                        # Determine if both are aliases (starting with @)
+                        current_is_alias = isinstance(person, str) and person.strip().startswith("@")
+                        prev_is_alias = isinstance(prev_person_value, str) and str(prev_person_value).strip().startswith("@")
+
+                        if current_is_alias and prev_is_alias:
+                            # Both are aliases for the same person
+                            issues.append(
+                                MetadataIssue(
+                                    file_path=file_path,
+                                    field_name=f"people[{idx}]",
+                                    severity="error",
+                                    message=f"Multiple aliases for '{person_display}': people[{prev_idx}] and people[{idx}]",
+                                    suggestion=f"Combine into single entry: {{name: {person_display}, alias: [Alias1, Alias2]}}",
+                                    yaml_value=str(person),
+                                )
                             )
-                        )
+                        else:
+                            # Same person referenced multiple times
+                            issues.append(
+                                MetadataIssue(
+                                    file_path=file_path,
+                                    field_name=f"people[{idx}]",
+                                    severity="warning",
+                                    message=f"Person '{person_display}' appears multiple times in people field",
+                                    suggestion="For multiple nicknames, use: {name: Person, alias: [Nick1, Nick2]}",
+                                    yaml_value=str(person),
+                                )
+                            )
                         break
 
                 referenced_people.append(person_id)
@@ -632,18 +637,22 @@ class MetadataValidator:
                     )
                 )
 
-            # Check mode enum
-            if "mode" in ref and ref["mode"] not in self.VALID_REFERENCE_MODES:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"references[{idx}].mode",
-                        severity="error",
-                        message=f"Invalid reference mode: '{ref['mode']}'",
-                        suggestion=f"Valid modes: {', '.join(self.VALID_REFERENCE_MODES)}",
-                        yaml_value=ref["mode"],
-                    )
+            # Check mode enum using schema validator
+            if "mode" in ref:
+                mode_issue = self.schema_validator.validate_reference_mode(
+                    ref["mode"], f"references[{idx}].mode"
                 )
+                if mode_issue:
+                    issues.append(
+                        MetadataIssue(
+                            file_path=file_path,
+                            field_name=mode_issue.field_path,
+                            severity=mode_issue.severity,
+                            message=mode_issue.message,
+                            suggestion=mode_issue.suggestion,
+                            yaml_value=mode_issue.actual_value,
+                        )
+                    )
 
             # Check source structure
             if "source" in ref:
@@ -679,20 +688,25 @@ class MetadataValidator:
                                 field_name=f"references[{idx}].source",
                                 severity="error",
                                 message="Reference source missing 'type'",
-                                suggestion=f"Add: type: {self.VALID_REFERENCE_TYPES[0]}",
+                                suggestion=f"Add: type: {self.schema_validator.get_valid_reference_types()[0]}",
                             )
                         )
-                    elif source["type"] not in self.VALID_REFERENCE_TYPES:
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"references[{idx}].source.type",
-                                severity="error",
-                                message=f"Invalid source type: '{source['type']}'",
-                                suggestion=f"Valid types: {', '.join(self.VALID_REFERENCE_TYPES)}",
-                                yaml_value=source["type"],
-                            )
+                    else:
+                        # Validate type using schema validator
+                        type_issue = self.schema_validator.validate_reference_type(
+                            source["type"], f"references[{idx}].source.type"
                         )
+                        if type_issue:
+                            issues.append(
+                                MetadataIssue(
+                                    file_path=file_path,
+                                    field_name=type_issue.field_path,
+                                    severity=type_issue.severity,
+                                    message=type_issue.message,
+                                    suggestion=type_issue.suggestion,
+                                    yaml_value=type_issue.actual_value,
+                                )
+                            )
 
         return issues
 
@@ -801,17 +815,20 @@ class MetadataValidator:
             )
             return issues
 
-        # Check status
+        # Check status using schema validator
         if "status" in manuscript_data:
-            if manuscript_data["status"] not in self.VALID_MANUSCRIPT_STATUS:
+            status_issue = self.schema_validator.validate_manuscript_status(
+                manuscript_data["status"], "manuscript.status"
+            )
+            if status_issue:
                 issues.append(
                     MetadataIssue(
                         file_path=file_path,
-                        field_name="manuscript.status",
-                        severity="error",
-                        message=f"Invalid manuscript status: '{manuscript_data['status']}'",
-                        suggestion=f"Valid statuses: {', '.join(self.VALID_MANUSCRIPT_STATUS)}",
-                        yaml_value=manuscript_data["status"],
+                        field_name=status_issue.field_path,
+                        severity=status_issue.severity,
+                        message=status_issue.message,
+                        suggestion=status_issue.suggestion,
+                        yaml_value=status_issue.actual_value,
                     )
                 )
 

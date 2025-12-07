@@ -40,6 +40,7 @@ import yaml
 from dev.utils.md import split_frontmatter
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
+from dev.validators.schema import SchemaValidator
 
 
 @dataclass
@@ -95,6 +96,9 @@ class MarkdownValidator:
     # Required frontmatter fields
     REQUIRED_FIELDS = ["date"]
 
+    # Schema validator for enum and type checking
+    schema_validator = SchemaValidator()
+
     # Optional frontmatter fields with types
     OPTIONAL_FIELDS = {
         "word_count": int,
@@ -114,33 +118,9 @@ class MarkdownValidator:
         "manuscript": dict,
     }
 
-    # Valid manuscript status values
-    VALID_MANUSCRIPT_STATUS = [
-        "unspecified",
-        "draft",
-        "reviewed",
-        "included",
-        "excluded",
-        "final",
-    ]
-
-    # Valid reference modes
-    VALID_REFERENCE_MODES = ["direct", "indirect", "paraphrase", "visual"]
-
-    # Valid reference types (must match ReferenceType enum in models/enums.py)
-    VALID_REFERENCE_TYPES = [
-        "book",
-        "poem",
-        "article",
-        "film",
-        "song",
-        "podcast",
-        "interview",
-        "speech",
-        "tv_show",
-        "video",
-        "other",
-    ]
+    # Note: Enum values are now imported from schema validator
+    # which gets them from the authoritative source (models/enums.py).
+    # No more hardcoded enum lists!
 
     def __init__(
         self,
@@ -345,60 +325,47 @@ class MarkdownValidator:
                         )
                     )
 
-        # Validate manuscript section
+        # Validate manuscript section using schema validator
         if "manuscript" in frontmatter and isinstance(frontmatter["manuscript"], dict):
-            manuscript = frontmatter["manuscript"]
-            if "status" in manuscript:
-                if manuscript["status"] not in self.VALID_MANUSCRIPT_STATUS:
-                    # Find line number for manuscript or status field
-                    line_num = self._find_field_line_number(frontmatter_text, "status")
-                    if line_num == 1:  # If status not found, try manuscript
-                        line_num = self._find_field_line_number(frontmatter_text, "manuscript")
+            schema_issues = self.schema_validator.validate_manuscript_schema(
+                frontmatter["manuscript"]
+            )
+            for schema_issue in schema_issues:
+                # Find line number for manuscript or status field
+                line_num = self._find_field_line_number(frontmatter_text, "status")
+                if line_num == 1:  # If status not found, try manuscript
+                    line_num = self._find_field_line_number(frontmatter_text, "manuscript")
 
-                    issues.append(
-                        MarkdownIssue(
-                            file_path=file_path,
-                            line_number=line_num,
-                            severity="error",
-                            category="frontmatter",
-                            message=f"Invalid manuscript status: '{manuscript['status']}'",
-                            suggestion=f"Valid statuses: {', '.join(self.VALID_MANUSCRIPT_STATUS)}",
-                        )
+                issues.append(
+                    MarkdownIssue(
+                        file_path=file_path,
+                        line_number=line_num,
+                        severity=schema_issue.severity,
+                        category="frontmatter",
+                        message=schema_issue.message,
+                        suggestion=schema_issue.suggestion,
                     )
+                )
 
-        # Validate references
+        # Validate references using schema validator
         if "references" in frontmatter and isinstance(frontmatter["references"], list):
             # Find line number for references field
             ref_line_num = self._find_field_line_number(frontmatter_text, "references")
 
-            for idx, ref in enumerate(frontmatter["references"]):
-                if isinstance(ref, dict):
-                    # Check mode
-                    if "mode" in ref and ref["mode"] not in self.VALID_REFERENCE_MODES:
-                        issues.append(
-                            MarkdownIssue(
-                                file_path=file_path,
-                                line_number=ref_line_num,
-                                severity="error",
-                                category="frontmatter",
-                                message=f"Reference {idx+1}: Invalid mode '{ref['mode']}'",
-                                suggestion=f"Valid modes: {', '.join(self.VALID_REFERENCE_MODES)}",
-                            )
-                        )
-
-                    # Check source type
-                    if "source" in ref and isinstance(ref["source"], dict):
-                        if "type" in ref["source"] and ref["source"]["type"] not in self.VALID_REFERENCE_TYPES:
-                            issues.append(
-                                MarkdownIssue(
-                                    file_path=file_path,
-                                    line_number=ref_line_num,
-                                    severity="error",
-                                    category="frontmatter",
-                                    message=f"Reference {idx+1}: Invalid source type '{ref['source']['type']}'",
-                                    suggestion=f"Valid types: {', '.join(self.VALID_REFERENCE_TYPES)}",
-                                )
-                            )
+            schema_issues = self.schema_validator.validate_references_schema(
+                frontmatter["references"]
+            )
+            for schema_issue in schema_issues:
+                issues.append(
+                    MarkdownIssue(
+                        file_path=file_path,
+                        line_number=ref_line_num,
+                        severity=schema_issue.severity,
+                        category="frontmatter",
+                        message=schema_issue.message,
+                        suggestion=schema_issue.suggestion,
+                    )
+                )
 
         # Validate dates field structure
         if "dates" in frontmatter and isinstance(frontmatter["dates"], list):
