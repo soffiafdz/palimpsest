@@ -98,21 +98,13 @@ function M.search(entity_type)
 
 	-- For multiple paths, use glob pattern to search both
 	if #search_paths > 1 then
-		-- Create a glob pattern that matches both directories
-		local search_pattern = ""
-		for i, path in ipairs(search_paths) do
-			if i > 1 then
-				search_pattern = search_pattern .. " "
-			end
-			search_pattern = search_pattern .. path
-		end
+		-- Build the rg command to search multiple directories
+		local rg_cmd = "rg --column --line-number --no-heading --color=always --smart-case --hidden --follow -g '!.git' "
+		rg_cmd = rg_cmd .. table.concat(search_paths, " ")
 
 		fzf.live_grep({
 			prompt = "Search All Content: " .. (entity_type or "all") .. "> ",
-			cmd = "rg --column --line-number --no-heading --color=always --smart-case -- ",
-			-- fzf-lua will search in all specified directories
-			cwd = search_paths[1], -- Use first as base
-			rg_opts = "--hidden --follow -g '!.git' -- " .. table.concat(search_paths, " "),
+			cmd = rg_cmd,
 			winopts = {
 				height = 0.85,
 				width = 0.80,
