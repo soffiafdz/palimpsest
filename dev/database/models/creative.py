@@ -123,9 +123,10 @@ class ReferenceSource(Base):
 
     Attributes:
         id: Primary key
-        type: Type of source (book/article/film/poem/song/etc.)
+        type: Type of source (book/article/film/poem/song/website/etc.)
         title: Title of the source (unique)
         author: Author or creator of the source (optional)
+        url: URL of the source (optional, typically used for website type)
 
     Relationships:
         references: One-to-many with Reference (references from this source)
@@ -137,6 +138,7 @@ class ReferenceSource(Base):
 
     Note:
         Some source types (book, article) typically require an author field.
+        Website type typically uses the url field.
     """
 
     __tablename__ = "reference_sources"
@@ -155,6 +157,7 @@ class ReferenceSource(Base):
         String(255), unique=True, nullable=False, index=True
     )
     author: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    url: Mapped[Optional[str]] = mapped_column(String(500))
 
     # --- Relationship ---
     references: Mapped[List["Reference"]] = relationship(

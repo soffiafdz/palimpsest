@@ -65,6 +65,7 @@ class ReferenceType(str, Enum):
     - SPEECH: Speeches and talks
     - TV_SHOW: Television programs
     - VIDEO: Online videos, YouTube content
+    - WEBSITE: Web pages, blog posts, online articles
     - OTHER: Miscellaneous sources
     """
 
@@ -78,6 +79,7 @@ class ReferenceType(str, Enum):
     SPEECH = "speech"
     TV_SHOW = "tv_show"
     VIDEO = "video"
+    WEBSITE = "website"
     OTHER = "other"
 
     @classmethod
@@ -88,7 +90,7 @@ class ReferenceType(str, Enum):
     @classmethod
     def written_types(cls) -> List["ReferenceType"]:
         """Get types that are primarily written/text-based."""
-        return [cls.BOOK, cls.POEM, cls.ARTICLE]
+        return [cls.BOOK, cls.POEM, cls.ARTICLE, cls.WEBSITE]
 
     @classmethod
     def audiovisual_types(cls) -> List["ReferenceType"]:
@@ -128,6 +130,7 @@ class ReferenceType(str, Enum):
             self.SPEECH: "Speech",
             self.TV_SHOW: "TV Show",
             self.VIDEO: "Video",
+            self.WEBSITE: "Website",
             self.OTHER: "Other",
         }
         return display_map.get(self, self.value.title())
