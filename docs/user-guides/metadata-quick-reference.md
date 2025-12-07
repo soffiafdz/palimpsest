@@ -319,23 +319,39 @@ Entry content here.
 ```yaml
 # Simple names
 people:
-  - John              # → Person(name='John')
-  - Jane Smith        # → Person(full_name='Jane Smith')
+  - John              # → Person(name='John', full_name=None)
+  - Jane Smith        # → Person(name='Jane', full_name='Jane Smith')
 
 # Hyphenated names (hyphen → space)
 people:
-  - Ana-Sofía        # → Person(name='Ana Sofía')
-  - Jean-Paul         # → Person(name='Jean Paul')
+  - Ana-Sofía        # → Person(name='Ana Sofía', full_name=None)
+  - Jean-Paul         # → Person(name='Jean Paul', full_name=None)
 
-# Name with expansion
+# IMPORTANT: Hyphenated compound names vs multiple names
+people:
+  - María             # → Person(name='María', full_name=None)
+  - María-José        # → Person(name='María José', full_name=None)  [DIFFERENT PERSON!]
+  - María José        # → Person(name='María', full_name='María José')  [DIFFERENT PERSON!]
+
+# Name with expansion (explicit format)
 people:
   - John (John Smith) # → Person(name='John', full_name='John Smith')
   - Bob (Robert)      # → Person(name='Bob', full_name='Robert')
+
+# These create the SAME person:
+people:
+  - Jane Smith        # Auto-parsed: name='Jane', full_name='Jane Smith'
+  - Jane (Jane Smith) # Explicit: name='Jane', full_name='Jane Smith'
 
 # Aliases (requires @ prefix)
 people:
   - "@Johnny"         # → Alias(alias='Johnny')
   - "@Sofi (Ana-Sofía)" # → Alias(alias='Sofi'), Person(name='Ana Sofía')
+
+# Multiple nicknames for same person (use alias array)
+people:
+  - name: María José
+    alias: [María, Majo, MJ]
 ```
 
 ### Location Patterns
@@ -379,17 +395,71 @@ dates:
   - "2024-01-15 (meeting with @John at #Café-X)"
   # Extracts: people=['John'], locations=['Café X']
 
-# Explicit dict
+# Explicit dict with people/locations
 dates:
   - date: "2024-01-15"
     context: "thesis defense"
     people: [Dr. Smith, Dr. Johnson]
     locations: [McGill University]
+  # Creates people_dates and location_dates associations!
 
 # Opt out of entry date auto-inclusion
 dates:
   - "~"  # Prevents entry date from being added
   - "2024-01-20"
+```
+
+### Date Field Behavior (IMPORTANT!)
+
+```yaml
+# SCENARIO A: NO dates field
+---
+date: 2024-01-15
+people: [María, John]
+locations: [Café X]
+---
+# Result: Entry date (2024-01-15) auto-added to mentioned_dates
+#         WITH people and locations attached as date associations
+#         (people_dates and location_dates records created)
+
+# SCENARIO B: HAS dates field
+---
+date: 2024-01-15
+people: [María, John]
+locations: [Café X]
+dates:
+  - "2024-01-20"
+---
+# Result: Both dates added to mentioned_dates:
+#         - 2024-01-15: NO people/locations attached (just exists)
+#         - 2024-01-20: NO people/locations attached (just exists)
+#         People/locations only linked to entry, not to specific dates
+
+# SCENARIO C: Explicit date associations
+---
+date: 2024-01-15
+people: [María, John]
+dates:
+  - date: "2024-01-15"
+    people: [María]
+    locations: [Café X]
+  - date: "2024-01-20"
+    people: [John]
+---
+# Result:
+#         - 2024-01-15: María + Café X associated with THIS date
+#         - 2024-01-20: John associated with THIS date
+#         Entry also has María and John as general mentions
+
+# SCENARIO D: Opt out of entry date
+---
+date: 2024-01-15
+dates:
+  - "~"
+  - "2024-01-20"
+---
+# Result: ONLY 2024-01-20 added to mentioned_dates
+#         Entry date (2024-01-15) excluded entirely
 ```
 
 ### Reference Patterns
@@ -422,6 +492,24 @@ references:
       title: "Artwork Title"
       type: artwork
       author: "Artist"
+
+# Both content AND description (allowed!)
+references:
+  - content: "The exact quote"
+    description: "My interpretation and context"
+    mode: direct
+    source:
+      title: "Book Title"
+      type: book
+
+# Website reference (with URL)
+references:
+  - content: "Quote from article"
+    source:
+      title: "Article Title"
+      type: website
+      author: "Author Name"
+      url: "https://example.com/article"
 
 # Minimal (no source)
 references:
@@ -479,6 +567,26 @@ people:
 people:
   - "@Clarabelais (Clara)"
   - "@Ari (Clara)"  # Wrong! Use alias array instead
+  # Validator will flag this as ERROR: "Multiple aliases for 'Clara'"
+```
+
+### 1b. People: Name Variants Create Different People
+
+```yaml
+# ⚠️ WARNING: These create THREE DIFFERENT people!
+people:
+  - María              # Person(name='María', full_name=None)
+  - María-José         # Person(name='María José', full_name=None)
+  - María José         # Person(name='María', full_name='María José')
+
+# ✅ SOLUTION: Use one canonical form + aliases
+people:
+  - name: María José
+    alias: [María, Majo]
+
+# OR use explicit alias notation
+people:
+  - "@María (María-José)"  # "María" is alias for "María José"
 ```
 
 ### 2. Locations: Multiple Cities Need Nested Dict
@@ -498,25 +606,38 @@ locations:
     - Library
 ```
 
-### 3. Dates: Entry Date Auto-Inclusion
+### 3. Dates: Entry Date Auto-Inclusion & Associations
 
 ```yaml
 # Entry date: 2024-01-15
-# No dates field → 2024-01-15 auto-added to mentioned_dates
+# NO dates field → 2024-01-15 auto-added WITH people/locations
+people: [María]
+locations: [Café X]
+# Result: María and Café X associated with 2024-01-15 date
 
-# With dates field → Entry date still added
+# HAS dates field → Entry date added WITHOUT associations
+people: [María]
+locations: [Café X]
 dates:
   - "2024-01-20"
-# Result: Both 2024-01-15 AND 2024-01-20
+# Result: Both dates exist, but NO people/location associations
+#         María and Café X only linked to entry, not dates
+
+# To add associations, be explicit:
+dates:
+  - date: "2024-01-15"
+    people: [María]
+    locations: [Café X]
+# Result: Creates people_dates and location_dates records
 
 # To opt out (IMPORTANT: tilde must be quoted!):
 dates:
   - "~"  # MUST use quotes
   - "2024-01-20"
-# Result: Only 2024-01-20
+# Result: Only 2024-01-20 (entry date excluded)
 ```
 
-### 4. References: Need Content OR Description
+### 4. References: Need Content OR Description (or both!)
 
 ```yaml
 # ❌ INVALID - Missing both
@@ -525,9 +646,25 @@ references:
       title: "Book"
       type: book
 
-# ✅ VALID - Has content
+# ✅ VALID - Has content only
 references:
   - content: "Quote"
+    source:
+      title: "Book"
+      type: book
+
+# ✅ VALID - Has description only
+references:
+  - description: "Summary of the argument"
+    mode: paraphrase
+    source:
+      title: "Book"
+      type: book
+
+# ✅ VALID - Has BOTH (perfectly fine!)
+references:
+  - content: "The exact quote"
+    description: "My interpretation"
     source:
       title: "Book"
       type: book
@@ -610,6 +747,7 @@ dates:
 - `lecture`
 - `interview`
 - `artwork`
+- `website`
 - `other`
 
 ### Manuscript Status

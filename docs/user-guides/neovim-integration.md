@@ -4,9 +4,10 @@ Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides ed
 
 ## Features
 
-- **Telescope Integration** - Browse and search wiki entities and journal entries
+- **fzf-lua Integration** - Browse and search wiki entities and journal entries
 - **Automatic Validation** - On-save validation with LSP-style diagnostics
 - **VimWiki Templates** - Automated log entry creation
+- **which-key Integration** - Discoverable keybindings with visual menus
 
 ---
 
@@ -22,7 +23,8 @@ The Lua package is located at `dev/lua/palimpsest/`. To use it in Neovim:
     name = "palimpsest",
     dependencies = {
         "vimwiki/vimwiki",
-        "nvim-telescope/telescope.nvim",
+        "ibhagwan/fzf-lua",
+        "folke/which-key.nvim",
     },
     config = function()
         require("palimpsest").setup()
@@ -37,7 +39,8 @@ use {
     "~/Documents/palimpsest/dev/lua/palimpsest",
     requires = {
         "vimwiki/vimwiki",
-        "nvim-telescope/telescope.nvim",
+        "ibhagwan/fzf-lua",
+        "folke/which-key.nvim",
     },
     config = function()
         require("palimpsest").setup()
@@ -55,18 +58,19 @@ require("palimpsest").setup()
 
 ---
 
-## Telescope Commands
+## Commands
 
 ### Browse Commands
 
-Browse markdown files by entity type or location:
+Browse markdown files by entity type or location using fzf-lua:
 
 ```vim
 :PalimpsestBrowse [entity_type]
 ```
 
 **Available entity types:**
-- `all` - All wiki markdown files
+- `all` - Both wiki and journal markdown files
+- `wiki` - All wiki markdown files
 - `journal` - Journal entries (data/journal/content/md/)
 - `people` - Person entity pages
 - `entries` - Entry metadata pages
@@ -82,12 +86,12 @@ Browse markdown files by entity type or location:
 ```vim
 :PalimpsestBrowse journal      " Browse journal entries
 :PalimpsestBrowse people       " Browse people pages
-:PalimpsestBrowse all          " Browse all wiki files
+:PalimpsestBrowse all          " Browse all files (wiki + journal)
 ```
 
 ### Search Commands
 
-Search content across wiki and journal files:
+Search content across wiki and journal files using ripgrep:
 
 ```vim
 :PalimpsestSearch [scope]
@@ -106,26 +110,30 @@ Search content across wiki and journal files:
 :PalimpsestSearch people       " Search only people pages
 ```
 
-### Telescope Extension
-
-Access via Telescope extension:
-
-```vim
-:Telescope palimpsest palimpsest    " Quick access to wiki pages
-```
-
 ---
 
 ## Keybindings
 
+Keybindings are managed by [which-key.nvim](https://github.com/folke/which-key.nvim) for discoverability. Press the leader key sequence to see available options in a popup menu.
+
 ### Single VimWiki Setup
 
-If Palimpsest is your only vimwiki:
+If Palimpsest is your only vimwiki, keybindings use `<leader>v` prefix:
+
+#### Core Keybindings
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>vf` | Find wiki pages (quick access) |
-| `<leader>vFa` | Browse wiki files |
+| `<leader>vw` | Open Palimpsest wiki index |
+| `<leader>vi` | Open diary index |
+| `<leader>v<leader>w` | Open today's diary entry |
+| `<leader>v<leader>i` | Generate diary index |
+
+#### Browse Files (via fzf-lua)
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>vFa` | Browse all wiki files |
 | `<leader>vFj` | Browse journal entries |
 | `<leader>vFp` | Browse people |
 | `<leader>vFe` | Browse entries |
@@ -136,20 +144,63 @@ If Palimpsest is your only vimwiki:
 | `<leader>vFT` | Browse tags |
 | `<leader>vFP` | Browse poems |
 | `<leader>vFr` | Browse references |
-| `<leader>v/` | Search all content |
 
-### Multiple VimWiki Setup
-
-If you have multiple vimwikis configured, Palimpsest uses `<leader>p` instead:
+#### Search Content (via ripgrep + fzf-lua)
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>pf` | Find wiki pages (quick access) |
-| `<leader>pFa` | Browse wiki files |
+| `<leader>v/` | Search all content (wiki + journal) |
+| `<leader>v?w` | Search wiki only |
+| `<leader>v?j` | Search journal only |
+
+#### Validation
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>vvw` | Validate wiki links |
+
+### Multiple VimWiki Setup
+
+If you have multiple vimwikis configured, Palimpsest uses `<leader>p` prefix instead:
+
+#### Core Keybindings
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>pw` | Open Palimpsest wiki index |
+| `<leader>pi` | Open diary index |
+| `<leader>p<leader>w` | Open today's diary entry |
+| `<leader>p<leader>i` | Generate diary index |
+
+#### Browse Files
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>pFa` | Browse all wiki files |
 | `<leader>pFj` | Browse journal entries |
 | `<leader>pFp` | Browse people |
-| `<leader>p/` | Search all content |
-| *(etc.)* | Same as above with `p` instead of `v` |
+| `<leader>pFe` | Browse entries |
+| `<leader>pFl` | Browse locations |
+| `<leader>pFc` | Browse cities |
+| `<leader>pFv` | Browse events |
+| `<leader>pFt` | Browse themes |
+| `<leader>pFT` | Browse tags |
+| `<leader>pFP` | Browse poems |
+| `<leader>pFr` | Browse references |
+
+#### Search Content
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>p/` | Search all content (wiki + journal) |
+| `<leader>p?w` | Search wiki only |
+| `<leader>p?j` | Search journal only |
+
+#### Validation
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>pvw` | Validate wiki links |
 
 ---
 
@@ -256,11 +307,18 @@ These paths are used by:
 
 ## Troubleshooting
 
-### Telescope Not Working
+### fzf-lua Not Working
 
-- Ensure Telescope is installed: `:checkhealth telescope`
-- Verify extension loaded: `:Telescope palimpsest palimpsest`
+- Ensure fzf-lua is installed: `:lua print(vim.inspect(require('fzf-lua')))`
+- Verify ripgrep is available: `:!rg --version`
+- Verify fd is available (for browse): `:!fd --version`
 - Check for errors: `:messages`
+
+### which-key Not Showing Keybindings
+
+- Ensure which-key.nvim is installed
+- Check keybindings registered: `:WhichKey <leader>v`
+- For multiple vimwikis: `:WhichKey <leader>p`
 
 ### Validators Not Running
 
@@ -288,11 +346,22 @@ These paths are used by:
 │         Neovim Editor               │
 │  ┌───────────────────────────────┐  │
 │  │  palimpsest.nvim Package      │  │
-│  │  ├── telescope.lua   (browse) │  │
-│  │  ├── validators.lua  (lint)   │  │
-│  │  ├── templates.lua   (diary)  │  │
-│  │  ├── autocmds.lua    (hooks)  │  │
-│  │  └── commands.lua    (cmds)   │  │
+│  │  ├── fzf.lua        (browse)  │  │
+│  │  ├── validators.lua (lint)    │  │
+│  │  ├── templates.lua  (diary)   │  │
+│  │  ├── autocmds.lua   (hooks)   │  │
+│  │  ├── commands.lua   (cmds)    │  │
+│  │  ├── keymaps.lua    (keys)    │  │
+│  │  └── vimwiki.lua    (config)  │  │
+│  └───────────────────────────────┘  │
+│           │                          │
+│           ▼                          │
+│  ┌───────────────────────────────┐  │
+│  │  External Dependencies        │  │
+│  │  ├── fzf-lua (browse/search)  │  │
+│  │  ├── which-key (keybindings)  │  │
+│  │  ├── ripgrep (search backend) │  │
+│  │  └── fd (file finding)        │  │
 │  └───────────────────────────────┘  │
 │           │                          │
 │           ▼                          │
@@ -325,7 +394,8 @@ These paths are used by:
 ```
 
 The Neovim package acts as a frontend to the Python backend:
-- **Browse/Search** - Direct file access via Telescope (wiki + journal)
+- **Browse/Search** - Direct file access via fzf-lua + ripgrep (wiki + journal)
+- **Keybindings** - Managed via which-key.nvim for discoverability
 - **Validation** - Calls Python validators asynchronously
 - **Templates** - Only for diary entries (VimWiki integration)
 

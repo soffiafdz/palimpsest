@@ -8,12 +8,12 @@ Technical documentation for developing and extending the Palimpsest Neovim integ
 dev/lua/palimpsest/
 ├── init.lua          # Entry point and setup
 ├── config.lua        # Configuration and paths
-├── telescope.lua     # Telescope extension
+├── fzf.lua           # fzf-lua integration (browse/search)
 ├── validators.lua    # Validation integration
 ├── templates.lua     # Template system
 ├── autocmds.lua      # Autocommands
 ├── commands.lua      # User commands
-├── keymaps.lua       # Key bindings
+├── keymaps.lua       # Key bindings (which-key)
 └── vimwiki.lua       # VimWiki configuration
 ```
 
@@ -32,12 +32,6 @@ function M.setup()
     require("palimpsest.validators").setup()
     require("palimpsest.keymaps").setup()
     require("palimpsest.autocmds").setup()
-
-    -- Load telescope extension
-    local has_telescope, telescope = pcall(require, "telescope")
-    if has_telescope then
-        telescope.load_extension("palimpsest")
-    end
 end
 ```
 
@@ -55,36 +49,69 @@ M.paths = {
 }
 ```
 
-### telescope.lua
+### fzf.lua
 
-Telescope extension implementation following the official Telescope extension API:
+fzf-lua integration for browsing files and searching content:
 
 **Key Functions:**
 
-- `M.browse(entity_type)` - Browse files by entity type
-- `M.search(entity_type)` - Search content with live_grep
-- `M.quick_access()` - Custom picker for special pages
-- `M.setup(ext_config, config)` - Extension registration (called by Telescope)
+- `M.browse(entity_type)` - Browse files by entity type using fzf-lua's `files()` picker
+- `M.search(entity_type)` - Search content using fzf-lua's `live_grep()` with ripgrep
 
-**Extension Structure:**
+**Browse Implementation:**
 
 ```lua
-function M.setup(ext_config, config)
-    return {
-        exports = {
-            palimpsest = M.quick_access,
-            browse = function(opts)
-                local entity_type = opts.entity or "all"
-                M.browse(entity_type)
-            end,
-            search = function(opts)
-                local entity_type = opts.entity or "all"
-                M.search(entity_type)
-            end,
-        },
+function M.browse(entity_type)
+    local has_fzf, fzf = pcall(require, "fzf-lua")
+    if not has_fzf then
+        vim.notify("fzf-lua is not installed", vim.log.levels.ERROR)
+        return
+    end
+
+    local entity_paths = {
+        all = { journal_dir, wiki_dir },
+        wiki = wiki_dir,
+        journal = journal_dir,
+        people = wiki_dir .. "/people",
+        -- ... other entity types
     }
+
+    fzf.files({
+        prompt = "Palimpsest: " .. entity_type .. "> ",
+        cwd = search_path,
+        cmd = "fd -t f -e md",  -- Uses fd for fast file finding
+        winopts = { height = 0.85, width = 0.80 },
+    })
 end
 ```
+
+**Search Implementation:**
+
+```lua
+function M.search(entity_type)
+    -- For single paths
+    fzf.live_grep({
+        prompt = "Search: " .. entity_type .. "> ",
+        cwd = search_paths[1],
+        winopts = { height = 0.85, width = 0.80 },
+    })
+
+    -- For multiple paths (e.g., "all" = wiki + journal)
+    local rg_cmd = "rg --column --line-number --no-heading --color=always --smart-case --hidden --follow -g '!.git' "
+    rg_cmd = rg_cmd .. table.concat(search_paths, " ")
+
+    fzf.live_grep({
+        prompt = "Search All Content: " .. entity_type .. "> ",
+        cmd = rg_cmd,  -- Custom ripgrep command with multiple paths
+        winopts = { height = 0.85, width = 0.80 },
+    })
+end
+```
+
+**Dependencies:**
+- `fzf-lua` - Neovim plugin for fuzzy finding
+- `ripgrep` (rg) - Fast text search tool
+- `fd` - Fast file finding tool (optional, falls back to `find`)
 
 ### validators.lua
 
@@ -97,11 +124,21 @@ Async validation integration with Python backend:
 3. Converts to Neovim diagnostics
 4. Displays via diagnostic API
 
+**Python Validator Layers:**
+
+The Python validation system uses a 3-layer architecture:
+
+1. **Schema Layer** (`dev/validators/schema.py`) - Enum and type validation
+2. **Format Layer** (`dev/validators/md.py`, `metadata.py`) - Markdown/YAML structure validation
+3. **Database Layer** (`dev/validators/db.py`, `consistency.py`) - Referential integrity validation
+
+See [Validator Architecture](./validator-architecture.md) for details.
+
 **Key Functions:**
 
-- `M.validate_frontmatter(bufnr)` - YAML frontmatter validation
-- `M.validate_metadata(bufnr)` - Metadata field validation
-- `M.validate_links(bufnr)` - Link validation
+- `M.validate_frontmatter(bufnr)` - YAML frontmatter validation (uses `md.py`)
+- `M.validate_metadata(bufnr)` - Metadata field validation (uses `metadata.py`)
+- `M.validate_links(bufnr)` - Link validation (uses `md.py`)
 
 **Diagnostic Format:**
 
@@ -176,12 +213,23 @@ User command definitions using `vim.api.nvim_create_user_command()`:
 ```lua
 vim.api.nvim_create_user_command("PalimpsestBrowse", function(opts)
     local entity_type = opts.args ~= "" and opts.args or "all"
-    require("palimpsest.telescope").browse(entity_type)
+    require("palimpsest.fzf").browse(entity_type)
 end, {
     nargs = "?",
-    desc = "Browse wiki entities with Telescope",
+    desc = "Browse wiki entities with fzf-lua",
     complete = function()
-        return { "all", "journal", "people", ... }
+        return { "all", "wiki", "journal", "people", ... }
+    end,
+})
+
+vim.api.nvim_create_user_command("PalimpsestSearch", function(opts)
+    local entity_type = opts.args ~= "" and opts.args or "all"
+    require("palimpsest.fzf").search(entity_type)
+end, {
+    nargs = "?",
+    desc = "Search wiki/journal content with ripgrep",
+    complete = function()
+        return { "all", "wiki", "journal", "people", ... }
     end,
 })
 ```
@@ -197,14 +245,43 @@ Key binding registration using `which-key.nvim`:
 
 **Structure:**
 
+Uses which-key.nvim's `add()` API for registering keybindings with descriptions and groups:
+
 ```lua
-wk.add({
-    { "<leader>pF", group = "browse entities" },
-    { "<leader>pFa", "<cmd>lua require('palimpsest.telescope').browse('all')<cr>", desc = "Browse wiki" },
-    { "<leader>pFj", "<cmd>lua require('palimpsest.telescope').browse('journal')<cr>", desc = "Browse journal" },
-    -- ...
-})
+local wk = require("which-key")
+
+-- Check if multiple vimwikis are configured
+if #vim.g.vimwiki_list > 1 then
+    -- Multiple vimwikis - use <leader>p prefix
+    wk.add({
+        { "<leader>p", group = "Palimpsest", icon = { icon = palimpsest_icon, color = "green" } },
+        { "<leader>pF", group = "browse entities" },
+        { "<leader>pFa", "<cmd>lua require('palimpsest.fzf').browse('all')<cr>", desc = "Browse wiki" },
+        { "<leader>pFj", "<cmd>lua require('palimpsest.fzf').browse('journal')<cr>", desc = "Browse journal" },
+        { "<leader>p/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
+        { "<leader>p?w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
+        { "<leader>p?j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+        -- ... more keybindings
+    })
+else
+    -- Single vimwiki - use <leader>v prefix
+    wk.add({
+        { "<leader>v", group = "Palimpsest", icon = { icon = palimpsest_icon, color = "green" } },
+        { "<leader>vF", group = "browse entities" },
+        { "<leader>vFa", "<cmd>lua require('palimpsest.fzf').browse('all')<cr>", desc = "Browse wiki" },
+        { "<leader>vFj", "<cmd>lua require('palimpsest.fzf').browse('journal')<cr>", desc = "Browse journal" },
+        { "<leader>v/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
+        { "<leader>v?w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
+        { "<leader>v?j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+        -- ... more keybindings
+    })
+end
 ```
+
+**Benefits:**
+- Discoverable keybindings via which-key popup menus
+- Grouped keybindings with visual hierarchy
+- Icons and descriptions for better UX
 
 ---
 
@@ -292,25 +369,27 @@ end
 
 ### Adding New Entity Types
 
-To add a new entity type to Telescope:
+To add a new entity type to fzf-lua browse/search:
 
-1. **Update `telescope.lua`** entity paths:
+1. **Update `fzf.lua`** entity paths in both `browse()` and `search()` functions:
 
 ```lua
 local entity_paths = {
-    all = wiki_dir,
+    all = { journal_dir, wiki_dir },
+    wiki = wiki_dir,
     journal = journal_dir,
     custom_entity = wiki_dir .. "/custom_entities",
     -- ...
 }
 ```
 
-2. **Update `commands.lua`** completion:
+2. **Update `commands.lua`** completion for both Browse and Search commands:
 
 ```lua
 complete = function()
     return {
         "all",
+        "wiki",
         "journal",
         "custom_entity",
         -- ...
@@ -318,10 +397,14 @@ complete = function()
 end
 ```
 
-3. **Add keymap** in `keymaps.lua`:
+3. **Add keymap** in `keymaps.lua` (for both single and multiple vimwiki configs):
 
 ```lua
-{ "<leader>pFx", "<cmd>lua require('palimpsest.telescope').browse('custom_entity')<cr>", desc = "Browse custom entities" },
+-- Single vimwiki
+{ "<leader>vFx", "<cmd>lua require('palimpsest.fzf').browse('custom_entity')<cr>", desc = "Browse custom entities" },
+
+-- Multiple vimwikis
+{ "<leader>pFx", "<cmd>lua require('palimpsest.fzf').browse('custom_entity')<cr>", desc = "Browse custom entities" },
 ```
 
 ### Adding New Wiki Entity Types
@@ -333,7 +416,7 @@ To add a new wiki entity type to the export system:
    - Implement `from_database(db_entity, wiki_dir, journal_dir)` classmethod
    - Implement `to_wiki()` method that generates complete markdown
 3. **Register entity** in SQL→Wiki pipeline with `EntityConfig`
-4. **Add to Telescope** entity paths (see "Adding New Entity Types" above)
+4. **Add to fzf-lua** browse/search (see "Adding New Entity Types" above)
 
 ---
 
@@ -342,11 +425,18 @@ To add a new wiki entity type to the export system:
 ### Manual Testing
 
 ```vim
-" Test Telescope browse
+" Test fzf-lua browse
 :PalimpsestBrowse journal
+:PalimpsestBrowse all
 
-" Test search
+" Test fzf-lua search
 :PalimpsestSearch all
+:PalimpsestSearch wiki
+:PalimpsestSearch journal
+
+" Test which-key keybindings
+:WhichKey <leader>v
+:WhichKey <leader>p
 
 " Test validators
 :PalimpsestValidateFrontmatter
@@ -416,10 +506,17 @@ end
 ### Graceful Degradation
 
 ```lua
--- Check for Telescope availability
-local has_telescope, telescope = pcall(require, "telescope")
-if not has_telescope then
-    vim.notify("Telescope not found - features disabled", vim.log.levels.WARN)
+-- Check for fzf-lua availability
+local has_fzf, fzf = pcall(require, "fzf-lua")
+if not has_fzf then
+    vim.notify("fzf-lua not found - browse/search disabled", vim.log.levels.ERROR)
+    return
+end
+
+-- Check for which-key availability
+local has_which_key, wk = pcall(require, "which-key")
+if not has_which_key then
+    vim.notify("which-key not found - keybindings will work but won't be discoverable", vim.log.levels.WARN)
     return
 end
 ```
@@ -457,12 +554,15 @@ end
 5. **Pattern Specificity** - Use specific autocmd patterns to avoid performance issues
 6. **Backend Separation** - Keep UI logic in Lua, data logic in Python
 7. **Diagnostic API** - Use standard Neovim diagnostic API for consistency
-8. **Extension Compliance** - Follow Telescope extension API standards
+8. **Discoverable Keybindings** - Use which-key.nvim for organized, searchable keybindings
+9. **Multi-path Search** - When searching multiple directories with ripgrep, build the command properly with all paths
 
 ---
 
 ## See Also
 
-- [Telescope Extension API](https://github.com/nvim-telescope/telescope.nvim/blob/master/developers.md)
+- [fzf-lua Documentation](https://github.com/ibhagwan/fzf-lua)
+- [which-key.nvim Documentation](https://github.com/folke/which-key.nvim)
 - [Neovim Diagnostic API](https://neovim.io/doc/user/diagnostic.html)
+- [ripgrep User Guide](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md)
 - [User Guide](../../user-guides/neovim-integration.md)

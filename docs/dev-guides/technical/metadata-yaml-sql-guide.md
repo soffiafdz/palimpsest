@@ -423,20 +423,41 @@ people:
 ```
 
 **Parsing Rules:**
-- Single word → `name` field only
-- Multiple words → `full_name` field only
-- Hyphens in single words → converted to spaces
+- Single word → `name` field only, `full_name=NULL`
+- Multiple words (space-separated) → First word becomes `name`, full string becomes `full_name`
+- Hyphens in single words → converted to spaces (still treated as single word)
 
 **Results:**
 ```sql
 -- "John" (single word)
 Person(name='John', full_name=NULL)
 
--- "Jane Smith" (multiple words)
-Person(name=NULL, full_name='Jane Smith')
+-- "Jane Smith" (two words separated by space)
+Person(name='Jane', full_name='Jane Smith')
 
--- "Ana Sofía" (multiple words)
-Person(name=NULL, full_name='Ana Sofía')
+-- "Ana Sofía" (two words separated by space)
+Person(name='Ana', full_name='Ana Sofía')
+```
+
+**CRITICAL: Space vs Hyphen Distinction**
+```yaml
+# ⚠️ WARNING: These create THREE DIFFERENT people!
+people:
+  - María              # Single word → Person(name='María', full_name=NULL)
+  - María-José         # Single word with hyphen → Person(name='María José', full_name=NULL)
+  - María José         # Two words → Person(name='María', full_name='María José')
+```
+
+**To avoid duplicates, pick ONE canonical form:**
+```yaml
+# Option 1: Use compound name consistently with alias array
+people:
+  - name: María José
+    alias: [María, Majo]
+
+# Option 2: Use alias notation
+people:
+  - "@María (María-José)"  # "María" is an alias for "María José"
 ```
 
 ### Format 2: Hyphenated Names
@@ -755,6 +776,65 @@ dates:
 # - 2023-12-25 (explicit)
 ```
 
+### CRITICAL: Date Associations Behavior
+
+**The behavior of people/location associations with dates depends on whether you have a `dates:` field:**
+
+#### Scenario A: NO `dates:` field
+
+```yaml
+---
+date: 2024-01-15
+people: [María, John]
+locations: [Café X]
+---
+```
+
+**Result:**
+- Entry date (2024-01-15) auto-added to `mentioned_dates`
+- **People and locations ARE associated with the date**
+- Creates `people_dates` records: María → 2024-01-15, John → 2024-01-15
+- Creates `location_dates` records: Café X → 2024-01-15
+
+#### Scenario B: HAS `dates:` field
+
+```yaml
+---
+date: 2024-01-15
+people: [María, John]
+locations: [Café X]
+dates:
+  - "2024-01-20"
+---
+```
+
+**Result:**
+- Both dates added to `mentioned_dates` (2024-01-15 and 2024-01-20)
+- **People and locations are NOT associated with any dates**
+- María, John, and Café X only linked to entry via `entry_people` and `entry_locations`
+- NO `people_dates` or `location_dates` records created
+
+#### Scenario C: Explicit date associations
+
+```yaml
+---
+date: 2024-01-15
+people: [María, John]
+dates:
+  - date: "2024-01-15"
+    people: [María]
+    locations: [Café X]
+  - date: "2024-01-20"
+    people: [John]
+---
+```
+
+**Result:**
+- 2024-01-15: María and Café X associated with THIS specific date
+- 2024-01-20: John associated with THIS specific date
+- Entry still has María and John as general mentions (via `entry_people`)
+- Creates both entry associations AND date associations
+
 ### Complete Dates Examples
 
 ```yaml
@@ -943,24 +1023,28 @@ INSERT INTO entry_related (entry_id, related_entry_id) VALUES
 
 ```yaml
 references:
-  - content: "The quoted text or description"
-    mode: direct              # Optional: direct, indirect, paraphrase, visual
-    speaker: "Character Name"  # Optional: who said it
-    source:                    # Optional but recommended
+  - content: "The quoted text"         # Optional (but need content OR description)
+    description: "My interpretation"    # Optional (but need content OR description)
+    mode: direct                        # Optional: direct, indirect, paraphrase, visual
+    speaker: "Character Name"           # Optional: who said it
+    source:                             # Optional but recommended
       title: "Book Title"
-      type: book              # Required if source present
-      author: "Author Name"   # Optional
+      type: book                        # Required if source present
+      author: "Author Name"             # Optional
+      url: "https://example.com"        # Optional (typically for website type)
 ```
 
 ### Required Fields
 
-**At least ONE of these:**
+**At least ONE of these (can have BOTH!):**
 - `content` - Direct quote text
 - `description` - Paraphrased content or summary
+- **Note:** You can include BOTH `content` AND `description` in the same reference!
 
 **If `source` is present:**
 - `title` - Required
 - `type` - Required (validated enum)
+- `url` - Optional (but typically provided for `website` type)
 
 ### Reference Modes
 
@@ -984,6 +1068,7 @@ Valid `type` values:
 - `podcast`
 - `lecture`
 - `interview`
+- `website` (typically includes `url` field)
 - `other`
 
 ### Examples
@@ -1028,7 +1113,43 @@ references:
   - content: "Quote from conversation (no formal source)"
 ```
 
-**Example 5: Multiple References**
+**Example 5: Both Content AND Description**
+```yaml
+references:
+  - content: "The unexamined life is not worth living"
+    description: "Socrates argues that self-reflection is essential for a meaningful existence"
+    mode: direct
+    speaker: Socrates
+    source:
+      title: "Apology"
+      type: book
+      author: "Plato"
+```
+
+**Example 6: Website Reference**
+```yaml
+references:
+  - content: "Quote from the blog post"
+    description: "Discussion of modern stoicism"
+    source:
+      title: "The Daily Stoic: Ancient Wisdom for Modern Life"
+      type: website
+      author: "Ryan Holiday"
+      url: "https://dailystoic.com/article-example"
+```
+
+**SQL Result:**
+```sql
+-- ReferenceSource record
+INSERT INTO reference_sources (type, title, author, url) VALUES
+  ('website', 'The Daily Stoic: Ancient Wisdom for Modern Life', 'Ryan Holiday', 'https://dailystoic.com/article-example');
+
+-- Reference record
+INSERT INTO references (entry_id, source_id, content, description, mode) VALUES
+  (entry.id, source.id, 'Quote from the blog post', 'Discussion of modern stoicism', 'direct');
+```
+
+**Example 7: Multiple References**
 ```yaml
 references:
   # Book quote

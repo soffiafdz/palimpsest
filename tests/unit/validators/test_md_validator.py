@@ -177,6 +177,6 @@ references:
 Body.
 """
         file_path.write_text(content, encoding="utf-8")
-        
+
         issues = validator.validate_file(file_path)
-        assert any("Invalid mode" in i.message for i in issues)
+        assert any("Invalid reference mode" in i.message for i in issues)

@@ -58,7 +58,7 @@ class TestMetadataValidator:
         assert any("Invalid people entry type" in i.message for i in issues)
 
     def test_validate_people_field_duplicates(self, validator, tmp_path):
-        """Test validation detects duplicate people in the field."""
+        """Test validation detects multiple aliases for same person."""
         file_path = tmp_path / "duplicate_people.md"
         frontmatter = {
             "people": [
@@ -70,8 +70,27 @@ class TestMetadataValidator:
 
         issues = validator.validate_file(file_path)
         assert len(issues) >= 1
+        # Should be an ERROR for multiple aliases
+        assert any(i.severity == "error" for i in issues)
+        assert any("Multiple aliases for" in i.message for i in issues)
+        assert any("Combine into single entry" in i.suggestion for i in issues)
+
+    def test_validate_people_field_same_person_different_formats(self, validator, tmp_path):
+        """Test validation detects same person in different formats (not both aliases)."""
+        file_path = tmp_path / "same_person_different_formats.md"
+        frontmatter = {
+            "people": [
+                "Clara",
+                "@Clarabelais (Clara)",  # Same person, but one is alias, one is not
+            ]
+        }
+        self.create_md_file(file_path, frontmatter)
+
+        issues = validator.validate_file(file_path)
+        assert len(issues) >= 1
+        # Should be a WARNING (not error) since they're not both aliases
+        assert any(i.severity == "warning" for i in issues)
         assert any("appears multiple times" in i.message for i in issues)
-        assert any("alias: [Nick1, Nick2]" in i.suggestion for i in issues)
 
     def test_validate_people_field_no_duplicates_different_people(self, validator, tmp_path):
         """Test validation allows different people."""
@@ -86,8 +105,9 @@ class TestMetadataValidator:
         self.create_md_file(file_path, frontmatter)
 
         issues = validator.validate_file(file_path)
-        # Should have no duplicate warnings
+        # Should have no duplicate warnings or errors
         assert not any("appears multiple times" in i.message for i in issues)
+        assert not any("Multiple aliases" in i.message for i in issues)
 
     def test_validate_locations_field_valid(self, validator, tmp_path):
         """Test validation of valid locations field formats."""
