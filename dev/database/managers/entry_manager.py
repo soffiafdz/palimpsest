@@ -47,6 +47,7 @@ from dev.database.decorators import (
 )
 from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
+from .entry_helpers import EntryRelationshipHelper
 
 
 class EntryManager(BaseManager):
@@ -75,6 +76,13 @@ class EntryManager(BaseManager):
         """
         super().__init__(session, logger)
         self.tombstones = TombstoneManager(session, logger)
+        self.helpers = EntryRelationshipHelper(session, logger)
+
+        # Cache manager instances to avoid repeated instantiation
+        from dev.database.managers import PersonManager, LocationManager, EventManager
+        self._person_mgr = PersonManager(session, logger)
+        self._location_mgr = LocationManager(session, logger)
+        self._event_mgr = EventManager(session, logger)
 
     # -------------------------------------------------------------------------
     # Core CRUD Operations
@@ -558,21 +566,12 @@ class EntryManager(BaseManager):
 
         # Handle strings by delegating to appropriate get_or_create
         if isinstance(item, str):
-            from dev.database.managers import (
-                PersonManager,
-                EventManager,
-                LocationManager,
-            )
-
             if model_class == Person:
-                person_mgr = PersonManager(self.session, self.logger)
-                return person_mgr.get_or_create(item)
+                return self._person_mgr.get_or_create(item)
             elif model_class == Event:
-                event_mgr = EventManager(self.session, self.logger)
-                return event_mgr.get_or_create(item)
+                return self._event_mgr.get_or_create(item)
             elif model_class == City:
-                location_mgr = LocationManager(self.session, self.logger)
-                return location_mgr.get_or_create_city(item)
+                return self._location_mgr.get_or_create_city(item)
             else:
                 raise TypeError(
                     f"String resolution not supported for {model_class.__name__}"
@@ -580,14 +579,11 @@ class EntryManager(BaseManager):
 
         # Handle dicts for Person model (from MdEntry people parsing)
         if isinstance(item, dict) and model_class == Person:
-            from dev.database.managers import PersonManager
-
-            person_mgr = PersonManager(self.session, self.logger)
             name = DataValidator.normalize_string(item.get("name"))
             full_name = DataValidator.normalize_string(item.get("full_name"))
 
             if name or full_name:
-                return person_mgr.get_or_create(name or full_name, full_name)
+                return self._person_mgr.get_or_create(name or full_name, full_name)
             return None
 
         # Handle ORM instances and IDs using base method (after string check to narrow type)
@@ -873,12 +869,8 @@ class EntryManager(BaseManager):
                 if not person:
                     if name or full_name:
                         try:
-                            # Need PersonManager here - will delegate to manager.py
-                            from dev.database import PalimpsestDB
-
-                            person = PalimpsestDB.get_person_static(
-                                self.session, name, full_name
-                            )
+                            # Use helper to get or create person
+                            person = self.helpers.get_person(name, full_name)
                         except ValidationError as e:
                             if self.logger:
                                 self.logger.log_warning(
@@ -1118,10 +1110,7 @@ class EntryManager(BaseManager):
                 base_name = norm_name[:-2]  # Remove "'s"
 
                 # Check if base_name matches a person in the database
-                from dev.database.managers import PersonManager
-
-                person_mgr = PersonManager(self.session, self.logger)
-                person = person_mgr.get(base_name)
+                person = self._person_mgr.get(base_name)
 
                 if person is not None:
                     # It's a person's place! Convert to "Name's house"
@@ -1130,10 +1119,7 @@ class EntryManager(BaseManager):
 
             # Get or create location (auto-create like we do for entries)
             # If no city is specified, use "Unknown" as default
-            from dev.database.managers import LocationManager
-
-            location_mgr = LocationManager(self.session, self.logger)
-            location = location_mgr.get_or_create_location(
+            location = self._location_mgr.get_or_create_location(
                 norm_name, city_name="Unknown"
             )
 
@@ -1178,10 +1164,7 @@ class EntryManager(BaseManager):
                 if not norm_name:
                     continue
 
-                from dev.database.managers import PersonManager
-
-                person_mgr = PersonManager(self.session, self.logger)
-                person = person_mgr.get_or_create(norm_name)
+                person = self._person_mgr.get_or_create(norm_name)
 
             elif isinstance(person_spec, dict):
                 # Dict with name or full_name - use get_or_create
@@ -1189,10 +1172,7 @@ class EntryManager(BaseManager):
                 full_name = DataValidator.normalize_string(person_spec.get("full_name"))
 
                 if name or full_name:
-                    from dev.database.managers import PersonManager
-
-                    person_mgr = PersonManager(self.session, self.logger)
-                    person = person_mgr.get_or_create(name or full_name, full_name)
+                    person = self._person_mgr.get_or_create(name or full_name, full_name)
 
             if person and person.id not in existing_person_ids:
                 mentioned_date.people.append(person)
@@ -1275,13 +1255,8 @@ class EntryManager(BaseManager):
             locations_data: List of location dicts with "name" and "city" keys
             incremental: Whether to add (True) or replace (False) locations
         """
-        # This will be delegated to manager.py's helper method
-        # which uses LocationManager
-        from dev.database import PalimpsestDB
-
-        PalimpsestDB.update_entry_locations_static(
-            self.session, entry, locations_data, incremental
-        )
+        # Use helper for location processing
+        self.helpers.update_entry_locations(entry, locations_data, incremental)
 
     def _process_references(
         self,
@@ -1291,17 +1266,14 @@ class EntryManager(BaseManager):
         """
         Process references with source creation.
 
-        Delegates to ReferenceManager for reference and source creation.
+        Delegates to ReferenceManager via helper.
 
         Args:
             entry: Entry to attach references to
             references_data: List of reference dicts
         """
-        # This will be delegated to manager.py's helper method
-        # which uses ReferenceManager
-        from dev.database import PalimpsestDB
-
-        PalimpsestDB.process_references_static(self.session, entry, references_data)
+        # Use helper for reference processing
+        self.helpers.process_references(entry, references_data)
 
     def _process_poems(
         self,
@@ -1311,17 +1283,14 @@ class EntryManager(BaseManager):
         """
         Process poem versions with parent poem creation.
 
-        Delegates to PoemManager for poem and version creation.
+        Delegates to PoemManager via helper.
 
         Args:
             entry: Entry to attach poems to
             poems_data: List of poem version dicts
         """
-        # This will be delegated to manager.py's helper method
-        # which uses PoemManager
-        from dev.database import PalimpsestDB
-
-        PalimpsestDB.process_poems_static(self.session, entry, poems_data)
+        # Use helper for poem processing
+        self.helpers.process_poems(entry, poems_data)
 
     def _process_manuscript(
         self,
@@ -1331,16 +1300,11 @@ class EntryManager(BaseManager):
         """
         Create or update manuscript entry.
 
-        Delegates to ManuscriptManager.
+        Delegates to ManuscriptManager via helper.
 
         Args:
             entry: Entry to attach manuscript to
             manuscript_data: Manuscript metadata dict
         """
-        # This will be delegated to manager.py's helper method
-        # which uses ManuscriptManager
-        from dev.database import PalimpsestDB
-
-        PalimpsestDB.create_or_update_manuscript_entry_static(
-            self.session, entry, manuscript_data
-        )
+        # Use helper for manuscript processing
+        self.helpers.create_or_update_manuscript_entry(entry, manuscript_data)

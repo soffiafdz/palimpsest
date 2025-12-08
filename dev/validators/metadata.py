@@ -115,6 +115,173 @@ class MetadataValidator:
         self.md_dir = md_dir
         self.logger = logger
 
+    # --- Helper Methods ---
+
+    def _require_type(
+        self,
+        file_path: Path,
+        field_name: str,
+        value: Any,
+        expected_type: type,
+        suggestion: str,
+    ) -> Optional[MetadataIssue]:
+        """
+        Create type validation error if value doesn't match expected type.
+
+        Args:
+            file_path: File being validated
+            field_name: Name of the field
+            value: Actual value
+            expected_type: Expected Python type
+            suggestion: User-friendly suggestion
+
+        Returns:
+            MetadataIssue if type mismatch, None otherwise
+        """
+        if not isinstance(value, expected_type):
+            return MetadataIssue(
+                file_path=file_path,
+                field_name=field_name,
+                severity="error",
+                message=f"{field_name.capitalize()} field must be a {expected_type.__name__}",
+                suggestion=suggestion,
+                yaml_value=type(value).__name__,
+            )
+        return None
+
+    def _error(
+        self,
+        file_path: Path,
+        field_name: str,
+        message: str,
+        suggestion: Optional[str] = None,
+        yaml_value: Optional[Any] = None,
+    ) -> MetadataIssue:
+        """
+        Create an error-level MetadataIssue.
+
+        Args:
+            file_path: File being validated
+            field_name: Name of the field
+            message: Error message
+            suggestion: Optional suggestion for fix
+            yaml_value: Optional YAML value that caused issue
+
+        Returns:
+            MetadataIssue with severity="error"
+        """
+        return MetadataIssue(
+            file_path=file_path,
+            field_name=field_name,
+            severity="error",
+            message=message,
+            suggestion=suggestion,
+            yaml_value=yaml_value,
+        )
+
+    def _warning(
+        self,
+        file_path: Path,
+        field_name: str,
+        message: str,
+        suggestion: Optional[str] = None,
+        yaml_value: Optional[Any] = None,
+    ) -> MetadataIssue:
+        """
+        Create a warning-level MetadataIssue.
+
+        Args:
+            file_path: File being validated
+            field_name: Name of the field
+            message: Warning message
+            suggestion: Optional suggestion for fix
+            yaml_value: Optional YAML value that caused issue
+
+        Returns:
+            MetadataIssue with severity="warning"
+        """
+        return MetadataIssue(
+            file_path=file_path,
+            field_name=field_name,
+            severity="warning",
+            message=message,
+            suggestion=suggestion,
+            yaml_value=yaml_value,
+        )
+
+    def _check_duplicate_person(
+        self,
+        file_path: Path,
+        idx: int,
+        person: Any,
+        person_name: Optional[str],
+        person_full_name: Optional[str],
+        referenced_people: List[tuple],
+        people_data: List[Any],
+    ) -> Optional[MetadataIssue]:
+        """
+        Check if a person has already been referenced in the people list.
+
+        Args:
+            file_path: File being validated
+            idx: Current person index
+            person: Current person value (string or dict)
+            person_name: Normalized person name
+            person_full_name: Normalized person full name
+            referenced_people: List of previously seen (name, full_name) tuples
+            people_data: Full people list for comparison
+
+        Returns:
+            MetadataIssue if duplicate found, None otherwise
+        """
+        if not (person_name or person_full_name):
+            return None
+
+        person_id = (person_name, person_full_name)
+
+        # Check if this person was already referenced
+        for prev_idx, prev_person_id in enumerate(referenced_people):
+            prev_name, prev_full_name = prev_person_id
+
+            # Check for match on either name or full_name
+            match = False
+            if person_name and prev_name and person_name.lower() == prev_name.lower():
+                match = True
+            if person_full_name and prev_full_name and person_full_name.lower() == prev_full_name.lower():
+                match = True
+            # Also check if one's name matches the other's full_name
+            if person_name and prev_full_name and person_name.lower() == prev_full_name.lower():
+                match = True
+            if person_full_name and prev_name and person_full_name.lower() == prev_name.lower():
+                match = True
+
+            if match:
+                person_display = person_full_name or person_name
+                prev_person_value = people_data[prev_idx]
+
+                # Determine if both are aliases (starting with @)
+                current_is_alias = isinstance(person, str) and person.strip().startswith("@")
+                prev_is_alias = isinstance(prev_person_value, str) and str(prev_person_value).strip().startswith("@")
+
+                if current_is_alias and prev_is_alias:
+                    # Both are aliases for the same person
+                    return self._error(
+                        file_path, f"people[{idx}]",
+                        f"Multiple aliases for '{person_display}': people[{prev_idx}] and people[{idx}]",
+                        f"Combine into single entry: {{name: {person_display}, alias: [Alias1, Alias2]}}",
+                        str(person)
+                    )
+                else:
+                    # Same person referenced multiple times
+                    return self._warning(
+                        file_path, f"people[{idx}]",
+                        f"Person '{person_display}' appears multiple times in people field",
+                        "For multiple nicknames, use: {name: Person, alias: [Nick1, Nick2]}",
+                        str(person)
+                    )
+
+        return None
+
     def validate_people_field(
         self, file_path: Path, people_data: Any
     ) -> List[MetadataIssue]:
@@ -135,18 +302,13 @@ class MetadataValidator:
         """
         issues = []
 
-        if not isinstance(people_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="people",
-                    severity="error",
-                    message="People field must be a list",
-                    suggestion="Use: people: [name1, name2] or people:\n  - name1\n  - name2",
-                    yaml_value=type(people_data).__name__,
-                )
-            )
-            return issues
+        # Type check using helper
+        type_error = self._require_type(
+            file_path, "people", people_data, list,
+            "Use: people: [name1, name2] or people:\n  - name1\n  - name2"
+        )
+        if type_error:
+            return [type_error]
 
         # Track referenced people to detect duplicates
         referenced_people = []  # List of (name, full_name) tuples for comparison
@@ -190,43 +352,31 @@ class MetadataValidator:
 
                 # Check for unbalanced parentheses
                 if ")" in person and "(" not in person:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"people[{idx}]",
-                            severity="error",
-                            message=f"Unbalanced parenthesis in: '{person}'",
-                            suggestion="Check parentheses pairing",
-                            yaml_value=person,
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, f"people[{idx}]",
+                        f"Unbalanced parenthesis in: '{person}'",
+                        "Check parentheses pairing",
+                        person
+                    ))
 
                 # Check for parentheses format
                 if "(" in person:
                     if not person.endswith(")"):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="error",
-                                message=f"Malformed parentheses in: '{person}'",
-                                suggestion="Use format: Name (Full Name) or @Alias (Name)",
-                                yaml_value=person,
-                            )
-                        )
+                        issues.append(self._error(
+                            file_path, f"people[{idx}]",
+                            f"Malformed parentheses in: '{person}'",
+                            "Use format: Name (Full Name) or @Alias (Name)",
+                            person
+                        ))
                     # Check for space before parenthesis
                     # Allow @Alias (Name) but catch @Alias(Name) and Name(Full Name)
                     elif not re.search(r'\s+\(', person):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="warning",
-                                message=f"Missing space before parenthesis in: '{person}'",
-                                suggestion="Use format: Name (Full Name) not Name(Full Name)",
-                                yaml_value=person,
-                            )
-                        )
+                        issues.append(self._warning(
+                            file_path, f"people[{idx}]",
+                            f"Missing space before parenthesis in: '{person}'",
+                            "Use format: Name (Full Name) not Name(Full Name)",
+                            person
+                        ))
 
                 # Check for alias format
                 if person.startswith("@"):
@@ -235,16 +385,12 @@ class MetadataValidator:
                         # Just @Alias is valid but limited
                         pass
                     elif not person.endswith(")"):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="error",
-                                message=f"Malformed alias format: '{person}'",
-                                suggestion="Use format: @Alias (Name) or @Alias (Full Name)",
-                                yaml_value=person,
-                            )
-                        )
+                        issues.append(self._error(
+                            file_path, f"people[{idx}]",
+                            f"Malformed alias format: '{person}'",
+                            "Use format: @Alias (Name) or @Alias (Full Name)",
+                            person
+                        ))
 
             elif isinstance(person, dict):
                 # Extract name and full_name from dict format
@@ -259,102 +405,41 @@ class MetadataValidator:
 
                 # Check dict has at least one required field
                 if not any(key in person for key in ["name", "full_name", "alias"]):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"people[{idx}]",
-                            severity="error",
-                            message="Person dict missing required field (name, full_name, or alias)",
-                            suggestion="Add at least one of: name, full_name, or alias",
-                            yaml_value=str(person),
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, f"people[{idx}]",
+                        "Person dict missing required field (name, full_name, or alias)",
+                        "Add at least one of: name, full_name, or alias",
+                        str(person)
+                    ))
 
                 # Check for unknown fields
                 known_fields = {"name", "full_name", "alias"}
                 unknown = set(person.keys()) - known_fields
                 if unknown:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"people[{idx}]",
-                            severity="warning",
-                            message=f"Unknown fields in person dict: {', '.join(unknown)}",
-                            suggestion="Valid fields: name, full_name, alias",
-                        )
-                    )
+                    issues.append(self._warning(
+                        file_path, f"people[{idx}]",
+                        f"Unknown fields in person dict: {', '.join(unknown)}",
+                        "Valid fields: name, full_name, alias"
+                    ))
             else:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"people[{idx}]",
-                        severity="error",
-                        message=f"Invalid people entry type: {type(person).__name__}",
-                        suggestion="Use string or dict format",
-                        yaml_value=str(person),
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"people[{idx}]",
+                    f"Invalid people entry type: {type(person).__name__}",
+                    "Use string or dict format",
+                    str(person)
+                ))
 
             # Check for duplicate person references
+            duplicate_issue = self._check_duplicate_person(
+                file_path, idx, person, person_name, person_full_name,
+                referenced_people, people_data
+            )
+            if duplicate_issue:
+                issues.append(duplicate_issue)
+
+            # Track this person for future duplicate checks
             if person_name or person_full_name:
-                person_id = (person_name, person_full_name)
-
-                # Check if this person was already referenced
-                for prev_idx, prev_person_id in enumerate(referenced_people):
-                    prev_name, prev_full_name = prev_person_id
-
-                    # Check for match on either name or full_name
-                    match = False
-                    match_type = None
-                    if person_name and prev_name and person_name.lower() == prev_name.lower():
-                        match = True
-                        match_type = "name"
-                    if person_full_name and prev_full_name and person_full_name.lower() == prev_full_name.lower():
-                        match = True
-                        match_type = "full_name"
-                    # Also check if one's name matches the other's full_name
-                    if person_name and prev_full_name and person_name.lower() == prev_full_name.lower():
-                        match = True
-                        match_type = "cross_reference"
-                    if person_full_name and prev_name and person_full_name.lower() == prev_name.lower():
-                        match = True
-                        match_type = "cross_reference"
-
-                    if match:
-                        person_display = person_full_name or person_name
-                        prev_person_value = people_data[prev_idx]
-
-                        # Determine if both are aliases (starting with @)
-                        current_is_alias = isinstance(person, str) and person.strip().startswith("@")
-                        prev_is_alias = isinstance(prev_person_value, str) and str(prev_person_value).strip().startswith("@")
-
-                        if current_is_alias and prev_is_alias:
-                            # Both are aliases for the same person
-                            issues.append(
-                                MetadataIssue(
-                                    file_path=file_path,
-                                    field_name=f"people[{idx}]",
-                                    severity="error",
-                                    message=f"Multiple aliases for '{person_display}': people[{prev_idx}] and people[{idx}]",
-                                    suggestion=f"Combine into single entry: {{name: {person_display}, alias: [Alias1, Alias2]}}",
-                                    yaml_value=str(person),
-                                )
-                            )
-                        else:
-                            # Same person referenced multiple times
-                            issues.append(
-                                MetadataIssue(
-                                    file_path=file_path,
-                                    field_name=f"people[{idx}]",
-                                    severity="warning",
-                                    message=f"Person '{person_display}' appears multiple times in people field",
-                                    suggestion="For multiple nicknames, use: {name: Person, alias: [Nick1, Nick2]}",
-                                    yaml_value=str(person),
-                                )
-                            )
-                        break
-
-                referenced_people.append(person_id)
+                referenced_people.append((person_name, person_full_name))
 
         return issues
 
@@ -381,26 +466,18 @@ class MetadataValidator:
         if isinstance(locations_data, list):
             # Flat list format
             if city_count == 0:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="locations",
-                        severity="error",
-                        message="Flat locations list requires city field",
-                        suggestion="Add: city: CityName",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, "locations",
+                    "Flat locations list requires city field",
+                    "Add: city: CityName"
+                ))
             elif city_count > 1:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="locations",
-                        severity="error",
-                        message=f"Flat locations list with {city_count} cities (ambiguous)",
-                        suggestion="Use nested dict:\nlocations:\n  City1:\n    - Location1\n  City2:\n    - Location2",
-                        yaml_value=f"cities: {city_data}",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, "locations",
+                    f"Flat locations list with {city_count} cities (ambiguous)",
+                    "Use nested dict:\nlocations:\n  City1:\n    - Location1\n  City2:\n    - Location2",
+                    f"cities: {city_data}"
+                ))
 
         elif isinstance(locations_data, dict):
             # Nested dict format
@@ -409,39 +486,27 @@ class MetadataValidator:
             # Check if dict keys match cities
             for city_key in locations_data.keys():
                 if city_list and city_key not in city_list:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name="locations",
-                            severity="warning",
-                            message=f"Location city '{city_key}' not in city list: {city_list}",
-                            suggestion=f"Add '{city_key}' to city field or check for typos",
-                        )
-                    )
+                    issues.append(self._warning(
+                        file_path, "locations",
+                        f"Location city '{city_key}' not in city list: {city_list}",
+                        f"Add '{city_key}' to city field or check for typos"
+                    ))
 
             # Check dict values are lists or strings
             for city_key, city_locs in locations_data.items():
                 if not isinstance(city_locs, (list, str)):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"locations.{city_key}",
-                            severity="error",
-                            message=f"Invalid locations type for {city_key}: {type(city_locs).__name__}",
-                            suggestion="Use list or string for location names",
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, f"locations.{city_key}",
+                        f"Invalid locations type for {city_key}: {type(city_locs).__name__}",
+                        "Use list or string for location names"
+                    ))
 
         else:
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="locations",
-                    severity="error",
-                    message=f"Invalid locations type: {type(locations_data).__name__}",
-                    suggestion="Use list (single city) or dict (multiple cities)",
-                )
-            )
+            issues.append(self._error(
+                file_path, "locations",
+                f"Invalid locations type: {type(locations_data).__name__}",
+                "Use list (single city) or dict (multiple cities)"
+            ))
 
         return issues
 
@@ -462,17 +527,13 @@ class MetadataValidator:
         """
         issues = []
 
-        if not isinstance(dates_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="dates",
-                    severity="error",
-                    message="Dates field must be a list",
-                    suggestion="Use: dates: [date1, date2]",
-                )
-            )
-            return issues
+        # Type check using helper
+        type_error = self._require_type(
+            file_path, "dates", dates_data, list,
+            "Use: dates: [date1, date2]"
+        )
+        if type_error:
+            return [type_error]
 
         # ISO date pattern
         date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}')
@@ -485,103 +546,71 @@ class MetadataValidator:
 
                 # Check for date format
                 if not date_pattern.match(date_entry.strip()):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}]",
-                            severity="error",
-                            message=f"Invalid date format: '{date_entry}'",
-                            suggestion="Use YYYY-MM-DD format, optionally with (context)",
-                            yaml_value=date_entry,
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, f"dates[{idx}]",
+                        f"Invalid date format: '{date_entry}'",
+                        "Use YYYY-MM-DD format, optionally with (context)",
+                        date_entry
+                    ))
 
                 # Check parentheses balance
                 if "(" in date_entry:
                     if not date_entry.rstrip().endswith(")"):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"dates[{idx}]",
-                                severity="error",
-                                message=f"Unclosed parenthesis in: '{date_entry}'",
-                                suggestion="Use format: YYYY-MM-DD (context)",
-                            )
-                        )
+                        issues.append(self._error(
+                            file_path, f"dates[{idx}]",
+                            f"Unclosed parenthesis in: '{date_entry}'",
+                            "Use format: YYYY-MM-DD (context)"
+                        ))
 
             elif isinstance(date_entry, dict):
                 # Dict format requires 'date' key
                 if "date" not in date_entry:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}]",
-                            severity="error",
-                            message="Date dict missing required 'date' key",
-                            suggestion="Add: date: YYYY-MM-DD",
-                            yaml_value=str(date_entry),
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, f"dates[{idx}]",
+                        "Date dict missing required 'date' key",
+                        "Add: date: YYYY-MM-DD",
+                        str(date_entry)
+                    ))
                 else:
                     # Validate date value
                     if not date_pattern.match(str(date_entry["date"]).strip()):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"dates[{idx}].date",
-                                severity="error",
-                                message=f"Invalid date value: '{date_entry['date']}'",
-                                suggestion="Use YYYY-MM-DD format",
-                            )
-                        )
+                        issues.append(self._error(
+                            file_path, f"dates[{idx}].date",
+                            f"Invalid date value: '{date_entry['date']}'",
+                            "Use YYYY-MM-DD format"
+                        ))
 
                 # Check valid subfields
                 valid_keys = {"date", "context", "people", "locations"}
                 unknown = set(date_entry.keys()) - valid_keys
                 if unknown:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}]",
-                            severity="warning",
-                            message=f"Unknown fields in date dict: {', '.join(unknown)}",
-                            suggestion="Valid fields: date, context, people, locations",
-                        )
-                    )
+                    issues.append(self._warning(
+                        file_path, f"dates[{idx}]",
+                        f"Unknown fields in date dict: {', '.join(unknown)}",
+                        "Valid fields: date, context, people, locations"
+                    ))
 
                 # Check types of subfields
                 if "people" in date_entry and not isinstance(date_entry["people"], list):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}].people",
-                            severity="warning",
-                            message="Date people should be a list",
-                            suggestion="Use: people: [name1, name2]",
-                        )
-                    )
+                    issues.append(self._warning(
+                        file_path, f"dates[{idx}].people",
+                        "Date people should be a list",
+                        "Use: people: [name1, name2]"
+                    ))
 
                 if "locations" in date_entry and not isinstance(date_entry["locations"], list):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}].locations",
-                            severity="warning",
-                            message="Date locations should be a list",
-                            suggestion="Use: locations: [loc1, loc2]",
-                        )
-                    )
+                    issues.append(self._warning(
+                        file_path, f"dates[{idx}].locations",
+                        "Date locations should be a list",
+                        "Use: locations: [loc1, loc2]"
+                    ))
 
             else:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"dates[{idx}]",
-                        severity="error",
-                        message=f"Invalid date entry type: {type(date_entry).__name__}",
-                        suggestion="Use string (YYYY-MM-DD) or dict format",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"dates[{idx}]",
+                    f"Invalid date entry type: {type(date_entry).__name__}",
+                    "Use string (YYYY-MM-DD) or dict format"
+                ))
 
         return issues
 
@@ -599,43 +628,31 @@ class MetadataValidator:
         """
         issues = []
 
-        if not isinstance(references_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="references",
-                    severity="error",
-                    message="References field must be a list",
-                    suggestion="Use: references:\n  - content: \"...\"",
-                )
-            )
-            return issues
+        # Type check using helper
+        type_error = self._require_type(
+            file_path, "references", references_data, list,
+            "Use: references:\n  - content: \"...\""
+        )
+        if type_error:
+            return [type_error]
 
         for idx, ref in enumerate(references_data):
             if not isinstance(ref, dict):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"references[{idx}]",
-                        severity="error",
-                        message=f"Reference must be a dict, got {type(ref).__name__}",
-                        suggestion="Use dict format with content/description",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"references[{idx}]",
+                    f"Reference must be a dict, got {type(ref).__name__}",
+                    "Use dict format with content/description"
+                ))
                 continue
 
             # Check for content or description
             if "content" not in ref and "description" not in ref:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"references[{idx}]",
-                        severity="error",
-                        message="Reference missing both 'content' and 'description'",
-                        suggestion="Add at least one: content or description",
-                        yaml_value=str(ref),
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"references[{idx}]",
+                    "Reference missing both 'content' and 'description'",
+                    "Add at least one: content or description",
+                    str(ref)
+                ))
 
             # Check mode enum using schema validator
             if "mode" in ref:
@@ -643,70 +660,60 @@ class MetadataValidator:
                     ref["mode"], f"references[{idx}].mode"
                 )
                 if mode_issue:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=mode_issue.field_path,
-                            severity=mode_issue.severity,
-                            message=mode_issue.message,
-                            suggestion=mode_issue.suggestion,
-                            yaml_value=mode_issue.actual_value,
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, mode_issue.field_path,
+                        mode_issue.message,
+                        mode_issue.suggestion,
+                        mode_issue.actual_value
+                    ) if mode_issue.severity == "error" else self._warning(
+                        file_path, mode_issue.field_path,
+                        mode_issue.message,
+                        mode_issue.suggestion,
+                        mode_issue.actual_value
+                    ))
 
             # Check source structure
             if "source" in ref:
                 if not isinstance(ref["source"], dict):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"references[{idx}].source",
-                            severity="error",
-                            message="Reference source must be a dict",
-                            suggestion="Use: source:\n  title: \"...\"\n  type: book",
-                        )
-                    )
+                    issues.append(self._error(
+                        file_path, f"references[{idx}].source",
+                        "Reference source must be a dict",
+                        "Use: source:\n  title: \"...\"\n  type: book"
+                    ))
                 else:
                     source = ref["source"]
 
                     # Check required fields
                     if "title" not in source:
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"references[{idx}].source",
-                                severity="error",
-                                message="Reference source missing 'title'",
-                                suggestion="Add: title: \"Source Title\"",
-                            )
-                        )
+                        issues.append(self._error(
+                            file_path, f"references[{idx}].source",
+                            "Reference source missing 'title'",
+                            "Add: title: \"Source Title\""
+                        ))
 
                     if "type" not in source:
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"references[{idx}].source",
-                                severity="error",
-                                message="Reference source missing 'type'",
-                                suggestion=f"Add: type: {self.schema_validator.get_valid_reference_types()[0]}",
-                            )
-                        )
+                        issues.append(self._error(
+                            file_path, f"references[{idx}].source",
+                            "Reference source missing 'type'",
+                            f"Add: type: {self.schema_validator.get_valid_reference_types()[0]}"
+                        ))
                     else:
                         # Validate type using schema validator
                         type_issue = self.schema_validator.validate_reference_type(
                             source["type"], f"references[{idx}].source.type"
                         )
                         if type_issue:
-                            issues.append(
-                                MetadataIssue(
-                                    file_path=file_path,
-                                    field_name=type_issue.field_path,
-                                    severity=type_issue.severity,
-                                    message=type_issue.message,
-                                    suggestion=type_issue.suggestion,
-                                    yaml_value=type_issue.actual_value,
-                                )
-                            )
+                            issues.append(self._error(
+                                file_path, type_issue.field_path,
+                                type_issue.message,
+                                type_issue.suggestion,
+                                type_issue.actual_value
+                            ) if type_issue.severity == "error" else self._warning(
+                                file_path, type_issue.field_path,
+                                type_issue.message,
+                                type_issue.suggestion,
+                                type_issue.actual_value
+                            ))
 
         return issues
 
@@ -723,70 +730,50 @@ class MetadataValidator:
         """
         issues = []
 
-        if not isinstance(poems_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="poems",
-                    severity="error",
-                    message="Poems field must be a list",
-                    suggestion="Use: poems:\n  - title: \"...\"\n    content: |",
-                )
-            )
-            return issues
+        # Type check using helper
+        type_error = self._require_type(
+            file_path, "poems", poems_data, list,
+            "Use: poems:\n  - title: \"...\"\n    content: |"
+        )
+        if type_error:
+            return [type_error]
 
         # ISO date pattern for revision_date
         date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
         for idx, poem in enumerate(poems_data):
             if not isinstance(poem, dict):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"poems[{idx}]",
-                        severity="error",
-                        message=f"Poem must be a dict, got {type(poem).__name__}",
-                        suggestion="Use dict format with title and content",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"poems[{idx}]",
+                    f"Poem must be a dict, got {type(poem).__name__}",
+                    "Use dict format with title and content"
+                ))
                 continue
 
             # Check required fields
             if "title" not in poem:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"poems[{idx}]",
-                        severity="error",
-                        message="Poem missing required 'title' field",
-                        suggestion="Add: title: \"Poem Title\"",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"poems[{idx}]",
+                    "Poem missing required 'title' field",
+                    "Add: title: \"Poem Title\""
+                ))
 
             if "content" not in poem:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"poems[{idx}]",
-                        severity="error",
-                        message="Poem missing required 'content' field",
-                        suggestion="Add: content: |\n  Line 1\n  Line 2",
-                    )
-                )
+                issues.append(self._error(
+                    file_path, f"poems[{idx}]",
+                    "Poem missing required 'content' field",
+                    "Add: content: |\n  Line 1\n  Line 2"
+                ))
 
             # Check revision_date format if present
             if "revision_date" in poem:
                 if not date_pattern.match(str(poem["revision_date"]).strip()):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"poems[{idx}].revision_date",
-                            severity="warning",
-                            message=f"Invalid revision_date format: '{poem['revision_date']}'",
-                            suggestion="Use YYYY-MM-DD format (will default to entry date)",
-                            yaml_value=poem["revision_date"],
-                        )
-                    )
+                    issues.append(self._warning(
+                        file_path, f"poems[{idx}].revision_date",
+                        f"Invalid revision_date format: '{poem['revision_date']}'",
+                        "Use YYYY-MM-DD format (will default to entry date)",
+                        poem["revision_date"]
+                    ))
 
         return issues
 
@@ -803,17 +790,13 @@ class MetadataValidator:
         """
         issues = []
 
-        if not isinstance(manuscript_data, dict):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="manuscript",
-                    severity="error",
-                    message=f"Manuscript field must be a dict, got {type(manuscript_data).__name__}",
-                    suggestion="Use: manuscript:\n  status: draft\n  edited: false",
-                )
-            )
-            return issues
+        # Type check using helper
+        type_error = self._require_type(
+            file_path, "manuscript", manuscript_data, dict,
+            "Use: manuscript:\n  status: draft\n  edited: false"
+        )
+        if type_error:
+            return [type_error]
 
         # Check status using schema validator
         if "status" in manuscript_data:
@@ -821,43 +804,36 @@ class MetadataValidator:
                 manuscript_data["status"], "manuscript.status"
             )
             if status_issue:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=status_issue.field_path,
-                        severity=status_issue.severity,
-                        message=status_issue.message,
-                        suggestion=status_issue.suggestion,
-                        yaml_value=status_issue.actual_value,
-                    )
-                )
+                issues.append(self._error(
+                    file_path, status_issue.field_path,
+                    status_issue.message,
+                    status_issue.suggestion,
+                    status_issue.actual_value
+                ) if status_issue.severity == "error" else self._warning(
+                    file_path, status_issue.field_path,
+                    status_issue.message,
+                    status_issue.suggestion,
+                    status_issue.actual_value
+                ))
 
         # Check edited field type
         if "edited" in manuscript_data:
             if not isinstance(manuscript_data["edited"], bool):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="manuscript.edited",
-                        severity="warning",
-                        message=f"Manuscript edited should be boolean, got {type(manuscript_data['edited']).__name__}",
-                        suggestion="Use: edited: true or edited: false",
-                        yaml_value=manuscript_data["edited"],
-                    )
-                )
+                issues.append(self._warning(
+                    file_path, "manuscript.edited",
+                    f"Manuscript edited should be boolean, got {type(manuscript_data['edited']).__name__}",
+                    "Use: edited: true or edited: false",
+                    manuscript_data["edited"]
+                ))
 
         # Check themes is list
         if "themes" in manuscript_data:
             if not isinstance(manuscript_data["themes"], list):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="manuscript.themes",
-                        severity="warning",
-                        message="Manuscript themes should be a list",
-                        suggestion="Use: themes:\n  - theme1\n  - theme2",
-                    )
-                )
+                issues.append(self._warning(
+                    file_path, "manuscript.themes",
+                    "Manuscript themes should be a list",
+                    "Use: themes:\n  - theme1\n  - theme2"
+                ))
 
         return issues
 
