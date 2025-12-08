@@ -55,9 +55,8 @@ function M.setup()
 				{ "<leader>pFT", "<cmd>lua require('palimpsest.fzf').browse('tags')<cr>", desc = "Browse tags" },
 				{ "<leader>pFP", "<cmd>lua require('palimpsest.fzf').browse('poems')<cr>", desc = "Browse poems" },
 				{ "<leader>pFr", "<cmd>lua require('palimpsest.fzf').browse('references')<cr>", desc = "Browse references" },
-				{ "<leader>p/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
-				{ "<leader>p?w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
-				{ "<leader>p?j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+				{ "<leader>p/w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
+				{ "<leader>p/j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
 			},
 		})
 	else
@@ -106,9 +105,8 @@ function M.setup()
 				{ "<leader>vFT", "<cmd>lua require('palimpsest.fzf').browse('tags')<cr>", desc = "Browse tags" },
 				{ "<leader>vFP", "<cmd>lua require('palimpsest.fzf').browse('poems')<cr>", desc = "Browse poems" },
 				{ "<leader>vFr", "<cmd>lua require('palimpsest.fzf').browse('references')<cr>", desc = "Browse references" },
-				{ "<leader>v/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
-				{ "<leader>v?w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
-				{ "<leader>v?j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+				{ "<leader>v/w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
+				{ "<leader>v/j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
 			},
 		})
 		-- Remove unnecessary keymaps

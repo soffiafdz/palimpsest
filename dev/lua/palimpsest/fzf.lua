@@ -66,7 +66,6 @@ function M.search(entity_type)
 
 	-- Define search paths for each entity type
 	local entity_paths = {
-		all = { journal_dir, wiki_dir },
 		wiki = wiki_dir,
 		journal = journal_dir,
 		people = wiki_dir .. "/people",
@@ -80,47 +79,28 @@ function M.search(entity_type)
 		references = wiki_dir .. "/references",
 	}
 
-	local search_paths = entity_paths[entity_type]
+	local search_path = entity_paths[entity_type]
 
-	-- Handle both single path and multiple paths
-	if type(search_paths) == "string" then
-		search_paths = { search_paths }
-	elseif not search_paths then
-		search_paths = { wiki_dir }
+	if not search_path then
+		vim.notify("Invalid search type: " .. (entity_type or "nil"), vim.log.levels.ERROR)
+		return
 	end
 
-	-- Verify all paths exist
-	for _, path in ipairs(search_paths) do
-		if vim.fn.isdirectory(path) == 0 then
-			vim.notify("Directory not found: " .. path, vim.log.levels.WARN)
-		end
+	-- Verify path exists
+	if vim.fn.isdirectory(search_path) == 0 then
+		vim.notify("Directory not found: " .. search_path, vim.log.levels.WARN)
+		return
 	end
 
-	-- For multiple paths, use glob pattern to search both
-	if #search_paths > 1 then
-		-- Build the rg command to search multiple directories
-		local rg_cmd = "rg --column --line-number --no-heading --color=always --smart-case --hidden --follow -g '!.git' "
-		rg_cmd = rg_cmd .. table.concat(search_paths, " ")
-
-		fzf.live_grep({
-			prompt = "Search All Content: " .. (entity_type or "all") .. "> ",
-			cmd = rg_cmd,
-			winopts = {
-				height = 0.85,
-				width = 0.80,
-			},
-		})
-	else
-		-- Single path, simpler
-		fzf.live_grep({
-			prompt = "Search: " .. (entity_type or "all") .. "> ",
-			cwd = search_paths[1],
-			winopts = {
-				height = 0.85,
-				width = 0.80,
-			},
-		})
-	end
+	-- Use live_grep with single directory
+	fzf.live_grep({
+		prompt = "Search " .. entity_type .. "> ",
+		cwd = search_path,
+		winopts = {
+			height = 0.85,
+			width = 0.80,
+		},
+	})
 end
 
 -- Quick access to specific wiki pages
