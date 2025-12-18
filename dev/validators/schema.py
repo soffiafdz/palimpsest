@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Optional
 
 # --- Local imports ---
 from dev.database.models.enums import ReferenceType, ReferenceMode
+from dev.database.models_manuscript import ManuscriptStatus
 from dev.core.validators import DataValidator
 
 
@@ -74,22 +75,10 @@ class SchemaValidator:
         """Get valid reference modes from authoritative enum."""
         return ReferenceMode.choices()
 
-    # TODO: Add other enums when they exist in models/enums.py
-    # @staticmethod
-    # def get_valid_manuscript_status() -> List[str]:
-    #     """Get valid manuscript status values."""
-    #     return ManuscriptStatus.choices()
-
-    # Hardcoded until ManuscriptStatus enum is created
-    VALID_MANUSCRIPT_STATUS = [
-        "unspecified",
-        "draft",
-        "reviewed",
-        "included",
-        "adapted",
-        "excluded",
-        "final",
-    ]
+    @staticmethod
+    def get_valid_manuscript_status() -> List[str]:
+        """Get valid manuscript status values."""
+        return ManuscriptStatus.choices()
 
     # ========== Field Validators ==========
 
@@ -154,12 +143,13 @@ class SchemaValidator:
         Returns:
             SchemaIssue if invalid, None if valid
         """
-        if status not in self.VALID_MANUSCRIPT_STATUS:
+        valid_statuses = self.get_valid_manuscript_status()
+        if status not in valid_statuses:
             return SchemaIssue(
                 field_path=field_path,
                 severity="error",
                 message=f"Invalid manuscript status: '{status}'",
-                suggestion=f"Valid statuses: {', '.join(self.VALID_MANUSCRIPT_STATUS)}",
+                suggestion=f"Valid statuses: {', '.join(valid_statuses)}",
                 actual_value=status,
             )
         return None

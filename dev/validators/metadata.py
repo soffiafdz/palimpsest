@@ -455,6 +455,9 @@ class MetadataValidator:
         """
         issues = []
 
+        if locations_data is None:
+            return issues
+
         # Parse city count
         city_count = 0
         if isinstance(city_data, str):
@@ -511,7 +514,7 @@ class MetadataValidator:
         return issues
 
     def validate_dates_field(
-        self, file_path: Path, dates_data: Any
+        self, file_path: Path, dates_data: Any, people_data: Optional[List[Any]] = None
     ) -> List[MetadataIssue]:
         """
         Validate dates field structure.
@@ -524,6 +527,9 @@ class MetadataValidator:
         - With refs: "2024-01-15 (meeting with @John at #Café)"
         - Dict: {date: "2024-01-15", context: "...", people: [...], locations: [...]}
         - Opt-out: "~"
+        - Entry date shorthand: "."
+
+        Also validates that referenced people exist in the main people list (if provided).
         """
         issues = []
 
@@ -538,14 +544,54 @@ class MetadataValidator:
         # ISO date pattern
         date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}')
 
+        # Prepare main people list for semantic validation
+        main_people = []
+        if people_data:
+            for person in people_data:
+                if isinstance(person, str):
+                    # Extract name/alias from string format
+                    if '(' in person and person.endswith(')'):
+                        before_paren, in_paren = person.split('(', 1)
+                        before_paren = before_paren.strip().lstrip('@')
+                        in_paren = in_paren.rstrip(')').strip()
+                        if before_paren:
+                            main_people.append(before_paren.replace('_', ' ').replace('-', ' ').lower())
+                        if in_paren:
+                            main_people.append(in_paren.replace('_', ' ').replace('-', ' ').lower())
+                    else:
+                        name = person.strip().lstrip('@')
+                        if name:
+                            main_people.append(name.replace('_', ' ').replace('-', ' ').lower())
+                elif isinstance(person, dict):
+                    if "name" in person:
+                        main_people.append(person["name"].replace('-', ' ').lower())
+                    if "full_name" in person:
+                        main_people.append(person["full_name"].replace('-', ' ').lower())
+                    if "alias" in person:
+                        # Alias can be string or list
+                        aliases = person["alias"]
+                        if isinstance(aliases, str):
+                            aliases = [aliases]
+                        for alias in aliases:
+                            main_people.append(alias.replace('-', ' ').lower())
+
+        from datetime import date as dt_date
+
         for idx, date_entry in enumerate(dates_data):
+            # Handle datetime.date objects (YAML loader might produce these)
+            if isinstance(date_entry, dt_date):
+                continue
+
             if isinstance(date_entry, str):
-                # Check for opt-out marker
-                if date_entry.strip() == "~":
+                # Parse context out first
+                date_part = date_entry.split("(")[0].strip()
+
+                # Check for opt-out marker or entry date shorthand
+                if date_part in ("~", "."):
                     continue
 
                 # Check for date format
-                if not date_pattern.match(date_entry.strip()):
+                if not date_pattern.match(date_part):
                     issues.append(self._error(
                         file_path, f"dates[{idx}]",
                         f"Invalid date format: '{date_entry}'",
@@ -573,15 +619,20 @@ class MetadataValidator:
                     ))
                 else:
                     # Validate date value
-                    if not date_pattern.match(str(date_entry["date"]).strip()):
-                        issues.append(self._error(
-                            file_path, f"dates[{idx}].date",
-                            f"Invalid date value: '{date_entry['date']}'",
-                            "Use YYYY-MM-DD format"
-                        ))
+                    date_val = date_entry["date"]
+                    if isinstance(date_val, dt_date):
+                        pass # Valid
+                    else:
+                        date_val_str = str(date_val).strip()
+                        if date_val_str not in ("~", ".") and not date_pattern.match(date_val_str):
+                            issues.append(self._error(
+                                file_path, f"dates[{idx}].date",
+                                f"Invalid date value: '{date_val}'",
+                                "Use YYYY-MM-DD format"
+                            ))
 
                 # Check valid subfields
-                valid_keys = {"date", "context", "people", "locations"}
+                valid_keys = {"date", "context", "people", "locations", "description"}
                 unknown = set(date_entry.keys()) - valid_keys
                 if unknown:
                     issues.append(self._warning(
@@ -591,19 +642,55 @@ class MetadataValidator:
                     ))
 
                 # Check types of subfields
-                if "people" in date_entry and not isinstance(date_entry["people"], list):
-                    issues.append(self._warning(
-                        file_path, f"dates[{idx}].people",
-                        "Date people should be a list",
-                        "Use: people: [name1, name2]"
-                    ))
+                people_in_date = []
+                if "people" in date_entry:
+                    p_field = date_entry["people"]
+                    if not isinstance(p_field, (list, str)):
+                        issues.append(self._warning(
+                            file_path, f"dates[{idx}].people",
+                            "Date people should be a list or string",
+                            "Use: people: [name1, name2]"
+                        ))
+                    else:
+                        if isinstance(p_field, list):
+                            people_in_date.extend(p_field)
+                        else:
+                            people_in_date.append(p_field)
 
-                if "locations" in date_entry and not isinstance(date_entry["locations"], list):
+                if "locations" in date_entry and not isinstance(date_entry["locations"], (list, str)):
                     issues.append(self._warning(
                         file_path, f"dates[{idx}].locations",
-                        "Date locations should be a list",
+                        "Date locations should be a list or string",
                         "Use: locations: [loc1, loc2]"
                     ))
+
+                # Validate people existence if main people list is available
+                if main_people and people_in_date:
+                    for person_ref in people_in_date:
+                        if isinstance(person_ref, str):
+                            # Extract name part (handle @Alias format)
+                            check_name = person_ref.split('(')[0].strip().lstrip('@')
+                            # Normalize
+                            check_name = check_name.replace('_', ' ').replace('-', ' ').lower()
+
+                            if check_name:
+                                # Try exact match
+                                found = check_name in main_people
+                                
+                                # Try first word match (e.g. "Daniel" matching "Daniel Andrews")
+                                if not found:
+                                    for main_person in main_people:
+                                        first_word = main_person.split()[0] if ' ' in main_person else main_person
+                                        if first_word == check_name:
+                                            found = True
+                                            break
+                                
+                                if not found:
+                                    issues.append(self._error(
+                                        file_path, f"dates[{idx}].people",
+                                        f"Person '{person_ref}' not found in main 'people' field",
+                                        f"Add '{person_ref}' to the main 'people' field at the top of the frontmatter"
+                                    ))
 
             else:
                 issues.append(self._error(
@@ -767,6 +854,11 @@ class MetadataValidator:
 
             # Check revision_date format if present
             if "revision_date" in poem:
+                # Handle raw date object
+                from datetime import date as dt_date
+                if isinstance(poem["revision_date"], dt_date):
+                    continue
+                    
                 if not date_pattern.match(str(poem["revision_date"]).strip()):
                     issues.append(self._warning(
                         file_path, f"poems[{idx}].revision_date",
@@ -877,7 +969,9 @@ class MetadataValidator:
             )
 
         if "dates" in metadata:
-            issues.extend(self.validate_dates_field(file_path, metadata["dates"]))
+            # Pass people data for semantic validation
+            people_data = metadata.get("people")
+            issues.extend(self.validate_dates_field(file_path, metadata["dates"], people_data))
 
         if "references" in metadata:
             issues.extend(self.validate_references_field(file_path, metadata["references"]))

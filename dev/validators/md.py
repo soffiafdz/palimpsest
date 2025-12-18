@@ -41,6 +41,7 @@ from dev.utils.md import split_frontmatter
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
 from dev.validators.schema import SchemaValidator
+from dev.validators.metadata import MetadataValidator
 
 
 @dataclass
@@ -50,7 +51,7 @@ class MarkdownIssue:
     file_path: Path
     line_number: Optional[int]
     severity: str  # error, warning, info
-    category: str  # frontmatter, link, structure, content
+    category: str  # frontmatter, link, structure, content, metadata
     message: str
     suggestion: Optional[str] = None
 
@@ -367,152 +368,27 @@ class MarkdownValidator:
                     )
                 )
 
-        # Validate dates field structure
-        if "dates" in frontmatter and isinstance(frontmatter["dates"], list):
-            dates_line_num = self._find_field_line_number(frontmatter_text, "dates")
-
-            # Get the main people list for validation
-            main_people = []
-            if "people" in frontmatter and isinstance(frontmatter["people"], list):
-                for person in frontmatter["people"]:
-                    if isinstance(person, str):
-                        # Extract all name variations from the string
-                        # Formats: "Name", "Name (Full Name)", "@Alias", "@Alias (Name)"
-
-                        # Check for parenthetical expansion
-                        if '(' in person and person.endswith(')'):
-                            before_paren, in_paren = person.split('(', 1)
-                            before_paren = before_paren.strip().lstrip('@')
-                            in_paren = in_paren.rstrip(')').strip()
-
-                            # Add both parts (e.g., "@Majo (María)" → ["majo", "maría"])
-                            if before_paren:
-                                # Replace hyphens/underscores with spaces for matching
-                                normalized = before_paren.replace('_', ' ').replace('-', ' ') if '_' not in before_paren else before_paren.replace('_', ' ')
-                                main_people.append(normalized.lower())
-                            if in_paren:
-                                # Replace hyphens/underscores with spaces for matching
-                                normalized = in_paren.replace('_', ' ').replace('-', ' ') if '_' not in in_paren else in_paren.replace('_', ' ')
-                                main_people.append(normalized.lower())
-                        else:
-                            # Simple name without parentheses
-                            name = person.strip().lstrip('@')
-                            if name:
-                                # Replace hyphens/underscores with spaces for matching
-                                normalized = name.replace('_', ' ').replace('-', ' ') if '_' not in name else name.replace('_', ' ')
-                                main_people.append(normalized.lower())
-                    elif isinstance(person, dict):
-                        if "name" in person:
-                            main_people.append(person["name"].lower())
-                        if "full_name" in person:
-                            main_people.append(person["full_name"].lower())
-                        if "alias" in person:
-                            main_people.append(person["alias"].lower())
-
-            for idx, date_item in enumerate(frontmatter["dates"]):
-                # Skip the opt-out markers
-                if date_item == "~" or date_item is None:
-                    continue
-
-                # String dates are valid
-                if isinstance(date_item, str):
-                    continue
-
-                # Dict dates should have required fields
-                if isinstance(date_item, dict):
-                    import datetime
-                    date_value = date_item.get("date")
-
-                    # Check if date field is missing or None
-                    if "date" not in date_item or date_value is None:
-                        issues.append(
-                            MarkdownIssue(
-                                file_path=file_path,
-                                line_number=dates_line_num,
-                                severity="error",
-                                category="frontmatter",
-                                message=f"Date entry {idx+1}: Missing required 'date' field" + (" (date: ~ is invalid, use just ~ at list level)" if date_value is None else ""),
-                                suggestion="To exclude entry date, use '~' or 'null' as a list item, not as a dict value. Example: dates: [~, ...]",
-                            )
-                        )
-                    # Accept '.' as shorthand for entry date, or string, or datetime.date object
-                    elif date_value != "." and not isinstance(date_value, (str, datetime.date)):
-                        issues.append(
-                            MarkdownIssue(
-                                file_path=file_path,
-                                line_number=dates_line_num,
-                                severity="error",
-                                category="frontmatter",
-                                message=f"Date entry {idx+1}: 'date' field must be a string or date (or '.' for entry date)",
-                                suggestion="Use YYYY-MM-DD format or '.' for the entry's date",
-                            )
-                        )
-
-                    # Validate people field if present
-                    if "people" in date_item:
-                        people_field = date_item["people"]
-                        # Accept string or list for people in dates
-                        if not isinstance(people_field, (str, list)):
-                            issues.append(
-                                MarkdownIssue(
-                                    file_path=file_path,
-                                    line_number=dates_line_num,
-                                    severity="error",
-                                    category="frontmatter",
-                                    message=f"Date entry {idx+1}: Field 'people' must be string or list",
-                                    suggestion="Use a string for single person or list for multiple people",
-                                )
-                            )
-                        else:
-                            # Check that people exist in main people field
-                            people_list = [people_field] if isinstance(people_field, str) else people_field
-                            for person_name in people_list:
-                                if isinstance(person_name, str):
-                                    # Extract just the name part (handle @Alias format)
-                                    check_name = person_name.split('(')[0].strip().lstrip('@')
-                                    # Replace hyphens/underscores with spaces for matching (consistent with parser)
-                                    check_name = (check_name.replace('_', ' ').replace('-', ' ') if '_' not in check_name else check_name.replace('_', ' ')).lower()
-
-                                    if check_name and main_people:
-                                        # Try exact match first
-                                        found = check_name in main_people
-
-                                        # If not found, try matching as first name against full names
-                                        if not found:
-                                            for main_person in main_people:
-                                                # Check if check_name is the first word of a full name
-                                                first_word = main_person.split()[0] if ' ' in main_person else main_person
-                                                if first_word == check_name:
-                                                    found = True
-                                                    break
-
-                                        if not found:
-                                            issues.append(
-                                                MarkdownIssue(
-                                                    file_path=file_path,
-                                                    line_number=dates_line_num,
-                                                    severity="error",
-                                                    category="frontmatter",
-                                                    message=f"Date entry {idx+1}: Person '{person_name}' not found in main 'people' field",
-                                                    suggestion=f"Add '{person_name}' to the main 'people' field at the top of the frontmatter",
-                                                )
-                                            )
-
-                    # Validate locations field if present
-                    if "locations" in date_item:
-                        locations_field = date_item["locations"]
-                        # Accept string or list for locations in dates
-                        if not isinstance(locations_field, (str, list)):
-                            issues.append(
-                                MarkdownIssue(
-                                    file_path=file_path,
-                                    line_number=dates_line_num,
-                                    severity="error",
-                                    category="frontmatter",
-                                    message=f"Date entry {idx+1}: Field 'locations' must be string or list",
-                                    suggestion="Use a string for single location or list for multiple locations",
-                                )
-                            )
+        # --- Delegate detailed metadata validation to MetadataValidator ---
+        metadata_validator = MetadataValidator(self.md_dir, self.logger)
+        # Use validate_file directly which takes care of parsing frontmatter again,
+        # but since we already have frontmatter, it might be slightly inefficient.
+        # However, MetadataValidator logic is cleaner to keep separate.
+        # We catch the issues and convert them.
+        metadata_issues = metadata_validator.validate_file(file_path)
+        for m_issue in metadata_issues:
+            # Find line number for the field
+            line_num = self._find_field_line_number(frontmatter_text, m_issue.field_name.split('[')[0].split('.')[0])
+            
+            issues.append(
+                MarkdownIssue(
+                    file_path=file_path,
+                    line_number=line_num,
+                    severity=m_issue.severity,
+                    category="metadata",
+                    message=m_issue.message,
+                    suggestion=m_issue.suggestion,
+                )
+            )
 
         # Warn about unknown fields
         known_fields = set(self.REQUIRED_FIELDS) | set(self.OPTIONAL_FIELDS.keys())
