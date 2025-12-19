@@ -23,14 +23,8 @@
 ### Install Package
 
 ```bash
-# Install with all dependencies
+# Local installation (from repository)
 pip install -e .
-
-# Or use make
-make install
-
-# Development mode with extra tools
-make install-dev
 ```
 
 This installs 5 CLI entry points in `~/.local/bin/`:

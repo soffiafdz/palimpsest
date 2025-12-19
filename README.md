@@ -25,7 +25,6 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 - **Manuscript subwiki**: Dedicated wiki for curating journal entries into literary material
 - **PDF generation**: Create clean reading copies and annotated review versions
 - **Vim/Neovim integration**: Vimwiki templates and automation (optional)
-- **Makefile orchestration**: Simple commands for batch processing and year-based builds
 
 ---
 
@@ -71,23 +70,6 @@ plm build-pdf 2024
 
 # Or run complete pipeline
 plm run-all 2024
-```
-
-### Using Make
-
-```bash
-# Process everything
-make all
-
-# Year-specific
-make 2024
-make 2024-md   # Markdown only
-make 2024-pdf  # PDFs only
-
-# Database operations
-make init-db
-make backup
-make stats
 ```
 
 ---
@@ -196,10 +178,14 @@ palimpsest/
 │   │   └── manuscript/
 │   └── metadata/
 │       └── palimpsest.db
-├── docs/
-│   └── BIDIRECTIONAL_SYNC_GUIDE.md # Wiki sync documentation
+├── docs/                       # Documentation
+│   ├── README.md              # Documentation index
+│   ├── getting-started.md     # New user onboarding
+│   ├── reference/             # Command and field references
+│   ├── guides/                # User guides and workflows
+│   ├── integrations/          # Editor integrations
+│   └── development/           # Developer documentation
 ├── environment.yaml
-├── Makefile
 └── README.md
 ```
 
@@ -358,7 +344,7 @@ wiki/
 - Characters: Character description, arc, voice notes, appearance notes
 - Themes, arcs, and other manuscript-specific metadata
 
-See [docs/bidirectional-sync-guide.md](/docs/dev-guides/architecture/bidirectional-sync-guide.md) for complete documentation.
+See [Synchronization Guide](docs/guides/synchronization.md) for complete documentation.
 
 ---
 
@@ -435,7 +421,7 @@ manuscript:
 Entry content here...
 ```
 
-See `example_yaml.md` for complete examples.
+See [Metadata Examples](docs/reference/metadata-examples.md) for complete examples.
 
 ---
 
@@ -539,6 +525,40 @@ Edit `dev/core/paths.py` to customize:
 - Database path
 - Output directories
 - Template paths
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+### Getting Started
+- **[Getting Started Guide](docs/getting-started.md)** - New user onboarding with core concepts and first workflow
+
+### Reference
+- **[Command Reference](docs/reference/commands.md)** - Complete CLI command documentation (70+ commands)
+- **[Metadata Field Reference](docs/reference/metadata-field-reference.md)** - All YAML frontmatter fields with examples
+- **[Metadata Examples](docs/reference/metadata-examples.md)** - Template entries and patterns
+- **[Wiki Field Reference](docs/reference/wiki-fields.md)** - Wiki page structure and editable fields
+
+### Guides
+- **[Synchronization Guide](docs/guides/synchronization.md)** - Multi-machine workflows and bidirectional sync
+- **[Conflict Resolution](docs/guides/conflict-resolution.md)** - Handling concurrent edits across machines
+- **[Manuscript Features](docs/guides/manuscript-features.md)** - Manuscript wiki and curation features
+- **[Migration Guide](docs/guides/migration.md)** - Upgrading between versions
+
+### Integrations
+- **[Neovim Integration](docs/integrations/neovim.md)** - Editor integration and vimwiki features
+
+### Development
+- **[Development Overview](docs/development/README.md)** - Contributing and architecture
+- **[Architecture](docs/development/architecture.md)** - System design and modular organization
+- **[Database Managers](docs/development/database-managers.md)** - Entity manager patterns
+- **[Validators](docs/development/validators.md)** - Validation system architecture
+- **[Tombstones](docs/development/tombstones.md)** - Deletion tracking implementation
+- **[Type Checking](docs/development/type-checking.md)** - Pyright configuration and patterns
+- **[Testing](docs/development/testing.md)** - Comprehensive testing guide
+- **[Neovim Plugin Development](docs/development/neovim-plugin-dev.md)** - Extending the Neovim integration
 
 ---
 

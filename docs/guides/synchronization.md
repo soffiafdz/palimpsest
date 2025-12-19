@@ -1,23 +1,35 @@
-# Multi-Machine Synchronization Guide
+# Synchronization Guide
 
-## Overview
-
-This guide explains how to work on your Palimpsest journal across multiple machines (laptop, desktop, etc.) while maintaining data consistency and handling conflicts.
-
-The Palimpsest system now supports reliable multi-machine synchronization using a **tombstone pattern** for tracking deletions and **hash-based conflict detection** for identifying concurrent edits.
+Complete guide to Palimpsest's bidirectional synchronization system and multi-machine workflows.
 
 ---
 
-## How It Works
+## Navigation
 
-### Synchronization Components
+- [Quick Start](#daily-workflow) - Get started with multi-machine sync (5 min)
+- [Common Scenarios](#common-scenarios) - Real-world examples (10 min)
+- [Understanding the Architecture](#understanding-the-architecture) - How it all works (20 min)
+- [Conflict Detection](#conflict-detection-and-resolution) - Handling concurrent edits
+- [Monitoring](#monitoring-sync-health) - Health checks and statistics
+- [Troubleshooting](#troubleshooting) - Common issues and solutions
 
-1. **Tombstones**: Track when associations (people, tags, events) are removed
-2. **Sync State**: Track when files were last synced and detect conflicts
-3. **Soft Delete**: Mark entries as deleted instead of removing them permanently
-4. **Hash Tracking**: Use file content hashes to detect changes
+**Related Documentation:**
+- [Conflict Resolution](conflict-resolution.md) - Deep dive into conflict handling
+- [Command Reference](../reference/commands.md) - CLI commands
+- [Getting Started](../getting-started.md) - New user onboarding
 
-### Data Flow
+---
+
+## Overview
+
+Palimpsest supports reliable multi-machine synchronization using:
+
+1. **Tombstones**: Track deletions across machines
+2. **Hash-based conflict detection**: Identify concurrent edits
+3. **Soft delete**: Mark entries as deleted instead of removing
+4. **Three-layer bidirectional sync**: YAML ↔ SQL ↔ Wiki
+
+### How It Works
 
 ```
 Machine A                          Git Repository                    Machine B
@@ -45,7 +57,7 @@ cd ~/Documents/palimpsest
 git pull
 
 # 2. Sync from YAML to database
-plm sync-db --input journal/md/
+plm sync-db
 
 # 3. Check for conflicts (optional but recommended)
 metadb sync conflicts
@@ -65,7 +77,7 @@ vim journal/md/2024/2024-11-23.md
 
 ```bash
 # 1. Sync changes to database
-plm sync-db --input journal/md/
+plm sync-db
 
 # 2. Commit changes to git
 git add journal/md/
@@ -115,7 +127,7 @@ git push
 git pull
 
 # Sync from YAML
-plm sync-db --input journal/md/
+plm sync-db
 
 # What happens:
 # - Tombstone prevents Bob from being re-added
@@ -153,7 +165,7 @@ git push
 git pull
 
 # Sync
-plm sync-db --input journal/md/
+plm sync-db
 
 # Entry now exists on Machine B
 ```
@@ -248,7 +260,7 @@ vim wiki/entries/2024/2024-11-01.md
 # Add editorial notes
 
 # Import from wiki
-python -m dev.pipeline.wiki2sql import entries
+plm import-wiki
 
 # Push
 git add wiki/entries/2024/2024-11-01.md data/palimpsest.db
@@ -262,12 +274,204 @@ git push
 git pull
 
 # Import from wiki
-python -m dev.pipeline.wiki2sql import entries
+plm import-wiki
 
 # Notes synced
 ```
 
 **Result**: ✅ Wiki edits sync independently from YAML
+
+---
+
+## Understanding the Architecture
+
+### Three-Layer Bidirectional Synchronization
+
+Palimpsest implements three-layer sync between Journal files, SQL database, and Wiki pages:
+
+```
+┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
+│  Journal Files   │ ←────→  │   SQL Database   │ ←────→  │   Wiki Pages     │
+│  (Markdown)      │         │   (SQLite)       │         │   (Vimwiki)      │
+│                  │         │                  │         │                  │
+│  YAML metadata   │         │  Normalized      │         │  Human-readable  │
+│  Entry content   │         │  Relationships   │         │  Entity pages    │
+└──────────────────┘         └──────────────────┘         └──────────────────┘
+     Primary                      Central                     Navigation
+   Source Material              Source of Truth             & Exploration
+```
+
+### Data Flow Principles
+
+1. **Journal → Database**: Single source of truth for life events
+   - Journal entries (Markdown with YAML frontmatter) are the primary record
+   - Database is a derived, structured representation
+   - Ensures human-readability and version control (Git)
+
+2. **Database → Wiki**: Auto-generated navigation & exploration
+   - Wiki is a browsable, interlinked interface
+   - Auto-generated to reflect current database state
+   - One-way generation prevents conflicting sources
+
+3. **Wiki → Database**: Editable notes only (not structural data)
+   - Wiki is workspace for editorial notes and annotations
+   - Only specific "notes" fields sync back to database
+   - Core structural metadata stays in Journal YAML
+
+### Three Synchronization Paths
+
+#### Path 1: YAML ↔ SQL (Journal Entries)
+
+- **Purpose**: Capture and persist journal metadata
+- **Direction**: Fully bidirectional
+  - YAML → SQL: Daily journaling (primary flow)
+  - SQL → YAML: Export/backup (reverse flow)
+- **Use Cases**:
+  - Write new entries in Markdown
+  - Sync metadata to database
+  - Export database back to Markdown for backup
+
+**Example Flow**:
+```bash
+# Write journal entry with YAML frontmatter
+vim journal/md/2024/2024-11-01.md
+
+# Import to database (YAML → SQL)
+plm sync-db --file journal/md/2024/2024-11-01.md
+
+# Export back to Markdown (SQL → YAML)
+plm export-db --date 2024-11-01 --output backup/
+```
+
+**What syncs**:
+- Core fields (date, word_count, reading_time)
+- Geographic fields (city, locations)
+- People, events, tags
+- References, poems
+- Manuscript flags (status, edited)
+
+#### Path 2: SQL → Wiki (Entity Export)
+
+- **Purpose**: Generate navigable wiki for exploration
+- **Direction**: One-way (SQL → Wiki)
+- **Update Mode**: Regenerate from database
+
+**Example Flow**:
+```bash
+# Export all entities to wiki
+plm export-wiki all
+
+# Export specific entity type
+plm export-wiki people
+plm export-wiki entries
+```
+
+**What gets exported**:
+- Entity pages (entries, people, locations, cities, events, tags, etc.)
+- Timeline views
+- Statistics dashboards
+- Manuscript subwiki (separate workspace)
+
+**Design rationale**: Wiki always reflects database state, preventing conflicts.
+
+#### Path 3: Wiki → SQL (Entity Import)
+
+- **Purpose**: Sync user edits back to database
+- **Direction**: One-way (Wiki → SQL)
+- **Update Mode**: Import only editable fields
+
+**Example Flow**:
+```bash
+# Edit notes in wiki
+vim wiki/people/alice.md
+
+# Import changes to database
+plm import-wiki people
+```
+
+**What syncs**:
+- Entry notes
+- Person notes
+- Event notes
+- Manuscript-specific fields (character notes, adaptation notes, etc.)
+
+**What does NOT sync** (structural data):
+- Dates
+- Relationships
+- Names
+- Core metadata
+
+**Design rationale**: Limits wiki-to-database sync to designated editable fields, preserving database as structural authority.
+
+### Complete Data Flow
+
+```
+    ┌─────────────────────────────────────────────────────────────┐
+    │                  PALIMPSEST DATA FLOW                        │
+    └─────────────────────────────────────────────────────────────┘
+
+┌─────────────┐
+│   Journal   │  Write new entry
+│   (*.md)    │  with YAML metadata
+└──────┬──────┘
+       │
+       │ yaml2sql (import)
+       ↓
+┌─────────────────────────────────────────────────────┐
+│                   SQL Database                      │
+│                                                     │
+│  ┌──────────┐  ┌─────────┐  ┌──────────┐            │
+│  │ Entries  │  │ People  │  │ Events   │            │
+│  └────┬─────┘  └────┬────┘  └────┬─────┘            │
+│       │             │            │                  │
+│       └─────────────┴────────────┘                  │
+│              Relationships                          │
+└───────────┬─────────────────────┬───────────────────┘
+            │                     │
+            │ sql2wiki            │
+            │ (export)            │
+            ↓                     ↓
+┌─────────────────────┐  ┌─────────────────────┐
+│   Main Wiki         │  │ Manuscript Subwiki  │
+│   wiki/             │  │ wiki/manuscript     │
+│  - entries/         │  │  - entries/         │
+│  - people/          │  │  - characters/      │
+│  - events/          │  │  - events/          │
+│  - locations/       │  │  - arcs/            │
+│  - cities/          │  │  - themes/          │
+└──────┬──────────────┘  └──────┬──────────────┘
+       │                        │
+       │ wiki2sql               │
+       │ (import notes)         │
+       ↓                        ↓
+┌─────────────────────────────────────────────────────┐
+│         Database (Notes Updated)                    │
+│  Entry.notes ← wiki edits                           │
+│  Person.notes ← wiki edits                          │
+│  ManuscriptEntry.notes ← manuscript wiki edits      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Field Ownership Strategy
+
+**Database Fields** (never in wiki):
+- Primary keys (`id`)
+- Foreign keys (`entry_id`, `person_id`)
+- Timestamps (`created_at`, `updated_at`)
+- File metadata (`file_path`, `file_hash`)
+- Computed properties (word count, relationships)
+
+**Wiki-Editable Fields** (user can modify):
+- `notes` - Editorial/manuscript planning notes
+- `character_notes` - Character development
+- `character_description` - Character descriptions
+- `character_arc` - Character arc notes
+- `voice_notes`, `appearance_notes` - Manuscript-specific
+
+**YAML-Owned Fields** (structural):
+- date, people, locations, cities, events, tags
+- references, poems
+- Manuscript flags (status, edited)
 
 ---
 
@@ -330,9 +534,9 @@ metadb sync conflicts
 **Best Practices**:
 1. **Always pull before editing**: `git pull` at start of session
 2. **Sync before pushing**: Ensure database updated
-3. **Don't edit on both machines simultaneously**: Coordinate if possible
+3. **Don't edit on both machines simultaneously**
 4. **Review conflicts promptly**: Don't let them accumulate
-5. **Use meaningful commit messages**: Helps identify what changed
+5. **Use meaningful commit messages**: Helps identify changes
 
 ---
 
@@ -428,10 +632,10 @@ Since the database is in git, you have automatic backups. But consider:
 
 ```bash
 # Full data backup (monthly)
-python -m dev.pipeline.cli backup-full --suffix monthly
+plm backup-full --suffix monthly
 
 # List backups
-python -m dev.pipeline.cli backup-list-full
+plm backup-list-full
 ```
 
 ---
@@ -473,7 +677,7 @@ metadb sync stats
 1. Review each conflict individually
 2. Verify database state matches desired state
 3. Mark all as resolved: `metadb sync resolve Entry <ID>`
-4. Investigate why conflicts are frequent (coordinating edits?)
+4. Investigate why conflicts are frequent
 
 ### Problem: Sync state shows conflict but file looks correct
 
@@ -485,23 +689,24 @@ metadb sync stats
 metadb sync resolve Entry 123
 
 # Next sync will update baseline hash
-python -m dev.pipeline.yaml2sql update journal/md/2024/2024-11-23.md
+plm sync-db --file journal/md/2024/2024-11-23.md
 ```
 
-### Problem: Accidentally deleted tombstone
+### Problem: Wiki import doesn't update other fields
 
-**Symptoms**: Person re-added after you manually removed tombstone.
+**This is correct behavior!** Wiki import only updates `notes` fields. All other metadata must be edited in the database or journal YAML.
 
-**Solution**:
+**Fields that wiki import updates**:
+- Main wiki: `notes` only
+- Manuscript wiki: `notes`, `character_notes`, `character_description`, etc.
+
+**To edit structural data**: Edit journal YAML and re-import:
 ```bash
-# Remove person from YAML again
+# Edit journal file's YAML frontmatter
 vim journal/md/2024/2024-11-01.md
 
-# Sync (creates new tombstone)
+# Re-import to database
 plm sync-db --file journal/md/2024/2024-11-01.md
-
-# Verify tombstone exists
-metadb tombstone list --table entry_people
 ```
 
 ---
@@ -526,10 +731,6 @@ Tombstones have a TTL (time-to-live) of **90 days** by default:
 - Cleanup command removes expired tombstones
 - After removal, association can be re-added
 
-**Permanent tombstones**: Some deletions are permanent (no expiration)
-
-**Adjusting TTL**: Currently not configurable (hardcoded to 90 days)
-
 ### Sync Sources
 
 The system tracks two sync sources separately:
@@ -549,6 +750,8 @@ Each has independent sync state and conflict detection.
 - Review conflicts promptly
 - Run monthly cleanup
 - Monitor sync stats weekly
+- Use wiki for editorial notes
+- Use YAML for structural changes
 
 ### Don'ts ❌
 - Don't edit on multiple machines simultaneously
@@ -556,61 +759,68 @@ Each has independent sync state and conflict detection.
 - Don't ignore conflict warnings
 - Don't manually edit database without syncing
 - Don't remove tombstones unless you understand implications
+- Don't edit structural data in wiki (use YAML)
 
 ---
 
-## Getting Help
+## Quick Reference
 
-### Check System Status
+### Daily Workflow Commands
+
 ```bash
-# Overall health
-metadb sync status
-metadb tombstone stats
-
-# Recent activity
-metadb tombstone list --limit 10
-metadb sync conflicts
-```
-
-### Common Commands Quick Reference
-```bash
-# Daily workflow
+# Start session
 git pull
-plm sync-db --input journal/md/
+plm sync-db
+
 # ... make edits ...
-plm sync-db --input journal/md/
+
+# End session
+plm sync-db
 git add . && git commit -m "Update journal"
 git push
+```
 
-# Conflict management
+### Conflict Management
+
+```bash
 metadb sync conflicts              # List conflicts
 metadb sync resolve Entry 123      # Resolve conflict
 metadb sync stats                  # View statistics
+```
 
-# Tombstone management
+### Tombstone Management
+
+```bash
 metadb tombstone list              # View tombstones
 metadb tombstone stats             # View statistics
 metadb tombstone cleanup --dry-run # Preview cleanup
 metadb tombstone cleanup           # Clean expired
 ```
 
-### Support Resources
-- Technical guide: `docs/tombstone-guide.md`
-- Conflict resolution: `docs/conflict-resolution.md`
-- Migration guide: `docs/migration-guide.md`
-- Code: `dev/database/tombstone_manager.py`
-- CLI commands: `dev/database/cli.py`
+### Wiki Sync
+
+```bash
+# Export to wiki
+plm export-wiki all
+plm export-wiki people
+
+# Import from wiki
+plm import-wiki all
+plm import-wiki people
+```
 
 ---
 
-## Conclusion
+## Summary
 
-The Palimpsest multi-machine synchronization system provides:
+The Palimpsest synchronization system provides:
+- ✅ Three-layer bidirectional sync (YAML ↔ SQL ↔ Wiki)
 - ✅ Reliable deletion propagation via tombstones
 - ✅ Conflict detection via hash comparison
 - ✅ Soft delete with restore capability
+- ✅ Field ownership separation (YAML/Database/Wiki)
 - ✅ Full CLI for monitoring and management
 
-By following this guide and the best practices, you can work seamlessly across multiple machines while maintaining data consistency and handling conflicts gracefully.
+By following this guide and best practices, you can work seamlessly across multiple machines while maintaining data consistency.
 
-Happy journaling! 📔✨
+Happy journaling! 📔
