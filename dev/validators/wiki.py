@@ -30,7 +30,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
-import sys
 from pathlib import Path
 from typing import List, Set, Optional
 from dataclasses import dataclass, field
@@ -40,9 +39,7 @@ from collections import defaultdict
 import click
 
 # --- Local imports ---
-from dev.core.paths import WIKI_DIR, LOG_DIR
-from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli import setup_logger
+from dev.core.logging_manager import PalimpsestLogger
 
 
 class WikiValidationError(Exception):
@@ -328,84 +325,3 @@ def print_stats_report(result: ValidationResult, wiki_dir: Path) -> None:
         click.echo(f"  Average links per file: {avg_links:.1f}")
 
     click.echo("\n" + "=" * 70 + "\n")
-
-
-# ===== CLI =====
-
-
-@click.group()
-@click.option(
-    "--wiki-dir",
-    type=click.Path(exists=True),
-    default=str(WIKI_DIR),
-    help="Wiki root directory",
-)
-@click.option(
-    "--log-dir",
-    type=click.Path(),
-    default=str(LOG_DIR),
-    help="Logging directory",
-)
-@click.pass_context
-def cli(ctx: click.Context, wiki_dir: str, log_dir: str) -> None:
-    """Validate vimwiki cross-references and detect issues."""
-    ctx.ensure_object(dict)
-    ctx.obj["wiki_dir"] = Path(wiki_dir)
-    ctx.obj["log_dir"] = Path(log_dir)
-    ctx.obj["logger"] = setup_logger(Path(log_dir), "validate_wiki")
-
-
-@cli.command()
-@click.pass_context
-def check(ctx: click.Context) -> None:
-    """Check all wiki links for broken references."""
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-    logger: PalimpsestLogger = ctx.obj["logger"]
-
-    try:
-        click.echo(f"🔍 Validating wiki links in {wiki_dir}...")
-        result = validate_wiki(wiki_dir, logger)
-        print_validation_report(result, wiki_dir)
-
-        # Exit with error if issues found
-        if result.broken_links or result.orphaned_files:
-            sys.exit(1)
-
-    except WikiValidationError as e:
-        handle_cli_error(ctx, e, "check")
-
-
-@cli.command()
-@click.pass_context
-def orphans(ctx: click.Context) -> None:
-    """Find orphaned pages (no incoming links)."""
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-    logger: PalimpsestLogger = ctx.obj["logger"]
-
-    try:
-        click.echo(f"🔍 Finding orphaned files in {wiki_dir}...")
-        result = validate_wiki(wiki_dir, logger)
-        print_orphans_report(result, wiki_dir)
-
-    except WikiValidationError as e:
-        handle_cli_error(ctx, e, "orphans")
-
-
-@cli.command()
-@click.pass_context
-def stats(ctx: click.Context) -> None:
-    """Show wiki statistics."""
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-    logger: PalimpsestLogger = ctx.obj["logger"]
-
-    try:
-        click.echo(f"📊 Calculating wiki statistics for {wiki_dir}...")
-        result = validate_wiki(wiki_dir, logger)
-        print_stats_report(result, wiki_dir)
-
-    except WikiValidationError as e:
-        handle_cli_error(ctx, e, "stats")
-
-
-if __name__ == "__main__":
-    cli(obj={})
