@@ -2,15 +2,15 @@ import pytest
 from pathlib import Path
 import yaml
 
-from dev.validators.metadata import MetadataValidator
+from dev.validators.frontmatter import FrontmatterValidator
 
-class TestMetadataValidator:
-    """Tests for the MetadataValidator class."""
+class TestFrontmatterValidator:
+    """Tests for the FrontmatterValidator class."""
 
     @pytest.fixture
     def validator(self, tmp_path):
-        """Create a MetadataValidator instance with a temporary directory."""
-        return MetadataValidator(md_dir=tmp_path)
+        """Create a FrontmatterValidator instance with a temporary directory."""
+        return FrontmatterValidator(md_dir=tmp_path)
 
     def create_md_file(self, path: Path, frontmatter: dict):
         """Helper to create a markdown file with given frontmatter."""

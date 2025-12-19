@@ -24,15 +24,15 @@ The Palimpsest validation system uses a 3-layer architecture to ensure data qual
                               │
                     ┌─────────┴─────────┐
                     │                   │
-┌───────────────────▼─────┐   ┌─────────▼──────────────────┐
-│     Layer 2: Format     │   │   Layer 2: Structure       │
-│  (dev/validators/md.py) │   │ (dev/validators/metadata.py)│
-│                         │   │                            │
-│  • Markdown syntax      │   │  • YAML structure          │
-│  • Frontmatter format   │   │  • Parser compatibility    │
-│  • Body content rules   │   │  • Cross-field dependencies│
-│  • Internal links       │   │  • Field presence/absence  │
-└─────────────────────────┘   └────────────────────────────┘
+┌───────────────────▼─────┐   ┌─────────▼────────────────────┐
+│     Layer 2: Format     │   │   Layer 2: Frontmatter       │
+│  (dev/validators/md.py) │   │ (dev/validators/frontmatter.py)│
+│                         │   │                              │
+│  • Markdown syntax      │   │  • YAML structure            │
+│  • Frontmatter format   │   │  • Parser compatibility      │
+│  • Body content rules   │   │  • Cross-field dependencies  │
+│  • Internal links       │   │  • Field presence/absence    │
+└─────────────────────────┘   └──────────────────────────────┘
                     │                   │
                     └─────────┬─────────┘
                               ▼

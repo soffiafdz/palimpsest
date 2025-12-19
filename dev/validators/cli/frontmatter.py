@@ -1,11 +1,12 @@
 """
-Metadata Validation Commands
------------------------------
+Frontmatter Validation Commands
+--------------------------------
 
-Commands for validating metadata parser compatibility.
+Commands for validating YAML frontmatter structure and compatibility.
 
 Check that frontmatter structures match parser expectations, including
-special character usage, cross-field dependencies, and structural rules.
+YAML syntax, field types, special character usage, cross-field
+dependencies, and structural rules.
 
 Commands:
     - people: Validate people field structures
@@ -13,7 +14,7 @@ Commands:
     - dates: Validate dates field structures
     - references: Validate references field structures
     - poems: Validate poems field structures
-    - all: Run all metadata validation checks
+    - all: Run all frontmatter validation checks
 """
 import click
 from pathlib import Path
@@ -33,11 +34,11 @@ from dev.core.paths import MD_DIR, LOG_DIR
     "--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files"
 )
 @click.pass_context
-def metadata(ctx: click.Context, md_dir: str, log_dir: str) -> None:
+def frontmatter(ctx: click.Context, md_dir: str, log_dir: str) -> None:
     """
-    Validate metadata parser compatibility.
+    Validate YAML frontmatter structure and compatibility.
 
-    Check that frontmatter structures match parser expectations, including
+    Comprehensive validation of frontmatter including YAML syntax, field types,
     special character usage, cross-field dependencies, and structural rules.
     """
     from dev.core.cli import setup_logger
@@ -48,7 +49,7 @@ def metadata(ctx: click.Context, md_dir: str, log_dir: str) -> None:
     ctx.obj["logger"] = setup_logger(Path(log_dir), "validators")
 
 
-@metadata.command()
+@frontmatter.command()
 @click.argument("file_path", type=click.Path(exists=True), required=False)
 @click.pass_context
 def people(ctx: click.Context, file_path: Optional[str]) -> None:
@@ -61,14 +62,14 @@ def people(ctx: click.Context, file_path: Optional[str]) -> None:
     - Hyphenated name handling
     - Dict structure (name/full_name/alias fields)
     """
-    from dev.validators.metadata import MetadataValidator, format_metadata_report
+    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
 
     click.echo(f"🔍 Validating people metadata in {md_dir}\n")
 
-    validator = MetadataValidator(md_dir, logger)
+    validator = FrontmatterValidator(md_dir, logger)
 
     if file_path:
         # Validate single file
@@ -92,7 +93,7 @@ def people(ctx: click.Context, file_path: Optional[str]) -> None:
         report.total_errors = sum(1 for i in people_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in people_issues if i.severity == "warning")
 
-        click.echo(format_metadata_report(report))
+        click.echo(format_frontmatter_report(report))
 
         if report.has_errors:
             raise click.ClickException(
@@ -100,7 +101,7 @@ def people(ctx: click.Context, file_path: Optional[str]) -> None:
             )
 
 
-@metadata.command()
+@frontmatter.command()
 @click.argument("file_path", type=click.Path(exists=True), required=False)
 @click.pass_context
 def locations(ctx: click.Context, file_path: Optional[str]) -> None:
@@ -113,14 +114,14 @@ def locations(ctx: click.Context, file_path: Optional[str]) -> None:
     - Dict keys match city list
     - Location name references (#prefix in context)
     """
-    from dev.validators.metadata import MetadataValidator, format_metadata_report
+    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
 
     click.echo(f"🔍 Validating locations metadata in {md_dir}\n")
 
-    validator = MetadataValidator(md_dir, logger)
+    validator = FrontmatterValidator(md_dir, logger)
 
     if file_path:
         # Validate single file
@@ -152,7 +153,7 @@ def locations(ctx: click.Context, file_path: Optional[str]) -> None:
         report.total_errors = sum(1 for i in location_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in location_issues if i.severity == "warning")
 
-        click.echo(format_metadata_report(report))
+        click.echo(format_frontmatter_report(report))
 
         if report.has_errors:
             raise click.ClickException(
@@ -160,7 +161,7 @@ def locations(ctx: click.Context, file_path: Optional[str]) -> None:
             )
 
 
-@metadata.command()
+@frontmatter.command()
 @click.argument("file_path", type=click.Path(exists=True), required=False)
 @click.pass_context
 def dates(ctx: click.Context, file_path: Optional[str]) -> None:
@@ -174,14 +175,14 @@ def dates(ctx: click.Context, file_path: Optional[str]) -> None:
     - Opt-out marker (~)
     - Parentheses balance in context
     """
-    from dev.validators.metadata import MetadataValidator, format_metadata_report
+    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
 
     click.echo(f"🔍 Validating dates metadata in {md_dir}\n")
 
-    validator = MetadataValidator(md_dir, logger)
+    validator = FrontmatterValidator(md_dir, logger)
 
     if file_path:
         # Validate single file
@@ -205,7 +206,7 @@ def dates(ctx: click.Context, file_path: Optional[str]) -> None:
         report.total_errors = sum(1 for i in date_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in date_issues if i.severity == "warning")
 
-        click.echo(format_metadata_report(report))
+        click.echo(format_frontmatter_report(report))
 
         if report.has_errors:
             raise click.ClickException(
@@ -213,7 +214,7 @@ def dates(ctx: click.Context, file_path: Optional[str]) -> None:
             )
 
 
-@metadata.command()
+@frontmatter.command()
 @click.argument("file_path", type=click.Path(exists=True), required=False)
 @click.pass_context
 def references(ctx: click.Context, file_path: Optional[str]) -> None:
@@ -226,14 +227,14 @@ def references(ctx: click.Context, file_path: Optional[str]) -> None:
     - Valid source type enum (book, article, film, etc.)
     - Source structure
     """
-    from dev.validators.metadata import MetadataValidator, format_metadata_report
+    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
 
     click.echo(f"🔍 Validating references metadata in {md_dir}\n")
 
-    validator = MetadataValidator(md_dir, logger)
+    validator = FrontmatterValidator(md_dir, logger)
 
     if file_path:
         # Validate single file
@@ -257,7 +258,7 @@ def references(ctx: click.Context, file_path: Optional[str]) -> None:
         report.total_errors = sum(1 for i in ref_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in ref_issues if i.severity == "warning")
 
-        click.echo(format_metadata_report(report))
+        click.echo(format_frontmatter_report(report))
 
         if report.has_errors:
             raise click.ClickException(
@@ -265,7 +266,7 @@ def references(ctx: click.Context, file_path: Optional[str]) -> None:
             )
 
 
-@metadata.command()
+@frontmatter.command()
 @click.argument("file_path", type=click.Path(exists=True), required=False)
 @click.pass_context
 def poems(ctx: click.Context, file_path: Optional[str]) -> None:
@@ -277,14 +278,14 @@ def poems(ctx: click.Context, file_path: Optional[str]) -> None:
     - Required content field
     - Optional revision_date in ISO format
     """
-    from dev.validators.metadata import MetadataValidator, format_metadata_report
+    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
 
     click.echo(f"🔍 Validating poems metadata in {md_dir}\n")
 
-    validator = MetadataValidator(md_dir, logger)
+    validator = FrontmatterValidator(md_dir, logger)
 
     if file_path:
         # Validate single file
@@ -308,7 +309,7 @@ def poems(ctx: click.Context, file_path: Optional[str]) -> None:
         report.total_errors = sum(1 for i in poem_issues if i.severity == "error")
         report.total_warnings = sum(1 for i in poem_issues if i.severity == "warning")
 
-        click.echo(format_metadata_report(report))
+        click.echo(format_frontmatter_report(report))
 
         if report.has_errors:
             raise click.ClickException(
@@ -316,7 +317,7 @@ def poems(ctx: click.Context, file_path: Optional[str]) -> None:
             )
 
 
-@metadata.command()
+@frontmatter.command()
 @click.pass_context
 def all(ctx: click.Context) -> None:
     """
@@ -325,14 +326,14 @@ def all(ctx: click.Context) -> None:
     Comprehensive validation of all metadata fields for parser compatibility.
     Checks people, locations, dates, references, poems, and manuscript structures.
     """
-    from dev.validators.metadata import MetadataValidator, format_metadata_report
+    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
 
     click.echo(f"🔍 Running comprehensive metadata validation on {md_dir}\n")
 
-    validator = MetadataValidator(md_dir, logger)
+    validator = FrontmatterValidator(md_dir, logger)
     report = validator.validate_all()
 
     # Print formatted report

@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 """
-metadata.py
------------
-Metadata structure validation for Palimpsest journal entries.
+frontmatter.py
+--------------
+YAML frontmatter validation for Palimpsest journal entries.
 
-Validates that YAML frontmatter structures match parser expectations.
+Comprehensive validation of YAML frontmatter structure and content.
 This is NOT semantic validation (checking if people/entries exist),
 but STRUCTURAL validation (checking if the parser can handle it).
 
 Based on comprehensive parsing specification derived from:
 - dev/dataclasses/md_entry.py (all _parse_* methods)
 - dev/utils/parsers.py (parsing utilities)
-- docs/metadata-quick-reference.md
-- docs/example-yaml.md
+- docs/reference/metadata-field-reference.md
 
 Validates:
+- YAML syntax and basic structure
+- Required fields (date)
+- Field types (string, list, dict)
 - Field structure compatibility (list vs dict vs string)
 - Cross-field dependencies (city-locations)
 - Nested structure formats (dates with people/locations)
 - Special character usage (@, #, ~, -, ())
 - Required subfields in complex structures
-- Enum value compatibility
+- Enum value compatibility (manuscript status, reference modes/types)
+- Unknown fields (warnings)
 
 Usage:
-    validate metadata all
-    validate metadata people
-    validate metadata locations
-    validate metadata references
+    validate frontmatter [FILE]
+    validate frontmatter --help
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -44,8 +45,8 @@ from dev.validators.schema import SchemaValidator
 
 
 @dataclass
-class MetadataIssue:
-    """Represents a metadata validation issue."""
+class FrontmatterIssue:
+    """Represents a frontmatter validation issue."""
 
     file_path: Path
     field_name: str
@@ -56,17 +57,17 @@ class MetadataIssue:
 
 
 @dataclass
-class MetadataValidationReport:
-    """Complete metadata validation report."""
+class FrontmatterValidationReport:
+    """Complete frontmatter validation report."""
 
     files_checked: int = 0
     files_with_errors: int = 0
     files_with_warnings: int = 0
     total_errors: int = 0
     total_warnings: int = 0
-    issues: List[MetadataIssue] = field(default_factory=list)
+    issues: List[FrontmatterIssue] = field(default_factory=list)
 
-    def add_issue(self, issue: MetadataIssue) -> None:
+    def add_issue(self, issue: FrontmatterIssue) -> None:
         """Add an issue to the report."""
         self.issues.append(issue)
         if issue.severity == "error":
@@ -90,8 +91,8 @@ class MetadataValidationReport:
         return not self.has_errors
 
 
-class MetadataValidator:
-    """Validates metadata structure for parser compatibility."""
+class FrontmatterValidator:
+    """Validates YAML frontmatter structure comprehensively."""
 
     # Schema validator for enum and type checking
     schema_validator = SchemaValidator()
@@ -106,7 +107,7 @@ class MetadataValidator:
         logger: Optional[PalimpsestLogger] = None,
     ):
         """
-        Initialize metadata validator.
+        Initialize frontmatter validator.
 
         Args:
             md_dir: Directory containing markdown files
@@ -124,7 +125,7 @@ class MetadataValidator:
         value: Any,
         expected_type: type,
         suggestion: str,
-    ) -> Optional[MetadataIssue]:
+    ) -> Optional[FrontmatterIssue]:
         """
         Create type validation error if value doesn't match expected type.
 
@@ -136,10 +137,10 @@ class MetadataValidator:
             suggestion: User-friendly suggestion
 
         Returns:
-            MetadataIssue if type mismatch, None otherwise
+            FrontmatterIssue if type mismatch, None otherwise
         """
         if not isinstance(value, expected_type):
-            return MetadataIssue(
+            return FrontmatterIssue(
                 file_path=file_path,
                 field_name=field_name,
                 severity="error",
@@ -156,9 +157,9 @@ class MetadataValidator:
         message: str,
         suggestion: Optional[str] = None,
         yaml_value: Optional[Any] = None,
-    ) -> MetadataIssue:
+    ) -> FrontmatterIssue:
         """
-        Create an error-level MetadataIssue.
+        Create an error-level FrontmatterIssue.
 
         Args:
             file_path: File being validated
@@ -168,9 +169,9 @@ class MetadataValidator:
             yaml_value: Optional YAML value that caused issue
 
         Returns:
-            MetadataIssue with severity="error"
+            FrontmatterIssue with severity="error"
         """
-        return MetadataIssue(
+        return FrontmatterIssue(
             file_path=file_path,
             field_name=field_name,
             severity="error",
@@ -186,9 +187,9 @@ class MetadataValidator:
         message: str,
         suggestion: Optional[str] = None,
         yaml_value: Optional[Any] = None,
-    ) -> MetadataIssue:
+    ) -> FrontmatterIssue:
         """
-        Create a warning-level MetadataIssue.
+        Create a warning-level FrontmatterIssue.
 
         Args:
             file_path: File being validated
@@ -198,9 +199,9 @@ class MetadataValidator:
             yaml_value: Optional YAML value that caused issue
 
         Returns:
-            MetadataIssue with severity="warning"
+            FrontmatterIssue with severity="warning"
         """
-        return MetadataIssue(
+        return FrontmatterIssue(
             file_path=file_path,
             field_name=field_name,
             severity="warning",
@@ -218,7 +219,7 @@ class MetadataValidator:
         person_full_name: Optional[str],
         referenced_people: List[tuple],
         people_data: List[Any],
-    ) -> Optional[MetadataIssue]:
+    ) -> Optional[FrontmatterIssue]:
         """
         Check if a person has already been referenced in the people list.
 
@@ -284,7 +285,7 @@ class MetadataValidator:
 
     def validate_people_field(
         self, file_path: Path, people_data: Any
-    ) -> List[MetadataIssue]:
+    ) -> List[FrontmatterIssue]:
         """
         Validate people field structure.
 
@@ -445,7 +446,7 @@ class MetadataValidator:
 
     def validate_locations_field(
         self, file_path: Path, locations_data: Any, city_data: Any
-    ) -> List[MetadataIssue]:
+    ) -> List[FrontmatterIssue]:
         """
         Validate locations field structure and city dependency.
 
@@ -515,7 +516,7 @@ class MetadataValidator:
 
     def validate_dates_field(
         self, file_path: Path, dates_data: Any, people_data: Optional[List[Any]] = None
-    ) -> List[MetadataIssue]:
+    ) -> List[FrontmatterIssue]:
         """
         Validate dates field structure.
 
@@ -703,7 +704,7 @@ class MetadataValidator:
 
     def validate_references_field(
         self, file_path: Path, references_data: Any
-    ) -> List[MetadataIssue]:
+    ) -> List[FrontmatterIssue]:
         """
         Validate references field structure.
 
@@ -806,7 +807,7 @@ class MetadataValidator:
 
     def validate_poems_field(
         self, file_path: Path, poems_data: Any
-    ) -> List[MetadataIssue]:
+    ) -> List[FrontmatterIssue]:
         """
         Validate poems field structure.
 
@@ -871,7 +872,7 @@ class MetadataValidator:
 
     def validate_manuscript_field(
         self, file_path: Path, manuscript_data: Any
-    ) -> List[MetadataIssue]:
+    ) -> List[FrontmatterIssue]:
         """
         Validate manuscript field structure.
 
@@ -984,14 +985,14 @@ class MetadataValidator:
 
         return issues
 
-    def validate_all(self) -> MetadataValidationReport:
+    def validate_all(self) -> FrontmatterValidationReport:
         """
         Validate all markdown files in directory.
 
         Returns:
             Complete validation report
         """
-        report = MetadataValidationReport()
+        report = FrontmatterValidationReport()
         md_files = list(self.md_dir.glob("**/*.md"))
 
         for md_file in md_files:
@@ -1009,9 +1010,9 @@ class MetadataValidator:
         return report
 
 
-def format_metadata_report(report: MetadataValidationReport) -> str:
+def format_frontmatter_report(report: FrontmatterValidationReport) -> str:
     """
-    Format metadata validation report as readable text.
+    Format frontmatter validation report as readable text.
 
     Args:
         report: Validation report to format
@@ -1021,7 +1022,7 @@ def format_metadata_report(report: MetadataValidationReport) -> str:
     """
     lines = []
     lines.append("\n" + "=" * 60)
-    lines.append("METADATA VALIDATION REPORT")
+    lines.append("FRONTMATTER VALIDATION REPORT")
     lines.append("=" * 60)
     lines.append("")
 
@@ -1039,14 +1040,14 @@ def format_metadata_report(report: MetadataValidationReport) -> str:
 
     # Overall status
     if report.is_healthy:
-        lines.append("✅ ALL METADATA STRUCTURES VALID")
+        lines.append("✅ ALL FRONTMATTER VALID")
     else:
-        lines.append("❌ METADATA VALIDATION FAILED")
+        lines.append("❌ FRONTMATTER VALIDATION FAILED")
     lines.append("")
 
     # Group issues by file
     if report.issues:
-        issues_by_file: Dict[Path, List[MetadataIssue]] = {}
+        issues_by_file: Dict[Path, List[FrontmatterIssue]] = {}
         for issue in report.issues:
             if issue.file_path not in issues_by_file:
                 issues_by_file[issue.file_path] = []

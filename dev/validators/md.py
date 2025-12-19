@@ -41,7 +41,7 @@ from dev.utils.md import split_frontmatter
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
 from dev.validators.schema import SchemaValidator
-from dev.validators.metadata import MetadataValidator
+from dev.validators.frontmatter import FrontmatterValidator
 
 
 @dataclass
@@ -368,25 +368,25 @@ class MarkdownValidator:
                     )
                 )
 
-        # --- Delegate detailed metadata validation to MetadataValidator ---
-        metadata_validator = MetadataValidator(self.md_dir, self.logger)
+        # --- Delegate detailed structure validation to FrontmatterValidator ---
+        frontmatter_validator = FrontmatterValidator(self.md_dir, self.logger)
         # Use validate_file directly which takes care of parsing frontmatter again,
         # but since we already have frontmatter, it might be slightly inefficient.
-        # However, MetadataValidator logic is cleaner to keep separate.
+        # However, FrontmatterValidator logic is cleaner to keep separate.
         # We catch the issues and convert them.
-        metadata_issues = metadata_validator.validate_file(file_path)
-        for m_issue in metadata_issues:
+        frontmatter_issues = frontmatter_validator.validate_file(file_path)
+        for fm_issue in frontmatter_issues:
             # Find line number for the field
-            line_num = self._find_field_line_number(frontmatter_text, m_issue.field_name.split('[')[0].split('.')[0])
-            
+            line_num = self._find_field_line_number(frontmatter_text, fm_issue.field_name.split('[')[0].split('.')[0])
+
             issues.append(
                 MarkdownIssue(
                     file_path=file_path,
                     line_number=line_num,
-                    severity=m_issue.severity,
-                    category="metadata",
-                    message=m_issue.message,
-                    suggestion=m_issue.suggestion,
+                    severity=fm_issue.severity,
+                    category="frontmatter",
+                    message=fm_issue.message,
+                    suggestion=fm_issue.suggestion,
                 )
             )
 
