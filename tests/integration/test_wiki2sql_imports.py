@@ -19,7 +19,6 @@ from dev.database.models_manuscript import (
     ManuscriptStatus,
 )
 from dev.pipeline.wiki2sql import (
-    import_person,
     import_people,
     import_entry,
     import_entries,
@@ -55,61 +54,6 @@ def temp_db():
 
         yield db
         db.engine.dispose()
-
-
-class TestImportPerson:
-    """Test import_person function."""
-
-    def test_import_person_skips_always(self, temp_db, tmp_path):
-        """Test that person import always skips (no editable DB fields)."""
-        # Create person in database
-        with temp_db.session_scope() as session:
-            person = Person(name="Alice", relation_type=RelationType.FRIEND)
-            session.add(person)
-            session.commit()
-
-        # Create wiki file
-        wiki_file = tmp_path / "alice.md"
-        wiki_file.write_text("""# Palimpsest — Person
-
-## Alice
-
-### Category
-Friend
-
-### Notes
-These notes are wiki-only and not stored in database.
-""")
-
-        # Import should skip (no database fields to update)
-        result = import_person(wiki_file, temp_db)
-        assert result == "skipped"
-
-    def test_import_person_not_found(self, temp_db, tmp_path):
-        """Test importing person that doesn't exist in database."""
-        wiki_file = tmp_path / "nonexistent.md"
-        wiki_file.write_text("""# Palimpsest — Person
-
-## NonexistentPerson
-
-### Category
-Friend
-
-### Notes
-This person doesn't exist in database.
-""")
-
-        result = import_person(wiki_file, temp_db)
-        assert result == "skipped"
-
-    def test_import_person_invalid_file(self, temp_db, tmp_path):
-        """Test importing invalid wiki file returns error."""
-        wiki_file = tmp_path / "invalid.md"
-        wiki_file.write_text("Invalid content")
-
-        result = import_person(wiki_file, temp_db)
-        # Should skip if parsing fails
-        assert result in ["skipped", "error"]
 
 
 class TestImportPeople:

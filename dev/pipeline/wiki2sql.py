@@ -38,18 +38,9 @@ from sqlalchemy import select, func
 
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
-from dev.database.models import (
-    Person as DBPerson,
-    Entry as DBEntry,
-    Tag as DBTag,
-    Event as DBEvent,
-)
-from dev.database.models_manuscript import Theme as DBTheme
+from dev.database.models import Entry as DBEntry, Event as DBEvent
 from dev.database.sync_state_manager import SyncStateManager
 
-from dev.dataclasses.wiki_person import Person as WikiPerson
-from dev.dataclasses.wiki_theme import Theme as WikiTheme
-from dev.dataclasses.wiki_tag import Tag as WikiTag
 from dev.dataclasses.wiki_entry import Entry as WikiEntry
 from dev.dataclasses.wiki_event import Event as WikiEvent
 
@@ -75,54 +66,6 @@ from dev.pipeline.configs.manuscript_entity_import_configs import (
 # --- Import Functions ---
 
 
-def import_person(
-    wiki_file: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
-) -> str:
-    """
-    Import person edits from wiki to database.
-
-    Args:
-        wiki_file: Path to person wiki file
-        db: Database manager
-        logger: Optional logger
-
-    Returns:
-        Status: "updated", "skipped", or "error"
-    """
-    try:
-        # Parse wiki file
-        wiki_person = WikiPerson.from_file(wiki_file)
-        if not wiki_person:
-            return "skipped"
-
-        # Find corresponding database record by name or full_name
-        # Wiki exports display_name (full_name if exists, else name)
-        with db.session_scope() as session:
-            from sqlalchemy import or_
-            query = select(DBPerson).where(
-                or_(
-                    DBPerson.name == wiki_person.name,
-                    DBPerson.full_name == wiki_person.name
-                )
-            )
-            db_person = session.execute(query).scalar_one_or_none()
-
-            if not db_person:
-                if logger:
-                    logger.log_warning(f"Person not found in database: {wiki_person.name}")
-                return "skipped"
-
-            # Note: Person notes and vignettes are wiki-only metadata, not stored in database
-            # They are preserved during export by reading existing wiki files
-            # No database fields to update, so always skip
-            return "skipped"
-
-    except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "import_person", "file": str(wiki_file)})
-        return "error"
-
-
 def import_people(
     wiki_dir: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
 ) -> ImportStats:
@@ -141,70 +84,12 @@ def import_people(
     return importer.import_entities(PERSON_IMPORT_CONFIG)
 
 
-def import_theme(
-    wiki_file: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
-) -> str:
-    """Import theme edits from wiki to database."""
-    try:
-        wiki_theme = WikiTheme.from_file(wiki_file)
-        if not wiki_theme:
-            return "skipped"
-
-        with db.session_scope() as session:
-            query = select(DBTheme).where(DBTheme.theme == wiki_theme.name)
-            db_theme = session.execute(query).scalar_one_or_none()
-
-            if not db_theme:
-                if logger:
-                    logger.log_warning(f"Theme not found in database: {wiki_theme.name}")
-                return "skipped"
-
-            # Note: Theme notes and description are wiki-only metadata, not stored in database
-            # They are preserved during export by reading existing wiki files
-            # No database fields to update, so always skip
-            return "skipped"
-
-    except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "import_theme", "file": str(wiki_file)})
-        return "error"
-
-
 def import_themes(
     wiki_dir: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
 ) -> ImportStats:
     """Batch import all themes from wiki."""
     importer = EntityImporter(db, wiki_dir, logger)
     return importer.import_entities(THEME_IMPORT_CONFIG)
-
-
-def import_tag(
-    wiki_file: Path, db: PalimpsestDB, logger: Optional[PalimpsestLogger] = None
-) -> str:
-    """Import tag edits from wiki to database."""
-    try:
-        wiki_tag = WikiTag.from_file(wiki_file)
-        if not wiki_tag:
-            return "skipped"
-
-        with db.session_scope() as session:
-            query = select(DBTag).where(DBTag.tag == wiki_tag.name)
-            db_tag = session.execute(query).scalar_one_or_none()
-
-            if not db_tag:
-                if logger:
-                    logger.log_warning(f"Tag not found in database: {wiki_tag.name}")
-                return "skipped"
-
-            # Note: Tag notes are wiki-only metadata, not stored in database
-            # They are preserved during export by reading existing wiki files
-            # No database fields to update, so always skip
-            return "skipped"
-
-    except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "import_tag", "file": str(wiki_file)})
-        return "error"
 
 
 def import_tags(
