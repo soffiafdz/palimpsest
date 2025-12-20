@@ -106,10 +106,7 @@ from .models import (
 )
 from .models_manuscript import Theme
 
-from .decorators import (
-    handle_db_errors,
-    log_database_operation,
-)
+from .decorators import DatabaseOperation
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
@@ -414,8 +411,6 @@ class PalimpsestDB:
             safe_logger(self.logger).log_error(e, {"operation": "setup_alembic"})
             raise DatabaseError(f"Alembic configuration failed: {e}")
 
-    @handle_db_errors
-    @log_database_operation("init_alembic")
     def init_alembic(self) -> None:
         """
         Initialize Alembic in the project directory.
@@ -425,16 +420,17 @@ class PalimpsestDB:
             Updates alembic/env.py to import Palimpsest Base metadata
             Prints instructions for first migration
         """
-        try:
-            if self.alembic_dir is not None and not self.alembic_dir.is_dir():
-                command.init(self.alembic_cfg, str(self.alembic_dir))
-                self._update_alembic_env()
-            else:
-                safe_logger(self.logger).log_debug(
-                    f"Alembic already initialized in {self.alembic_dir}"
-                )
-        except Exception as e:
-            raise DatabaseError(f"Alembic initialization failed: {e}")
+        with DatabaseOperation(self.logger, "init_alembic"):
+            try:
+                if self.alembic_dir is not None and not self.alembic_dir.is_dir():
+                    command.init(self.alembic_cfg, str(self.alembic_dir))
+                    self._update_alembic_env()
+                else:
+                    safe_logger(self.logger).log_debug(
+                        f"Alembic already initialized in {self.alembic_dir}"
+                    )
+            except Exception as e:
+                raise DatabaseError(f"Alembic initialization failed: {e}")
 
     def _update_alembic_env(self) -> None:
         """Update the generated alembic/env.py to import Palimpsest models."""
@@ -463,8 +459,6 @@ class PalimpsestDB:
             safe_logger(self.logger).log_error(e, {"operation": "update_alembic_env"})
             raise DatabaseError(f"Could not update Alembic environment: {e}")
 
-    @handle_db_errors
-    @log_database_operation("initialize_schema")
     def initialize_schema(self) -> None:
         """
         Initialize database - create tables if needed and run migrations.
@@ -477,33 +471,32 @@ class PalimpsestDB:
             If not,
                 runs pending migrations to update schema
         """
-        try:
-            with self.engine.connect() as conn:
-                inspector = self.engine.dialect.get_table_names(conn)
-                is_fresh_db: bool = len(inspector) == 0
+        with DatabaseOperation(self.logger, "initialize_schema"):
+            try:
+                with self.engine.connect() as conn:
+                    inspector = self.engine.dialect.get_table_names(conn)
+                    is_fresh_db: bool = len(inspector) == 0
 
-            if is_fresh_db:
-                Base.metadata.create_all(bind=self.engine)
-                try:
-                    command.stamp(self.alembic_cfg, "head")
+                if is_fresh_db:
+                    Base.metadata.create_all(bind=self.engine)
+                    try:
+                        command.stamp(self.alembic_cfg, "head")
+                        safe_logger(self.logger).log_operation(
+                            "fresh_database_created",
+                            {"tables_created": len(Base.metadata.tables)},
+                        )
+                    except Exception as e:
+                        safe_logger(self.logger).log_error(e, {"operation": "stamp_database"})
+                else:
+                    self.upgrade_database()
                     safe_logger(self.logger).log_operation(
-                        "fresh_database_created",
-                        {"tables_created": len(Base.metadata.tables)},
+                        "existing_database_migrated",
+                        {"table_count": len(inspector)},
                     )
-                except Exception as e:
-                    safe_logger(self.logger).log_error(e, {"operation": "stamp_database"})
-            else:
-                self.upgrade_database()
-                safe_logger(self.logger).log_operation(
-                    "existing_database_migrated",
-                    {"table_count": len(inspector)},
-                )
 
-        except Exception as e:
-            raise DatabaseError(f"Could not initialize database: {e}")
+            except Exception as e:
+                raise DatabaseError(f"Could not initialize database: {e}")
 
-    @handle_db_errors
-    @log_database_operation("upgrade_database")
     def upgrade_database(self, revision: str = "head") -> None:
         """
         Upgrade the database schema to the specified Alembic revision.
@@ -513,13 +506,12 @@ class PalimpsestDB:
                 The target revision to upgrade to.
                 Defaults to 'head' (latest revision).
         """
-        try:
-            command.upgrade(self.alembic_cfg, revision)
-        except Exception as e:
-            raise DatabaseError(f"Database upgrade failed: {e}")
+        with DatabaseOperation(self.logger, "upgrade_database"):
+            try:
+                command.upgrade(self.alembic_cfg, revision)
+            except Exception as e:
+                raise DatabaseError(f"Database upgrade failed: {e}")
 
-    @handle_db_errors
-    @log_database_operation("create_migration")
     def create_migration(self, message: str) -> str:
         """
         Create a new Alembic migration.
@@ -529,35 +521,34 @@ class PalimpsestDB:
         Returns:
             revision
         """
-        try:
-            result = command.revision(
-                self.alembic_cfg, message=message, autogenerate=True
-            )
+        with DatabaseOperation(self.logger, "create_migration"):
+            try:
+                result = command.revision(
+                    self.alembic_cfg, message=message, autogenerate=True
+                )
 
-            # Handle both single Script and List[Script] return types
-            if isinstance(result, list):
-                if not result or result[0] is None:
-                    raise DatabaseError("Migration creation returned no scripts")
-                script = result[0]
-            else:
-                # Single Script object
-                if result is None:
-                    raise DatabaseError("Migration creation returned no script")
-                script = result
+                # Handle both single Script and List[Script] return types
+                if isinstance(result, list):
+                    if not result or result[0] is None:
+                        raise DatabaseError("Migration creation returned no scripts")
+                    script = result[0]
+                else:
+                    # Single Script object
+                    if result is None:
+                        raise DatabaseError("Migration creation returned no script")
+                    script = result
 
-            # Access revision attribute
-            if not hasattr(script, "revision") or script.revision is None:
-                raise DatabaseError("Migration script has no revision")
+                # Access revision attribute
+                if not hasattr(script, "revision") or script.revision is None:
+                    raise DatabaseError("Migration script has no revision")
 
-            return script.revision
+                return script.revision
 
-        except DatabaseError:
-            raise
-        except Exception as e:
-            raise DatabaseError(f"Migration creation failed: {e}")
+            except DatabaseError:
+                raise
+            except Exception as e:
+                raise DatabaseError(f"Migration creation failed: {e}")
 
-    @handle_db_errors
-    @log_database_operation("downgrade_database")
     def downgrade_database(self, revision: str) -> None:
         """
         Downgrade the database schema to a specified Alembic revision.
@@ -565,10 +556,11 @@ class PalimpsestDB:
         Args:
             revision (str): The target revision to downgrade to.
         """
-        try:
-            command.downgrade(self.alembic_cfg, revision)
-        except Exception as e:
-            raise DatabaseError(f"Database downgrade to {revision} failed: {e}")
+        with DatabaseOperation(self.logger, "downgrade_database"):
+            try:
+                command.downgrade(self.alembic_cfg, revision)
+            except Exception as e:
+                raise DatabaseError(f"Database downgrade to {revision} failed: {e}")
 
     def get_migration_history(self) -> Dict[str, Optional[str]]:
         """
@@ -608,31 +600,31 @@ class PalimpsestDB:
     # -------------------------------------------------------------------------
 
     # --- Cleanup Operations ---
-    @handle_db_errors
     def bulk_cleanup_unused(
         self, session: Session, cleanup_config: Dict[str, tuple]
     ) -> Dict[str, int]:
         """Perform bulk cleanup operations more efficiently."""
-        return self.health_monitor.bulk_cleanup_unused(session, cleanup_config)
+        with DatabaseOperation(self.logger, "bulk_cleanup_unused"):
+            return self.health_monitor.bulk_cleanup_unused(session, cleanup_config)
 
-    @log_database_operation("cleanup_all_metadata")
     def cleanup_all_metadata(self) -> Dict[str, int]:
         """Run safe cleanup operations with proper transaction handling."""
-        cleanup_config = {
-            "tags": (Tag, "entries"),
-            "locations": (Location, "entries"),
-            "moments": (Moment, "entries"),
-            "themes": (Theme, "entries"),
-            "references": (Reference, "entry"),
-            "poem_versions": (PoemVersion, "entry"),
-        }
+        with DatabaseOperation(self.logger, "cleanup_all_metadata"):
+            cleanup_config = {
+                "tags": (Tag, "entries"),
+                "locations": (Location, "entries"),
+                "moments": (Moment, "entries"),
+                "themes": (Theme, "entries"),
+                "references": (Reference, "entry"),
+                "poem_versions": (PoemVersion, "entry"),
+            }
 
-        try:
-            with self.session_scope() as session:
-                return self.bulk_cleanup_unused(session, cleanup_config)
-        except Exception as e:
-            safe_logger(self.logger).log_error(e, {"operation": "cleanup_all_metadata"})
-            raise DatabaseError(f"Cleanup operation failed: {e}")
+            try:
+                with self.session_scope() as session:
+                    return self.bulk_cleanup_unused(session, cleanup_config)
+            except Exception as e:
+                safe_logger(self.logger).log_error(e, {"operation": "cleanup_all_metadata"})
+                raise DatabaseError(f"Cleanup operation failed: {e}")
 
     # --- Backup Integration ---
     def create_backup(

@@ -10,8 +10,8 @@ Key Features:
     - Retry logic for database lock handling
     - Generic get-or-create utilities
     - Object resolution helpers
-    - Consistent error handling with decorators
-    - Consistent logging with decorators
+    - Consistent error handling via DatabaseOperation context manager
+    - Consistent logging via DatabaseOperation context manager
     - Support for both soft and hard delete where applicable
     - Transaction management helpers
 
@@ -29,12 +29,11 @@ Example:
         def __init__(self, session: Session, logger: Optional[PalimpsestLogger] = None):
             super().__init__(session, logger)
 
-        @handle_db_errors
-        @log_database_operation("create_person")
-        @validate_metadata(["name"])
         def create(self, metadata: Dict[str, Any]) -> Person:
-            # Entity-specific creation logic
-            ...
+            DataValidator.validate_required_fields(metadata, ["name"])
+            with DatabaseOperation(self.logger, "create_person"):
+                # Entity-specific creation logic
+                ...
 """
 from __future__ import annotations
 

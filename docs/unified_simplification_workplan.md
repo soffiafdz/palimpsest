@@ -41,6 +41,8 @@
 | P25 | Moment model schema | ~50 |
 | P26 | Template-based wiki renderer (Jinja2) | -2,750 |
 | P27 | Main wiki dashboards | +173 |
+| P10 | Replace decorators with DatabaseOperation context manager | ~300 |
+| P11 | Utils module consolidation (rename extract_section collision) | ~10 |
 
 **Obsolete (replaced by P26):** P5, P5.1, P5.2, P7.2, P18, P19, P20, P24
 
@@ -52,8 +54,6 @@
 
 | Priority | Task | Lines | Risk | Description |
 |----------|------|-------|------|-------------|
-| **P10** | Decorator → context managers | ~300 | Medium | Replace @handle_db_errors, @log_database_operation with context managers |
-| **P11** | Utils module consolidation | ~180 | Low | Consolidate duplicate hash functions, rename extract_section collision |
 | **P22** | Core module cleanup | ~90 | Low | Remove redundant exception helpers |
 | **P23** | Database model mixins | ~100 | Very Low | Extract common model properties into mixins |
 
@@ -106,10 +106,8 @@
 
 **Current Focus:** Tier 3 (Core Utilities)
 
-1. **P10** - High impact, medium risk: Replace decorators with context managers
-2. **P11** - Low risk: Utils consolidation (hash functions, naming)
-3. **P22** - Low risk: Core cleanup
-4. **P23** - Very low risk: Model mixins
+1. **P22** - Low risk: Core cleanup
+2. **P23** - Very low risk: Model mixins
 
 After Tier 3, proceed to Tier 5 (Pipeline), then Tier 6-7 (Manuscript), then Tier 8 (Validators), then Tier 9 (Final).
 

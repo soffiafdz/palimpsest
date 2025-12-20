@@ -40,14 +40,19 @@ Usage:
         "entry": entry
     })
 """
+# --- Annotations ---
 from typing import Any, Dict, List, Optional, Union, cast
 
+# --- Standard library imports ---
+
+# --- Third party imports ---
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
-from dev.database.decorators import handle_db_errors, log_database_operation
+from dev.database.decorators import DatabaseOperation
 from dev.database.models import (
     Entry,
     Reference,
@@ -176,8 +181,6 @@ class ReferenceManager(EntityManager):
         """Delete a reference source."""
         self.delete(source)
 
-    @handle_db_errors
-    @log_database_operation("get_or_create_source")
     def get_or_create_source(
         self,
         title: str,
@@ -195,17 +198,16 @@ class ReferenceManager(EntityManager):
         Returns:
             ReferenceSource object (existing or newly created)
         """
-        return self.get_or_create(
-            title,
-            extra_metadata={"type": source_type, "author": author},
-        )
+        with DatabaseOperation(self.logger, "get_or_create_source"):
+            return self.get_or_create(
+                title,
+                extra_metadata={"type": source_type, "author": author},
+            )
 
     # =========================================================================
     # REFERENCE OPERATIONS (Child entity)
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_reference")
     def get_reference(self, reference_id: int) -> Optional[Reference]:
         """
         Retrieve a reference by ID.
@@ -216,10 +218,9 @@ class ReferenceManager(EntityManager):
         Returns:
             Reference object if found, None otherwise
         """
-        return self._get_by_id(Reference, reference_id)
+        with DatabaseOperation(self.logger, "get_reference"):
+            return self._get_by_id(Reference, reference_id)
 
-    @handle_db_errors
-    @log_database_operation("get_all_references")
     def get_all_references(
         self, mode: Optional[ReferenceMode] = None
     ) -> List[Reference]:
@@ -232,12 +233,11 @@ class ReferenceManager(EntityManager):
         Returns:
             List of Reference objects
         """
-        if mode is not None:
-            return self._get_all(Reference, mode=mode)
-        return self._get_all(Reference)
+        with DatabaseOperation(self.logger, "get_all_references"):
+            if mode is not None:
+                return self._get_all(Reference, mode=mode)
+            return self._get_all(Reference)
 
-    @handle_db_errors
-    @log_database_operation("create_reference")
     def create_reference(self, metadata: Dict[str, Any]) -> Reference:
         """
         Create a new reference for an entry.
@@ -261,77 +261,76 @@ class ReferenceManager(EntityManager):
             ValidationError: If content AND description both missing,
                            or if entry is missing/invalid
         """
-        # Validate content or description requirement
-        content = DataValidator.normalize_string(metadata.get("content"))
-        description = DataValidator.normalize_string(metadata.get("description"))
+        with DatabaseOperation(self.logger, "create_reference"):
+            # Validate content or description requirement
+            content = DataValidator.normalize_string(metadata.get("content"))
+            description = DataValidator.normalize_string(metadata.get("description"))
 
-        if not content and not description:
-            raise ValidationError(
-                "Reference must have either 'content' or 'description'"
+            if not content and not description:
+                raise ValidationError(
+                    "Reference must have either 'content' or 'description'"
+                )
+
+            # Resolve entry
+            entry_spec = metadata.get("entry")
+            if entry_spec is None:
+                raise ValidationError("Reference must be linked to an entry")
+
+            if isinstance(entry_spec, Entry):
+                entry = entry_spec
+            elif isinstance(entry_spec, int):
+                entry = self.session.get(Entry, entry_spec)
+                if not entry:
+                    raise ValidationError(f"Entry not found with id: {entry_spec}")
+            else:
+                raise ValidationError(f"Invalid entry specification: {entry_spec}")
+
+            # Normalize mode
+            mode = DataValidator.normalize_enum(
+                metadata.get("mode", "direct"), ReferenceMode, "mode"
+            )
+            if mode is None:
+                mode = ReferenceMode.DIRECT
+
+            # Resolve source (optional)
+            source = None
+            source_spec = metadata.get("source")
+            if source_spec is not None:
+                if isinstance(source_spec, ReferenceSource):
+                    source = source_spec
+                elif isinstance(source_spec, int):
+                    source = self.get_source(source_id=source_spec)
+                    if not source:
+                        safe_logger(self.logger).log_warning(
+                            f"Source not found with id: {source_spec}",
+                            {"reference_content": content or description},
+                        )
+                elif isinstance(source_spec, dict):
+                    source = self.create_source(source_spec)
+
+            # Create reference
+            reference = Reference(
+                content=content,
+                description=description,
+                speaker=DataValidator.normalize_string(metadata.get("speaker")),
+                mode=mode,
+                entry=entry,
+                source=source,
+            )
+            self.session.add(reference)
+            self.session.flush()
+
+            safe_logger(self.logger).log_debug(
+                f"Created reference for entry {entry.date}",
+                {
+                    "reference_id": reference.id,
+                    "mode": mode.value,
+                    "has_source": source is not None,
+                },
             )
 
-        # Resolve entry
-        entry_spec = metadata.get("entry")
-        if entry_spec is None:
-            raise ValidationError("Reference must be linked to an entry")
+            return reference
 
-        if isinstance(entry_spec, Entry):
-            entry = entry_spec
-        elif isinstance(entry_spec, int):
-            entry = self.session.get(Entry, entry_spec)
-            if not entry:
-                raise ValidationError(f"Entry not found with id: {entry_spec}")
-        else:
-            raise ValidationError(f"Invalid entry specification: {entry_spec}")
-
-        # Normalize mode
-        mode = DataValidator.normalize_enum(
-            metadata.get("mode", "direct"), ReferenceMode, "mode"
-        )
-        if mode is None:
-            mode = ReferenceMode.DIRECT
-
-        # Resolve source (optional)
-        source = None
-        source_spec = metadata.get("source")
-        if source_spec is not None:
-            if isinstance(source_spec, ReferenceSource):
-                source = source_spec
-            elif isinstance(source_spec, int):
-                source = self.get_source(source_id=source_spec)
-                if not source:
-                    safe_logger(self.logger).log_warning(
-                        f"Source not found with id: {source_spec}",
-                        {"reference_content": content or description},
-                    )
-            elif isinstance(source_spec, dict):
-                source = self.create_source(source_spec)
-
-        # Create reference
-        reference = Reference(
-            content=content,
-            description=description,
-            speaker=DataValidator.normalize_string(metadata.get("speaker")),
-            mode=mode,
-            entry=entry,
-            source=source,
-        )
-        self.session.add(reference)
-        self.session.flush()
-
-        safe_logger(self.logger).log_debug(
-            f"Created reference for entry {entry.date}",
-            {
-                "reference_id": reference.id,
-                "mode": mode.value,
-                "has_source": source is not None,
-            },
-        )
-
-        return reference
-
-    @handle_db_errors
-    @log_database_operation("update_reference")
     def update_reference(
         self, reference: Reference, metadata: Dict[str, Any]
     ) -> Reference:
@@ -351,67 +350,66 @@ class ReferenceManager(EntityManager):
         Returns:
             Updated Reference object
         """
-        db_ref = self.session.get(Reference, reference.id)
-        if db_ref is None:
-            raise DatabaseError(f"Reference with id={reference.id} not found")
+        with DatabaseOperation(self.logger, "update_reference"):
+            db_ref = self.session.get(Reference, reference.id)
+            if db_ref is None:
+                raise DatabaseError(f"Reference with id={reference.id} not found")
 
-        reference = self.session.merge(db_ref)
+            reference = self.session.merge(db_ref)
 
-        # Update scalar fields
-        self._update_scalar_fields(
-            reference,
-            metadata,
-            [
-                ("content", DataValidator.normalize_string, True),
-                ("description", DataValidator.normalize_string, True),
-                ("speaker", DataValidator.normalize_string, True),
-            ],
-        )
-
-        # Validate content or description requirement
-        if not reference.content and not reference.description:
-            raise ValidationError(
-                "Reference must have either 'content' or 'description'"
+            # Update scalar fields
+            self._update_scalar_fields(
+                reference,
+                metadata,
+                [
+                    ("content", DataValidator.normalize_string, True),
+                    ("description", DataValidator.normalize_string, True),
+                    ("speaker", DataValidator.normalize_string, True),
+                ],
             )
 
-        # Update mode
-        if "mode" in metadata:
-            mode = DataValidator.normalize_enum(metadata["mode"], ReferenceMode, "mode")
-            if mode:
-                reference.mode = mode  # type: ignore[misc]
+            # Validate content or description requirement
+            if not reference.content and not reference.description:
+                raise ValidationError(
+                    "Reference must have either 'content' or 'description'"
+                )
 
-        # Update entry
-        if "entry" in metadata:
-            entry = self._resolve_parent(
-                metadata["entry"],
-                Entry,
-                lambda **kw: self.session.get(Entry, kw.get("id")),
-                None,
-                "id",
-            )
-            if entry:
-                reference.entry = entry
+            # Update mode
+            if "mode" in metadata:
+                mode = DataValidator.normalize_enum(metadata["mode"], ReferenceMode, "mode")
+                if mode:
+                    reference.mode = mode  # type: ignore[misc]
 
-        # Update source (allows None to clear)
-        if "source" in metadata:
-            if metadata["source"] is None:
-                reference.source = None
-            else:
-                source = self._resolve_parent(
-                    metadata["source"],
-                    ReferenceSource,
-                    lambda **kw: self.get_source(source_id=kw.get("id")),
+            # Update entry
+            if "entry" in metadata:
+                entry = self._resolve_parent(
+                    metadata["entry"],
+                    Entry,
+                    lambda **kw: self.session.get(Entry, kw.get("id")),
                     None,
                     "id",
                 )
-                if source:
-                    reference.source = source
+                if entry:
+                    reference.entry = entry
 
-        self.session.flush()
-        return reference
+            # Update source (allows None to clear)
+            if "source" in metadata:
+                if metadata["source"] is None:
+                    reference.source = None
+                else:
+                    source = self._resolve_parent(
+                        metadata["source"],
+                        ReferenceSource,
+                        lambda **kw: self.get_source(source_id=kw.get("id")),
+                        None,
+                        "id",
+                    )
+                    if source:
+                        reference.source = source
 
-    @handle_db_errors
-    @log_database_operation("delete_reference")
+            self.session.flush()
+            return reference
+
     def delete_reference(self, reference: Reference) -> None:
         """
         Delete a reference.
@@ -419,52 +417,50 @@ class ReferenceManager(EntityManager):
         Args:
             reference: Reference object or ID to delete
         """
-        if isinstance(reference, int):
-            fetched_ref = self.session.get(Reference, reference)
-            if not fetched_ref:
-                raise DatabaseError(f"Reference not found with id: {reference}")
-            reference = fetched_ref
+        with DatabaseOperation(self.logger, "delete_reference"):
+            if isinstance(reference, int):
+                fetched_ref = self.session.get(Reference, reference)
+                if not fetched_ref:
+                    raise DatabaseError(f"Reference not found with id: {reference}")
+                reference = fetched_ref
 
-        safe_logger(self.logger).log_debug(
-            "Deleting reference",
-            {"reference_id": reference.id, "entry_id": reference.entry_id},
-        )
+            safe_logger(self.logger).log_debug(
+                "Deleting reference",
+                {"reference_id": reference.id, "entry_id": reference.entry_id},
+            )
 
-        self.session.delete(reference)
-        self.session.flush()
+            self.session.delete(reference)
+            self.session.flush()
 
     # =========================================================================
     # QUERY METHODS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_references_for_entry")
     def get_references_for_entry(self, entry: Entry) -> List[Reference]:
         """Get all references for an entry."""
-        return entry.references
+        with DatabaseOperation(self.logger, "get_references_for_entry"):
+            return entry.references
 
-    @handle_db_errors
-    @log_database_operation("get_references_for_source")
     def get_references_for_source(self, source: ReferenceSource) -> List[Reference]:
         """Get all references from a specific source."""
-        return source.references
+        with DatabaseOperation(self.logger, "get_references_for_source"):
+            return source.references
 
-    @handle_db_errors
-    @log_database_operation("get_sources_by_type")
     def get_sources_by_type(
         self, source_type: Union[ReferenceType, str]
     ) -> List[ReferenceSource]:
         """Get all sources of a specific type."""
-        normalized_type: Union[ReferenceType, str, None] = source_type
-        if isinstance(source_type, str):
-            normalized_type = cast(
-                Optional[ReferenceType],
-                DataValidator.normalize_enum(source_type, ReferenceType, "source_type"),
+        with DatabaseOperation(self.logger, "get_sources_by_type"):
+            normalized_type: Union[ReferenceType, str, None] = source_type
+            if isinstance(source_type, str):
+                normalized_type = cast(
+                    Optional[ReferenceType],
+                    DataValidator.normalize_enum(source_type, ReferenceType, "source_type"),
+                )
+
+            if normalized_type is None:
+                return []
+
+            return self._get_all(
+                ReferenceSource, order_by="title", type=normalized_type
             )
-
-        if normalized_type is None:
-            return []
-
-        return self._get_all(
-            ReferenceSource, order_by="title", type=normalized_type
-        )

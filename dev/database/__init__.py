@@ -26,11 +26,7 @@ from .manager import PalimpsestDB
 from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
-from .decorators import (
-    log_database_operation,
-    handle_db_errors,
-    validate_metadata,
-)
+from .decorators import DatabaseOperation
 
 __version__ = "2.0.0"
 __author__ = "Palimpsest Development Team"
@@ -48,8 +44,6 @@ __all__ = [
     "HealthMonitor",
     "ExportManager",
     "QueryAnalytics",
-    # Decorators
-    "log_database_operation",
-    "handle_db_errors",
-    "validate_metadata",
+    # Context managers
+    "DatabaseOperation",
 ]

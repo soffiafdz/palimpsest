@@ -81,18 +81,21 @@ Notes:
 See Also:
     - query_optimizer.py: Efficient database queries
     - manager.py: Main database interface
-    - decorators.py: @handle_db_errors, @log_database_operation
+    - decorators.py: DatabaseOperation context manager
 """
+# --- Standard library imports ---
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
+# --- Third party imports ---
 from sqlalchemy import text, func
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.exceptions import HealthCheckError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
-from .decorators import handle_db_errors, log_database_operation
+from .decorators import DatabaseOperation
 from .query_optimizer import QueryOptimizer
 
 # Import models for health checks
@@ -134,8 +137,6 @@ class HealthMonitor:
         """
         self.logger = logger
 
-    @handle_db_errors
-    @log_database_operation("health_check")
     def health_check(
         self,
         session: Session,
@@ -155,64 +156,65 @@ class HealthMonitor:
         Raises:
             HealthCheckError: If health check encounters critical errors
         """
-        health = {
-            "status": "healthy",
-            "issues": [],
-            "metrics": {},
-            "recommendations": [],
-        }
+        with DatabaseOperation(self.logger, "health_check"):
+            health = {
+                "status": "healthy",
+                "issues": [],
+                "metrics": {},
+                "recommendations": [],
+            }
 
-        try:
-            # Test basic connectivity
-            session.execute(text("SELECT 1"))
+            try:
+                # Test basic connectivity
+                session.execute(text("SELECT 1"))
 
-            # Check for orphaned records
-            orphan_results = self.check_orphaned_records(session)
-            health["metrics"]["orphaned_records"] = orphan_results
+                # Check for orphaned records
+                orphan_results = self.check_orphaned_records(session)
+                health["metrics"]["orphaned_records"] = orphan_results
 
-            # Check for data integrity issues
-            integrity_results = self.check_data_integrity(session)
-            health["metrics"]["integrity"] = integrity_results
+                # Check for data integrity issues
+                integrity_results = self.check_data_integrity(session)
+                health["metrics"]["integrity"] = integrity_results
 
-            # Check relationship integrity
-            rel_integrity = self._check_relationship_integrity(session)
-            health["metrics"]["relationship_integrity"] = rel_integrity
+                # Check relationship integrity
+                rel_integrity = self._check_relationship_integrity(session)
+                health["metrics"]["relationship_integrity"] = rel_integrity
 
-            # Check reference integrity
-            ref_integrity = self._check_reference_integrity(session)
-            health["metrics"]["reference_integrity"] = ref_integrity
+                # Check reference integrity
+                ref_integrity = self._check_reference_integrity(session)
+                health["metrics"]["reference_integrity"] = ref_integrity
 
-            # Check poem integrity
-            poem_integrity = self._check_poem_integrity(session)
-            health["metrics"]["poem_integrity"] = poem_integrity
+                # Check poem integrity
+                poem_integrity = self._check_poem_integrity(session)
+                health["metrics"]["poem_integrity"] = poem_integrity
 
-            # Check manuscript integrity
-            manuscript_integrity = self._check_manuscript_integrity(session)
-            health["metrics"]["manuscript_integrity"] = manuscript_integrity
+                # Check manuscript integrity
+                manuscript_integrity = self._check_manuscript_integrity(session)
+                health["metrics"]["manuscript_integrity"] = manuscript_integrity
 
-            # Check mentioned date integrity
-            date_integrity = self._check_mentioned_date_integrity(session)
-            health["metrics"]["mentioned_date_integrity"] = date_integrity
+                # Check mentioned date integrity
+                date_integrity = self._check_mentioned_date_integrity(session)
+                health["metrics"]["mentioned_date_integrity"] = date_integrity
 
-            # Check file references if db_path provided
-            if check_files and db_path:
-                file_results = self._check_file_references(session)
-                health["metrics"]["file_references"] = file_results
+                # Check file references if db_path provided
+                if check_files and db_path:
+                    file_results = self._check_file_references(session)
+                    health["metrics"]["file_references"] = file_results
 
-            # Database size and performance metrics
-            perf_metrics = self._get_performance_metrics(session)
-            health["metrics"]["performance"] = perf_metrics
+                # Database size and performance metrics
+                perf_metrics = self._get_performance_metrics(session)
+                health["metrics"]["performance"] = perf_metrics
 
-            # Evaluate overall health
-            health = self._evaluate_health_status(health)
+                # Evaluate overall health
+                health = self._evaluate_health_status(health)
 
-        except Exception as e:
-            health["status"] = "error"
-            health["issues"].append(f"Database connectivity issue: {e}")
-            safe_logger(self.logger).log_error(e, {"operation": "health_check"})
-            raise HealthCheckError(f"Health check failed: {e}")
+            except Exception as e:
+                health["status"] = "error"
+                health["issues"].append(f"Database connectivity issue: {e}")
+                safe_logger(self.logger).log_error(e, {"operation": "health_check"})
+                raise HealthCheckError(f"Health check failed: {e}")
 
-        return health
+            return health
 
     # Orphan detection config: (name, model, fk_attr, parent_model)
     _ORPHAN_CHECKS = [
@@ -427,8 +429,6 @@ class HealthMonitor:
 
         return file_checks
 
-    @handle_db_errors
-    @log_database_operation("optimize_database")
     def optimize_database(self, session: Session) -> Dict[str, Any]:
         """
         Optimize database by running VACUUM and ANALYZE.
@@ -445,45 +445,46 @@ class HealthMonitor:
         Note:
             VACUUM requires exclusive access and can take time on large databases.
         """
-        from sqlalchemy import text
+        with DatabaseOperation(self.logger, "optimize_database"):
+            from sqlalchemy import text
 
-        results = {"vacuum_completed": False, "analyze_completed": False, "errors": []}
+            results = {"vacuum_completed": False, "analyze_completed": False, "errors": []}
 
-        try:
-            # Get size before optimization
-            db_size_query = text(
-                "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"
-            )
-            size_before = session.execute(db_size_query).scalar()
-            results["size_before_bytes"] = size_before
+            try:
+                # Get size before optimization
+                db_size_query = text(
+                    "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"
+                )
+                size_before = session.execute(db_size_query).scalar()
+                results["size_before_bytes"] = size_before
 
-            # Run VACUUM (must be outside transaction)
-            session.commit()  # Commit any pending transaction
-            session.execute(text("VACUUM"))
-            results["vacuum_completed"] = True
+                # Run VACUUM (must be outside transaction)
+                session.commit()  # Commit any pending transaction
+                session.execute(text("VACUUM"))
+                results["vacuum_completed"] = True
 
-            safe_logger(self.logger).log_operation(
-                "vacuum_completed", {"size_before": size_before}
-            )
+                safe_logger(self.logger).log_operation(
+                    "vacuum_completed", {"size_before": size_before}
+                )
 
-            # Run ANALYZE
-            session.execute(text("ANALYZE"))
-            results["analyze_completed"] = True
+                # Run ANALYZE
+                session.execute(text("ANALYZE"))
+                results["analyze_completed"] = True
 
-            # Get size after optimization
-            size_after = session.execute(db_size_query).scalar()
-            if size_after:
-                results["size_after_bytes"] = size_after
-                results["space_reclaimed_bytes"] = size_before - size_after
+                # Get size after optimization
+                size_after = session.execute(db_size_query).scalar()
+                if size_after:
+                    results["size_after_bytes"] = size_after
+                    results["space_reclaimed_bytes"] = size_before - size_after
 
-            safe_logger(self.logger).log_operation("optimize_completed", results)
+                safe_logger(self.logger).log_operation("optimize_completed", results)
 
-        except Exception as e:
-            results["errors"].append(str(e))
-            safe_logger(self.logger).log_error(e, {"operation": "optimize_database"})
-            raise HealthCheckError(f"Database optimization failed: {e}")
+            except Exception as e:
+                results["errors"].append(str(e))
+                safe_logger(self.logger).log_error(e, {"operation": "optimize_database"})
+                raise HealthCheckError(f"Database optimization failed: {e}")
 
-        return results
+            return results
 
     def _get_performance_metrics(self, session: Session) -> Dict[str, Any]:
         """
@@ -602,8 +603,6 @@ class HealthMonitor:
 
         return health
 
-    @handle_db_errors
-    @log_database_operation("cleanup_orphaned_records")
     def cleanup_orphaned_records(
         self, session: Session, dry_run: bool = True
     ) -> Dict[str, int | bool]:
@@ -617,38 +616,37 @@ class HealthMonitor:
         Returns:
             Dictionary with cleanup results
         """
-        results: Dict[str, bool | int] = {"dry_run": dry_run}
+        with DatabaseOperation(self.logger, "cleanup_orphaned_records"):
+            results: Dict[str, bool | int] = {"dry_run": dry_run}
 
-        # Clean up standard orphan types using config
-        for name, model, fk_attr, parent_model in self._ORPHAN_CHECKS:
-            orphaned = self._get_orphaned_query(session, model, fk_attr, parent_model).all()
-            results[f"orphaned_{name}"] = len(orphaned)
-            if not dry_run and orphaned:
-                for record in orphaned:
-                    session.delete(record)
+            # Clean up standard orphan types using config
+            for name, model, fk_attr, parent_model in self._ORPHAN_CHECKS:
+                orphaned = self._get_orphaned_query(session, model, fk_attr, parent_model).all()
+                results[f"orphaned_{name}"] = len(orphaned)
+                if not dry_run and orphaned:
+                    for record in orphaned:
+                        session.delete(record)
 
-        # Special case: poem versions with entry_id that doesn't exist
-        orphaned_poems = (
-            session.query(PoemVersion)
-            .filter(
-                PoemVersion.entry_id.isnot(None),
-                ~PoemVersion.entry_id.in_(session.query(Entry.id)),
+            # Special case: poem versions with entry_id that doesn't exist
+            orphaned_poems = (
+                session.query(PoemVersion)
+                .filter(
+                    PoemVersion.entry_id.isnot(None),
+                    ~PoemVersion.entry_id.in_(session.query(Entry.id)),
+                )
+                .all()
             )
-            .all()
-        )
-        results["orphaned_poem_versions"] = len(orphaned_poems)
-        if not dry_run and orphaned_poems:
-            for poem in orphaned_poems:
-                session.delete(poem)
+            results["orphaned_poem_versions"] = len(orphaned_poems)
+            if not dry_run and orphaned_poems:
+                for poem in orphaned_poems:
+                    session.delete(poem)
 
-        if not dry_run:
-            session.flush()
-            safe_logger(self.logger).log_operation("orphaned_records_cleaned", results)
+            if not dry_run:
+                session.flush()
+                safe_logger(self.logger).log_operation("orphaned_records_cleaned", results)
 
-        return results
+            return results
 
-    @handle_db_errors
-    @log_database_operation("bulk_cleanup_unused")
     def bulk_cleanup_unused(
         self, session: Session, cleanup_config: Dict[str, tuple]
     ) -> Dict[str, int]:
@@ -662,27 +660,28 @@ class HealthMonitor:
         Returns:
             Dictionary with cleanup results
         """
-        results = {}
+        with DatabaseOperation(self.logger, "bulk_cleanup_unused"):
+            results = {}
 
-        for table_name, (model_class, relationship_attr) in cleanup_config.items():
-            # Use bulk delete for better performance
-            subquery = (
-                session.query(model_class.id)
-                .filter(~getattr(model_class, relationship_attr).any())
-                .subquery()
-            )
+            for table_name, (model_class, relationship_attr) in cleanup_config.items():
+                # Use bulk delete for better performance
+                subquery = (
+                    session.query(model_class.id)
+                    .filter(~getattr(model_class, relationship_attr).any())
+                    .subquery()
+                )
 
-            deleted_count = (
-                session.query(model_class)
-                .filter(model_class.id.in_(subquery.select()))
-                .delete(synchronize_session=False)
-            )
+                deleted_count = (
+                    session.query(model_class)
+                    .filter(model_class.id.in_(subquery.select()))
+                    .delete(synchronize_session=False)
+                )
 
-            results[table_name] = deleted_count
-            safe_logger(self.logger).log_operation(
-                "cleanup_table",
-                {"table": table_name, "deleted_count": deleted_count},
-            )
+                results[table_name] = deleted_count
+                safe_logger(self.logger).log_operation(
+                    "cleanup_table",
+                    {"table": table_name, "deleted_count": deleted_count},
+                )
 
-        session.flush()
-        return results
+            session.flush()
+            return results

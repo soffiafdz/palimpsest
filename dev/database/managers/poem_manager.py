@@ -45,15 +45,20 @@ Usage:
     # Query versions
     versions = poem_mgr.get_versions_for_poem(version.poem)
 """
+# --- Annotations ---
 from datetime import date
 from typing import Any, Dict, List, Optional
 
+# --- Standard library imports ---
+
+# --- Third party imports ---
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
-from dev.database.decorators import handle_db_errors, log_database_operation
+from dev.database.decorators import DatabaseOperation
 from dev.database.models import Entry, Poem, PoemVersion
 from dev.utils import md
 
@@ -108,8 +113,6 @@ class PoemManager(EntityManager):
     # - update(entity, metadata) -> Poem
     # - delete(entity) -> None
 
-    @handle_db_errors
-    @log_database_operation("poem_exists")
     def poem_exists(self, title: str) -> bool:
         """
         Check if a poem with title exists.
@@ -124,10 +127,9 @@ class PoemManager(EntityManager):
             - Poem titles are NOT unique, multiple poems can have same title
             - This checks if ANY poem with this title exists
         """
-        return self.exists(name=title)
+        with DatabaseOperation(self.logger, "poem_exists"):
+            return self.exists(name=title)
 
-    @handle_db_errors
-    @log_database_operation("get_poem")
     def get_poem(
         self, title: Optional[str] = None, poem_id: Optional[int] = None
     ) -> Optional[Poem]:
@@ -145,10 +147,9 @@ class PoemManager(EntityManager):
             - If both provided, ID takes precedence
             - Title lookup returns first match (titles are not unique)
         """
-        return self.get(name=title, entity_id=poem_id)
+        with DatabaseOperation(self.logger, "get_poem"):
+            return self.get(name=title, entity_id=poem_id)
 
-    @handle_db_errors
-    @log_database_operation("get_all_poems")
     def get_all_poems(self) -> List[Poem]:
         """
         Retrieve all poems.
@@ -156,10 +157,9 @@ class PoemManager(EntityManager):
         Returns:
             List of all Poem objects, ordered by title
         """
-        return self.get_all()
+        with DatabaseOperation(self.logger, "get_all_poems"):
+            return self.get_all()
 
-    @handle_db_errors
-    @log_database_operation("create_poem")
     def create_poem(self, metadata: Dict[str, Any]) -> Poem:
         """
         Create a new poem (without versions).
@@ -180,22 +180,21 @@ class PoemManager(EntityManager):
             - Poem titles are not unique, duplicates are allowed
             - Usually prefer create_version() which creates both poem and version
         """
-        # Poems allow duplicate titles, so we override to skip duplicate check
-        title = DataValidator.normalize_string(metadata.get("title"))
-        if not title:
-            raise ValidationError(f"Invalid poem title: {metadata.get('title')}")
+        with DatabaseOperation(self.logger, "create_poem"):
+            # Poems allow duplicate titles, so we override to skip duplicate check
+            title = DataValidator.normalize_string(metadata.get("title"))
+            if not title:
+                raise ValidationError(f"Invalid poem title: {metadata.get('title')}")
 
-        # Create poem directly (no duplicate check)
-        poem = Poem(title=title)
-        self.session.add(poem)
-        self.session.flush()
+            # Create poem directly (no duplicate check)
+            poem = Poem(title=title)
+            self.session.add(poem)
+            self.session.flush()
 
-        safe_logger(self.logger).log_debug(f"Created poem: {title}", {"poem_id": poem.id})
+            safe_logger(self.logger).log_debug(f"Created poem: {title}", {"poem_id": poem.id})
 
-        return poem
+            return poem
 
-    @handle_db_errors
-    @log_database_operation("update_poem")
     def update_poem(self, poem: Poem, metadata: Dict[str, Any]) -> Poem:
         """
         Update an existing poem.
@@ -210,10 +209,9 @@ class PoemManager(EntityManager):
         Returns:
             Updated Poem object
         """
-        return self.update(poem, metadata)
+        with DatabaseOperation(self.logger, "update_poem"):
+            return self.update(poem, metadata)
 
-    @handle_db_errors
-    @log_database_operation("delete_poem")
     def delete_poem(self, poem: Poem) -> None:
         """
         Delete a poem.
@@ -226,10 +224,9 @@ class PoemManager(EntityManager):
             - All versions are cascade deleted
             - Use with caution if versions exist
         """
-        self.delete(poem)
+        with DatabaseOperation(self.logger, "delete_poem"):
+            self.delete(poem)
 
-    @handle_db_errors
-    @log_database_operation("get_or_create_poem")
     def get_or_create_poem(self, title: str) -> Poem:
         """
         Get an existing poem or create it if needed.
@@ -244,14 +241,13 @@ class PoemManager(EntityManager):
             - Returns first poem with matching title if multiple exist
             - Consider using create_version() instead for full poem+version creation
         """
-        return self.get_or_create(title)
+        with DatabaseOperation(self.logger, "get_or_create_poem"):
+            return self.get_or_create(title)
 
     # =========================================================================
     # POEM VERSION OPERATIONS (Child entity)
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_version")
     def get_version(self, version_id: int) -> Optional[PoemVersion]:
         """
         Retrieve a poem version by ID.
@@ -262,10 +258,9 @@ class PoemManager(EntityManager):
         Returns:
             PoemVersion object if found, None otherwise
         """
-        return self._get_by_id(PoemVersion, version_id)
+        with DatabaseOperation(self.logger, "get_version"):
+            return self._get_by_id(PoemVersion, version_id)
 
-    @handle_db_errors
-    @log_database_operation("get_all_versions")
     def get_all_versions(self) -> List[PoemVersion]:
         """
         Retrieve all poem versions.
@@ -273,10 +268,9 @@ class PoemManager(EntityManager):
         Returns:
             List of all PoemVersion objects
         """
-        return self._get_all(PoemVersion)
+        with DatabaseOperation(self.logger, "get_all_versions"):
+            return self._get_all(PoemVersion)
 
-    @handle_db_errors
-    @log_database_operation("create_version")
     def create_version(self, metadata: Dict[str, Any]) -> PoemVersion:
         """
         Create a new poem version (and parent poem if needed).
@@ -300,111 +294,110 @@ class PoemManager(EntityManager):
         Raises:
             ValidationError: If title/content missing or invalid
         """
-        # Validate required fields
-        title = DataValidator.normalize_string(metadata.get("title"))
-        if not title:
-            raise ValidationError(f"Invalid poem title: {metadata.get('title')}")
+        with DatabaseOperation(self.logger, "create_version"):
+            # Validate required fields
+            title = DataValidator.normalize_string(metadata.get("title"))
+            if not title:
+                raise ValidationError(f"Invalid poem title: {metadata.get('title')}")
 
-        content = DataValidator.normalize_string(metadata.get("content"))
-        if not content:
-            raise ValidationError("Poem content cannot be empty")
+            content = DataValidator.normalize_string(metadata.get("content"))
+            if not content:
+                raise ValidationError("Poem content cannot be empty")
 
-        # Resolve or create parent poem
-        poem_spec = metadata.get("poem")
-        if poem_spec is None:
-            poem = self.get_or_create_poem(title)
-        elif isinstance(poem_spec, Poem):
-            poem = poem_spec
-        elif isinstance(poem_spec, int):
-            poem = self.get_poem(poem_id=poem_spec)
-            if not poem:
-                raise ValidationError(f"Poem not found with id: {poem_spec}")
-        else:
-            raise ValidationError(f"Invalid poem specification: {poem_spec}")
+            # Resolve or create parent poem
+            poem_spec = metadata.get("poem")
+            if poem_spec is None:
+                poem = self.get_or_create_poem(title)
+            elif isinstance(poem_spec, Poem):
+                poem = poem_spec
+            elif isinstance(poem_spec, int):
+                poem = self.get_poem(poem_id=poem_spec)
+                if not poem:
+                    raise ValidationError(f"Poem not found with id: {poem_spec}")
+            else:
+                raise ValidationError(f"Invalid poem specification: {poem_spec}")
 
-        # Generate version hash
-        version_hash = metadata.get("version_hash")
-        if not version_hash:
-            version_hash = md.get_text_hash(content)
+            # Generate version hash
+            version_hash = metadata.get("version_hash")
+            if not version_hash:
+                version_hash = md.get_text_hash(content)
 
-        # Check for duplicate version (deduplication)
-        existing_version = (
-            self.session.query(PoemVersion)
-            .filter_by(poem_id=poem.id, version_hash=version_hash)
-            .first()
-        )
+            # Check for duplicate version (deduplication)
+            existing_version = (
+                self.session.query(PoemVersion)
+                .filter_by(poem_id=poem.id, version_hash=version_hash)
+                .first()
+            )
 
-        if existing_version:
+            if existing_version:
+                safe_logger(self.logger).log_debug(
+                    "Duplicate poem version found, returning existing",
+                    {
+                        "poem": poem.title,
+                        "version_id": existing_version.id,
+                        "version_hash": version_hash,
+                    },
+                )
+                return existing_version
+
+            # Resolve revision date
+            revision_date = metadata.get("revision_date")
+            if revision_date:
+                if isinstance(revision_date, str):
+                    try:
+                        revision_date = date.fromisoformat(revision_date)
+                    except ValueError as e:
+                        raise ValidationError(
+                            f"Invalid revision date: {revision_date}"
+                        ) from e
+            else:
+                # Try to get from entry, otherwise use today
+                entry_spec = metadata.get("entry")
+                if isinstance(entry_spec, Entry):
+                    revision_date = entry_spec.date
+                elif isinstance(entry_spec, int):
+                    entry = self.session.get(Entry, entry_spec)
+                    revision_date = entry.date if entry else date.today()
+                else:
+                    revision_date = date.today()
+
+            # Resolve entry (optional)
+            entry = None
+            entry_spec = metadata.get("entry")
+            if entry_spec is not None:
+                if isinstance(entry_spec, Entry):
+                    entry = entry_spec
+                elif isinstance(entry_spec, int):
+                    entry = self.session.get(Entry, entry_spec)
+                    if not entry:
+                        safe_logger(self.logger).log_warning(
+                            f"Entry not found with id: {entry_spec}",
+                            {"poem": poem.title},
+                        )
+
+            # Create version
+            version = PoemVersion(
+                poem=poem,
+                content=content,
+                revision_date=revision_date,
+                version_hash=version_hash,
+                notes=DataValidator.normalize_string(metadata.get("notes")),
+                entry=entry,
+            )
+            self.session.add(version)
+            self.session.flush()
+
             safe_logger(self.logger).log_debug(
-                "Duplicate poem version found, returning existing",
+                f"Created poem version: {poem.title}",
                 {
-                    "poem": poem.title,
-                    "version_id": existing_version.id,
-                    "version_hash": version_hash,
+                    "version_id": version.id,
+                    "poem_id": poem.id,
+                    "revision_date": revision_date.isoformat(),
                 },
             )
-            return existing_version
 
-        # Resolve revision date
-        revision_date = metadata.get("revision_date")
-        if revision_date:
-            if isinstance(revision_date, str):
-                try:
-                    revision_date = date.fromisoformat(revision_date)
-                except ValueError as e:
-                    raise ValidationError(
-                        f"Invalid revision date: {revision_date}"
-                    ) from e
-        else:
-            # Try to get from entry, otherwise use today
-            entry_spec = metadata.get("entry")
-            if isinstance(entry_spec, Entry):
-                revision_date = entry_spec.date
-            elif isinstance(entry_spec, int):
-                entry = self.session.get(Entry, entry_spec)
-                revision_date = entry.date if entry else date.today()
-            else:
-                revision_date = date.today()
+            return version
 
-        # Resolve entry (optional)
-        entry = None
-        entry_spec = metadata.get("entry")
-        if entry_spec is not None:
-            if isinstance(entry_spec, Entry):
-                entry = entry_spec
-            elif isinstance(entry_spec, int):
-                entry = self.session.get(Entry, entry_spec)
-                if not entry:
-                    safe_logger(self.logger).log_warning(
-                        f"Entry not found with id: {entry_spec}",
-                        {"poem": poem.title},
-                    )
-
-        # Create version
-        version = PoemVersion(
-            poem=poem,
-            content=content,
-            revision_date=revision_date,
-            version_hash=version_hash,
-            notes=DataValidator.normalize_string(metadata.get("notes")),
-            entry=entry,
-        )
-        self.session.add(version)
-        self.session.flush()
-
-        safe_logger(self.logger).log_debug(
-            f"Created poem version: {poem.title}",
-            {
-                "version_id": version.id,
-                "poem_id": poem.id,
-                "revision_date": revision_date.isoformat(),
-            },
-        )
-
-        return version
-
-    @handle_db_errors
-    @log_database_operation("update_version")
     def update_version(
         self, version: PoemVersion, metadata: Dict[str, Any]
     ) -> PoemVersion:
@@ -420,69 +413,68 @@ class PoemManager(EntityManager):
                 - poem: Updated parent Poem object or ID
                 - entry: Updated Entry object or ID
         """
-        db_version = self.session.get(PoemVersion, version.id)
-        if db_version is None:
-            raise DatabaseError(f"PoemVersion with id={version.id} not found")
+        with DatabaseOperation(self.logger, "update_version"):
+            db_version = self.session.get(PoemVersion, version.id)
+            if db_version is None:
+                raise DatabaseError(f"PoemVersion with id={version.id} not found")
 
-        version = self.session.merge(db_version)
+            version = self.session.merge(db_version)
 
-        # Update content (special: auto-regenerate hash)
-        if "content" in metadata:
-            content = DataValidator.normalize_string(metadata["content"])
-            if content:
-                version.content = content
-                version.version_hash = md.get_text_hash(content)
+            # Update content (special: auto-regenerate hash)
+            if "content" in metadata:
+                content = DataValidator.normalize_string(metadata["content"])
+                if content:
+                    version.content = content
+                    version.version_hash = md.get_text_hash(content)
 
-        # Update revision date
-        if "revision_date" in metadata:
-            rev_date = metadata["revision_date"]
-            if isinstance(rev_date, str):
-                try:
-                    rev_date = date.fromisoformat(rev_date)
-                except ValueError:
-                    pass
-            if isinstance(rev_date, date):
-                version.revision_date = rev_date
+            # Update revision date
+            if "revision_date" in metadata:
+                rev_date = metadata["revision_date"]
+                if isinstance(rev_date, str):
+                    try:
+                        rev_date = date.fromisoformat(rev_date)
+                    except ValueError:
+                        pass
+                if isinstance(rev_date, date):
+                    version.revision_date = rev_date
 
-        # Update notes
-        self._update_scalar_fields(
-            version,
-            metadata,
-            [("notes", DataValidator.normalize_string, True)],
-        )
-
-        # Update poem
-        if "poem" in metadata:
-            poem = self._resolve_parent(
-                metadata["poem"],
-                Poem,
-                lambda **kw: self.get_poem(poem_id=kw.get("id")),
-                None,
-                "id",
+            # Update notes
+            self._update_scalar_fields(
+                version,
+                metadata,
+                [("notes", DataValidator.normalize_string, True)],
             )
-            if poem:
-                version.poem = poem
 
-        # Update entry (allows None to clear)
-        if "entry" in metadata:
-            if metadata["entry"] is None:
-                version.entry = None
-            else:
-                entry = self._resolve_parent(
-                    metadata["entry"],
-                    Entry,
-                    lambda **kw: self.session.get(Entry, kw.get("id")),
+            # Update poem
+            if "poem" in metadata:
+                poem = self._resolve_parent(
+                    metadata["poem"],
+                    Poem,
+                    lambda **kw: self.get_poem(poem_id=kw.get("id")),
                     None,
                     "id",
                 )
-                if entry:
-                    version.entry = entry
+                if poem:
+                    version.poem = poem
 
-        self.session.flush()
-        return version
+            # Update entry (allows None to clear)
+            if "entry" in metadata:
+                if metadata["entry"] is None:
+                    version.entry = None
+                else:
+                    entry = self._resolve_parent(
+                        metadata["entry"],
+                        Entry,
+                        lambda **kw: self.session.get(Entry, kw.get("id")),
+                        None,
+                        "id",
+                    )
+                    if entry:
+                        version.entry = entry
 
-    @handle_db_errors
-    @log_database_operation("delete_version")
+            self.session.flush()
+            return version
+
     def delete_version(self, version: PoemVersion) -> None:
         """
         Delete a poem version.
@@ -490,48 +482,45 @@ class PoemManager(EntityManager):
         Args:
             version: PoemVersion object or ID to delete
         """
-        if isinstance(version, int):
-            version = self.session.get(PoemVersion, version)  # type: ignore[assignment]
-            if not version:
-                raise DatabaseError(f"PoemVersion not found with id: {version}")
+        with DatabaseOperation(self.logger, "delete_version"):
+            if isinstance(version, int):
+                version = self.session.get(PoemVersion, version)  # type: ignore[assignment]
+                if not version:
+                    raise DatabaseError(f"PoemVersion not found with id: {version}")
 
-        safe_logger(self.logger).log_debug(
-            "Deleting poem version",
-            {"version_id": version.id, "poem": version.poem.title},
-        )
+            safe_logger(self.logger).log_debug(
+                "Deleting poem version",
+                {"version_id": version.id, "poem": version.poem.title},
+            )
 
-        self.session.delete(version)
-        self.session.flush()
+            self.session.delete(version)
+            self.session.flush()
 
     # =========================================================================
     # QUERY METHODS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_versions_for_poem")
     def get_versions_for_poem(self, poem: Poem) -> List[PoemVersion]:
         """Get all versions of a poem, ordered chronologically."""
-        return sorted(
-            poem.versions, key=lambda v: v.revision_date or date.min
-        )  # type: ignore[arg-type]
+        with DatabaseOperation(self.logger, "get_versions_for_poem"):
+            return sorted(
+                poem.versions, key=lambda v: v.revision_date or date.min
+            )  # type: ignore[arg-type]
 
-    @handle_db_errors
-    @log_database_operation("get_versions_for_entry")
     def get_versions_for_entry(self, entry: Entry) -> List[PoemVersion]:
         """Get all poem versions linked to an entry."""
-        return entry.poems
+        with DatabaseOperation(self.logger, "get_versions_for_entry"):
+            return entry.poems
 
-    @handle_db_errors
-    @log_database_operation("get_latest_version")
     def get_latest_version(self, poem: Poem) -> Optional[PoemVersion]:
         """Get the most recent version of a poem."""
-        return poem.latest_version
+        with DatabaseOperation(self.logger, "get_latest_version"):
+            return poem.latest_version
 
-    @handle_db_errors
-    @log_database_operation("get_poems_by_title")
     def get_poems_by_title(self, title: str) -> List[Poem]:
         """Get all poems with a specific title."""
-        normalized = DataValidator.normalize_string(title)
-        if not normalized:
-            return []
-        return self.session.query(Poem).filter_by(title=normalized).all()
+        with DatabaseOperation(self.logger, "get_poems_by_title"):
+            normalized = DataValidator.normalize_string(title)
+            if not normalized:
+                return []
+            return self.session.query(Poem).filter_by(title=normalized).all()

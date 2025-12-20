@@ -41,10 +41,7 @@ from dev.database.models import (
     Event,
     Tag,
 )
-from dev.database.decorators import (
-    handle_db_errors,
-    log_database_operation,
-)
+from dev.database.decorators import DatabaseOperation
 from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
 from .entry_helpers import EntryRelationshipHelper
@@ -88,8 +85,6 @@ class EntryManager(BaseManager):
     # Core CRUD Operations
     # -------------------------------------------------------------------------
 
-    @handle_db_errors
-    @log_database_operation("entry_exists")
     def exists(
         self,
         entry_date: Optional[Union[str, date]] = None,
@@ -105,27 +100,26 @@ class EntryManager(BaseManager):
         Returns:
             True if entry exists, False otherwise
         """
-        if entry_date is not None:
-            if isinstance(entry_date, str):
-                normalized_date = DataValidator.normalize_date(entry_date)
-                if normalized_date is None:
-                    return False
-                entry_date = normalized_date
-            return (
-                self.session.query(Entry).filter_by(date=entry_date).first() is not None
-            )
+        with DatabaseOperation(self.logger, "entry_exists"):
+            if entry_date is not None:
+                if isinstance(entry_date, str):
+                    normalized_date = DataValidator.normalize_date(entry_date)
+                    if normalized_date is None:
+                        return False
+                    entry_date = normalized_date
+                return (
+                    self.session.query(Entry).filter_by(date=entry_date).first() is not None
+                )
 
-        if file_path is not None:
-            file_path = DataValidator.normalize_string(file_path)
-            return (
-                self.session.query(Entry).filter_by(file_path=file_path).first()
-                is not None
-            )
+            if file_path is not None:
+                file_path = DataValidator.normalize_string(file_path)
+                return (
+                    self.session.query(Entry).filter_by(file_path=file_path).first()
+                    is not None
+                )
 
-        return False
+            return False
 
-    @handle_db_errors
-    @log_database_operation("get_entry")
     def get(
         self,
         entry_date: Optional[Union[str, date]] = None,
@@ -152,34 +146,33 @@ class EntryManager(BaseManager):
             >>> # Get entry including deleted
             >>> entry = entry_mgr.get(entry_date=date(2024, 11, 1), include_deleted=True)
         """
-        if entry_id is not None:
-            entry = self.session.get(Entry, entry_id)
-            if entry and not include_deleted and entry.is_deleted:
+        with DatabaseOperation(self.logger, "get_entry"):
+            if entry_id is not None:
+                entry = self.session.get(Entry, entry_id)
+                if entry and not include_deleted and entry.is_deleted:
+                    return None
+                return entry
+
+            query = self.session.query(Entry)
+
+            if entry_date is not None:
+                if isinstance(entry_date, str):
+                    entry_date = DataValidator.normalize_date(entry_date)
+                query = query.filter_by(date=entry_date)
+
+            elif file_path is not None:
+                file_path = DataValidator.normalize_string(file_path)
+                query = query.filter_by(file_path=file_path)
+
+            else:
                 return None
-            return entry
 
-        query = self.session.query(Entry)
+            # Filter out soft-deleted entries unless explicitly requested
+            if not include_deleted:
+                query = query.filter(Entry.deleted_at.is_(None))
 
-        if entry_date is not None:
-            if isinstance(entry_date, str):
-                entry_date = DataValidator.normalize_date(entry_date)
-            query = query.filter_by(date=entry_date)
+            return query.first()
 
-        elif file_path is not None:
-            file_path = DataValidator.normalize_string(file_path)
-            query = query.filter_by(file_path=file_path)
-
-        else:
-            return None
-
-        # Filter out soft-deleted entries unless explicitly requested
-        if not include_deleted:
-            query = query.filter(Entry.deleted_at.is_(None))
-
-        return query.first()
-
-    @handle_db_errors
-    @log_database_operation("create_entry")
     def create(
         self,
         metadata: Dict[str, Any],
@@ -220,65 +213,64 @@ class EntryManager(BaseManager):
         Returns:
             Entry: The newly created Entry ORM object.
         """
-        # --- Required fields ---
-        parsed_date = DataValidator.normalize_date(metadata["date"])
-        if not parsed_date:
-            raise ValueError(f"Invalid date format: {metadata['date']}")
+        with DatabaseOperation(self.logger, "create_entry"):
+            # --- Required fields ---
+            parsed_date = DataValidator.normalize_date(metadata["date"])
+            if not parsed_date:
+                raise ValueError(f"Invalid date format: {metadata['date']}")
 
-        file_path = DataValidator.normalize_string(metadata["file_path"])
-        if not file_path:
-            raise ValueError(f"Invalid file_path: {metadata['file_path']}")
+            file_path = DataValidator.normalize_string(metadata["file_path"])
+            if not file_path:
+                raise ValueError(f"Invalid file_path: {metadata['file_path']}")
 
-        # --- file_path uniqueness check ---
-        existing = self.session.query(Entry).filter_by(file_path=file_path).first()
-        if existing:
-            raise ValidationError(f"Entry already exists for file_path: {file_path}")
+            # --- file_path uniqueness check ---
+            existing = self.session.query(Entry).filter_by(file_path=file_path).first()
+            if existing:
+                raise ValidationError(f"Entry already exists for file_path: {file_path}")
 
-        # --- If hash doesn't exist, create it ---
-        file_hash = DataValidator.normalize_string((metadata.get("file_hash")))
-        if not file_hash and file_path:
-            file_path_obj = Path(file_path)
-            if file_path_obj.exists():
-                file_hash = fs.get_file_hash(file_path)
-            else:
-                safe_logger(self.logger).log_warning(
-                    f"File path does not exist, cannot calculate hash: {file_path}"
+            # --- If hash doesn't exist, create it ---
+            file_hash = DataValidator.normalize_string((metadata.get("file_hash")))
+            if not file_hash and file_path:
+                file_path_obj = Path(file_path)
+                if file_path_obj.exists():
+                    file_hash = fs.get_file_hash(file_path)
+                else:
+                    safe_logger(self.logger).log_warning(
+                        f"File path does not exist, cannot calculate hash: {file_path}"
+                    )
+
+            # --- Create Entry ---
+            def _do_create():
+                entry = Entry(
+                    date=parsed_date,
+                    file_path=file_path,
+                    file_hash=file_hash,
+                    word_count=DataValidator.normalize_int(metadata.get("word_count")),
+                    reading_time=DataValidator.normalize_float(
+                        metadata.get("reading_time")
+                    ),
+                    epigraph=DataValidator.normalize_string(metadata.get("epigraph")),
+                    epigraph_attribution=DataValidator.normalize_string(
+                        metadata.get("epigraph_attribution")
+                    ),
+                    notes=DataValidator.normalize_string(metadata.get("notes")),
                 )
+                self.session.add(entry)
+                self.session.flush()
+                return entry
 
-        # --- Create Entry ---
-        def _do_create():
-            entry = Entry(
-                date=parsed_date,
-                file_path=file_path,
-                file_hash=file_hash,
-                word_count=DataValidator.normalize_int(metadata.get("word_count")),
-                reading_time=DataValidator.normalize_float(
-                    metadata.get("reading_time")
-                ),
-                epigraph=DataValidator.normalize_string(metadata.get("epigraph")),
-                epigraph_attribution=DataValidator.normalize_string(
-                    metadata.get("epigraph_attribution")
-                ),
-                notes=DataValidator.normalize_string(metadata.get("notes")),
+            entry = self._execute_with_retry(_do_create)
+
+            # --- Relationships ---
+            self.update_relationships(
+                entry,
+                metadata,
+                incremental=True,
+                sync_source=sync_source,
+                removed_by=removed_by,
             )
-            self.session.add(entry)
-            self.session.flush()
             return entry
 
-        entry = self._execute_with_retry(_do_create)
-
-        # --- Relationships ---
-        self.update_relationships(
-            entry,
-            metadata,
-            incremental=True,
-            sync_source=sync_source,
-            removed_by=removed_by,
-        )
-        return entry
-
-    @handle_db_errors
-    @log_database_operation("update_entry")
     def update(
         self,
         entry: Entry,
@@ -307,59 +299,58 @@ class EntryManager(BaseManager):
 
         Notes: version_hash is automatically updated if content changes
         """
-        # --- Ensure existance ---
-        db_entry = self.session.get(Entry, entry.id)
-        if db_entry is None:
-            raise ValueError(f"Entry with id={entry.id} does not exist")
+        with DatabaseOperation(self.logger, "update_entry"):
+            # --- Ensure existance ---
+            db_entry = self.session.get(Entry, entry.id)
+            if db_entry is None:
+                raise ValueError(f"Entry with id={entry.id} does not exist")
 
-        # --- Attach to session ---
-        entry = self.session.merge(db_entry)
+            # --- Attach to session ---
+            entry = self.session.merge(db_entry)
 
-        # --- Update scalar fields ---
-        def _do_update():
-            field_updates = {
-                "date": DataValidator.normalize_date,
-                "file_path": DataValidator.normalize_string,
-                "file_hash": DataValidator.normalize_string,
-                "word_count": DataValidator.normalize_int,
-                "reading_time": DataValidator.normalize_float,
-                "epigraph": DataValidator.normalize_string,
-                "epigraph_attribution": DataValidator.normalize_string,
-                "notes": DataValidator.normalize_string,
-            }
+            # --- Update scalar fields ---
+            def _do_update():
+                field_updates = {
+                    "date": DataValidator.normalize_date,
+                    "file_path": DataValidator.normalize_string,
+                    "file_hash": DataValidator.normalize_string,
+                    "word_count": DataValidator.normalize_int,
+                    "reading_time": DataValidator.normalize_float,
+                    "epigraph": DataValidator.normalize_string,
+                    "epigraph_attribution": DataValidator.normalize_string,
+                    "notes": DataValidator.normalize_string,
+                }
 
-            for field, normalizer in field_updates.items():
-                if field not in metadata:
-                    continue
+                for field, normalizer in field_updates.items():
+                    if field not in metadata:
+                        continue
 
-                value = normalizer(metadata[field])
-                if value is not None or field in [
-                    "epigraph",
-                    "epigraph_attribution",
-                    "notes",
-                ]:
-                    if field == "file_path" and value is not None:
-                        file_hash = fs.get_file_hash(value)
-                        setattr(entry, "file_hash", file_hash)
-                    setattr(entry, field, value)
+                    value = normalizer(metadata[field])
+                    if value is not None or field in [
+                        "epigraph",
+                        "epigraph_attribution",
+                        "notes",
+                    ]:
+                        if field == "file_path" and value is not None:
+                            file_hash = fs.get_file_hash(value)
+                            setattr(entry, "file_hash", file_hash)
+                        setattr(entry, field, value)
 
-            self.session.flush()
+                self.session.flush()
+                return entry
+
+            entry = self._execute_with_retry(_do_update)
+
+            # --- Update relationships ---
+            self.update_relationships(
+                entry,
+                metadata,
+                incremental=False,  # Update mode uses replacement
+                sync_source=sync_source,
+                removed_by=removed_by,
+            )
             return entry
 
-        entry = self._execute_with_retry(_do_update)
-
-        # --- Update relationships ---
-        self.update_relationships(
-            entry,
-            metadata,
-            incremental=False,  # Update mode uses replacement
-            sync_source=sync_source,
-            removed_by=removed_by,
-        )
-        return entry
-
-    @handle_db_errors
-    @log_database_operation("delete_entry")
     def delete(
         self,
         entry: Entry,
@@ -386,26 +377,26 @@ class EntryManager(BaseManager):
             >>> # Hard delete (permanent)
             >>> entry_mgr.delete(entry, hard_delete=True, reason='duplicate')
         """
+        with DatabaseOperation(self.logger, "delete_entry"):
+            def _do_delete():
+                if hard_delete:
+                    # Permanent deletion - cannot be recovered
+                    self.session.delete(entry)
+                    safe_logger(self.logger).log_warning(
+                        f"HARD DELETE: Entry {entry.date}",
+                        {"reason": reason, "deleted_by": deleted_by},
+                    )
+                else:
+                    # Soft delete - mark as deleted
+                    entry.soft_delete(deleted_by=deleted_by, reason=reason)
+                    safe_logger(self.logger).log_info(
+                        f"Soft deleted entry {entry.date}",
+                        {"deleted_by": deleted_by, "reason": reason},
+                    )
 
-        def _do_delete():
-            if hard_delete:
-                # Permanent deletion - cannot be recovered
-                self.session.delete(entry)
-                safe_logger(self.logger).log_warning(
-                    f"HARD DELETE: Entry {entry.date}",
-                    {"reason": reason, "deleted_by": deleted_by},
-                )
-            else:
-                # Soft delete - mark as deleted
-                entry.soft_delete(deleted_by=deleted_by, reason=reason)
-                safe_logger(self.logger).log_info(
-                    f"Soft deleted entry {entry.date}",
-                    {"deleted_by": deleted_by, "reason": reason},
-                )
+                self.session.flush()
 
-            self.session.flush()
-
-        self._execute_with_retry(_do_delete)
+            self._execute_with_retry(_do_delete)
 
     def restore(self, entry: Entry) -> None:
         """
@@ -426,8 +417,6 @@ class EntryManager(BaseManager):
 
         self._execute_with_retry(_do_restore)
 
-    @handle_db_errors
-    @log_database_operation("bulk_create_entries")
     def bulk_create(
         self,
         entries_metadata: List[Dict[str, Any]],
@@ -443,69 +432,68 @@ class EntryManager(BaseManager):
         Returns:
             List of created entry IDs
         """
-        created_ids = []
+        with DatabaseOperation(self.logger, "bulk_create_entries"):
+            created_ids = []
 
-        # Process in batches
-        for i in range(0, len(entries_metadata), batch_size):
-            batch = entries_metadata[i : i + batch_size]
+            # Process in batches
+            for i in range(0, len(entries_metadata), batch_size):
+                batch = entries_metadata[i : i + batch_size]
 
-            # Prepare mappings for bulk insert
-            mappings = []
-            for metadata in batch:
-                parsed_date = DataValidator.normalize_date(metadata["date"])
-                file_path = DataValidator.normalize_string(metadata["file_path"])
-                file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
+                # Prepare mappings for bulk insert
+                mappings = []
+                for metadata in batch:
+                    parsed_date = DataValidator.normalize_date(metadata["date"])
+                    file_path = DataValidator.normalize_string(metadata["file_path"])
+                    file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
 
-                if file_path and not file_hash:
-                    file_hash = fs.get_file_hash(file_path)
+                    if file_path and not file_hash:
+                        file_hash = fs.get_file_hash(file_path)
 
-                mappings.append(
-                    {
-                        "date": parsed_date,
-                        "file_path": file_path,
-                        "file_hash": file_hash,
-                        "word_count": DataValidator.normalize_int(
-                            metadata.get("word_count")
-                        ),
-                        "reading_time": DataValidator.normalize_float(
-                            metadata.get("reading_time")
-                        ),
-                        "epigraph": DataValidator.normalize_string(
-                            metadata.get("epigraph")
-                        ),
-                        "epigraph_attribution": DataValidator.normalize_string(
-                            metadata.get("epigraph_attribution")
-                        ),
-                        "notes": DataValidator.normalize_string(metadata.get("notes")),
-                        "created_at": datetime.now(timezone.utc),
-                        "updated_at": datetime.now(timezone.utc),
-                    }
+                    mappings.append(
+                        {
+                            "date": parsed_date,
+                            "file_path": file_path,
+                            "file_hash": file_hash,
+                            "word_count": DataValidator.normalize_int(
+                                metadata.get("word_count")
+                            ),
+                            "reading_time": DataValidator.normalize_float(
+                                metadata.get("reading_time")
+                            ),
+                            "epigraph": DataValidator.normalize_string(
+                                metadata.get("epigraph")
+                            ),
+                            "epigraph_attribution": DataValidator.normalize_string(
+                                metadata.get("epigraph_attribution")
+                            ),
+                            "notes": DataValidator.normalize_string(metadata.get("notes")),
+                            "created_at": datetime.now(timezone.utc),
+                            "updated_at": datetime.now(timezone.utc),
+                        }
+                    )
+
+                def _do_bulk_insert():
+                    # Use Core insert for bulk operations
+                    stmt = insert(Entry).values(mappings)
+                    self.session.execute(stmt)
+                    self.session.flush()
+
+                self._execute_with_retry(_do_bulk_insert)
+
+                # Get IDs of created entries
+                dates = [m["date"] for m in mappings]
+                created_entries = (
+                    self.session.query(Entry).filter(Entry.date.in_(dates)).all()
+                )
+                created_ids.extend([e.id for e in created_entries])
+
+                safe_logger(self.logger).log_operation(
+                    "bulk_create_batch",
+                    {"batch_number": i // batch_size + 1, "count": len(batch)},
                 )
 
-            def _do_bulk_insert():
-                # Use Core insert for bulk operations
-                stmt = insert(Entry).values(mappings)
-                self.session.execute(stmt)
-                self.session.flush()
+            return created_ids
 
-            self._execute_with_retry(_do_bulk_insert)
-
-            # Get IDs of created entries
-            dates = [m["date"] for m in mappings]
-            created_entries = (
-                self.session.query(Entry).filter(Entry.date.in_(dates)).all()
-            )
-            created_ids.extend([e.id for e in created_entries])
-
-            safe_logger(self.logger).log_operation(
-                "bulk_create_batch",
-                {"batch_number": i // batch_size + 1, "count": len(batch)},
-            )
-
-        return created_ids
-
-    @handle_db_errors
-    @log_database_operation("get_entry_for_display")
     def get_for_display(self, entry_date: Union[str, date]) -> Optional[Entry]:
         """
         Get single entry optimized for display operations.
@@ -518,19 +506,20 @@ class EntryManager(BaseManager):
         Returns:
             Entry with display relationships preloaded
         """
-        if isinstance(entry_date, str):
-            entry_date = date.fromisoformat(entry_date)
+        with DatabaseOperation(self.logger, "get_entry_for_display"):
+            if isinstance(entry_date, str):
+                entry_date = date.fromisoformat(entry_date)
 
-        entry = self.session.query(Entry).filter_by(date=entry_date).first()
+            entry = self.session.query(Entry).filter_by(date=entry_date).first()
 
-        if entry:
-            # Import here to avoid circular dependency
-            from dev.database.query_optimizer import QueryOptimizer
+            if entry:
+                # Import here to avoid circular dependency
+                from dev.database.query_optimizer import QueryOptimizer
 
-            # Use optimized display query
-            return QueryOptimizer.for_display(self.session, entry.id)
+                # Use optimized display query
+                return QueryOptimizer.for_display(self.session, entry.id)
 
-        return None
+            return None
 
     # -------------------------------------------------------------------------
     # Relationship Processing Methods

@@ -74,7 +74,7 @@ from sqlalchemy.orm import Session
 
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
-from .decorators import handle_db_errors, log_database_operation
+from .decorators import DatabaseOperation
 from .query_optimizer import QueryOptimizer, HierarchicalBatcher
 from .models import (
     Entry,
@@ -117,8 +117,6 @@ class QueryAnalytics:
         """
         self.logger = logger
 
-    @handle_db_errors
-    @log_database_operation("get_database_stats")
     def get_database_stats(self, session: Session) -> Dict[str, Any]:
         """
         Get comprehensive database statistics.
@@ -129,62 +127,63 @@ class QueryAnalytics:
         Returns:
             Dictionary with database statistics
         """
-        stats = {}
+        with DatabaseOperation(self.logger, "get_database_stats"):
+            stats = {}
 
-        # Basic counts
-        stats["entries"] = session.query(Entry).count()
-        stats["people"] = session.query(Person).count()
-        stats["cities"] = session.query(City).count()
-        stats["locations"] = session.query(Location).count()
-        stats["events"] = session.query(Event).count()
-        stats["tags"] = session.query(Tag).count()
-        stats["references"] = session.query(Reference).count()
-        stats["reference_sources"] = session.query(ReferenceSource).count()
-        stats["poems"] = session.query(Poem).count()
-        stats["poem_versions"] = session.query(PoemVersion).count()
-        stats["mentioned_dates"] = session.query(Moment).count()
-        stats["aliases"] = session.query(Alias).count()
+            # Basic counts
+            stats["entries"] = session.query(Entry).count()
+            stats["people"] = session.query(Person).count()
+            stats["cities"] = session.query(City).count()
+            stats["locations"] = session.query(Location).count()
+            stats["events"] = session.query(Event).count()
+            stats["tags"] = session.query(Tag).count()
+            stats["references"] = session.query(Reference).count()
+            stats["reference_sources"] = session.query(ReferenceSource).count()
+            stats["poems"] = session.query(Poem).count()
+            stats["poem_versions"] = session.query(PoemVersion).count()
+            stats["mentioned_dates"] = session.query(Moment).count()
+            stats["aliases"] = session.query(Alias).count()
 
-        # Manuscript stats
-        stats["manuscript_entries"] = session.query(ManuscriptEntry).count()
-        stats["manuscript_people"] = session.query(ManuscriptPerson).count()
-        stats["manuscript_events"] = session.query(ManuscriptEvent).count()
-        stats["themes"] = session.query(Theme).count()
-        stats["arcs"] = session.query(Arc).count()
+            # Manuscript stats
+            stats["manuscript_entries"] = session.query(ManuscriptEntry).count()
+            stats["manuscript_people"] = session.query(ManuscriptPerson).count()
+            stats["manuscript_events"] = session.query(ManuscriptEvent).count()
+            stats["themes"] = session.query(Theme).count()
+            stats["arcs"] = session.query(Arc).count()
 
-        # Date range
-        first_entry = session.query(Entry).order_by(Entry.date).first()
-        last_entry = session.query(Entry).order_by(Entry.date.desc()).first()
+            # Date range
+            first_entry = session.query(Entry).order_by(Entry.date).first()
+            last_entry = session.query(Entry).order_by(Entry.date.desc()).first()
 
-        if first_entry and last_entry:
-            stats["date_range"] = {
-                "first_entry": first_entry.date.isoformat(),
-                "last_entry": last_entry.date.isoformat(),
-                "total_days": (last_entry.date - first_entry.date).days + 1,
-            }
+            if first_entry and last_entry:
+                stats["date_range"] = {
+                    "first_entry": first_entry.date.isoformat(),
+                    "last_entry": last_entry.date.isoformat(),
+                    "total_days": (last_entry.date - first_entry.date).days + 1,
+                }
 
-        # Word count stats
-        total_words = session.query(func.sum(Entry.word_count)).scalar() or 0
-        stats["total_words"] = total_words
+            # Word count stats
+            total_words = session.query(func.sum(Entry.word_count)).scalar() or 0
+            stats["total_words"] = total_words
 
-        if stats["entries"] > 0:
-            avg_words = total_words / stats["entries"]
-            stats["average_words_per_entry"] = round(avg_words, 2)
+            if stats["entries"] > 0:
+                avg_words = total_words / stats["entries"]
+                stats["average_words_per_entry"] = round(avg_words, 2)
 
-        # Recent activity
-        week_ago = datetime.now() - timedelta(days=7)
-        stats["entries_updated_last_7_days"] = (
-            session.query(Entry).filter(Entry.updated_at >= week_ago).count()
-        )
+            # Recent activity
+            week_ago = datetime.now() - timedelta(days=7)
+            stats["entries_updated_last_7_days"] = (
+                session.query(Entry).filter(Entry.updated_at >= week_ago).count()
+            )
 
-        # Get migration status if possible
-        try:
-            stats["migration_status"] = self._get_migration_status(session)
-        except DatabaseError as e:
-            stats["migration_status"] = {"status": "error", "error": str(e)}
-            safe_logger(self.logger).log_error(e, {"operation": "get_migration_status"})
+            # Get migration status if possible
+            try:
+                stats["migration_status"] = self._get_migration_status(session)
+            except DatabaseError as e:
+                stats["migration_status"] = {"status": "error", "error": str(e)}
+                safe_logger(self.logger).log_error(e, {"operation": "get_migration_status"})
 
-        return stats
+            return stats
 
     def _get_migration_status(self, session: Session) -> Dict[str, Optional[str]]:
         """
@@ -215,8 +214,6 @@ class QueryAnalytics:
         except Exception as e:
             raise DatabaseError(f"Failed to get migration status: {e}")
 
-    @handle_db_errors
-    @log_database_operation("get_entry_summary")
     def get_entry_summary(
         self, session: Session, entry_date: Union[str, date]
     ) -> Dict[str, Any]:
@@ -230,35 +227,34 @@ class QueryAnalytics:
         Returns:
             Dictionary with entry summary
         """
-        if isinstance(entry_date, str):
-            entry_date = date.fromisoformat(entry_date)
+        with DatabaseOperation(self.logger, "get_entry_summary"):
+            if isinstance(entry_date, str):
+                entry_date = date.fromisoformat(entry_date)
 
-        entry = session.query(Entry).filter_by(date=entry_date).first()
-        if not entry:
-            return {"error": "Entry not found"}
+            entry = session.query(Entry).filter_by(date=entry_date).first()
+            if not entry:
+                return {"error": "Entry not found"}
 
-        # Use display-optimized query
-        entry = QueryOptimizer.for_display(session, entry.id)
+            # Use display-optimized query
+            entry = QueryOptimizer.for_display(session, entry.id)
 
-        summary = {}
-        if entry is not None:
-            summary = {
-                "date": entry.date.isoformat(),
-                "word_count": entry.word_count,
-                "reading_time": entry.reading_time,
-                "people_count": len(entry.people),
-                "people": [p.display_name for p in entry.people],
-                "locations_count": len(entry.locations),
-                "locations": [loc.name for loc in entry.locations],
-                "events_count": len(entry.events),
-                "events": [evt.display_name for evt in entry.events],
-                "tags": [tag.tag for tag in entry.tags],
-            }
+            summary = {}
+            if entry is not None:
+                summary = {
+                    "date": entry.date.isoformat(),
+                    "word_count": entry.word_count,
+                    "reading_time": entry.reading_time,
+                    "people_count": len(entry.people),
+                    "people": [p.display_name for p in entry.people],
+                    "locations_count": len(entry.locations),
+                    "locations": [loc.name for loc in entry.locations],
+                    "events_count": len(entry.events),
+                    "events": [evt.display_name for evt in entry.events],
+                    "tags": [tag.tag for tag in entry.tags],
+                }
 
-        return summary
+            return summary
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_date_range")
     def get_entries_by_date_range(
         self, session: Session, start_date: Union[str, date], end_date: Union[str, date]
     ) -> List[Entry]:
@@ -273,20 +269,19 @@ class QueryAnalytics:
         Returns:
             List of Entry instances
         """
-        if isinstance(start_date, str):
-            start_date = date.fromisoformat(start_date)
-        if isinstance(end_date, str):
-            end_date = date.fromisoformat(end_date)
+        with DatabaseOperation(self.logger, "get_entries_by_date_range"):
+            if isinstance(start_date, str):
+                start_date = date.fromisoformat(start_date)
+            if isinstance(end_date, str):
+                end_date = date.fromisoformat(end_date)
 
-        return (
-            session.query(Entry)
-            .filter(Entry.date >= start_date, Entry.date <= end_date)
-            .order_by(Entry.date)
-            .all()
-        )
+            return (
+                session.query(Entry)
+                .filter(Entry.date >= start_date, Entry.date <= end_date)
+                .order_by(Entry.date)
+                .all()
+            )
 
-    @handle_db_errors
-    @log_database_operation("search_entries")
     def search_entries(
         self, session: Session, query: str, limit: Optional[int] = None
     ) -> List[Entry]:
@@ -301,67 +296,64 @@ class QueryAnalytics:
         Returns:
             List of matching Entry instances
         """
-        search_filter = or_(
-            Entry.notes.ilike(f"%{query}%"), Entry.epigraph.ilike(f"%{query}%")
-        )
+        with DatabaseOperation(self.logger, "search_entries"):
+            search_filter = or_(
+                Entry.notes.ilike(f"%{query}%"), Entry.epigraph.ilike(f"%{query}%")
+            )
 
-        query_obj = (
-            session.query(Entry).filter(search_filter).order_by(Entry.date.desc())
-        )
+            query_obj = (
+                session.query(Entry).filter(search_filter).order_by(Entry.date.desc())
+            )
 
-        if limit:
-            query_obj = query_obj.limit(limit)
+            if limit:
+                query_obj = query_obj.limit(limit)
 
-        return query_obj.all()
+            return query_obj.all()
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_person")
     def get_entries_by_person(self, session: Session, person_name: str) -> List[Entry]:
         """Get all entries mentioning a specific person."""
-        person = (
-            session.query(Person)
-            .filter(
-                or_(
-                    Person.name.ilike(f"%{person_name}%"),
-                    Person.full_name.ilike(f"%{person_name}%"),
+        with DatabaseOperation(self.logger, "get_entries_by_person"):
+            person = (
+                session.query(Person)
+                .filter(
+                    or_(
+                        Person.name.ilike(f"%{person_name}%"),
+                        Person.full_name.ilike(f"%{person_name}%"),
+                    )
                 )
+                .first()
             )
-            .first()
-        )
 
-        return person.entries if person else []
+            return person.entries if person else []
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_city")
     def get_entries_by_city(self, session: Session, city_name: str) -> List[Entry]:
         """Get all entries at a specific city."""
-        city = (
-            session.query(City).filter(City.city.ilike(f"%{city_name}%")).first()
-        )
+        with DatabaseOperation(self.logger, "get_entries_by_city"):
+            city = (
+                session.query(City).filter(City.city.ilike(f"%{city_name}%")).first()
+            )
 
-        return city.entries if city else []
+            return city.entries if city else []
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_location")
     def get_entries_by_location(
         self, session: Session, location_name: str
     ) -> List[Entry]:
         """Get all entries at a specific location."""
-        location = (
-            session.query(Location)
-            .filter(Location.name.ilike(f"%{location_name}%"))
-            .first()
-        )
+        with DatabaseOperation(self.logger, "get_entries_by_location"):
+            location = (
+                session.query(Location)
+                .filter(Location.name.ilike(f"%{location_name}%"))
+                .first()
+            )
 
-        return location.entries if location else []
+            return location.entries if location else []
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_tag")
     def get_entries_by_tag(self, session: Session, tag_name: str) -> List[Entry]:
         """Get all entries with a specific tag."""
-        tag = session.query(Tag).filter(Tag.tag.ilike(f"%{tag_name}%")).first()
+        with DatabaseOperation(self.logger, "get_entries_by_tag"):
+            tag = session.query(Tag).filter(Tag.tag.ilike(f"%{tag_name}%")).first()
 
-        return tag.entries if tag else []
+            return tag.entries if tag else []
 
     def _compute_entry_analytics(self, entries: List[Entry]) -> Dict[str, Any]:
         """
@@ -388,8 +380,6 @@ class QueryAnalytics:
             "total_poems": sum(len(e.poems) for e in entries),
         }
 
-    @handle_db_errors
-    @log_database_operation("get_year_analytics")
     def get_year_analytics(self, session: Session, year: int) -> Dict[str, Any]:
         """
         Get comprehensive analytics for a specific year with optimized loading.
@@ -401,23 +391,22 @@ class QueryAnalytics:
         Returns:
             Dictionary with year analytics including monthly breakdown
         """
-        entries = QueryOptimizer.for_year(session, year)
-        analytics = {"year": year, **self._compute_entry_analytics(entries)}
+        with DatabaseOperation(self.logger, "get_year_analytics"):
+            entries = QueryOptimizer.for_year(session, year)
+            analytics = {"year": year, **self._compute_entry_analytics(entries)}
 
-        # Monthly breakdown
-        monthly = {}
-        for entry in entries:
-            month_key = entry.date.strftime("%Y-%m")
-            if month_key not in monthly:
-                monthly[month_key] = {"entries": 0, "words": 0}
-            monthly[month_key]["entries"] += 1
-            monthly[month_key]["words"] += entry.word_count
-        analytics["monthly_breakdown"] = monthly
+            # Monthly breakdown
+            monthly = {}
+            for entry in entries:
+                month_key = entry.date.strftime("%Y-%m")
+                if month_key not in monthly:
+                    monthly[month_key] = {"entries": 0, "words": 0}
+                monthly[month_key]["entries"] += 1
+                monthly[month_key]["words"] += entry.word_count
+            analytics["monthly_breakdown"] = monthly
 
-        return analytics
+            return analytics
 
-    @handle_db_errors
-    @log_database_operation("get_month_analytics")
     def get_month_analytics(self, session: Session, year: int, month: int) -> Dict[str, Any]:
         """
         Get comprehensive analytics for a specific month with optimized loading.
@@ -430,8 +419,9 @@ class QueryAnalytics:
         Returns:
             Dictionary with month analytics
         """
-        entries = QueryOptimizer.for_month(session, year, month)
-        return {"year": year, "month": month, **self._compute_entry_analytics(entries)}
+        with DatabaseOperation(self.logger, "get_month_analytics"):
+            entries = QueryOptimizer.for_month(session, year, month)
+            return {"year": year, "month": month, **self._compute_entry_analytics(entries)}
 
     def _get_top_people(
         self, entries: List[Entry], limit: int = 5
@@ -465,8 +455,6 @@ class QueryAnalytics:
             for name, count in location_count.most_common(limit)
         ]
 
-    @handle_db_errors
-    @log_database_operation("get_timeline_overview")
     def get_timeline_overview(self, session: Session) -> Dict[str, Any]:
         """
         Get overview of entire journal timeline.
@@ -477,44 +465,44 @@ class QueryAnalytics:
         Returns:
             Dictionary with timeline analytics
         """
-        years = HierarchicalBatcher.get_years(session)
+        with DatabaseOperation(self.logger, "get_timeline_overview"):
+            years = HierarchicalBatcher.get_years(session)
 
-        overview = {
-            "total_years": len(years),
-            "year_range": {
-                "start": min(years) if years else None,
-                "end": max(years) if years else None,
-            },
-            "years": [],
-        }
-
-        for year in years:
-            year_count = HierarchicalBatcher.count_year_entries(session, year)
-            months = HierarchicalBatcher.get_months_for_year(session, year)
-
-            year_data = {
-                "year": year,
-                "total_entries": year_count,
-                "months_active": len(months),
-                "months": [],
+            overview = {
+                "total_years": len(years),
+                "year_range": {
+                    "start": min(years) if years else None,
+                    "end": max(years) if years else None,
+                },
+                "years": [],
             }
 
-            for month in months:
-                month_count = HierarchicalBatcher.count_month_entries(
-                    session, year, month
-                )
-                year_data["months"].append(
-                    {
-                        "month": month,
-                        "entries": month_count,
-                    }
-                )
+            for year in years:
+                year_count = HierarchicalBatcher.count_year_entries(session, year)
+                months = HierarchicalBatcher.get_months_for_year(session, year)
 
-            overview["years"].append(year_data)
+                year_data = {
+                    "year": year,
+                    "total_entries": year_count,
+                    "months_active": len(months),
+                    "months": [],
+                }
 
-        return overview
+                for month in months:
+                    month_count = HierarchicalBatcher.count_month_entries(
+                        session, year, month
+                    )
+                    year_data["months"].append(
+                        {
+                            "month": month,
+                            "entries": month_count,
+                        }
+                    )
 
-    @handle_db_errors
+                overview["years"].append(year_data)
+
+            return overview
+
     def get_manuscript_analytics(self, session: Session) -> Dict[str, Any]:
         """
         Get manuscript-specific analytics.
@@ -525,46 +513,47 @@ class QueryAnalytics:
         Returns:
             Dictionary with manuscript analytics
         """
-        analytics = {
-            "by_status": {},
-            "by_theme": {},
-            "by_arc": {},
-            "edited_count": 0,
-            "unedited_count": 0,
-        }
+        with DatabaseOperation(self.logger, "get_manuscript_analytics"):
+            analytics = {
+                "by_status": {},
+                "by_theme": {},
+                "by_arc": {},
+                "edited_count": 0,
+                "unedited_count": 0,
+            }
 
-        # Count by status
-        for status in ManuscriptStatus:
-            count = (
+            # Count by status
+            for status in ManuscriptStatus:
+                count = (
+                    session.query(ManuscriptEntry)
+                    .filter(ManuscriptEntry.status == status)
+                    .count()
+                )
+                analytics["by_status"][status.value] = count
+
+            # Count by theme
+            themes = session.query(Theme).all()
+            for theme in themes:
+                count = len(theme.entries)
+                analytics["by_theme"][theme.theme] = count
+
+            # Count by arc
+            arcs = session.query(Arc).all()
+            for arc in arcs:
+                count = len(arc.events)
+                analytics["by_arc"][arc.arc] = count
+
+            # Edited vs unedited
+            analytics["edited_count"] = (
                 session.query(ManuscriptEntry)
-                .filter(ManuscriptEntry.status == status)
+                .filter(ManuscriptEntry.edited.is_(True))
                 .count()
             )
-            analytics["by_status"][status.value] = count
 
-        # Count by theme
-        themes = session.query(Theme).all()
-        for theme in themes:
-            count = len(theme.entries)
-            analytics["by_theme"][theme.theme] = count
+            analytics["unedited_count"] = (
+                session.query(ManuscriptEntry)
+                .filter(ManuscriptEntry.edited.is_(False))
+                .count()
+            )
 
-        # Count by arc
-        arcs = session.query(Arc).all()
-        for arc in arcs:
-            count = len(arc.events)
-            analytics["by_arc"][arc.arc] = count
-
-        # Edited vs unedited
-        analytics["edited_count"] = (
-            session.query(ManuscriptEntry)
-            .filter(ManuscriptEntry.edited.is_(True))
-            .count()
-        )
-
-        analytics["unedited_count"] = (
-            session.query(ManuscriptEntry)
-            .filter(ManuscriptEntry.edited.is_(False))
-            .count()
-        )
-
-        return analytics
+            return analytics

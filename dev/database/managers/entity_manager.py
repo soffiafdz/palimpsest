@@ -35,7 +35,7 @@ from sqlalchemy.orm import Session
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
-from dev.database.decorators import handle_db_errors
+from dev.database.decorators import DatabaseOperation
 from .base_manager import BaseManager
 
 T = TypeVar("T")
@@ -105,7 +105,6 @@ class EntityManager(BaseManager):
     # CRUD Operations
     # =========================================================================
 
-    @handle_db_errors
     def exists(
         self,
         name: Optional[str] = None,
@@ -123,21 +122,21 @@ class EntityManager(BaseManager):
         Returns:
             True if entity exists, False otherwise
         """
-        if entity_id is not None:
-            entity = self._get_by_id(
-                self.config.model_class, entity_id, include_deleted=include_deleted
-            )
-            return entity is not None
-        if name is not None:
-            return self._exists(
-                self.config.model_class,
-                self.config.name_field,
-                name,
-                include_deleted=include_deleted,
-            )
-        return False
+        with DatabaseOperation(self.logger, f"check_{self.config.display_name}_exists"):
+            if entity_id is not None:
+                entity = self._get_by_id(
+                    self.config.model_class, entity_id, include_deleted=include_deleted
+                )
+                return entity is not None
+            if name is not None:
+                return self._exists(
+                    self.config.model_class,
+                    self.config.name_field,
+                    name,
+                    include_deleted=include_deleted,
+                )
+            return False
 
-    @handle_db_errors
     def get(
         self,
         name: Optional[str] = None,
@@ -155,20 +154,20 @@ class EntityManager(BaseManager):
         Returns:
             Entity if found, None otherwise
         """
-        if entity_id is not None:
-            return self._get_by_id(
-                self.config.model_class, entity_id, include_deleted=include_deleted
-            )
-        if name is not None:
-            return self._get_by_field(
-                self.config.model_class,
-                self.config.name_field,
-                name,
-                include_deleted=include_deleted,
-            )
-        return None
+        with DatabaseOperation(self.logger, f"get_{self.config.display_name}"):
+            if entity_id is not None:
+                return self._get_by_id(
+                    self.config.model_class, entity_id, include_deleted=include_deleted
+                )
+            if name is not None:
+                return self._get_by_field(
+                    self.config.model_class,
+                    self.config.name_field,
+                    name,
+                    include_deleted=include_deleted,
+                )
+            return None
 
-    @handle_db_errors
     def get_all(self, include_deleted: bool = False) -> List[T]:
         """
         Retrieve all entities.
@@ -179,13 +178,13 @@ class EntityManager(BaseManager):
         Returns:
             List of all entities
         """
-        return self._get_all(
-            self.config.model_class,
-            order_by=self.config.order_by,
-            include_deleted=include_deleted,
-        )
+        with DatabaseOperation(self.logger, f"get_all_{self.config.display_name}s"):
+            return self._get_all(
+                self.config.model_class,
+                order_by=self.config.order_by,
+                include_deleted=include_deleted,
+            )
 
-    @handle_db_errors
     def get_or_create(
         self,
         name: str,
@@ -201,18 +200,18 @@ class EntityManager(BaseManager):
         Returns:
             Existing or newly created entity
         """
-        # Try to get existing
-        existing = self.get(name=name)
-        if existing:
-            return existing
+        with DatabaseOperation(self.logger, f"get_or_create_{self.config.display_name}"):
+            # Try to get existing
+            existing = self.get(name=name)
+            if existing:
+                return existing
 
-        # Create new
-        metadata = {self.config.name_field: name}
-        if extra_metadata:
-            metadata.update(extra_metadata)
-        return self.create(metadata)
+            # Create new
+            metadata = {self.config.name_field: name}
+            if extra_metadata:
+                metadata.update(extra_metadata)
+            return self.create(metadata)
 
-    @handle_db_errors
     def create(self, metadata: Dict[str, Any]) -> T:
         """
         Create a new entity.
@@ -227,38 +226,38 @@ class EntityManager(BaseManager):
             ValidationError: If validation fails
             DatabaseError: If entity already exists
         """
-        # Validate
-        self._validate_create(metadata)
+        with DatabaseOperation(self.logger, f"create_{self.config.display_name}"):
+            # Validate
+            self._validate_create(metadata)
 
-        # Normalize name field
-        name = DataValidator.normalize_string(metadata.get(self.config.name_field))
-        if not name:
-            raise ValidationError(
-                f"Invalid {self.config.display_name} name: "
-                f"{metadata.get(self.config.name_field)}"
+            # Normalize name field
+            name = DataValidator.normalize_string(metadata.get(self.config.name_field))
+            if not name:
+                raise ValidationError(
+                    f"Invalid {self.config.display_name} name: "
+                    f"{metadata.get(self.config.name_field)}"
+                )
+
+            # Check for existing
+            existing = self.get(name=name)
+            if existing:
+                raise DatabaseError(f"{self.config.display_name} already exists: {name}")
+
+            # Create entity
+            entity = self._create_entity(metadata, name)
+            self.session.add(entity)
+            self.session.flush()
+
+            safe_logger(self.logger).log_debug(
+                f"Created {self.config.display_name}: {name}",
+                {f"{self.config.display_name}_id": entity.id},
             )
 
-        # Check for existing
-        existing = self.get(name=name)
-        if existing:
-            raise DatabaseError(f"{self.config.display_name} already exists: {name}")
+            # Post-creation (relationships, etc.)
+            self._post_create(entity, metadata)
 
-        # Create entity
-        entity = self._create_entity(metadata, name)
-        self.session.add(entity)
-        self.session.flush()
+            return entity
 
-        safe_logger(self.logger).log_debug(
-            f"Created {self.config.display_name}: {name}",
-            {f"{self.config.display_name}_id": entity.id},
-        )
-
-        # Post-creation (relationships, etc.)
-        self._post_create(entity, metadata)
-
-        return entity
-
-    @handle_db_errors
     def update(self, entity: T, metadata: Dict[str, Any]) -> T:
         """
         Update an existing entity.
@@ -270,34 +269,34 @@ class EntityManager(BaseManager):
         Returns:
             Updated entity
         """
-        # Validate
-        self._validate_update(entity, metadata)
+        with DatabaseOperation(self.logger, f"update_{self.config.display_name}"):
+            # Validate
+            self._validate_update(entity, metadata)
 
-        # Get fresh from session
-        db_entity = self.session.get(self.config.model_class, entity.id)
-        if db_entity is None:
-            raise DatabaseError(
-                f"{self.config.display_name} with id={entity.id} does not exist"
-            )
-        entity = self.session.merge(db_entity)
+            # Get fresh from session
+            db_entity = self.session.get(self.config.model_class, entity.id)
+            if db_entity is None:
+                raise DatabaseError(
+                    f"{self.config.display_name} with id={entity.id} does not exist"
+                )
+            entity = self.session.merge(db_entity)
 
-        # Update scalar fields
-        if self.config.scalar_fields:
-            self._update_scalar_fields(entity, metadata, self.config.scalar_fields)
+            # Update scalar fields
+            if self.config.scalar_fields:
+                self._update_scalar_fields(entity, metadata, self.config.scalar_fields)
 
-        # Update relationships
-        if self.config.relationships:
-            self._update_relationships(
-                entity, metadata, self.config.relationships, incremental=True
-            )
+            # Update relationships
+            if self.config.relationships:
+                self._update_relationships(
+                    entity, metadata, self.config.relationships, incremental=True
+                )
 
-        # Post-update hook
-        self._post_update(entity, metadata)
+            # Post-update hook
+            self._post_update(entity, metadata)
 
-        self.session.flush()
-        return entity
+            self.session.flush()
+            return entity
 
-    @handle_db_errors
     def delete(
         self,
         entity: T,
@@ -314,38 +313,38 @@ class EntityManager(BaseManager):
             reason: Why it's being deleted (for soft delete)
             hard: If True, permanently delete even if soft delete is supported
         """
-        if not isinstance(entity, self.config.model_class):
-            raise TypeError(
-                f"Expected {self.config.model_class.__name__}, "
-                f"got {type(entity).__name__}"
-            )
+        with DatabaseOperation(self.logger, f"delete_{self.config.display_name}"):
+            if not isinstance(entity, self.config.model_class):
+                raise TypeError(
+                    f"Expected {self.config.model_class.__name__}, "
+                    f"got {type(entity).__name__}"
+                )
 
-        # Pre-delete hook
-        self._pre_delete(entity)
+            # Pre-delete hook
+            self._pre_delete(entity)
 
-        # Soft delete if supported and not forced hard
-        if self.config.supports_soft_delete and not hard:
-            entity.deleted_at = datetime.now(timezone.utc)
-            entity.deleted_by = deleted_by
-            entity.deletion_reason = reason
-            safe_logger(self.logger).log_debug(
-                f"Soft deleted {self.config.display_name}",
-                {
-                    f"{self.config.display_name}_id": entity.id,
-                    "deleted_by": deleted_by,
-                },
-            )
-        else:
-            # Hard delete
-            self.session.delete(entity)
-            safe_logger(self.logger).log_debug(
-                f"Deleted {self.config.display_name}",
-                {f"{self.config.display_name}_id": entity.id},
-            )
+            # Soft delete if supported and not forced hard
+            if self.config.supports_soft_delete and not hard:
+                entity.deleted_at = datetime.now(timezone.utc)
+                entity.deleted_by = deleted_by
+                entity.deletion_reason = reason
+                safe_logger(self.logger).log_debug(
+                    f"Soft deleted {self.config.display_name}",
+                    {
+                        f"{self.config.display_name}_id": entity.id,
+                        "deleted_by": deleted_by,
+                    },
+                )
+            else:
+                # Hard delete
+                self.session.delete(entity)
+                safe_logger(self.logger).log_debug(
+                    f"Deleted {self.config.display_name}",
+                    {f"{self.config.display_name}_id": entity.id},
+                )
 
-        self.session.flush()
+            self.session.flush()
 
-    @handle_db_errors
     def restore(self, entity: T) -> T:
         """
         Restore a soft-deleted entity.
@@ -359,28 +358,29 @@ class EntityManager(BaseManager):
         Raises:
             DatabaseError: If entity doesn't support soft delete
         """
-        if not self.config.supports_soft_delete:
-            raise DatabaseError(
-                f"{self.config.display_name} does not support soft delete"
+        with DatabaseOperation(self.logger, f"restore_{self.config.display_name}"):
+            if not self.config.supports_soft_delete:
+                raise DatabaseError(
+                    f"{self.config.display_name} does not support soft delete"
+                )
+
+            if not isinstance(entity, self.config.model_class):
+                raise TypeError(
+                    f"Expected {self.config.model_class.__name__}, "
+                    f"got {type(entity).__name__}"
+                )
+
+            entity.deleted_at = None
+            entity.deleted_by = None
+            entity.deletion_reason = None
+            self.session.flush()
+
+            safe_logger(self.logger).log_debug(
+                f"Restored {self.config.display_name}",
+                {f"{self.config.display_name}_id": entity.id},
             )
 
-        if not isinstance(entity, self.config.model_class):
-            raise TypeError(
-                f"Expected {self.config.model_class.__name__}, "
-                f"got {type(entity).__name__}"
-            )
-
-        entity.deleted_at = None
-        entity.deleted_by = None
-        entity.deletion_reason = None
-        self.session.flush()
-
-        safe_logger(self.logger).log_debug(
-            f"Restored {self.config.display_name}",
-            {f"{self.config.display_name}_id": entity.id},
-        )
-
-        return entity
+            return entity
 
     # =========================================================================
     # Hook Methods (Override in Subclasses)

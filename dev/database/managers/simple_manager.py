@@ -38,7 +38,7 @@ from sqlalchemy.orm import Session
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
-from dev.database.decorators import handle_db_errors
+from dev.database.decorators import DatabaseOperation
 from dev.database.models import Entry, Event, Location, Moment, Person, Tag
 from .base_manager import BaseManager
 
@@ -187,7 +187,6 @@ class SimpleManager(BaseManager):
     # Core CRUD Operations
     # -------------------------------------------------------------------------
 
-    @handle_db_errors
     def exists(self, value: Any, include_deleted: bool = False) -> bool:
         """
         Check if an entity exists.
@@ -199,24 +198,24 @@ class SimpleManager(BaseManager):
         Returns:
             True if entity exists, False otherwise
         """
-        try:
-            normalized = self.config.normalizer(value)
-        except (ValidationError, TypeError):
-            return False
+        with DatabaseOperation(self.logger, "exists"):
+            try:
+                normalized = self.config.normalizer(value)
+            except (ValidationError, TypeError):
+                return False
 
-        if normalized is None:
-            return False
+            if normalized is None:
+                return False
 
-        query = self.session.query(self.config.model_class).filter_by(
-            **{self.config.name_field: normalized}
-        )
+            query = self.session.query(self.config.model_class).filter_by(
+                **{self.config.name_field: normalized}
+            )
 
-        if self.config.supports_soft_delete and not include_deleted:
-            query = query.filter(self.config.model_class.deleted_at.is_(None))
+            if self.config.supports_soft_delete and not include_deleted:
+                query = query.filter(self.config.model_class.deleted_at.is_(None))
 
-        return query.first() is not None
+            return query.first() is not None
 
-    @handle_db_errors
     def get(
         self,
         value: Optional[Any] = None,
@@ -246,52 +245,52 @@ class SimpleManager(BaseManager):
         Notes:
             If both value and ID provided, ID takes precedence.
         """
-        # Handle backward compatibility aliases
-        if target_date is not None:
-            value = target_date
-        if event_name is not None:
-            value = event_name
-        if date_id is not None:
-            entity_id = date_id
-        if event_id is not None:
-            entity_id = event_id
+        with DatabaseOperation(self.logger, "get"):
+            # Handle backward compatibility aliases
+            if target_date is not None:
+                value = target_date
+            if event_name is not None:
+                value = event_name
+            if date_id is not None:
+                entity_id = date_id
+            if event_id is not None:
+                entity_id = event_id
 
-        if entity_id is not None:
-            entity = self.session.get(self.config.model_class, entity_id)
-            if entity:
-                if self.config.supports_soft_delete:
-                    if include_deleted or not entity.deleted_at:
-                        return entity
+            if entity_id is not None:
+                entity = self.session.get(self.config.model_class, entity_id)
+                if entity:
+                    if self.config.supports_soft_delete:
+                        if include_deleted or not entity.deleted_at:
+                            return entity
+                        return None
+                    return entity
+                return None
+
+            if value is not None:
+                try:
+                    normalized = self.config.normalizer(value)
+                except (ValidationError, TypeError):
                     return None
-                return entity
+
+                if normalized is None:
+                    return None
+
+                query = self.session.query(self.config.model_class).filter_by(
+                    **{self.config.name_field: normalized}
+                )
+
+                if self.config.supports_soft_delete and not include_deleted:
+                    query = query.filter(self.config.model_class.deleted_at.is_(None))
+
+                return query.first()
+
             return None
 
-        if value is not None:
-            try:
-                normalized = self.config.normalizer(value)
-            except (ValidationError, TypeError):
-                return None
-
-            if normalized is None:
-                return None
-
-            query = self.session.query(self.config.model_class).filter_by(
-                **{self.config.name_field: normalized}
-            )
-
-            if self.config.supports_soft_delete and not include_deleted:
-                query = query.filter(self.config.model_class.deleted_at.is_(None))
-
-            return query.first()
-
-        return None
-
-    @handle_db_errors
     def get_by_id(self, entity_id: int) -> Optional[Any]:
         """Retrieve an entity by ID."""
-        return self.session.get(self.config.model_class, entity_id)
+        with DatabaseOperation(self.logger, "get_by_id"):
+            return self.session.get(self.config.model_class, entity_id)
 
-    @handle_db_errors
     def get_all(
         self,
         include_deleted: bool = False,
@@ -309,38 +308,38 @@ class SimpleManager(BaseManager):
         Returns:
             List of entity objects
         """
-        query = self.session.query(self.config.model_class)
+        with DatabaseOperation(self.logger, "get_all"):
+            query = self.session.query(self.config.model_class)
 
-        if self.config.supports_soft_delete and not include_deleted:
-            query = query.filter(self.config.model_class.deleted_at.is_(None))
+            if self.config.supports_soft_delete and not include_deleted:
+                query = query.filter(self.config.model_class.deleted_at.is_(None))
 
-        # Determine ordering
-        if order_by == "usage_count":
-            # Special case: order by computed property (done in Python)
-            entities = query.all()
-            return sorted(
-                entities,
-                key=lambda e: len(e.entries) if hasattr(e, "entries") else 0,
-                reverse=True,
-            )
+            # Determine ordering
+            if order_by == "usage_count":
+                # Special case: order by computed property (done in Python)
+                entities = query.all()
+                return sorted(
+                    entities,
+                    key=lambda e: len(e.entries) if hasattr(e, "entries") else 0,
+                    reverse=True,
+                )
 
-        # For Moment, order_by_date controls ordering
-        if self.config.model_class == Moment:
-            if order_by_date:
-                query = query.order_by(Moment.date)
+            # For Moment, order_by_date controls ordering
+            if self.config.model_class == Moment:
+                if order_by_date:
+                    query = query.order_by(Moment.date)
+                return query.all()
+
+            # Default ordering by name_field
+            order_field = order_by or self.config.name_field
+            if hasattr(self.config.model_class, order_field):
+                attr = getattr(self.config.model_class, order_field)
+                # Only use for ordering if it's a column, not a property
+                if hasattr(attr, '__clause_element__') or hasattr(attr, 'property'):
+                    query = query.order_by(attr)
+
             return query.all()
 
-        # Default ordering by name_field
-        order_field = order_by or self.config.name_field
-        if hasattr(self.config.model_class, order_field):
-            attr = getattr(self.config.model_class, order_field)
-            # Only use for ordering if it's a column, not a property
-            if hasattr(attr, '__clause_element__') or hasattr(attr, 'property'):
-                query = query.order_by(attr)
-
-        return query.all()
-
-    @handle_db_errors
     def create(self, metadata: Dict[str, Any]) -> Any:
         """
         Create a new entity.
@@ -358,65 +357,65 @@ class SimpleManager(BaseManager):
             ValidationError: If required field is missing or invalid
             DatabaseError: If entity already exists
         """
-        # Validate and normalize the primary field
-        raw_value = metadata.get(self.config.name_field)
-        if raw_value is None:
-            raise ValidationError(
-                f"{self.config.display_name.capitalize()} "
-                f"{self.config.name_field} is required"
-            )
-
-        try:
-            normalized = self.config.normalizer(raw_value)
-        except ValidationError:
-            raise
-        except Exception as e:
-            raise ValidationError(
-                f"Invalid {self.config.name_field}: {raw_value}"
-            ) from e
-
-        if normalized is None:
-            raise ValidationError(
-                f"{self.config.display_name.capitalize()} cannot be empty"
-            )
-
-        # Check for existing (including deleted if soft delete supported)
-        existing = self.get(value=normalized, include_deleted=True)
-        if existing:
-            if self.config.supports_soft_delete and existing.deleted_at:
-                raise DatabaseError(
-                    f"{self.config.display_name.capitalize()} '{normalized}' exists "
-                    f"but is deleted. Restore it instead of creating new."
+        with DatabaseOperation(self.logger, "create"):
+            # Validate and normalize the primary field
+            raw_value = metadata.get(self.config.name_field)
+            if raw_value is None:
+                raise ValidationError(
+                    f"{self.config.display_name.capitalize()} "
+                    f"{self.config.name_field} is required"
                 )
-            raise DatabaseError(
-                f"{self.config.display_name.capitalize()} already exists: {normalized}"
+
+            try:
+                normalized = self.config.normalizer(raw_value)
+            except ValidationError:
+                raise
+            except Exception as e:
+                raise ValidationError(
+                    f"Invalid {self.config.name_field}: {raw_value}"
+                ) from e
+
+            if normalized is None:
+                raise ValidationError(
+                    f"{self.config.display_name.capitalize()} cannot be empty"
+                )
+
+            # Check for existing (including deleted if soft delete supported)
+            existing = self.get(value=normalized, include_deleted=True)
+            if existing:
+                if self.config.supports_soft_delete and existing.deleted_at:
+                    raise DatabaseError(
+                        f"{self.config.display_name.capitalize()} '{normalized}' exists "
+                        f"but is deleted. Restore it instead of creating new."
+                    )
+                raise DatabaseError(
+                    f"{self.config.display_name.capitalize()} already exists: {normalized}"
+                )
+
+            # Build entity fields
+            fields = {self.config.name_field: normalized}
+            for extra_field in self.config.extra_fields:
+                if extra_field in metadata:
+                    value = metadata[extra_field]
+                    if isinstance(value, str):
+                        value = DataValidator.normalize_string(value)
+                    fields[extra_field] = value
+
+            # Create entity
+            entity = self.config.model_class(**fields)
+            self.session.add(entity)
+            self.session.flush()
+
+            safe_logger(self.logger).log_debug(
+                f"Created {self.config.display_name}: {normalized}",
+                {"id": entity.id},
             )
 
-        # Build entity fields
-        fields = {self.config.name_field: normalized}
-        for extra_field in self.config.extra_fields:
-            if extra_field in metadata:
-                value = metadata[extra_field]
-                if isinstance(value, str):
-                    value = DataValidator.normalize_string(value)
-                fields[extra_field] = value
+            # Update relationships
+            self._update_relationships(entity, metadata, incremental=False)
 
-        # Create entity
-        entity = self.config.model_class(**fields)
-        self.session.add(entity)
-        self.session.flush()
+            return entity
 
-        safe_logger(self.logger).log_debug(
-            f"Created {self.config.display_name}: {normalized}",
-            {"id": entity.id},
-        )
-
-        # Update relationships
-        self._update_relationships(entity, metadata, incremental=False)
-
-        return entity
-
-    @handle_db_errors
     def get_or_create(self, value: Any, **extra_fields) -> Any:
         """
         Get an existing entity or create it if it doesn't exist.
@@ -431,28 +430,28 @@ class SimpleManager(BaseManager):
         Raises:
             ValidationError: If value is invalid
         """
-        try:
-            normalized = self.config.normalizer(value)
-        except ValidationError:
-            raise
-        except Exception as e:
-            raise ValidationError(f"Invalid {self.config.name_field}: {value}") from e
+        with DatabaseOperation(self.logger, "get_or_create"):
+            try:
+                normalized = self.config.normalizer(value)
+            except ValidationError:
+                raise
+            except Exception as e:
+                raise ValidationError(f"Invalid {self.config.name_field}: {value}") from e
 
-        if normalized is None:
-            raise ValidationError(
-                f"{self.config.display_name.capitalize()} cannot be empty"
-            )
+            if normalized is None:
+                raise ValidationError(
+                    f"{self.config.display_name.capitalize()} cannot be empty"
+                )
 
-        # Try to get existing
-        entity = self.get(value=normalized)
-        if entity:
-            return entity
+            # Try to get existing
+            entity = self.get(value=normalized)
+            if entity:
+                return entity
 
-        # Create new
-        metadata = {self.config.name_field: normalized, **extra_fields}
-        return self.create(metadata)
+            # Create new
+            metadata = {self.config.name_field: normalized, **extra_fields}
+            return self.create(metadata)
 
-    @handle_db_errors
     def update(self, entity: Any, metadata: Dict[str, Any]) -> Any:
         """
         Update an existing entity.
@@ -467,45 +466,45 @@ class SimpleManager(BaseManager):
         Raises:
             DatabaseError: If entity not found or is deleted
         """
-        # Ensure entity exists
-        db_entity = self.session.get(self.config.model_class, entity.id)
-        if db_entity is None:
-            raise DatabaseError(
-                f"{self.config.display_name.capitalize()} with id={entity.id} not found"
-            )
+        with DatabaseOperation(self.logger, "update"):
+            # Ensure entity exists
+            db_entity = self.session.get(self.config.model_class, entity.id)
+            if db_entity is None:
+                raise DatabaseError(
+                    f"{self.config.display_name.capitalize()} with id={entity.id} not found"
+                )
 
-        if self.config.supports_soft_delete and db_entity.deleted_at:
-            raise DatabaseError(
-                f"Cannot update deleted {self.config.display_name}: "
-                f"{getattr(db_entity, self.config.name_field)}"
-            )
+            if self.config.supports_soft_delete and db_entity.deleted_at:
+                raise DatabaseError(
+                    f"Cannot update deleted {self.config.display_name}: "
+                    f"{getattr(db_entity, self.config.name_field)}"
+                )
 
-        # Attach to session
-        entity = self.session.merge(db_entity)
+            # Attach to session
+            entity = self.session.merge(db_entity)
 
-        # Update name field if provided (for Event manager: event field can be renamed)
-        name_field = self.config.name_field
-        if name_field in metadata:
-            value = metadata[name_field]
-            if isinstance(value, str):
-                value = DataValidator.normalize_string(value)
-            if value is not None:
-                setattr(entity, name_field, value)
-
-        # Update extra fields
-        for field_name in self.config.extra_fields:
-            if field_name in metadata:
-                value = metadata[field_name]
+            # Update name field if provided (for Event manager: event field can be renamed)
+            name_field = self.config.name_field
+            if name_field in metadata:
+                value = metadata[name_field]
                 if isinstance(value, str):
                     value = DataValidator.normalize_string(value)
-                setattr(entity, field_name, value)
+                if value is not None:
+                    setattr(entity, name_field, value)
 
-        # Update relationships
-        self._update_relationships(entity, metadata, incremental=True)
+            # Update extra fields
+            for field_name in self.config.extra_fields:
+                if field_name in metadata:
+                    value = metadata[field_name]
+                    if isinstance(value, str):
+                        value = DataValidator.normalize_string(value)
+                    setattr(entity, field_name, value)
 
-        return entity
+            # Update relationships
+            self._update_relationships(entity, metadata, incremental=True)
 
-    @handle_db_errors
+            return entity
+
     def delete(
         self,
         entity: Union[Any, int],
@@ -526,35 +525,35 @@ class SimpleManager(BaseManager):
             - Entities without soft delete support always hard delete
             - Cascade deletes remove all relationships
         """
-        if isinstance(entity, int):
-            entity = self.get(entity_id=entity, include_deleted=True)
-            if not entity:
-                raise DatabaseError(
-                    f"{self.config.display_name.capitalize()} not found with id: {entity}"
+        with DatabaseOperation(self.logger, "delete"):
+            if isinstance(entity, int):
+                entity = self.get(entity_id=entity, include_deleted=True)
+                if not entity:
+                    raise DatabaseError(
+                        f"{self.config.display_name.capitalize()} not found with id: {entity}"
+                    )
+
+            entity_name = getattr(entity, self.config.name_field)
+
+            if self.config.supports_soft_delete and not hard_delete:
+                # Soft delete
+                safe_logger(self.logger).log_debug(
+                    f"Soft deleting {self.config.display_name}: {entity_name}",
+                    {"id": entity.id, "deleted_by": deleted_by, "reason": reason},
                 )
+                entity.deleted_at = datetime.now(timezone.utc)
+                entity.deleted_by = deleted_by
+                entity.deletion_reason = reason
+            else:
+                # Hard delete
+                safe_logger(self.logger).log_debug(
+                    f"Hard deleting {self.config.display_name}: {entity_name}",
+                    {"id": entity.id},
+                )
+                self.session.delete(entity)
 
-        entity_name = getattr(entity, self.config.name_field)
+            self.session.flush()
 
-        if self.config.supports_soft_delete and not hard_delete:
-            # Soft delete
-            safe_logger(self.logger).log_debug(
-                f"Soft deleting {self.config.display_name}: {entity_name}",
-                {"id": entity.id, "deleted_by": deleted_by, "reason": reason},
-            )
-            entity.deleted_at = datetime.now(timezone.utc)
-            entity.deleted_by = deleted_by
-            entity.deletion_reason = reason
-        else:
-            # Hard delete
-            safe_logger(self.logger).log_debug(
-                f"Hard deleting {self.config.display_name}: {entity_name}",
-                {"id": entity.id},
-            )
-            self.session.delete(entity)
-
-        self.session.flush()
-
-    @handle_db_errors
     def restore(self, entity: Union[Any, int]) -> Any:
         """
         Restore a soft-deleted entity.
@@ -568,37 +567,38 @@ class SimpleManager(BaseManager):
         Raises:
             DatabaseError: If entity not found, not deleted, or doesn't support soft delete
         """
-        if not self.config.supports_soft_delete:
-            raise DatabaseError(
-                f"{self.config.display_name.capitalize()} does not support soft delete"
-            )
-
-        if isinstance(entity, int):
-            entity = self.get(entity_id=entity, include_deleted=True)
-            if not entity:
+        with DatabaseOperation(self.logger, "restore"):
+            if not self.config.supports_soft_delete:
                 raise DatabaseError(
-                    f"{self.config.display_name.capitalize()} not found with id: {entity}"
+                    f"{self.config.display_name.capitalize()} does not support soft delete"
                 )
 
-        if not entity.deleted_at:
+            if isinstance(entity, int):
+                entity = self.get(entity_id=entity, include_deleted=True)
+                if not entity:
+                    raise DatabaseError(
+                        f"{self.config.display_name.capitalize()} not found with id: {entity}"
+                    )
+
+            if not entity.deleted_at:
+                entity_name = getattr(entity, self.config.name_field)
+                raise DatabaseError(
+                    f"{self.config.display_name.capitalize()} is not deleted: {entity_name}"
+                )
+
+            entity.deleted_at = None
+            entity.deleted_by = None
+            entity.deletion_reason = None
+
+            self.session.flush()
+
             entity_name = getattr(entity, self.config.name_field)
-            raise DatabaseError(
-                f"{self.config.display_name.capitalize()} is not deleted: {entity_name}"
+            safe_logger(self.logger).log_debug(
+                f"Restored {self.config.display_name}: {entity_name}",
+                {"id": entity.id},
             )
 
-        entity.deleted_at = None
-        entity.deleted_by = None
-        entity.deletion_reason = None
-
-        self.session.flush()
-
-        entity_name = getattr(entity, self.config.name_field)
-        safe_logger(self.logger).log_debug(
-            f"Restored {self.config.display_name}: {entity_name}",
-            {"id": entity.id},
-        )
-
-        return entity
+            return entity
 
     # -------------------------------------------------------------------------
     # Relationship Management
@@ -646,7 +646,6 @@ class SimpleManager(BaseManager):
 
             self.session.flush()
 
-    @handle_db_errors
     def link_to_entry(
         self, entity_or_entry: Any, entry_or_name: Any = None
     ) -> Optional[Any]:
@@ -660,32 +659,32 @@ class SimpleManager(BaseManager):
         For other entities:
             link_to_entry(entity, entry) -> None
         """
-        # Tag-specific: link_to_entry(entry, tag_name)
-        if self.config.model_class == Tag and isinstance(entry_or_name, str):
-            entry = entity_or_entry
-            tag_name = entry_or_name
+        with DatabaseOperation(self.logger, "link_to_entry"):
+            # Tag-specific: link_to_entry(entry, tag_name)
+            if self.config.model_class == Tag and isinstance(entry_or_name, str):
+                entry = entity_or_entry
+                tag_name = entry_or_name
 
-            if entry.id is None:
-                raise ValueError("Entry must be persisted before linking tags")
+                if entry.id is None:
+                    raise ValueError("Entry must be persisted before linking tags")
 
-            tag = self.get_or_create(tag_name)
-            if tag not in entry.tags:
-                entry.tags.append(tag)
-                self.session.flush()
+                tag = self.get_or_create(tag_name)
+                if tag not in entry.tags:
+                    entry.tags.append(tag)
+                    self.session.flush()
 
-                safe_logger(self.logger).log_debug(
-                    "Linked tag to entry",
-                    {"tag": tag.tag, "entry_date": entry.date},
-                )
-            return tag
+                    safe_logger(self.logger).log_debug(
+                        "Linked tag to entry",
+                        {"tag": tag.tag, "entry_date": entry.date},
+                    )
+                return tag
 
-        # Generic: link_to_entry(entity, entry)
-        entity = entity_or_entry
-        entry = entry_or_name
-        self._link(entity, entry, "entries")
-        return None
+            # Generic: link_to_entry(entity, entry)
+            entity = entity_or_entry
+            entry = entry_or_name
+            self._link(entity, entry, "entries")
+            return None
 
-    @handle_db_errors
     def unlink_from_entry(
         self, entity_or_entry: Any, entry_or_name: Any = None
     ) -> bool:
@@ -698,33 +697,33 @@ class SimpleManager(BaseManager):
         For other entities:
             unlink_from_entry(entity, entry) -> bool
         """
-        # Tag-specific: unlink_from_entry(entry, tag_name)
-        if self.config.model_class == Tag and isinstance(entry_or_name, str):
-            entry = entity_or_entry
-            tag_name = entry_or_name
+        with DatabaseOperation(self.logger, "unlink_from_entry"):
+            # Tag-specific: unlink_from_entry(entry, tag_name)
+            if self.config.model_class == Tag and isinstance(entry_or_name, str):
+                entry = entity_or_entry
+                tag_name = entry_or_name
 
-            if entry.id is None:
-                raise ValueError("Entry must be persisted before unlinking tags")
+                if entry.id is None:
+                    raise ValueError("Entry must be persisted before unlinking tags")
 
-            tag = self.get(value=tag_name)
-            if not tag or tag not in entry.tags:
-                return False
+                tag = self.get(value=tag_name)
+                if not tag or tag not in entry.tags:
+                    return False
 
-            entry.tags.remove(tag)
-            self.session.flush()
+                entry.tags.remove(tag)
+                self.session.flush()
 
-            safe_logger(self.logger).log_debug(
-                "Unlinked tag from entry",
-                {"tag": tag.tag, "entry_date": entry.date},
-            )
-            return True
+                safe_logger(self.logger).log_debug(
+                    "Unlinked tag from entry",
+                    {"tag": tag.tag, "entry_date": entry.date},
+                )
+                return True
 
-        # Generic: unlink_from_entry(entity, entry)
-        entity = entity_or_entry
-        entry = entry_or_name
-        return self._unlink(entity, entry, "entries")
+            # Generic: unlink_from_entry(entity, entry)
+            entity = entity_or_entry
+            entry = entry_or_name
+            return self._unlink(entity, entry, "entries")
 
-    @handle_db_errors
     def update_entry_tags(
         self,
         entry: Entry,
@@ -742,66 +741,67 @@ class SimpleManager(BaseManager):
         Raises:
             ValueError: If not a Tag manager or entry is not persisted
         """
-        if self.config.model_class != Tag:
-            raise ValueError("update_entry_tags only available for Tag manager")
+        with DatabaseOperation(self.logger, "update_entry_tags"):
+            if self.config.model_class != Tag:
+                raise ValueError("update_entry_tags only available for Tag manager")
 
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before updating tags")
+            if entry.id is None:
+                raise ValueError("Entry must be persisted before updating tags")
 
-        # Normalize incoming tags
-        norm_tags = set()
-        for t in tags:
-            if t:
-                normalized = DataValidator.normalize_string(t)
-                if normalized:
-                    norm_tags.add(normalized)
+            # Normalize incoming tags
+            norm_tags = set()
+            for t in tags:
+                if t:
+                    normalized = DataValidator.normalize_string(t)
+                    if normalized:
+                        norm_tags.add(normalized)
 
-        # Replacement mode: clear all existing
-        if not incremental:
-            entry.tags.clear()
-            self.session.flush()
+            # Replacement mode: clear all existing
+            if not incremental:
+                entry.tags.clear()
+                self.session.flush()
 
-        # Get existing tags
-        existing_tags = {tag.tag for tag in entry.tags}
+            # Get existing tags
+            existing_tags = {tag.tag for tag in entry.tags}
 
-        # Add new tags
-        new_tags = norm_tags - existing_tags
-        for tag_name in new_tags:
-            tag_obj = self.get_or_create(tag_name)
-            entry.tags.append(tag_obj)
+            # Add new tags
+            new_tags = norm_tags - existing_tags
+            for tag_name in new_tags:
+                tag_obj = self.get_or_create(tag_name)
+                entry.tags.append(tag_obj)
 
-        if new_tags:
-            self.session.flush()
+            if new_tags:
+                self.session.flush()
 
-            safe_logger(self.logger).log_debug(
-                "Updated entry tags",
-                {
-                    "entry_date": entry.date,
-                    "added_count": len(new_tags),
-                    "total_count": len(entry.tags),
-                    "incremental": incremental,
-                },
-            )
+                safe_logger(self.logger).log_debug(
+                    "Updated entry tags",
+                    {
+                        "entry_date": entry.date,
+                        "added_count": len(new_tags),
+                        "total_count": len(entry.tags),
+                        "incremental": incremental,
+                    },
+                )
 
-    @handle_db_errors
     def link_to_person(self, entity: Any, person: Person) -> None:
         """Link an entity to a person (if relationship exists)."""
-        self._link(entity, person, "people")
+        with DatabaseOperation(self.logger, "link_to_person"):
+            self._link(entity, person, "people")
 
-    @handle_db_errors
     def unlink_from_person(self, entity: Any, person: Person) -> bool:
         """Unlink an entity from a person (if relationship exists)."""
-        return self._unlink(entity, person, "people")
+        with DatabaseOperation(self.logger, "unlink_from_person"):
+            return self._unlink(entity, person, "people")
 
-    @handle_db_errors
     def link_to_location(self, entity: Any, location: Location) -> None:
         """Link an entity to a location (if relationship exists)."""
-        self._link(entity, location, "locations")
+        with DatabaseOperation(self.logger, "link_to_location"):
+            self._link(entity, location, "locations")
 
-    @handle_db_errors
     def unlink_from_location(self, entity: Any, location: Location) -> bool:
         """Unlink an entity from a location (if relationship exists)."""
-        return self._unlink(entity, location, "locations")
+        with DatabaseOperation(self.logger, "unlink_from_location"):
+            return self._unlink(entity, location, "locations")
 
     def _link(self, entity: Any, related: Any, attr_name: str) -> None:
         """Generic link helper."""
@@ -868,7 +868,6 @@ class SimpleManager(BaseManager):
     # Query Methods
     # -------------------------------------------------------------------------
 
-    @handle_db_errors
     def get_by_usage(
         self, min_count: int = 1, max_count: Optional[int] = None
     ) -> List[Any]:
@@ -882,28 +881,28 @@ class SimpleManager(BaseManager):
         Returns:
             List of entities sorted by usage count (descending)
         """
-        all_entities = self.get_all()
+        with DatabaseOperation(self.logger, "get_by_usage"):
+            all_entities = self.get_all()
 
-        # Filter by entry count
-        filtered = []
-        for entity in all_entities:
-            count = len(entity.entries) if hasattr(entity, "entries") else 0
-            if count >= min_count and (max_count is None or count <= max_count):
-                filtered.append(entity)
+            # Filter by entry count
+            filtered = []
+            for entity in all_entities:
+                count = len(entity.entries) if hasattr(entity, "entries") else 0
+                if count >= min_count and (max_count is None or count <= max_count):
+                    filtered.append(entity)
 
-        # Sort by usage count descending
-        return sorted(
-            filtered,
-            key=lambda e: len(e.entries) if hasattr(e, "entries") else 0,
-            reverse=True,
-        )
+            # Sort by usage count descending
+            return sorted(
+                filtered,
+                key=lambda e: len(e.entries) if hasattr(e, "entries") else 0,
+                reverse=True,
+            )
 
-    @handle_db_errors
     def get_unused(self) -> List[Any]:
         """Get entities not linked to any entries."""
-        return self.get_by_usage(min_count=0, max_count=0)
+        with DatabaseOperation(self.logger, "get_unused"):
+            return self.get_by_usage(min_count=0, max_count=0)
 
-    @handle_db_errors
     def get_by_date_range(
         self,
         start_date: Optional[date] = None,
@@ -924,33 +923,34 @@ class SimpleManager(BaseManager):
         Returns:
             List of entities in the date range
         """
-        if self.config.model_class == Moment:
-            # Filter Moment by date field
-            from sqlalchemy import and_
+        with DatabaseOperation(self.logger, "get_by_date_range"):
+            if self.config.model_class == Moment:
+                # Filter Moment by date field
+                from sqlalchemy import and_
 
-            query = self.session.query(self.config.model_class)
-            conditions = []
-            if start_date:
-                conditions.append(Moment.date >= start_date)
-            if end_date:
-                conditions.append(Moment.date <= end_date)
-            if conditions:
-                query = query.filter(and_(*conditions))
-            return query.order_by(Moment.date).all()
+                query = self.session.query(self.config.model_class)
+                conditions = []
+                if start_date:
+                    conditions.append(Moment.date >= start_date)
+                if end_date:
+                    conditions.append(Moment.date <= end_date)
+                if conditions:
+                    query = query.filter(and_(*conditions))
+                return query.order_by(Moment.date).all()
 
-        elif self.config.model_class == Event:
-            # Filter Event by entry dates
-            query = self.session.query(Event).join(Event.entries)
-            if start_date:
-                query = query.filter(Entry.date >= start_date)
-            if end_date:
-                query = query.filter(Entry.date <= end_date)
-            if not include_deleted:
-                query = query.filter(Event.deleted_at.is_(None))
-            return query.order_by(Event.event).distinct().all()
+            elif self.config.model_class == Event:
+                # Filter Event by entry dates
+                query = self.session.query(Event).join(Event.entries)
+                if start_date:
+                    query = query.filter(Entry.date >= start_date)
+                if end_date:
+                    query = query.filter(Entry.date <= end_date)
+                if not include_deleted:
+                    query = query.filter(Event.deleted_at.is_(None))
+                return query.order_by(Event.event).distinct().all()
 
-        # Tags don't have date ranges
-        return []
+            # Tags don't have date ranges
+            return []
 
     # Alias for backward compatibility with DateManager
     get_by_range = get_by_date_range
