@@ -147,6 +147,19 @@ def format_date(d: date, fmt: str = "%Y-%m-%d") -> str:
     return d.strftime(fmt)
 
 
+def format_number(n: int) -> str:
+    """
+    Format a number with thousands separators.
+
+    Args:
+        n: Number to format
+
+    Returns:
+        Formatted string with commas (e.g., "1,234,567")
+    """
+    return f"{n:,}"
+
+
 def pluralize(count: int, singular: str, plural: Optional[str] = None) -> str:
     """
     Return singular or plural form based on count.
@@ -174,6 +187,7 @@ def register_filters(env) -> None:
     """
     env.filters['slugify'] = slugify
     env.filters['format_date'] = format_date
+    env.filters['format_number'] = format_number
     env.filters['pluralize'] = pluralize
     # entity_link and wikilink need context, registered as globals
     env.globals['entity_link'] = entity_link

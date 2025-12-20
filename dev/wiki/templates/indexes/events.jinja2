@@ -1,0 +1,21 @@
+{# Events Index Template - Groups by year #}
+# Palimpsest — Events
+
+Index of all events, organized by year.
+
+{% for year in years %}
+{% set year_events = groups[year] %}
+
+## {{ year }} ({{ year_events|length }} events)
+
+{% for event in year_events|sort(attribute='name') %}
+- [[{{ event.path }}|{{ event.name }}]] ({{ event.mentions }} mention{{ 's' if event.mentions != 1 else '' }})
+{% endfor %}
+{% endfor %}
+
+---
+
+## Statistics
+
+- **Total Events**: {{ total }}
+- **Years Covered**: {{ years|reject('equalto', 'Unknown')|list|length }}

@@ -99,6 +99,8 @@ This list is organized by dependency tiers. Complete tasks in order to avoid rew
 | **P25** | Moment model schema (MentionedDate → Moment, M2M events) | ~50 cleaner | ✅ Complete |
 | **P4** | Simplify health/analytics (data-driven configs) | -114 | ✅ Complete |
 | **P4.1** | Consolidate integrity check methods | (in P4) | ✅ Complete |
+| **P26** | Template-based wiki renderer (Jinja2 templates) | -2,750 | ✅ Complete |
+| **P8** | Generic wiki index builder (merged into P26) | -280 | ✅ Complete |
 
 ### Tier 1: Foundation (Core Changes - Do First)
 
@@ -108,16 +110,16 @@ Schema and architecture changes that other tasks depend on.
 |----------|------|--------------|------|------------|
 | **P3** | Consolidate entity managers (9→4) | -3,000 | Medium | — |
 
-### Tier 2: Wiki System Rewrite
+### Tier 2: Wiki System Rewrite ✅
 
-Replaces the current wiki dataclass system with Jinja templates.
+Replaced the wiki dataclass system with Jinja templates in `dev/wiki/`.
 
-| Priority | Task | Lines Impact | Risk | Depends On |
-|----------|------|--------------|------|------------|
-| **P26** | Template-based wiki renderer | -2,750 | Medium | P25 |
-| **P8** | Generic wiki index builder | -280 | Low | P26 (or merged into P26) |
+| Priority | Task | Lines Impact | Risk | Status |
+|----------|------|--------------|------|--------|
+| **P26** | Template-based wiki renderer | -2,750 | Medium | ✅ Complete |
+| **P8** | Generic wiki index builder | -280 | Low | ✅ Merged into P26 |
 
-**Note:** P5, P5.1, P5.2, P20 (wiki dataclass cleanup) become **obsolete** with P26. Skip these if P26 is planned.
+**Completed:** P5, P5.1, P5.2, P20 (wiki dataclass cleanup) are now obsolete - all handled by P26.
 
 ### Tier 3: Wiki Enhancements
 
@@ -2111,10 +2113,10 @@ class PoemVersion(Base):
 
 ---
 
-## P. Wiki System Rewrite: Template-Based Renderer
+## P. Wiki System Rewrite: Template-Based Renderer ✅ COMPLETE
 
 **Priority:** P26
-**Risk:** Medium
+**Status:** ✅ Complete
 **Benefit:** ~2,500 lines saved, cleaner architecture, easier to maintain
 
 ### P.1: The Problem
