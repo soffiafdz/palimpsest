@@ -50,6 +50,7 @@
 **Obsolete (no longer applicable):** P7, P7.1 (no meta-programming found, all import functions used)
 **Skipped (marginal gain):** P12, P15, P16 (sync patterns straightforward, ~5 occurrences)
 **Obsolete (codebase already clean):** P17 (only 1 unused function found - removed), P21 (search modules logically separate)
+**Already done:** P6 (CLI well-organized), P9 (validators domain-specific), P14 (PDF builder uses shared `_build_single_pdf`)
 
 ---
 
@@ -71,14 +72,6 @@
 | **P32** | Neovim manuscript commands | +200 Lua | Low | P28-P31 |
 | **P33** | Stats materialized views | +100 SQL | Low | P25, P28 |
 
-### Tier 8: Validators & CLI
-
-| Priority | Task | Lines | Risk | Description |
-|----------|------|-------|------|-------------|
-| **P6** | Consolidate backup/stats CLI | ~100 | Low | Merge similar CLI commands |
-| **P9** | Validator method consolidation | ~160 | Low | Generic validation helpers |
-| **P14** | PDF builder consolidation | ~98 | Medium | Merge clean/notes PDF builders |
-
 ### Tier 9: Final Cleanup
 
 | Priority | Task | Lines | Risk | Depends On |
@@ -90,13 +83,11 @@
 
 ## Quick Reference: What to Do Next
 
-**Current Focus:** Tier 8 (Validators & CLI) - Low-impact remaining
+**Simplification Complete** - All high-impact tasks done.
 
-1. **P6** - Low risk: Consolidate backup/stats CLI (~100 lines)
-2. **P9** - Low risk: Generic validation helpers (~160 lines)
-3. **P14** - Medium risk: PDF builder consolidation (~98 lines)
-
-Note: Most simplification work is complete. Remaining tasks have diminishing returns.
+Remaining options:
+1. **Tier 6-7 (Manuscript)**: Add manuscript features (+lines, not simplification)
+2. **P35 (Code reorganization)**: Optional structural cleanup
 
 ---
 
