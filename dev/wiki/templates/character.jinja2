@@ -1,0 +1,72 @@
+{#
+  character.jinja2
+  ----------------
+  Wiki template for ManuscriptPerson (character) entity.
+  Displays character info, based-on person, appearances, and development notes.
+#}
+# Palimpsest — Character
+
+## {{ entity.character }}
+
+### Based On
+{% if entity.person %}
+- **Real Person:** {{ entity_link(entity.person, 'people', wiki_dir, output_path) }}
+- **Relationship:** {{ entity.person.relationship_display if entity.person.relation_type else 'Unknown' }}
+{% endif %}
+
+### Statistics
+- **Entry Appearances:** {{ entity.entry_count }}
+{% if entity.first_appearance %}
+- **First Appearance:** {{ entity.first_appearance.isoformat() }}
+{% endif %}
+{% if entity.last_appearance %}
+- **Last Appearance:** {{ entity.last_appearance.isoformat() }}
+{% endif %}
+
+### Character Description
+{{ entity.character_description or '[Add physical and personality description here]' }}
+
+### Character Arc
+{{ entity.character_arc or '[Add character development notes here]' }}
+
+### Voice Notes
+{{ entity.voice_notes or '[Add notes about dialogue style and narrative voice]' }}
+
+### Appearance Notes
+{{ entity.appearance_notes or '[Add notes about how character appears in manuscript]' }}
+
+### Appearances
+{% if entity.person and entity.person.entries %}
+{% set entries_by_year = {} %}
+{% for entry in entity.person.entries %}
+{% set year = entry.date.year %}
+{% if year not in entries_by_year %}
+{% set _ = entries_by_year.update({year: []}) %}
+{% endif %}
+{% set _ = entries_by_year[year].append(entry) %}
+{% endfor %}
+{% for year in entries_by_year.keys()|sort(reverse=true) %}
+{% set year_entries = entries_by_year[year] %}
+#### {{ year }} ({{ year_entries|length }} entries)
+
+{% for entry in year_entries|sort(attribute='date', reverse=true) %}
+{% if entry.manuscript %}
+- {{ entity_link(entry, 'entries', wiki_dir, output_path) }} [{{ entry.manuscript.status.value }}]
+{% else %}
+- {{ entity_link(entry, 'entries', wiki_dir, output_path) }}
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+{% else %}
+- No appearances recorded
+{% endif %}
+
+### Events
+{% if entity.person and entity.person.events %}
+{% for event in entity.person.events|sort(attribute='event') %}
+- {{ entity_link(event, 'events', wiki_dir, output_path) }}
+{% endfor %}
+{% else %}
+-
+{% endif %}

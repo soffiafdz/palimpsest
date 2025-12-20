@@ -101,6 +101,21 @@ def entity_link(entity: Any, entity_type: str, wiki_dir: Path, from_path: Path) 
             # Poem
             name = entity.title
         target = wiki_dir / "poems" / f"{slugify(name)}.md"
+    # Manuscript entity types
+    elif entity_type == "arcs":
+        name = entity.arc
+        target = wiki_dir / "manuscript" / "arcs" / f"{slugify(name)}.md"
+    elif entity_type == "characters":
+        name = entity.character
+        target = wiki_dir / "manuscript" / "characters" / f"{slugify(name)}.md"
+    elif entity_type == "manuscript_entries":
+        # ManuscriptEntry uses date for path: manuscript/entries/YYYY/YYYY-MM-DD.md
+        name = entity.date.isoformat() if entity.date else str(entity.entry_id)
+        year = entity.date.year if entity.date else "unknown"
+        target = wiki_dir / "manuscript" / "entries" / str(year) / f"{name}.md"
+    elif entity_type == "manuscript_events":
+        name = entity.display_name
+        target = wiki_dir / "manuscript" / "events" / f"{slugify(name)}.md"
     else:
         # Fallback: try common name attributes
         if hasattr(entity, 'display_name'):

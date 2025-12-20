@@ -37,7 +37,8 @@ from dev.database.manager import PalimpsestDB
     "entity_type",
     type=click.Choice([
         "entries", "locations", "cities", "events", "timeline", "index", "stats", "analysis",
-        "people", "themes", "tags", "poems", "references", "all"
+        "people", "themes", "tags", "poems", "references", "all",
+        "manuscript", "manuscript-entries", "manuscript-characters", "manuscript-arcs", "manuscript-events",
     ]),
 )
 @click.option("-f", "--force", is_flag=True, help="Force regenerate all files")
@@ -55,6 +56,7 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
         PERSON_CONFIG, LOCATION_CONFIG, CITY_CONFIG, ENTRY_CONFIG,
         EVENT_CONFIG, TAG_CONFIG, THEME_CONFIG, REFERENCE_CONFIG,
         POEM_CONFIG,
+        ARC_CONFIG, CHARACTER_CONFIG, MANUSCRIPT_ENTRY_CONFIG, MANUSCRIPT_EVENT_CONFIG,
     )
 
     # Map entity names to configs
@@ -68,6 +70,10 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
         "themes": THEME_CONFIG,
         "references": REFERENCE_CONFIG,
         "poems": POEM_CONFIG,
+        "manuscript-entries": MANUSCRIPT_ENTRY_CONFIG,
+        "manuscript-characters": CHARACTER_CONFIG,
+        "manuscript-arcs": ARC_CONFIG,
+        "manuscript-events": MANUSCRIPT_EVENT_CONFIG,
     }
 
     logger: PalimpsestLogger = ctx.obj["logger"]
@@ -122,6 +128,20 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
                 stats.entries_skipped += result.entries_skipped
 
             click.echo("\nAll exports complete:")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Unchanged: {stats.entries_skipped}")
+        elif entity_type == "manuscript":
+            click.echo(f"Exporting manuscript entities to {wiki_path}/manuscript/")
+            stats = exporter.export_manuscript(force)
+
+            # Export manuscript indexes
+            index_stats = exporter.export_manuscript_indexes(force)
+            stats.entries_created += index_stats.entries_created
+            stats.entries_updated += index_stats.entries_updated
+            stats.entries_skipped += index_stats.entries_skipped
+
+            click.echo("\nManuscript export complete:")
             click.echo(f"  Created: {stats.entries_created}")
             click.echo(f"  Updated: {stats.entries_updated}")
             click.echo(f"  Unchanged: {stats.entries_skipped}")

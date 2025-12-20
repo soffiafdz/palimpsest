@@ -44,6 +44,9 @@
 | P10 | Replace decorators with DatabaseOperation context manager | ~300 |
 | P11 | Utils module consolidation (rename extract_section collision) | ~10 |
 | P22 | Remove unused specialized enum normalizers | ~50 |
+| P29 | Manuscript wiki configs + export infrastructure | +200 |
+| P30 | Manuscript wiki templates (arc, character, entry, event) | +350 |
+| P31 | Manuscript CLI integration (export-wiki/import-wiki) | +50 |
 
 **Obsolete (replaced by P26):** P5, P5.1, P5.2, P7.2, P18, P19, P20, P24
 **Skipped (marginal gain):** P23 (Database model mixins - common properties only 2 lines each)
@@ -58,12 +61,11 @@
 
 ### Tier 6: Manuscript System
 
-| Priority | Task | Lines | Risk | Description |
-|----------|------|-------|------|-------------|
-| **P28** | Manuscript database schema | +150 | Medium | ✅ Already implemented |
-| **P29** | Manuscript YAML parsing | +100 | Low | Parse manuscript.yaml into database |
-| **P30** | Manuscript wiki structure | +300 | Medium | Wiki templates for arcs/characters/themes |
-| **P31** | Bidirectional sync config | +150 | Medium | Wiki-to-DB sync for manuscript entities |
+✅ **Complete** - All Tier 6 tasks implemented:
+- P28: Database schema (ManuscriptEntry, ManuscriptPerson, ManuscriptEvent, Arc, Theme)
+- P29: Wiki export configs + EntityConfig for manuscript entities
+- P30: Jinja2 templates (arc, character, manuscript_entry, manuscript_event) + index templates
+- P31: CLI commands (export-wiki manuscript, import-wiki manuscript-*)
 
 ### Tier 7: Manuscript Integration
 
@@ -84,17 +86,18 @@
 ## Quick Reference: What to Do Next
 
 **Simplification Complete** - All high-impact tasks done.
+**Tier 6 Complete** - Manuscript wiki infrastructure implemented.
 
 Remaining options:
-1. **Tier 6-7 (Manuscript)**: Add manuscript features (+lines, not simplification)
-2. **P35 (Code reorganization)**: Optional structural cleanup
+1. **Tier 7 (Manuscript Integration)**: Neovim commands, stats views
+2. **Tier 9 (Final Cleanup)**: Code reorganization
 
 ---
 
 ## Critical Path
 
 ```
-Tier 8 (Validators) → Tier 9 (Final Cleanup)
+Tier 7 (Manuscript Integration) → Tier 9 (Final Cleanup)
 ```
 
-Tier 6-7 (Manuscript) adds features - work on separately if needed.
+Tier 6 (Manuscript Wiki) complete. Tier 7-9 add features or optional cleanup.

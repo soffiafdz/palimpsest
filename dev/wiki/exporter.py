@@ -28,7 +28,7 @@ from dev.database.manager import PalimpsestDB
 from dev.utils.wiki import slugify
 
 from .renderer import WikiRenderer
-from .configs import EntityConfig, ALL_CONFIGS
+from .configs import EntityConfig, ALL_CONFIGS, MANUSCRIPT_CONFIGS
 
 
 def write_if_changed(path: Path, content: str) -> str:
@@ -1086,3 +1086,237 @@ class WikiExporter:
         safe_logger(self.logger).log_info("Analysis report exported")
 
         return stats
+
+    # =========================================================================
+    # MANUSCRIPT EXPORT METHODS
+    # =========================================================================
+
+    def export_manuscript(self, force: bool = False) -> ConversionStats:
+        """
+        Export all manuscript entity types to wiki/manuscript/.
+
+        Args:
+            force: If True, regenerate all files
+
+        Returns:
+            Combined statistics for all manuscript entity types
+        """
+        total_stats = ConversionStats()
+
+        for config in MANUSCRIPT_CONFIGS:
+            stats = self.export_entity_type(config, force)
+            total_stats.entries_created += stats.entries_created
+            total_stats.entries_updated += stats.entries_updated
+            total_stats.entries_skipped += stats.entries_skipped
+
+        safe_logger(self.logger).log_info(
+            f"Manuscript export complete: "
+            f"{total_stats.entries_created} created, {total_stats.entries_updated} updated, "
+            f"{total_stats.entries_skipped} unchanged"
+        )
+
+        return total_stats
+
+    def export_manuscript_indexes(self, force: bool = False) -> ConversionStats:
+        """
+        Export manuscript subwiki index pages.
+
+        Args:
+            force: If True, regenerate all indexes
+
+        Returns:
+            Statistics for manuscript index generation
+        """
+        stats = ConversionStats()
+
+        with self.db.session_scope() as session:
+            # Export manuscript home
+            self._export_manuscript_home(session, force, stats)
+            # Export manuscript entity indexes
+            self._export_manuscript_entries_index(session, force, stats)
+            self._export_manuscript_characters_index(session, force, stats)
+            self._export_manuscript_arcs_index(session, force, stats)
+            self._export_manuscript_events_index(session, force, stats)
+
+        safe_logger(self.logger).log_info(
+            f"Manuscript index export complete: "
+            f"{stats.entries_created} created, {stats.entries_updated} updated, "
+            f"{stats.entries_skipped} unchanged"
+        )
+
+        return stats
+
+    def _export_manuscript_home(
+        self, session, force: bool, stats: ConversionStats
+    ) -> None:
+        """Export manuscript subwiki home page."""
+        from datetime import datetime
+
+        from dev.database.models_manuscript import (
+            Arc,
+            ManuscriptEntry,
+            ManuscriptEvent,
+            ManuscriptPerson,
+            ManuscriptStatus,
+        )
+
+        # Gather manuscript statistics
+        ms_entries = session.query(ManuscriptEntry).all()
+        ms_characters = session.query(ManuscriptPerson).filter(
+            ManuscriptPerson.deleted_at.is_(None)
+        ).all()
+        ms_events = session.query(ManuscriptEvent).filter(
+            ManuscriptEvent.deleted_at.is_(None)
+        ).all()
+        arcs = session.query(Arc).filter(Arc.deleted_at.is_(None)).all()
+
+        # Count by status
+        status_counts = {}
+        for status in ManuscriptStatus:
+            status_counts[status.value] = len(
+                [e for e in ms_entries if e.status == status]
+            )
+
+        ready_count = len([e for e in ms_entries if e.is_ready_for_manuscript])
+        total_words = sum(e.word_count for e in ms_entries)
+
+        ms_stats = {
+            "entries": len(ms_entries),
+            "ready": ready_count,
+            "characters": len(ms_characters),
+            "events": len(ms_events),
+            "arcs": len(arcs),
+            "total_words": total_words,
+            "status_counts": status_counts,
+        }
+
+        # Render template
+        output_path = self.wiki_dir / "manuscript" / "index.md"
+        content = self.renderer.render_index(
+            "manuscript_home",
+            output_path,
+            stats=ms_stats,
+            generated_at=datetime.now(),
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_manuscript_entries_index(
+        self, session, force: bool, stats: ConversionStats
+    ) -> None:
+        """Export manuscript entries index grouped by year."""
+        from collections import defaultdict
+
+        from dev.database.models_manuscript import ManuscriptEntry
+
+        ms_entries = session.query(ManuscriptEntry).all()
+
+        # Group by year
+        groups = defaultdict(list)
+        for ms_entry in ms_entries:
+            if ms_entry.date:
+                year = ms_entry.date.year
+                groups[year].append({
+                    "date": ms_entry.date,
+                    "path": f"entries/{year}/{ms_entry.date.isoformat()}.md",
+                    "status": ms_entry.status.value if ms_entry.status else "unspecified",
+                    "edited": ms_entry.edited,
+                    "word_count": ms_entry.word_count,
+                })
+
+        # Render template
+        output_path = self.wiki_dir / "manuscript" / "entries" / "entries.md"
+        content = self.renderer.render_index(
+            "manuscript_entries",
+            output_path,
+            years=sorted(groups.keys(), reverse=True),
+            groups=dict(groups),
+            total=len(ms_entries),
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_manuscript_characters_index(
+        self, session, force: bool, stats: ConversionStats
+    ) -> None:
+        """Export manuscript characters index."""
+        from dev.database.models_manuscript import ManuscriptPerson
+
+        characters = session.query(ManuscriptPerson).filter(
+            ManuscriptPerson.deleted_at.is_(None)
+        ).order_by(ManuscriptPerson.character).all()
+
+        items = []
+        for char in characters:
+            items.append({
+                "name": char.character,
+                "path": f"characters/{slugify(char.character)}.md",
+                "real_name": char.real_name,
+                "entry_count": char.entry_count,
+            })
+
+        # Render template
+        output_path = self.wiki_dir / "manuscript" / "characters" / "characters.md"
+        content = self.renderer.render_index(
+            "manuscript_characters",
+            output_path,
+            items=items,
+            total=len(characters),
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_manuscript_arcs_index(
+        self, session, force: bool, stats: ConversionStats
+    ) -> None:
+        """Export story arcs index."""
+        from dev.database.models_manuscript import Arc
+
+        arcs = session.query(Arc).filter(
+            Arc.deleted_at.is_(None)
+        ).order_by(Arc.arc).all()
+
+        items = []
+        for arc in arcs:
+            items.append({
+                "name": arc.arc,
+                "path": f"arcs/{slugify(arc.arc)}.md",
+                "event_count": arc.event_count,
+                "entry_count": arc.total_entry_count,
+            })
+
+        # Render template
+        output_path = self.wiki_dir / "manuscript" / "arcs" / "arcs.md"
+        content = self.renderer.render_index(
+            "manuscript_arcs",
+            output_path,
+            items=items,
+            total=len(arcs),
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_manuscript_events_index(
+        self, session, force: bool, stats: ConversionStats
+    ) -> None:
+        """Export manuscript events index."""
+        from dev.database.models_manuscript import ManuscriptEvent
+
+        ms_events = session.query(ManuscriptEvent).filter(
+            ManuscriptEvent.deleted_at.is_(None)
+        ).all()
+
+        items = []
+        for ms_event in ms_events:
+            items.append({
+                "name": ms_event.display_name,
+                "path": f"events/{slugify(ms_event.display_name)}.md",
+                "arc": ms_event.arc_name,
+                "entry_count": ms_event.entry_count,
+            })
+
+        # Render template
+        output_path = self.wiki_dir / "manuscript" / "events" / "events.md"
+        content = self.renderer.render_index(
+            "manuscript_events",
+            output_path,
+            items=items,
+            total=len(ms_events),
+        )
+        self._write_index(output_path, content, force, stats)

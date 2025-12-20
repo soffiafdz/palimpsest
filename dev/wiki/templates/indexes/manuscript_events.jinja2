@@ -1,0 +1,24 @@
+{# Manuscript Events Index Template #}
+# Palimpsest — Manuscript Events
+
+Index of journal events adapted for the manuscript narrative.
+
+---
+
+## Summary
+
+- **Total Events:** {{ total }}
+
+---
+
+## Event List
+
+| Event | Arc | Entries |
+|-------|-----|---------|
+{% for item in items|sort(attribute='name') %}
+| [[{{ item.path }}|{{ item.name }}]] | {{ item.arc or '—' }} | {{ item.entry_count }} |
+{% endfor %}
+
+---
+
+[[../index.md|← Back to Manuscript Home]]

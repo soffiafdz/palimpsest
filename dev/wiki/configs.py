@@ -42,7 +42,13 @@ from dev.database.models import (
     PoemVersion,
     ReferenceSource,
 )
-from dev.database.models_manuscript import Theme
+from dev.database.models_manuscript import (
+    Arc,
+    ManuscriptEntry,
+    ManuscriptEvent,
+    ManuscriptPerson,
+    Theme,
+)
 from dev.utils.wiki import slugify
 
 
@@ -281,4 +287,102 @@ ALL_CONFIGS = [
     THEME_CONFIG,
     REFERENCE_CONFIG,
     POEM_CONFIG,
+]
+
+
+# --- Manuscript Query Functions ---
+
+def _query_arcs(session: Session) -> List[Arc]:
+    """Query all non-deleted arcs with relationships loaded."""
+    return session.scalars(
+        select(Arc)
+        .options(joinedload(Arc.events).joinedload(ManuscriptEvent.event))
+        .where(Arc.deleted_at.is_(None))
+        .order_by(Arc.arc)
+    ).unique().all()
+
+
+def _query_manuscript_entries(session: Session) -> List[ManuscriptEntry]:
+    """Query all manuscript entries with relationships loaded."""
+    return session.scalars(
+        select(ManuscriptEntry)
+        .options(
+            joinedload(ManuscriptEntry.entry),
+            joinedload(ManuscriptEntry.themes),
+        )
+        .order_by(ManuscriptEntry.entry_id)
+    ).unique().all()
+
+
+def _query_manuscript_characters(session: Session) -> List[ManuscriptPerson]:
+    """Query all non-deleted manuscript characters with relationships loaded."""
+    return session.scalars(
+        select(ManuscriptPerson)
+        .options(joinedload(ManuscriptPerson.person))
+        .where(ManuscriptPerson.deleted_at.is_(None))
+        .order_by(ManuscriptPerson.character)
+    ).unique().all()
+
+
+def _query_manuscript_events(session: Session) -> List[ManuscriptEvent]:
+    """Query all non-deleted manuscript events with relationships loaded."""
+    return session.scalars(
+        select(ManuscriptEvent)
+        .options(
+            joinedload(ManuscriptEvent.event),
+            joinedload(ManuscriptEvent.arc),
+        )
+        .where(ManuscriptEvent.deleted_at.is_(None))
+        .order_by(ManuscriptEvent.event_id)
+    ).unique().all()
+
+
+# --- Manuscript Entity Configurations ---
+
+ARC_CONFIG = EntityConfig(
+    name="arc",
+    plural="arcs",
+    template="arc",
+    folder="manuscript/arcs",
+    query=_query_arcs,
+    get_name=lambda a: a.arc,
+    get_slug=lambda a: slugify(a.arc),
+)
+
+MANUSCRIPT_ENTRY_CONFIG = EntityConfig(
+    name="manuscript_entry",
+    plural="manuscript_entries",
+    template="manuscript_entry",
+    folder="manuscript/entries",
+    query=_query_manuscript_entries,
+    get_name=lambda me: me.date.isoformat() if me.date else str(me.entry_id),
+    get_slug=lambda me: me.date.isoformat() if me.date else str(me.entry_id),
+)
+
+CHARACTER_CONFIG = EntityConfig(
+    name="character",
+    plural="characters",
+    template="character",
+    folder="manuscript/characters",
+    query=_query_manuscript_characters,
+    get_name=lambda c: c.character,
+    get_slug=lambda c: slugify(c.character),
+)
+
+MANUSCRIPT_EVENT_CONFIG = EntityConfig(
+    name="manuscript_event",
+    plural="manuscript_events",
+    template="manuscript_event",
+    folder="manuscript/events",
+    query=_query_manuscript_events,
+    get_name=lambda me: me.display_name,
+    get_slug=lambda me: slugify(me.display_name),
+)
+
+# All manuscript entity configs for manuscript export
+MANUSCRIPT_CONFIGS = [
+    ARC_CONFIG,
+    MANUSCRIPT_ENTRY_CONFIG,
+    CHARACTER_CONFIG,
+    MANUSCRIPT_EVENT_CONFIG,
 ]

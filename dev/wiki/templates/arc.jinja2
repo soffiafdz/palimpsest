@@ -1,0 +1,86 @@
+{#
+  arc.jinja2
+  ----------
+  Wiki template for Arc entity (story arcs in manuscript).
+  Displays arc info, events timeline, characters involved, and themes.
+#}
+# Palimpsest — Story Arc
+
+## {{ entity.arc }}
+
+### Arc Info
+- **Events:** {{ entity.event_count }}
+- **Total Entries:** {{ entity.total_entry_count }}
+{% if entity.date_range %}
+- **Date Range:** {{ entity.date_range.start_date.isoformat() }} to {{ entity.date_range.end_date.isoformat() }}
+- **Duration:** {{ entity.date_range.duration_days }} days
+{% endif %}
+
+### Description
+[Add arc description here]
+
+### Events
+{% if entity.chronological_events %}
+{% for ms_event in entity.chronological_events %}
+{% if ms_event.event %}
+- {{ entity_link(ms_event, 'manuscript_events', wiki_dir, output_path) }}
+{% if ms_event.start_date %} ({{ ms_event.start_date.isoformat() }}){% endif %}
+{% if ms_event.notes %} — {{ ms_event.notes[:50] }}{% if ms_event.notes|length > 50 %}...{% endif %}{% endif %}
+{% endif %}
+{% endfor %}
+{% else %}
+- No events in this arc yet
+{% endif %}
+
+### Characters
+{% if entity.events %}
+{% set characters = {} %}
+{% for ms_event in entity.events %}
+{% if ms_event.event %}
+{% for person in ms_event.event.people %}
+{% if person.manuscript and person.manuscript.character and person.manuscript.character not in characters %}
+{% set _ = characters.update({person.manuscript.character: person.manuscript}) %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% if characters %}
+{% for name in characters.keys()|sort %}
+- {{ entity_link(characters[name], 'characters', wiki_dir, output_path) }}
+{% endfor %}
+{% else %}
+- No characters linked to this arc
+{% endif %}
+{% else %}
+-
+{% endif %}
+
+### Themes
+{% if entity.events %}
+{% set themes = {} %}
+{% for ms_event in entity.events %}
+{% if ms_event.event and ms_event.event.entries %}
+{% for entry in ms_event.event.entries %}
+{% if entry.manuscript and entry.manuscript.themes %}
+{% for theme in entry.manuscript.themes %}
+{% if theme.theme not in themes %}
+{% set _ = themes.update({theme.theme: theme}) %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% if themes %}
+{% for name in themes.keys()|sort %}
+- {{ entity_link(themes[name], 'themes', wiki_dir, output_path) }}
+{% endfor %}
+{% else %}
+-
+{% endif %}
+{% else %}
+-
+{% endif %}
+
+### Arc Notes
+[Add notes about arc development, narrative progression, and planning]
