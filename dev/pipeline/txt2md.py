@@ -33,9 +33,8 @@ from __future__ import annotations
 # --- Standard library imports ---
 import logging
 
-from datetime import date
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 # --- Local imports ---
 from dev.core.exceptions import Txt2MdError

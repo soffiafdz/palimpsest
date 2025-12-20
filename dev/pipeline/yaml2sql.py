@@ -99,7 +99,6 @@ from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
 from dev.database.sync_state_manager import SyncStateManager
 from dev.core.exceptions import Yaml2SqlError
-from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.cli import ConversionStats
 from dev.utils import fs

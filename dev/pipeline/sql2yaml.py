@@ -28,19 +28,13 @@ Usage:
 """
 from __future__ import annotations
 
-import sys
-from datetime import date
 from pathlib import Path
 from typing import List, Optional
 
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
-from dev.database.manager import PalimpsestDB
-
-from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR, MD_DIR
 from dev.core.exceptions import Sql2YamlError
 from dev.core.logging_manager import PalimpsestLogger
-from dev.core.validators import DataValidator
 
 from dev.utils import md
 
@@ -211,6 +205,3 @@ def export_entry_to_markdown(
         if logger:
             logger.log_error(e, {"operation": "write_file", "file": str(output_path)})
         raise Sql2YamlError(f"Failed to write file: {e}") from e
-
-
-# --- CLI ---
