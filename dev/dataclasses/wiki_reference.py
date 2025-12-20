@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 # --- Local ---
 from .wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import entity_path
 
 
 @dataclass
@@ -117,8 +118,7 @@ class Reference(WikiEntity):
             - Groups all citations from the same source
         """
         # Determine output path
-        source_filename = db_source.title.lower().replace(" ", "_").replace("/", "-") + ".md"
-        path = wiki_dir / "references" / source_filename
+        path = entity_path(wiki_dir, "references", db_source.title)
 
         # Get notes from existing file if it exists
         existing_notes = None

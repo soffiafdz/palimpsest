@@ -17,6 +17,7 @@ from typing import List, Optional, Dict, Any
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import entity_path
 
 
 @dataclass
@@ -73,8 +74,7 @@ class Event(WikiEntity):
             Event instance
         """
         # Determine output path: vimwiki/events/{event}.md
-        event_slug = db_event.event.lower().replace(" ", "_")
-        path = wiki_dir / "events" / f"{event_slug}.md"
+        path = entity_path(wiki_dir, "events", db_event.event)
 
         # Build entries list (chronological)
         entries = []
@@ -93,8 +93,7 @@ class Event(WikiEntity):
         # Build people list
         people_dict = {}
         for person in db_event.people:
-            person_filename = person.display_name.lower().replace(" ", "_") + ".md"
-            person_path = wiki_dir / "people" / person_filename
+            person_path = entity_path(wiki_dir, "people", person.display_name)
             person_link = relative_link(path, person_path)
 
             # Count how many entries this person appears in
@@ -130,8 +129,7 @@ class Event(WikiEntity):
             # Get themes
             if hasattr(ms, "themes"):
                 for theme in sorted(ms.themes, key=lambda t: t.theme):
-                    theme_slug = theme.theme.lower().replace(" ", "_")
-                    theme_path = wiki_dir / "themes" / f"{theme_slug}.md"
+                    theme_path = entity_path(wiki_dir, "themes", theme.theme)
                     theme_link = relative_link(path, theme_path)
 
                     manuscript_themes.append({

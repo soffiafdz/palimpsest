@@ -24,6 +24,7 @@ from typing import List, Optional, Dict, Any
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import entity_path, slugify
 
 
 @dataclass
@@ -134,8 +135,7 @@ class Entry(WikiEntity):
         # People mentioned
         people = []
         for person in sorted(db_entry.people, key=lambda p: p.display_name):
-            person_filename = person.display_name.lower().replace(" ", "_") + ".md"
-            person_path = wiki_dir / "people" / person_filename
+            person_path = entity_path(wiki_dir, "people", person.display_name)
             link = relative_link(path, person_path)
 
             people.append({
@@ -147,9 +147,8 @@ class Entry(WikiEntity):
         # Locations visited
         locations = []
         for location in sorted(db_entry.locations, key=lambda loc: loc.name):
-            city_slug = location.city.city.lower().replace(" ", "_")
-            location_slug = location.name.lower().replace(" ", "_")
-            location_path = wiki_dir / "locations" / city_slug / f"{location_slug}.md"
+            city_slug = slugify(location.city.city)
+            location_path = wiki_dir / "locations" / city_slug / f"{slugify(location.name)}.md"
             link = relative_link(path, location_path)
 
             locations.append({
@@ -161,8 +160,7 @@ class Entry(WikiEntity):
         # Cities
         cities = []
         for city in sorted(db_entry.cities, key=lambda c: c.city):
-            city_slug = city.city.lower().replace(" ", "_")
-            city_path = wiki_dir / "cities" / f"{city_slug}.md"
+            city_path = entity_path(wiki_dir, "cities", city.city)
             link = relative_link(path, city_path)
 
             cities.append({
@@ -174,8 +172,7 @@ class Entry(WikiEntity):
         # Events
         events = []
         for event in sorted(db_entry.events, key=lambda e: e.display_name):
-            event_slug = event.event.lower().replace(" ", "_")
-            event_path = wiki_dir / "events" / f"{event_slug}.md"
+            event_path = entity_path(wiki_dir, "events", event.event)
             link = relative_link(path, event_path)
 
             events.append({
@@ -187,8 +184,7 @@ class Entry(WikiEntity):
         themes = []
         if hasattr(db_entry, "manuscript") and db_entry.manuscript:
             for theme in sorted(db_entry.manuscript.themes, key=lambda t: t.theme):
-                theme_slug = theme.theme.lower().replace(" ", "_")
-                theme_path = wiki_dir / "themes" / f"{theme_slug}.md"
+                theme_path = entity_path(wiki_dir, "themes", theme.theme)
                 link = relative_link(path, theme_path)
 
                 themes.append({
@@ -203,8 +199,7 @@ class Entry(WikiEntity):
         poems = []
         for poem_version in db_entry.poems:
             if poem_version.poem:
-                poem_slug = poem_version.poem.title.lower().replace(" ", "_")
-                poem_path = wiki_dir / "poems" / f"{poem_slug}.md"
+                poem_path = entity_path(wiki_dir, "poems", poem_version.poem.title)
                 link = relative_link(path, poem_path)
 
                 poems.append({
@@ -217,8 +212,7 @@ class Entry(WikiEntity):
         references = []
         for ref in db_entry.references:
             if ref.source:
-                source_slug = ref.source.title.lower().replace(" ", "_")
-                source_path = wiki_dir / "references" / f"{source_slug}.md"
+                source_path = entity_path(wiki_dir, "references", ref.source.title)
                 link = relative_link(path, source_path)
 
                 references.append({

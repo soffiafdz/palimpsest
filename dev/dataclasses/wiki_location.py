@@ -17,6 +17,7 @@ from typing import List, Optional, Dict, Any
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import slugify, entity_path
 
 
 @dataclass
@@ -61,9 +62,8 @@ class Location(WikiEntity):
             Location instance
         """
         # Determine output path: vimwiki/locations/{city}/{name}.md
-        city_slug = db_location.city.city.lower().replace(" ", "_")
-        location_slug = db_location.name.lower().replace(" ", "_")
-        path = wiki_dir / "locations" / city_slug / f"{location_slug}.md"
+        city_slug = slugify(db_location.city.city)
+        path = wiki_dir / "locations" / city_slug / f"{slugify(db_location.name)}.md"
 
         # Build visit timeline
         visits = []
@@ -114,8 +114,7 @@ class Location(WikiEntity):
         for entry in db_location.entries:
             for person in entry.people:
                 if person.display_name not in people_dict:
-                    person_filename = person.display_name.lower().replace(" ", "_") + ".md"
-                    person_path = wiki_dir / "people" / person_filename
+                    person_path = entity_path(wiki_dir, "people", person.display_name)
                     person_link = relative_link(path, person_path)
 
                     people_dict[person.display_name] = {
@@ -149,8 +148,7 @@ class Location(WikiEntity):
         from itertools import groupby
 
         # Generate location info
-        city_slug = self.city.lower().replace(" ", "_")
-        city_path = Path("../../cities") / f"{city_slug}.md"
+        city_path = Path("../../cities") / f"{slugify(self.city)}.md"
         city_display = f"{self.city}, {self.city_country}" if self.city_country else self.city
 
         location_info_lines = [

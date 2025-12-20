@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 # --- Local ---
 from .wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import entity_path
 
 
 @dataclass
@@ -114,8 +115,7 @@ class Tag(WikiEntity):
             - Sorts entries chronologically
         """
         # Determine output path
-        tag_filename = db_tag.tag.lower().replace(" ", "_").replace("/", "-") + ".md"
-        path = wiki_dir / "tags" / tag_filename
+        path = entity_path(wiki_dir, "tags", db_tag.tag)
 
         # Get description and notes from existing file if it exists
         description = None

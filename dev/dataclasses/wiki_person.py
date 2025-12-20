@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Set, Pattern
 # --- Local ---
 from .wiki_entity import WikiEntity
 from dev.utils.md import extract_section, parse_bullets, resolve_relative_link, relative_link
+from dev.utils.wiki import entity_path, entity_filename
 
 
 @dataclass
@@ -130,8 +131,7 @@ class Person(WikiEntity):
             - Creates relative links from wiki/people/{name}.md to entries
         """
         # Determine output path
-        person_filename = db_person.display_name.lower().replace(" ", "_") + ".md"
-        path = wiki_dir / "people" / person_filename
+        path = entity_path(wiki_dir, "people", db_person.display_name)
 
         # Get category and notes from existing file if it exists, otherwise use database
         category = None

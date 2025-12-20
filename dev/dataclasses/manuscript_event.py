@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import slugify
 
 
 @dataclass
@@ -84,7 +85,7 @@ class ManuscriptEvent(WikiEntity):
             ManuscriptEvent instance
         """
         # Path setup
-        event_slug = db_event.event.lower().replace(" ", "_")
+        event_slug = slugify(db_event.event)
         path = wiki_dir / "manuscript" / "events" / f"{event_slug}.md"
 
         # Source event path

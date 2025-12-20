@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import slugify
 
 
 @dataclass
@@ -76,8 +77,7 @@ class Theme(WikiEntity):
             Theme instance
         """
         # Path setup
-        theme_slug = db_theme.theme.lower().replace(" ", "_")
-        path = wiki_dir / "manuscript" / "themes" / f"{theme_slug}.md"
+        path = wiki_dir / "manuscript" / "themes" / f"{slugify(db_theme.theme)}.md"
 
         # Entries using this theme
         entries = []

@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional, Set
 # --- Local ---
 from .wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import entity_path
 
 
 @dataclass
@@ -129,8 +130,7 @@ class Theme(WikiEntity):
             - Creates relative links from wiki/themes/{name}.md to entries
         """
         # Determine output path
-        theme_filename = db_theme.theme.lower().replace(" ", "_").replace("/", "-") + ".md"
-        path = wiki_dir / "themes" / theme_filename
+        path = entity_path(wiki_dir, "themes", db_theme.theme)
 
         # Get description and notes from existing file if it exists
         description = None

@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import slugify, entity_path
 
 
 @dataclass
@@ -85,12 +86,10 @@ class Character(WikiEntity):
             Character instance
         """
         # Path setup
-        character_slug = manuscript_person.character.lower().replace(" ", "_")
-        path = wiki_dir / "manuscript" / "characters" / f"{character_slug}.md"
+        path = wiki_dir / "manuscript" / "characters" / f"{slugify(manuscript_person.character)}.md"
 
         # Real person path
-        person_slug = db_person.name.lower().replace(" ", "_")
-        real_person_path = wiki_dir / "people" / f"{person_slug}.md"
+        real_person_path = entity_path(wiki_dir, "people", db_person.name)
 
         # Appearances (from manuscript entries where this person appears)
         appearances = []

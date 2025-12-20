@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import slugify
 
 
 @dataclass
@@ -92,14 +93,12 @@ class Arc(WikiEntity):
             Arc instance
         """
         # Path setup
-        arc_slug = db_arc.arc.lower().replace(" ", "_")
-        path = wiki_dir / "manuscript" / "arcs" / f"{arc_slug}.md"
+        path = wiki_dir / "manuscript" / "arcs" / f"{slugify(db_arc.arc)}.md"
 
         # Events in this arc
         events = []
         for ms_event in db_arc.events:
-            event_slug = ms_event.event.event.lower().replace(" ", "_")
-            event_path = wiki_dir / "manuscript" / "events" / f"{event_slug}.md"
+            event_path = wiki_dir / "manuscript" / "events" / f"{slugify(ms_event.event.event)}.md"
             events.append({
                 "name": ms_event.event.event,
                 "link": relative_link(path, event_path),

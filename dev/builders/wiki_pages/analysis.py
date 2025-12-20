@@ -22,6 +22,7 @@ from dev.database.models import Entry as DBEntry
 from dev.core.logging_manager import PalimpsestLogger
 from dev.builders.wiki import write_if_changed
 from dev.utils.md import relative_link
+from dev.utils.wiki import entity_path
 
 
 def export_analysis_report(
@@ -181,8 +182,7 @@ def export_analysis_report(
         ])
 
         for person, count in person_counter.most_common(10):
-            person_slug = person.lower().replace(" ", "_")
-            person_path = wiki_dir / "people" / f"{person_slug}.md"
+            person_path = entity_path(wiki_dir, "people", person)
             person_link = relative_link(analysis_path, person_path)
             lines.append(f"{count:3d}× [[{person_link}|{person}]]")
         lines.append("")
@@ -202,8 +202,7 @@ def export_analysis_report(
         ])
 
         for city, count in city_counter.most_common(10):
-            city_slug = city.lower().replace(" ", "_")
-            city_path = wiki_dir / "cities" / f"{city_slug}.md"
+            city_path = entity_path(wiki_dir, "cities", city)
             city_link = relative_link(analysis_path, city_path)
             lines.append(f"{count:3d}× [[{city_link}|{city}]]")
         lines.append("")
@@ -214,8 +213,7 @@ def export_analysis_report(
         ])
 
         for tag, count in tag_counter.most_common(15):
-            tag_slug = tag.lower().replace(" ", "_")
-            tag_path = wiki_dir / "tags" / f"{tag_slug}.md"
+            tag_path = entity_path(wiki_dir, "tags", tag)
             tag_link = relative_link(analysis_path, tag_path)
             lines.append(f"{count:3d}× [[{tag_link}|#{tag}]]")
         lines.append("")
@@ -254,8 +252,7 @@ def export_analysis_report(
                 top_cities = sorted(cities.items(), key=lambda x: x[1], reverse=True)[:3]
                 city_str = ", ".join([f"{city} ({count}×)" for city, count in top_cities])
 
-                person_slug = person.lower().replace(" ", "_")
-                person_path = wiki_dir / "people" / f"{person_slug}.md"
+                person_path = entity_path(wiki_dir, "people", person)
                 person_link = relative_link(analysis_path, person_path)
 
                 lines.append(f"- **[[{person_link}|{person}]]**: {city_str}")

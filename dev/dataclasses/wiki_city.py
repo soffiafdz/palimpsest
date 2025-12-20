@@ -17,6 +17,7 @@ from typing import List, Optional, Dict, Any
 
 from dev.dataclasses.wiki_entity import WikiEntity
 from dev.utils.md import relative_link
+from dev.utils.wiki import slugify, entity_path
 
 
 @dataclass
@@ -65,8 +66,8 @@ class City(WikiEntity):
             City instance
         """
         # Determine output path: vimwiki/cities/{name}.md
-        city_slug = db_city.city.lower().replace(" ", "_")
-        path = wiki_dir / "cities" / f"{city_slug}.md"
+        city_slug = slugify(db_city.city)
+        path = entity_path(wiki_dir, "cities", db_city.city)
 
         # Build entries list
         entries = []
@@ -84,8 +85,7 @@ class City(WikiEntity):
         # Build locations list
         locations = []
         for location in sorted(db_city.locations, key=lambda loc: loc.name):
-            location_slug = location.name.lower().replace(" ", "_")
-            location_path = wiki_dir / "locations" / city_slug / f"{location_slug}.md"
+            location_path = wiki_dir / "locations" / city_slug / f"{slugify(location.name)}.md"
             location_link = relative_link(path, location_path)
 
             # Count visits (from location's entries)
@@ -102,8 +102,7 @@ class City(WikiEntity):
         for entry in db_city.entries:
             for person in entry.people:
                 if person.display_name not in people_dict:
-                    person_filename = person.display_name.lower().replace(" ", "_") + ".md"
-                    person_path = wiki_dir / "people" / person_filename
+                    person_path = entity_path(wiki_dir, "people", person.display_name)
                     person_link = relative_link(path, person_path)
 
                     people_dict[person.display_name] = {
