@@ -22,7 +22,7 @@ from ..models import (
     PoemVersion,
     Moment,
 )
-from ..models.associations import entry_dates
+from ..models.associations import entry_moments
 from ..models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
@@ -224,13 +224,13 @@ MANUSCRIPT_INTEGRITY_CHECKS = IntegrityCheckGroup(
 # ========================================
 
 def _count_orphaned_mentioned_dates(session: Session) -> int:
-    """Count mentioned dates without parent entry."""
-    # Query dates that don't appear in the entry_dates association table
+    """Count moments without parent entry."""
+    # Query moments that don't appear in the entry_moments association table
     return (
         session.query(Moment)
         .filter(
             ~Moment.id.in_(
-                select(entry_dates.c.date_id)
+                select(entry_moments.c.moment_id)
             )
         )
         .count()

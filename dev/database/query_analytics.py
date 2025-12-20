@@ -364,6 +364,31 @@ class QueryAnalytics:
 
         return tag.entries if tag else []
 
+    def _compute_entry_analytics(self, entries: List[Entry]) -> Dict[str, Any]:
+        """
+        Compute analytics from a list of entries.
+
+        Args:
+            entries: List of Entry objects with relationships loaded
+
+        Returns:
+            Dictionary with computed analytics
+        """
+        total_words = sum(e.word_count for e in entries)
+        return {
+            "total_entries": len(entries),
+            "total_words": total_words,
+            "avg_words": total_words / len(entries) if entries else 0,
+            "unique_people": len({p.id for e in entries for p in e.people}),
+            "top_people": self._get_top_people(entries, limit=5),
+            "unique_locations": len({loc.id for e in entries for loc in e.locations}),
+            "top_locations": self._get_top_locations(entries, limit=5),
+            "unique_cities": len({city.id for e in entries for city in e.cities}),
+            "unique_events": len({evt.id for e in entries for evt in e.events}),
+            "total_references": sum(len(e.references) for e in entries),
+            "total_poems": sum(len(e.poems) for e in entries),
+        }
+
     @handle_db_errors
     @log_database_operation("get_year_analytics")
     def get_year_analytics(self, session: Session, year: int) -> Dict[str, Any]:
@@ -375,27 +400,10 @@ class QueryAnalytics:
             year: Year to analyze
 
         Returns:
-            Dictionary with year analytics
+            Dictionary with year analytics including monthly breakdown
         """
-        # Use optimized query
         entries = QueryOptimizer.for_year(session, year)
-
-        analytics = {
-            "year": year,
-            "total_entries": len(entries),
-            "total_words": sum(e.word_count for e in entries),
-            "avg_words": (
-                sum(e.word_count for e in entries) / len(entries) if entries else 0
-            ),
-            "unique_people": len({p.id for e in entries for p in e.people}),
-            "top_people": self._get_top_people(entries, limit=5),
-            "unique_locations": len({loc.id for e in entries for loc in e.locations}),
-            "top_locations": self._get_top_locations(entries, limit=5),
-            "unique_cities": len({city.id for e in entries for city in e.cities}),
-            "unique_events": len({evt.id for e in entries for evt in e.events}),
-            "total_references": sum(len(e.references) for e in entries),
-            "total_poems": sum(len(e.poems) for e in entries),
-        }
+        analytics = {"year": year, **self._compute_entry_analytics(entries)}
 
         # Monthly breakdown
         monthly = {}
@@ -405,16 +413,13 @@ class QueryAnalytics:
                 monthly[month_key] = {"entries": 0, "words": 0}
             monthly[month_key]["entries"] += 1
             monthly[month_key]["words"] += entry.word_count
-
         analytics["monthly_breakdown"] = monthly
 
         return analytics
 
     @handle_db_errors
     @log_database_operation("get_month_analytics")
-    def get_month_analytics(
-        self, session: Session, year: int, month: int
-    ) -> Dict[str, Any]:
+    def get_month_analytics(self, session: Session, year: int, month: int) -> Dict[str, Any]:
         """
         Get comprehensive analytics for a specific month with optimized loading.
 
@@ -426,28 +431,8 @@ class QueryAnalytics:
         Returns:
             Dictionary with month analytics
         """
-        # Use optimized query
         entries = QueryOptimizer.for_month(session, year, month)
-
-        analytics = {
-            "year": year,
-            "month": month,
-            "total_entries": len(entries),
-            "total_words": sum(e.word_count for e in entries),
-            "avg_words": (
-                sum(e.word_count for e in entries) / len(entries) if entries else 0
-            ),
-            "unique_people": len({p.id for e in entries for p in e.people}),
-            "top_people": self._get_top_people(entries, limit=5),
-            "unique_locations": len({loc.id for e in entries for loc in e.locations}),
-            "top_locations": self._get_top_locations(entries, limit=5),
-            "unique_cities": len({city.id for e in entries for city in e.cities}),
-            "unique_events": len({evt.id for e in entries for evt in e.events}),
-            "total_references": sum(len(e.references) for e in entries),
-            "total_poems": sum(len(e.poems) for e in entries),
-        }
-
-        return analytics
+        return {"year": year, "month": month, **self._compute_entry_analytics(entries)}
 
     def _get_top_people(
         self, entries: List[Entry], limit: int = 5

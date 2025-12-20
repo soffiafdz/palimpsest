@@ -215,6 +215,20 @@ class HealthMonitor:
 
         return health
 
+    # Orphan detection config: (name, model, fk_attr, parent_model)
+    _ORPHAN_CHECKS = [
+        ("aliases", Alias, "person_id", Person),
+        ("references", Reference, "entry_id", Entry),
+        ("manuscript_entries", ManuscriptEntry, "entry_id", Entry),
+        ("manuscript_people", ManuscriptPerson, "person_id", Person),
+        ("manuscript_events", ManuscriptEvent, "event_id", Event),
+    ]
+
+    def _get_orphaned_query(self, session: Session, model, fk_attr: str, parent_model):
+        """Build query for orphaned records of a specific type."""
+        fk_column = getattr(model, fk_attr)
+        return session.query(model).filter(~fk_column.in_(session.query(parent_model.id)))
+
     def check_orphaned_records(self, session: Session) -> Dict[str, int]:
         """
         Check for orphaned records across all tables.
@@ -227,46 +241,16 @@ class HealthMonitor:
         """
         orphans = {}
 
-        # Check orphaned aliases (person deleted)
-        orphans["aliases"] = (
-            session.query(Alias)
-            .filter(~Alias.person_id.in_(session.query(Person.id)))
-            .count()
-        )
+        for name, model, fk_attr, parent_model in self._ORPHAN_CHECKS:
+            orphans[name] = self._get_orphaned_query(session, model, fk_attr, parent_model).count()
 
-        # Check orphaned references (entry deleted)
-        orphans["references"] = (
-            session.query(Reference)
-            .filter(~Reference.entry_id.in_(session.query(Entry.id)))
-            .count()
-        )
-
-        # Check orphaned poem versions (entry deleted)
+        # Special case: poem versions with entry_id that doesn't exist
         orphans["poem_versions"] = (
             session.query(PoemVersion)
             .filter(
                 PoemVersion.entry_id.isnot(None),
                 ~PoemVersion.entry_id.in_(session.query(Entry.id)),
             )
-            .count()
-        )
-
-        # Check manuscript orphans
-        orphans["manuscript_entries"] = (
-            session.query(ManuscriptEntry)
-            .filter(~ManuscriptEntry.entry_id.in_(session.query(Entry.id)))
-            .count()
-        )
-
-        orphans["manuscript_people"] = (
-            session.query(ManuscriptPerson)
-            .filter(~ManuscriptPerson.person_id.in_(session.query(Person.id)))
-            .count()
-        )
-
-        orphans["manuscript_events"] = (
-            session.query(ManuscriptEvent)
-            .filter(~ManuscriptEvent.event_id.in_(session.query(Event.id)))
             .count()
         )
 
@@ -549,9 +533,44 @@ class HealthMonitor:
 
         return metrics
 
+    # Health evaluation rules: (metric_path, key, issue_msg, recommendation, is_warning)
+    _HEALTH_RULES = [
+        # Integrity checks
+        ("integrity", "duplicate_file_paths", "Duplicate file paths detected",
+         "Review and resolve duplicate file path entries", True),
+        ("integrity", "future_dated_entries", "Entries with future dates detected",
+         "Review entries with future dates for data entry errors", False),
+        ("integrity", "entries_without_file_path", "Entries without file paths detected",
+         "Investigate entries missing file_path field", True),
+        # Reference integrity
+        ("reference_integrity", "references_with_invalid_source", "References with invalid source IDs detected",
+         "Clean up references with invalid source references", True),
+        ("reference_integrity", "references_without_content", "References without content detected",
+         "Review and fix references with empty content", False),
+        # Poem integrity
+        ("poem_integrity", "poems_without_versions", "Poems without any versions detected",
+         "Remove poems without versions or add missing versions", False),
+        ("poem_integrity", "orphaned_poem_versions", "Orphaned poem versions detected",
+         "Clean up orphaned poem versions", True),
+        ("poem_integrity", "poem_versions_without_content", "Poem versions without content detected",
+         "Review and fix poem versions with empty content", False),
+        # Manuscript integrity
+        ("manuscript_integrity", "orphaned_themes", "Orphaned themes detected",
+         "Remove unused themes", False),
+        ("manuscript_integrity", "orphaned_arcs", "Orphaned arcs detected",
+         "Remove unused arcs", False),
+        # Mentioned date integrity
+        ("mentioned_date_integrity", "orphaned_mentioned_dates", "Orphaned mentioned dates detected",
+         "Remove unused mentioned dates", False),
+        ("mentioned_date_integrity", "duplicate_date_contexts", "Duplicate date+context combinations detected",
+         "Consolidate duplicate mentioned dates", False),
+        ("mentioned_date_integrity", "far_future_mentioned_dates", "Mentioned dates far in future detected",
+         "Review mentioned dates for data entry errors", False),
+    ]
+
     def _evaluate_health_status(self, health: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Evaluate overall health status based on metrics.
+        Evaluate overall health status based on metrics using data-driven rules.
 
         Args:
             health: Current health dictionary
@@ -562,111 +581,26 @@ class HealthMonitor:
         # Check orphaned records
         orphans = health["metrics"].get("orphaned_records", {})
         total_orphans = sum(orphans.values())
-
         if total_orphans > 0:
             health["issues"].append(f"{total_orphans} orphaned records found")
-            health["recommendations"].append(
-                "Run cleanup_orphaned_records() to remove orphans"
-            )
+            health["recommendations"].append("Run cleanup_orphaned_records() to remove orphans")
 
-        # Check integrity
-        integrity = health["metrics"].get("integrity", {})
-        if integrity.get("duplicate_file_paths", 0) > 0:
-            health["issues"].append("Duplicate file paths detected")
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Review and resolve duplicate file path entries"
-            )
+        # Apply data-driven health rules
+        for metric_path, key, issue_msg, recommendation, is_warning in self._HEALTH_RULES:
+            metric_data = health["metrics"].get(metric_path, {})
+            if metric_data.get(key, 0) > 0:
+                health["issues"].append(issue_msg)
+                health["recommendations"].append(recommendation)
+                if is_warning:
+                    health["status"] = "warning"
 
-        if integrity.get("future_dated_entries", 0) > 0:
-            health["issues"].append("Entries with future dates detected")
-            health["recommendations"].append(
-                "Review entries with future dates for data entry errors"
-            )
-
-        if integrity.get("entries_without_file_path", 0) > 0:
-            health["issues"].append("Entries without file paths detected")
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Investigate entries missing file_path field"
-            )
-
-        # Check reference integrity
-        ref_integrity = health["metrics"].get("reference_integrity", {})
-        if ref_integrity.get("references_with_invalid_source", 0) > 0:
-            health["issues"].append("References with invalid source IDs detected")
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Clean up references with invalid source references"
-            )
-
-        if ref_integrity.get("references_without_content", 0) > 0:
-            health["issues"].append("References without content detected")
-            health["recommendations"].append(
-                "Review and fix references with empty content"
-            )
-
-        # Check poem integrity
-        poem_integrity = health["metrics"].get("poem_integrity", {})
-        if poem_integrity.get("poems_without_versions", 0) > 0:
-            health["issues"].append("Poems without any versions detected")
-            health["recommendations"].append(
-                "Remove poems without versions or add missing versions"
-            )
-
-        if poem_integrity.get("orphaned_poem_versions", 0) > 0:
-            health["issues"].append("Orphaned poem versions detected")
-            health["status"] = "warning"
-            health["recommendations"].append("Clean up orphaned poem versions")
-
-        if poem_integrity.get("poem_versions_without_content", 0) > 0:
-            health["issues"].append("Poem versions without content detected")
-            health["recommendations"].append(
-                "Review and fix poem versions with empty content"
-            )
-
-        # Check manuscript integrity
-        manuscript_integrity = health["metrics"].get("manuscript_integrity", {})
-        if manuscript_integrity.get("orphaned_themes", 0) > 0:
-            health["issues"].append("Orphaned themes detected")
-            health["recommendations"].append("Remove unused themes")
-
-        if manuscript_integrity.get("orphaned_arcs", 0) > 0:
-            health["issues"].append("Orphaned arcs detected")
-            health["recommendations"].append("Remove unused arcs")
-
-        # Check mentioned date integrity
-        date_integrity = health["metrics"].get("mentioned_date_integrity", {})
-        if date_integrity.get("orphaned_mentioned_dates", 0) > 0:
-            health["issues"].append("Orphaned mentioned dates detected")
-            health["recommendations"].append("Remove unused mentioned dates")
-
-        if date_integrity.get("duplicate_date_contexts", 0) > 0:
-            health["issues"].append("Duplicate date+context combinations detected")
-            health["recommendations"].append("Consolidate duplicate mentioned dates")
-
-        if date_integrity.get("far_future_mentioned_dates", 0) > 0:
-            health["issues"].append("Mentioned dates far in future detected")
-            health["recommendations"].append(
-                "Review mentioned dates for data entry errors"
-            )
-
-        # Check file references
+        # Check file references (special case with dynamic message)
         file_refs = health["metrics"].get("file_references", {})
         if file_refs.get("total_missing", 0) > 0:
-            health["issues"].append(
-                f"{file_refs['total_missing']} entries reference missing files"
-            )
+            health["issues"].append(f"{file_refs['total_missing']} entries reference missing files")
             health["status"] = "warning"
 
-        # Set final status
-        if health["issues"] and health["status"] == "healthy":
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Verify file paths and restore missing files or update entries"
-            )
-
-        # Set final status
+        # Set final status if any issues found
         if health["issues"] and health["status"] == "healthy":
             health["status"] = "warning"
 
@@ -689,33 +623,15 @@ class HealthMonitor:
         """
         results: Dict[str, bool | int] = {"dry_run": dry_run}
 
-        # Find and optionally delete orphaned aliases
-        orphaned_aliases = (
-            session.query(Alias)
-            .filter(~Alias.person_id.in_(session.query(Person.id)))
-            .all()
-        )
+        # Clean up standard orphan types using config
+        for name, model, fk_attr, parent_model in self._ORPHAN_CHECKS:
+            orphaned = self._get_orphaned_query(session, model, fk_attr, parent_model).all()
+            results[f"orphaned_{name}"] = len(orphaned)
+            if not dry_run and orphaned:
+                for record in orphaned:
+                    session.delete(record)
 
-        results["orphaned_aliases"] = len(orphaned_aliases)
-
-        if not dry_run and orphaned_aliases:
-            for alias in orphaned_aliases:
-                session.delete(alias)
-
-        # Find and optionally delete orphaned references
-        orphaned_refs = (
-            session.query(Reference)
-            .filter(~Reference.entry_id.in_(session.query(Entry.id)))
-            .all()
-        )
-
-        results["orphaned_references"] = len(orphaned_refs)
-
-        if not dry_run and orphaned_refs:
-            for ref in orphaned_refs:
-                session.delete(ref)
-
-        # Find and optionally delete orphaned poem versions
+        # Special case: poem versions with entry_id that doesn't exist
         orphaned_poems = (
             session.query(PoemVersion)
             .filter(
@@ -724,25 +640,10 @@ class HealthMonitor:
             )
             .all()
         )
-
         results["orphaned_poem_versions"] = len(orphaned_poems)
-
         if not dry_run and orphaned_poems:
             for poem in orphaned_poems:
                 session.delete(poem)
-
-        # Manuscript orphans
-        orphaned_manuscript_entries = (
-            session.query(ManuscriptEntry)
-            .filter(~ManuscriptEntry.entry_id.in_(session.query(Entry.id)))
-            .all()
-        )
-
-        results["orphaned_manuscript_entries"] = len(orphaned_manuscript_entries)
-
-        if not dry_run and orphaned_manuscript_entries:
-            for ms in orphaned_manuscript_entries:
-                session.delete(ms)
 
         if not dry_run:
             session.flush()
