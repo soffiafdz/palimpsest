@@ -31,8 +31,6 @@ Programmatic API:
 from __future__ import annotations
 
 # --- Standard library imports ---
-import logging
-
 from pathlib import Path
 from typing import Optional
 
@@ -42,15 +40,6 @@ from dev.core.temporal_files import TemporalFileManager
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
-
-
-# --- Helper Functions ---
-def configure_verbose_logging(logger: PalimpsestLogger) -> None:
-    """Enable verbose/debug logging for a logger instance."""
-    logger.main_logger.setLevel(logging.DEBUG)
-    for handler in logger.main_logger.handlers:
-        if isinstance(handler, logging.StreamHandler):
-            handler.setLevel(logging.DEBUG)
 
 
 # --- Conversion ---

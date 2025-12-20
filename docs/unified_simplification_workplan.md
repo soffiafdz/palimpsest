@@ -47,20 +47,13 @@
 
 **Obsolete (replaced by P26):** P5, P5.1, P5.2, P7.2, P18, P19, P20, P24
 **Skipped (marginal gain):** P23 (Database model mixins - common properties only 2 lines each)
+**Obsolete (no longer applicable):** P7, P7.1 (no meta-programming found, all import functions used)
+**Skipped (marginal gain):** P12, P15, P16 (sync patterns straightforward, ~5 occurrences)
+**Obsolete (codebase already clean):** P17 (only 1 unused function found - removed), P21 (search modules logically separate)
 
 ---
 
 ## Pending Tasks by Tier
-
-### Tier 5: Pipeline & Sync (Do Next)
-
-| Priority | Task | Lines | Risk | Description |
-|----------|------|-------|------|-------------|
-| **P7** | Remove meta-programming in pipeline | ~300 | Medium | Simplify import/export configuration |
-| **P7.1** | Delete unused import_* wrappers | ~250 | Low | Remove never-called import functions |
-| **P12** | Pipeline file writing helpers | ~40 | Low | Extract common write-if-changed pattern |
-| **P15** | Extract sync state helper | ~125 | Medium | Consolidate sync state update patterns |
-| **P16** | Extract field update helper | ~100 | Medium | Consolidate field comparison logic |
 
 ### Tier 6: Manuscript System
 
@@ -85,8 +78,6 @@
 | **P6** | Consolidate backup/stats CLI | ~100 | Low | Merge similar CLI commands |
 | **P9** | Validator method consolidation | ~160 | Low | Generic validation helpers |
 | **P14** | PDF builder consolidation | ~98 | Medium | Merge clean/notes PDF builders |
-| **P17** | Delete unused single-entity imports | ~230 | Low | Remove never-called import functions |
-| **P21** | Search module consolidation | ~160 | Low | Merge search_engine and search_index |
 
 ### Tier 9: Final Cleanup
 
@@ -99,20 +90,20 @@
 
 ## Quick Reference: What to Do Next
 
-**Current Focus:** Tier 5 (Pipeline & Sync)
+**Current Focus:** Tier 8 (Validators & CLI) - Low-impact remaining
 
-1. **P7** - Medium risk: Remove meta-programming in pipeline
-2. **P7.1** - Low risk: Delete unused import_* wrappers
-3. **P12** - Low risk: Pipeline file writing helpers
+1. **P6** - Low risk: Consolidate backup/stats CLI (~100 lines)
+2. **P9** - Low risk: Generic validation helpers (~160 lines)
+3. **P14** - Medium risk: PDF builder consolidation (~98 lines)
 
-After Tier 5, proceed to Tier 6-7 (Manuscript), then Tier 8 (Validators), then Tier 9 (Final).
+Note: Most simplification work is complete. Remaining tasks have diminishing returns.
 
 ---
 
 ## Critical Path
 
 ```
-Tier 3 (Utilities) → Tier 5 (Pipeline) → Tier 6-7 (Manuscript) → Tier 8 (Validators) → Tier 9 (Final)
+Tier 8 (Validators) → Tier 9 (Final Cleanup)
 ```
 
-Each tier can be worked on independently, but completing earlier tiers first avoids rework.
+Tier 6-7 (Manuscript) adds features - work on separately if needed.
