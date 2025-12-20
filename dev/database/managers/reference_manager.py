@@ -458,21 +458,18 @@ class ReferenceManager(BaseManager):
         Notes:
             - Must maintain content OR description requirement
         """
-        # Ensure exists
         db_ref = self.session.get(Reference, reference.id)
         if db_ref is None:
             raise DatabaseError(f"Reference with id={reference.id} not found")
 
-        # Attach to session
         reference = self.session.merge(db_ref)
 
-        # Update content/description (validate at least one remains)
-        if "content" in metadata:
-            reference.content = DataValidator.normalize_string(metadata["content"])
-        if "description" in metadata:
-            reference.description = DataValidator.normalize_string(
-                metadata["description"]
-            )
+        # Update scalar fields (allow None for optional fields)
+        self._update_scalar_fields(reference, metadata, [
+            ("content", DataValidator.normalize_string, True),
+            ("description", DataValidator.normalize_string, True),
+            ("speaker", DataValidator.normalize_string, True),
+        ])
 
         # Validate content or description requirement
         if not reference.content and not reference.description:
@@ -480,11 +477,7 @@ class ReferenceManager(BaseManager):
                 "Reference must have either 'content' or 'description'"
             )
 
-        # Update speaker
-        if "speaker" in metadata:
-            reference.speaker = DataValidator.normalize_string(metadata["speaker"])
-
-        # Update mode
+        # Update mode (enum requires special handling)
         if "mode" in metadata:
             mode = DataValidator.normalize_enum(metadata["mode"], ReferenceMode, "mode")
             if mode:
@@ -492,23 +485,22 @@ class ReferenceManager(BaseManager):
 
         # Update entry
         if "entry" in metadata:
-            entry_spec = metadata["entry"]
-            if isinstance(entry_spec, Entry):
-                reference.entry = entry_spec
-            elif isinstance(entry_spec, int):
-                entry = self.session.get(Entry, entry_spec)
-                if entry:
-                    reference.entry = entry
+            entry = self._resolve_parent(
+                metadata["entry"], Entry,
+                lambda **kw: self.session.get(Entry, kw.get("id")), None, "id"
+            )
+            if entry:
+                reference.entry = entry
 
-        # Update source
+        # Update source (allows None to clear)
         if "source" in metadata:
-            source_spec = metadata["source"]
-            if source_spec is None:
+            if metadata["source"] is None:
                 reference.source = None
-            elif isinstance(source_spec, ReferenceSource):
-                reference.source = source_spec
-            elif isinstance(source_spec, int):
-                source = self.get_source(source_id=source_spec)
+            else:
+                source = self._resolve_parent(
+                    metadata["source"], ReferenceSource,
+                    lambda **kw: self.get_source(source_id=kw.get("id")), None, "id"
+                )
                 if source:
                     reference.source = source
 

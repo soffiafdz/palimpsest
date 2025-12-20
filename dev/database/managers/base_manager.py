@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, Protocol
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, Protocol
 
 from sqlalchemy.orm import Session, Mapped
 
@@ -488,6 +488,88 @@ class BaseManager(ABC):
             self._update_m2m_collection(
                 entity, attr_name, items, model_class, remove_items, incremental
             )
+
+    # -------------------------------------------------------------------------
+    # Scalar Field Update Helpers
+    # -------------------------------------------------------------------------
+
+    def _update_scalar_fields(
+        self,
+        entity: Any,
+        metadata: Dict[str, Any],
+        field_configs: List[tuple],
+    ) -> None:
+        """
+        Update multiple scalar fields from metadata using normalizers.
+
+        Args:
+            entity: Entity to update
+            metadata: Dictionary containing field values
+            field_configs: List of tuples:
+                - (field_name, normalizer) for required fields
+                - (field_name, normalizer, allow_none) for optional fields
+
+        Example:
+            self._update_scalar_fields(city, metadata, [
+                ("city", DataValidator.normalize_string),
+                ("state_province", DataValidator.normalize_string, True),
+                ("country", DataValidator.normalize_string, True),
+            ])
+        """
+        for config in field_configs:
+            field_name = config[0]
+            normalizer = config[1]
+            allow_none = config[2] if len(config) > 2 else False
+
+            if field_name not in metadata:
+                continue
+
+            value = normalizer(metadata[field_name])
+            if value is not None or allow_none:
+                setattr(entity, field_name, value)
+
+    def _resolve_parent(
+        self,
+        parent_spec: Any,
+        parent_model: Type[T],
+        get_method: Callable,
+        get_or_create_method: Optional[Callable] = None,
+        id_param: str = "id",
+    ) -> Optional[T]:
+        """
+        Resolve a parent entity from various input types.
+
+        Args:
+            parent_spec: Parent object, ID, or name string
+            parent_model: Parent model class
+            get_method: Method to get parent by name/id (e.g., self.get_city)
+            get_or_create_method: Optional method for string-based creation
+            id_param: Parameter name for ID lookup (default: "id")
+
+        Returns:
+            Resolved parent entity or None
+
+        Example:
+            city = self._resolve_parent(
+                metadata.get("city"),
+                City,
+                lambda **kw: self.get_city(city_id=kw.get("id"), city_name=kw.get("name")),
+                self.get_or_create_city
+            )
+        """
+        if parent_spec is None:
+            return None
+
+        if isinstance(parent_spec, parent_model):
+            return parent_spec
+        elif isinstance(parent_spec, int):
+            return get_method(**{id_param: parent_spec})
+        elif isinstance(parent_spec, str) and get_or_create_method:
+            return get_or_create_method(parent_spec)
+        elif isinstance(parent_spec, str):
+            return get_method(name=parent_spec)
+
+        return None
 
     # -------------------------------------------------------------------------
     # Abstract CRUD Methods (to be implemented by subclasses)

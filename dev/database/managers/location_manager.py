@@ -185,26 +185,18 @@ class LocationManager(BaseManager):
         Returns:
             Updated City object
         """
-        # Ensure exists
         db_city = self.session.get(City, city.id)
         if db_city is None:
             raise DatabaseError(f"City with id={city.id} does not exist")
 
-        # Attach to session
         city = self.session.merge(db_city)
 
-        # Update scalar fields
-        field_updates = {
-            "city": DataValidator.normalize_string,
-            "state_province": DataValidator.normalize_string,
-            "country": DataValidator.normalize_string,
-        }
-
-        for field, normalizer in field_updates.items():
-            if field in metadata:
-                value = normalizer(metadata[field])
-                if value is not None or field in ["state_province", "country"]:
-                    setattr(city, field, value)
+        # Update scalar fields using helper
+        self._update_scalar_fields(city, metadata, [
+            ("city", DataValidator.normalize_string),
+            ("state_province", DataValidator.normalize_string, True),
+            ("country", DataValidator.normalize_string, True),
+        ])
 
         # Update relationships
         self._update_city_relationships(city, metadata, incremental=True)
@@ -284,27 +276,10 @@ class LocationManager(BaseManager):
         incremental: bool = True,
     ) -> None:
         """Update relationships for a city."""
-        # Many-to-many with entries using generic helper
-        if "entries" in metadata:
-            self._update_m2m_collection(
-                city,
-                "entries",
-                metadata["entries"],
-                Entry,
-                metadata.get("remove_entries", []),
-                incremental,
-            )
-
-        # One-to-many with locations using generic helper
-        if "locations" in metadata:
-            self._update_m2m_collection(
-                city,
-                "locations",
-                metadata["locations"],
-                Location,
-                metadata.get("remove_locations", []),
-                incremental,
-            )
+        self._update_m2m_relationships(city, metadata, [
+            ("entries", "entries", Entry),
+            ("locations", "locations", Location),
+        ], incremental)
 
     # =========================================================================
     # LOCATION OPERATIONS
@@ -440,31 +415,26 @@ class LocationManager(BaseManager):
         Returns:
             Updated Location object
         """
-        # Ensure exists
         db_location = self.session.get(Location, location.id)
         if db_location is None:
             raise DatabaseError(f"Location with id={location.id} does not exist")
 
-        # Attach to session
         location = self.session.merge(db_location)
 
         # Update name
-        if "name" in metadata:
-            name = DataValidator.normalize_string(metadata["name"])
-            if name:
-                location.name = name
+        self._update_scalar_fields(location, metadata, [
+            ("name", DataValidator.normalize_string),
+        ])
 
-        # Update city
+        # Update city using parent resolution
         if "city" in metadata:
-            city_spec = metadata["city"]
-            if isinstance(city_spec, City):
-                location.city = city_spec
-            elif isinstance(city_spec, int):
-                city = self.get_city(city_id=city_spec)
-                if city:
-                    location.city = city
-            elif isinstance(city_spec, str):
-                location.city = self.get_or_create_city(city_spec)
+            city = self._resolve_parent(
+                metadata["city"], City,
+                lambda **kw: self.get_city(city_id=kw.get("id")),
+                self.get_or_create_city, "id"
+            )
+            if city:
+                location.city = city
 
         # Update relationships
         self._update_location_relationships(location, metadata, incremental=True)

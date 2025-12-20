@@ -191,41 +191,23 @@ class PoemManager(BaseManager):
         Returns:
             Updated Poem object
         """
-        # Ensure exists
         db_poem = self.session.get(Poem, poem.id)
         if db_poem is None:
             raise DatabaseError(f"Poem with id={poem.id} not found")
 
-        # Attach to session
         poem = self.session.merge(db_poem)
 
-        # Update title
-        if "title" in metadata:
-            title = DataValidator.normalize_string(metadata["title"])
-            if title:
-                poem.title = title
+        # Update scalar fields
+        self._update_scalar_fields(poem, metadata, [
+            ("title", DataValidator.normalize_string),
+        ])
 
-        # Update versions (one-to-many)
+        # Update versions (one-to-many) using collection helper
         if "versions" in metadata:
-            items = metadata["versions"]
-            remove_items = metadata.get("remove_versions", [])
-
-            # Get existing IDs for comparison
-            existing_ids = {version.id for version in poem.versions}
-
-            # Incremental mode: add new items
-            for item in items:
-                resolved_item = self._resolve_object(item, PoemVersion)
-                if resolved_item and resolved_item.id not in existing_ids:
-                    poem.versions.append(resolved_item)
-
-            # Remove specified items
-            for item in remove_items:
-                resolved_item = self._resolve_object(item, PoemVersion)
-                if resolved_item and resolved_item.id in existing_ids:
-                    poem.versions.remove(resolved_item)
-
-        self.session.flush()
+            self._update_m2m_collection(
+                poem, "versions", metadata["versions"], PoemVersion,
+                metadata.get("remove_versions", []), incremental=True
+            )
 
         return poem
 
@@ -472,23 +454,20 @@ class PoemManager(BaseManager):
         Notes:
             - Automatically regenerates version_hash if content changes
         """
-        # Ensure exists
         db_version = self.session.get(PoemVersion, version.id)
         if db_version is None:
             raise DatabaseError(f"PoemVersion with id={version.id} not found")
 
-        # Attach to session
         version = self.session.merge(db_version)
 
-        # Update content (and auto-regenerate hash)
+        # Update content (special: auto-regenerate hash)
         if "content" in metadata:
             content = DataValidator.normalize_string(metadata["content"])
             if content:
                 version.content = content
-                # Regenerate hash
                 version.version_hash = md.get_text_hash(content)
 
-        # Update revision date
+        # Update revision date (special: parse string dates)
         if "revision_date" in metadata:
             rev_date = metadata["revision_date"]
             if isinstance(rev_date, str):
@@ -500,28 +479,28 @@ class PoemManager(BaseManager):
                 version.revision_date = rev_date
 
         # Update notes
-        if "notes" in metadata:
-            version.notes = DataValidator.normalize_string(metadata["notes"])
+        self._update_scalar_fields(version, metadata, [
+            ("notes", DataValidator.normalize_string, True),
+        ])
 
         # Update poem
         if "poem" in metadata:
-            poem_spec = metadata["poem"]
-            if isinstance(poem_spec, Poem):
-                version.poem = poem_spec
-            elif isinstance(poem_spec, int):
-                poem = self.get_poem(poem_id=poem_spec)
-                if poem:
-                    version.poem = poem
+            poem = self._resolve_parent(
+                metadata["poem"], Poem,
+                lambda **kw: self.get_poem(poem_id=kw.get("id")), None, "id"
+            )
+            if poem:
+                version.poem = poem
 
-        # Update entry
+        # Update entry (allows None to clear)
         if "entry" in metadata:
-            entry_spec = metadata["entry"]
-            if entry_spec is None:
+            if metadata["entry"] is None:
                 version.entry = None
-            elif isinstance(entry_spec, Entry):
-                version.entry = entry_spec
-            elif isinstance(entry_spec, int):
-                entry = self.session.get(Entry, entry_spec)
+            else:
+                entry = self._resolve_parent(
+                    metadata["entry"], Entry,
+                    lambda **kw: self.session.get(Entry, kw.get("id")), None, "id"
+                )
                 if entry:
                     version.entry = entry
 
