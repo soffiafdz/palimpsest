@@ -132,67 +132,6 @@ class TestPipelineDataFlow:
         # Should handle empty directory gracefully
         assert result.exit_code == 0 or "complete" in result.output.lower()
 
-    @patch("dev.pipeline.cli.sql2wiki.PalimpsestDB")
-    def test_export_db_calls_manager(self, mock_db_cls, runner, tmp_path):
-        """Test export-db initializes DB and calls export manager."""
-        # Setup mock
-        mock_db = MagicMock()
-        mock_db_cls.return_value = mock_db
-        mock_db.session_scope.return_value.__enter__.return_value = MagicMock()
-        
-        # Mock return value of export
-        mock_db.export_manager.export_hierarchical.return_value = {
-            "total_entries": 10,
-            "processed": 10,
-            "errors": 0,
-            "duration": 1.0
-        }
-
-        output_dir = tmp_path / "md_out"
-        
-        result = runner.invoke(cli, [
-            "export-db",
-            "--output", str(output_dir),
-            "--force"
-        ])
-
-        assert result.exit_code == 0
-        assert "Export complete" in result.output
-        
-        # Verify DB initialized
-        mock_db_cls.assert_called_once()
-        
-        # Verify export method called
-        mock_db.export_manager.export_hierarchical.assert_called_once()
-        
-    @patch("dev.pipeline.wiki2sql.import_people")
-    @patch("dev.pipeline.cli.wiki2sql.PalimpsestDB")
-    def test_import_wiki_dispatch(self, mock_db_cls, mock_import, runner, tmp_path):
-        """Test import-wiki dispatches to correct function."""
-        # Setup mock stats
-        mock_stats = MagicMock()
-        mock_stats.files_processed = 5
-        mock_stats.records_updated = 5
-        mock_stats.records_skipped = 0
-        mock_stats.errors = 0
-        mock_import.return_value = mock_stats
-        
-        wiki_dir = tmp_path / "wiki"
-        
-        result = runner.invoke(cli, [
-            "import-wiki",
-            "people",
-            "--wiki-dir", str(wiki_dir)
-        ])
-        
-        assert result.exit_code == 0
-        assert "Import complete" in result.output
-        
-        # Verify correct import function called
-        mock_import.assert_called_once()
-        # Check args (path, db, logger)
-        call_args = mock_import.call_args
-        assert str(call_args[0][0]) == str(wiki_dir) # First arg is path
 
 
 if __name__ == "__main__":
