@@ -114,7 +114,7 @@ from .health_monitor import HealthMonitor
 from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
 
-# Modular entity managers (Phase 2 & Phase 3)
+# Modular entity managers
 from .managers import (
     TagManager,
     PersonManager,
@@ -613,35 +613,15 @@ class PalimpsestDB:
                 self.logger.log_error(e, {"operation": "get_migration_history"})
             return {"error": str(e)}
 
-    # --- Entry Operations - Delegated to EntryManager (Phase 3) ---
-    # All Entry CRUD and relationship operations are now handled by EntryManager.
-    #
-    # New recommended usage:
-    #   with db.session_scope() as session:
-    #       entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
-    #       entry = db.entries.get(entry_date="2024-01-15")
-    #       db.entries.update(entry, {"notes": "Updated"})
-    #       db.entries.delete(entry)
-    #
-    # Stable facade methods that delegate to EntryManager:
     # -------------------------------------------------------------------------
-    # --- Entity Operations Delegated to Modular Managers ---
-    # All entity-specific CRUD operations are now handled by specialized managers.
-    #
-    # Use the manager properties within session_scope:
-    #   - db.people: PersonManager
-    #   - db.events: EventManager
-    #   - db.locations: LocationManager
-    #   - db.references: ReferenceManager
-    #   - db.poems: PoemManager
-    #   - db.manuscripts: ManuscriptManager
-    #   - db.tags: TagManager
-    #   - db.moments: MomentManager
+    # Entity operations use modular managers via properties:
+    #   db.entries, db.people, db.events, db.locations, db.references,
+    #   db.poems, db.manuscripts, db.tags, db.moments
     #
     # Example:
     #   with db.session_scope() as session:
+    #       entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
     #       person = db.people.create({"name": "Alice"})
-    #       event = db.events.create({"name": "PyCon 2024"})
     # -------------------------------------------------------------------------
 
     # --- Cleanup Operations ---

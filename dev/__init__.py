@@ -36,7 +36,6 @@ License: MIT
 
 See Also:
     - README.md: Project overview and quick start
-    - dev/database/managers/README.md: Manager architecture overview
 """
 
 __version__ = "2.0.0"
