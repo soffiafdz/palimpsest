@@ -69,10 +69,9 @@
 
 ### Tier 7: Manuscript Integration
 
-| Priority | Task | Lines | Risk | Depends On |
-|----------|------|-------|------|------------|
-| **P32** | Neovim manuscript commands | +200 Lua | Low | P28-P31 |
-| **P33** | Stats materialized views | +100 SQL | Low | P25, P28 |
+✅ **Complete** - All Tier 7 tasks resolved:
+- P32: Neovim commands updated (export/import/browse manuscript, fzf integration)
+- P33: Stats views reconsidered - SQLite doesn't support materialized views, QueryAnalytics already provides comprehensive manuscript analytics
 
 ### Tier 9: Final Cleanup
 
@@ -87,17 +86,17 @@
 
 **Simplification Complete** - All high-impact tasks done.
 **Tier 6 Complete** - Manuscript wiki infrastructure implemented.
+**Tier 7 Complete** - Neovim integration and analytics reviewed.
 
 Remaining options:
-1. **Tier 7 (Manuscript Integration)**: Neovim commands, stats views
-2. **Tier 9 (Final Cleanup)**: Code reorganization
+1. **Tier 9 (Final Cleanup)**: Neovim enhancements, code reorganization
 
 ---
 
 ## Critical Path
 
 ```
-Tier 7 (Manuscript Integration) → Tier 9 (Final Cleanup)
+All tiers complete except Tier 9 (Final Cleanup - Optional)
 ```
 
-Tier 6 (Manuscript Wiki) complete. Tier 7-9 add features or optional cleanup.
+Tier 6 and 7 complete. Tier 9 contains optional enhancements.

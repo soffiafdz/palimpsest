@@ -27,6 +27,12 @@ function M.browse(entity_type)
 		tags = wiki_dir .. "/tags",
 		poems = wiki_dir .. "/poems",
 		references = wiki_dir .. "/references",
+		-- Manuscript paths
+		manuscript = wiki_dir .. "/manuscript",
+		["manuscript-entries"] = wiki_dir .. "/manuscript/entries",
+		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
+		["manuscript-arcs"] = wiki_dir .. "/manuscript/arcs",
+		["manuscript-events"] = wiki_dir .. "/manuscript/events",
 	}
 
 	local search_path = entity_paths[entity_type] or wiki_dir
@@ -77,6 +83,12 @@ function M.search(entity_type)
 		tags = wiki_dir .. "/tags",
 		poems = wiki_dir .. "/poems",
 		references = wiki_dir .. "/references",
+		-- Manuscript paths
+		manuscript = wiki_dir .. "/manuscript",
+		["manuscript-entries"] = wiki_dir .. "/manuscript/entries",
+		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
+		["manuscript-arcs"] = wiki_dir .. "/manuscript/arcs",
+		["manuscript-events"] = wiki_dir .. "/manuscript/events",
 	}
 
 	local search_path = entity_paths[entity_type]
@@ -127,6 +139,12 @@ function M.quick_access()
 		{ name = "Tags Index", path = wiki_dir .. "/tags.md" },
 		{ name = "Poems Index", path = wiki_dir .. "/poems.md" },
 		{ name = "References Index", path = wiki_dir .. "/references.md" },
+		-- Manuscript pages
+		{ name = "Manuscript Homepage", path = wiki_dir .. "/manuscript/index.md" },
+		{ name = "Manuscript Entries", path = wiki_dir .. "/manuscript/entries/entries.md" },
+		{ name = "Manuscript Characters", path = wiki_dir .. "/manuscript/characters/characters.md" },
+		{ name = "Manuscript Arcs", path = wiki_dir .. "/manuscript/arcs/arcs.md" },
+		{ name = "Manuscript Events", path = wiki_dir .. "/manuscript/events/events.md" },
 	}
 
 	-- Filter to only existing pages and format for fzf
