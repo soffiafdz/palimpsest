@@ -21,7 +21,6 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
-import re
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Optional

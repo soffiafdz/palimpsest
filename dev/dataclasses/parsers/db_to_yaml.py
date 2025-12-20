@@ -128,12 +128,6 @@ class DbToYamlExporter:
             """Re-hyphenate only the first name portion of a full name."""
             if not full_name or " " not in full_name:
                 return full_name
-            # Split into parts: first name(s) and last name(s)
-            parts = full_name.split()
-            # Only hyphenate the first part (first name can have spaces like "María José")
-            # Keep last name parts with spaces
-            # Actually, we need to be smarter: we stored it as "first_name last_name"
-            # But we don't know where the boundary is anymore...
             # For now, just hyphenate ALL spaces - this matches the input format
             return spaces_to_hyphenated(full_name)
 

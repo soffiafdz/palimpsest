@@ -55,7 +55,7 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
     from dev.wiki.configs import (
         PERSON_CONFIG, LOCATION_CONFIG, CITY_CONFIG, ENTRY_CONFIG,
         EVENT_CONFIG, TAG_CONFIG, THEME_CONFIG, REFERENCE_CONFIG,
-        POEM_CONFIG, ALL_CONFIGS,
+        POEM_CONFIG,
     )
     from dev.builders.wiki_pages import (
         export_index,
@@ -117,7 +117,7 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
             export_timeline(db, wiki_path, MD_DIR, force, logger)
             export_analysis_report(db, wiki_path, MD_DIR, force, logger)
 
-            click.echo(f"\nAll exports complete:")
+            click.echo("\nAll exports complete:")
             click.echo(f"  Created: {stats.created}")
             click.echo(f"  Updated: {stats.updated}")
             click.echo(f"  Unchanged: {stats.skipped}")

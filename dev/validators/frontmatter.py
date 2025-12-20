@@ -233,12 +233,10 @@ class FrontmatterValidator:
             people_data: Full people list for comparison
 
         Returns:
-            MetadataIssue if duplicate found, None otherwise
+            FrontmatterIssue if duplicate found, None otherwise
         """
         if not (person_name or person_full_name):
             return None
-
-        person_id = (person_name, person_full_name)
 
         # Check if this person was already referenced
         for prev_idx, prev_person_id in enumerate(referenced_people):
@@ -930,7 +928,7 @@ class FrontmatterValidator:
 
         return issues
 
-    def validate_file(self, file_path: Path) -> List[MetadataIssue]:
+    def validate_file(self, file_path: Path) -> List[FrontmatterIssue]:
         """
         Validate metadata structure in a single file.
 

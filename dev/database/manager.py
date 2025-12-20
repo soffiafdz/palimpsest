@@ -77,17 +77,15 @@ Notes
 from __future__ import annotations
 
 # --- Standard library imports ---
-import time
 from contextlib import contextmanager
 from datetime import datetime
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Protocol
+from typing import Any, Dict, Optional, Union, List, Type, TypeVar, Protocol
 
 # --- Third party ---
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session, sessionmaker, Mapped
-from sqlalchemy.exc import IntegrityError, OperationalError
 
 from alembic.config import Config
 from alembic import command
@@ -97,14 +95,11 @@ from alembic.runtime.migration import MigrationContext
 from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import DatabaseError
 from dev.core.paths import ROOT
-from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger
 from .models import (
     Base,
-    Entry,
     Moment,
     Location,
-    Person,
     Reference,
     PoemVersion,
     Tag,

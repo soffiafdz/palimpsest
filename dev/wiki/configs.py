@@ -24,7 +24,7 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 from dataclasses import dataclass
-from typing import Any, Callable, List, Type
+from typing import Any, Callable, List
 
 # --- Third party imports ---
 from sqlalchemy import select
@@ -196,8 +196,8 @@ LOCATION_CONFIG = EntityConfig(
     template="location",
     folder="locations",
     query=_query_locations,
-    get_name=lambda l: l.name,
-    get_slug=lambda l: slugify(l.name),
+    get_name=lambda loc: loc.name,
+    get_slug=lambda loc: slugify(loc.name),
 )
 
 CITY_CONFIG = EntityConfig(

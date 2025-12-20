@@ -38,7 +38,7 @@ from sqlalchemy.orm import Session
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.validators import DataValidator
-from dev.database.decorators import handle_db_errors, log_database_operation
+from dev.database.decorators import handle_db_errors
 from dev.database.models import Entry, Event, Location, Moment, Person, Tag
 from .base_manager import BaseManager
 

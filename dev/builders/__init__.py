@@ -28,7 +28,6 @@ from dev.builders.wiki_indexes import (
 )
 from dev.builders.wiki_pages import (
     export_analysis_report,
-    export_entries_with_navigation,
     export_index,
     export_stats,
     export_timeline,
@@ -55,7 +54,6 @@ __all__ = [
     "build_cities_index",
     "build_events_index",
     # Wiki builders - special pages
-    "export_entries_with_navigation",
     "export_index",
     "export_stats",
     "export_timeline",

@@ -31,7 +31,6 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from dev.core.exceptions import DatabaseError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.validators import DataValidator
 from dev.database.models import Entry, Person, Location

@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, Protocol
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, Protocol
 
 from sqlalchemy.orm import Session, Mapped
 

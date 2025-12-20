@@ -28,6 +28,7 @@ from .enums import ReferenceMode, ReferenceType
 
 if TYPE_CHECKING:
     from .core import Entry
+    from .geography import Location
     from .entities import Person
     from .geography import Moment
     from ..models_manuscript import ManuscriptEvent
@@ -281,8 +282,6 @@ class Event(Base, SoftDeleteMixin):
     @property
     def moment_locations(self) -> List["Location"]:
         """All locations associated with this event's moments."""
-        from .geography import Location  # Import here to avoid circular import
-
         locations_set: set = set()
         for moment in self.moments:
             for loc in moment.locations:

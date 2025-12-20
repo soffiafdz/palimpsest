@@ -30,7 +30,6 @@ from typing import Optional
 # --- Local imports ---
 from dev.core.paths import ARCHIVE_DIR, FORMATTING_SCRIPT
 from dev.core.logging_manager import PalimpsestLogger
-from dev.core.exceptions import TxtBuildError
 from dev.builders.txtbuilder import TxtBuilder, ProcessingStats
 
 
@@ -58,9 +57,6 @@ def process_inbox(
 
     Returns:
         ProcessingStats with files_found, files_processed, etc.
-
-    Raises:
-        TxtBuildError: If processing fails
     """
     # Apply defaults
     if archive_dir is None:

@@ -13,7 +13,7 @@ Architecture:
 - GenericEntityExporter: Generic exporter that works with any EntityConfig
 - ENTITY_REGISTRY: Registry of all entity configurations
 
-Used by sql2wiki.py and ms2wiki.py for entity export operations.
+Used by WikiExporter for entity export operations.
 """
 
 from __future__ import annotations

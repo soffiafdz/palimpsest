@@ -26,6 +26,7 @@ from typing import Optional
 # --- Local imports ---
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger
+from dev.core.paths import TEX_DIR
 from dev.builders.pdfbuilder import PdfBuilder, BuildStats
 
 

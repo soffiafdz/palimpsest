@@ -16,26 +16,16 @@ from __future__ import annotations
 # --- Standard library imports ---
 from datetime import date
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 import tempfile
-
-# --- Third party imports ---
-import pytest
 
 # --- Local imports ---
 from dev.wiki.renderer import WikiRenderer
 from dev.wiki.filters import entity_link, format_date, pluralize, slugify
 from dev.wiki.configs import (
-    EntityConfig,
     PERSON_CONFIG,
-    LOCATION_CONFIG,
-    CITY_CONFIG,
     ENTRY_CONFIG,
-    EVENT_CONFIG,
     TAG_CONFIG,
-    THEME_CONFIG,
-    REFERENCE_CONFIG,
-    POEM_CONFIG,
     ALL_CONFIGS,
 )
 

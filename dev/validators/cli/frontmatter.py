@@ -337,7 +337,7 @@ def all(ctx: click.Context) -> None:
     report = validator.validate_all()
 
     # Print formatted report
-    click.echo(format_metadata_report(report))
+    click.echo(format_frontmatter_report(report))
 
     if not report.is_healthy:
         raise click.ClickException(
