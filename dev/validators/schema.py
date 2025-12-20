@@ -82,77 +82,58 @@ class SchemaValidator:
 
     # ========== Field Validators ==========
 
-    def validate_reference_mode(
-        self, mode: str, field_path: str = "mode"
+    def _validate_enum_field(
+        self,
+        value: str,
+        valid_values: List[str],
+        field_name: str,
+        field_path: str,
     ) -> Optional[SchemaIssue]:
         """
-        Validate a reference mode value.
+        Generic enum field validator.
 
         Args:
-            mode: The mode value to validate
+            value: The value to validate
+            valid_values: List of valid enum values
+            field_name: Human-readable field name for error messages
             field_path: Path to the field (for error reporting)
 
         Returns:
             SchemaIssue if invalid, None if valid
         """
-        valid_modes = self.get_valid_reference_modes()
-        if mode not in valid_modes:
+        if value not in valid_values:
             return SchemaIssue(
                 field_path=field_path,
                 severity="error",
-                message=f"Invalid reference mode: '{mode}'",
-                suggestion=f"Valid modes: {', '.join(valid_modes)}",
-                actual_value=mode,
+                message=f"Invalid {field_name}: '{value}'",
+                suggestion=f"Valid values: {', '.join(valid_values)}",
+                actual_value=value,
             )
         return None
+
+    def validate_reference_mode(
+        self, mode: str, field_path: str = "mode"
+    ) -> Optional[SchemaIssue]:
+        """Validate a reference mode value."""
+        return self._validate_enum_field(
+            mode, self.get_valid_reference_modes(), "reference mode", field_path
+        )
 
     def validate_reference_type(
         self, ref_type: str, field_path: str = "type"
     ) -> Optional[SchemaIssue]:
-        """
-        Validate a reference type value.
-
-        Args:
-            ref_type: The type value to validate
-            field_path: Path to the field (for error reporting)
-
-        Returns:
-            SchemaIssue if invalid, None if valid
-        """
-        valid_types = self.get_valid_reference_types()
-        if ref_type not in valid_types:
-            return SchemaIssue(
-                field_path=field_path,
-                severity="error",
-                message=f"Invalid reference type: '{ref_type}'",
-                suggestion=f"Valid types: {', '.join(valid_types)}",
-                actual_value=ref_type,
-            )
-        return None
+        """Validate a reference type value."""
+        return self._validate_enum_field(
+            ref_type, self.get_valid_reference_types(), "reference type", field_path
+        )
 
     def validate_manuscript_status(
         self, status: str, field_path: str = "manuscript.status"
     ) -> Optional[SchemaIssue]:
-        """
-        Validate a manuscript status value.
-
-        Args:
-            status: The status value to validate
-            field_path: Path to the field (for error reporting)
-
-        Returns:
-            SchemaIssue if invalid, None if valid
-        """
-        valid_statuses = self.get_valid_manuscript_status()
-        if status not in valid_statuses:
-            return SchemaIssue(
-                field_path=field_path,
-                severity="error",
-                message=f"Invalid manuscript status: '{status}'",
-                suggestion=f"Valid statuses: {', '.join(valid_statuses)}",
-                actual_value=status,
-            )
-        return None
+        """Validate a manuscript status value."""
+        return self._validate_enum_field(
+            status, self.get_valid_manuscript_status(), "manuscript status", field_path
+        )
 
     def validate_date_format(
         self, date_value: Any, field_path: str = "date"
