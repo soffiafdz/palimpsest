@@ -56,6 +56,11 @@ from .parsers import (
 
 # Wiki parsing utilities (for wiki→database import)
 # Note: Section extraction functions moved to md.py
+from .wiki import (
+    slugify,
+    entity_filename,
+    entity_path,
+)
 
 # Text processing utilities
 from .txt import (
@@ -97,6 +102,9 @@ __all__ = [
     "resolve_relative_link",
     "find_section_line_indexes",
     "update_section",
+    "slugify",
+    "entity_filename",
+    "entity_path",
     # Text
     "ordinal",
     "format_body",

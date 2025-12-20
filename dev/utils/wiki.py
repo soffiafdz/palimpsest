@@ -285,3 +285,68 @@ def parse_wiki_links(text: str) -> List[Dict[str, str]]:
         })
 
     return links
+
+
+def slugify(name: str) -> str:
+    """
+    Convert name to wiki-safe filename slug.
+
+    Transforms a display name into a safe slug for use in file paths
+    and wiki links. Handles spaces and special characters.
+
+    Rules:
+    - Lowercase the string
+    - Replace spaces with underscores
+    - Replace forward slashes with hyphens
+
+    Args:
+        name: Display name to slugify
+
+    Returns:
+        Wiki-safe slug
+
+    Examples:
+        >>> slugify("María José")
+        'maría_josé'
+        >>> slugify("The Person/Character")
+        'the_person-character'
+        >>> slugify("New York City")
+        'new_york_city'
+    """
+    return name.lower().replace(" ", "_").replace("/", "-")
+
+
+def entity_filename(name: str) -> str:
+    """
+    Generate wiki markdown filename for an entity.
+
+    Args:
+        name: Entity display name
+
+    Returns:
+        Filename with .md extension
+
+    Examples:
+        >>> entity_filename("María José")
+        'maría_josé.md'
+    """
+    return f"{slugify(name)}.md"
+
+
+def entity_path(wiki_dir: Path, subdir: str, name: str) -> Path:
+    """
+    Generate standard entity path within wiki directory.
+
+    Args:
+        wiki_dir: Root wiki directory
+        subdir: Entity type subdirectory (e.g., "people", "locations")
+        name: Entity display name
+
+    Returns:
+        Full path to entity wiki file
+
+    Examples:
+        >>> entity_path(Path("/wiki"), "people", "María José")
+        PosixPath('/wiki/people/maría_josé.md')
+    """
+    return wiki_dir / subdir / entity_filename(name)
