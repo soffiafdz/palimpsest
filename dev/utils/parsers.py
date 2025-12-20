@@ -130,7 +130,7 @@ def format_location_ref(location_name: str) -> str:
         >>> format_location_ref("Rue St-Hubert")
         '#Rue_St-Hubert'
     """
-    hyphenated = spaces_to_hyphenated_smart(location_name)
+    hyphenated = spaces_to_hyphenated(location_name)
     return f"#{hyphenated}"
 
 
@@ -187,20 +187,7 @@ def split_hyphenated_to_spaces(text: str) -> str:
 
 def spaces_to_hyphenated(text: str) -> str:
     """
-    Convert spaces to hyphens (for names and locations).
-
-    Examples:
-        >>> spaces_to_hyphenated("María José")
-        'María-José'
-        >>> spaces_to_hyphenated("San Diego")
-        'San-Diego'
-    """
-    return text.replace(" ", "-")
-
-
-def spaces_to_hyphenated_smart(text: str) -> str:
-    """
-    Convert spaces to hyphens, but use underscores if hyphens already exist.
+    Convert spaces to hyphens, preserving existing hyphens with underscores.
 
     This preserves the distinction between original hyphens (part of the name)
     and spaces (word separators).
@@ -210,14 +197,16 @@ def spaces_to_hyphenated_smart(text: str) -> str:
     - If text contains hyphens: replace spaces with underscores (preserve hyphens)
 
     Examples:
-        >>> spaces_to_hyphenated_smart("María José")
+        >>> spaces_to_hyphenated("María José")
         'María-José'
-        >>> spaces_to_hyphenated_smart("Rue St-Hubert")
-        'Rue_St-Hubert'
-        >>> spaces_to_hyphenated_smart("Station Berri-UQAM")
-        'Station_Berri-UQAM'
-        >>> spaces_to_hyphenated_smart("San Diego")
+        >>> spaces_to_hyphenated("San Diego")
         'San-Diego'
+        >>> spaces_to_hyphenated("Rue St-Hubert")
+        'Rue_St-Hubert'
+        >>> spaces_to_hyphenated("Station Berri-UQAM")
+        'Station_Berri-UQAM'
+        >>> spaces_to_hyphenated("Jean-Pierre Martin")
+        'Jean-Pierre_Martin'
     """
     if not text:
         return text

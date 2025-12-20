@@ -301,3 +301,26 @@ class TestSpacesToHyphenated:
         assert hyphenated == "María-José-García"
         restored = split_hyphenated_to_spaces(hyphenated)
         assert restored == original
+
+    def test_preserves_existing_hyphens_with_underscores(self):
+        """Test that existing hyphens are preserved by using underscores for spaces."""
+        # Names with hyphens should use underscores for spaces
+        assert spaces_to_hyphenated("Jean-Pierre Martin") == "Jean-Pierre_Martin"
+        assert spaces_to_hyphenated("Rue St-Hubert") == "Rue_St-Hubert"
+        assert spaces_to_hyphenated("Station Berri-UQAM") == "Station_Berri-UQAM"
+
+    def test_round_trip_with_hyphens(self):
+        """Test round-trip conversion when text has existing hyphens."""
+        original = "Rue St-Hubert"
+        converted = spaces_to_hyphenated(original)
+        assert converted == "Rue_St-Hubert"
+        restored = split_hyphenated_to_spaces(converted)
+        assert restored == original
+
+    def test_empty_string(self):
+        """Test empty string handling."""
+        assert spaces_to_hyphenated("") == ""
+
+    def test_only_hyphens_no_spaces(self):
+        """Test text with hyphens but no spaces."""
+        assert spaces_to_hyphenated("Jean-Pierre") == "Jean-Pierre"

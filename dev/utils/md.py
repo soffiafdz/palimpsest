@@ -152,7 +152,7 @@ def yaml_escape(value: str) -> str:
     return value.replace('"', '\\"').replace("\n", "\\n")
 
 
-def yaml_list(items: List[Any], hyphenated: bool = False, smart_hyphenation: bool = False) -> str:
+def yaml_list(items: List[Any], hyphenated: bool = False) -> str:
     """
     Format list for inline YAML output.
 
@@ -161,8 +161,7 @@ def yaml_list(items: List[Any], hyphenated: bool = False, smart_hyphenation: boo
 
     Args:
         items: List of items to format
-        hyphenated: Whether to hyphenate items (use standard hyphenation)
-        smart_hyphenation: Use smart hyphenation (underscores if hyphens exist)
+        hyphenated: Whether to hyphenate items (preserves existing hyphens)
 
     Returns:
         YAML inline list string
@@ -174,7 +173,7 @@ def yaml_list(items: List[Any], hyphenated: bool = False, smart_hyphenation: boo
         '["Has spaces", "Has: colon"]'
         >>> yaml_list(["Has spaces"], hyphenated=True)
         '["Has-spaces"]'
-        >>> yaml_list(["Rue St-Hubert"], smart_hyphenation=True)
+        >>> yaml_list(["Rue St-Hubert"], hyphenated=True)
         '["Rue_St-Hubert"]'
         >>> yaml_list([])
         '[]'
@@ -182,14 +181,10 @@ def yaml_list(items: List[Any], hyphenated: bool = False, smart_hyphenation: boo
     if not items:
         return "[]"
 
-    from dev.utils.parsers import spaces_to_hyphenated_smart
-
     formatted = []
     for item in items:
         if isinstance(item, str) and (" " in item or ":" in item or '"' in item):
-            if smart_hyphenation:
-                item = yaml_escape(spaces_to_hyphenated_smart(item))
-            elif hyphenated:
+            if hyphenated:
                 item = yaml_escape(spaces_to_hyphenated(item))
             else:
                 item = yaml_escape(item)
