@@ -101,14 +101,11 @@ This list is organized by dependency tiers. Complete tasks in order to avoid rew
 | **P4.1** | Consolidate integrity check methods | (in P4) | ✅ Complete |
 | **P26** | Template-based wiki renderer (Jinja2 templates) | -2,750 | ✅ Complete |
 | **P8** | Generic wiki index builder (merged into P26) | -280 | ✅ Complete |
+| **P3** | Consolidate entity managers (EntityManager base) | ~500 reduction | ✅ Complete |
 
 ### Tier 1: Foundation (Core Changes - Do First)
 
-Schema and architecture changes that other tasks depend on.
-
-| Priority | Task | Lines Impact | Risk | Depends On |
-|----------|------|--------------|------|------------|
-| **P3** | Consolidate entity managers (9→4) | -3,000 | Medium | — |
+All foundation tasks complete. Proceed to Tier 3 enhancements.
 
 ### Tier 2: Wiki System Rewrite ✅
 
