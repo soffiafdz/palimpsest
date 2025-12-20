@@ -122,10 +122,10 @@ Replaced the wiki dataclass system with Jinja templates in `dev/wiki/`.
 
 Improvements to the wiki system after the rewrite.
 
-| Priority | Task | Lines Impact | Risk | Depends On |
-|----------|------|--------------|------|------------|
-| **P27** | Main wiki dashboards | +200 | Low | P26 |
-| **P34** | Neovim plugin fixes + enhancements | +300 Lua | Low | — (can be done anytime) |
+| Priority | Task | Lines Impact | Risk | Status |
+|----------|------|--------------|------|--------|
+| **P27** | Main wiki dashboards | +173 | Low | ✅ Complete |
+| **P34** | Neovim plugin fixes + enhancements | +300 Lua | Low | Pending |
 
 ### Tier 4: Manuscript System
 
