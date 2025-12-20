@@ -55,8 +55,16 @@ function M.setup()
 				{ "<leader>pFT", "<cmd>lua require('palimpsest.fzf').browse('tags')<cr>", desc = "Browse tags" },
 				{ "<leader>pFP", "<cmd>lua require('palimpsest.fzf').browse('poems')<cr>", desc = "Browse poems" },
 				{ "<leader>pFr", "<cmd>lua require('palimpsest.fzf').browse('references')<cr>", desc = "Browse references" },
+				-- Manuscript browse
+				{ "<leader>pFm", "<cmd>lua require('palimpsest.fzf').browse('manuscript')<cr>", desc = "Browse manuscript" },
+				{ "<leader>pFM", group = "manuscript entities" },
+				{ "<leader>pFMe", "<cmd>lua require('palimpsest.fzf').browse('manuscript-entries')<cr>", desc = "Manuscript entries" },
+				{ "<leader>pFMc", "<cmd>lua require('palimpsest.fzf').browse('manuscript-characters')<cr>", desc = "Manuscript characters" },
+				{ "<leader>pFMa", "<cmd>lua require('palimpsest.fzf').browse('manuscript-arcs')<cr>", desc = "Manuscript arcs" },
+				{ "<leader>pFMv", "<cmd>lua require('palimpsest.fzf').browse('manuscript-events')<cr>", desc = "Manuscript events" },
 				{ "<leader>p/w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
 				{ "<leader>p/j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+				{ "<leader>p/m", "<cmd>lua require('palimpsest.fzf').search('manuscript')<cr>", desc = "Search manuscript" },
 			},
 		})
 	else
@@ -105,8 +113,16 @@ function M.setup()
 				{ "<leader>vFT", "<cmd>lua require('palimpsest.fzf').browse('tags')<cr>", desc = "Browse tags" },
 				{ "<leader>vFP", "<cmd>lua require('palimpsest.fzf').browse('poems')<cr>", desc = "Browse poems" },
 				{ "<leader>vFr", "<cmd>lua require('palimpsest.fzf').browse('references')<cr>", desc = "Browse references" },
+				-- Manuscript browse
+				{ "<leader>vFm", "<cmd>lua require('palimpsest.fzf').browse('manuscript')<cr>", desc = "Browse manuscript" },
+				{ "<leader>vFM", group = "manuscript entities" },
+				{ "<leader>vFMe", "<cmd>lua require('palimpsest.fzf').browse('manuscript-entries')<cr>", desc = "Manuscript entries" },
+				{ "<leader>vFMc", "<cmd>lua require('palimpsest.fzf').browse('manuscript-characters')<cr>", desc = "Manuscript characters" },
+				{ "<leader>vFMa", "<cmd>lua require('palimpsest.fzf').browse('manuscript-arcs')<cr>", desc = "Manuscript arcs" },
+				{ "<leader>vFMv", "<cmd>lua require('palimpsest.fzf').browse('manuscript-events')<cr>", desc = "Manuscript events" },
 				{ "<leader>v/w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
 				{ "<leader>v/j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+				{ "<leader>v/m", "<cmd>lua require('palimpsest.fzf').search('manuscript')<cr>", desc = "Search manuscript" },
 			},
 		})
 		-- Remove unnecessary keymaps
