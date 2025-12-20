@@ -276,7 +276,7 @@ class LocationManager(BaseManager):
         incremental: bool = True,
     ) -> None:
         """Update relationships for a city."""
-        self._update_m2m_relationships(city, metadata, [
+        self._update_relationships(city, metadata, [
             ("entries", "entries", Entry),
             ("locations", "locations", Location),
         ], incremental)
@@ -519,7 +519,7 @@ class LocationManager(BaseManager):
     ) -> None:
         """Update relationships for a location."""
         # Many-to-many relationships using generic helper
-        self._update_m2m_relationships(
+        self._update_relationships(
             location,
             metadata,
             [

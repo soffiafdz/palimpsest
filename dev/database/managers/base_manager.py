@@ -223,7 +223,7 @@ class BaseManager(ABC):
             )
 
     # -------------------------------------------------------------------------
-    # Generic CRUD Helpers (P3.1)
+    # Generic CRUD Helpers
     # -------------------------------------------------------------------------
 
     def _exists(
@@ -395,10 +395,10 @@ class BaseManager(ABC):
         return query.count()
 
     # -------------------------------------------------------------------------
-    # Generic Relationship Helpers (P3.2)
+    # Generic Relationship Helpers
     # -------------------------------------------------------------------------
 
-    def _update_m2m_collection(
+    def _update_collection(
         self,
         entity: Any,
         attr_name: str,
@@ -419,7 +419,7 @@ class BaseManager(ABC):
             incremental: If True, add/remove items; if False, replace entire collection
 
         Example:
-            self._update_m2m_collection(
+            self._update_collection(
                 person, "events", metadata.get("events", []),
                 Event, metadata.get("remove_events", [])
             )
@@ -455,7 +455,7 @@ class BaseManager(ABC):
 
         self.session.flush()
 
-    def _update_m2m_relationships(
+    def _update_relationships(
         self,
         entity: Any,
         metadata: Dict[str, Any],
@@ -472,7 +472,7 @@ class BaseManager(ABC):
             incremental: If True, add/remove items; if False, replace
 
         Example:
-            self._update_m2m_relationships(person, metadata, [
+            self._update_relationships(person, metadata, [
                 ("events", "events", Event),
                 ("entries", "entries", Entry),
                 ("dates", "dates", Moment),
@@ -485,7 +485,7 @@ class BaseManager(ABC):
             items = metadata[meta_key]
             remove_items = metadata.get(f"remove_{meta_key}", [])
 
-            self._update_m2m_collection(
+            self._update_collection(
                 entity, attr_name, items, model_class, remove_items, incremental
             )
 

@@ -514,7 +514,7 @@ class PersonManager(BaseManager):
             self._update_person_aliases(person, metadata, incremental)
 
         # Many-to-many relationships using generic helper
-        self._update_m2m_relationships(
+        self._update_relationships(
             person,
             metadata,
             [

@@ -204,7 +204,7 @@ class PoemManager(BaseManager):
 
         # Update versions (one-to-many) using collection helper
         if "versions" in metadata:
-            self._update_m2m_collection(
+            self._update_collection(
                 poem, "versions", metadata["versions"], PoemVersion,
                 metadata.get("remove_versions", []), incremental=True
             )
