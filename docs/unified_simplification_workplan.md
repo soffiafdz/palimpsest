@@ -73,6 +73,8 @@ This list is organized by dependency tiers. Complete tasks in order to avoid rew
 | **P3.2** | Generic relationship updater (_update_relationships) | -150 | ✅ Complete |
 | **P3.3** | Delete wrapper methods (get_for_entry, etc.) | ~100 | ✅ Complete |
 | **P25** | Moment model schema (MentionedDate → Moment, M2M events) | ~50 cleaner | ✅ Complete |
+| **P4** | Simplify health/analytics (data-driven configs) | -114 | ✅ Complete |
+| **P4.1** | Consolidate integrity check methods | (in P4) | ✅ Complete |
 
 ### Tier 1: Foundation (Core Changes - Do First)
 
@@ -81,8 +83,6 @@ Schema and architecture changes that other tasks depend on.
 | Priority | Task | Lines Impact | Risk | Depends On |
 |----------|------|--------------|------|------------|
 | **P3** | Consolidate entity managers (9→4) | -3,000 | Medium | — |
-| **P4** | Simplify health/analytics (2,047→600) | -1,400 | Low | — |
-| **P4.1** | Consolidate integrity check methods | -100 | Low | P4 |
 
 ### Tier 2: Wiki System Rewrite
 
@@ -1290,7 +1290,7 @@ dev/builders/wiki.py
 
 ---
 
-**Document Version:** 5.1
+**Document Version:** 5.2
 **Authors:** Claude Opus 4.5 + Gemini 3 (synthesized) + Comprehensive Method-Level Analysis + Frontmatter Review + Follow-Up Audit (Section N) + Schema Enhancement (Section O) + Priority Reorganization
 **Last Updated:** 2025-12-20
 **Next Actions (by priority):**
