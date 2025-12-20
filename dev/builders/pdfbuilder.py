@@ -377,6 +377,59 @@ class PdfBuilder:
                 f"Pandoc conversion failed: {in_md} → {out_pdf}: {e}"
             ) from e
 
+    def _build_single_pdf(
+        self,
+        files: List[Path],
+        pdf_path: Path,
+        preamble: Path,
+        metadata: Dict[str, str],
+        vars: Dict[str, str],
+        temp_manager: TemporalFileManager,
+        pdf_type: str,
+        notes: bool = False,
+    ) -> bool:
+        """
+        Build a single PDF (clean or notes).
+
+        Args:
+            files: List of Markdown files
+            pdf_path: Output PDF path
+            preamble: LaTeX preamble file
+            metadata: Pandoc metadata
+            vars: LaTeX variables
+            temp_manager: Temp file manager
+            pdf_type: Type name for logging ("clean" or "notes")
+            notes: If True, include notes formatting
+
+        Returns:
+            True if PDF was created, False if skipped
+        """
+        if pdf_path.exists() and not self.force_overwrite:
+            if self.logger:
+                self.logger.log_info(
+                    f"{pdf_type.capitalize()} PDF exists, skipping: {pdf_path.name}"
+                )
+            return False
+
+        if pdf_path.exists():
+            if self.logger:
+                self.logger.log_debug(
+                    f"{pdf_type.capitalize()} PDF exists, overwriting: {pdf_path.name}"
+                )
+            pdf_path.unlink()
+
+        tmp_file = temp_manager.create_temp_file(
+            suffix=".md", prefix=f"palimpsest_{self.year}_{pdf_type}_"
+        )
+        self._write_temp_md(files, tmp_file, notes=notes)
+        self._run_pandoc(tmp_file, pdf_path, preamble, metadata, vars)
+
+        if self.logger:
+            self.logger.log_operation(
+                "pdf_created", {"type": pdf_type, "file": str(pdf_path)}
+            )
+        return True
+
     def build(self) -> BuildStats:
         """
         Execute complete PDF build process.
@@ -426,16 +479,9 @@ class PdfBuilder:
             "author": PDF_AUTHOR,
         }
 
-        # LaTeX variables for different PDF types
-        clean_vars = {"fontsize": "12pt"}
-        notes_vars = {"fontsize": "12pt", "linestretch": "1.9"}
-
         # Gather files
-        try:
-            files = self.gather_md()
-            stats.files_processed = len(files)
-        except PdfBuildError:
-            raise
+        files = self.gather_md()
+        stats.files_processed = len(files)
 
         # Use TemporalFileManager for proper cleanup
         temp_manager = TemporalFileManager()
@@ -445,102 +491,22 @@ class PdfBuilder:
             # Build clean PDF
             if self.preamble:
                 clean_pdf = self.pdf_dir / f"{self.year}.pdf"
-
-                if clean_pdf.exists():
-                    if not self.force_overwrite:
-                        if self.logger:
-                            self.logger.log_info(
-                                f"Clean PDF exists, skipping: {clean_pdf.name}"
-                            )
-                    else:
-                        if self.logger:
-                            self.logger.log_debug(
-                                f"Clean PDF exists, overwriting: {clean_pdf.name}"
-                            )
-                        clean_pdf.unlink()
-
-                        tmp_clean = temp_manager.create_temp_file(
-                            suffix=".md", prefix=f"palimpsest_{self.year}_clean_"
-                        )
-
-                        self._write_temp_md(files, tmp_clean, notes=False)
-                        self._run_pandoc(
-                            tmp_clean, clean_pdf, self.preamble, metadata, clean_vars
-                        )
-
-                        stats.pdfs_created += 1
-
-                        if self.logger:
-                            self.logger.log_operation(
-                                "pdf_created", {"type": "clean", "file": str(clean_pdf)}
-                            )
-                else:
-                    # File doesn't exist, create it
-                    tmp_clean = temp_manager.create_temp_file(
-                        suffix=".md", prefix=f"palimpsest_{self.year}_clean_"
-                    )
-
-                    self._write_temp_md(files, tmp_clean, notes=False)
-                    self._run_pandoc(
-                        tmp_clean, clean_pdf, self.preamble, metadata, clean_vars
-                    )
-
+                clean_vars = {"fontsize": "12pt"}
+                if self._build_single_pdf(
+                    files, clean_pdf, self.preamble, metadata, clean_vars,
+                    temp_manager, "clean", notes=False
+                ):
                     stats.pdfs_created += 1
-
-                    if self.logger:
-                        self.logger.log_operation(
-                            "pdf_created", {"type": "clean", "file": str(clean_pdf)}
-                        )
 
             # Build notes PDF
             if self.preamble_notes:
                 notes_pdf = self.pdf_dir / f"{self.year}-notes.pdf"
-
-                if notes_pdf.exists():
-                    if not self.force_overwrite:
-                        if self.logger:
-                            self.logger.log_info(
-                                f"Notes PDF exists, skipping: {notes_pdf.name}"
-                            )
-                    else:
-                        if self.logger:
-                            self.logger.log_debug(
-                                f"Notes PDF exists, overwriting: {notes_pdf.name}"
-                            )
-                        notes_pdf.unlink()
-
-                        tmp_notes = temp_manager.create_temp_file(
-                            suffix=".md", prefix=f"palimpsest_{self.year}_notes_"
-                        )
-
-                        self._write_temp_md(files, tmp_notes, notes=True)
-                        self._run_pandoc(
-                            tmp_notes, notes_pdf, self.preamble_notes, metadata, notes_vars
-                        )
-
-                        stats.pdfs_created += 1
-
-                        if self.logger:
-                            self.logger.log_operation(
-                                "pdf_created", {"type": "notes", "file": str(notes_pdf)}
-                            )
-                else:
-                    # File doesn't exist, create it
-                    tmp_notes = temp_manager.create_temp_file(
-                        suffix=".md", prefix=f"palimpsest_{self.year}_notes_"
-                    )
-
-                    self._write_temp_md(files, tmp_notes, notes=True)
-                    self._run_pandoc(
-                        tmp_notes, notes_pdf, self.preamble_notes, metadata, notes_vars
-                    )
-
+                notes_vars = {"fontsize": "12pt", "linestretch": "1.9"}
+                if self._build_single_pdf(
+                    files, notes_pdf, self.preamble_notes, metadata, notes_vars,
+                    temp_manager, "notes", notes=True
+                ):
                     stats.pdfs_created += 1
-
-                    if self.logger:
-                        self.logger.log_operation(
-                            "pdf_created", {"type": "notes", "file": str(notes_pdf)}
-                        )
 
         except PdfBuildError:
             stats.errors += 1
