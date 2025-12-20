@@ -327,7 +327,7 @@ class TestEventManagerUpdate:
         """Test update raises when event doesn't exist."""
         fake_event = Event(event="fake", id=99999)
 
-        with pytest.raises(DatabaseError, match="does not exist"):
+        with pytest.raises(DatabaseError, match="not found"):
             event_manager.update(fake_event, {"title": "New"})
 
     def test_update_raises_when_event_deleted(self, event_manager, db_session):

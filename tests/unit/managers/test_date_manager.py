@@ -397,7 +397,7 @@ class TestDateManagerLinkToEntry:
         db_session.add(entry)
         db_session.commit()
 
-        with pytest.raises(ValueError, match="MentionedDate must be persisted"):
+        with pytest.raises(ValueError, match="must be persisted"):
             date_manager.link_to_entry(mentioned_date, entry)
 
     def test_link_to_entry_raises_on_unpersisted_entry(self, date_manager, db_session):
@@ -407,7 +407,7 @@ class TestDateManagerLinkToEntry:
         db_session.add(mentioned_date)
         db_session.commit()
 
-        with pytest.raises(ValueError, match="Entry must be persisted"):
+        with pytest.raises(ValueError, match="must be persisted"):
             date_manager.link_to_entry(mentioned_date, entry)
 
 
@@ -456,7 +456,7 @@ class TestDateManagerLinkToLocation:
         db_session.add(location)
         db_session.commit()
 
-        with pytest.raises(ValueError, match="MentionedDate must be persisted"):
+        with pytest.raises(ValueError, match="must be persisted"):
             date_manager.link_to_location(mentioned_date, location)
 
     def test_link_to_location_raises_on_unpersisted_location(self, date_manager, db_session):
@@ -507,7 +507,7 @@ class TestDateManagerLinkToPerson:
         db_session.add(person)
         db_session.commit()
 
-        with pytest.raises(ValueError, match="MentionedDate must be persisted"):
+        with pytest.raises(ValueError, match="must be persisted"):
             date_manager.link_to_person(mentioned_date, person)
 
     def test_link_to_person_raises_on_unpersisted_person(self, date_manager, db_session):
@@ -517,7 +517,7 @@ class TestDateManagerLinkToPerson:
         db_session.add(mentioned_date)
         db_session.commit()
 
-        with pytest.raises(ValueError, match="Person must be persisted"):
+        with pytest.raises(ValueError, match="must be persisted"):
             date_manager.link_to_person(mentioned_date, person)
 
 
