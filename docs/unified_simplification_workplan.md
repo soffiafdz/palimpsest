@@ -43,21 +43,16 @@
 | P27 | Main wiki dashboards | +173 |
 | P10 | Replace decorators with DatabaseOperation context manager | ~300 |
 | P11 | Utils module consolidation (rename extract_section collision) | ~10 |
+| P22 | Remove unused specialized enum normalizers | ~50 |
 
 **Obsolete (replaced by P26):** P5, P5.1, P5.2, P7.2, P18, P19, P20, P24
+**Skipped (marginal gain):** P23 (Database model mixins - common properties only 2 lines each)
 
 ---
 
 ## Pending Tasks by Tier
 
-### Tier 3: Core Utilities (Do Next)
-
-| Priority | Task | Lines | Risk | Description |
-|----------|------|-------|------|-------------|
-| **P22** | Core module cleanup | ~90 | Low | Remove redundant exception helpers |
-| **P23** | Database model mixins | ~100 | Very Low | Extract common model properties into mixins |
-
-### Tier 5: Pipeline & Sync
+### Tier 5: Pipeline & Sync (Do Next)
 
 | Priority | Task | Lines | Risk | Description |
 |----------|------|-------|------|-------------|
@@ -104,12 +99,13 @@
 
 ## Quick Reference: What to Do Next
 
-**Current Focus:** Tier 3 (Core Utilities)
+**Current Focus:** Tier 5 (Pipeline & Sync)
 
-1. **P22** - Low risk: Core cleanup
-2. **P23** - Very low risk: Model mixins
+1. **P7** - Medium risk: Remove meta-programming in pipeline
+2. **P7.1** - Low risk: Delete unused import_* wrappers
+3. **P12** - Low risk: Pipeline file writing helpers
 
-After Tier 3, proceed to Tier 5 (Pipeline), then Tier 6-7 (Manuscript), then Tier 8 (Validators), then Tier 9 (Final).
+After Tier 5, proceed to Tier 6-7 (Manuscript), then Tier 8 (Validators), then Tier 9 (Final).
 
 ---
 

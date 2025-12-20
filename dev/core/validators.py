@@ -17,14 +17,10 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, Union
 
 # --- Local imports ---
 from .exceptions import ValidationError
-
-# Use TYPE_CHECKING to avoid circular imports
-if TYPE_CHECKING:
-    from dev.database.models import ReferenceMode, ReferenceType, RelationType
 
 
 class DataValidator:
@@ -367,53 +363,3 @@ class DataValidator:
             f"Cannot convert {type(value).__name__} to {enum_class.__name__}"
         )
 
-    @staticmethod
-    def normalize_reference_mode(value: Any) -> Optional["ReferenceMode"]:
-        """
-        Normalize value to ReferenceMode enum.
-
-        Note: Import ReferenceMode from dev.database.models when using this method.
-
-        Args:
-            value: Value to convert
-
-        Returns:
-            ReferenceMode instance or None
-        """
-        # Import here to avoid circular dependency
-        from dev.database.models import ReferenceMode
-        return DataValidator.normalize_enum(value, ReferenceMode, "reference_mode")  # type: ignore
-
-    @staticmethod
-    def normalize_reference_type(value: Any) -> Optional["ReferenceType"]:
-        """
-        Normalize value to ReferenceType enum.
-
-        Note: Import ReferenceType from dev.database.models when using this method.
-
-        Args:
-            value: Value to convert
-
-        Returns:
-            ReferenceType instance or None
-        """
-        # Import here to avoid circular dependency
-        from dev.database.models import ReferenceType
-        return DataValidator.normalize_enum(value, ReferenceType, "reference_type")  # type: ignore
-
-    @staticmethod
-    def normalize_relation_type(value: Any) -> Optional["RelationType"]:
-        """
-        Normalize value to RelationType enum.
-
-        Note: Import RelationType from dev.database.models when using this method.
-
-        Args:
-            value: Value to convert
-
-        Returns:
-            RelationType instance or None
-        """
-        # Import here to avoid circular dependency
-        from dev.database.models import RelationType
-        return DataValidator.normalize_enum(value, RelationType, "relation_type")  # type: ignore
