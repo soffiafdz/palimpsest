@@ -412,21 +412,3 @@ class TagManager(BaseManager):
             - Tags are automatically created on first use
         """
         return self.get_by_usage(min_count=0, max_count=0)
-
-    @handle_db_errors
-    @log_database_operation("get_entry_tags")
-    def get_for_entry(self, entry: Entry) -> List[Tag]:
-        """
-        Get all tags for a specific entry.
-
-        Args:
-            entry: Entry object
-
-        Returns:
-            List of Tag objects associated with the entry
-
-        Notes:
-            - This is just a convenience wrapper around entry.tags
-            - Results are sorted alphabetically by tag name
-        """
-        return sorted(entry.tags, key=lambda t: t.tag)
