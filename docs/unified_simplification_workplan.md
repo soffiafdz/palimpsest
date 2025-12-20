@@ -137,16 +137,16 @@ Consolidate core infrastructure before building on it.
 | **P22** | Core module cleanup | ~90 | Low | Pending |
 | **P23** | Database model mixins | ~100 | Very Low | Pending |
 
-### Tier 4: Wiki Cleanup
+### Tier 4: Wiki Cleanup — ✅ Complete
 
-Post-P26 cleanup. Some tasks may be obsolete after template rewrite.
+P7.2, P18, P19 were absorbed into the P26 template migration. Old `wiki_pages/` module deleted.
 
 | Priority | Task | Lines Saved | Risk | Status |
 |----------|------|-------------|------|--------|
-| **P7.2** | Merge EntityExporter classes | ~350 | Medium | Check if obsolete |
-| **P18** | Wiki stats collector | ~30 | Low | Check if part of P26 |
-| **P19** | Generic wiki index grouping | ~80 | Medium | Check if part of P26 |
-| **P24** | Wiki pages utils cleanup | ~20 | Very Low | Pending |
+| **P7.2** | Merge EntityExporter classes | ~350 | Medium | ✅ Absorbed into P26 |
+| **P18** | Wiki stats collector | ~30 | Low | ✅ Absorbed into P26 |
+| **P19** | Generic wiki index grouping | ~80 | Medium | ✅ Absorbed into P26 |
+| **P24** | Wiki pages utils cleanup | ~20 | Very Low | ✅ Deleted with wiki_pages/ |
 
 ### Tier 5: Pipeline & Sync System
 
@@ -572,8 +572,8 @@ python -c "from dev.database.managers import TagManager, PersonManager; print('O
 | **Low Priority** | P6-P24 (various) | -2,000 |
 
 **Notes:**
-- P5, P5.1-5.2, P20 (~2,050 lines) become **obsolete** if P26 is implemented
-- Many Low Priority tasks (P7.2, P18, P19) are absorbed into P26
+- P5, P5.1-5.2, P20 (~2,050 lines) became **obsolete** with P26 implementation
+- P7.2, P18, P19, P24 were absorbed into P26 — old `wiki_pages/` module deleted
 
 **Final target:** ~29,000 lines (from ~42,150) — **~31% reduction**
 
