@@ -125,7 +125,7 @@ from typing import Dict, Any, Union, Optional, List, Callable
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import ExportError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.temporal_files import TemporalFileManager
 
 from .decorators import handle_db_errors, log_database_operation
@@ -226,10 +226,9 @@ class ExportManager:
                 stats["processed"] += 1
             except Exception as e:
                 stats["errors"] += 1
-                if self.logger:
-                    self.logger.log_error(
-                        e, {"operation": "export_entry", "entry_id": entry.id}
-                    )
+                safe_logger(self.logger).log_error(
+                    e, {"operation": "export_entry", "entry_id": entry.id}
+                )
 
         stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
         return stats
@@ -302,22 +301,20 @@ class ExportManager:
                 except Exception as e:
                     batch_stats["errors"] += 1
                     stats["errors"] += 1
-                    if self.logger:
-                        self.logger.log_error(
-                            e, {"operation": "export_entry", "entry_id": entry.id}
-                        )
+                    safe_logger(self.logger).log_error(
+                        e, {"operation": "export_entry", "entry_id": entry.id}
+                    )
 
             stats["batches"].append(batch_stats)
 
-            if self.logger:
-                self.logger.log_operation(
-                    "batch_exported",
-                    {
-                        "period": batch.period_label,
-                        "processed": batch_stats["processed"],
-                        "errors": batch_stats["errors"],
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "batch_exported",
+                {
+                    "period": batch.period_label,
+                    "processed": batch_stats["processed"],
+                    "errors": batch_stats["errors"],
+                },
+            )
 
         stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
         return stats
@@ -397,16 +394,14 @@ class ExportManager:
                         session, model_class, table_name, export_dir, temp_manager
                     )
                 except ExportError as e:
-                    if self.logger:
-                        self.logger.log_error(
-                            e, {"operation": "export_table_csv", "table": table_name}
-                        )
+                    safe_logger(self.logger).log_error(
+                        e, {"operation": "export_table_csv", "table": table_name}
+                    )
                     raise  # Re-raise instead of continuing
                 except Exception as e:
-                    if self.logger:
-                        self.logger.log_error(
-                            e, {"operation": "export_table_csv", "table": table_name}
-                        )
+                    safe_logger(self.logger).log_error(
+                        e, {"operation": "export_table_csv", "table": table_name}
+                    )
                     raise ExportError(f"Failed to export table {table_name}: {e}")
 
         return exported_files

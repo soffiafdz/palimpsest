@@ -91,7 +91,7 @@ from sqlalchemy import text, func
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import HealthCheckError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from .decorators import handle_db_errors, log_database_operation
 from .query_optimizer import QueryOptimizer
 
@@ -209,8 +209,7 @@ class HealthMonitor:
         except Exception as e:
             health["status"] = "error"
             health["issues"].append(f"Database connectivity issue: {e}")
-            if self.logger:
-                self.logger.log_error(e, {"operation": "health_check"})
+            safe_logger(self.logger).log_error(e, {"operation": "health_check"})
             raise HealthCheckError(f"Health check failed: {e}")
 
         return health
@@ -463,10 +462,9 @@ class HealthMonitor:
             session.execute(text("VACUUM"))
             results["vacuum_completed"] = True
 
-            if self.logger:
-                self.logger.log_operation(
-                    "vacuum_completed", {"size_before": size_before}
-                )
+            safe_logger(self.logger).log_operation(
+                "vacuum_completed", {"size_before": size_before}
+            )
 
             # Run ANALYZE
             session.execute(text("ANALYZE"))
@@ -478,13 +476,11 @@ class HealthMonitor:
                 results["size_after_bytes"] = size_after
                 results["space_reclaimed_bytes"] = size_before - size_after
 
-            if self.logger:
-                self.logger.log_operation("optimize_completed", results)
+            safe_logger(self.logger).log_operation("optimize_completed", results)
 
         except Exception as e:
             results["errors"].append(str(e))
-            if self.logger:
-                self.logger.log_error(e, {"operation": "optimize_database"})
+            safe_logger(self.logger).log_error(e, {"operation": "optimize_database"})
             raise HealthCheckError(f"Database optimization failed: {e}")
 
         return results
@@ -647,8 +643,7 @@ class HealthMonitor:
 
         if not dry_run:
             session.flush()
-            if self.logger:
-                self.logger.log_operation("orphaned_records_cleaned", results)
+            safe_logger(self.logger).log_operation("orphaned_records_cleaned", results)
 
         return results
 
@@ -684,11 +679,10 @@ class HealthMonitor:
             )
 
             results[table_name] = deleted_count
-            if self.logger:
-                self.logger.log_operation(
-                    "cleanup_table",
-                    {"table": table_name, "deleted_count": deleted_count},
-                )
+            safe_logger(self.logger).log_operation(
+                "cleanup_table",
+                {"table": table_name, "deleted_count": deleted_count},
+            )
 
         session.flush()
         return results

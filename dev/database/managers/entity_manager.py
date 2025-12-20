@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import handle_db_errors
 from .base_manager import BaseManager
@@ -248,11 +248,10 @@ class EntityManager(BaseManager):
         self.session.add(entity)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created {self.config.display_name}: {name}",
-                {f"{self.config.display_name}_id": entity.id},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created {self.config.display_name}: {name}",
+            {f"{self.config.display_name}_id": entity.id},
+        )
 
         # Post-creation (relationships, etc.)
         self._post_create(entity, metadata)
@@ -329,22 +328,20 @@ class EntityManager(BaseManager):
             entity.deleted_at = datetime.now(timezone.utc)
             entity.deleted_by = deleted_by
             entity.deletion_reason = reason
-            if self.logger:
-                self.logger.log_debug(
-                    f"Soft deleted {self.config.display_name}",
-                    {
-                        f"{self.config.display_name}_id": entity.id,
-                        "deleted_by": deleted_by,
-                    },
-                )
+            safe_logger(self.logger).log_debug(
+                f"Soft deleted {self.config.display_name}",
+                {
+                    f"{self.config.display_name}_id": entity.id,
+                    "deleted_by": deleted_by,
+                },
+            )
         else:
             # Hard delete
             self.session.delete(entity)
-            if self.logger:
-                self.logger.log_debug(
-                    f"Deleted {self.config.display_name}",
-                    {f"{self.config.display_name}_id": entity.id},
-                )
+            safe_logger(self.logger).log_debug(
+                f"Deleted {self.config.display_name}",
+                {f"{self.config.display_name}_id": entity.id},
+            )
 
         self.session.flush()
 
@@ -378,11 +375,10 @@ class EntityManager(BaseManager):
         entity.deletion_reason = None
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Restored {self.config.display_name}",
-                {f"{self.config.display_name}_id": entity.id},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Restored {self.config.display_name}",
+            {f"{self.config.display_name}_id": entity.id},
+        )
 
         return entity
 

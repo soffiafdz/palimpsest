@@ -72,7 +72,7 @@ from typing import Dict, Any, List, Optional, Union
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 from .decorators import handle_db_errors, log_database_operation
 from .query_optimizer import QueryOptimizer, HierarchicalBatcher
@@ -182,8 +182,7 @@ class QueryAnalytics:
             stats["migration_status"] = self._get_migration_status(session)
         except DatabaseError as e:
             stats["migration_status"] = {"status": "error", "error": str(e)}
-            if self.logger:
-                self.logger.log_error(e, {"operation": "get_migration_status"})
+            safe_logger(self.logger).log_error(e, {"operation": "get_migration_status"})
 
         return stats
 

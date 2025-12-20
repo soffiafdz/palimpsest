@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Optional
 
 # --- Local imports ---
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.database.manager import PalimpsestDB
 
@@ -106,26 +106,23 @@ class WikiExporter:
         """
         stats = ConversionStats()
 
-        if self.logger:
-            self.logger.log_info(f"Exporting {config.plural}...")
+        safe_logger(self.logger).log_info(f"Exporting {config.plural}...")
 
         with self.db.session_scope() as session:
             entities = config.query(session)
 
             if not entities:
-                if self.logger:
-                    self.logger.log_info(f"No {config.plural} to export")
+                safe_logger(self.logger).log_info(f"No {config.plural} to export")
                 return stats
 
             for entity in entities:
                 self._export_entity(entity, config, force, stats)
 
-        if self.logger:
-            self.logger.log_info(
-                f"Exported {config.plural}: "
-                f"{stats.entries_created} created, {stats.entries_updated} updated, "
-                f"{stats.entries_skipped} unchanged"
-            )
+        safe_logger(self.logger).log_info(
+            f"Exported {config.plural}: "
+            f"{stats.entries_created} created, {stats.entries_updated} updated, "
+            f"{stats.entries_skipped} unchanged"
+        )
 
         return stats
 
@@ -189,12 +186,11 @@ class WikiExporter:
             total_stats.entries_updated += stats.entries_updated
             total_stats.entries_skipped += stats.entries_skipped
 
-        if self.logger:
-            self.logger.log_info(
-                f"Wiki export complete: "
-                f"{total_stats.entries_created} created, {total_stats.entries_updated} updated, "
-                f"{total_stats.entries_skipped} unchanged"
-            )
+        safe_logger(self.logger).log_info(
+            f"Wiki export complete: "
+            f"{total_stats.entries_created} created, {total_stats.entries_updated} updated, "
+            f"{total_stats.entries_skipped} unchanged"
+        )
 
         return total_stats
 
@@ -228,12 +224,11 @@ class WikiExporter:
         stats.entries_updated += home_stats.entries_updated
         stats.entries_skipped += home_stats.entries_skipped
 
-        if self.logger:
-            self.logger.log_info(
-                f"Index export complete: "
-                f"{stats.entries_created} created, {stats.entries_updated} updated, "
-                f"{stats.entries_skipped} unchanged"
-            )
+        safe_logger(self.logger).log_info(
+            f"Index export complete: "
+            f"{stats.entries_created} created, {stats.entries_updated} updated, "
+            f"{stats.entries_skipped} unchanged"
+        )
 
         return stats
 
@@ -588,8 +583,7 @@ class WikiExporter:
 
             self._write_index(output_path, content, force, stats)
 
-        if self.logger:
-            self.logger.log_info("Home dashboard exported")
+        safe_logger(self.logger).log_info("Home dashboard exported")
 
         return stats
 
@@ -624,8 +618,7 @@ class WikiExporter:
             entries = session.query(Entry).order_by(Entry.date).all()
 
             if not entries:
-                if self.logger:
-                    self.logger.log_warning("No entries found for statistics")
+                safe_logger(self.logger).log_warning("No entries found for statistics")
                 return stats
 
             total_entries = len(entries)
@@ -794,8 +787,7 @@ class WikiExporter:
 
             self._write_index(output_path, content, force, stats)
 
-        if self.logger:
-            self.logger.log_info("Statistics dashboard exported")
+        safe_logger(self.logger).log_info("Statistics dashboard exported")
 
         return stats
 
@@ -820,8 +812,7 @@ class WikiExporter:
             entries = session.query(Entry).order_by(Entry.date).all()
 
             if not entries:
-                if self.logger:
-                    self.logger.log_warning("No entries found for timeline")
+                safe_logger(self.logger).log_warning("No entries found for timeline")
                 return stats
 
             total_entries = len(entries)
@@ -888,8 +879,7 @@ class WikiExporter:
 
             self._write_index(output_path, content, force, stats)
 
-        if self.logger:
-            self.logger.log_info("Timeline exported")
+        safe_logger(self.logger).log_info("Timeline exported")
 
         return stats
 
@@ -928,8 +918,7 @@ class WikiExporter:
             )
 
             if not entries:
-                if self.logger:
-                    self.logger.log_warning("No entries found for analysis")
+                safe_logger(self.logger).log_warning("No entries found for analysis")
                 return stats
 
             # Entity counters
@@ -1094,7 +1083,6 @@ class WikiExporter:
 
             self._write_index(output_path, content, force, stats)
 
-        if self.logger:
-            self.logger.log_info("Analysis report exported")
+        safe_logger(self.logger).log_info("Analysis report exported")
 
         return stats

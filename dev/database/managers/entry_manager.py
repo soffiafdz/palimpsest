@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import insert
 
 from dev.core.exceptions import ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.utils import fs
 from dev.database.models import (
@@ -241,10 +241,9 @@ class EntryManager(BaseManager):
             if file_path_obj.exists():
                 file_hash = fs.get_file_hash(file_path)
             else:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"File path does not exist, cannot calculate hash: {file_path}"
-                    )
+                safe_logger(self.logger).log_warning(
+                    f"File path does not exist, cannot calculate hash: {file_path}"
+                )
 
         # --- Create Entry ---
         def _do_create():
@@ -392,19 +391,17 @@ class EntryManager(BaseManager):
             if hard_delete:
                 # Permanent deletion - cannot be recovered
                 self.session.delete(entry)
-                if self.logger:
-                    self.logger.log_warning(
-                        f"HARD DELETE: Entry {entry.date}",
-                        {"reason": reason, "deleted_by": deleted_by},
-                    )
+                safe_logger(self.logger).log_warning(
+                    f"HARD DELETE: Entry {entry.date}",
+                    {"reason": reason, "deleted_by": deleted_by},
+                )
             else:
                 # Soft delete - mark as deleted
                 entry.soft_delete(deleted_by=deleted_by, reason=reason)
-                if self.logger:
-                    self.logger.log_info(
-                        f"Soft deleted entry {entry.date}",
-                        {"deleted_by": deleted_by, "reason": reason},
-                    )
+                safe_logger(self.logger).log_info(
+                    f"Soft deleted entry {entry.date}",
+                    {"deleted_by": deleted_by, "reason": reason},
+                )
 
             self.session.flush()
 
@@ -424,8 +421,7 @@ class EntryManager(BaseManager):
 
         def _do_restore():
             entry.restore()
-            if self.logger:
-                self.logger.log_info(f"Restored entry {entry.date}")
+            safe_logger(self.logger).log_info(f"Restored entry {entry.date}")
             self.session.flush()
 
         self._execute_with_retry(_do_restore)
@@ -501,11 +497,10 @@ class EntryManager(BaseManager):
             )
             created_ids.extend([e.id for e in created_entries])
 
-            if self.logger:
-                self.logger.log_operation(
-                    "bulk_create_batch",
-                    {"batch_number": i // batch_size + 1, "count": len(batch)},
-                )
+            safe_logger(self.logger).log_operation(
+                "bulk_create_batch",
+                {"batch_number": i // batch_size + 1, "count": len(batch)},
+            )
 
         return created_ids
 
@@ -763,15 +758,14 @@ class EntryManager(BaseManager):
 
         except Exception as e:
             # Log error with context
-            if self.logger:
-                self.logger.log_error(
-                    e,
-                    {
-                        "operation": "update_entry_relationships",
-                        "entry_id": entry.id,
-                        "entry_date": str(entry.date),
-                    },
-                )
+            safe_logger(self.logger).log_error(
+                e,
+                {
+                    "operation": "update_entry_relationships",
+                    "entry_id": entry.id,
+                    "entry_date": str(entry.date),
+                },
+            )
             # Re-raise for higher-level handling
             raise
 
@@ -831,19 +825,17 @@ class EntryManager(BaseManager):
                     aliases = [normalized]
 
             else:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Invalid alias format: {type(alias_obj).__name__}",
-                        {"entry_id": entry.id, "alias_data": str(alias_obj)[:100]},
-                    )
+                safe_logger(self.logger).log_warning(
+                    f"Invalid alias format: {type(alias_obj).__name__}",
+                    {"entry_id": entry.id, "alias_data": str(alias_obj)[:100]},
+                )
                 continue
 
             if not aliases:
-                if self.logger:
-                    self.logger.log_warning(
-                        "Empty alias list after normalization",
-                        {"entry_id": entry.id, "raw_data": str(alias_obj)[:100]},
-                    )
+                safe_logger(self.logger).log_warning(
+                    "Empty alias list after normalization",
+                    {"entry_id": entry.id, "raw_data": str(alias_obj)[:100]},
+                )
                 continue
 
             # Try to resolve person from existing aliases
@@ -872,51 +864,48 @@ class EntryManager(BaseManager):
                             # Use helper to get or create person
                             person = self.helpers.get_person(name, full_name)
                         except ValidationError as e:
-                            if self.logger:
-                                self.logger.log_warning(
-                                    f"Could not resolve person for aliases: {e}",
-                                    {
-                                        "entry_id": entry.id,
-                                        "entry_date": str(entry.date),
-                                        "alias": [
-                                            *unresolved_aliases,
-                                            *alias_fellows,
-                                        ],
-                                        "name": name,
-                                        "full_name": full_name,
-                                    },
-                                )
-                            continue
-
-                        if person is None:
-                            if self.logger:
-                                person_id = full_name if full_name else name
-                                self.logger.log_warning(
-                                    f"Person '{person_id}' not found for alias",
-                                    {
-                                        "entry_id": entry.id,
-                                        "entry_date": str(entry.date),
-                                        "alias": [
-                                            *unresolved_aliases,
-                                            *alias_fellows,
-                                        ],
-                                        "name": name,
-                                        "full_name": full_name,
-                                    },
-                                )
-                            continue
-                    else:
-                        # No person context provided
-                        if self.logger:
-                            self.logger.log_warning(
-                                "Cannot resolve alias without person context",
+                            safe_logger(self.logger).log_warning(
+                                f"Could not resolve person for aliases: {e}",
                                 {
                                     "entry_id": entry.id,
                                     "entry_date": str(entry.date),
-                                    "alias": [*unresolved_aliases, *alias_fellows],
-                                    "hint": "Provide 'name' or 'full_name' in alias dict",
+                                    "alias": [
+                                        *unresolved_aliases,
+                                        *alias_fellows,
+                                    ],
+                                    "name": name,
+                                    "full_name": full_name,
                                 },
                             )
+                            continue
+
+                        if person is None:
+                            person_id = full_name if full_name else name
+                            safe_logger(self.logger).log_warning(
+                                f"Person '{person_id}' not found for alias",
+                                {
+                                    "entry_id": entry.id,
+                                    "entry_date": str(entry.date),
+                                    "alias": [
+                                        *unresolved_aliases,
+                                        *alias_fellows,
+                                    ],
+                                    "name": name,
+                                    "full_name": full_name,
+                                },
+                            )
+                            continue
+                    else:
+                        # No person context provided
+                        safe_logger(self.logger).log_warning(
+                            "Cannot resolve alias without person context",
+                            {
+                                "entry_id": entry.id,
+                                "entry_date": str(entry.date),
+                                "alias": [*unresolved_aliases, *alias_fellows],
+                                "hint": "Provide 'name' or 'full_name' in alias dict",
+                            },
+                        )
                         continue
 
                 if alias_fellows:
@@ -939,15 +928,14 @@ class EntryManager(BaseManager):
                     ]
                     # This shouldn't happen due to Tables limitation, leave here anyway
                     if alias_fellows:
-                        if self.logger:
-                            self.logger.log_warning(
-                                f"Ambiguous alias(es) '{alias_fellows}' match multiple people",
-                                {
-                                    "entry_id": entry.id,
-                                    "entry_date": str(entry.date),
-                                    "alias": alias_fellows,
-                                },
-                            )
+                        safe_logger(self.logger).log_warning(
+                            f"Ambiguous alias(es) '{alias_fellows}' match multiple people",
+                            {
+                                "entry_id": entry.id,
+                                "entry_date": str(entry.date),
+                                "alias": alias_fellows,
+                            },
+                        )
 
                 # Create new alias records for this person
                 for alias in unresolved_aliases:
@@ -958,26 +946,24 @@ class EntryManager(BaseManager):
                         )
                         alias_orms.append(alias_orm)
 
-                        if self.logger:
-                            self.logger.log_debug(
-                                f"Created alias '{alias}' for {person.display_name}",
-                                {
-                                    "entry_id": entry.id,
-                                    "person_id": person.id,
-                                    "alias": alias,
-                                },
-                            )
+                        safe_logger(self.logger).log_debug(
+                            f"Created alias '{alias}' for {person.display_name}",
+                            {
+                                "entry_id": entry.id,
+                                "person_id": person.id,
+                                "alias": alias,
+                            },
+                        )
                     except Exception as e:
-                        if self.logger:
-                            self.logger.log_error(
-                                e,
-                                {
-                                    "operation": "create_alias",
-                                    "entry_id": entry.id,
-                                    "person_id": person.id,
-                                    "alias": alias,
-                                },
-                            )
+                        safe_logger(self.logger).log_error(
+                            e,
+                            {
+                                "operation": "create_alias",
+                                "entry_id": entry.id,
+                                "person_id": person.id,
+                                "alias": alias,
+                            },
+                        )
                         # Continue processing other aliases
                         continue
 
@@ -991,30 +977,28 @@ class EntryManager(BaseManager):
                         entry.aliases_used.append(resolved_alias)
                 self.session.flush()
 
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Linked {len(alias_orms)} aliases to entry",
-                        {
-                            "entry_id": entry.id,
-                            "entry_date": str(entry.date),
-                            "alias_count": len(alias_orms),
-                        },
-                    )
+                safe_logger(self.logger).log_debug(
+                    f"Linked {len(alias_orms)} aliases to entry",
+                    {
+                        "entry_id": entry.id,
+                        "entry_date": str(entry.date),
+                        "alias_count": len(alias_orms),
+                    },
+                )
             except Exception as e:
-                if self.logger:
-                    self.logger.log_error(
-                        e,
-                        {
-                            "operation": "link_aliases_to_entry",
-                            "entry_id": entry.id,
-                            "entry_date": str(entry.date),
-                            "alias_count": len(alias_orms),
-                        },
-                    )
+                safe_logger(self.logger).log_error(
+                    e,
+                    {
+                        "operation": "link_aliases_to_entry",
+                        "entry_id": entry.id,
+                        "entry_date": str(entry.date),
+                        "alias_count": len(alias_orms),
+                    },
+                )
                 raise
-        elif self.logger:
+        else:
             # No aliases were successfully processed
-            self.logger.log_debug(
+            safe_logger(self.logger).log_debug(
                 "No alias linked to entry",
                 {
                     "entry_id": entry.id,

@@ -45,7 +45,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import (
     handle_db_errors,
@@ -350,11 +350,10 @@ class LocationManager(EntityManager):
         self.session.add(location)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created location: {location_name}",
-                {"location_id": location.id, "city": city.city},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created location: {location_name}",
+            {"location_id": location.id, "city": city.city},
+        )
 
         # Update relationships
         self._update_location_relationships(location, metadata, incremental=False)
@@ -428,11 +427,10 @@ class LocationManager(EntityManager):
             if not location:
                 raise DatabaseError(f"Location not found with id: {location}")
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Deleting location: {location.name}",
-                {"location_id": location.id, "city": location.city.city},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Deleting location: {location.name}",
+            {"location_id": location.id, "city": location.city.city},
+        )
 
         self.session.delete(location)
         self.session.flush()
@@ -472,11 +470,10 @@ class LocationManager(EntityManager):
         self.session.add(location)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created location: {normalized_location}",
-                {"location_id": location.id, "city": city.city},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created location: {normalized_location}",
+            {"location_id": location.id, "city": city.city},
+        )
 
         return location
 

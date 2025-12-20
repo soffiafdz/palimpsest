@@ -36,7 +36,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import handle_db_errors
 from dev.database.models import Entry, Event, Location, Moment, Person, Tag
@@ -406,11 +406,10 @@ class SimpleManager(BaseManager):
         self.session.add(entity)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created {self.config.display_name}: {normalized}",
-                {"id": entity.id},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created {self.config.display_name}: {normalized}",
+            {"id": entity.id},
+        )
 
         # Update relationships
         self._update_relationships(entity, metadata, incremental=False)
@@ -538,21 +537,19 @@ class SimpleManager(BaseManager):
 
         if self.config.supports_soft_delete and not hard_delete:
             # Soft delete
-            if self.logger:
-                self.logger.log_debug(
-                    f"Soft deleting {self.config.display_name}: {entity_name}",
-                    {"id": entity.id, "deleted_by": deleted_by, "reason": reason},
-                )
+            safe_logger(self.logger).log_debug(
+                f"Soft deleting {self.config.display_name}: {entity_name}",
+                {"id": entity.id, "deleted_by": deleted_by, "reason": reason},
+            )
             entity.deleted_at = datetime.now(timezone.utc)
             entity.deleted_by = deleted_by
             entity.deletion_reason = reason
         else:
             # Hard delete
-            if self.logger:
-                self.logger.log_debug(
-                    f"Hard deleting {self.config.display_name}: {entity_name}",
-                    {"id": entity.id},
-                )
+            safe_logger(self.logger).log_debug(
+                f"Hard deleting {self.config.display_name}: {entity_name}",
+                {"id": entity.id},
+            )
             self.session.delete(entity)
 
         self.session.flush()
@@ -595,12 +592,11 @@ class SimpleManager(BaseManager):
 
         self.session.flush()
 
-        if self.logger:
-            entity_name = getattr(entity, self.config.name_field)
-            self.logger.log_debug(
-                f"Restored {self.config.display_name}: {entity_name}",
-                {"id": entity.id},
-            )
+        entity_name = getattr(entity, self.config.name_field)
+        safe_logger(self.logger).log_debug(
+            f"Restored {self.config.display_name}: {entity_name}",
+            {"id": entity.id},
+        )
 
         return entity
 
@@ -677,11 +673,10 @@ class SimpleManager(BaseManager):
                 entry.tags.append(tag)
                 self.session.flush()
 
-                if self.logger:
-                    self.logger.log_debug(
-                        "Linked tag to entry",
-                        {"tag": tag.tag, "entry_date": entry.date},
-                    )
+                safe_logger(self.logger).log_debug(
+                    "Linked tag to entry",
+                    {"tag": tag.tag, "entry_date": entry.date},
+                )
             return tag
 
         # Generic: link_to_entry(entity, entry)
@@ -718,11 +713,10 @@ class SimpleManager(BaseManager):
             entry.tags.remove(tag)
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_debug(
-                    "Unlinked tag from entry",
-                    {"tag": tag.tag, "entry_date": entry.date},
-                )
+            safe_logger(self.logger).log_debug(
+                "Unlinked tag from entry",
+                {"tag": tag.tag, "entry_date": entry.date},
+            )
             return True
 
         # Generic: unlink_from_entry(entity, entry)
@@ -779,16 +773,15 @@ class SimpleManager(BaseManager):
         if new_tags:
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_debug(
-                    "Updated entry tags",
-                    {
-                        "entry_date": entry.date,
-                        "added_count": len(new_tags),
-                        "total_count": len(entry.tags),
-                        "incremental": incremental,
-                    },
-                )
+            safe_logger(self.logger).log_debug(
+                "Updated entry tags",
+                {
+                    "entry_date": entry.date,
+                    "added_count": len(new_tags),
+                    "total_count": len(entry.tags),
+                    "incremental": incremental,
+                },
+            )
 
     @handle_db_errors
     def link_to_person(self, entity: Any, person: Person) -> None:
@@ -833,12 +826,11 @@ class SimpleManager(BaseManager):
             collection.append(related)
             self.session.flush()
 
-            if self.logger:
-                entity_name = getattr(entity, self.config.name_field)
-                self.logger.log_debug(
-                    f"Linked {self.config.display_name} to {attr_name}",
-                    {self.config.name_field: entity_name},
-                )
+            entity_name = getattr(entity, self.config.name_field)
+            safe_logger(self.logger).log_debug(
+                f"Linked {self.config.display_name} to {attr_name}",
+                {self.config.name_field: entity_name},
+            )
 
     def _unlink(self, entity: Any, related: Any, attr_name: str) -> bool:
         """Generic unlink helper."""
@@ -863,12 +855,11 @@ class SimpleManager(BaseManager):
             collection.remove(related)
             self.session.flush()
 
-            if self.logger:
-                entity_name = getattr(entity, self.config.name_field)
-                self.logger.log_debug(
-                    f"Unlinked {self.config.display_name} from {attr_name}",
-                    {self.config.name_field: entity_name},
-                )
+            entity_name = getattr(entity, self.config.name_field)
+            safe_logger(self.logger).log_debug(
+                f"Unlinked {self.config.display_name} from {attr_name}",
+                {self.config.name_field: entity_name},
+            )
             return True
 
         return False

@@ -55,7 +55,7 @@ from sqlalchemy.orm import Session
 
 # --- Local imports ---
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import (
     handle_db_errors,
@@ -308,15 +308,14 @@ class PersonManager(EntityManager):
         self.session.add(person)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created person: {p_name}",
-                {
-                    "person_id": person.id,
-                    "full_name": p_fname,
-                    "has_name_fellows": len(name_fellows) > 0,
-                },
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created person: {p_name}",
+            {
+                "person_id": person.id,
+                "full_name": p_fname,
+                "has_name_fellows": len(name_fellows) > 0,
+            },
+        )
 
         # Set name_fellow flag for all people with same name
         if name_fellows:
@@ -324,10 +323,9 @@ class PersonManager(EntityManager):
             for fellow in name_fellows:
                 fellow.name_fellow = True
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Set name_fellow=True for {len(name_fellows)} people named '{p_name}'"
-                )
+            safe_logger(self.logger).log_debug(
+                f"Set name_fellow=True for {len(name_fellows)} people named '{p_name}'"
+            )
 
         # Update relationships
         self._update_relationships(person, metadata, incremental=False)
@@ -632,10 +630,9 @@ class PersonManager(EntityManager):
         # Check if alias already exists for this person
         for existing in person.aliases:
             if existing.alias == normalized:
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Alias '{normalized}' already exists for {person.display_name}"
-                    )
+                safe_logger(self.logger).log_debug(
+                    f"Alias '{normalized}' already exists for {person.display_name}"
+                )
                 return existing
 
         # Create new alias
@@ -643,11 +640,10 @@ class PersonManager(EntityManager):
         self.session.add(alias_obj)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Added alias '{normalized}' to {person.display_name}",
-                {"alias_id": alias_obj.id, "person_id": person.id},
-            )
+        safe_logger(self.logger).log_debug(
+            f"Added alias '{normalized}' to {person.display_name}",
+            {"alias_id": alias_obj.id, "person_id": person.id},
+        )
 
         return alias_obj
 
@@ -697,11 +693,10 @@ class PersonManager(EntityManager):
                 self.session.delete(alias_obj)
                 self.session.flush()
 
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Removed alias '{normalized}' from {person.display_name}",
-                        {"person_id": person.id},
-                    )
+                safe_logger(self.logger).log_debug(
+                    f"Removed alias '{normalized}' from {person.display_name}",
+                    {"person_id": person.id},
+                )
                 return True
 
         return False

@@ -39,7 +39,7 @@ from typing import Optional
 # --- Local imports ---
 from dev.core.exceptions import Txt2MdError
 from dev.core.temporal_files import TemporalFileManager
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
 
@@ -108,8 +108,7 @@ def process_entry(
     Raises:
         Txt2MdError: If file write fails or directory creation fails
     """
-    if logger:
-        logger.log_debug(f"Processing entry dated {entry.date.isoformat()}")
+    safe_logger(logger).log_debug(f"Processing entry dated {entry.date.isoformat()}")
 
     # Create year directory structure
     year_dir = output_dir / str(entry.date.year)
@@ -120,8 +119,7 @@ def process_entry(
 
     # Check for existing files
     if output_path.exists() and not force_overwrite:
-        if logger:
-            logger.log_debug(f"{output_path.name} exists, skipping")
+        safe_logger(logger).log_debug(f"{output_path.name} exists, skipping")
         return None
 
     # Generate markdown content
@@ -133,9 +131,8 @@ def process_entry(
     # Write file
     output_path.write_text(content, encoding="utf-8")
 
-    if logger:
-        action = "Overwrote" if output_path.exists() else "Created"
-        logger.log_debug(f"{action} file: {output_path.name}")
+    action = "Overwrote" if output_path.exists() else "Created"
+    safe_logger(logger).log_debug(f"{action} file: {output_path.name}")
 
     return output_path
 
@@ -209,18 +206,16 @@ def convert_file(
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if logger:
-        logger.log_operation(
-            "convert_file_start", {"input": str(input_path), "output": str(output_dir)}
-        )
+    safe_logger(logger).log_operation(
+        "convert_file_start", {"input": str(input_path), "output": str(output_dir)}
+    )
 
     # Parse entries from .txt file
     try:
         with TemporalFileManager() as temp_manager:
             # For large files, use temporary processing
             if input_path.stat().st_size > 50 * 1024 * 1024:  # 50MB+
-                if logger:
-                    logger.log_debug("Large file detected, using temporary processing")
+                safe_logger(logger).log_debug("Large file detected, using temporary processing")
                 temp_file = temp_manager.create_temp_file(suffix=".txt")
                 temp_file.write_text(
                     input_path.read_text(encoding="utf-8"), encoding="utf-8"
@@ -229,18 +224,15 @@ def convert_file(
             else:
                 entries = TxtEntry.from_file(input_path, verbose=False)
 
-        if logger:
-            logger.log_operation(
-                "entries_parsed", {"file": input_path.name, "count": len(entries)}
-            )
+        safe_logger(logger).log_operation(
+            "entries_parsed", {"file": input_path.name, "count": len(entries)}
+        )
     except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "parse_file", "file": str(input_path)})
+        safe_logger(logger).log_error(e, {"operation": "parse_file", "file": str(input_path)})
         raise Txt2MdError(f"Failed to parse {input_path}: {e}") from e
 
     if not entries:
-        if logger:
-            logger.log_info(f"No entries found in {input_path}")
+        safe_logger(logger).log_info(f"No entries found in {input_path}")
         return stats
 
     # Process each entry
@@ -255,15 +247,13 @@ def convert_file(
                 stats.entries_skipped += 1
         except Txt2MdError as e:
             stats.errors += 1
-            if logger:
-                logger.log_error(
-                    e, {"operation": "process_entry", "date": str(entry.date)}
-                )
+            safe_logger(logger).log_error(
+                e, {"operation": "process_entry", "date": str(entry.date)}
+            )
 
     stats.files_processed = 1
 
-    if logger:
-        logger.log_operation("convert_file_complete", {"stats": stats.summary()})
+    safe_logger(logger).log_operation("convert_file_complete", {"stats": stats.summary()})
 
     return stats
 
@@ -292,21 +282,18 @@ def convert_directory(
 
     txt_files = list(input_dir.rglob(pattern))
     if not txt_files:
-        if logger:
-            logger.log_info(f"No .txt files found in {input_dir}")
+        safe_logger(logger).log_info(f"No .txt files found in {input_dir}")
         return total_stats
 
-    if logger:
-        logger.log_operation(
-            "convert_directory_start",
-            {"input": str(input_dir), "files_found": len(txt_files)},
-        )
+    safe_logger(logger).log_operation(
+        "convert_directory_start",
+        {"input": str(input_dir), "files_found": len(txt_files)},
+    )
 
     # Process each file
     for txt_file in txt_files:
         try:
-            if logger:
-                logger.log_info(f"Processing {txt_file.name}")
+            safe_logger(logger).log_info(f"Processing {txt_file.name}")
 
             stats = convert_file(
                 txt_file, output_dir, force_overwrite, minimal_yaml, logger
@@ -320,15 +307,13 @@ def convert_directory(
 
         except Txt2MdError as e:
             total_stats.errors += 1
-            if logger:
-                logger.log_error(
-                    e, {"operation": "convert_file", "file": str(txt_file)}
-                )
+            safe_logger(logger).log_error(
+                e, {"operation": "convert_file", "file": str(txt_file)}
+            )
 
-    if logger:
-        logger.log_operation(
-            "convert_directory_complete", {"stats": total_stats.summary()}
-        )
+    safe_logger(logger).log_operation(
+        "convert_directory_complete", {"stats": total_stats.summary()}
+    )
 
     return total_stats
 

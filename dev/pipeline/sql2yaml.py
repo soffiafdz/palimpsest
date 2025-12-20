@@ -34,7 +34,7 @@ from typing import List, Optional
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
 from dev.core.exceptions import Sql2YamlError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 from dev.utils import md
 
@@ -134,8 +134,7 @@ def export_entry_to_markdown(
     Raises:
         Sql2YamlError: If export fails (MdEntry creation, markdown generation, file write)
     """
-    if logger:
-        logger.log_debug(f"Exporting entry {entry.date}")
+    safe_logger(logger).log_debug(f"Exporting entry {entry.date}")
 
     # Determine output path
     year_dir: Path = output_dir / str(entry.date.year)
@@ -148,8 +147,7 @@ def export_entry_to_markdown(
     file_existed: bool = output_path.exists()
 
     if file_existed and not force_overwrite:
-        if logger:
-            logger.log_debug(f"File exists, skipping: {output_path.name}")
+        safe_logger(logger).log_debug(f"File exists, skipping: {output_path.name}")
         return "skipped"
 
     # Get body content
@@ -157,51 +155,44 @@ def export_entry_to_markdown(
     if preserve_body and file_existed:
         # Preserve existing body
         body_lines = md.read_entry_body(output_path)
-        if logger:
-            logger.log_debug(f"Preserved body: {len(body_lines)} lines")
+        safe_logger(logger).log_debug(f"Preserved body: {len(body_lines)} lines")
     elif entry.file_path and Path(entry.file_path).exists():
         # Read from original file
         body_lines = md.read_entry_body(Path(entry.file_path))
-        if logger:
-            logger.log_debug(f"Loaded body from: {entry.file_path}")
+        safe_logger(logger).log_debug(f"Loaded body from: {entry.file_path}")
     else:
         body_lines = md.generate_placeholder_body(entry.date)
-        if logger:
-            logger.log_debug("Generated placeholder body")
+        safe_logger(logger).log_debug("Generated placeholder body")
 
     # Create MdEntry from database
     try:
         md_entry: MdEntry = MdEntry.from_database(entry, body_lines, output_path)
     except Exception as e:
-        if logger:
-            logger.log_error(
-                e, {"operation": "create_mdentry", "date": str(entry.date)}
-            )
+        safe_logger(logger).log_error(
+            e, {"operation": "create_mdentry", "date": str(entry.date)}
+        )
         raise Sql2YamlError(f"Failed to create MdEntry: {e}") from e
 
     # Generate markdown
     try:
         markdown_content: str = md_entry.to_markdown()
     except Exception as e:
-        if logger:
-            logger.log_error(
-                e, {"operation": "generate_markdown", "date": str(entry.date)}
-            )
+        safe_logger(logger).log_error(
+            e, {"operation": "generate_markdown", "date": str(entry.date)}
+        )
         raise Sql2YamlError(f"Failed to generate markdown: {e}") from e
 
     # Write file
     try:
         output_path.write_text(markdown_content, encoding="utf-8")
 
-        if logger:
-            action: str = "updated" if file_existed else "created"
-            logger.log_operation(
-                f"entry_{action}", {"date": str(entry.date), "file": str(output_path)}
-            )
+        action: str = "updated" if file_existed else "created"
+        safe_logger(logger).log_operation(
+            f"entry_{action}", {"date": str(entry.date), "file": str(output_path)}
+        )
 
         return "updated" if file_existed else "created"
 
     except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "write_file", "file": str(output_path)})
+        safe_logger(logger).log_error(e, {"operation": "write_file", "file": str(output_path)})
         raise Sql2YamlError(f"Failed to write file: {e}") from e

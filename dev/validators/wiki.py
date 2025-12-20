@@ -39,7 +39,7 @@ from collections import defaultdict
 import click
 
 # --- Local imports ---
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class WikiValidationError(Exception):
@@ -163,8 +163,7 @@ def validate_wiki(
     Returns:
         ValidationResult with findings
     """
-    if logger:
-        logger.log_operation("validate_wiki_start", {"wiki_dir": str(wiki_dir)})
+    safe_logger(logger).log_operation("validate_wiki_start", {"wiki_dir": str(wiki_dir)})
 
     result = ValidationResult()
 
@@ -173,8 +172,7 @@ def validate_wiki(
     result.total_files = len(all_files)
     result.all_files = set(all_files)
 
-    if logger:
-        logger.log_info(f"Found {len(all_files)} wiki files")
+    safe_logger(logger).log_info(f"Found {len(all_files)} wiki files")
 
     # Parse links from each file
     for wiki_file in all_files:
@@ -185,8 +183,8 @@ def validate_wiki(
             target_exists = link.resolved_target.exists()
             result.add_link(link, target_exists)
 
-            if logger and not target_exists:
-                logger.log_warning(
+            if not target_exists:
+                safe_logger(logger).log_warning(
                     f"Broken link: {wiki_file.relative_to(wiki_dir)} → "
                     f"{link.target_path} (line {link.line_number})"
                 )
@@ -194,13 +192,12 @@ def validate_wiki(
     # Calculate orphaned files
     result.calculate_orphans()
 
-    if logger:
-        logger.log_operation("validate_wiki_complete", {
-            "total_files": result.total_files,
-            "total_links": result.total_links,
-            "broken_links": len(result.broken_links),
-            "orphaned_files": len(result.orphaned_files),
-        })
+    safe_logger(logger).log_operation("validate_wiki_complete", {
+        "total_files": result.total_files,
+        "total_links": result.total_links,
+        "broken_links": len(result.broken_links),
+        "orphaned_files": len(result.orphaned_files),
+    })
 
     return result
 

@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
-from .logging_manager import PalimpsestLogger
+from .logging_manager import PalimpsestLogger, safe_logger
 from .exceptions import BackupError
 
 # ---- Constants ----
@@ -158,29 +158,27 @@ class BackupManager:
             marker_path = backup_path.with_suffix(".db.marker")
             marker_path.write_text(self._get_timestamp_for_metadata())
 
-            if self.logger:
-                self.logger.log_operation(
-                    "backup_created",
-                    {
-                        "backup_type": backup_type,
-                        "backup_path": str(backup_path),
-                        "original_size": self.db_path.stat().st_size,
-                        "backup_size": backup_path.stat().st_size,
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "backup_created",
+                {
+                    "backup_type": backup_type,
+                    "backup_path": str(backup_path),
+                    "original_size": self.db_path.stat().st_size,
+                    "backup_size": backup_path.stat().st_size,
+                },
+            )
 
             return backup_path
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(
-                    e,
-                    {
-                        "operation": "create_backup",
-                        "backup_type": backup_type,
-                        "target_path": str(backup_path),
-                    },
-                )
+            safe_logger(self.logger).log_error(
+                e,
+                {
+                    "operation": "create_backup",
+                    "backup_type": backup_type,
+                    "target_path": str(backup_path),
+                },
+            )
             raise BackupError(f"Failed to create backup: {e}") from e
 
     def create_full_backup(self, suffix: Optional[str] = None) -> Path:
@@ -230,11 +228,10 @@ class BackupManager:
         ]
 
         try:
-            if self.logger:
-                self.logger.log_operation(
-                    "full_backup_start",
-                    {"data_dir": str(self.data_dir), "backup_path": str(backup_path)},
-                )
+            safe_logger(self.logger).log_operation(
+                "full_backup_start",
+                {"data_dir": str(self.data_dir), "backup_path": str(backup_path)},
+            )
 
             with tarfile.open(backup_path, "w:gz") as tar:
                 # Add data directory with filtering
@@ -253,27 +250,25 @@ class BackupManager:
             backup_size = backup_path.stat().st_size
             backup_size_mb = backup_size / (1024 * 1024)
 
-            if self.logger:
-                self.logger.log_operation(
-                    "full_backup_created",
-                    {
-                        "backup_path": str(backup_path),
-                        "size_bytes": backup_size,
-                        "size_mb": f"{backup_size_mb:.2f}",
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "full_backup_created",
+                {
+                    "backup_path": str(backup_path),
+                    "size_bytes": backup_size,
+                    "size_mb": f"{backup_size_mb:.2f}",
+                },
+            )
 
             return backup_path
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(
-                    e,
-                    {
-                        "operation": "create_full_backup",
-                        "target_path": str(backup_path),
-                    },
-                )
+            safe_logger(self.logger).log_error(
+                e,
+                {
+                    "operation": "create_full_backup",
+                    "target_path": str(backup_path),
+                },
+            )
             raise BackupError(f"Failed to create full backup: {e}") from e
 
     def _filter_tarinfo(
@@ -324,8 +319,7 @@ class BackupManager:
             return backup_path
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "auto_backup"})
+            safe_logger(self.logger).log_error(e, {"operation": "auto_backup"})
             return None
 
     def create_weekly_backup(self) -> Path:
@@ -377,13 +371,12 @@ class BackupManager:
                         removed_count += 1
 
                 except Exception as e:
-                    if self.logger:
-                        self.logger.log_error(
-                            e, {"operation": "cleanup_backup", "file": str(backup_file)}
-                        )
+                    safe_logger(self.logger).log_error(
+                        e, {"operation": "cleanup_backup", "file": str(backup_file)}
+                    )
 
-            if removed_count > 0 and self.logger:
-                self.logger.log_operation(
+            if removed_count > 0:
+                safe_logger(self.logger).log_operation(
                     "backup_cleanup",
                     {
                         "backup_type": backup_type,
@@ -412,20 +405,18 @@ class BackupManager:
             # Use extracted helper method for safe restore
             self._backup_database(backup_path, self.db_path)
 
-            if self.logger:
-                self.logger.log_operation(
-                    "restore_backup",
-                    {
-                        "restored_from": str(backup_path),
-                        "pre_restore_backup": str(current_backup),
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "restore_backup",
+                {
+                    "restored_from": str(backup_path),
+                    "pre_restore_backup": str(current_backup),
+                },
+            )
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "restore_backup", "backup_path": str(backup_path)}
-                )
+            safe_logger(self.logger).log_error(
+                e, {"operation": "restore_backup", "backup_path": str(backup_path)}
+            )
             raise BackupError(f"Failed to restore backup: {e}")
 
     def list_backups(self) -> Dict[str, List[Dict[str, Any]]]:

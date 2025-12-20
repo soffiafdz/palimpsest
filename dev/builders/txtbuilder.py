@@ -34,7 +34,7 @@ from typing import Dict, List, Optional, Set
 
 from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import TxtBuildError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.paths import FORMATTING_SCRIPT
 from dev.utils.txt import ENTRY_MARKERS
 
@@ -168,8 +168,7 @@ class TxtBuilder:
         parsed = self.parse_filename(filename)
 
         if not parsed:
-            if self.logger:
-                self.logger.log_warning(f"Cannot parse filename: {filename}")
+            safe_logger(self.logger).log_warning(f"Cannot parse filename: {filename}")
             return None
 
         year, month = parsed
@@ -182,20 +181,17 @@ class TxtBuilder:
 
         try:
             file_path.rename(new_path)
-            if self.logger:
-                self.logger.log_debug(f"Renamed: {filename} → {standard_name}")
+            safe_logger(self.logger).log_debug(f"Renamed: {filename} → {standard_name}")
             return new_path
         except FileExistsError:
-            if self.logger:
-                self.logger.log_warning(
-                    f"Target exists, skipping rename: {standard_name}"
-                )
+            safe_logger(self.logger).log_warning(
+                f"Target exists, skipping rename: {standard_name}"
+            )
             return file_path
         except OSError as e:
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "rename", "file": str(file_path)}
-                )
+            safe_logger(self.logger).log_error(
+                e, {"operation": "rename", "file": str(file_path)}
+            )
             return None
 
     def _get_existing_dates(self, file_path: Path) -> Set[str]:
@@ -216,18 +212,16 @@ class TxtBuilder:
             # Match "Date: YYYY-MM-DD" pattern
             dates = {match.group(1) for match in DATE_PATTERN.finditer(content)}
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Found {len(dates)} existing dates in {file_path.name}"
-                )
+            safe_logger(self.logger).log_debug(
+                f"Found {len(dates)} existing dates in {file_path.name}"
+            )
 
             return dates
 
         except (OSError, UnicodeDecodeError) as e:
-            if self.logger:
-                self.logger.log_warning(
-                    f"Could not read existing file {file_path.name}: {e}"
-                )
+            safe_logger(self.logger).log_warning(
+                f"Could not read existing file {file_path.name}: {e}"
+            )
             return set()
 
     def _filter_new_entries(self, content: str, existing_dates: set) -> str:
@@ -269,11 +263,10 @@ class TxtBuilder:
         if current_entry and (entry_date is None or entry_date not in existing_dates):
             entries.append("\n".join(current_entry))
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Filtered to {len(entries)} new entries "
-                f"(skipped {len(existing_dates)} existing)"
-            )
+        safe_logger(self.logger).log_debug(
+            f"Filtered to {len(entries)} new entries "
+            f"(skipped {len(existing_dates)} existing)"
+        )
 
         return "\n\n".join(entries)
 
@@ -317,10 +310,9 @@ class TxtBuilder:
                 filtered_content = self._filter_new_entries(formatted_content, existing_dates)
 
                 if not filtered_content.strip():
-                    if self.logger:
-                        self.logger.log_info(
-                            f"No new entries to add to {output_file.name}"
-                        )
+                    safe_logger(self.logger).log_info(
+                        f"No new entries to add to {output_file.name}"
+                    )
                     return True
 
                 # Read existing content
@@ -336,37 +328,33 @@ class TxtBuilder:
                 # Append new entries
                 output_file.write_text(existing_content + filtered_content, encoding="utf-8")
 
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Merged: {input_file.name} → {output_file.name} (appended new entries)"
-                    )
+                safe_logger(self.logger).log_debug(
+                    f"Merged: {input_file.name} → {output_file.name} (appended new entries)"
+                )
             else:
                 # No existing file, write all content
                 output_file.write_text(formatted_content, encoding="utf-8")
 
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Formatted: {input_file.name} → {output_file.name}"
-                    )
+                safe_logger(self.logger).log_debug(
+                    f"Formatted: {input_file.name} → {output_file.name}"
+                )
 
             return True
 
         except subprocess.CalledProcessError as e:
-            if self.logger:
-                self.logger.log_error(
-                    e,
-                    {
-                        "operation": "format",
-                        "input": str(input_file),
-                        "stderr": e.stderr,
-                    },
-                )
+            safe_logger(self.logger).log_error(
+                e,
+                {
+                    "operation": "format",
+                    "input": str(input_file),
+                    "stderr": e.stderr,
+                },
+            )
             return False
         except OSError as e:
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "write_output", "file": str(output_file)}
-                )
+            safe_logger(self.logger).log_error(
+                e, {"operation": "write_output", "file": str(output_file)}
+            )
             return False
 
     def _archive_files(self, files: List[Path], archive_path: Path) -> bool:
@@ -393,15 +381,14 @@ class TxtBuilder:
                     if file_path.exists():
                         zf.write(file_path, file_path.name)
 
-            if self.logger:
-                self.logger.log_operation(
-                    "archive_created",
-                    {
-                        "action": action,
-                        "archive": str(archive_path),
-                        "count": len(files),
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "archive_created",
+                {
+                    "action": action,
+                    "archive": str(archive_path),
+                    "count": len(files),
+                },
+            )
 
             # Remove original files after successful archiving
             for file_path in files:
@@ -411,10 +398,9 @@ class TxtBuilder:
             return True
 
         except (OSError, zipfile.BadZipFile) as e:
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "archive", "archive": str(archive_path)}
-                )
+            safe_logger(self.logger).log_error(
+                e, {"operation": "archive", "archive": str(archive_path)}
+            )
             return False
 
     def build(self) -> ProcessingStats:
@@ -435,11 +421,10 @@ class TxtBuilder:
         """
         stats = ProcessingStats()
 
-        if self.logger:
-            self.logger.log_operation(
-                "inbox_build_start",
-                {"inbox": str(self.inbox_dir), "output": str(self.output_dir)},
-            )
+        safe_logger(self.logger).log_operation(
+            "inbox_build_start",
+            {"inbox": str(self.inbox_dir), "output": str(self.output_dir)},
+        )
 
         # Validate directories
         if not self.inbox_dir.exists():
@@ -450,12 +435,10 @@ class TxtBuilder:
         stats.files_found = len(txt_files)
 
         if stats.files_found == 0:
-            if self.logger:
-                self.logger.log_info(f"No files found in inbox: {self.inbox_dir}")
+            safe_logger(self.logger).log_info(f"No files found in inbox: {self.inbox_dir}")
             return stats
 
-        if self.logger:
-            self.logger.log_debug(f"Found {stats.files_found} files in inbox")
+        safe_logger(self.logger).log_debug(f"Found {stats.files_found} files in inbox")
 
         # Group files by year
         year_files: Dict[str, List[Path]] = defaultdict(list)
@@ -479,8 +462,7 @@ class TxtBuilder:
 
         # Process each year
         for year, files in sorted(year_files.items()):
-            if self.logger:
-                self.logger.log_debug(f"Processing {len(files)} files for year {year}")
+            safe_logger(self.logger).log_debug(f"Processing {len(files)} files for year {year}")
 
             year_dir = self.output_dir / year
             year_archive = self.archive_dir / f"{year}.zip"
@@ -510,9 +492,8 @@ class TxtBuilder:
                 else:
                     stats.errors += 1
 
-        if self.logger:
-            self.logger.log_operation(
-                "inbox_build_complete", {"stats": stats.summary()}
-            )
+        safe_logger(self.logger).log_operation(
+            "inbox_build_complete", {"stats": stats.summary()}
+        )
 
         return stats

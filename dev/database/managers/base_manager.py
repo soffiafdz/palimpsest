@@ -47,7 +47,7 @@ from sqlalchemy.orm import Session, Mapped
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from dev.core.exceptions import DatabaseError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 
 
@@ -119,11 +119,10 @@ class BaseManager(ABC):
                 ) and attempt < max_retries - 1:
                     wait_time = retry_delay * (2**attempt)  # Exponential backoff
 
-                    if self.logger:
-                        self.logger.log_debug(
-                            f"Database locked, retrying in {wait_time}s",
-                            {"attempt": attempt + 1, "max_retries": max_retries},
-                        )
+                    safe_logger(self.logger).log_debug(
+                        f"Database locked, retrying in {wait_time}s",
+                        {"attempt": attempt + 1, "max_retries": max_retries},
+                    )
 
                     time.sleep(wait_time)
                     continue
@@ -437,11 +436,10 @@ class BaseManager(ABC):
                 if resolved and resolved not in collection:
                     collection.append(resolved)
             except (ValueError, TypeError):
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Could not resolve {model_class.__name__} for {attr_name}",
-                        {"item": item},
-                    )
+                safe_logger(self.logger).log_warning(
+                    f"Could not resolve {model_class.__name__} for {attr_name}",
+                    {"item": item},
+                )
 
         # Remove items (only in incremental mode)
         if incremental and remove_items:

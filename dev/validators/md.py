@@ -39,7 +39,7 @@ import yaml
 # --- Local imports ---
 from dev.utils.md import split_frontmatter
 from dev.core.validators import DataValidator
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.validators.schema import SchemaValidator
 from dev.validators.frontmatter import FrontmatterValidator
 
@@ -454,8 +454,7 @@ class MarkdownValidator:
         md_files = list(self.md_dir.glob("**/*.md"))
 
         if not md_files:
-            if self.logger:
-                self.logger.log_warning(f"No markdown files found in {self.md_dir}")
+            safe_logger(self.logger).log_warning(f"No markdown files found in {self.md_dir}")
 
         for md_file in md_files:
             self.validate_file(md_file)

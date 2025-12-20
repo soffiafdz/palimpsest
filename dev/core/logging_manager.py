@@ -289,17 +289,8 @@ def handle_cli_error(
     if additional_context:
         context.update(additional_context)
 
-    # Format error message
-    if logger:
-        error_msg = logger.log_cli_error(error, context, show_traceback=verbose)
-    else:
-        # Fallback if logger not available
-        error_type = type(error).__name__
-        error_msg = (
-            f"❌ {operation.replace('_', ' ').title()} failed: {error_type}: {error}"
-        )
-        if verbose:
-            error_msg += f"\n\n{traceback.format_exc()}"
+    # Format error message using safe_logger for null-safety
+    error_msg = safe_logger(logger).log_cli_error(error, context, show_traceback=verbose)
 
     # Display and exit
     click.echo(error_msg, err=True)

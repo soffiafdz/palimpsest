@@ -95,7 +95,7 @@ from alembic.runtime.migration import MigrationContext
 from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import DatabaseError
 from dev.core.paths import ROOT
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from .models import (
     Base,
     Moment,
@@ -288,14 +288,13 @@ class PalimpsestDB:
     def _setup_engine(self) -> None:
         """Initialize database engine and session factory."""
         try:
-            if self.logger:
-                self.logger.log_operation(
-                    "database_init_start",
-                    {
-                        "db_path": str(self.db_path),
-                        "alembic_dir": str(self.alembic_dir),
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "database_init_start",
+                {
+                    "db_path": str(self.db_path),
+                    "alembic_dir": str(self.alembic_dir),
+                },
+            )
 
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -318,12 +317,10 @@ class PalimpsestDB:
             if not self.db_path.exists():
                 self.initialize_schema()
 
-            if self.logger:
-                self.logger.log_operation("database_init_complete", {"success": True})
+            safe_logger(self.logger).log_operation("database_init_complete", {"success": True})
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "database_init"})
+            safe_logger(self.logger).log_error(e, {"operation": "database_init"})
             raise DatabaseError(f"Database initialization failed: {e}")
 
     # --- Session Management ---
@@ -358,21 +355,18 @@ class PalimpsestDB:
         self._manuscript_manager = ManuscriptManager(session, self.logger)
         self._entry_manager = EntryManager(session, self.logger)
 
-        if self.logger:
-            self.logger.log_debug("session_start", {"session_id": session_id})
+        safe_logger(self.logger).log_debug("session_start", {"session_id": session_id})
 
         try:
             yield session
             session.commit()
-            if self.logger:
-                self.logger.log_debug("session_commit", {"session_id": session_id})
+            safe_logger(self.logger).log_debug("session_commit", {"session_id": session_id})
 
         except Exception as e:
             session.rollback()
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "session_rollback", "session_id": session_id}
-                )
+            safe_logger(self.logger).log_error(
+                e, {"operation": "session_rollback", "session_id": session_id}
+            )
             raise
         finally:
             # Clean up managers
@@ -386,8 +380,7 @@ class PalimpsestDB:
             self._manuscript_manager = None
 
             session.close()
-            if self.logger:
-                self.logger.log_debug("session_close", {"session_id": session_id})
+            safe_logger(self.logger).log_debug("session_close", {"session_id": session_id})
 
     def get_session(self) -> Session:
         """Create and return a new SQLAlchemy session."""
@@ -405,8 +398,7 @@ class PalimpsestDB:
     def _setup_alembic(self) -> Config:
         """Setup Alembic configuration."""
         try:
-            if self.logger:
-                self.logger.log_debug("Setting up Alembic configuration...")
+            safe_logger(self.logger).log_debug("Setting up Alembic configuration...")
 
             alembic_cfg: Config = Config(str(ROOT / "alembic.ini"))
             alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
@@ -416,12 +408,10 @@ class PalimpsestDB:
                 "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
             )
 
-            if self.logger:
-                self.logger.log_debug("Alembic configuration setup complete")
+            safe_logger(self.logger).log_debug("Alembic configuration setup complete")
             return alembic_cfg
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "setup_alembic"})
+            safe_logger(self.logger).log_error(e, {"operation": "setup_alembic"})
             raise DatabaseError(f"Alembic configuration failed: {e}")
 
     @handle_db_errors
@@ -440,10 +430,9 @@ class PalimpsestDB:
                 command.init(self.alembic_cfg, str(self.alembic_dir))
                 self._update_alembic_env()
             else:
-                if self.logger:
-                    self.logger.log_debug(
-                        f"Alembic already initialized in {self.alembic_dir}"
-                    )
+                safe_logger(self.logger).log_debug(
+                    f"Alembic already initialized in {self.alembic_dir}"
+                )
         except Exception as e:
             raise DatabaseError(f"Alembic initialization failed: {e}")
 
@@ -467,13 +456,11 @@ class PalimpsestDB:
                         f"{import_line}\n{target_metadata_line}",
                     )
                     env_path.write_text(updated_content, encoding="utf-8")
-                    if self.logger:
-                        self.logger.log_operation(
-                            "alembic_env_updated", {"env_path": str(env_path)}
-                        )
+                    safe_logger(self.logger).log_operation(
+                        "alembic_env_updated", {"env_path": str(env_path)}
+                    )
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "update_alembic_env"})
+            safe_logger(self.logger).log_error(e, {"operation": "update_alembic_env"})
             raise DatabaseError(f"Could not update Alembic environment: {e}")
 
     @handle_db_errors
@@ -499,21 +486,18 @@ class PalimpsestDB:
                 Base.metadata.create_all(bind=self.engine)
                 try:
                     command.stamp(self.alembic_cfg, "head")
-                    if self.logger:
-                        self.logger.log_operation(
-                            "fresh_database_created",
-                            {"tables_created": len(Base.metadata.tables)},
-                        )
+                    safe_logger(self.logger).log_operation(
+                        "fresh_database_created",
+                        {"tables_created": len(Base.metadata.tables)},
+                    )
                 except Exception as e:
-                    if self.logger:
-                        self.logger.log_error(e, {"operation": "stamp_database"})
+                    safe_logger(self.logger).log_error(e, {"operation": "stamp_database"})
             else:
                 self.upgrade_database()
-                if self.logger:
-                    self.logger.log_operation(
-                        "existing_database_migrated",
-                        {"table_count": len(inspector)},
-                    )
+                safe_logger(self.logger).log_operation(
+                    "existing_database_migrated",
+                    {"table_count": len(inspector)},
+                )
 
         except Exception as e:
             raise DatabaseError(f"Could not initialize database: {e}")
@@ -609,8 +593,7 @@ class PalimpsestDB:
                 "status": "up_to_date" if current_rev else "needs_migration",
             }
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "get_migration_history"})
+            safe_logger(self.logger).log_error(e, {"operation": "get_migration_history"})
             return {"error": str(e)}
 
     # -------------------------------------------------------------------------
@@ -648,8 +631,7 @@ class PalimpsestDB:
             with self.session_scope() as session:
                 return self.bulk_cleanup_unused(session, cleanup_config)
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "cleanup_all_metadata"})
+            safe_logger(self.logger).log_error(e, {"operation": "cleanup_all_metadata"})
             raise DatabaseError(f"Cleanup operation failed: {e}")
 
     # --- Backup Integration ---
@@ -688,5 +670,4 @@ class PalimpsestDB:
             try:
                 self.backup_manager.auto_backup()
             except Exception as e:
-                if self.logger:
-                    self.logger.log_error(e, {"operation": "exit_auto_backup"})
+                safe_logger(self.logger).log_error(e, {"operation": "exit_auto_backup"})

@@ -26,7 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from dev.database.manager import PalimpsestDB
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.utils.md import relative_link
 
@@ -158,9 +158,8 @@ class GenericEntityExporter:
         # Write if changed
         status = write_if_changed(wiki_entity.path, content, force)
 
-        if logger:
-            entity_name = getattr(wiki_entity, "name", str(wiki_entity.path.stem))
-            logger.log_debug(f"{self.config.name} {entity_name}: {status}")
+        entity_name = getattr(wiki_entity, "name", str(wiki_entity.path.stem))
+        safe_logger(logger).log_debug(f"{self.config.name} {entity_name}: {status}")
 
         return status
 
@@ -252,11 +251,10 @@ class GenericEntityExporter:
         content = "\n".join(lines)
         status = write_if_changed(index_path, content, force)
 
-        if logger:
-            if status in ("created", "updated"):
-                logger.log_info(f"{self.config.plural} index {status}")
-            else:
-                logger.log_debug(f"{self.config.plural} index unchanged")
+        if status in ("created", "updated"):
+            safe_logger(logger).log_info(f"{self.config.plural} index {status}")
+        else:
+            safe_logger(logger).log_debug(f"{self.config.plural} index unchanged")
 
         return status
 
@@ -295,11 +293,10 @@ class GenericEntityExporter:
 
         stats = ConversionStats()
 
-        if logger:
-            logger.log_operation(
-                f"export_{self.config.plural}_start",
-                {"wiki_dir": str(wiki_dir)}
-            )
+        safe_logger(logger).log_operation(
+            f"export_{self.config.plural}_start",
+            {"wiki_dir": str(wiki_dir)}
+        )
 
         with db.session_scope() as session:
             # Build query with eager loading
@@ -328,12 +325,10 @@ class GenericEntityExporter:
             db_entities = session.execute(query).scalars().unique().all()
 
             if not db_entities:
-                if logger:
-                    logger.log_warning(f"No {self.config.plural} found in database")
+                safe_logger(logger).log_warning(f"No {self.config.plural} found in database")
                 return stats
 
-            if logger:
-                logger.log_info(f"Found {len(db_entities)} {self.config.plural} in database")
+            safe_logger(logger).log_info(f"Found {len(db_entities)} {self.config.plural} in database")
 
             # Export each entity
             wiki_entities = []
@@ -360,27 +355,24 @@ class GenericEntityExporter:
 
                 except Exception as e:
                     stats.errors += 1
-                    if logger:
-                        logger.log_error(e, {
-                            "operation": f"export_{self.config.name}",
-                            "entity": str(db_entity)
-                        })
+                    safe_logger(logger).log_error(e, {
+                        "operation": f"export_{self.config.name}",
+                        "entity": str(db_entity)
+                    })
 
             # Build index
             try:
                 self.build_index(wiki_entities, wiki_dir, force, logger)
             except Exception as e:
                 stats.errors += 1
-                if logger:
-                    logger.log_error(e, {
-                        "operation": f"build_{self.config.plural}_index"
-                    })
+                safe_logger(logger).log_error(e, {
+                    "operation": f"build_{self.config.plural}_index"
+                })
 
-        if logger:
-            logger.log_operation(
-                f"export_{self.config.plural}_complete",
-                {"stats": stats.summary()}
-            )
+        safe_logger(logger).log_operation(
+            f"export_{self.config.plural}_complete",
+            {"stats": stats.summary()}
+        )
 
         return stats
 

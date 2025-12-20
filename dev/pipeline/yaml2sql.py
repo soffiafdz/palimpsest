@@ -99,7 +99,7 @@ from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
 from dev.database.sync_state_manager import SyncStateManager
 from dev.core.exceptions import Yaml2SqlError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.utils import fs
 import socket
@@ -192,23 +192,20 @@ def process_entry_file(
         Yaml2SqlError: If processing fails and raise_on_error=True
     """
     try:
-        if logger:
-            logger.log_debug(f"Processing {file_path.name}")
+        safe_logger(logger).log_debug(f"Processing {file_path.name}")
 
         # Parse markdown entry
         try:
             md_entry: MdEntry = MdEntry.from_file(file_path, verbose=False)
         except Exception as e:
-            if logger:
-                logger.log_error(e, {"operation": "parse_file", "file": str(file_path)})
+            safe_logger(logger).log_error(e, {"operation": "parse_file", "file": str(file_path)})
             raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
 
         # Validate entry
         validation_errors: List[str] = md_entry.validate()
         if validation_errors:
             error_msg: str = f"Validation failed: {', '.join(validation_errors)}"
-            if logger:
-                logger.log_warning(error_msg, {"file": str(file_path)})
+            safe_logger(logger).log_warning(error_msg, {"file": str(file_path)})
             raise Yaml2SqlError(error_msg)
 
         # Convert to database format
@@ -230,19 +227,17 @@ def process_entry_file(
             if existing:
                 # Check for conflicts before updating
                 if sync_mgr.check_conflict("Entry", existing.id, file_hash):
-                    if logger:
-                        logger.log_warning(
-                            f"Conflict detected for entry {md_entry.date}",
-                            {
-                                "file": str(file_path),
-                                "action": "proceeding_with_update"
-                            }
-                        )
+                    safe_logger(logger).log_warning(
+                        f"Conflict detected for entry {md_entry.date}",
+                        {
+                            "file": str(file_path),
+                            "action": "proceeding_with_update"
+                        }
+                    )
                     # Continue with update - conflict logged for user review
 
                 if fs.should_skip_file(file_path, existing.file_hash, force_update):
-                    if logger:
-                        logger.log_debug(f"Entry {md_entry.date} unchanged, skipping")
+                    safe_logger(logger).log_debug(f"Entry {md_entry.date} unchanged, skipping")
                     return "skipped"
 
                 # Update existing entry
@@ -264,17 +259,15 @@ def process_entry_file(
                         machine_id=machine_id
                     )
 
-                    if logger:
-                        logger.log_operation(
-                            "entry_updated",
-                            {"date": str(md_entry.date), "file": str(file_path)},
-                        )
+                    safe_logger(logger).log_operation(
+                        "entry_updated",
+                        {"date": str(md_entry.date), "file": str(file_path)},
+                    )
                     return "updated"
                 except Exception as e:
-                    if logger:
-                        logger.log_error(
-                            e, {"operation": "update_entry", "date": str(md_entry.date)}
-                        )
+                    safe_logger(logger).log_error(
+                        e, {"operation": "update_entry", "date": str(md_entry.date)}
+                    )
                     raise Yaml2SqlError(f"Failed to update entry: {e}") from e
             else:
                 # Create new entry
@@ -295,21 +288,18 @@ def process_entry_file(
                         machine_id=machine_id
                     )
 
-                    if logger:
-                        logger.log_operation(
-                            "entry_created",
-                            {"date": str(md_entry.date), "file": str(file_path)},
-                        )
+                    safe_logger(logger).log_operation(
+                        "entry_created",
+                        {"date": str(md_entry.date), "file": str(file_path)},
+                    )
                     return "created"
                 except Exception as e:
-                    if logger:
-                        logger.log_error(
-                            e, {"operation": "create_entry", "date": str(md_entry.date)}
-                        )
+                    safe_logger(logger).log_error(
+                        e, {"operation": "create_entry", "date": str(md_entry.date)}
+                    )
                     raise Yaml2SqlError(f"Failed to create entry: {e}") from e
     except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "parse_file", "file": str(file_path)})
+        safe_logger(logger).log_error(e, {"operation": "parse_file", "file": str(file_path)})
 
         if raise_on_error:
             raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
@@ -346,14 +336,12 @@ def process_directory(
     md_files: List[Path] = fs.find_markdown_files(input_dir, pattern)
 
     if not md_files:
-        if logger:
-            logger.log_info(f"No .md files found in {input_dir}")
+        safe_logger(logger).log_info(f"No .md files found in {input_dir}")
         return stats
 
-    if logger:
-        logger.log_operation(
-            "batch_start", {"input": str(input_dir), "files_found": len(md_files)}
-        )
+    safe_logger(logger).log_operation(
+        "batch_start", {"input": str(input_dir), "files_found": len(md_files)}
+    )
 
     # Process each file
     for md_file in md_files:
@@ -377,11 +365,9 @@ def process_directory(
 
         except Yaml2SqlError as e:
             stats.errors += 1
-            if logger:
-                logger.log_error(e, {"operation": "process_file", "file": str(md_file)})
+            safe_logger(logger).log_error(e, {"operation": "process_file", "file": str(md_file)})
 
-    if logger:
-        logger.log_operation("batch_complete", {"stats": stats.summary()})
+    safe_logger(logger).log_operation("batch_complete", {"stats": stats.summary()})
 
     return stats
 
@@ -410,10 +396,9 @@ def sync_directory(
     """
     stats = ConversionStats()
 
-    if logger:
-        logger.log_operation(
-            "sync_start", {"input": str(input_dir), "delete_missing": delete_missing}
-        )
+    safe_logger(logger).log_operation(
+        "sync_start", {"input": str(input_dir), "delete_missing": delete_missing}
+    )
 
     # Process all files (force update)
     batch_stats: ConversionStats = process_directory(
@@ -442,21 +427,18 @@ def sync_directory(
                             reason="removed_from_source"
                         )
                         stats.entries_skipped += 1  # Reuse as "deleted" counter
-                        if logger:
-                            logger.log_operation(
-                                "entry_soft_deleted",
-                                {"date": str(entry.date), "file": entry.file_path},
-                            )
+                        safe_logger(logger).log_operation(
+                            "entry_soft_deleted",
+                            {"date": str(entry.date), "file": entry.file_path},
+                        )
                     except Exception as e:
                         stats.errors += 1
-                        if logger:
-                            logger.log_error(
-                                e,
-                                {"operation": "delete_entry", "date": str(entry.date)},
-                            )
+                        safe_logger(logger).log_error(
+                            e,
+                            {"operation": "delete_entry", "date": str(entry.date)},
+                        )
 
-    if logger:
-        logger.log_operation("sync_complete", {"stats": stats.summary()})
+    safe_logger(logger).log_operation("sync_complete", {"stats": stats.summary()})
 
     return stats
 

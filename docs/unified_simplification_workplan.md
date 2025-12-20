@@ -98,6 +98,7 @@ This list is organized by dependency tiers. Complete tasks in order to avoid rew
 | **P3.3** | Delete wrapper methods (get_for_entry, etc.) | ~100 | ✅ Complete |
 | **P25** | Moment model schema (MentionedDate → Moment, M2M events) | ~50 cleaner | ✅ Complete |
 | **P4** | Simplify health/analytics (data-driven configs) | -114 | ✅ Complete |
+| **P13** | Use existing `safe_logger()` codebase-wide | ~140 | ✅ Complete |
 | **P4.1** | Consolidate integrity check methods | (in P4) | ✅ Complete |
 | **P26** | Template-based wiki renderer (Jinja2 templates) | -2,750 | ✅ Complete |
 | **P8** | Generic wiki index builder (merged into P26) | -280 | ✅ Complete |
@@ -133,7 +134,7 @@ Consolidate core infrastructure before building on it.
 |----------|------|-------------|------|--------|
 | **P10** | Replace decorator boilerplate with context managers | ~300 | Medium | Pending |
 | **P11** | Utils module consolidation | ~180 | Low | Pending |
-| **P13** | Use existing `safe_logger()` codebase-wide | ~70 | Low | Pending |
+| **P13** | Use existing `safe_logger()` codebase-wide | ~140 | Low | ✅ Complete |
 | **P22** | Core module cleanup | ~90 | Low | Pending |
 | **P23** | Database model mixins | ~100 | Very Low | Pending |
 

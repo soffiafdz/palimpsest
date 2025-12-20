@@ -45,7 +45,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import handle_db_errors, log_database_operation
 from dev.database.models import (
@@ -126,11 +126,10 @@ class ReferenceManager(EntityManager):
 
         # Warn if author missing for types that require it
         if cast(ReferenceType, ref_type).requires_author and not author:
-            if self.logger:
-                self.logger.log_warning(
-                    f"Source type '{ref_type.value}' typically requires an author",
-                    {"title": name},
-                )
+            safe_logger(self.logger).log_warning(
+                f"Source type '{ref_type.value}' typically requires an author",
+                {"title": name},
+            )
 
         return ReferenceSource(type=ref_type, title=name, author=author)
 
@@ -300,8 +299,8 @@ class ReferenceManager(EntityManager):
                 source = source_spec
             elif isinstance(source_spec, int):
                 source = self.get_source(source_id=source_spec)
-                if not source and self.logger:
-                    self.logger.log_warning(
+                if not source:
+                    safe_logger(self.logger).log_warning(
                         f"Source not found with id: {source_spec}",
                         {"reference_content": content or description},
                     )
@@ -320,15 +319,14 @@ class ReferenceManager(EntityManager):
         self.session.add(reference)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created reference for entry {entry.date}",
-                {
-                    "reference_id": reference.id,
-                    "mode": mode.value,
-                    "has_source": source is not None,
-                },
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created reference for entry {entry.date}",
+            {
+                "reference_id": reference.id,
+                "mode": mode.value,
+                "has_source": source is not None,
+            },
+        )
 
         return reference
 
@@ -427,11 +425,10 @@ class ReferenceManager(EntityManager):
                 raise DatabaseError(f"Reference not found with id: {reference}")
             reference = fetched_ref
 
-        if self.logger:
-            self.logger.log_debug(
-                "Deleting reference",
-                {"reference_id": reference.id, "entry_id": reference.entry_id},
-            )
+        safe_logger(self.logger).log_debug(
+            "Deleting reference",
+            {"reference_id": reference.id, "entry_id": reference.entry_id},
+        )
 
         self.session.delete(reference)
         self.session.flush()

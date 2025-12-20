@@ -40,7 +40,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from dev.database.models import AssociationTombstone
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class TombstoneManager:
@@ -125,11 +125,10 @@ class TombstoneManager:
 
         if existing:
             # Already exists - return existing (idempotent)
-            if self.logger:
-                self.logger.log_debug(
-                    f"Tombstone already exists: {table_name}({left_id}, {right_id})",
-                    {"existing_id": existing.id}
-                )
+            safe_logger(self.logger).log_debug(
+                f"Tombstone already exists: {table_name}({left_id}, {right_id})",
+                {"existing_id": existing.id}
+            )
             return existing
 
         # Create new tombstone
@@ -147,16 +146,15 @@ class TombstoneManager:
         self.session.add(tombstone)
         self.session.flush()  # Get ID without committing
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created tombstone: {table_name}({left_id}, {right_id})",
-                {
-                    "id": tombstone.id,
-                    "removed_by": removed_by,
-                    "source": sync_source,
-                    "ttl_days": ttl_days
-                }
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created tombstone: {table_name}({left_id}, {right_id})",
+            {
+                "id": tombstone.id,
+                "removed_by": removed_by,
+                "source": sync_source,
+                "ttl_days": ttl_days
+            }
+        )
 
         return tombstone
 
@@ -282,11 +280,10 @@ class TombstoneManager:
             self.session.delete(tombstone)
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Removed tombstone: {table_name}({left_id}, {right_id})",
-                    {"id": tombstone.id}
-                )
+            safe_logger(self.logger).log_debug(
+                f"Removed tombstone: {table_name}({left_id}, {right_id})",
+                {"id": tombstone.id}
+            )
             return True
 
         return False
@@ -321,8 +318,7 @@ class TombstoneManager:
 
         if dry_run:
             count = query.count()
-            if self.logger:
-                self.logger.log_info(f"Would clean up {count} expired tombstones (dry run)")
+            safe_logger(self.logger).log_info(f"Would clean up {count} expired tombstones (dry run)")
             return count
 
         # Get IDs before deleting for logging
@@ -334,11 +330,10 @@ class TombstoneManager:
             query.delete(synchronize_session=False)
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_info(
-                    f"Cleaned up {count} expired tombstones",
-                    {"count": count}
-                )
+            safe_logger(self.logger).log_info(
+                f"Cleaned up {count} expired tombstones",
+                {"count": count}
+            )
 
         return count
 

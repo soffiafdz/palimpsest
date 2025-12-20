@@ -40,7 +40,7 @@ from pypandoc import convert_file
 
 from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import PdfBuildError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.temporal_files import TemporalFileManager
 from dev.utils.md import split_frontmatter
 
@@ -204,8 +204,7 @@ class PdfBuilder:
         """
         md_year = self.md_dir / self.year
 
-        if self.logger:
-            self.logger.log_debug(f"Looking for Markdown files in: {md_year}")
+        safe_logger(self.logger).log_debug(f"Looking for Markdown files in: {md_year}")
 
         if not md_year.exists() or not md_year.is_dir():
             raise PdfBuildError(f"Markdown directory not found: {md_year}")
@@ -215,8 +214,7 @@ class PdfBuilder:
         if not files:
             raise PdfBuildError(f"No Markdown files found in {md_year}")
 
-        if self.logger:
-            self.logger.log_debug(f"Found {len(files)} Markdown entries")
+        safe_logger(self.logger).log_debug(f"Found {len(files)} Markdown entries")
 
         return files
 
@@ -237,29 +235,26 @@ class PdfBuilder:
         Raises:
             PdfBuildError: If file writing fails
         """
-        if self.logger:
-            pdf_type = "notes" if notes else "clean"
-            self.logger.log_debug(
-                f"Creating concatenated {pdf_type} Markdown: {tmp_path.name}"
-            )
+        pdf_type = "notes" if notes else "clean"
+        safe_logger(self.logger).log_debug(
+            f"Creating concatenated {pdf_type} Markdown: {tmp_path.name}"
+        )
 
         # Group files by month
         months: Dict[str, List[Path]] = defaultdict(list)
         for md_file in sorted(files):
             parts = md_file.stem.split("-")
             if len(parts) < 2:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Skipping malformed filename: {md_file.stem}"
-                    )
+                safe_logger(self.logger).log_warning(
+                    f"Skipping malformed filename: {md_file.stem}"
+                )
                 continue
             _, month_str, *_ = parts
             months[month_str].append(md_file)
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Grouped into {len(months)} months for year {self.year}"
-            )
+        safe_logger(self.logger).log_debug(
+            f"Grouped into {len(months)} months for year {self.year}"
+        )
 
         try:
             with tmp_path.open("w", encoding="utf-8") as tmp:
@@ -366,9 +361,8 @@ class PdfBuilder:
         for key, value in extra_vars.items():
             args.extend(["--variable", f"{key}:{value}"])
 
-        if self.logger:
-            self.logger.log_debug(f"Running Pandoc: {in_md.name} → {out_pdf.name}")
-            self.logger.log_debug(f"Temp file location: {in_md}")
+        safe_logger(self.logger).log_debug(f"Running Pandoc: {in_md.name} → {out_pdf.name}")
+        safe_logger(self.logger).log_debug(f"Temp file location: {in_md}")
 
         try:
             convert_file(str(in_md), to="pdf", outputfile=str(out_pdf), extra_args=args)
@@ -405,17 +399,15 @@ class PdfBuilder:
             True if PDF was created, False if skipped
         """
         if pdf_path.exists() and not self.force_overwrite:
-            if self.logger:
-                self.logger.log_info(
-                    f"{pdf_type.capitalize()} PDF exists, skipping: {pdf_path.name}"
-                )
+            safe_logger(self.logger).log_info(
+                f"{pdf_type.capitalize()} PDF exists, skipping: {pdf_path.name}"
+            )
             return False
 
         if pdf_path.exists():
-            if self.logger:
-                self.logger.log_debug(
-                    f"{pdf_type.capitalize()} PDF exists, overwriting: {pdf_path.name}"
-                )
+            safe_logger(self.logger).log_debug(
+                f"{pdf_type.capitalize()} PDF exists, overwriting: {pdf_path.name}"
+            )
             pdf_path.unlink()
 
         tmp_file = temp_manager.create_temp_file(
@@ -424,10 +416,9 @@ class PdfBuilder:
         self._write_temp_md(files, tmp_file, notes=notes)
         self._run_pandoc(tmp_file, pdf_path, preamble, metadata, vars)
 
-        if self.logger:
-            self.logger.log_operation(
-                "pdf_created", {"type": pdf_type, "file": str(pdf_path)}
-            )
+        safe_logger(self.logger).log_operation(
+            "pdf_created", {"type": pdf_type, "file": str(pdf_path)}
+        )
         return True
 
     def build(self) -> BuildStats:
@@ -444,15 +435,14 @@ class PdfBuilder:
         """
         stats = BuildStats()
 
-        if self.logger:
-            self.logger.log_operation(
-                "pdf_build_start",
-                {
-                    "year": self.year,
-                    "md_dir": str(self.md_dir),
-                    "pdf_dir": str(self.pdf_dir),
-                },
-            )
+        safe_logger(self.logger).log_operation(
+            "pdf_build_start",
+            {
+                "year": self.year,
+                "md_dir": str(self.md_dir),
+                "pdf_dir": str(self.pdf_dir),
+            },
+        )
 
         # Validate preambles
         if not self.preamble and not self.preamble_notes:
@@ -516,19 +506,17 @@ class PdfBuilder:
         finally:
             # Clean up with option to preserve on error
             if error_occurred and self.keep_temp_on_error:
-                if self.logger:
-                    self.logger.log_warning(
-                        f"Error occurred - preserving temp files for debugging: "
-                        f"{[str(f) for f in temp_manager.active_files]}"
-                    )
+                safe_logger(self.logger).log_warning(
+                    f"Error occurred - preserving temp files for debugging: "
+                    f"{[str(f) for f in temp_manager.active_files]}"
+                )
             else:
                 cleanup_stats = temp_manager.cleanup()
-                if self.logger and cleanup_stats["files_removed"] > 0:
-                    self.logger.log_debug(
+                if cleanup_stats["files_removed"] > 0:
+                    safe_logger(self.logger).log_debug(
                         f"Cleaned up {cleanup_stats['files_removed']} temporary files"
                     )
 
-        if self.logger:
-            self.logger.log_operation("pdf_build_complete", {"stats": stats.summary()})
+        safe_logger(self.logger).log_operation("pdf_build_complete", {"stats": stats.summary()})
 
         return stats

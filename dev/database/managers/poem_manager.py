@@ -51,7 +51,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import handle_db_errors, log_database_operation
 from dev.database.models import Entry, Poem, PoemVersion
@@ -190,8 +190,7 @@ class PoemManager(EntityManager):
         self.session.add(poem)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(f"Created poem: {title}", {"poem_id": poem.id})
+        safe_logger(self.logger).log_debug(f"Created poem: {title}", {"poem_id": poem.id})
 
         return poem
 
@@ -336,15 +335,14 @@ class PoemManager(EntityManager):
         )
 
         if existing_version:
-            if self.logger:
-                self.logger.log_debug(
-                    "Duplicate poem version found, returning existing",
-                    {
-                        "poem": poem.title,
-                        "version_id": existing_version.id,
-                        "version_hash": version_hash,
-                    },
-                )
+            safe_logger(self.logger).log_debug(
+                "Duplicate poem version found, returning existing",
+                {
+                    "poem": poem.title,
+                    "version_id": existing_version.id,
+                    "version_hash": version_hash,
+                },
+            )
             return existing_version
 
         # Resolve revision date
@@ -376,8 +374,8 @@ class PoemManager(EntityManager):
                 entry = entry_spec
             elif isinstance(entry_spec, int):
                 entry = self.session.get(Entry, entry_spec)
-                if not entry and self.logger:
-                    self.logger.log_warning(
+                if not entry:
+                    safe_logger(self.logger).log_warning(
                         f"Entry not found with id: {entry_spec}",
                         {"poem": poem.title},
                     )
@@ -394,15 +392,14 @@ class PoemManager(EntityManager):
         self.session.add(version)
         self.session.flush()
 
-        if self.logger:
-            self.logger.log_debug(
-                f"Created poem version: {poem.title}",
-                {
-                    "version_id": version.id,
-                    "poem_id": poem.id,
-                    "revision_date": revision_date.isoformat(),
-                },
-            )
+        safe_logger(self.logger).log_debug(
+            f"Created poem version: {poem.title}",
+            {
+                "version_id": version.id,
+                "poem_id": poem.id,
+                "revision_date": revision_date.isoformat(),
+            },
+        )
 
         return version
 
@@ -498,11 +495,10 @@ class PoemManager(EntityManager):
             if not version:
                 raise DatabaseError(f"PoemVersion not found with id: {version}")
 
-        if self.logger:
-            self.logger.log_debug(
-                "Deleting poem version",
-                {"version_id": version.id, "poem": version.poem.title},
-            )
+        safe_logger(self.logger).log_debug(
+            "Deleting poem version",
+            {"version_id": version.id, "poem": version.poem.title},
+        )
 
         self.session.delete(version)
         self.session.flush()
