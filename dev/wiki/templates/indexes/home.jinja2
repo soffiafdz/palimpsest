@@ -1,0 +1,71 @@
+{# Home Dashboard Template - Main wiki landing page #}
+# Palimpsest — Journal Wiki
+
+Welcome to the Palimpsest journal wiki. This is a comprehensive archive of all journal entries, people, places, events, and creative works.
+
+---
+
+## Quick Stats
+
+| Category | Count |
+|----------|-------|
+| Journal Entries | {{ stats.entries }} |
+| Total Words | {{ stats.words|format_number }} |
+| People | {{ stats.people }} |
+| Locations | {{ stats.locations }} |
+| Cities | {{ stats.cities }} |
+| Events | {{ stats.events }} |
+| Tags | {{ stats.tags }} |
+| Themes | {{ stats.themes }} |
+| Poems | {{ stats.poems }} |
+| Reference Sources | {{ stats.references }} |
+
+---
+
+## Browse by Section
+
+### Journal Entries
+[[entries/entries.md|Browse all entries]] organized by year. {{ stats.entries }} entries spanning {{ stats.years }} years.
+
+### People
+[[people/people.md|Browse all people]] organized by relationship. {{ stats.people }} people mentioned across {{ stats.entries }} entries.
+
+### Places
+
+- [[cities/cities.md|Cities]] — {{ stats.cities }} cities across {{ stats.countries }} countries
+- [[locations/locations.md|Locations]] — {{ stats.locations }} specific venues and places
+
+### Events
+[[events/events.md|Browse all events]] organized by year. {{ stats.events }} notable events.
+
+### Tags & Themes
+- [[tags/tags.md|Tags]] — {{ stats.tags }} topic tags
+- [[themes/themes.md|Themes]] — {{ stats.themes }} thematic categories
+
+### Creative Works
+- [[poems/poems.md|Poems]] — {{ stats.poems }} poems with {{ stats.poem_versions }} versions
+- [[references/references.md|References]] — {{ stats.references }} external sources cited
+
+---
+
+## Recent Activity
+
+{% if recent_entries %}
+### Latest Entries
+
+{% for entry in recent_entries[:5] %}
+- [[{{ entry.path }}|{{ entry.date|format_date('%Y-%m-%d') }}]] — {{ entry.word_count }} words
+{% endfor %}
+{% endif %}
+
+{% if recent_people %}
+### Most Mentioned People
+
+{% for person in recent_people[:5] %}
+- [[{{ person.path }}|{{ person.name }}]] — {{ person.mentions }} mentions
+{% endfor %}
+{% endif %}
+
+---
+
+*Last updated: {{ generated_at|format_date('%Y-%m-%d %H:%M') }}*

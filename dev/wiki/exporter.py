@@ -200,7 +200,7 @@ class WikiExporter:
 
     def export_indexes(self, force: bool = False) -> ConversionStats:
         """
-        Export index pages for all entity types.
+        Export index pages for all entity types and home dashboard.
 
         Args:
             force: If True, regenerate all indexes
@@ -221,6 +221,12 @@ class WikiExporter:
             self._export_simple_index(session, "themes", "Themes", force, stats)
             self._export_simple_index(session, "poems", "Poems", force, stats)
             self._export_simple_index(session, "references", "References", force, stats)
+
+        # Export home dashboard
+        home_stats = self.export_home(force)
+        stats.created += home_stats.created
+        stats.updated += home_stats.updated
+        stats.skipped += home_stats.skipped
 
         if self.logger:
             self.logger.log_info(
@@ -435,7 +441,7 @@ class WikiExporter:
         stats: ConversionStats,
     ) -> None:
         """Export a simple alphabetical index for an entity type."""
-        from dev.database.models import Tag, Poem, Reference
+        from dev.database.models import Tag, Poem, ReferenceSource
         from dev.database.models_manuscript import Theme
 
         # Map entity type to model and query
@@ -443,7 +449,7 @@ class WikiExporter:
             "tags": (Tag, "tag", lambda t: len(t.entries)),
             "themes": (Theme, "theme", lambda t: len(t.entries)),
             "poems": (Poem, "title", lambda p: len(p.versions)),
-            "references": (Reference, "title", lambda r: 1),
+            "references": (ReferenceSource, "title", lambda r: len(r.references)),
         }
 
         if entity_type not in model_map:
@@ -490,3 +496,99 @@ class WikiExporter:
                 stats.updated += 1
             else:
                 stats.skipped += 1
+
+    def export_home(self, force: bool = False) -> ConversionStats:
+        """
+        Export the main wiki home dashboard.
+
+        Args:
+            force: If True, regenerate even if unchanged
+
+        Returns:
+            Statistics for home page generation
+        """
+        from datetime import datetime
+
+        from dev.database.models import (
+            City,
+            Entry,
+            Event,
+            Location,
+            Person,
+            Poem,
+            PoemVersion,
+            ReferenceSource,
+            Tag,
+        )
+        from dev.database.models_manuscript import Theme
+
+        stats = ConversionStats()
+
+        with self.db.session_scope() as session:
+            # Gather statistics
+            entries = session.query(Entry).all()
+            people = session.query(Person).filter(Person.deleted_at.is_(None)).all()
+
+            wiki_stats = {
+                "entries": len(entries),
+                "words": sum(e.word_count or 0 for e in entries),
+                "years": len(set(e.date.year for e in entries)),
+                "people": len(people),
+                "locations": session.query(Location).count(),
+                "cities": session.query(City).count(),
+                "countries": len(
+                    set(c.country for c in session.query(City).all() if c.country)
+                ),
+                "events": session.query(Event).filter(
+                    Event.deleted_at.is_(None)
+                ).count(),
+                "tags": session.query(Tag).filter(Tag.deleted_at.is_(None)).count(),
+                "themes": session.query(Theme).filter(
+                    Theme.deleted_at.is_(None)
+                ).count(),
+                "poems": session.query(Poem).count(),
+                "poem_versions": session.query(PoemVersion).count(),
+                "references": session.query(ReferenceSource).count(),
+            }
+
+            # Recent entries (latest 5)
+            recent_entries = [
+                {
+                    "date": e.date,
+                    "path": f"entries/{e.date.year}/{e.date.isoformat()}.md",
+                    "word_count": e.word_count or 0,
+                }
+                for e in sorted(entries, key=lambda x: x.date, reverse=True)[:5]
+            ]
+
+            # Most mentioned people (top 5)
+            recent_people = sorted(
+                [
+                    {
+                        "name": p.display_name,
+                        "path": f"people/{slugify(p.display_name)}.md",
+                        "mentions": len(p.entries),
+                    }
+                    for p in people
+                ],
+                key=lambda x: x["mentions"],
+                reverse=True,
+            )[:5]
+
+            # Render home template
+            output_path = self.wiki_dir / "index.md"
+            content = self.renderer.render_index(
+                "home",
+                output_path,
+                stats=wiki_stats,
+                recent_entries=recent_entries,
+                recent_people=recent_people,
+                generated_at=datetime.now(),
+            )
+
+            self._write_index(output_path, content, force, stats)
+
+        if self.logger:
+            self.logger.log_info("Home dashboard exported")
+
+        return stats
