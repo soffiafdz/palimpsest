@@ -40,30 +40,78 @@ Usage:
     # Query locations by city
     seattle_locations = loc_mgr.get_locations_for_city(city)
 """
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
+from sqlalchemy.orm import Session
+
+from dev.core.exceptions import DatabaseError, ValidationError
+from dev.core.logging_manager import PalimpsestLogger
 from dev.core.validators import DataValidator
-from dev.core.exceptions import ValidationError, DatabaseError
 from dev.database.decorators import (
     handle_db_errors,
     log_database_operation,
     validate_metadata,
 )
-from dev.database.models import City, Location, Entry, Moment
-from .base_manager import BaseManager
+from dev.database.models import City, Entry, Location, Moment
+
+from .entity_manager import EntityManager, EntityManagerConfig
+
+# Configuration for City entity
+CITY_CONFIG = EntityManagerConfig(
+    model_class=City,
+    name_field="city",
+    display_name="city",
+    supports_soft_delete=False,
+    order_by="city",
+    scalar_fields=[
+        ("city", DataValidator.normalize_string),
+        ("state_province", DataValidator.normalize_string, True),
+        ("country", DataValidator.normalize_string, True),
+    ],
+    relationships=[
+        ("entries", "entries", Entry),
+        ("locations", "locations", Location),
+    ],
+)
 
 
-class LocationManager(BaseManager):
+class LocationManager(EntityManager):
     """
     Manages City and Location table operations and relationships.
+
+    Inherits EntityManager for City CRUD and adds Location-specific
+    operations for the child entity.
 
     This manager handles both entities since they have a tight parent-child
     relationship: every Location belongs to a City.
     """
 
+    def __init__(
+        self,
+        session: Session,
+        logger: Optional[PalimpsestLogger] = None,
+    ):
+        """
+        Initialize the location manager.
+
+        Args:
+            session: SQLAlchemy session
+            logger: Optional logger for operation tracking
+        """
+        super().__init__(session, logger, CITY_CONFIG)
+
     # =========================================================================
-    # CITY OPERATIONS
+    # CITY OPERATIONS (via EntityManager)
     # =========================================================================
+
+    # Inherited from EntityManager:
+    # - exists(name, entity_id) -> bool
+    # - get(name, entity_id) -> Optional[City]
+    # - get_all() -> List[City]
+    # - get_or_create(name, extra_metadata) -> City
+    # - create(metadata) -> City
+    # - update(entity, metadata) -> City
+    # - delete(entity) -> None
 
     @handle_db_errors
     @log_database_operation("city_exists")
@@ -77,7 +125,7 @@ class LocationManager(BaseManager):
         Returns:
             True if city exists, False otherwise
         """
-        return self._exists(City, "city", city_name)
+        return self.exists(name=city_name)
 
     @handle_db_errors
     @log_database_operation("get_city")
@@ -97,11 +145,7 @@ class LocationManager(BaseManager):
         Notes:
             - If both provided, ID takes precedence
         """
-        if city_id is not None:
-            return self._get_by_id(City, city_id)
-        if city_name is not None:
-            return self._get_by_field(City, "city", city_name)
-        return None
+        return self.get(name=city_name, entity_id=city_id)
 
     @handle_db_errors
     @log_database_operation("get_all_cities")
@@ -112,7 +156,7 @@ class LocationManager(BaseManager):
         Returns:
             List of all City objects, ordered by city name
         """
-        return self._get_all(City, order_by="city")
+        return self.get_all()
 
     @handle_db_errors
     @log_database_operation("create_city")
@@ -137,33 +181,7 @@ class LocationManager(BaseManager):
             ValidationError: If city name is missing or invalid
             DatabaseError: If city already exists
         """
-        city_name = DataValidator.normalize_string(metadata.get("city"))
-        if not city_name:
-            raise ValidationError(f"Invalid city name: {metadata.get('city')}")
-
-        # Check for existing
-        existing = self.get_city(city_name=city_name)
-        if existing:
-            raise DatabaseError(f"City already exists: {city_name}")
-
-        # Create city
-        city = City(
-            city=city_name,
-            state_province=DataValidator.normalize_string(
-                metadata.get("state_province")
-            ),
-            country=DataValidator.normalize_string(metadata.get("country")),
-        )
-        self.session.add(city)
-        self.session.flush()
-
-        if self.logger:
-            self.logger.log_debug(f"Created city: {city_name}", {"city_id": city.id})
-
-        # Update relationships
-        self._update_city_relationships(city, metadata, incremental=False)
-
-        return city
+        return self.create(metadata)
 
     @handle_db_errors
     @log_database_operation("update_city")
@@ -185,23 +203,7 @@ class LocationManager(BaseManager):
         Returns:
             Updated City object
         """
-        db_city = self.session.get(City, city.id)
-        if db_city is None:
-            raise DatabaseError(f"City with id={city.id} does not exist")
-
-        city = self.session.merge(db_city)
-
-        # Update scalar fields using helper
-        self._update_scalar_fields(city, metadata, [
-            ("city", DataValidator.normalize_string),
-            ("state_province", DataValidator.normalize_string, True),
-            ("country", DataValidator.normalize_string, True),
-        ])
-
-        # Update relationships
-        self._update_city_relationships(city, metadata, incremental=True)
-
-        return city
+        return self.update(city, metadata)
 
     @handle_db_errors
     @log_database_operation("delete_city")
@@ -217,19 +219,7 @@ class LocationManager(BaseManager):
             - Locations under this city will have invalid foreign keys
             - Consider updating locations first or using cascading deletes
         """
-        if isinstance(city, int):
-            city = self.session.get(City, city)  # type: ignore[assignment]
-            if not city:
-                raise DatabaseError(f"City not found with id: {city}")
-
-        if self.logger:
-            self.logger.log_debug(
-                f"Deleting city: {city.city}",
-                {"city_id": city.id, "location_count": len(city.locations)},
-            )
-
-        self.session.delete(city)
-        self.session.flush()
+        self.delete(city)
 
     @handle_db_errors
     @log_database_operation("get_or_create_city")
@@ -250,39 +240,16 @@ class LocationManager(BaseManager):
         Returns:
             City object (existing or newly created)
         """
-        normalized = DataValidator.normalize_string(city_name)
-        if not normalized:
-            raise ValidationError("City name cannot be empty")
-
-        # Try to get existing
-        existing = self.get_city(city_name=normalized)
-        if existing:
-            return existing
-
-        # Create new with extra fields
-        return self._get_or_create(
-            City,
-            {"city": normalized},
-            {
-                "state_province": DataValidator.normalize_string(state_province),
-                "country": DataValidator.normalize_string(country),
+        return self.get_or_create(
+            city_name,
+            extra_metadata={
+                "state_province": state_province,
+                "country": country,
             },
         )
 
-    def _update_city_relationships(
-        self,
-        city: City,
-        metadata: Dict[str, Any],
-        incremental: bool = True,
-    ) -> None:
-        """Update relationships for a city."""
-        self._update_relationships(city, metadata, [
-            ("entries", "entries", Entry),
-            ("locations", "locations", Location),
-        ], incremental)
-
     # =========================================================================
-    # LOCATION OPERATIONS
+    # LOCATION OPERATIONS (Child entity)
     # =========================================================================
 
     @handle_db_errors
@@ -422,16 +389,18 @@ class LocationManager(BaseManager):
         location = self.session.merge(db_location)
 
         # Update name
-        self._update_scalar_fields(location, metadata, [
-            ("name", DataValidator.normalize_string),
-        ])
+        self._update_scalar_fields(
+            location, metadata, [("name", DataValidator.normalize_string)]
+        )
 
         # Update city using parent resolution
         if "city" in metadata:
             city = self._resolve_parent(
-                metadata["city"], City,
+                metadata["city"],
+                City,
                 lambda **kw: self.get_city(city_id=kw.get("id")),
-                self.get_or_create_city, "id"
+                self.get_or_create_city,
+                "id",
             )
             if city:
                 location.city = city
@@ -517,8 +486,14 @@ class LocationManager(BaseManager):
         metadata: Dict[str, Any],
         incremental: bool = True,
     ) -> None:
-        """Update relationships for a location."""
-        # Many-to-many relationships using generic helper
+        """
+        Update relationships for a location.
+
+        Args:
+            location: Location entity to update
+            metadata: Dictionary containing relationship data
+            incremental: If True, add/remove items; if False, replace
+        """
         self._update_relationships(
             location,
             metadata,

@@ -47,31 +47,78 @@ Usage:
     person_mgr.add_alias(person, "Ali")
     person_mgr.add_aliases(person, ["Allie", "A."])
 """
-from typing import Dict, List, Optional, Any, Union, cast
-from datetime import datetime, timezone
+# --- Standard library imports ---
+from typing import Any, cast, Dict, List, Optional, Union
 
+# --- Third-party imports ---
+from sqlalchemy.orm import Session
+
+# --- Local imports ---
+from dev.core.exceptions import DatabaseError, ValidationError
+from dev.core.logging_manager import PalimpsestLogger
 from dev.core.validators import DataValidator
-from dev.core.exceptions import ValidationError, DatabaseError
 from dev.database.decorators import (
     handle_db_errors,
     log_database_operation,
     validate_metadata,
 )
-from dev.database.models import Person, Alias, Entry, Event, Moment, RelationType
-from .base_manager import BaseManager
+from dev.database.models import Alias, Entry, Event, Moment, Person, RelationType
+
+from .entity_manager import EntityManager, EntityManagerConfig
+
+# Configuration for Person entity
+PERSON_CONFIG = EntityManagerConfig(
+    model_class=Person,
+    name_field="name",
+    display_name="person",
+    supports_soft_delete=True,
+    order_by="name",
+    scalar_fields=[
+        ("name", DataValidator.normalize_string),
+        ("full_name", DataValidator.normalize_string, True),
+    ],
+    relationships=[
+        ("events", "events", Event),
+        ("entries", "entries", Entry),
+        ("dates", "dates", Moment),
+    ],
+)
 
 
-class PersonManager(BaseManager):
+class PersonManager(EntityManager):
     """
     Manages Person and Alias table operations with name disambiguation.
 
-    This manager handles the complex name_fellow logic where multiple people
-    can share the same name, requiring full_name for disambiguation.
+    Inherits EntityManager for base CRUD but overrides create/update/get
+    to handle the complex name_fellow logic where multiple people can share
+    the same name, requiring full_name for disambiguation.
+
+    This manager also handles Alias as a child entity with string-based input,
+    unlike other parent-child relationships that use entity objects.
     """
 
+    def __init__(
+        self,
+        session: Session,
+        logger: Optional[PalimpsestLogger] = None,
+    ):
+        """
+        Initialize the person manager.
+
+        Args:
+            session: SQLAlchemy session
+            logger: Optional logger for operation tracking
+        """
+        super().__init__(session, logger, PERSON_CONFIG)
+
     # =========================================================================
-    # PERSON OPERATIONS
+    # PERSON OPERATIONS (Overrides for name_fellow logic)
     # =========================================================================
+
+    # Inherited from EntityManager:
+    # - get_all(include_deleted) -> List[Person]
+    # - delete(entity, deleted_by, reason, hard) -> None
+    # - restore(entity) -> Person
 
     @handle_db_errors
     @log_database_operation("person_exists")
@@ -415,7 +462,7 @@ class PersonManager(BaseManager):
     @log_database_operation("delete_person")
     def delete(
         self,
-        person: Person,
+        person: Union[Person, int],
         deleted_by: Optional[str] = None,
         reason: Optional[str] = None,
         hard_delete: bool = False,
@@ -434,41 +481,19 @@ class PersonManager(BaseManager):
             - Hard delete removes person and all aliases (cascade)
             - Relationships (entries, events) are preserved with soft delete
         """
+        # Handle int ID lookup
         if isinstance(person, int):
-            person = self.get(person_id=person, include_deleted=True)
-            if not person:
+            fetched = self.get(person_id=person, include_deleted=True)
+            if not fetched:
                 raise DatabaseError(f"Person not found with id: {person}")
+            person = fetched
 
-        if hard_delete:
-            if self.logger:
-                self.logger.log_debug(
-                    f"Hard deleting person: {person.display_name}",
-                    {
-                        "person_id": person.id,
-                        "alias_count": len(person.aliases),
-                        "entry_count": person.entry_count,
-                    },
-                )
-            self.session.delete(person)
-        else:
-            if self.logger:
-                self.logger.log_debug(
-                    f"Soft deleting person: {person.display_name}",
-                    {
-                        "person_id": person.id,
-                        "deleted_by": deleted_by,
-                        "reason": reason,
-                    },
-                )
-            person.deleted_at = datetime.now(timezone.utc)
-            person.deleted_by = deleted_by
-            person.deletion_reason = reason
-
-        self.session.flush()
+        # Delegate to parent's delete method
+        super().delete(person, deleted_by=deleted_by, reason=reason, hard=hard_delete)
 
     @handle_db_errors
     @log_database_operation("restore_person")
-    def restore(self, person: Person) -> Person:
+    def restore(self, person: Union[Person, int]) -> Person:
         """
         Restore a soft-deleted person.
 
@@ -481,26 +506,19 @@ class PersonManager(BaseManager):
         Raises:
             DatabaseError: If person not found or not deleted
         """
+        # Handle int ID lookup
         if isinstance(person, int):
-            person = self.get(person_id=person, include_deleted=True)
-            if not person:
+            fetched = self.get(person_id=person, include_deleted=True)
+            if not fetched:
                 raise DatabaseError(f"Person not found with id: {person}")
+            person = fetched
 
+        # Validate deletion status before delegating
         if not person.deleted_at:
             raise DatabaseError(f"Person is not deleted: {person.display_name}")
 
-        person.deleted_at = None
-        person.deleted_by = None
-        person.deletion_reason = None
-
-        self.session.flush()
-
-        if self.logger:
-            self.logger.log_debug(
-                f"Restored person: {person.display_name}", {"person_id": person.id}
-            )
-
-        return person
+        # Delegate to parent's restore method
+        return super().restore(person)
 
     def _update_relationships(
         self,
