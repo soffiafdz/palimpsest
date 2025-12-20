@@ -625,12 +625,6 @@ class PalimpsestDB:
     #
     # Stable facade methods that delegate to EntryManager:
     # -------------------------------------------------------------------------
-    # --- Static Helper Methods for EntryManager ---
-    # Note: These static methods have been refactored into the EntryRelationshipHelper class
-    # located at /home/soffiafdz/Documents/palimpsest/dev/database/managers/entry_helpers.py
-    # This eliminates repeated manager instantiation and provides better organization.
-    # EntryManager now uses the helper class instead of these static methods.
-
     # --- Entity Operations Delegated to Modular Managers ---
     # All entity-specific CRUD operations are now handled by specialized managers.
     #

@@ -236,13 +236,6 @@ dev/dataclasses/
     └── db_to_yaml.py        # Database → YAML frontmatter export
 ```
 
-**Refactoring Summary** (2025-11-29):
-- **Original Size**: 1,581 lines
-- **New Size**: 787 lines (50% reduction)
-- **Extracted Code**: 794 lines into specialized modules
-- **Pattern**: Separation of concerns (parsing, export, validation)
-- **Result**: More maintainable, testable, and modular
-
 **Key Components**:
 
 1. **YamlToDbParser** (`yaml_to_db.py`):
@@ -288,37 +281,14 @@ db_meta = entry.to_database_metadata()  # Uses YamlToDbParser internally
 - Simplified validation testing
 - Better code organization and navigation
 
-**Before/After Comparison**:
+**Module Structure**:
 ```
-Before Refactoring:
-dev/dataclasses/md_entry.py (1,581 lines)
-  - Type definitions
-  - Dataclass definition
-  - Construction methods
-  - Database conversion helpers (_build_* methods)
-  - Parsing helpers (_parse_* methods)
-  - YAML generation
-  - Validation logic
-
-After Refactoring:
-dev/dataclasses/md_entry.py (787 lines)
-  - Type definitions
-  - Dataclass definition
-  - Construction methods
-  - YAML generation
-  - Simple method calls to parsers
-
-dev/dataclasses/parsers/yaml_to_db.py (207 lines)
-  - All YAML→DB parsing logic
-  - Complex field parsing (people, dates, locations)
-
-dev/dataclasses/parsers/db_to_yaml.py (114 lines)
-  - All DB→YAML export logic
-  - Metadata building from ORM objects
-
-dev/dataclasses/md_entry_validator.py (31 lines)
-  - Validation logic
-  - Stateless validator pattern
+dev/dataclasses/
+├── md_entry.py              # Core dataclass
+├── md_entry_validator.py    # Validation logic
+└── parsers/
+    ├── yaml_to_db.py        # YAML→DB parsing logic
+    └── db_to_yaml.py        # DB→YAML export logic
 ```
 
 ---

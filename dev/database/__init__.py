@@ -2,7 +2,7 @@
 """
 Palimpsest Database Package
 ---------------------------
-Refactored database management system with modular architecture.
+Database management system with modular architecture.
 
 This package provides a comprehensive database management system for the
 Palimpsest personal journal archive system, with specialized modules for:

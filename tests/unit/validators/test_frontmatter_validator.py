@@ -220,13 +220,13 @@ class TestFrontmatterValidator:
         file_path = tmp_path / "valid_manuscript.md"
         frontmatter = {
             "manuscript": {
-                "status": "draft",
+                "status": "quote",
                 "edited": True,
                 "themes": ["Theme1"]
             }
         }
         self.create_md_file(file_path, frontmatter)
-        
+
         issues = validator.validate_file(file_path)
         assert not issues
 

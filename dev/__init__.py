@@ -30,14 +30,13 @@ Example Usage:
     >>> with db.session_scope() as session:
     ...     entries = session.query(Entry).filter(Entry.year == 2024).all()
 
-Version: 2.0.0 (Refactored Architecture)
+Version: 2.0.0
 Author: Part of Palimpsest project
 License: MIT
 
 See Also:
     - README.md: Project overview and quick start
-    - dev/database/managers/README.md: Refactored manager architecture
-    - dev/database/managers/REFACTORING_GUIDE.md: Implementation patterns
+    - dev/database/managers/README.md: Manager architecture overview
 """
 
 __version__ = "2.0.0"

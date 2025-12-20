@@ -5,9 +5,7 @@ entry_helpers.py
 Helper class for EntryManager relationship processing.
 
 This module contains the EntryRelationshipHelper class which handles the complex
-relationship processing logic for Entry objects. It was refactored from static
-methods in manager.py to provide better organization and eliminate repeated
-manager instantiation.
+relationship processing logic for Entry objects.
 
 Key Features:
     - Caches manager instances to avoid repeated instantiation

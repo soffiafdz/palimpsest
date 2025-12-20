@@ -513,8 +513,8 @@ class PersonManager(BaseManager):
         if "aliases" in metadata:
             self._update_person_aliases(person, metadata, incremental)
 
-        # Many-to-many relationships using generic helper
-        self._update_relationships(
+        # Many-to-many relationships using base class helper
+        super()._update_relationships(
             person,
             metadata,
             [

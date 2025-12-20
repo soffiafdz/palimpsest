@@ -72,7 +72,7 @@ class TestSchemaValidator:
 
     def test_validate_manuscript_status_valid(self, validator):
         """Test validation of valid manuscript status."""
-        valid_statuses = ["unspecified", "draft", "reviewed", "included", "adapted", "excluded", "final"]
+        valid_statuses = ["unspecified", "reference", "quote", "fragments", "source"]
         for status in valid_statuses:
             issue = validator.validate_manuscript_status(status, "test.status")
             assert issue is None, f"Status '{status}' should be valid"
@@ -207,7 +207,7 @@ class TestSchemaValidator:
     def test_validate_manuscript_schema_valid(self, validator):
         """Test validation of valid manuscript structure."""
         manuscript = {
-            "status": "draft",
+            "status": "quote",
             "edited": True,
             "themes": ["Theme1", "Theme2"]
         }
@@ -230,7 +230,7 @@ class TestSchemaValidator:
 
     def test_validate_manuscript_schema_valid_statuses(self, validator):
         """Test all valid manuscript statuses."""
-        valid_statuses = ["unspecified", "draft", "reviewed", "included", "adapted", "excluded", "final"]
+        valid_statuses = ["unspecified", "reference", "quote", "fragments", "source"]
         for status in valid_statuses:
             manuscript = {"status": status}
             issues = validator.validate_manuscript_schema(manuscript)
