@@ -34,7 +34,7 @@ from dev.core.validators import DataValidator
 from dev.utils import fs
 from dev.database.models import (
     Entry,
-    MentionedDate,
+    Moment,
     City,
     Person,
     Alias,
@@ -206,7 +206,7 @@ class EntryManager(BaseManager):
                     - epigraph_attribution (str)
                     - notes (str)
                 Relationship keys (optional):
-                    - dates (List[MentionedDate|int])
+                    - dates (List[Moment|int])
                     - cities (List[City|int])
                     - locations (List[Location|int])
                     - people (List[Person|int])
@@ -617,7 +617,7 @@ class EntryManager(BaseManager):
             entry (Entry): Entry ORM object to update relationships for.
             metadata (Dict[str, Any]): Normalized metadata containing:
                 Expected keys (optional):
-                    - dates (List[MentionedDate|int|str|Dict]) - Mentioned dates with optional context
+                    - dates (List[Moment|int|str|Dict]) - Mentioned dates with optional context
                     - cities (List[City|int|str]) - Cities where entry took place
                     - locations (List[Dict]) - Locations with city context: {"name": str, "city": str}
                     - people (List[Person|int|str]) - People mentioned
@@ -629,7 +629,7 @@ class EntryManager(BaseManager):
                     - poems (List[Dict]) - Poem versions
                     - manuscript (Dict) - Manuscript metadata
                 Removal keys (optional):
-                    - remove_dates (List[MentionedDate|int])
+                    - remove_dates (List[Moment|int])
                     - remove_cities (List[City|int])
                     - remove_people (List[Person|int])
                     - remove_events (List[Event|int])
@@ -732,7 +732,7 @@ class EntryManager(BaseManager):
             # --- Dates ---
             if "dates" in metadata:
                 if not incremental:
-                    entry.dates.clear()
+                    entry.moments.clear()
                     self.session.flush()
                 self._process_mentioned_dates(entry, metadata["dates"])
 
@@ -1041,7 +1041,7 @@ class EntryManager(BaseManager):
             entry: Entry to attach dates to
             dates_data: List of date specifications
         """
-        existing_date_ids = {d.id for d in entry.dates}
+        existing_date_ids = {d.id for d in entry.moments}
 
         for date_item in dates_data:
             mentioned_date = None
@@ -1049,7 +1049,7 @@ class EntryManager(BaseManager):
             if isinstance(date_item, str):
                 # Simple date string
                 date_obj = date.fromisoformat(date_item)
-                mentioned_date = self._get_or_create(MentionedDate, {"date": date_obj})
+                mentioned_date = self._get_or_create(Moment, {"date": date_obj})
 
             elif isinstance(date_item, dict) and "date" in date_item:
                 # Date with context
@@ -1057,7 +1057,7 @@ class EntryManager(BaseManager):
                 context = date_item.get("context")
 
                 mentioned_date = self._get_or_create(
-                    MentionedDate, {"date": date_obj, "context": context}
+                    Moment, {"date": date_obj, "context": context}
                 )
 
                 if "locations" in date_item and date_item["locations"]:
@@ -1073,11 +1073,11 @@ class EntryManager(BaseManager):
                 continue
 
             if mentioned_date and mentioned_date.id not in existing_date_ids:
-                entry.dates.append(mentioned_date)
+                entry.moments.append(mentioned_date)
 
     def _update_mentioned_date_locations(
         self,
-        mentioned_date: MentionedDate,
+        mentioned_date: Moment,
         locations_data: List[str],
     ) -> None:
         """
@@ -1087,11 +1087,11 @@ class EntryManager(BaseManager):
         entry locations are handled.
 
         Args:
-            mentioned_date: MentionedDate to update
+            mentioned_date: Moment to update
             locations_data: List of location names
         """
         if mentioned_date.id is None:
-            raise ValueError("MentionedDate must be persisted before linking locations")
+            raise ValueError("Moment must be persisted before linking locations")
 
         # Get existing location IDs to avoid duplicates
         existing_location_ids = {loc.id for loc in mentioned_date.locations}
@@ -1132,7 +1132,7 @@ class EntryManager(BaseManager):
 
     def _update_mentioned_date_people(
         self,
-        mentioned_date: MentionedDate,
+        mentioned_date: Moment,
         people_data: List[Union[str, Dict[str, Any]]],
     ) -> None:
         """
@@ -1146,11 +1146,11 @@ class EntryManager(BaseManager):
         - Dict: {"name": "John"} or {"full_name": "John Smith"}
 
         Args:
-            mentioned_date: MentionedDate to update
+            mentioned_date: Moment to update
             people_data: List of person specifications
         """
         if mentioned_date.id is None:
-            raise ValueError("MentionedDate must be persisted before linking people")
+            raise ValueError("Moment must be persisted before linking people")
 
         # Get existing person IDs to avoid duplicates
         existing_person_ids = {p.id for p in mentioned_date.people}

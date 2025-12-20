@@ -88,11 +88,7 @@ class PoemManager(BaseManager):
             - Poem titles are NOT unique, multiple poems can have same title
             - This checks if ANY poem with this title exists
         """
-        normalized = DataValidator.normalize_string(title)
-        if not normalized:
-            return False
-
-        return self.session.query(Poem).filter_by(title=normalized).first() is not None
+        return self._exists(Poem, "title", title)
 
     @handle_db_errors
     @log_database_operation("get_poem")
@@ -113,15 +109,10 @@ class PoemManager(BaseManager):
             - If both provided, ID takes precedence
             - Title lookup returns first match (titles are not unique)
         """
-        if poem_id is not None:  # type: ignore[reportUnnecessaryComparison]
-            return self.session.get(Poem, poem_id)
-
+        if poem_id is not None:
+            return self._get_by_id(Poem, poem_id)
         if title is not None:
-            normalized = DataValidator.normalize_string(title)
-            if not normalized:
-                return None
-            return self.session.query(Poem).filter_by(title=normalized).first()
-
+            return self._get_by_field(Poem, "title", title)
         return None
 
     @handle_db_errors
@@ -133,7 +124,7 @@ class PoemManager(BaseManager):
         Returns:
             List of all Poem objects, ordered by title
         """
-        return self.session.query(Poem).order_by(Poem.title).all()
+        return self._get_all(Poem, order_by="title")
 
     @handle_db_errors
     @log_database_operation("create_poem")
@@ -310,7 +301,7 @@ class PoemManager(BaseManager):
         Returns:
             PoemVersion object if found, None otherwise
         """
-        return self.session.get(PoemVersion, version_id)
+        return self._get_by_id(PoemVersion, version_id)
 
     @handle_db_errors
     @log_database_operation("get_all_versions")
@@ -321,7 +312,7 @@ class PoemManager(BaseManager):
         Returns:
             List of all PoemVersion objects
         """
-        return self.session.query(PoemVersion).all()
+        return self._get_all(PoemVersion)
 
     @handle_db_errors
     @log_database_operation("create_version")

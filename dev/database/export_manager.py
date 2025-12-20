@@ -141,7 +141,7 @@ from .models import (
     Tag,
     Reference,
     ReferenceSource,
-    MentionedDate,
+    Moment,
     Poem,
     PoemVersion,
     Alias,
@@ -379,7 +379,7 @@ class ExportManager:
             "tags": Tag,
             "references": Reference,
             "reference_sources": ReferenceSource,
-            "mentioned_dates": MentionedDate,
+            "mentioned_dates": Moment,
             "poems": Poem,
             "poem_versions": PoemVersion,
             "aliases": Alias,
@@ -599,7 +599,7 @@ class ExportManager:
             # Relationships
             "mentioned_dates": [
                 {"date": md.date.isoformat(), "context": md.context}
-                for md in entry.dates
+                for md in entry.moments
             ],
             "cities": [city.city for city in entry.cities],
             "locations": [

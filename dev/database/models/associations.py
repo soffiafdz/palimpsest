@@ -5,12 +5,16 @@ Association Tables
 Many-to-many relationship tables for the Palimpsest database.
 
 This module contains all association tables that connect:
-- Entries with dates, cities, locations, people, events, tags
-- Events with people
-- Locations and people with dates
+- Entries with moments, cities, locations, people, events, tags
+- Events with people and moments
+- Locations and people with moments
 - Entries with related entries (self-referential)
 
 These are pure association tables with no additional metadata.
+
+Note: The original "dates" table was renamed to "moments" (P25) to better
+reflect the semantic meaning - a moment is a point in time with context,
+people, and locations, not just a date reference.
 """
 # --- Third party imports ---
 from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Table
@@ -19,8 +23,8 @@ from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Table
 from .base import Base
 
 # Entry associations
-entry_dates = Table(
-    "entry_dates",
+entry_moments = Table(
+    "entry_moments",
     Base.metadata,
     Column(
         "entry_id",
@@ -28,8 +32,9 @@ entry_dates = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("date_id", Integer, ForeignKey("dates.id", ondelete="CASCADE"), primary_key=True),
+    Column("moment_id", Integer, ForeignKey("moments.id", ondelete="CASCADE"), primary_key=True),
 )
+
 
 entry_cities = Table(
     "entry_cities",
@@ -151,37 +156,56 @@ event_people = Table(
     ),
 )
 
-# Geography and people date associations
-location_dates = Table(
-    "location_dates",
+# Moment associations (locations and people linked to specific moments)
+moment_locations = Table(
+    "moment_locations",
     Base.metadata,
+    Column(
+        "moment_id",
+        Integer,
+        ForeignKey("moments.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
     Column(
         "location_id",
         Integer,
         ForeignKey("locations.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column(
-        "date_id",
-        Integer,
-        ForeignKey("dates.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
 )
 
-people_dates = Table(
-    "people_dates",
+moment_people = Table(
+    "moment_people",
     Base.metadata,
+    Column(
+        "moment_id",
+        Integer,
+        ForeignKey("moments.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
     Column(
         "person_id",
         Integer,
         ForeignKey("people.id", ondelete="CASCADE"),
         primary_key=True,
     ),
+)
+
+# NEW: Moments can belong to multiple events (M2M)
+moment_events = Table(
+    "moment_events",
+    Base.metadata,
     Column(
-        "date_id",
+        "moment_id",
         Integer,
-        ForeignKey("dates.id", ondelete="CASCADE"),
+        ForeignKey("moments.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "event_id",
+        Integer,
+        ForeignKey("events.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
+

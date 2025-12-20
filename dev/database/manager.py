@@ -102,7 +102,7 @@ from dev.core.logging_manager import PalimpsestLogger
 from .models import (
     Base,
     Entry,
-    MentionedDate,
+    Moment,
     Location,
     Person,
     Reference,
@@ -124,7 +124,7 @@ from .managers import (
     TagManager,
     PersonManager,
     EventManager,
-    DateManager,
+    MomentManager,
     LocationManager,
     ReferenceManager,
     PoemManager,
@@ -217,7 +217,7 @@ class PalimpsestDB:
     tags = ManagerProperty("_tag_manager", "TagManager")
     people = ManagerProperty("_person_manager", "PersonManager")
     events = ManagerProperty("_event_manager", "EventManager")
-    dates = ManagerProperty("_date_manager", "DateManager")
+    moments = ManagerProperty("_moment_manager", "MomentManager")
     locations = ManagerProperty("_location_manager", "LocationManager")
     references = ManagerProperty("_reference_manager", "ReferenceManager")
     poems = ManagerProperty("_poem_manager", "PoemManager")
@@ -277,7 +277,7 @@ class PalimpsestDB:
         self._tag_manager: Optional[TagManager] = None
         self._person_manager: Optional[PersonManager] = None
         self._event_manager: Optional[EventManager] = None
-        self._date_manager: Optional[DateManager] = None
+        self._moment_manager: Optional[MomentManager] = None
         self._location_manager: Optional[LocationManager] = None
         self._reference_manager: Optional[ReferenceManager] = None
         self._poem_manager: Optional[PoemManager] = None
@@ -356,7 +356,7 @@ class PalimpsestDB:
         self._tag_manager = TagManager(session, self.logger)
         self._person_manager = PersonManager(session, self.logger)
         self._event_manager = EventManager(session, self.logger)
-        self._date_manager = DateManager(session, self.logger)
+        self._moment_manager = MomentManager(session, self.logger)
         self._location_manager = LocationManager(session, self.logger)
         self._reference_manager = ReferenceManager(session, self.logger)
         self._poem_manager = PoemManager(session, self.logger)
@@ -384,7 +384,7 @@ class PalimpsestDB:
             self._tag_manager = None
             self._person_manager = None
             self._event_manager = None
-            self._date_manager = None
+            self._moment_manager = None
             self._location_manager = None
             self._reference_manager = None
             self._poem_manager = None
@@ -647,7 +647,7 @@ class PalimpsestDB:
     #   - db.poems: PoemManager
     #   - db.manuscripts: ManuscriptManager
     #   - db.tags: TagManager
-    #   - db.dates: DateManager
+    #   - db.moments: MomentManager
     #
     # Example:
     #   with db.session_scope() as session:
@@ -669,7 +669,7 @@ class PalimpsestDB:
         cleanup_config = {
             "tags": (Tag, "entries"),
             "locations": (Location, "entries"),
-            "dates": (MentionedDate, "entries"),
+            "moments": (Moment, "entries"),
             "themes": (Theme, "entries"),
             "references": (Reference, "entry"),
             "poem_versions": (PoemVersion, "entry"),

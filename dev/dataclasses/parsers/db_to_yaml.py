@@ -197,20 +197,20 @@ class DbToYamlExporter:
                 }
             ]
         """
-        if not entry.dates:
+        if not entry.moments:
             return None
 
         dates_list: List[Union[str, Dict[str, Any]]] = []
 
         # Check if entry date is in mentioned dates
-        entry_date_in_mentioned = any(md.date == entry.date for md in entry.dates)
+        entry_date_in_mentioned = any(md.date == entry.date for md in entry.moments)
 
         # Add ~ if entry date NOT in mentioned dates
         if not entry_date_in_mentioned:
             dates_list.append("~")
 
         # Build all date items as dicts
-        for mentioned_date in entry.dates:
+        for mentioned_date in entry.moments:
             date_dict: Dict[str, Any] = {"date": mentioned_date.date.isoformat()}
 
             # Add locations

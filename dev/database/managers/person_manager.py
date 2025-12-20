@@ -57,7 +57,7 @@ from dev.database.decorators import (
     log_database_operation,
     validate_metadata,
 )
-from dev.database.models import Person, Alias, Entry, Event, MentionedDate, RelationType
+from dev.database.models import Person, Alias, Entry, Event, Moment, RelationType
 from .base_manager import BaseManager
 
 
@@ -97,22 +97,14 @@ class PersonManager(BaseManager):
             - Name alone may match multiple people (name_fellows)
         """
         if person_full_name:
-            normalized = DataValidator.normalize_string(person_full_name)
-            if not normalized:
-                return False
-            query = self.session.query(Person).filter_by(full_name=normalized)
-        elif person_name:
-            normalized = DataValidator.normalize_string(person_name)
-            if not normalized:
-                return False
-            query = self.session.query(Person).filter_by(name=normalized)
-        else:
-            return False
-
-        if not include_deleted:
-            query = query.filter(Person.deleted_at.is_(None))
-
-        return query.first() is not None
+            return self._exists(
+                Person, "full_name", person_full_name, include_deleted=include_deleted
+            )
+        if person_name:
+            return self._exists(
+                Person, "name", person_name, include_deleted=include_deleted
+            )
+        return False
 
     @handle_db_errors
     @log_database_operation("get_person")
@@ -145,37 +137,25 @@ class PersonManager(BaseManager):
         """
         # ID lookup
         if person_id is not None:
-            person = self.session.get(Person, person_id)
-            if person and (include_deleted or not person.deleted_at):
-                return person
-            return None
+            return self._get_by_id(Person, person_id, include_deleted=include_deleted)
 
         # Full name lookup (unique)
         if person_full_name is not None:
-            normalized = DataValidator.normalize_string(person_full_name)
-            if not normalized:
-                return None
+            return self._get_by_field(
+                Person, "full_name", person_full_name, include_deleted=include_deleted
+            )
 
-            query = self.session.query(Person).filter_by(full_name=normalized)
-
-            if not include_deleted:
-                query = query.filter(Person.deleted_at.is_(None))
-
-            return query.first()
-
-        # Name lookup (may be ambiguous)
+        # Name lookup (may be ambiguous - requires special handling)
         if person_name is not None:
             normalized = DataValidator.normalize_string(person_name)
             if not normalized:
                 return None
 
             query = self.session.query(Person).filter_by(name=normalized)
-
             if not include_deleted:
                 query = query.filter(Person.deleted_at.is_(None))
 
             count = query.count()
-
             if count == 0:
                 return None
             elif count == 1:
@@ -201,12 +181,7 @@ class PersonManager(BaseManager):
         Returns:
             List of Person objects, ordered by name
         """
-        query = self.session.query(Person)
-
-        if not include_deleted:
-            query = query.filter(Person.deleted_at.is_(None))
-
-        return query.order_by(Person.name).all()
+        return self._get_all(Person, order_by="name", include_deleted=include_deleted)
 
     @handle_db_errors
     @log_database_operation("create_person")
@@ -224,7 +199,7 @@ class PersonManager(BaseManager):
                 - aliases: List of alias strings
                 - events: List of Event objects or IDs
                 - entries: List of Entry objects or IDs
-                - dates: List of MentionedDate objects or IDs
+                - dates: List of Moment objects or IDs
 
         Returns:
             Created Person object
@@ -538,42 +513,17 @@ class PersonManager(BaseManager):
         if "aliases" in metadata:
             self._update_person_aliases(person, metadata, incremental)
 
-        # Many-to-many relationships
-        many_to_many_configs = [
-            ("events", "events", Event),
-            ("entries", "entries", Entry),
-            ("dates", "dates", MentionedDate),
-        ]
-
-        for rel_name, meta_key, model_class in many_to_many_configs:
-            if meta_key in metadata:
-                items = metadata[meta_key]
-                remove_items = metadata.get(f"remove_{meta_key}", [])
-
-                # Get the collection
-                collection = getattr(person, rel_name)
-
-                # Replacement mode: clear and add all
-                if not incremental:
-                    collection.clear()
-                    for item in items:
-                        resolved_item = self._resolve_object(item, model_class)
-                        if resolved_item and resolved_item not in collection:
-                            collection.append(resolved_item)
-                else:
-                    # Incremental mode: add new items
-                    for item in items:
-                        resolved_item = self._resolve_object(item, model_class)
-                        if resolved_item and resolved_item not in collection:
-                            collection.append(resolved_item)
-
-                    # Remove specified items
-                    for item in remove_items:
-                        resolved_item = self._resolve_object(item, model_class)
-                        if resolved_item and resolved_item in collection:
-                            collection.remove(resolved_item)
-
-                self.session.flush()
+        # Many-to-many relationships using generic helper
+        self._update_m2m_relationships(
+            person,
+            metadata,
+            [
+                ("events", "events", Event),
+                ("entries", "entries", Entry),
+                ("dates", "dates", Moment),
+            ],
+            incremental,
+        )
 
     def _update_person_aliases(
         self,

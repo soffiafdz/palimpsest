@@ -68,8 +68,8 @@ class Location(WikiEntity):
         # Build visit timeline
         visits = []
 
-        # Add explicit dated visits (from MentionedDate)
-        for mentioned_date in sorted(db_location.dates, key=lambda d: d.date):
+        # Add explicit dated visits (from Moment)
+        for mentioned_date in sorted(db_location.moments, key=lambda d: d.date):
             entry = None
             entry_link = None
             # Find the entry for this date

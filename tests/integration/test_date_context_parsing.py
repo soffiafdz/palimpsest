@@ -59,7 +59,7 @@ class TestDateContextWithNestedEntities:
         test_db.refresh(entry)
 
         # Find the mentioned date with context
-        mentioned_dates = [d for d in entry.dates if d.context]
+        mentioned_dates = [d for d in entry.moments if d.context]
         assert len(mentioned_dates) == 1
         mentioned_date = mentioned_dates[0]
 
@@ -90,7 +90,7 @@ class TestDateContextWithNestedEntities:
         test_db.commit()
         test_db.refresh(entry)
 
-        mentioned_date = next(d for d in entry.dates if d.context)
+        mentioned_date = next(d for d in entry.moments if d.context)
         assert len(mentioned_date.people) == 2
 
         people_names = {p.name for p in mentioned_date.people}
@@ -116,7 +116,7 @@ class TestDateContextWithNestedEntities:
         test_db.commit()
         test_db.refresh(entry)
 
-        mentioned_date = next(d for d in entry.dates if d.context)
+        mentioned_date = next(d for d in entry.moments if d.context)
         assert len(mentioned_date.locations) == 1
         assert mentioned_date.locations[0].name == "Office"
 
@@ -140,7 +140,7 @@ class TestDateContextWithNestedEntities:
         test_db.commit()
         test_db.refresh(entry)
 
-        mentioned_date = next(d for d in entry.dates if d.context)
+        mentioned_date = next(d for d in entry.moments if d.context)
         assert len(mentioned_date.locations) == 2
 
         location_names = {loc.name for loc in mentioned_date.locations}
@@ -167,7 +167,7 @@ class TestDateContextWithNestedEntities:
         test_db.commit()
         test_db.refresh(entry)
 
-        mentioned_date = next(d for d in entry.dates if d.context)
+        mentioned_date = next(d for d in entry.moments if d.context)
 
         # Verify both people and locations were linked
         assert len(mentioned_date.people) == 2
@@ -205,7 +205,7 @@ class TestDateContextWithNestedEntities:
         test_db.refresh(entry)
 
         # Verify each mentioned date has correct relationships
-        mentioned_dates = [d for d in entry.dates if d.context]
+        mentioned_dates = [d for d in entry.moments if d.context]
         assert len(mentioned_dates) == 2
 
         date_jan10 = next(d for d in mentioned_dates if d.date == date(2024, 1, 10))
@@ -250,7 +250,7 @@ class TestDateContextWithNestedEntities:
         assert total_alices == 1
 
         # Both dates should reference the same Alice
-        mentioned_dates = [d for d in entry.dates if d.context]
+        mentioned_dates = [d for d in entry.moments if d.context]
         alice_1 = mentioned_dates[0].people[0]
         alice_2 = mentioned_dates[1].people[0]
         assert alice_1.id == alice_2.id
@@ -285,7 +285,7 @@ class TestDateContextWithNestedEntities:
         assert total_offices == 1
 
         # Both dates should reference the same Office
-        mentioned_dates = [d for d in entry.dates if d.context]
+        mentioned_dates = [d for d in entry.moments if d.context]
         office_1 = mentioned_dates[0].locations[0]
         office_2 = mentioned_dates[1].locations[0]
         assert office_1.id == office_2.id
@@ -309,7 +309,7 @@ class TestDateContextWithNestedEntities:
         test_db.commit()
         test_db.refresh(entry)
 
-        mentioned_date = next(d for d in entry.dates if d.context)
+        mentioned_date = next(d for d in entry.moments if d.context)
         assert mentioned_date.context == "Important milestone"
         assert len(mentioned_date.people) == 0
         assert len(mentioned_date.locations) == 0

@@ -223,7 +223,7 @@ class Entry(WikiEntity):
 
         # Mentioned dates
         mentioned_dates = []
-        for md in sorted(db_entry.dates, key=lambda d: d.date):
+        for md in sorted(db_entry.moments, key=lambda d: d.date):
             mentioned_dates.append({
                 "date": md.date,
                 "context": md.context or "",

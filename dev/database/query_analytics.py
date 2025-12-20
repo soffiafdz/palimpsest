@@ -85,7 +85,7 @@ from .models import (
     Tag,
     Reference,
     ReferenceSource,
-    MentionedDate,
+    Moment,
     Poem,
     PoemVersion,
     Alias,
@@ -142,7 +142,7 @@ class QueryAnalytics:
         stats["reference_sources"] = session.query(ReferenceSource).count()
         stats["poems"] = session.query(Poem).count()
         stats["poem_versions"] = session.query(PoemVersion).count()
-        stats["mentioned_dates"] = session.query(MentionedDate).count()
+        stats["mentioned_dates"] = session.query(Moment).count()
         stats["aliases"] = session.query(Alias).count()
 
         # Manuscript stats

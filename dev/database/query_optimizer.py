@@ -176,7 +176,7 @@ from .models import (
     # City,
     Event,
     # Tag,
-    # MentionedDate,
+    # Moment,
     Reference,
     # ReferenceSource,
     PoemVersion,
@@ -243,7 +243,7 @@ class QueryOptimizer:
                 selectinload(Entry.events).selectinload(Event.manuscript),
                 # Simple collections
                 selectinload(Entry.tags),
-                selectinload(Entry.dates),
+                selectinload(Entry.moments),
                 # References with sources
                 selectinload(Entry.references).selectinload(Reference.source),
                 # Poems with parent poem
@@ -320,7 +320,7 @@ class QueryOptimizer:
                 selectinload(Entry.cities),
                 selectinload(Entry.events),
                 selectinload(Entry.tags),
-                selectinload(Entry.dates),
+                selectinload(Entry.moments),
                 selectinload(Entry.references).selectinload(Reference.source),
                 selectinload(Entry.poems).selectinload(PoemVersion.poem),
             )
@@ -356,7 +356,7 @@ class QueryOptimizer:
                 selectinload(Entry.cities),
                 selectinload(Entry.events),
                 selectinload(Entry.tags),
-                selectinload(Entry.dates),
+                selectinload(Entry.moments),
                 selectinload(Entry.references).selectinload(Reference.source),
                 selectinload(Entry.poems).selectinload(PoemVersion.poem),
             )
@@ -411,7 +411,7 @@ class RelationshipLoader:
             selectinload(Entry.cities),
             selectinload(Entry.events),
             selectinload(Entry.tags),
-            selectinload(Entry.dates),
+            selectinload(Entry.moments),
             selectinload(Entry.references).selectinload(Reference.source),
             selectinload(Entry.poems).selectinload(PoemVersion.poem),
         ).all()

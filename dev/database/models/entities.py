@@ -30,7 +30,7 @@ from .associations import (
     entry_people,
     entry_tags,
     event_people,
-    people_dates,
+    moment_people,
 )
 from .base import Base, SoftDeleteMixin
 from .enums import RelationType
@@ -38,7 +38,7 @@ from .enums import RelationType
 if TYPE_CHECKING:
     from .core import Entry
     from .creative import Event
-    from .geography import MentionedDate
+    from .geography import Moment
     from ..models_manuscript import ManuscriptPerson
 
 
@@ -101,8 +101,8 @@ class Person(Base, SoftDeleteMixin):
     aliases: Mapped[List["Alias"]] = relationship(
         "Alias", back_populates="person", cascade="all, delete-orphan"
     )
-    dates: Mapped[List["MentionedDate"]] = relationship(
-        "MentionedDate", secondary=people_dates, back_populates="people"
+    moments: Mapped[List["Moment"]] = relationship(
+        "Moment", secondary=moment_people, back_populates="people"
     )
     events: Mapped[List["Event"]] = relationship(
         "Event", secondary=event_people, back_populates="people"
@@ -136,8 +136,8 @@ class Person(Base, SoftDeleteMixin):
 
     @property
     def appearances_count(self) -> int:
-        """Total number of appearances (explicit dates)."""
-        return len(self.dates)
+        """Total number of appearances (explicit moments)."""
+        return len(self.moments)
 
     @property
     def event_count(self) -> int:
@@ -147,14 +147,14 @@ class Person(Base, SoftDeleteMixin):
     @property
     def first_appearance(self) -> Optional[date]:
         """Earliest date this person was mentioned."""
-        dates = [md.date for md in self.dates]
-        return min(dates) if dates else None
+        moment_dates = [m.date for m in self.moments]
+        return min(moment_dates) if moment_dates else None
 
     @property
     def last_appearance(self) -> Optional[date]:
         """Most recent date this person was mentioned."""
-        dates = [md.date for md in self.dates]
-        return max(dates) if dates else None
+        moment_dates = [m.date for m in self.moments]
+        return max(moment_dates) if moment_dates else None
 
     @property
     def mention_timeline(self) -> List[Dict[str, Any]]:
@@ -162,7 +162,7 @@ class Person(Base, SoftDeleteMixin):
         Complete timeline of mentions with context.
 
         Returns:
-            List of dicts with keys: date, source ('entry'|'mentioned'), context
+            List of dicts with keys: date, source ('entry'|'moment'), context
         """
         timeline = []
 
@@ -177,14 +177,14 @@ class Person(Base, SoftDeleteMixin):
                 }
             )
 
-        # Add explicit mentioned dates
-        for md in self.dates:
+        # Add explicit moments
+        for moment in self.moments:
             timeline.append(
                 {
-                    "date": md.date,
-                    "source": "date",
-                    "context": md.context,
-                    "mentioned_date_id": md.id,
+                    "date": moment.date,
+                    "source": "moment",
+                    "context": moment.context,
+                    "moment_id": moment.id,
                 }
             )
 
@@ -196,14 +196,14 @@ class Person(Base, SoftDeleteMixin):
     def mention_frequency(self) -> Dict[str, int]:
         """
         Calculate mention frequency by year-month.
-        Uses all mentions (entries + mentioned dates).
+        Uses all mentions (from moments).
 
         Returns:
             Dictionary mapping YYYY-MM strings to mention counts
         """
         frequency: Dict[str, int] = {}
-        for md in self.dates:
-            year_month = md.date.strftime("%Y-%m")
+        for moment in self.moments:
+            year_month = moment.date.strftime("%Y-%m")
             frequency[year_month] = frequency.get(year_month, 0) + 1
         return frequency
 

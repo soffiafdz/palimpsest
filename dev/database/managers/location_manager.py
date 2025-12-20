@@ -6,13 +6,13 @@ Manages City and Location entities with their parent-child relationship.
 
 Cities are high-level geographic entities that contain specific Locations (venues).
 Both entities have many-to-many relationships with entries, and Locations also
-link to MentionedDates for visit tracking.
+link to Moments for visit tracking.
 
 Key Features:
     - CRUD operations for cities and locations
     - Parent-child relationship management (City → Locations)
     - M2M relationships with entries (both entities)
-    - Location visit tracking via MentionedDate M2M
+    - Location visit tracking via Moment M2M
     - Geographic analysis and frequency statistics
 
 Usage:
@@ -49,7 +49,7 @@ from dev.database.decorators import (
     log_database_operation,
     validate_metadata,
 )
-from dev.database.models import City, Location, Entry, MentionedDate
+from dev.database.models import City, Location, Entry, Moment
 from .base_manager import BaseManager
 
 
@@ -77,11 +77,7 @@ class LocationManager(BaseManager):
         Returns:
             True if city exists, False otherwise
         """
-        normalized = DataValidator.normalize_string(city_name)
-        if not normalized:
-            return False
-
-        return self.session.query(City).filter_by(city=normalized).first() is not None
+        return self._exists(City, "city", city_name)
 
     @handle_db_errors
     @log_database_operation("get_city")
@@ -101,15 +97,10 @@ class LocationManager(BaseManager):
         Notes:
             - If both provided, ID takes precedence
         """
-        if city_id is not None:  # type: ignore[reportUnnecessaryComparison]
-            return self.session.get(City, city_id)
-
+        if city_id is not None:
+            return self._get_by_id(City, city_id)
         if city_name is not None:
-            normalized = DataValidator.normalize_string(city_name)
-            if not normalized:
-                return None
-            return self.session.query(City).filter_by(city=normalized).first()
-
+            return self._get_by_field(City, "city", city_name)
         return None
 
     @handle_db_errors
@@ -121,7 +112,7 @@ class LocationManager(BaseManager):
         Returns:
             List of all City objects, ordered by city name
         """
-        return self.session.query(City).order_by(City.city).all()
+        return self._get_all(City, order_by="city")
 
     @handle_db_errors
     @log_database_operation("create_city")
@@ -293,63 +284,27 @@ class LocationManager(BaseManager):
         incremental: bool = True,
     ) -> None:
         """Update relationships for a city."""
-        # Many-to-many with entries
+        # Many-to-many with entries using generic helper
         if "entries" in metadata:
-            items = metadata["entries"]
-            remove_items = metadata.get("remove_entries", [])
-            collection = city.entries
+            self._update_m2m_collection(
+                city,
+                "entries",
+                metadata["entries"],
+                Entry,
+                metadata.get("remove_entries", []),
+                incremental,
+            )
 
-            # Replacement mode: clear and add all
-            if not incremental:
-                collection.clear()
-                for item in items:
-                    resolved_item = self._resolve_object(item, Entry)
-                    if resolved_item and resolved_item not in collection:
-                        collection.append(resolved_item)
-            else:
-                # Incremental mode: add new items
-                for item in items:
-                    resolved_item = self._resolve_object(item, Entry)
-                    if resolved_item and resolved_item not in collection:
-                        collection.append(resolved_item)
-
-                # Remove specified items
-                for item in remove_items:
-                    resolved_item = self._resolve_object(item, Entry)
-                    if resolved_item and resolved_item in collection:
-                        collection.remove(resolved_item)
-
-            self.session.flush()
-
-        # One-to-many with locations (handled differently)
+        # One-to-many with locations using generic helper
         if "locations" in metadata:
-            items = metadata["locations"]
-            remove_items = metadata.get("remove_locations", [])
-
-            # Get existing IDs for comparison
-            existing_ids = {loc.id for loc in city.locations}
-
-            # Replacement mode: clear and add all
-            if not incremental:
-                city.locations.clear()
-                for item in items:
-                    resolved_item = self._resolve_object(item, Location)
-                    if resolved_item:
-                        city.locations.append(resolved_item)
-            else:
-                # Incremental mode: add new items
-                for item in items:
-                    resolved_item = self._resolve_object(item, Location)
-                    if resolved_item and resolved_item.id not in existing_ids:
-                        city.locations.append(resolved_item)
-
-                # Remove specified items
-                for item in remove_items:
-                    resolved_item = self._resolve_object(item, Location)
-                    if resolved_item and resolved_item.id in existing_ids:
-                        city.locations.remove(resolved_item)
-
-            self.session.flush()
+            self._update_m2m_collection(
+                city,
+                "locations",
+                metadata["locations"],
+                Location,
+                metadata.get("remove_locations", []),
+                incremental,
+            )
 
     # =========================================================================
     # LOCATION OPERATIONS
@@ -367,13 +322,7 @@ class LocationManager(BaseManager):
         Returns:
             True if location exists, False otherwise
         """
-        normalized = DataValidator.normalize_string(location_name)
-        if not normalized:
-            return False
-
-        return (
-            self.session.query(Location).filter_by(name=normalized).first() is not None
-        )
+        return self._exists(Location, "name", location_name)
 
     @handle_db_errors
     @log_database_operation("get_location")
@@ -393,15 +342,10 @@ class LocationManager(BaseManager):
         Notes:
             - If both provided, ID takes precedence
         """
-        if location_id is not None:  # type: ignore[reportUnnecessaryComparison]
-            return self.session.get(Location, location_id)
-
+        if location_id is not None:
+            return self._get_by_id(Location, location_id)
         if location_name is not None:
-            normalized = DataValidator.normalize_string(location_name)
-            if not normalized:
-                return None
-            return self.session.query(Location).filter_by(name=normalized).first()
-
+            return self._get_by_field(Location, "name", location_name)
         return None
 
     @handle_db_errors
@@ -413,7 +357,7 @@ class LocationManager(BaseManager):
         Returns:
             List of all Location objects, ordered by name
         """
-        return self.session.query(Location).order_by(Location.name).all()
+        return self._get_all(Location, order_by="name")
 
     @handle_db_errors
     @log_database_operation("create_location")
@@ -428,7 +372,7 @@ class LocationManager(BaseManager):
                 - city: City object, city ID, or city name (required)
                 Optional keys:
                 - entries: List of Entry objects or IDs
-                - dates: List of MentionedDate objects or IDs
+                - dates: List of Moment objects or IDs
 
         Returns:
             Created Location object
@@ -604,41 +548,16 @@ class LocationManager(BaseManager):
         incremental: bool = True,
     ) -> None:
         """Update relationships for a location."""
-        # Many-to-many relationships
-        many_to_many_configs = [
-            ("entries", "entries", Entry),
-            ("dates", "dates", MentionedDate),
-        ]
-
-        for rel_name, meta_key, model_class in many_to_many_configs:
-            if meta_key in metadata:
-                items = metadata[meta_key]
-                remove_items = metadata.get(f"remove_{meta_key}", [])
-
-                # Get the collection
-                collection = getattr(location, rel_name)
-
-                # Replacement mode: clear and add all
-                if not incremental:
-                    collection.clear()
-                    for item in items:
-                        resolved_item = self._resolve_object(item, model_class)
-                        if resolved_item and resolved_item not in collection:
-                            collection.append(resolved_item)
-                else:
-                    # Incremental mode: add new items
-                    for item in items:
-                        resolved_item = self._resolve_object(item, model_class)
-                        if resolved_item and resolved_item not in collection:
-                            collection.append(resolved_item)
-
-                    # Remove specified items
-                    for item in remove_items:
-                        resolved_item = self._resolve_object(item, model_class)
-                        if resolved_item and resolved_item in collection:
-                            collection.remove(resolved_item)
-
-                self.session.flush()
+        # Many-to-many relationships using generic helper
+        self._update_m2m_relationships(
+            location,
+            metadata,
+            [
+                ("entries", "entries", Entry),
+                ("dates", "dates", Moment),
+            ],
+            incremental,
+        )
 
     # =========================================================================
     # QUERY METHODS

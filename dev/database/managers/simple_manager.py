@@ -2,7 +2,7 @@
 """
 simple_manager.py
 -----------------
-Config-driven manager for simple entities: Tag, MentionedDate, Event.
+Config-driven manager for simple entities: Tag, Moment, Event.
 
 This module consolidates the common patterns from tag_manager.py,
 date_manager.py, and event_manager.py into a single configurable class.
@@ -39,7 +39,7 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.validators import DataValidator
 from dev.database.decorators import handle_db_errors, log_database_operation
-from dev.database.models import Entry, Event, Location, MentionedDate, Person, Tag
+from dev.database.models import Entry, Event, Location, Moment, Person, Tag
 from .base_manager import BaseManager
 
 
@@ -103,10 +103,10 @@ TAG_CONFIG = SimpleManagerConfig(
     relationships=[RelationshipConfig("entries", Entry)],
 )
 
-DATE_CONFIG = SimpleManagerConfig(
-    model_class=MentionedDate,
+MOMENT_CONFIG = SimpleManagerConfig(
+    model_class=Moment,
     name_field="date",
-    display_name="mentioned date",
+    display_name="moment",
     normalizer=_normalize_date,
     extra_fields=["context"],
     supports_soft_delete=False,
@@ -114,8 +114,10 @@ DATE_CONFIG = SimpleManagerConfig(
         RelationshipConfig("entries", Entry),
         RelationshipConfig("locations", Location),
         RelationshipConfig("people", Person),
+        RelationshipConfig("events", Event),
     ],
 )
+
 
 EVENT_CONFIG = SimpleManagerConfig(
     model_class=Event,
@@ -133,7 +135,7 @@ EVENT_CONFIG = SimpleManagerConfig(
 
 class SimpleManager(BaseManager):
     """
-    Generic manager for simple entities (Tag, MentionedDate, Event).
+    Generic manager for simple entities (Tag, Moment, Event).
 
     Uses configuration to provide consistent CRUD operations and relationship
     management across different entity types.
@@ -168,11 +170,11 @@ class SimpleManager(BaseManager):
         return cls(session, logger, TAG_CONFIG)
 
     @classmethod
-    def for_dates(
+    def for_moments(
         cls, session: Session, logger: Optional[PalimpsestLogger] = None
     ) -> "SimpleManager":
-        """Create a manager for MentionedDate entities."""
-        return cls(session, logger, DATE_CONFIG)
+        """Create a manager for Moment entities."""
+        return cls(session, logger, MOMENT_CONFIG)
 
     @classmethod
     def for_events(
@@ -322,10 +324,10 @@ class SimpleManager(BaseManager):
                 reverse=True,
             )
 
-        # For MentionedDate, order_by_date controls ordering
-        if self.config.model_class == MentionedDate:
+        # For Moment, order_by_date controls ordering
+        if self.config.model_class == Moment:
             if order_by_date:
-                query = query.order_by(MentionedDate.date)
+                query = query.order_by(Moment.date)
             return query.all()
 
         # Default ordering by name_field
@@ -920,7 +922,7 @@ class SimpleManager(BaseManager):
         """
         Get entities within a date range.
 
-        For MentionedDate: filters by the date field itself.
+        For Moment: filters by the date field itself.
         For Event: filters by entry dates.
 
         Args:
@@ -931,19 +933,19 @@ class SimpleManager(BaseManager):
         Returns:
             List of entities in the date range
         """
-        if self.config.model_class == MentionedDate:
-            # Filter MentionedDate by date field
+        if self.config.model_class == Moment:
+            # Filter Moment by date field
             from sqlalchemy import and_
 
             query = self.session.query(self.config.model_class)
             conditions = []
             if start_date:
-                conditions.append(MentionedDate.date >= start_date)
+                conditions.append(Moment.date >= start_date)
             if end_date:
-                conditions.append(MentionedDate.date <= end_date)
+                conditions.append(Moment.date <= end_date)
             if conditions:
                 query = query.filter(and_(*conditions))
-            return query.order_by(MentionedDate.date).all()
+            return query.order_by(Moment.date).all()
 
         elif self.config.model_class == Event:
             # Filter Event by entry dates
@@ -963,7 +965,7 @@ class SimpleManager(BaseManager):
     get_by_range = get_by_date_range
 
 
-# Convenience aliases for backward compatibility
+# Convenience factory functions
 TagManager = SimpleManager.for_tags
-DateManager = SimpleManager.for_dates
+MomentManager = SimpleManager.for_moments
 EventManager = SimpleManager.for_events

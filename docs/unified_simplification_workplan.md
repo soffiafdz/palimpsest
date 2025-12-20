@@ -57,40 +57,127 @@ To preserve functionality and usability, we will NOT:
 
 ---
 
-## Unified Priority List
+## Unified Priority List (Dependency-Ordered)
 
-| Priority | Task | Lines Saved | Risk | Status |
-|----------|------|-------------|------|--------|
-| **P0** | ~~Delete NLP module~~ | ~2,500 | Done | ✅ Complete |
-| **P0.5** | ~~Fix `spaces_to_hyphenated()` data corruption~~ | ~30 | Done | ✅ Complete |
-| **P1** | ~~Remove duplicate CLI in validators/wiki.py~~ | ~84 | Low | ✅ Complete |
-| **P2** | ~~Add `slugify()` utility + consolidate parsers~~ | ~65 | Low | ✅ Complete |
-| **P3** | Consolidate entity managers (9→4) | ~3,000 | Medium | 🟡 Pending |
-| **P3.1** | Consolidate CRUD patterns (exists/get/get_or_create) | ~550 | Medium | 🟡 Pending |
-| **P3.2** | Generic relationship updater (_update_relationships) | ~150 | Medium | 🟡 Pending |
-| **P3.3** | Delete wrapper methods (get_for_entry, etc.) | ~60 | Low | 🟡 Pending |
-| **P4** | Simplify health/analytics (2,047→600) | ~1,400 | Low | 🟡 Pending |
-| **P4.1** | Consolidate integrity check methods | ~100 | Low | 🟡 Pending |
-| **P5** | Simplify wiki dataclasses | ~1,500 | Low | 🟡 Pending |
-| **P5.1** | Generic from_database marshalling helpers | ~300 | Low | 🟡 Pending |
-| **P5.2** | Generic section generators | ~50 | Low | 🟡 Pending |
-| **P6** | Consolidate backup/stats CLI commands | ~100 | Low | 🟡 Pending |
-| **P7** | Remove meta-programming in pipeline | ~300 | Medium | 🟡 Pending |
-| **P7.1** | Delete unused import_* wrappers | ~250 | Low | 🟡 Pending |
-| **P7.2** | Merge EntityExporter classes | ~350 | Medium | 🟡 Pending |
-| **P8** | Generic wiki index builder | ~280 | Low | 🟡 Pending |
-| **P9** | Validator method consolidation | ~160 | Low | 🟡 Pending |
-| **P10** | Replace decorator boilerplate with context managers | ~300 | Medium | 🟡 Pending |
-| **P11** | Utils module consolidation | ~180 | Low | 🟡 Pending |
-| **P12** | Pipeline file writing helpers | ~40 | Low | 🟡 Pending |
-| **P13** | Enforce BaseBuilder logging methods | ~70 | Low | 🟡 Pending |
-| **P14** | PDF builder consolidation | ~98 | Medium | 🟡 Pending |
-| **P15** | Extract sync state helper | ~125 | Medium | 🟡 Pending |
-| **P16** | Extract field update helper | ~100 | Medium | 🟡 Pending |
-| **P17** | Delete unused single-entity imports | ~230 | Low | 🟡 Pending |
-| **P18** | Wiki stats collector | ~30 | Low | 🟡 Pending |
-| **P19** | Generic wiki index grouping | ~80 | Medium | 🟡 Pending |
-| **P20** | Dataclass from_database/to_wiki consolidation | ~200 | Medium | 🟡 Pending |
+This list is organized by dependency tiers. Complete tasks in order to avoid rework.
+
+### ✅ Completed
+
+| Priority | Task | Lines Saved | Status |
+|----------|------|-------------|--------|
+| **P0** | Delete NLP module | ~2,500 | ✅ Complete |
+| **P0.5** | Fix `spaces_to_hyphenated()` data corruption | ~30 | ✅ Complete |
+| **P1** | Remove duplicate CLI in validators/wiki.py | ~84 | ✅ Complete |
+| **P2** | Add `slugify()` utility + consolidate parsers | ~65 | ✅ Complete |
+| **P3.1** | Consolidate CRUD patterns (exists/get/get_or_create) | -550 | ✅ Complete |
+| **P3.2** | Generic relationship updater (_update_relationships) | -150 | ✅ Complete |
+| **P3.3** | Delete wrapper methods (get_for_entry, etc.) | ~100 | ✅ Complete |
+| **P25** | Moment model schema (MentionedDate → Moment, M2M events) | ~50 cleaner | ✅ Complete |
+
+### Tier 1: Foundation (Core Changes - Do First)
+
+Schema and architecture changes that other tasks depend on.
+
+| Priority | Task | Lines Impact | Risk | Depends On |
+|----------|------|--------------|------|------------|
+| **P3** | Consolidate entity managers (9→4) | -3,000 | Medium | — |
+| **P4** | Simplify health/analytics (2,047→600) | -1,400 | Low | — |
+| **P4.1** | Consolidate integrity check methods | -100 | Low | P4 |
+
+### Tier 2: Wiki System Rewrite
+
+Replaces the current wiki dataclass system with Jinja templates.
+
+| Priority | Task | Lines Impact | Risk | Depends On |
+|----------|------|--------------|------|------------|
+| **P26** | Template-based wiki renderer | -2,750 | Medium | P25 |
+| **P8** | Generic wiki index builder | -280 | Low | P26 (or merged into P26) |
+
+**Note:** P5, P5.1, P5.2, P20 (wiki dataclass cleanup) become **obsolete** with P26. Skip these if P26 is planned.
+
+### Tier 3: Wiki Enhancements
+
+Improvements to the wiki system after the rewrite.
+
+| Priority | Task | Lines Impact | Risk | Depends On |
+|----------|------|--------------|------|------------|
+| **P27** | Main wiki dashboards | +200 | Low | P26 |
+| **P34** | Neovim plugin fixes + enhancements | +300 Lua | Low | — (can be done anytime) |
+
+### Tier 4: Manuscript System
+
+Full manuscript curation workflow.
+
+| Priority | Task | Lines Impact | Risk | Depends On |
+|----------|------|--------------|------|------------|
+| **P28** | Manuscript database schema | +150 SQL | Medium | P25, P26 |
+| **P29** | Manuscript YAML parsing | +100 | Low | P28 |
+| **P30** | Manuscript wiki structure | +300 templates | Medium | P26, P28 |
+| **P31** | Bidirectional sync config | +150 | Medium | P28, P30 |
+
+### Tier 5: Manuscript Integration
+
+Final manuscript tooling.
+
+| Priority | Task | Lines Impact | Risk | Depends On |
+|----------|------|--------------|------|------------|
+| **P32** | Neovim manuscript commands | +200 Lua | Low | P28-P31 |
+| **P33** | Stats materialized views | +100 SQL | Low | P25, P28 |
+
+### Tier 6: Final Cleanup
+
+Do after major architectural changes are complete.
+
+| Priority | Task | Lines Impact | Risk | Depends On |
+|----------|------|--------------|------|------------|
+| **P35** | Code reorganization | ~0 | Medium | P4, P26 |
+
+### Low Priority (Anytime)
+
+Independent cleanup tasks. Do as convenient or skip if superseded.
+
+| Priority | Task | Lines Saved | Risk | Notes |
+|----------|------|-------------|------|-------|
+| **P6** | Consolidate backup/stats CLI commands | ~100 | Low | |
+| **P7** | Remove meta-programming in pipeline | ~300 | Medium | |
+| **P7.1** | Delete unused import_* wrappers | ~250 | Low | |
+| **P7.2** | Merge EntityExporter classes | ~350 | Medium | May be part of P26 |
+| **P9** | Validator method consolidation | ~160 | Low | |
+| **P10** | Replace decorator boilerplate with context managers | ~300 | Medium | |
+| **P11** | Utils module consolidation | ~180 | Low | |
+| **P12** | Pipeline file writing helpers | ~40 | Low | |
+| **P13** | Use existing `safe_logger()` codebase-wide | ~70 | Low | |
+| **P14** | PDF builder consolidation | ~98 | Medium | |
+| **P15** | Extract sync state helper | ~125 | Medium | |
+| **P16** | Extract field update helper | ~100 | Medium | |
+| **P17** | Delete unused single-entity imports | ~230 | Low | |
+| **P18** | Wiki stats collector | ~30 | Low | May be part of P26 |
+| **P19** | Generic wiki index grouping | ~80 | Medium | Part of P26/P8 |
+| **P21** | Search module consolidation | ~160 | Low | |
+| **P22** | Core module cleanup | ~90 | Low | |
+| **P23** | Database model mixins | ~100 | Very Low | |
+| **P24** | Wiki pages utils cleanup | ~20 | Very Low | |
+
+### Skip If P26 Is Implemented
+
+These become obsolete when wiki dataclasses are replaced with templates:
+
+| Priority | Task | Reason to Skip |
+|----------|------|----------------|
+| **P5** | Simplify wiki dataclasses | Replaced by templates |
+| **P5.1** | Generic from_database helpers | Replaced by templates |
+| **P5.2** | Generic section generators | Replaced by templates |
+| **P20** | Dataclass consolidation | Replaced by templates |
+
+### Critical Path Summary
+
+```
+P25 (Moment) ─┬─→ P26 (Templates) ─┬─→ P27 (Dashboards)
+              │                    │
+P3 (Managers) │                    ├─→ P28-31 (Manuscript) ─→ P32-33 (Integration)
+      ↓       │                    │
+P4 (Health) ──┴────────────────────┴─→ P35 (Reorg)
+```
 
 ---
 
@@ -418,35 +505,32 @@ python -c "from dev.database.managers import TagManager, PersonManager; print('O
 
 ## Summary
 
-| Phase | Task | Lines Removed | Status |
-|-------|------|---------------|--------|
-| P0 | NLP module deletion | ~2,500 | ✅ Done |
-| P0.5 | Parser bug fix | ~30 | ✅ Done |
-| P1 | Wiki CLI dedup | ~84 | ✅ Done |
-| P2 | Slugify utility | ~65 | ✅ Done |
-| P3 | Manager consolidation (structure) | ~3,000 | 🟡 Pending |
-| P3.1-3.3 | Manager method-level cleanup | ~760 | 🟡 Pending |
-| P4 | Health simplification | ~1,400 | 🟡 Pending |
-| P4.1 | Health integrity consolidation | ~100 | 🟡 Pending |
-| P5 | Wiki dataclass cleanup | ~1,500 | 🟡 Pending |
-| P5.1-5.2 | Dataclass method cleanup | ~350 | 🟡 Pending |
-| P6 | CLI consolidation | ~100 | 🟡 Pending |
-| P7 | Pipeline simplification | ~300 | 🟡 Pending |
-| P7.1-7.2 | Pipeline method cleanup | ~600 | 🟡 Pending |
-| P8 | Wiki index builder | ~280 | 🟡 Pending |
-| P9 | Validator consolidation | ~160 | 🟡 Pending |
-| P10 | Decorator → context manager | ~300 | 🟡 Pending |
-| P11 | Utils module consolidation | ~180 | 🟡 Pending |
-| P12-14 | Pipeline/builder helpers | ~208 | 🟡 Pending |
-| P15-16 | SQL/YAML sync helpers | ~225 | 🟡 Pending |
-| P17 | Delete unused imports | ~230 | 🟡 Pending |
-| P18-19 | Stats/grouping utilities | ~110 | 🟡 Pending |
-| P20 | Dataclass consolidation | ~200 | 🟡 Pending |
-| P21 | Search module consolidation | ~160 | 🟡 Pending |
-| P22 | Core module cleanup | ~90 | 🟡 Pending |
-| P23 | Database model mixins | ~100 | 🟡 Pending |
-| P24 | Wiki pages utils cleanup | ~20 | 🟡 Pending |
-| **Total** | | **~13,187** | |
+### Lines Removed (Completed)
+
+| Phase | Task | Lines Removed |
+|-------|------|---------------|
+| P0 | NLP module deletion | ~2,500 |
+| P0.5 | Parser bug fix | ~30 |
+| P1 | Wiki CLI dedup | ~84 |
+| P2 | Slugify utility | ~65 |
+| P3.3 | Remove wrapper methods | ~100 |
+| **Completed Total** | | **~2,779** |
+
+### Critical Path (In Priority Order)
+
+| Tier | Tasks | Net Lines Impact |
+|------|-------|------------------|
+| **Tier 1** | P25, P3, P3.1-3.2, P4, P4.1 | -5,200 |
+| **Tier 2** | P26, P8 | -3,030 |
+| **Tier 3** | P27, P34 | +500 |
+| **Tier 4** | P28-P31 | +700 |
+| **Tier 5** | P32-P33 | +300 |
+| **Tier 6** | P35 | ~0 |
+| **Low Priority** | P6-P24 (various) | -2,000 |
+
+**Notes:**
+- P5, P5.1-5.2, P20 (~2,050 lines) become **obsolete** if P26 is implemented
+- Many Low Priority tasks (P7.2, P18, P19) are absorbed into P26
 
 **Final target:** ~29,000 lines (from ~42,150) — **~31% reduction**
 
@@ -1206,14 +1290,21 @@ dev/builders/wiki.py
 
 ---
 
-**Document Version:** 4.2
-**Authors:** Claude Opus 4.5 + Gemini 3 (synthesized) + Comprehensive Method-Level Analysis + Frontmatter Review + Follow-Up Audit (Section N)
-**Last Updated:** 2025-12-19
-**Next Action:**
-1. Execute P0.5 (parser bug fix)
-2. Document the hyphenation convention (- = space, _ = space preserving hyphens)
-3. Use existing `safe_logger()` for P13 implementation
-4. Proceed through priority list
+**Document Version:** 5.1
+**Authors:** Claude Opus 4.5 + Gemini 3 (synthesized) + Comprehensive Method-Level Analysis + Frontmatter Review + Follow-Up Audit (Section N) + Schema Enhancement (Section O) + Priority Reorganization
+**Last Updated:** 2025-12-20
+**Next Actions (by priority):**
+
+**Tier 1 - Foundation (start here):**
+1. ✅ P25: Moment model schema change (COMPLETE)
+2. P3 → P3.1 → P3.2: Manager consolidation (can parallel with P25)
+3. P4 → P4.1: Health simplification (independent)
+
+**Then Tier 2 - Wiki Rewrite:**
+4. P26: Template-based wiki renderer (depends on P25)
+
+**Manual cleanup (do anytime):**
+- Fix `epigraph-attribution` typos in ~70 files (see O.7.1)
 
 ---
 
@@ -1719,3 +1810,806 @@ Require explicit `people:` and `locations:` lists instead of parsing from contex
 **Total complexity that could be simplified:** ~400 lines
 
 **Priority:** The hyphenation convention works correctly but needs documentation. Focus on simplifying the parsing complexity (people, dates, inline references).
+
+---
+
+## O. Schema Enhancement: Moment Model
+
+**Priority:** P25 (Schema change - requires migration)
+**Risk:** Medium (data migration required)
+**Benefit:** Cleaner semantics, better wiki generation, richer queries
+
+### O.1: The Problem
+
+The current `MentionedDate` model conflates two concepts:
+1. A date that was mentioned in an entry
+2. A moment in time with people, locations, and context
+
+Additionally, `Event` has no connection to locations, making queries like "Where was the conference?" impossible.
+
+### O.2: Current Schema
+
+```
+MentionedDate (dates table)
+├─ date, context
+├─ people_dates → [Person, ...]
+└─ location_dates → [Location, ...]
+
+Event (events table)
+├─ event, title, description
+├─ entry_events → [Entry, ...]
+└─ event_people → [Person, ...]
+   ❌ NO locations!
+   ❌ NO specific dates!
+```
+
+### O.3: Proposed Schema: Moment Model
+
+Rename `MentionedDate` → `Moment` with clearer semantics:
+
+```sql
+-- Moments: What happened when (semantic rename of dates table)
+CREATE TABLE moments (
+    id INTEGER PRIMARY KEY,
+    date DATE NOT NULL,
+    context TEXT,
+
+    -- Which entry mentions this moment
+    entry_id INTEGER NOT NULL REFERENCES entries(id),
+
+    UNIQUE(date, entry_id)
+);
+
+-- Who was at each moment (rename people_dates)
+CREATE TABLE moment_people (
+    moment_id INTEGER REFERENCES moments(id) ON DELETE CASCADE,
+    person_id INTEGER REFERENCES people(id) ON DELETE CASCADE,
+    PRIMARY KEY (moment_id, person_id)
+);
+
+-- Where each moment happened (rename location_dates)
+CREATE TABLE moment_locations (
+    moment_id INTEGER REFERENCES moments(id) ON DELETE CASCADE,
+    location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE,
+    PRIMARY KEY (moment_id, location_id)
+);
+
+-- Which events a moment belongs to (NEW M2M - one moment can be part of multiple events)
+CREATE TABLE moment_events (
+    moment_id INTEGER REFERENCES moments(id) ON DELETE CASCADE,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+    PRIMARY KEY (moment_id, event_id)
+);
+```
+
+**Key Change:** Events are now linked TO moments, not to entries. This means:
+- Events have dates (computed from their moments)
+- Events have locations (computed from their moments)
+- Events have people (computed from their moments)
+
+### O.4: What This Enables
+
+**Query: "Who was with me at the conference?"**
+```sql
+SELECT DISTINCT p.name
+FROM people p
+JOIN moment_people mp ON p.id = mp.person_id
+JOIN moments m ON mp.moment_id = m.id
+WHERE m.event_id = (SELECT id FROM events WHERE name = 'Conference Trip');
+```
+
+**Query: "All locations I visited in July 2024"**
+```sql
+SELECT DISTINCT l.name, m.date, m.context
+FROM locations l
+JOIN moment_locations ml ON l.id = ml.location_id
+JOIN moments m ON ml.moment_id = m.id
+WHERE m.date BETWEEN '2024-07-01' AND '2024-07-31'
+ORDER BY m.date;
+```
+
+**Query: "Timeline of interactions with María"**
+```sql
+SELECT m.date, m.context, e.date as wrote_about_it,
+       GROUP_CONCAT(l.name) as locations
+FROM moments m
+JOIN moment_people mp ON m.id = mp.moment_id
+JOIN people p ON mp.person_id = p.id
+JOIN entries e ON m.entry_id = e.id
+LEFT JOIN moment_locations ml ON m.id = ml.moment_id
+LEFT JOIN locations l ON ml.location_id = l.id
+WHERE p.name = 'María'
+GROUP BY m.id
+ORDER BY m.date;
+```
+
+### O.5: Wiki Generation Benefits
+
+**Person Page** can now show:
+```markdown
+## Moments Together
+| Date | Context | Location | Event |
+|------|---------|----------|-------|
+| 2024-07-04 | July 4th party | Central Park | Independence Day |
+| 2024-06-15 | Coffee catch-up | Café Olimpico | — |
+```
+
+**Location Page** can now show:
+```markdown
+## Visit History
+| Date | Context | With | Event |
+|------|---------|------|-------|
+| 2024-07-04 | July 4th party | María, John | Independence Day |
+```
+
+**Event Page** can now show:
+```markdown
+## Conference Trip
+**Dates:** 2024-07-04 to 2024-07-08
+**Locations:** Convention Center, Hotel Marriott, Restaurant X
+**People:** John, Dr. Franck, María
+```
+
+### O.6: Migration Steps
+
+1. **Alembic migration:**
+   - Rename `dates` → `moments`
+   - Rename `people_dates` → `moment_people`
+   - Rename `location_dates` → `moment_locations`
+   - Rename `entry_dates` → `entry_moments`
+   - Add `event_id` column to `moments` table
+
+2. **Update models:**
+   - Rename `MentionedDate` → `Moment`
+   - Add `event` relationship to `Moment`
+   - Update `Event` to compute dates/locations/people from moments
+
+3. **Update managers:**
+   - Rename `DateManager` → `MomentManager`
+   - Update relationship handling
+
+4. **Update wiki dataclasses:**
+   - Update WikiPerson to show moment timeline
+   - Update WikiLocation to show visit history
+   - Update WikiEvent to show computed data
+
+5. **Update YAML parsing:**
+   - `dates:` field parsing creates `Moment` objects
+   - Optional `events:` field on date items links to Events (M2M)
+
+### O.7: YAML Schema Update
+
+The `dates` field now supports an optional `events` subfield to link moments to specific events:
+
+```yaml
+# Current behavior: events at entry level propagate to ALL moments
+events: [Dating-Clara]
+dates:
+  - date: 2024-07-04
+    context: July 4th party
+
+# NEW: events within dates link only to THAT moment
+dates:
+  - date: 2024-07-04
+    context: July 4th party
+    people: [María, John]
+    locations: [Central Park]
+    events: [Dating-Clara, Summer-Trip]  # M2M: multiple events per moment
+```
+
+**Parsing behavior:**
+- If `events` at entry level only → propagate to all moments (backward compatible)
+- If `events` within a date item → link only to that specific moment
+- Both can coexist (entry-level for default, date-level for overrides)
+
+### O.7.1: YAML Typos to Fix Manually
+
+The frontmatter review discovered `epigraph-attribution` (hyphen) used in ~70 files instead of `epigraph_attribution` (underscore). The parser expects underscores. These need manual correction:
+
+```bash
+# Find all files with hyphenated key
+grep -r "epigraph-attribution" data/journal/content/md/2025/
+
+# Fix with sed (or manually)
+sed -i 's/epigraph-attribution/epigraph_attribution/g' data/journal/content/md/2025/*.md
+```
+
+### O.8: Future Enhancement - Moment Type Distinction
+
+**Status:** Design consideration for future work
+
+The current schema conflates two semantically different uses of dates:
+
+1. **Occurred**: Something that happened on this date (during the entry's events)
+   - Example: `2024-07-04 (July 4th party with María at Central Park)`
+
+2. **Referenced**: A callback/reference to a past date
+   - Example: `2025-01-11 (I gave Clara the negatives she forgot at my house)` with `type: reference`
+   - Or use a different field: `references:` vs `dates:` in YAML
+   - Note: Using `-` prefix would conflict with YAML list syntax
+
+**Potential Enhancement:**
+```python
+class MomentType(Enum):
+    OCCURRED = "occurred"     # Entry is about what happened on this date
+    REFERENCED = "referenced"  # Entry references/mentions this past date
+
+# Moment model gains:
+moment_type: Mapped[MomentType] = mapped_column(
+    SQLEnum(MomentType), default=MomentType.OCCURRED
+)
+```
+
+**Wiki Benefits:**
+- Person page could show "Moments Together" vs "References to [Person]"
+- Entry page could distinguish "What happened" vs "Callbacks to past events"
+- Timeline views could filter by type
+
+**Note:** Current implementation maintains backward compatibility. The context field can implicitly capture this distinction. Consider adding `moment_type` in a future iteration if needed.
+
+### O.9: Files to Modify
+
+| File | Change |
+|------|--------|
+| `dev/database/models/geography.py` | Rename MentionedDate → Moment |
+| `dev/database/models/associations.py` | Rename tables + add moment_events M2M |
+| `dev/database/managers/date_manager.py` | Rename → moment_manager.py |
+| `dev/dataclasses/parsers/yaml_to_db.py` | Update date parsing |
+| `dev/dataclasses/wiki_*.py` | Update to use moments |
+| `alembic/versions/xxx_moment_model.py` | Migration script |
+
+### O.9: Estimated Effort
+
+- Migration script: 2-3 hours
+- Model/manager updates: 2-3 hours
+- Wiki dataclass updates: 2-3 hours
+- Testing: 2-3 hours
+- **Total: ~1 day**
+
+### O.10: Poem Simplification Note
+
+Poems do NOT need a status field. They are single-date creations, not works in progress. The current Poem → PoemVersion → Entry structure is sufficient:
+
+```python
+class Poem(Base):
+    id: int
+    title: str
+    # NO status field - poems are just documented, not tracked
+
+class PoemVersion(Base):
+    id: int
+    poem_id: int
+    entry_id: int  # Which entry contains this version
+    content: str
+    revision_date: date
+    version_hash: str  # For deduplication
+```
+
+---
+
+## P. Wiki System Rewrite: Template-Based Renderer
+
+**Priority:** P26
+**Risk:** Medium
+**Benefit:** ~2,500 lines saved, cleaner architecture, easier to maintain
+
+### P.1: The Problem
+
+Currently there are 11 wiki dataclass files (~3,000 lines) with 70% duplicate code:
+- `wiki_entry.py`, `wiki_person.py`, `wiki_location.py`, `wiki_city.py`
+- `wiki_event.py`, `wiki_tag.py`, `wiki_theme.py`, `wiki_poem.py`
+- `wiki_reference.py`, `wiki_entity.py`, `wiki_vignette.py`
+
+Each has:
+- `from_database()` method with similar loops
+- `to_wiki()` method generating markdown
+- Properties for statistics
+
+### P.2: Proposed Solution
+
+Replace with a single Jinja-based renderer + templates:
+
+```
+dev/wiki/
+├── __init__.py
+├── renderer.py           # Single Jinja-based renderer (~150 lines)
+├── exporter.py           # SQL → Wiki export (~200 lines)
+├── importer.py           # Wiki → SQL sync (~200 lines)
+├── config.py             # Sync directions, paths (~100 lines)
+└── templates/
+    ├── base.jinja2
+    ├── entry.jinja2
+    ├── person.jinja2
+    ├── location.jinja2
+    ├── city.jinja2
+    ├── event.jinja2
+    ├── moment.jinja2
+    ├── tag.jinja2
+    ├── poem.jinja2
+    ├── reference.jinja2
+    └── indexes/
+        ├── people.jinja2
+        ├── locations.jinja2
+        ├── timeline.jinja2
+        └── entries_monthly.jinja2
+```
+
+### P.3: Renderer Design
+
+```python
+class WikiRenderer:
+    def __init__(self, wiki_dir: Path, template_dir: Path):
+        self.wiki_dir = wiki_dir
+        self.env = Environment(loader=FileSystemLoader(template_dir))
+        self.env.filters['wikilink'] = self._wikilink
+        self.env.filters['slugify'] = slugify
+
+    def render_entity(self, entity_type: str, data: dict) -> str:
+        template = self.env.get_template(f"{entity_type}.jinja2")
+        return template.render(**data, wiki_dir=self.wiki_dir)
+
+    def render_index(self, index_type: str, items: list) -> str:
+        template = self.env.get_template(f"indexes/{index_type}.jinja2")
+        return template.render(items=items)
+```
+
+### P.4: Files to Remove
+
+```
+dev/dataclasses/wiki_entry.py      (~542 lines)
+dev/dataclasses/wiki_person.py     (~478 lines)
+dev/dataclasses/wiki_location.py   (~296 lines)
+dev/dataclasses/wiki_city.py       (~300 lines)
+dev/dataclasses/wiki_event.py      (~318 lines)
+dev/dataclasses/wiki_tag.py        (~231 lines)
+dev/dataclasses/wiki_theme.py      (~237 lines)
+dev/dataclasses/wiki_poem.py       (~238 lines)
+dev/dataclasses/wiki_reference.py  (~252 lines)
+dev/dataclasses/wiki_entity.py     (~121 lines)
+dev/builders/wiki_indexes.py       (~400 lines)
+```
+
+**Total removed:** ~3,400 lines
+**Total added:** ~650 lines (renderer + templates)
+**Net reduction:** ~2,750 lines
+
+---
+
+## Q. Main Wiki Dashboards
+
+**Priority:** P27
+**Risk:** Low
+**Benefit:** Better wiki navigation and insights
+
+### Q.1: Dashboard Pages
+
+Add these dashboard templates:
+
+1. **Home Dashboard** (`wiki/index.md`):
+   - Recent entries (last 7 days)
+   - Most mentioned people this month
+   - Quick stats (total entries, people, locations)
+   - Links to all indexes
+
+2. **Timeline Dashboard** (`wiki/timeline.md`):
+   - All moments chronologically
+   - Grouped by year/month
+   - Shows who was there, where
+
+3. **Statistics Dashboard** (`wiki/stats.md`):
+   - Word count trends
+   - Entry frequency by month
+   - Tag usage over time
+   - Geographic distribution
+
+4. **Relationships Dashboard** (`wiki/relationships.md`):
+   - People who appear together frequently
+   - Locations associated with people
+
+### Q.2: Templates Location
+
+```
+dev/wiki/templates/dashboards/
+├── home.jinja2
+├── timeline.jinja2
+├── stats.jinja2
+└── relationships.jinja2
+```
+
+---
+
+## R. Manuscript System
+
+**Priority:** P28-P30
+**Risk:** Medium-High
+**Benefit:** Complete manuscript curation workflow
+
+### R.1: Design Principles
+
+1. **YAML (minimal):** Just mark entries for inclusion
+2. **Main Wiki:** Shows entries with manuscript status, links to manuscript wiki
+3. **Manuscript Wiki:** THE workspace for curation
+4. **Manuscript Drafts:** In `data/manuscript/` (outside wiki, like `data/journal/`)
+5. **Many-to-many:** Characters ↔ People (not one-to-one)
+6. **Manual linking:** Wiki edits in specific sections, parsed by importer
+
+### R.2: YAML Schema (P29)
+
+```yaml
+# Simple status
+manuscript: source
+
+# Or with quote
+manuscript:
+  status: quote
+  content: "The specific line I want to keep"
+```
+
+**Statuses:**
+- `source` — Full entry to be edited/adapted
+- `reference` — Keep in mind for story context
+- `quote` — Specific content to extract
+
+No chapter numbers. Absence of field = not in manuscript.
+
+### R.3: Database Schema (P28)
+
+```sql
+-- Manuscript entry metadata
+CREATE TABLE manuscript_entries (
+    entry_id INTEGER PRIMARY KEY REFERENCES entries(id),
+    status TEXT NOT NULL CHECK(status IN ('source', 'reference', 'quote')),
+    notes TEXT,                    -- Wiki-editable
+    sourced_in TEXT,               -- Wiki-editable: where used
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- For quote status
+CREATE TABLE manuscript_quotes (
+    id INTEGER PRIMARY KEY,
+    entry_id INTEGER REFERENCES entries(id),
+    content TEXT NOT NULL,         -- From YAML
+    notes TEXT,                    -- Wiki-editable
+    sourced_in TEXT                -- Wiki-editable
+);
+
+-- Characters (wiki-created, never real names)
+CREATE TABLE manuscript_characters (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,            -- Always fictional
+    description TEXT,
+    arc TEXT,
+    voice TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Many-to-many: characters ↔ people
+CREATE TABLE manuscript_character_sources (
+    character_id INTEGER REFERENCES manuscript_characters(id),
+    person_id INTEGER REFERENCES people(id),
+    notes TEXT,
+    PRIMARY KEY (character_id, person_id)
+);
+
+-- Track which manuscript entries a character appears in
+CREATE TABLE manuscript_character_entries (
+    character_id INTEGER REFERENCES manuscript_characters(id),
+    entry_id INTEGER REFERENCES manuscript_entries(entry_id),
+    notes TEXT,
+    PRIMARY KEY (character_id, entry_id)
+);
+
+-- Chapters (wiki-created, link to external drafts)
+CREATE TABLE manuscript_chapters (
+    id INTEGER PRIMARY KEY,
+    number INTEGER,
+    title TEXT,
+    draft_path TEXT,               -- Path to draft in data/manuscript/
+    summary TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Link chapters to source entries
+CREATE TABLE manuscript_chapter_entries (
+    chapter_id INTEGER REFERENCES manuscript_chapters(id),
+    entry_id INTEGER REFERENCES manuscript_entries(entry_id),
+    notes TEXT,
+    PRIMARY KEY (chapter_id, entry_id)
+);
+```
+
+### R.4: Wiki Structure (P30)
+
+```
+data/wiki/
+├── entries/
+│   └── 2024/
+│       └── 2024-11-01.md     # Links to source markdown
+├── people/
+│   └── maria_jose.md         # Has "Used as Reference for Characters" section
+└── manuscript/
+    ├── index.md              # Dashboard: stats, recent activity
+    ├── entries/
+    │   └── 2024/
+    │       ├── 2024-01.md    # Monthly index of manuscript entries
+    │       ├── 2024-02.md
+    │       └── ...
+    ├── characters/
+    │   ├── index.md          # All characters
+    │   └── marie.md          # Character page with "Based On" section
+    └── chapters/
+        ├── index.md          # Chapter list with links to drafts
+        └── 01.md             # Chapter wiki page (links to data/manuscript/01.md)
+
+data/manuscript/              # Outside wiki, actual drafts
+├── chapters/
+│   ├── 01.md                 # Chapter 1 draft
+│   ├── 02.md
+│   └── ...
+└── notes/
+    └── themes.md             # General notes
+```
+
+### R.5: Bidirectional Sync (P31)
+
+**From YAML → DB:**
+- `manuscript` field → `manuscript_entries` table
+- `manuscript.content` → `manuscript_quotes` table
+
+**From Wiki → DB (wiki-editable fields):**
+
+```python
+MANUSCRIPT_SYNC = {
+    "manuscript_entry": {
+        "from_yaml": ["status"],
+        "wiki_editable": ["notes", "sourced_in"],
+    },
+    "manuscript_character": {
+        "from_yaml": [],  # All wiki-created
+        "wiki_editable": ["name", "description", "arc", "voice", "notes"],
+        "link_section": "## Based On",  # Parse links from this section
+    },
+    "person": {
+        "link_section": "## Used as Reference for Characters",
+    },
+    "manuscript_chapter": {
+        "from_yaml": [],
+        "wiki_editable": ["title", "summary", "notes", "draft_path"],
+    },
+}
+```
+
+**Link parsing:** Importer looks for wikilinks in specific sections to create associations.
+
+### R.6: Data Directory Change
+
+Rename/repurpose `data/vignettes/` → `data/manuscript/`:
+- `data/manuscript/chapters/` — Chapter drafts
+- `data/manuscript/notes/` — General manuscript notes
+
+These are standalone markdown files, linked from wiki but not part of it.
+
+---
+
+## S. Neovim Commands
+
+**Priority:** P32
+**Risk:** Low
+**Benefit:** Reduced mental load for manuscript curation
+
+### S.1: Proposed Commands
+
+1. **`:PalimpsestCreateCharacter <name>`**
+   - Creates `data/wiki/manuscript/characters/<slug>.md`
+   - Pre-populates with template (empty "Based On" section)
+   - Opens the new file
+
+2. **`:PalimpsestLinkCharacter`** (on Person page)
+   - Prompts for character name (autocomplete from existing)
+   - Adds link under "## Used as Reference for Characters"
+   - Adds reciprocal link on character page under "## Based On"
+
+3. **`:PalimpsestCreateChapter <number>`**
+   - Creates `data/wiki/manuscript/chapters/<number>.md` (wiki page)
+   - Creates `data/manuscript/chapters/<number>.md` (draft file)
+   - Links them together
+   - Opens the draft file
+
+4. **`:PalimpsestExportWiki`** / **`:PalimpsestImportWiki`**
+   - Already exist, ensure they work with new structure
+
+### S.2: Implementation
+
+Location: `dev/lua/palimpsest/manuscript.lua`
+
+---
+
+## T. Statistics Materialized Views
+
+**Priority:** P33
+**Risk:** Low
+**Benefit:** Fast dashboard queries
+
+### T.1: Views to Create
+
+```sql
+CREATE VIEW person_stats AS
+SELECT
+    p.id, p.name,
+    COUNT(DISTINCT ep.entry_id) as entry_count,
+    COUNT(DISTINCT mp.moment_id) as moment_count,
+    MIN(e.date) as first_mention,
+    MAX(e.date) as last_mention
+FROM people p
+LEFT JOIN entry_people ep ON p.id = ep.people_id
+LEFT JOIN entries e ON ep.entry_id = e.id
+LEFT JOIN moment_people mp ON p.id = mp.person_id
+GROUP BY p.id;
+
+CREATE VIEW location_stats AS
+SELECT
+    l.id, l.name, c.city as city_name,
+    COUNT(DISTINCT el.entry_id) as entry_count,
+    COUNT(DISTINCT ml.moment_id) as visit_count
+FROM locations l
+JOIN cities c ON l.city_id = c.id
+LEFT JOIN entry_locations el ON l.id = el.location_id
+LEFT JOIN moment_locations ml ON l.id = ml.moment_id
+GROUP BY l.id;
+
+CREATE VIEW monthly_stats AS
+SELECT
+    strftime('%Y-%m', e.date) as month,
+    COUNT(*) as entry_count,
+    SUM(e.word_count) as total_words,
+    COUNT(DISTINCT ep.people_id) as unique_people
+FROM entries e
+LEFT JOIN entry_people ep ON e.id = ep.entry_id
+GROUP BY strftime('%Y-%m', e.date);
+
+CREATE VIEW manuscript_stats AS
+SELECT
+    status,
+    COUNT(*) as entry_count
+FROM manuscript_entries
+GROUP BY status;
+```
+
+---
+
+## P25-P35 Quick Reference
+
+See **[Unified Priority List (Dependency-Ordered)](#unified-priority-list-dependency-ordered)** at top of document for the canonical priority list with tiers and dependencies.
+
+| Priority | Section | Description |
+|----------|---------|-------------|
+| P25 | Section O | Moment model schema |
+| P26 | Section P | Template-based wiki |
+| P27 | Section Q | Wiki dashboards |
+| P28-P31 | Section R | Manuscript system |
+| P32 | Section S | Neovim manuscript commands |
+| P33 | Section T | Stats materialized views |
+| P34 | Section V | Neovim plugin fixes |
+| P35 | Section U | Code reorganization |
+
+---
+
+## U. Code Reorganization
+
+**Priority:** P35 (After P4 and P26 are complete)
+**Risk:** Medium (file moves, import changes)
+
+### U.1: Rationale
+
+After P4 (delete health/analytics) and P26 (template-based wiki), the codebase structure will naturally simplify. At that point, reorganization becomes practical without conflicting with ongoing work.
+
+### U.2: Quick Wins (Do Now If Convenient)
+
+| Change | Rationale |
+|--------|-----------|
+| Move `database/models_manuscript.py` → `database/models/manuscript.py` | Consistency with other models |
+| Move `database/decorators.py` → `core/decorators.py` | It's core infrastructure |
+
+### U.3: Post-P4/P26 Reorganization
+
+| Current | Proposed | Rationale |
+|---------|----------|-----------|
+| CLI in `pipeline/cli/`, `database/cli/`, `validators/cli/` | Single `cli/` directory | One place for all commands |
+| Wiki logic in 6 locations | Consolidated `wiki/` directory | All wiki logic together |
+| `dataclasses/wiki_*.py` (11 files) | Replaced by `wiki/templates/` | Per P26 |
+
+### U.4: Ideal Future Structure
+
+```
+dev/
+├── core/              # Logging, exceptions, validators, decorators
+├── models/            # All SQLAlchemy models (flat)
+├── db/                # Database operations (rename from database/)
+│   ├── managers/
+│   └── sync/          # Tombstone + sync state
+├── parse/             # YAML/MD parsing
+├── wiki/              # All wiki logic consolidated
+│   └── templates/     # Jinja templates (P26)
+├── manuscript/        # All manuscript logic
+├── build/             # PDF, TXT builders
+├── cli/               # All CLI commands
+├── migrations/
+└── utils/
+```
+
+---
+
+## V. Neovim Plugin Fixes and Enhancements
+
+**Priority:** P34
+**Risk:** Low
+**Note:** Confirm detailed implementation with user before proceeding.
+
+### V.1: Critical Bug Fixes
+
+| Bug | Location | Fix |
+|-----|----------|-----|
+| Hardcoded root path | `config.lua:3-4` | Make configurable via `setup({root = "..."})` |
+| Missing `/` in templates path | `config.lua:4` | `root .. "templates/wiki"` → `root .. "/templates/wiki"` |
+| Missing `log.template` | `templates.lua:111` | Create template or remove reference |
+| Wrong pipeline references | `commands.lua:205,111` | `manuscript2wiki` → `ms2wiki`, remove `validate_wiki` |
+| Unchecked dependencies | `keymaps.lua:1,4` | Wrap `which-key` and `mini.icons` in pcall |
+
+### V.2: Quick Enhancements
+
+| Enhancement | Description |
+|-------------|-------------|
+| Add manuscript to FZF browse | Include `wiki/manuscript/` in entity paths |
+| Add manuscript to FZF search | Search characters, arcs, themes |
+| Add manuscript quick access | Add manuscript index pages to quick access |
+
+### V.3: New Commands for Manuscript Workflow
+
+**High Priority:**
+
+| Command | Description |
+|---------|-------------|
+| `:PalimpsestCreateCharacter` | Create character wiki page, prompt for name, optionally link to Person |
+| `:PalimpsestCreateChapter` | Create chapter draft in `data/manuscript/chapters/` |
+| `:PalimpsestMarkForManuscript` | Add `manuscript: source` to current entry's YAML frontmatter |
+| `:PalimpsestBrowseManuscript` | FZF for manuscript wiki (entries/characters/chapters) |
+| `:PalimpsestInsertLink` | FZF picker → insert wiki link at cursor |
+
+**Medium Priority:**
+
+| Command | Description |
+|---------|-------------|
+| `:PalimpsestCreateEntity` | Generic: create Person/Location/Event/Tag using templates |
+| `:PalimpsestJumpToSource` | From wiki page, jump to original journal entry |
+| `:PalimpsestAddPerson` | Add person to current entry's YAML `people:` field |
+| `:PalimpsestAddLocation` | Add location to current entry's YAML |
+| `:PalimpsestAddTag` | Add tag to current entry's YAML |
+
+### V.4: Future Advanced Features
+
+| Feature | Description | Effort |
+|---------|-------------|--------|
+| nvim-cmp source | Autocomplete entity names in YAML frontmatter | High |
+| LSP-like hover | Show entity info on hover over wiki links | High |
+| Auto-sync on save | Option to auto-import wiki edits to DB | Medium |
+| Manuscript dashboard | Floating window showing entry counts by status | Medium |
+
+### V.5: Files to Modify
+
+| File | Changes |
+|------|---------|
+| `config.lua` | Make root configurable, fix templates path |
+| `commands.lua` | Add new commands, fix pipeline references |
+| `fzf.lua` | Add manuscript entity paths |
+| `keymaps.lua` | Wrap dependencies in pcall, add new keymaps |
+| `templates.lua` | Add entity creation functions |
+| `autocmds.lua` | Optional auto-sync hook |
+
+### V.6: Implementation Note
+
+**⚠️ Confirm detailed implementation approach with user before proceeding.** The specific UX for commands like `:PalimpsestCreateCharacter` (prompts, defaults, template format) should be discussed.

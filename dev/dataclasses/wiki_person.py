@@ -125,7 +125,7 @@ class Person(WikiEntity):
             Person wiki entity ready for serialization
 
         Notes:
-            - Generates appearances from db_person.dates (MentionedDate objects)
+            - Generates appearances from db_person.moments (Moment objects)
             - Generates themes from related entries
             - Preserves category and notes from existing wiki file if present
             - Creates relative links from wiki/people/{name}.md to entries
@@ -156,8 +156,8 @@ class Person(WikiEntity):
         appearances: List[Dict[str, Any]] = []
 
         # Try to use dates first (semantic relationship with context)
-        if db_person.dates:
-            for mentioned_date in sorted(db_person.dates, key=lambda d: d.date):
+        if db_person.moments:
+            for mentioned_date in sorted(db_person.moments, key=lambda d: d.date):
                 # Find entry for this date
                 entry = next(
                     (e for e in mentioned_date.entries if e.date == mentioned_date.date),

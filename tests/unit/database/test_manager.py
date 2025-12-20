@@ -57,7 +57,7 @@ class TestPalimpsestDBTransactionsAndRetries:
             db._tag_manager = MagicMock(autospec=TagManager)
             db._person_manager = MagicMock(autospec=True)
             db._event_manager = MagicMock(autospec=True)
-            db._date_manager = MagicMock(autospec=True)
+            db._moment_manager = MagicMock(autospec=True)
             db._location_manager = MagicMock(autospec=True)
             db._reference_manager = MagicMock(autospec=True)
             db._poem_manager = MagicMock(autospec=True)

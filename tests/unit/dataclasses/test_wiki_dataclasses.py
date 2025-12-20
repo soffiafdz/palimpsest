@@ -25,7 +25,7 @@ class TestWikiDataclasses:
         entry1.file_path = "/path/to/journal/2024/2024-01-01.md"
         date1.entries = [entry1]
         
-        db_person.dates = [date1]
+        db_person.moments = [date1]
         db_person.entries = [] # Fallback not used if dates present
         
         # Mock aliases
@@ -90,7 +90,7 @@ class TestWikiDataclasses:
         db_person = MagicMock()
         db_person.display_name = "Bob"
         db_person.relation_type = None # No category
-        db_person.dates = []
+        db_person.moments = []
         db_person.aliases = []
         
         entry1 = MagicMock()

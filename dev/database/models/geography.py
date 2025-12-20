@@ -2,14 +2,19 @@
 Geography Models
 -----------------
 
-Models for tracking dates, cities, and locations in the journal.
+Models for tracking moments, cities, and locations in the journal.
 
 Models:
-    - MentionedDate: Dates referenced within journal entries
+    - Moment: Points in time with context, people, and locations
     - City: Cities mentioned in entries
     - Location: Specific venues or places within cities
 
 These models enable geographic and temporal analysis of journal entries.
+
+Note: The original "MentionedDate" was renamed to "Moment" (P25) to better
+reflect the semantic meaning - a moment captures not just a date but a
+point in time with context, people involved, locations visited, and
+optional event associations.
 """
 
 from __future__ import annotations
@@ -22,67 +27,77 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .associations import (
     entry_cities,
-    entry_dates,
     entry_locations,
-    location_dates,
-    people_dates,
+    entry_moments,
+    moment_events,
+    moment_locations,
+    moment_people,
 )
 from .base import Base
 
 if TYPE_CHECKING:
     from .core import Entry
-    from .entities import Person
+    from .entities import Event, Person
 
 
-class MentionedDate(Base):
+class Moment(Base):
     """
-    Represents dates referenced within journal entries.
+    Represents a point in time with context, people, and locations.
 
-    Tracks specific dates mentioned in entries, allowing for temporal
-    analysis and cross-referencing of events. Dates can optionally include
-    context about why they were mentioned. They can, but not necessarily
-    be the date of the entry.
+    A Moment captures a specific date with optional context about what happened,
+    who was involved, where it took place, and which events it was part of.
+    This enables rich temporal and relational queries across the journal.
 
     Attributes:
         id: Primary key
-        date: The mentioned date
-        context: Optional context about why this date was mentioned
+        date: The date of this moment
+        context: Optional context about what happened
 
     Relationships:
-        entries: Many-to-many with Entry (entries that mention this date)
-        locations: Many-to-many with Location (locations visited on this date)
-        people: Many-to-many with People (people interacted with on this date)
+        entries: Many-to-many with Entry (entries that mention this moment)
+        locations: Many-to-many with Location (locations visited during this moment)
+        people: Many-to-many with Person (people involved in this moment)
+        events: Many-to-many with Event (events this moment is part of)
 
     Computed Properties:
         date_formatted: ISO format string (YYYY-MM-DD)
-        entry_count: Number of entries referencing this date
-        first_mention_date: When this date was first mentioned in the journal
-        last_mention_date: Most recent mention of this date
+        entry_count: Number of entries referencing this moment
+        first_mention_date: When this moment was first written about
+        last_mention_date: Most recent mention of this moment
 
     Examples:
-        # Simple date mention
-        MentionedDate(date=date(2020, 3, 15))
+        # Simple moment
+        Moment(date=date(2020, 3, 15))
 
-        # Date with context
-        MentionedDate(date=date(2020, 3, 15), context="thesis defense")
+        # Moment with context
+        Moment(date=date(2020, 3, 15), context="thesis defense")
+
+        # Full moment with relationships (set after creation)
+        moment = Moment(date=date(2024, 7, 4), context="July 4th party")
+        moment.people.extend([maria, john])
+        moment.locations.append(central_park)
+        moment.events.append(summer_trip_event)
     """
 
-    __tablename__ = "dates"
+    __tablename__ = "moments"
 
     # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     context: Mapped[Optional[str]] = mapped_column(Text)
 
-    # --- Relationship ---
+    # --- Relationships ---
     entries: Mapped[List["Entry"]] = relationship(
-        "Entry", secondary=entry_dates, back_populates="dates"
+        "Entry", secondary=entry_moments, back_populates="moments"
     )
     locations: Mapped[List["Location"]] = relationship(
-        "Location", secondary=location_dates, back_populates="dates"
+        "Location", secondary=moment_locations, back_populates="moments"
     )
     people: Mapped[List["Person"]] = relationship(
-        "Person", secondary=people_dates, back_populates="dates"
+        "Person", secondary=moment_people, back_populates="moments"
+    )
+    events: Mapped[List["Event"]] = relationship(
+        "Event", secondary=moment_events, back_populates="moments"
     )
 
     # --- Computed properties ---
@@ -130,17 +145,27 @@ class MentionedDate(Base):
             return None
         return max(entry.date for entry in self.entries)
 
+    @property
+    def event_count(self) -> int:
+        """Count of events this moment is part of."""
+        return len(self.events) if self.events else 0
+
+    @property
+    def event_names(self) -> List[str]:
+        """Names of events this moment is part of."""
+        return [event.event for event in self.events] if self.events else []
+
     def __repr__(self) -> str:
-        return f"<MentionedDate(id={self.id}, date={self.date})>"
+        return f"<Moment(id={self.id}, date={self.date})>"
 
     def __str__(self) -> str:
         count = self.entry_count
         if count == 0:
-            return f"Date {self.date_formatted} (no entries)"
+            return f"Moment {self.date_formatted} (no entries)"
         elif count == 1:
-            return f"Date {self.date_formatted} (1 entry)"
+            return f"Moment {self.date_formatted} (1 entry)"
         else:
-            return f"Date {self.date_formatted} ({count} entries)"
+            return f"Moment {self.date_formatted} ({count} entries)"
 
 
 class City(Base):
@@ -242,7 +267,7 @@ class Location(Base):
     Relationships:
         city: Many-to-one with City (parent city)
         entries: Many-to-many with Entry (entries mentioning this location)
-        dates: Many-to-many with MentionedDate (dates related to this location)
+        moments: Many-to-many with Moment (moments at this location)
 
     Computed Properties:
         entry_count: Number of entries mentioning this location
@@ -266,12 +291,12 @@ class Location(Base):
     city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"))
     city: Mapped["City"] = relationship(back_populates="locations")
 
-    # --- Relationship ---
+    # --- Relationships ---
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_locations, back_populates="locations"
     )
-    dates: Mapped[List["MentionedDate"]] = relationship(
-        "MentionedDate", secondary=location_dates, back_populates="locations"
+    moments: Mapped[List["Moment"]] = relationship(
+        "Moment", secondary=moment_locations, back_populates="locations"
     )
 
     # --- Computed properties ---
@@ -282,20 +307,20 @@ class Location(Base):
 
     @property
     def visit_count(self) -> int:
-        """Total number of recorded visits (explicit dates)."""
-        return len(self.dates)
+        """Total number of recorded visits (explicit moments)."""
+        return len(self.moments)
 
     @property
     def first_visit_date(self) -> Optional[date]:
         """Earliest date this location was visited."""
-        dates = [md.date for md in self.dates]
-        return min(dates) if dates else None
+        moment_dates = [m.date for m in self.moments]
+        return min(moment_dates) if moment_dates else None
 
     @property
     def last_visit_date(self) -> Optional[date]:
         """Most recent date this location was visited."""
-        dates = [md.date for md in self.dates]
-        return max(dates) if dates else None
+        moment_dates = [m.date for m in self.moments]
+        return max(moment_dates) if moment_dates else None
 
     @property
     def visit_timeline(self) -> List[Dict[str, Any]]:
@@ -303,7 +328,7 @@ class Location(Base):
         Complete timeline of visits with context.
 
         Returns:
-            List of dicts with keys: date, source ('entry'|'mentioned'), context
+            List of dicts with keys: date, source ('entry'|'moment'), context
         """
         timeline = []
 
@@ -318,14 +343,14 @@ class Location(Base):
                 }
             )
 
-        # Add explicit mentioned dates
-        for md in self.dates:
+        # Add explicit moments
+        for moment in self.moments:
             timeline.append(
                 {
-                    "date": md.date,
-                    "source": "mentioned",
-                    "context": md.context,
-                    "mentioned_date_id": md.id,
+                    "date": moment.date,
+                    "source": "moment",
+                    "context": moment.context,
+                    "moment_id": moment.id,
                 }
             )
 
@@ -337,15 +362,14 @@ class Location(Base):
     def visit_frequency(self) -> Dict[str, int]:
         """
         Calculate visit frequency by year-month.
-        Uses all recorded visits (entries + mentioned dates).
+        Uses all recorded visits (from moments).
 
         Returns:
             Dictionary mapping YYYY-MM strings to visit counts
         """
         frequency: Dict[str, int] = {}
-        # Count from mentioned dates
-        for md in self.dates:
-            year_month = md.date.strftime("%Y-%m")
+        for moment in self.moments:
+            year_month = moment.date.strftime("%Y-%m")
             frequency[year_month] = frequency.get(year_month, 0) + 1
         return frequency
 

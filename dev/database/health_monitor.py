@@ -105,7 +105,7 @@ from .models import (
     Tag,
     Reference,
     ReferenceSource,
-    MentionedDate,
+    Moment,
     Poem,
     PoemVersion,
     Alias,
@@ -529,7 +529,7 @@ class HealthMonitor:
             "reference_sources": session.query(ReferenceSource).count(),
             "poems": session.query(Poem).count(),
             "poem_versions": session.query(PoemVersion).count(),
-            "mentioned_dates": session.query(MentionedDate).count(),
+            "mentioned_dates": session.query(Moment).count(),
         }
 
         # Recent activity

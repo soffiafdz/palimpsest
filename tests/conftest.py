@@ -339,10 +339,10 @@ def event_manager(db_session):
 
 
 @pytest.fixture
-def date_manager(db_session):
-    """Create DateManager instance for testing."""
+def moment_manager(db_session):
+    """Create MomentManager instance for testing."""
     from dev.database.managers import SimpleManager
-    return SimpleManager.for_dates(db_session)
+    return SimpleManager.for_moments(db_session)
 
 
 @pytest.fixture

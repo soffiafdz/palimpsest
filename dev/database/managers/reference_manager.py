@@ -83,14 +83,7 @@ class ReferenceManager(BaseManager):
         Returns:
             True if source exists, False otherwise
         """
-        normalized = DataValidator.normalize_string(title)
-        if not normalized:
-            return False
-
-        return (
-            self.session.query(ReferenceSource).filter_by(title=normalized).first()
-            is not None
-        )
+        return self._exists(ReferenceSource, "title", title)
 
     @handle_db_errors
     @log_database_operation("get_source")
@@ -108,16 +101,9 @@ class ReferenceManager(BaseManager):
             ReferenceSource object if found, None otherwise
         """
         if source_id is not None:
-            return self.session.get(ReferenceSource, source_id)
-
+            return self._get_by_id(ReferenceSource, source_id)
         if title is not None:
-            normalized = DataValidator.normalize_string(title)
-            if not normalized:
-                return None
-            return (
-                self.session.query(ReferenceSource).filter_by(title=normalized).first()
-            )
-
+            return self._get_by_field(ReferenceSource, "title", title)
         return None
 
     @handle_db_errors
@@ -134,12 +120,9 @@ class ReferenceManager(BaseManager):
         Returns:
             List of ReferenceSource objects, ordered by title
         """
-        query = self.session.query(ReferenceSource)
-
         if source_type is not None:
-            query = query.filter_by(type=source_type)
-
-        return query.order_by(ReferenceSource.title).all()
+            return self._get_all(ReferenceSource, order_by="title", type=source_type)
+        return self._get_all(ReferenceSource, order_by="title")
 
     @handle_db_errors
     @log_database_operation("create_source")
@@ -334,7 +317,7 @@ class ReferenceManager(BaseManager):
         Returns:
             Reference object if found, None otherwise
         """
-        return self.session.get(Reference, reference_id)
+        return self._get_by_id(Reference, reference_id)
 
     @handle_db_errors
     @log_database_operation("get_all_references")
@@ -350,12 +333,9 @@ class ReferenceManager(BaseManager):
         Returns:
             List of Reference objects
         """
-        query = self.session.query(Reference)
-
         if mode is not None:
-            query = query.filter_by(mode=mode)
-
-        return query.all()
+            return self._get_all(Reference, mode=mode)
+        return self._get_all(Reference)
 
     @handle_db_errors
     @log_database_operation("create_reference")

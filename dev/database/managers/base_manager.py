@@ -40,13 +40,15 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union, Protocol
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, Protocol
 
 from sqlalchemy.orm import Session, Mapped
+
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from dev.core.exceptions import DatabaseError
 from dev.core.logging_manager import PalimpsestLogger
+from dev.core.validators import DataValidator
 
 
 class HasId(Protocol):
@@ -218,6 +220,273 @@ class BaseManager(ABC):
         else:
             raise TypeError(
                 f"Expected {model_class.__name__} instance or int, got {type(item)}"
+            )
+
+    # -------------------------------------------------------------------------
+    # Generic CRUD Helpers (P3.1)
+    # -------------------------------------------------------------------------
+
+    def _exists(
+        self,
+        model_class: Type[T],
+        field_name: str,
+        value: Any,
+        normalize: bool = True,
+        include_deleted: bool = False,
+    ) -> bool:
+        """
+        Generic existence check for any entity.
+
+        Args:
+            model_class: ORM model class to query
+            field_name: Field name to filter by
+            value: Value to check for
+            normalize: Whether to normalize string values
+            include_deleted: Include soft-deleted entities
+
+        Returns:
+            True if entity exists, False otherwise
+        """
+        if value is None:
+            return False
+
+        # Normalize string values
+        if normalize and isinstance(value, str):
+            value = DataValidator.normalize_string(value)
+            if not value:
+                return False
+
+        query = self.session.query(model_class).filter_by(**{field_name: value})
+
+        # Handle soft delete if model supports it
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        return query.first() is not None
+
+    def _get_by_id(
+        self,
+        model_class: Type[T],
+        entity_id: int,
+        include_deleted: bool = False,
+    ) -> Optional[T]:
+        """
+        Get entity by ID with optional soft-delete filtering.
+
+        Args:
+            model_class: ORM model class
+            entity_id: The entity ID
+            include_deleted: Include soft-deleted entities
+
+        Returns:
+            Entity if found, None otherwise
+        """
+        entity = self.session.get(model_class, entity_id)
+        if entity is None:
+            return None
+
+        if not include_deleted and hasattr(entity, "deleted_at"):
+            if entity.deleted_at is not None:
+                return None
+
+        return entity
+
+    def _get_by_field(
+        self,
+        model_class: Type[T],
+        field_name: str,
+        value: Any,
+        normalize: bool = True,
+        include_deleted: bool = False,
+    ) -> Optional[T]:
+        """
+        Get entity by a specific field value.
+
+        Args:
+            model_class: ORM model class
+            field_name: Field name to filter by
+            value: Value to look up
+            normalize: Whether to normalize string values
+            include_deleted: Include soft-deleted entities
+
+        Returns:
+            Entity if found, None otherwise
+        """
+        if value is None:
+            return None
+
+        # Normalize string values
+        if normalize and isinstance(value, str):
+            value = DataValidator.normalize_string(value)
+            if not value:
+                return None
+
+        query = self.session.query(model_class).filter_by(**{field_name: value})
+
+        # Handle soft delete if model supports it
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        return query.first()
+
+    def _get_all(
+        self,
+        model_class: Type[T],
+        order_by: Optional[str] = None,
+        include_deleted: bool = False,
+        **filters: Any,
+    ) -> List[T]:
+        """
+        Get all entities of a type with optional filtering and ordering.
+
+        Args:
+            model_class: ORM model class
+            order_by: Field name to order by (optional)
+            include_deleted: Include soft-deleted entities
+            **filters: Additional filter conditions
+
+        Returns:
+            List of entities
+        """
+        query = self.session.query(model_class)
+
+        # Apply filters
+        if filters:
+            query = query.filter_by(**filters)
+
+        # Handle soft delete if model supports it
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        # Apply ordering
+        if order_by and hasattr(model_class, order_by):
+            attr = getattr(model_class, order_by)
+            # Check if it's a column attribute (not a Python property)
+            if hasattr(attr, "__clause_element__") or hasattr(attr, "property"):
+                query = query.order_by(attr)
+
+        return query.all()
+
+    def _count(
+        self,
+        model_class: Type[T],
+        include_deleted: bool = False,
+        **filters: Any,
+    ) -> int:
+        """
+        Count entities with optional filtering.
+
+        Args:
+            model_class: ORM model class
+            include_deleted: Include soft-deleted entities
+            **filters: Additional filter conditions
+
+        Returns:
+            Count of matching entities
+        """
+        query = self.session.query(model_class)
+
+        if filters:
+            query = query.filter_by(**filters)
+
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        return query.count()
+
+    # -------------------------------------------------------------------------
+    # Generic Relationship Helpers (P3.2)
+    # -------------------------------------------------------------------------
+
+    def _update_m2m_collection(
+        self,
+        entity: Any,
+        attr_name: str,
+        items: List[Any],
+        model_class: Type[T],
+        remove_items: Optional[List[Any]] = None,
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update a many-to-many relationship collection.
+
+        Args:
+            entity: Entity whose collection to update
+            attr_name: Name of the relationship attribute (e.g., 'entries', 'tags')
+            items: Items to add (can be objects or IDs)
+            model_class: Model class for resolving IDs
+            remove_items: Items to remove in incremental mode
+            incremental: If True, add/remove items; if False, replace entire collection
+
+        Example:
+            self._update_m2m_collection(
+                person, "events", metadata.get("events", []),
+                Event, metadata.get("remove_events", [])
+            )
+        """
+        collection = getattr(entity, attr_name)
+
+        if not incremental:
+            # Replacement mode: clear and add all
+            collection.clear()
+
+        # Add items
+        for item in items:
+            try:
+                resolved = self._resolve_object(item, model_class)
+                if resolved and resolved not in collection:
+                    collection.append(resolved)
+            except (ValueError, TypeError):
+                if self.logger:
+                    self.logger.log_warning(
+                        f"Could not resolve {model_class.__name__} for {attr_name}",
+                        {"item": item},
+                    )
+
+        # Remove items (only in incremental mode)
+        if incremental and remove_items:
+            for item in remove_items:
+                try:
+                    resolved = self._resolve_object(item, model_class)
+                    if resolved and resolved in collection:
+                        collection.remove(resolved)
+                except (ValueError, TypeError):
+                    pass  # Silently skip items that can't be resolved
+
+        self.session.flush()
+
+    def _update_m2m_relationships(
+        self,
+        entity: Any,
+        metadata: Dict[str, Any],
+        relationship_configs: List[tuple],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update multiple many-to-many relationships from metadata.
+
+        Args:
+            entity: Entity to update
+            metadata: Dictionary containing relationship data
+            relationship_configs: List of (attr_name, meta_key, model_class) tuples
+            incremental: If True, add/remove items; if False, replace
+
+        Example:
+            self._update_m2m_relationships(person, metadata, [
+                ("events", "events", Event),
+                ("entries", "entries", Entry),
+                ("dates", "dates", Moment),
+            ])
+        """
+        for attr_name, meta_key, model_class in relationship_configs:
+            if meta_key not in metadata:
+                continue
+
+            items = metadata[meta_key]
+            remove_items = metadata.get(f"remove_{meta_key}", [])
+
+            self._update_m2m_collection(
+                entity, attr_name, items, model_class, remove_items, incremental
             )
 
     # -------------------------------------------------------------------------
