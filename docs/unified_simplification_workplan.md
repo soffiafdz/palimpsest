@@ -57,6 +57,30 @@ To preserve functionality and usability, we will NOT:
 
 ---
 
+## Development Guidelines
+
+### Commits
+- Use single-line commit messages describing the change
+- No AI attribution in commit messages
+- Example: `Consolidate Tag/Date/Event managers into config-driven SimpleManager`
+
+### Testing
+- Write tests for new functionality as it is created
+- Update existing tests when refactoring
+- Run `python -m pytest` before committing
+
+### Documentation
+- Update docstrings when changing function signatures
+- Keep import sections organized (Annotations, Standard library, Third party, Local)
+- Use Google-style docstrings with Args/Returns sections
+
+### Code Formatting
+- Use consistent import section headers (`# --- Annotations ---`, etc.)
+- Add `#!/usr/bin/env python3` shebang to executable scripts
+- Module docstrings: filename, dashes, description
+
+---
+
 ## Unified Priority List (Dependency-Ordered)
 
 This list is organized by dependency tiers. Complete tasks in order to avoid rework.

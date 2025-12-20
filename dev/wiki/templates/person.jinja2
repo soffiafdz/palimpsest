@@ -1,0 +1,80 @@
+{#
+  person.jinja2
+  -------------
+  Wiki template for Person entity.
+  Displays person metadata, appearances timeline, themes, and notes.
+#}
+# Palimpsest — Person
+
+## {{ entity.display_name }}
+
+### Category
+{{ entity.relationship_display }}
+
+### Alias
+{% if entity.aliases %}
+{% for alias in entity.aliases|sort(attribute='alias') %}
+- {{ alias.alias }}
+{% endfor %}
+{% else %}
+-
+{% endif %}
+
+### Appearances
+{% if entity.appearances_count == 0 %}
+- No appearances recorded
+{% elif entity.appearances_count == 1 %}
+- Appearance: {{ entity.first_appearance|format_date }}
+- Mentions: 1 entry
+{% set first_moment = entity.moments|sort(attribute='date')|first %}
+{% set entry = first_moment.entries|first %}
+{% if entry %}
+-> Entry: {{ entity_link(entry, 'entries', wiki_dir, output_path) }}{% if first_moment.context %} — {{ first_moment.context }}{% endif %}
+
+{% endif %}
+{% else %}
+- Range: {{ entity.first_appearance|format_date }} -> {{ entity.last_appearance|format_date }}
+- Mentions: {{ entity.appearances_count }} entries
+{% set sorted_moments = entity.moments|sort(attribute='date') %}
+{% set first_moment = sorted_moments|first %}
+{% set last_moment = sorted_moments|last %}
+{% set first_entry = first_moment.entries|first %}
+{% set last_entry = last_moment.entries|first %}
+{% if first_entry %}
+-> First: {{ entity_link(first_entry, 'entries', wiki_dir, output_path) }}{% if first_moment.context %} — {{ first_moment.context }}{% endif %}
+
+{% endif %}
+{% if last_entry %}
+-> Last: {{ entity_link(last_entry, 'entries', wiki_dir, output_path) }}{% if last_moment.context %} — {{ last_moment.context }}{% endif %}
+
+{% endif %}
+{% endif %}
+
+### Themes
+{% if entity.entries %}
+{% set themes = [] %}
+{% for entry in entity.entries %}
+{% if entry.manuscript and entry.manuscript.themes %}
+{% for theme in entry.manuscript.themes %}
+{% if theme.name not in themes %}
+{% set _ = themes.append(theme.name) %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% if themes %}
+{% for theme in themes|sort %}
+- {{ theme }}
+{% endfor %}
+{% else %}
+-
+{% endif %}
+{% else %}
+-
+{% endif %}
+
+### Vignettes
+-
+
+### Notes
+{{ entity.notes or '[Add your notes here]' }}

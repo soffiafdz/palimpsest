@@ -1,0 +1,110 @@
+{#
+  entry.jinja2
+  ------------
+  Wiki template for Entry entity.
+  The core entity connecting all metadata - date, content, and relationships.
+#}
+# Palimpsest — Entry
+
+## {{ entity.date.isoformat() }}
+
+---
+
+### Metadata
+| Property | Value |
+| --- | --- |
+| **Date** | {{ entity.date.isoformat() }} |
+| **Word Count** | {{ entity.word_count }} words |
+| **Reading Time** | {{ entity.reading_time_display }} |
+| **Age** | {{ entity.age_display }} |
+
+### Epigraph
+{% if entity.epigraph %}
+> {{ entity.epigraph }}
+{% if entity.epigraph_attribution %}
+> — {{ entity.epigraph_attribution }}
+{% endif %}
+{% endif %}
+
+### Source
+[[{{ entity.file_path }}|Read Full Entry]]
+
+### People
+{% if entity.people %}
+**People ({{ entity.people|length }})**
+
+{% for person in entity.people|sort(attribute='display_name') %}
+- {{ entity_link(person, 'people', wiki_dir, output_path) }} ({{ person.relationship_display }})
+{% endfor %}
+{% endif %}
+
+### Locations
+{% if entity.locations %}
+**Locations ({{ entity.locations|length }})**
+
+{% for location in entity.locations|sort(attribute='name') %}
+- {{ entity_link(location, 'locations', wiki_dir, output_path) }} ({{ location.city.city }})
+{% endfor %}
+{% endif %}
+
+### Events
+{% if entity.events %}
+**Events ({{ entity.events|length }})**
+
+{% for event in entity.events|sort(attribute='event') %}
+- {{ entity_link(event, 'events', wiki_dir, output_path) }}
+{% endfor %}
+{% endif %}
+
+### Themes
+{% if entity.manuscript and entity.manuscript.themes %}
+**Themes ({{ entity.manuscript.themes|length }})**
+
+{% for theme in entity.manuscript.themes|sort(attribute='name') %}
+- {{ entity_link(theme, 'themes', wiki_dir, output_path) }}
+{% endfor %}
+{% endif %}
+
+### Poems
+{% if entity.poems %}
+**Poems Written ({{ entity.poems|length }})**
+
+{% for poem_version in entity.poems %}
+- {{ entity_link(poem_version, 'poems', wiki_dir, output_path) }}{% if poem_version.revision_date %} ({{ poem_version.revision_date.isoformat() }}){% endif %}
+
+{% endfor %}
+{% endif %}
+
+### References
+{% if entity.references %}
+**References Cited ({{ entity.references|length }})**
+
+{% for ref in entity.references %}
+{% if ref.source %}
+- {{ entity_link(ref.source, 'references', wiki_dir, output_path) }}
+{% if ref.content_preview %}
+  > {{ ref.content_preview }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+### Tags
+{% if entity.tags %}
+**Tags ({{ entity.tags|length }})**
+
+{% for tag in entity.tags|sort(attribute='tag') %}#{{ tag.tag }} {% endfor %}
+
+{% endif %}
+
+### Related Entries
+**Navigation**
+
+{% if entity.related_entries %}
+{% for related in entity.related_entries|sort(attribute='date') %}
+- {{ entity_link(related, 'entries', wiki_dir, output_path) }}
+{% endfor %}
+{% endif %}
+
+### Notes
+{{ entity.notes or '[Add your notes about this entry for manuscript use]' }}
