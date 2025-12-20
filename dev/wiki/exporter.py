@@ -123,8 +123,8 @@ class WikiExporter:
         if self.logger:
             self.logger.log_info(
                 f"Exported {config.plural}: "
-                f"{stats.created} created, {stats.updated} updated, "
-                f"{stats.skipped} unchanged"
+                f"{stats.entries_created} created, {stats.entries_updated} updated, "
+                f"{stats.entries_skipped} unchanged"
             )
 
         return stats
@@ -161,15 +161,15 @@ class WikiExporter:
         if force:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(content, encoding="utf-8")
-            stats.updated += 1
+            stats.entries_updated += 1
         else:
             status = write_if_changed(output_path, content)
             if status == "created":
-                stats.created += 1
+                stats.entries_created += 1
             elif status == "updated":
-                stats.updated += 1
+                stats.entries_updated += 1
             else:
-                stats.skipped += 1
+                stats.entries_skipped += 1
 
     def export_all(self, force: bool = False) -> ConversionStats:
         """
@@ -185,15 +185,15 @@ class WikiExporter:
 
         for config in ALL_CONFIGS:
             stats = self.export_entity_type(config, force)
-            total_stats.created += stats.created
-            total_stats.updated += stats.updated
-            total_stats.skipped += stats.skipped
+            total_stats.entries_created += stats.entries_created
+            total_stats.entries_updated += stats.entries_updated
+            total_stats.entries_skipped += stats.entries_skipped
 
         if self.logger:
             self.logger.log_info(
                 f"Wiki export complete: "
-                f"{total_stats.created} created, {total_stats.updated} updated, "
-                f"{total_stats.skipped} unchanged"
+                f"{total_stats.entries_created} created, {total_stats.entries_updated} updated, "
+                f"{total_stats.entries_skipped} unchanged"
             )
 
         return total_stats
@@ -224,15 +224,15 @@ class WikiExporter:
 
         # Export home dashboard
         home_stats = self.export_home(force)
-        stats.created += home_stats.created
-        stats.updated += home_stats.updated
-        stats.skipped += home_stats.skipped
+        stats.entries_created += home_stats.entries_created
+        stats.entries_updated += home_stats.entries_updated
+        stats.entries_skipped += home_stats.entries_skipped
 
         if self.logger:
             self.logger.log_info(
                 f"Index export complete: "
-                f"{stats.created} created, {stats.updated} updated, "
-                f"{stats.skipped} unchanged"
+                f"{stats.entries_created} created, {stats.entries_updated} updated, "
+                f"{stats.entries_skipped} unchanged"
             )
 
         return stats
@@ -487,15 +487,15 @@ class WikiExporter:
         if force:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
-            stats.updated += 1
+            stats.entries_updated += 1
         else:
             status = write_if_changed(path, content)
             if status == "created":
-                stats.created += 1
+                stats.entries_created += 1
             elif status == "updated":
-                stats.updated += 1
+                stats.entries_updated += 1
             else:
-                stats.skipped += 1
+                stats.entries_skipped += 1
 
     def export_home(self, force: bool = False) -> ConversionStats:
         """
@@ -542,7 +542,7 @@ class WikiExporter:
                 "events": session.query(Event).filter(
                     Event.deleted_at.is_(None)
                 ).count(),
-                "tags": session.query(Tag).filter(Tag.deleted_at.is_(None)).count(),
+                "tags": session.query(Tag).count(),
                 "themes": session.query(Theme).filter(
                     Theme.deleted_at.is_(None)
                 ).count(),
@@ -590,5 +590,511 @@ class WikiExporter:
 
         if self.logger:
             self.logger.log_info("Home dashboard exported")
+
+        return stats
+
+    def export_stats(self, force: bool = False) -> ConversionStats:
+        """
+        Export the statistics dashboard.
+
+        Args:
+            force: If True, regenerate even if unchanged
+
+        Returns:
+            Statistics for stats page generation
+        """
+        import calendar
+        from collections import Counter, defaultdict
+        from datetime import date, datetime
+
+        from dev.database.models import (
+            City,
+            Entry,
+            Event,
+            Location,
+            Person,
+            Tag,
+        )
+        from dev.database.models_manuscript import Theme
+
+        stats = ConversionStats()
+
+        with self.db.session_scope() as session:
+            # Query entries
+            entries = session.query(Entry).order_by(Entry.date).all()
+
+            if not entries:
+                if self.logger:
+                    self.logger.log_warning("No entries found for statistics")
+                return stats
+
+            total_entries = len(entries)
+            total_words = sum(e.word_count or 0 for e in entries)
+            avg_words = total_words // total_entries if total_entries else 0
+
+            first_date = entries[0].date
+            last_date = entries[-1].date
+            span_days = (last_date - first_date).days
+
+            # People
+            people = session.query(Person).filter(Person.deleted_at.is_(None)).all()
+            total_people = len(people)
+
+            # Tags
+            tags = session.query(Tag).all()
+
+            # Counts
+            total_locations = session.query(Location).count()
+            total_cities = session.query(City).count()
+            total_events = session.query(Event).filter(
+                Event.deleted_at.is_(None)
+            ).count()
+            total_themes = session.query(Theme).filter(
+                Theme.deleted_at.is_(None)
+            ).count()
+
+            # Monthly frequency (last 12 months)
+            entries_by_month = defaultdict(int)
+            for entry in entries:
+                month_key = f"{entry.date.year}-{entry.date.month:02d}"
+                entries_by_month[month_key] += 1
+
+            current_month = date.today().replace(day=1)
+            months = []
+            for i in range(12):
+                month = current_month.month - i
+                year = current_month.year
+                while month <= 0:
+                    month += 12
+                    year -= 1
+                month_date = date(year, month, 1)
+                months.append(month_date)
+            months.reverse()
+
+            max_month_count = max(entries_by_month.values()) if entries_by_month else 1
+            monthly_frequency = []
+            for month_date in months:
+                month_key = f"{month_date.year}-{month_date.month:02d}"
+                count = entries_by_month.get(month_key, 0)
+                bar_length = int((count / max_month_count) * 20) if max_month_count else 0
+                bar = "█" * bar_length if bar_length else "░"
+                monthly_frequency.append({
+                    "name": month_date.strftime("%b %Y"),
+                    "bar": bar,
+                    "count": count,
+                })
+
+            # Word count distribution
+            word_ranges = {"0-100": 0, "101-250": 0, "251-500": 0, "501-1000": 0, "1000+": 0}
+            for entry in entries:
+                wc = entry.word_count or 0
+                if wc <= 100:
+                    word_ranges["0-100"] += 1
+                elif wc <= 250:
+                    word_ranges["101-250"] += 1
+                elif wc <= 500:
+                    word_ranges["251-500"] += 1
+                elif wc <= 1000:
+                    word_ranges["501-1000"] += 1
+                else:
+                    word_ranges["1000+"] += 1
+
+            max_range = max(word_ranges.values())
+            word_distribution = []
+            for name, count in word_ranges.items():
+                bar_length = int((count / max_range) * 20) if max_range else 0
+                bar = "█" * bar_length if bar_length else "░"
+                pct = (count / total_entries) * 100 if total_entries else 0
+                word_distribution.append({
+                    "name": name,
+                    "bar": bar,
+                    "count": count,
+                    "percent": pct,
+                })
+
+            # Top people
+            top_people = sorted(
+                [
+                    {
+                        "name": p.display_name,
+                        "mentions": len(p.entries),
+                        "category": p.relationship_display if p.relation_type else "Unknown",
+                    }
+                    for p in people
+                ],
+                key=lambda x: (-x["mentions"], x["name"]),
+            )
+
+            # Relationship distribution
+            relation_counts = Counter()
+            for person in people:
+                rel = person.relationship_display if person.relation_type else "Unknown"
+                relation_counts[rel] += 1
+
+            max_rel = max(relation_counts.values()) if relation_counts else 1
+            relation_distribution = []
+            for rel, count in relation_counts.most_common():
+                bar_length = int((count / max_rel) * 20)
+                bar = "█" * bar_length
+                pct = (count / total_people) * 100 if total_people else 0
+                relation_distribution.append({
+                    "name": rel,
+                    "bar": bar,
+                    "count": count,
+                    "percent": pct,
+                })
+
+            # Top tags
+            top_tags = sorted(
+                [{"name": t.tag, "count": len(t.entries)} for t in tags],
+                key=lambda x: (-x["count"], x["name"]),
+            )
+
+            # Yearly frequency
+            entries_by_year = defaultdict(int)
+            for entry in entries:
+                entries_by_year[entry.date.year] += 1
+
+            max_year = max(entries_by_year.values()) if entries_by_year else 1
+            yearly_frequency = []
+            for year in sorted(entries_by_year.keys()):
+                count = entries_by_year[year]
+                bar_length = int((count / max_year) * 30)
+                bar = "█" * bar_length
+                yearly_frequency.append({"year": year, "bar": bar, "count": count})
+
+            # Render template
+            output_path = self.wiki_dir / "stats.md"
+            content = self.renderer.render_index(
+                "stats",
+                output_path,
+                stats={
+                    "entries": total_entries,
+                    "words": total_words,
+                    "avg_words": avg_words,
+                    "first_date": first_date,
+                    "last_date": last_date,
+                    "span_days": span_days,
+                    "people": total_people,
+                    "locations": total_locations,
+                    "cities": total_cities,
+                    "events": total_events,
+                    "themes": total_themes,
+                    "tags": len(tags),
+                    "entries_per_day": total_entries / max(span_days, 1),
+                },
+                monthly_frequency=monthly_frequency,
+                word_distribution=word_distribution,
+                top_people=top_people,
+                relation_distribution=relation_distribution,
+                top_tags=top_tags,
+                yearly_frequency=yearly_frequency,
+                generated_at=datetime.now(),
+            )
+
+            self._write_index(output_path, content, force, stats)
+
+        if self.logger:
+            self.logger.log_info("Statistics dashboard exported")
+
+        return stats
+
+    def export_timeline(self, force: bool = False) -> ConversionStats:
+        """
+        Export the timeline/calendar view.
+
+        Args:
+            force: If True, regenerate even if unchanged
+
+        Returns:
+            Statistics for timeline page generation
+        """
+        from collections import defaultdict
+        from datetime import datetime
+
+        from dev.database.models import Entry
+
+        stats = ConversionStats()
+
+        with self.db.session_scope() as session:
+            entries = session.query(Entry).order_by(Entry.date).all()
+
+            if not entries:
+                if self.logger:
+                    self.logger.log_warning("No entries found for timeline")
+                return stats
+
+            total_entries = len(entries)
+            first_date = entries[0].date
+            last_date = entries[-1].date
+            span_days = (last_date - first_date).days
+
+            # Group by year and month
+            entries_by_year = defaultdict(lambda: defaultdict(list))
+            for entry in entries:
+                year = entry.date.year
+                month = entry.date.month
+                entries_by_year[year][month].append(entry)
+
+            month_names = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ]
+
+            # Build timeline structure
+            timeline = []
+            for year in sorted(entries_by_year.keys(), reverse=True):
+                year_count = sum(len(e) for e in entries_by_year[year].values())
+                months = []
+                for month in range(1, 13):
+                    if month in entries_by_year[year]:
+                        month_entries = entries_by_year[year][month]
+                        months.append({
+                            "name": month_names[month - 1],
+                            "count": len(month_entries),
+                            "entries": [
+                                {
+                                    "date": e.date,
+                                    "path": f"entries/{year}/{e.date.isoformat()}.md",
+                                    "word_count": e.word_count or 0,
+                                }
+                                for e in reversed(month_entries)
+                            ],
+                        })
+                timeline.append({
+                    "year": year,
+                    "count": year_count,
+                    "months": months,
+                })
+
+            total_years = len(entries_by_year)
+
+            # Render template
+            output_path = self.wiki_dir / "timeline.md"
+            content = self.renderer.render_index(
+                "timeline",
+                output_path,
+                stats={
+                    "entries": total_entries,
+                    "years": total_years,
+                    "span_days": span_days,
+                    "first_date": first_date,
+                    "last_date": last_date,
+                    "avg_per_year": total_entries / total_years if total_years else 0,
+                },
+                timeline=timeline,
+                generated_at=datetime.now(),
+            )
+
+            self._write_index(output_path, content, force, stats)
+
+        if self.logger:
+            self.logger.log_info("Timeline exported")
+
+        return stats
+
+    def export_analysis(self, force: bool = False) -> ConversionStats:
+        """
+        Export the analysis report.
+
+        Args:
+            force: If True, regenerate even if unchanged
+
+        Returns:
+            Statistics for analysis page generation
+        """
+        import calendar
+        from collections import Counter, defaultdict
+        from datetime import datetime
+
+        from sqlalchemy.orm import joinedload
+
+        from dev.database.models import Entry
+
+        stats = ConversionStats()
+
+        with self.db.session_scope() as session:
+            entries = (
+                session.query(Entry)
+                .options(
+                    joinedload(Entry.people),
+                    joinedload(Entry.locations),
+                    joinedload(Entry.cities),
+                    joinedload(Entry.events),
+                    joinedload(Entry.tags),
+                )
+                .order_by(Entry.date)
+                .all()
+            )
+
+            if not entries:
+                if self.logger:
+                    self.logger.log_warning("No entries found for analysis")
+                return stats
+
+            # Entity counters
+            person_counter = Counter()
+            location_counter = Counter()
+            city_counter = Counter()
+            tag_counter = Counter()
+
+            # Temporal data
+            entries_by_year = defaultdict(int)
+            entries_by_dow = defaultdict(int)
+            word_count_by_year = defaultdict(int)
+            entries_by_month = defaultdict(int)
+
+            # Co-occurrence
+            person_colocation = defaultdict(lambda: defaultdict(int))
+
+            for entry in entries:
+                for person in entry.people:
+                    person_counter[person.display_name] += 1
+                for location in entry.locations:
+                    location_counter[location.name] += 1
+                for city in entry.cities:
+                    city_counter[city.city] += 1
+                for tag in entry.tags:
+                    tag_counter[tag.tag] += 1
+
+                entries_by_year[entry.date.year] += 1
+                entries_by_month[f"{entry.date.year}-{entry.date.month:02d}"] += 1
+                entries_by_dow[entry.date.strftime("%A")] += 1
+                word_count_by_year[entry.date.year] += entry.word_count or 0
+
+                for person in entry.people:
+                    for city in entry.cities:
+                        person_colocation[person.display_name][city.city] += 1
+
+            total_entries = len(entries)
+            total_words = sum(e.word_count or 0 for e in entries)
+
+            # Yearly activity
+            max_year = max(entries_by_year.values()) if entries_by_year else 1
+            yearly_activity = []
+            for year in sorted(entries_by_year.keys()):
+                count = entries_by_year[year]
+                bar_length = int((count / max_year) * 50)
+                bar = "█" * bar_length
+                yearly_activity.append({
+                    "year": year,
+                    "bar": bar,
+                    "count": count,
+                    "words": word_count_by_year[year],
+                })
+
+            # Top entities
+            top_people = [
+                {
+                    "name": name,
+                    "count": count,
+                    "path": f"people/{slugify(name)}.md",
+                }
+                for name, count in person_counter.most_common(10)
+            ]
+
+            top_locations = [
+                {"name": name, "count": count}
+                for name, count in location_counter.most_common(10)
+            ]
+
+            top_cities = [
+                {
+                    "name": name,
+                    "count": count,
+                    "path": f"cities/{slugify(name)}.md",
+                }
+                for name, count in city_counter.most_common(10)
+            ]
+
+            top_tags = [
+                {
+                    "name": name,
+                    "count": count,
+                    "path": f"tags/{slugify(name)}.md",
+                }
+                for name, count in tag_counter.most_common(15)
+            ]
+
+            # Day of week
+            dow_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            max_dow = max(entries_by_dow.values()) if entries_by_dow else 1
+            day_of_week = []
+            for dow in dow_order:
+                count = entries_by_dow.get(dow, 0)
+                bar_length = int((count / max_dow) * 40)
+                bar = "█" * bar_length
+                day_of_week.append({"name": dow, "bar": bar, "count": count})
+
+            # Person-city network
+            person_city_network = []
+            for name, _ in person_counter.most_common(5):
+                if name in person_colocation:
+                    cities = person_colocation[name]
+                    top_cities_list = sorted(cities.items(), key=lambda x: x[1], reverse=True)[:3]
+                    city_str = ", ".join([f"{city} ({c}×)" for city, c in top_cities_list])
+                    person_city_network.append({
+                        "name": name,
+                        "path": f"people/{slugify(name)}.md",
+                        "cities": city_str,
+                    })
+
+            # Monthly heatmap (last 12 months)
+            monthly_heatmap = []
+            if entries:
+                last_date = entries[-1].date
+                for i in range(11, -1, -1):
+                    year = last_date.year
+                    month = last_date.month - i
+                    if month <= 0:
+                        year -= 1
+                        month += 12
+                    month_key = f"{year}-{month:02d}"
+                    count = entries_by_month.get(month_key, 0)
+                    if count == 0:
+                        intensity = "░░░"
+                    elif count <= 2:
+                        intensity = "▒▒▒"
+                    elif count <= 5:
+                        intensity = "▓▓▓"
+                    else:
+                        intensity = "███"
+                    monthly_heatmap.append({
+                        "key": month_key,
+                        "name": calendar.month_abbr[month],
+                        "intensity": intensity,
+                        "count": count,
+                    })
+
+            # Render template
+            output_path = self.wiki_dir / "analysis.md"
+            content = self.renderer.render_index(
+                "analysis",
+                output_path,
+                stats={
+                    "entries": total_entries,
+                    "people": len(person_counter),
+                    "locations": len(location_counter),
+                    "cities": len(city_counter),
+                    "events": sum(len(e.events) for e in entries),
+                    "tags": len(tag_counter),
+                    "words": total_words,
+                    "avg_words": total_words // total_entries if total_entries else 0,
+                },
+                yearly_activity=yearly_activity,
+                top_people=top_people,
+                top_locations=top_locations,
+                top_cities=top_cities,
+                top_tags=top_tags,
+                day_of_week=day_of_week,
+                person_city_network=person_city_network,
+                monthly_heatmap=monthly_heatmap,
+                generated_at=datetime.now(),
+            )
+
+            self._write_index(output_path, content, force, stats)
+
+        if self.logger:
+            self.logger.log_info("Analysis report exported")
 
         return stats

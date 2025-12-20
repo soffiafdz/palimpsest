@@ -5,27 +5,18 @@ Provides builder classes for generating various output formats from
 journal source files:
 - PdfBuilder: Generate annotated PDF compilations
 - TxtBuilder: Process and format raw text exports
-- Wiki builders: Export database entities to vimwiki pages
 
 All builders follow a common interface defined by the base classes.
 
-Wiki builders are organized in two modules:
-- wiki.py: GenericEntityExporter and EntityConfig registry
-- wiki_pages.py: Special page exports (index, stats, timeline, analysis)
-
-Index generation has been replaced by Jinja2 templates in dev/wiki/exporter.py.
+Note: Wiki export functionality has been migrated to dev/wiki/exporter.py
+using Jinja2 templates for all entity pages, indexes, and special pages
+(stats, timeline, analysis).
 """
 
 from dev.builders.base import BaseBuilder, BuilderStats
 from dev.builders.pdfbuilder import BuildStats, PdfBuilder
 from dev.builders.txtbuilder import ProcessingStats, TxtBuilder
 from dev.builders.wiki import EntityConfig, GenericEntityExporter, write_if_changed
-from dev.builders.wiki_pages import (
-    export_analysis_report,
-    export_index,
-    export_stats,
-    export_timeline,
-)
 
 __all__ = [
     # Base classes
@@ -37,13 +28,8 @@ __all__ = [
     # Text builder
     "TxtBuilder",
     "ProcessingStats",
-    # Wiki builders - core
+    # Wiki builders - legacy (use dev.wiki.WikiExporter instead)
     "EntityConfig",
     "GenericEntityExporter",
     "write_if_changed",
-    # Wiki builders - special pages
-    "export_index",
-    "export_stats",
-    "export_timeline",
-    "export_analysis_report",
 ]

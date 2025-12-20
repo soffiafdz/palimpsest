@@ -1,0 +1,35 @@
+{# Timeline/Calendar Template #}
+# Palimpsest — Timeline
+
+Chronological calendar view of all journal entries.
+
+---
+
+## Statistics
+
+- **Total Entries:** {{ stats.entries }}
+- **Time Span:** {{ stats.years }} years ({{ stats.span_days }} days)
+- **First Entry:** {{ stats.first_date|format_date('%Y-%m-%d') }}
+- **Last Entry:** {{ stats.last_date|format_date('%Y-%m-%d') }}
+- **Average per Year:** {{ stats.avg_per_year|format_number(1) }} entries
+
+---
+
+## Timeline by Year
+
+{% for year_data in timeline %}
+### {{ year_data.year }} ({{ year_data.count }} entries)
+
+{% for month_data in year_data.months %}
+#### {{ month_data.name }} {{ year_data.year }} ({{ month_data.count }} entries)
+
+{% for entry in month_data.entries %}
+- [[{{ entry.path }}|{{ entry.date|format_date('%Y-%m-%d') }}]] — {{ entry.word_count }} words
+{% endfor %}
+
+{% endfor %}
+{% endfor %}
+
+---
+
+*Last updated: {{ generated_at|format_date('%Y-%m-%d %H:%M') }}*

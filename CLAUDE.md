@@ -160,6 +160,48 @@ from dev.database.decorators import handle_db_errors
 - Run tests with: `python -m pytest tests/ -q`
 - Use fixtures from `conftest.py`
 
+### Mandatory Testing for All Changes
+
+**Every code addition or modification MUST include:**
+
+1. **Unit tests** for new functions/methods
+2. **Integration tests** if the change affects multiple modules
+3. **Test coverage** for edge cases and error conditions
+
+Place tests in the corresponding location:
+- `dev/module/file.py` → `tests/unit/module/test_file.py`
+
+## Development Workflow
+
+When making any code changes, follow these steps:
+
+### 1. Documentation First
+
+Before writing code:
+- Understand the existing patterns in the codebase
+- Plan the module header and key docstrings
+
+### 2. Implementation
+
+Code must include:
+- **Module header**: Script purpose, features, usage examples, dependencies
+- **Type annotations**: All parameters and return types
+- **Detailed docstrings**: Args, Returns, Raises, Notes sections
+
+### 3. Testing
+
+Create tests before considering a feature complete:
+- Test happy paths
+- Test edge cases
+- Test error conditions
+
+### 4. Documentation Update
+
+Update relevant docs:
+- `CLAUDE.md` for persistent instructions
+- `docs/unified_simplification_workplan.md` for task status
+- Module docstrings for usage guidance
+
 ## Avoid Over-Engineering
 
 - Only make changes directly requested

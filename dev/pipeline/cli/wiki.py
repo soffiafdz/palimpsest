@@ -22,7 +22,6 @@ import click
 
 # --- Local imports ---
 from dev.core.paths import (
-    MD_DIR,
     DB_PATH,
     ALEMBIC_DIR,
     LOG_DIR,
@@ -57,12 +56,6 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
         EVENT_CONFIG, TAG_CONFIG, THEME_CONFIG, REFERENCE_CONFIG,
         POEM_CONFIG,
     )
-    from dev.builders.wiki_pages import (
-        export_index,
-        export_stats,
-        export_timeline,
-        export_analysis_report,
-    )
 
     # Map entity names to configs
     config_map = {
@@ -93,43 +86,54 @@ def export_wiki(ctx: click.Context, entity_type: str, force: bool, wiki_dir: str
     try:
         if entity_type == "index":
             click.echo(f"Exporting wiki homepage to {wiki_path}/index.md")
-            status = export_index(db, wiki_path, MD_DIR, force, logger)
+            stats = exporter.export_home(force)
+            status = "created" if stats.entries_created else ("updated" if stats.entries_updated else "unchanged")
             click.echo(f"Index {status}")
         elif entity_type == "stats":
             click.echo(f"Exporting statistics dashboard to {wiki_path}/stats.md")
-            status = export_stats(db, wiki_path, MD_DIR, force, logger)
+            result = exporter.export_stats(force)
+            status = "created" if result.entries_created else ("updated" if result.entries_updated else "unchanged")
             click.echo(f"Statistics {status}")
         elif entity_type == "timeline":
             click.echo(f"Exporting timeline to {wiki_path}/timeline.md")
-            status = export_timeline(db, wiki_path, MD_DIR, force, logger)
+            result = exporter.export_timeline(force)
+            status = "created" if result.entries_created else ("updated" if result.entries_updated else "unchanged")
             click.echo(f"Timeline {status}")
         elif entity_type == "analysis":
             click.echo(f"Exporting analysis report to {wiki_path}/analysis.md")
-            status = export_analysis_report(db, wiki_path, MD_DIR, force, logger)
+            result = exporter.export_analysis(force)
+            status = "created" if result.entries_created else ("updated" if result.entries_updated else "unchanged")
             click.echo(f"Analysis report {status}")
         elif entity_type == "all":
             click.echo(f"Exporting all entities to {wiki_path}/")
             stats = exporter.export_all(force)
 
+            # Export index pages (home + entity indexes)
+            index_stats = exporter.export_indexes(force)
+            stats.entries_created += index_stats.entries_created
+            stats.entries_updated += index_stats.entries_updated
+            stats.entries_skipped += index_stats.entries_skipped
+
             # Export special pages
-            export_index(db, wiki_path, MD_DIR, force, logger)
-            export_stats(db, wiki_path, MD_DIR, force, logger)
-            export_timeline(db, wiki_path, MD_DIR, force, logger)
-            export_analysis_report(db, wiki_path, MD_DIR, force, logger)
+            for export_fn in [exporter.export_stats, exporter.export_timeline, exporter.export_analysis]:
+                result = export_fn(force)
+                stats.entries_created += result.entries_created
+                stats.entries_updated += result.entries_updated
+                stats.entries_skipped += result.entries_skipped
 
             click.echo("\nAll exports complete:")
-            click.echo(f"  Created: {stats.created}")
-            click.echo(f"  Updated: {stats.updated}")
-            click.echo(f"  Unchanged: {stats.skipped}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Unchanged: {stats.entries_skipped}")
         else:
             config = config_map[entity_type]
             click.echo(f"Exporting {config.plural} to {wiki_path}/{config.folder}/")
             stats = exporter.export_entity_type(config, force)
 
             click.echo(f"\n{config.plural.title()} export complete:")
-            click.echo(f"  Created: {stats.created}")
-            click.echo(f"  Updated: {stats.updated}")
-            click.echo(f"  Unchanged: {stats.skipped}")
+            click.echo(f"  Created: {stats.entries_created}")
+            click.echo(f"  Updated: {stats.entries_updated}")
+            click.echo(f"  Unchanged: {stats.entries_skipped}")
 
     except Exception as e:
         handle_cli_error(ctx, e, "export_wiki", {"entity_type": entity_type})

@@ -1,0 +1,110 @@
+{# Analysis Report Template #}
+# Palimpsest — Analysis Report
+
+Comprehensive analysis of journal entities, relationships, and patterns.
+
+---
+
+## Overview
+
+| Metric | Count |
+| --- | --- |
+| **Total Entries** | {{ stats.entries }} |
+| **Unique People** | {{ stats.people }} |
+| **Unique Locations** | {{ stats.locations }} |
+| **Unique Cities** | {{ stats.cities }} |
+| **Events** | {{ stats.events }} |
+| **Tags** | {{ stats.tags }} |
+| **Total Words** | {{ stats.words|format_number }} |
+| **Average Words/Entry** | {{ stats.avg_words }} |
+
+---
+
+## Activity Patterns
+
+### Entries by Year
+
+```
+{% for year in yearly_activity %}
+{{ year.year }}: {{ year.bar }} {{ year.count }} entries ({{ year.words|format_number }} words)
+{% endfor %}
+```
+
+---
+
+## Most Mentioned Entities
+
+### Top 10 People
+
+{% for person in top_people[:10] %}
+{{ person.count|rjust(3) }}× [[{{ person.path }}|{{ person.name }}]]
+{% endfor %}
+
+### Top 10 Locations
+
+{% for location in top_locations[:10] %}
+{{ location.count|rjust(3) }}× {{ location.name }}
+{% endfor %}
+
+### Top 10 Cities
+
+{% for city in top_cities[:10] %}
+{{ city.count|rjust(3) }}× [[{{ city.path }}|{{ city.name }}]]
+{% endfor %}
+
+### Top 15 Tags
+
+{% for tag in top_tags[:15] %}
+{{ tag.count|rjust(3) }}× [[{{ tag.path }}|#{{ tag.name }}]]
+{% endfor %}
+
+---
+
+## Temporal Patterns
+
+### Entries by Day of Week
+
+```
+{% for dow in day_of_week %}
+{{ dow.name|ljust(9) }}: {{ dow.bar }} {{ dow.count }}
+{% endfor %}
+```
+
+---
+
+## Relationship Networks
+
+### People-City Co-occurrences
+
+Top people and their most frequent cities:
+
+{% for person in person_city_network[:5] %}
+- **[[{{ person.path }}|{{ person.name }}]]**: {{ person.cities }}
+{% endfor %}
+
+---
+
+## Activity Heatmap
+
+### Monthly Activity (Last 12 Months)
+
+```
+{% for month in monthly_heatmap %}
+{{ month.key }} ({{ month.name }}): {{ month.intensity }} {{ month.count }} entries
+{% endfor %}
+```
+
+---
+
+## See Also
+
+- [[index.md|Home]]
+- [[stats.md|Statistics Dashboard]]
+- [[timeline.md|Timeline View]]
+- [[people/people.md|All People]]
+- [[cities/cities.md|All Cities]]
+- [[tags/tags.md|All Tags]]
+
+---
+
+*Last updated: {{ generated_at|format_date('%Y-%m-%d %H:%M') }}*

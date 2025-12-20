@@ -147,17 +147,50 @@ def format_date(d: date, fmt: str = "%Y-%m-%d") -> str:
     return d.strftime(fmt)
 
 
-def format_number(n: int) -> str:
+def format_number(n: float, decimals: int = 0) -> str:
     """
-    Format a number with thousands separators.
+    Format a number with thousands separators and optional decimal places.
 
     Args:
         n: Number to format
+        decimals: Number of decimal places (default 0)
 
     Returns:
-        Formatted string with commas (e.g., "1,234,567")
+        Formatted string with commas (e.g., "1,234,567" or "1,234.56")
     """
-    return f"{n:,}"
+    if n is None:
+        return ""
+    if decimals > 0:
+        return f"{n:,.{decimals}f}"
+    return f"{int(n):,}"
+
+
+def ljust(value: str, width: int) -> str:
+    """
+    Left-justify a string in a field of given width.
+
+    Args:
+        value: String to left-justify
+        width: Total width of the field
+
+    Returns:
+        Left-justified string padded with spaces
+    """
+    return str(value).ljust(width)
+
+
+def rjust(value: str, width: int) -> str:
+    """
+    Right-justify a string in a field of given width.
+
+    Args:
+        value: String to right-justify
+        width: Total width of the field
+
+    Returns:
+        Right-justified string padded with spaces
+    """
+    return str(value).rjust(width)
 
 
 def pluralize(count: int, singular: str, plural: Optional[str] = None) -> str:
@@ -189,6 +222,8 @@ def register_filters(env) -> None:
     env.filters['format_date'] = format_date
     env.filters['format_number'] = format_number
     env.filters['pluralize'] = pluralize
+    env.filters['ljust'] = ljust
+    env.filters['rjust'] = rjust
     # entity_link and wikilink need context, registered as globals
     env.globals['entity_link'] = entity_link
     env.globals['wikilink'] = wikilink
