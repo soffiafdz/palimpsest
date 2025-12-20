@@ -67,13 +67,16 @@ def parse_wiki_file(file_path: Path) -> Dict[str, str]:
     return sections
 
 
-def extract_section(sections: Dict[str, str], header: str) -> Optional[str]:
+def get_section(sections: Dict[str, str], header: str) -> Optional[str]:
     """
-    Extract content from a specific section.
+    Get content from a specific section by header name.
+
+    Simple dictionary lookup wrapper for parsed wiki sections.
+    Use md.extract_section() for parsing markdown content directly.
 
     Args:
         sections: Dictionary from parse_wiki_file()
-        header: Section header to extract
+        header: Section header to get
 
     Returns:
         Section content or None if not found
@@ -93,7 +96,7 @@ def extract_notes(sections: Dict[str, str]) -> Optional[str]:
     Returns:
         Notes content or None if empty/placeholder
     """
-    notes = extract_section(sections, "Notes")
+    notes = get_section(sections, "Notes")
 
     if not notes:
         return None
@@ -124,7 +127,7 @@ def extract_vignette(sections: Dict[str, str]) -> Optional[str]:
     Returns:
         Vignette content or None if empty/placeholder
     """
-    vignette = extract_section(sections, "Vignette")
+    vignette = get_section(sections, "Vignette")
 
     if not vignette:
         return None
@@ -155,7 +158,7 @@ def extract_category(sections: Dict[str, str]) -> Optional[str]:
     Returns:
         Category value or None
     """
-    metadata = extract_section(sections, "Metadata")
+    metadata = get_section(sections, "Metadata")
 
     if not metadata:
         return None
@@ -242,7 +245,7 @@ def extract_metadata_field(sections: Dict[str, str], field_name: str) -> Optiona
     Returns:
         Field value or None
     """
-    metadata = extract_section(sections, "Metadata")
+    metadata = get_section(sections, "Metadata")
 
     if not metadata:
         return None
