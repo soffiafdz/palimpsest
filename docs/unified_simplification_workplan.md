@@ -103,83 +103,103 @@ This list is organized by dependency tiers. Complete tasks in order to avoid rew
 | **P8** | Generic wiki index builder (merged into P26) | -280 | ✅ Complete |
 | **P3** | Consolidate entity managers (EntityManager base) | ~500 reduction | ✅ Complete |
 
-### Tier 1: Foundation (Core Changes - Do First)
+### Tier 1: Foundation ✅
 
-All foundation tasks complete. Proceed to Tier 3 enhancements.
+Core architecture changes. All complete.
 
-### Tier 2: Wiki System Rewrite ✅
+| Priority | Task | Lines Impact | Status |
+|----------|------|--------------|--------|
+| **P3** | EntityManager consolidation | ~500 saved | ✅ Complete |
+| **P25** | Moment model schema | ~50 cleaner | ✅ Complete |
+| **P4** | Health/analytics simplification | -114 | ✅ Complete |
 
-Replaced the wiki dataclass system with Jinja templates in `dev/wiki/`.
+### Tier 2: Wiki System ✅
 
-| Priority | Task | Lines Impact | Risk | Status |
-|----------|------|--------------|------|--------|
-| **P26** | Template-based wiki renderer | -2,750 | Medium | ✅ Complete |
-| **P8** | Generic wiki index builder | -280 | Low | ✅ Merged into P26 |
+Template-based wiki system. All complete.
 
-**Completed:** P5, P5.1, P5.2, P20 (wiki dataclass cleanup) are now obsolete - all handled by P26.
+| Priority | Task | Lines Impact | Status |
+|----------|------|--------------|--------|
+| **P26** | Template-based wiki renderer | -2,750 | ✅ Complete |
+| **P8** | Generic wiki index builder | -280 | ✅ Merged into P26 |
+| **P27** | Main wiki dashboards | +173 | ✅ Complete |
 
-### Tier 3: Wiki Enhancements
+**Obsolete:** P5, P5.1, P5.2, P20 (wiki dataclass cleanup) - handled by P26.
 
-Improvements to the wiki system after the rewrite.
+### Tier 3: Core Utilities & Database Layer
 
-| Priority | Task | Lines Impact | Risk | Status |
-|----------|------|--------------|------|--------|
-| **P27** | Main wiki dashboards | +173 | Low | ✅ Complete |
-| **P34** | Neovim plugin fixes + enhancements | +300 Lua | Low | Pending |
+Consolidate core infrastructure before building on it.
 
-### Tier 4: Manuscript System
+| Priority | Task | Lines Saved | Risk | Status |
+|----------|------|-------------|------|--------|
+| **P10** | Replace decorator boilerplate with context managers | ~300 | Medium | Pending |
+| **P11** | Utils module consolidation | ~180 | Low | Pending |
+| **P13** | Use existing `safe_logger()` codebase-wide | ~70 | Low | Pending |
+| **P22** | Core module cleanup | ~90 | Low | Pending |
+| **P23** | Database model mixins | ~100 | Very Low | Pending |
+
+### Tier 4: Wiki Cleanup
+
+Post-P26 cleanup. Some tasks may be obsolete after template rewrite.
+
+| Priority | Task | Lines Saved | Risk | Status |
+|----------|------|-------------|------|--------|
+| **P7.2** | Merge EntityExporter classes | ~350 | Medium | Check if obsolete |
+| **P18** | Wiki stats collector | ~30 | Low | Check if part of P26 |
+| **P19** | Generic wiki index grouping | ~80 | Medium | Check if part of P26 |
+| **P24** | Wiki pages utils cleanup | ~20 | Very Low | Pending |
+
+### Tier 5: Pipeline & Sync System
+
+Clean up pipeline code before manuscript integration.
+
+| Priority | Task | Lines Saved | Risk | Status |
+|----------|------|-------------|------|--------|
+| **P7** | Remove meta-programming in pipeline | ~300 | Medium | Pending |
+| **P7.1** | Delete unused import_* wrappers | ~250 | Low | Pending |
+| **P12** | Pipeline file writing helpers | ~40 | Low | Pending |
+| **P15** | Extract sync state helper | ~125 | Medium | Pending |
+| **P16** | Extract field update helper | ~100 | Medium | Pending |
+
+### Tier 6: Manuscript System
 
 Full manuscript curation workflow.
 
-| Priority | Task | Lines Impact | Risk | Depends On |
-|----------|------|--------------|------|------------|
-| **P28** | Manuscript database schema | +150 SQL | Medium | P25, P26 |
-| **P29** | Manuscript YAML parsing | +100 | Low | P28 |
-| **P30** | Manuscript wiki structure | +300 templates | Medium | P26, P28 |
-| **P31** | Bidirectional sync config | +150 | Medium | P28, P30 |
+| Priority | Task | Lines Impact | Risk | Status |
+|----------|------|--------------|------|--------|
+| **P28** | Manuscript database schema | +150 SQL | Medium | ✅ Already implemented |
+| **P29** | Manuscript YAML parsing | +100 | Low | Pending |
+| **P30** | Manuscript wiki structure | +300 templates | Medium | Pending |
+| **P31** | Bidirectional sync config | +150 | Medium | Pending |
 
-### Tier 5: Manuscript Integration
+### Tier 7: Manuscript Integration & Stats
 
-Final manuscript tooling.
+Final manuscript tooling and analytics.
 
 | Priority | Task | Lines Impact | Risk | Depends On |
 |----------|------|--------------|------|------------|
 | **P32** | Neovim manuscript commands | +200 Lua | Low | P28-P31 |
 | **P33** | Stats materialized views | +100 SQL | Low | P25, P28 |
 
-### Tier 6: Final Cleanup
+### Tier 8: Validators & CLI Cleanup
 
-Do after major architectural changes are complete.
+Independent module improvements.
+
+| Priority | Task | Lines Saved | Risk | Status |
+|----------|------|-------------|------|--------|
+| **P6** | Consolidate backup/stats CLI commands | ~100 | Low | Pending |
+| **P9** | Validator method consolidation | ~160 | Low | Pending |
+| **P14** | PDF builder consolidation | ~98 | Medium | Pending |
+| **P17** | Delete unused single-entity imports | ~230 | Low | Pending |
+| **P21** | Search module consolidation | ~160 | Low | Pending |
+
+### Tier 9: Final Cleanup & Neovim
+
+Do after all core Python work is complete.
 
 | Priority | Task | Lines Impact | Risk | Depends On |
 |----------|------|--------------|------|------------|
-| **P35** | Code reorganization | ~0 | Medium | P4, P26 |
-
-### Low Priority (Anytime)
-
-Independent cleanup tasks. Do as convenient or skip if superseded.
-
-| Priority | Task | Lines Saved | Risk | Notes |
-|----------|------|-------------|------|-------|
-| **P6** | Consolidate backup/stats CLI commands | ~100 | Low | |
-| **P7** | Remove meta-programming in pipeline | ~300 | Medium | |
-| **P7.1** | Delete unused import_* wrappers | ~250 | Low | |
-| **P7.2** | Merge EntityExporter classes | ~350 | Medium | May be part of P26 |
-| **P9** | Validator method consolidation | ~160 | Low | |
-| **P10** | Replace decorator boilerplate with context managers | ~300 | Medium | |
-| **P11** | Utils module consolidation | ~180 | Low | |
-| **P12** | Pipeline file writing helpers | ~40 | Low | |
-| **P13** | Use existing `safe_logger()` codebase-wide | ~70 | Low | |
-| **P14** | PDF builder consolidation | ~98 | Medium | |
-| **P15** | Extract sync state helper | ~125 | Medium | |
-| **P16** | Extract field update helper | ~100 | Medium | |
-| **P17** | Delete unused single-entity imports | ~230 | Low | |
-| **P18** | Wiki stats collector | ~30 | Low | May be part of P26 |
-| **P19** | Generic wiki index grouping | ~80 | Medium | Part of P26/P8 |
-| **P21** | Search module consolidation | ~160 | Low | |
-| **P22** | Core module cleanup | ~90 | Low | |
-| **P23** | Database model mixins | ~100 | Very Low | |
-| **P24** | Wiki pages utils cleanup | ~20 | Very Low | |
+| **P35** | Code reorganization | ~0 | Medium | All above |
+| **P34** | Neovim plugin fixes + enhancements | +300 Lua | Low | All above |
 
 ### Skip If P26 Is Implemented
 
