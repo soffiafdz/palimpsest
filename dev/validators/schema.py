@@ -25,7 +25,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # --- Local imports ---
