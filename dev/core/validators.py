@@ -9,6 +9,36 @@ used across database operations, conversion pipelines, and utilities.
 
 This module is format-agnostic and should not depend on specific file
 formats (Markdown, YAML, etc.). It provides pure data type conversions.
+
+Classes:
+    DataValidator: Centralized validation with static methods
+
+Key Methods:
+    validate_required_fields: Check required fields exist and are non-None
+    normalize_date: Convert various inputs to datetime.date
+    normalize_string: Strip whitespace, return None if empty
+    normalize_int/float: Safe numeric conversion
+    normalize_bool: Convert strings/ints to boolean
+    normalize_enum: Convert strings to enum instances
+    extract_number: Extract first numeric value from string
+    validate_date_string: Check ISO date format validity
+
+Usage:
+    from dev.core.validators import DataValidator
+
+    # Validate required fields
+    DataValidator.validate_required_fields(data, ["date", "content"])
+
+    # Normalize various types
+    date_obj = DataValidator.normalize_date("2024-01-15")
+    count = DataValidator.normalize_int("42")
+    is_active = DataValidator.normalize_bool("yes")
+
+    # Extract numbers from strings
+    word_count = DataValidator.extract_number("150 words")  # Returns 150.0
+
+    # Normalize enums
+    location_type = DataValidator.normalize_enum("venue", LocationType)
 """
 # --- Annotations ---
 from __future__ import annotations

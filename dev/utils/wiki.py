@@ -1,16 +1,48 @@
+#!/usr/bin/env python3
 """
 wiki.py
 -------
-Utilities for parsing vimwiki markdown files for import to database.
+Utilities for parsing vimwiki markdown files and generating entity paths.
 
-Used by wiki2sql phase to extract editable fields from wiki pages
-and sync them back to the database.
+Provides functions for parsing wiki page sections, extracting editable fields,
+and generating consistent file paths for wiki entities. Used by wiki2sql
+for syncing wiki edits back to the database.
+
+Functions:
+    parse_wiki_file: Parse wiki file into sections dictionary
+    get_section: Get content from a specific section
+    extract_notes: Extract Notes section (handles placeholders)
+    extract_vignette: Extract Vignette section (Person entities)
+    extract_category: Extract category from Metadata section
+    extract_list_items: Extract bullet items from section
+    extract_metadata_field: Extract specific field from Metadata
+    is_placeholder: Check if text is placeholder content
+    parse_wiki_links: Parse vimwiki [[path|text]] links
+    slugify: Convert name to wiki-safe filename slug
+    entity_filename: Generate wiki markdown filename for entity
+    entity_path: Generate full path to entity wiki file
+
+Usage:
+    from dev.utils.wiki import parse_wiki_file, slugify, entity_path
+
+    # Parse wiki file into sections
+    sections = parse_wiki_file(Path("/wiki/people/alice.md"))
+    notes = sections.get("Notes")
+
+    # Generate entity paths
+    path = entity_path(wiki_dir, "people", "María José")
+    # Returns: /wiki/people/maría_josé.md
+
+    # Slugify names for filenames
+    slug = slugify("New York City")  # "new_york_city"
 """
+# --- Annotations ---
+from __future__ import annotations
 
 # --- Standard library imports ---
+import re
 from pathlib import Path
 from typing import Dict, Optional, List
-import re
 
 
 def parse_wiki_file(file_path: Path) -> Dict[str, str]:

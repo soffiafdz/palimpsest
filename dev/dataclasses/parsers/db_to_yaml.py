@@ -1,12 +1,36 @@
+#!/usr/bin/env python3
 """
-Database to YAML Exporter
+db_to_yaml.py
+-------------
+Database Entry to YAML frontmatter exporter.
 
 Converts database Entry ORM objects to YAML frontmatter-compatible metadata format.
-Handles complex field building including people, locations, dates, references, and poems.
-"""
+Handles complex field building including people, locations, dates, references,
+and poems. Used by MdEntry.from_database() for sql2yaml workflow.
 
+Classes:
+    DbToYamlExporter: Exporter with static methods for building metadata
+
+Key Methods:
+    build_cities_metadata: Extract city/cities (single or list)
+    build_locations_metadata: Extract locations (flat or nested by city)
+    build_people_metadata: Extract people with aliases
+    build_dates_metadata: Extract mentioned dates with context
+    build_references_metadata: Extract references with sources
+    build_poems_metadata: Extract poems with revision dates
+    build_manuscript_metadata: Extract manuscript status and themes
+
+Usage:
+    from dev.dataclasses.parsers import DbToYamlExporter
+
+    exporter = DbToYamlExporter()
+    cities = exporter.build_cities_metadata(entry)
+    people = exporter.build_people_metadata(entry)
+"""
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from typing import Dict, Any, List, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:

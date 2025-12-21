@@ -2,12 +2,31 @@
 """
 fs.py
 -------------------
-Set of utilities for dealing with I/O and filesystems.
+Filesystem utilities for I/O operations and file management.
 
-It is designed to work with metadata and vimwiki integration.
+Provides functions for file discovery, hash computation, and date parsing
+from filenames. Used by md2wiki, yaml2sql, and other conversion workflows.
 
-Intended to be imported by the md2wiki and metadata workflow.
+Functions:
+    find_markdown_files: Discover markdown files by glob pattern
+    should_skip_file: Check if file processing can be skipped (hash comparison)
+    get_file_hash: Compute MD5 hash for change detection
+    parse_date_from_filename: Extract date from YYYY, YYYY-MM, or YYYY-MM-DD filenames
+    date_to_filename: Convert date to filename string with precision control
+
+Usage:
+    from dev.utils.fs import find_markdown_files, get_file_hash, parse_date_from_filename
+
+    # Find all markdown files
+    files = find_markdown_files(Path("/wiki"), "**/*.md")
+
+    # Check for changes
+    current_hash = get_file_hash(file_path)
+
+    # Parse date from filename
+    entry_date = parse_date_from_filename(Path("2024-01-15.md"))
 """
+# --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---

@@ -1,16 +1,40 @@
+#!/usr/bin/env python3
 """
-YAML to Database Parser
+yaml_to_db.py
+-------------
+YAML frontmatter to database format parser.
 
 Converts YAML frontmatter structures to database-compatible metadata format.
-Handles complex field parsing including people, locations, dates, references, and poems.
-"""
+Handles complex field parsing including people, locations, dates, references,
+and poems. Used by MdEntry.to_database_metadata() for yaml2sql workflow.
 
+Classes:
+    YamlToDbParser: Parser for converting YAML to database format
+
+Key Methods:
+    parse_city_field: Parse city/cities (single or list)
+    parse_locations_field: Parse flat or nested location structures
+    parse_people_field: Parse people with name/full_name/alias logic
+    parse_dates_field: Parse dates with locations/people associations
+    parse_references_field: Parse references with source handling
+    parse_poems_field: Parse poems with revision dates
+
+Usage:
+    from dev.dataclasses.parsers import YamlToDbParser
+
+    parser = YamlToDbParser(entry_date, metadata)
+    cities = parser.parse_city_field(metadata["city"])
+    people = parser.parse_people_field(metadata["people"])
+"""
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import logging
 from datetime import date
 from typing import Dict, Any, List, Optional, Union, Tuple
 
+# --- Local imports ---
 from dev.core.validators import DataValidator
 from dev.utils import parsers
 

@@ -35,16 +35,19 @@ Example:
                 # Entity-specific creation logic
                 ...
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import time
 from abc import ABC
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, Protocol
 
+# --- Third party imports ---
 from sqlalchemy.orm import Session, Mapped
-
 from sqlalchemy.exc import IntegrityError, OperationalError
 
+# --- Local imports ---
 from dev.core.exceptions import DatabaseError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator

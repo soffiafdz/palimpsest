@@ -35,9 +35,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# --- Third party ---
+# --- Third party imports ---
 from pypandoc import convert_file
 
+# --- Local imports ---
 from dev.builders.base import BuilderStats as BaseStats
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger

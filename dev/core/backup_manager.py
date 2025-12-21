@@ -2,19 +2,51 @@
 """
 backup_manager.py
 --------------------
-Database backup and recovery operations.
+Database backup and recovery operations for the Palimpsest project.
 
-Handles both database-only and full data directory backups.
+Handles both database-only backups (fast, frequent) and full data directory
+backups (complete archive, less frequent). Supports automatic daily/weekly
+backup scheduling with configurable retention policies.
+
+Features:
+    - Timestamped database backups with SQLite backup API
+    - Compressed full data directory archives (tar.gz)
+    - Automatic cleanup of old backups based on retention policy
+    - Pre-restore backup creation for safe recovery
+    - Marker files for precise creation timestamp tracking
+
+Usage:
+    from dev.core.backup_manager import BackupManager
+    from dev.core.paths import DB_PATH, BACKUP_DIR, DATA_DIR
+
+    manager = BackupManager(DB_PATH, BACKUP_DIR, DATA_DIR)
+
+    # Create manual backup
+    backup_path = manager.create_backup("manual")
+
+    # Auto backup with cleanup
+    manager.auto_backup()
+
+    # List all backups
+    backups = manager.list_backups()
+
+    # Restore from backup
+    manager.restore_backup(backup_path)
 """
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
 import fnmatch
 import sqlite3
 import tarfile
-from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .logging_manager import PalimpsestLogger, safe_logger
+# --- Local imports ---
 from .exceptions import BackupError
+from .logging_manager import PalimpsestLogger, safe_logger
 
 # ---- Constants ----
 SUNDAY = 6  # datetime.weekday() returns 6 for Sunday

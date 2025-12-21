@@ -24,14 +24,18 @@ Usage:
             # Person-specific validation (name_fellow logic)
             ...
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
+# --- Third party imports ---
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator

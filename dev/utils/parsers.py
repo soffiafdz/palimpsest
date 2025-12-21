@@ -2,10 +2,35 @@
 """
 parsers.py
 --------------------
-General parsing utilities for extracting structured data.
+Parsing utilities for extracting structured data from formatted text.
 
-Provides parsing functions used across multiple modules for extracting
-names, abbreviations, and other structured information from formatted text.
+Provides parsing functions for extracting names, abbreviations, context
+references (@people, #locations), and handling hyphenation conventions
+in the Palimpsest project.
+
+Functions:
+    extract_name_and_expansion: Parse "Short (Full Expansion)" format
+    extract_context_refs: Extract @people and #location references
+    format_person_ref: Format person name as @reference for YAML
+    format_location_ref: Format location name as #reference for YAML
+    parse_date_context: Parse "2024-01-15 (context)" format
+    split_hyphenated_to_spaces: Convert hyphens/underscores to spaces
+    spaces_to_hyphenated: Convert spaces to hyphens (smart handling)
+
+Usage:
+    from dev.utils.parsers import extract_context_refs, extract_name_and_expansion
+
+    # Parse context with @people and #locations
+    refs = extract_context_refs("Dinner with @Majo at #Aliza's")
+    # Returns: {"context": "...", "people": ["Majo"], "locations": ["Aliza's"]}
+
+    # Extract name with optional expansion
+    name, expansion = extract_name_and_expansion("Mtl (Montreal)")
+    # Returns: ("Mtl", "Montreal")
+
+    # Handle hyphenation conventions
+    display_name = split_hyphenated_to_spaces("María-José")  # "María José"
+    yaml_ref = spaces_to_hyphenated("María José")  # "María-José"
 """
 # --- Annotations ---
 from __future__ import annotations

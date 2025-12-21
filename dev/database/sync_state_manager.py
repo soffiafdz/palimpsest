@@ -31,12 +31,17 @@ Usage:
     # List all unresolved conflicts
     conflicts = mgr.list_conflicts()
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from datetime import datetime
 from typing import Optional, List
+
+# --- Third party imports ---
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.database.models import SyncState
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
