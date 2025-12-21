@@ -61,6 +61,38 @@ validate db schema
 - Creates new `moment_events` relationship table
 - **Your YAML `dates:` field name stays the same** - no frontmatter changes needed for this
 
+### Understanding dates → Moment mapping
+
+Your YAML `dates:` field maps to `Moment` objects in the database:
+
+```
+YAML field:     dates:           ← You write this (unchanged)
+                  ↓
+Database model: Moment           ← Internal name (renamed from MentionedDate)
+                  ↓
+Database table: moments          ← After migration (renamed from 'dates')
+```
+
+**Why the rename?** A "moment" is more than just a date - it captures:
+- `date`: when it happened
+- `context`: what happened
+- `people`: who was involved (via `moment_people` table)
+- `locations`: where it happened (via `moment_locations` table)
+- `events`: which events it's part of (via `moment_events` table)
+
+**Example mapping:**
+
+```yaml
+# Your YAML (field name unchanged)
+dates:
+  - date: 2025-01-15
+    context: "Birthday party at Café"
+    people: [Alice]
+    locations: [Café Olimpico]
+```
+
+This creates a `Moment` object in the database with relationships to the Person "Alice" and Location "Café Olimpico".
+
 ---
 
 ## Step 3: Fix Frontmatter Errors
