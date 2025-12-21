@@ -935,6 +935,164 @@ class FrontmatterValidator:
 
         return issues
 
+    def validate_events_field(
+        self, file_path: Path, events_data: Any
+    ) -> List[FrontmatterIssue]:
+        """
+        Validate events field structure.
+
+        Events should be a list of strings (event identifiers).
+        """
+        issues = []
+
+        # Type check
+        type_error = self._require_type(
+            file_path, "events", events_data, list,
+            "Use: events: [event1, event2]"
+        )
+        if type_error:
+            return [type_error]
+
+        # Check each event is a string
+        for idx, event in enumerate(events_data):
+            if not isinstance(event, str):
+                issues.append(self._warning(
+                    file_path, f"events[{idx}]",
+                    f"Event should be a string, got {type(event).__name__}",
+                    "Use: events: [event-name, another-event]",
+                    str(event)
+                ))
+            elif not event.strip():
+                issues.append(self._warning(
+                    file_path, f"events[{idx}]",
+                    "Event name is empty",
+                    "Remove empty events or add a valid name"
+                ))
+
+        return issues
+
+    def validate_tags_field(
+        self, file_path: Path, tags_data: Any
+    ) -> List[FrontmatterIssue]:
+        """
+        Validate tags field structure.
+
+        Tags should be a list of strings.
+        """
+        issues = []
+
+        # Type check
+        type_error = self._require_type(
+            file_path, "tags", tags_data, list,
+            "Use: tags: [tag1, tag2]"
+        )
+        if type_error:
+            return [type_error]
+
+        # Check each tag is a string
+        for idx, tag in enumerate(tags_data):
+            if not isinstance(tag, str):
+                issues.append(self._warning(
+                    file_path, f"tags[{idx}]",
+                    f"Tag should be a string, got {type(tag).__name__}",
+                    "Use: tags: [tag-name, another-tag]",
+                    str(tag)
+                ))
+            elif not tag.strip():
+                issues.append(self._warning(
+                    file_path, f"tags[{idx}]",
+                    "Tag name is empty",
+                    "Remove empty tags or add a valid name"
+                ))
+
+        return issues
+
+    def validate_related_entries_field(
+        self, file_path: Path, related_data: Any
+    ) -> List[FrontmatterIssue]:
+        """
+        Validate related_entries field structure.
+
+        Related entries should be a list of date strings (YYYY-MM-DD).
+        """
+        issues = []
+
+        # Type check
+        type_error = self._require_type(
+            file_path, "related_entries", related_data, list,
+            "Use: related_entries: [2024-01-15, 2024-02-20]"
+        )
+        if type_error:
+            return [type_error]
+
+        # ISO date pattern
+        date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+        from datetime import date as dt_date
+
+        for idx, entry_ref in enumerate(related_data):
+            # Handle datetime.date objects
+            if isinstance(entry_ref, dt_date):
+                continue
+
+            if not isinstance(entry_ref, str):
+                issues.append(self._error(
+                    file_path, f"related_entries[{idx}]",
+                    f"Related entry should be a date string, got {type(entry_ref).__name__}",
+                    "Use YYYY-MM-DD format",
+                    str(entry_ref)
+                ))
+            elif not date_pattern.match(entry_ref):
+                issues.append(self._error(
+                    file_path, f"related_entries[{idx}]",
+                    f"Invalid date format: '{entry_ref}'",
+                    "Use YYYY-MM-DD format"
+                ))
+
+        return issues
+
+    def validate_city_field(
+        self, file_path: Path, city_data: Any
+    ) -> List[FrontmatterIssue]:
+        """
+        Validate city field structure.
+
+        City can be a single string or list of strings.
+        """
+        issues = []
+
+        # Accept string or list
+        if isinstance(city_data, str):
+            if not city_data.strip():
+                issues.append(self._warning(
+                    file_path, "city",
+                    "City name is empty",
+                    "Remove empty city or add a valid name"
+                ))
+        elif isinstance(city_data, list):
+            for idx, city in enumerate(city_data):
+                if not isinstance(city, str):
+                    issues.append(self._warning(
+                        file_path, f"city[{idx}]",
+                        f"City should be a string, got {type(city).__name__}",
+                        "Use: city: [City1, City2]",
+                        str(city)
+                    ))
+                elif not city.strip():
+                    issues.append(self._warning(
+                        file_path, f"city[{idx}]",
+                        "City name is empty",
+                        "Remove empty cities or add valid names"
+                    ))
+        else:
+            issues.append(self._error(
+                file_path, "city",
+                f"City should be a string or list, got {type(city_data).__name__}",
+                "Use: city: Montreal or city: [Montreal, Toronto]"
+            ))
+
+        return issues
+
     def validate_file(self, file_path: Path) -> List[FrontmatterIssue]:
         """
         Validate metadata structure in a single file.
@@ -965,6 +1123,9 @@ class FrontmatterValidator:
             return issues  # Let frontmatter validator handle syntax errors
 
         # Validate each field
+        if "city" in metadata:
+            issues.extend(self.validate_city_field(file_path, metadata["city"]))
+
         if "people" in metadata:
             issues.extend(self.validate_people_field(file_path, metadata["people"]))
 
@@ -987,6 +1148,15 @@ class FrontmatterValidator:
 
         if "manuscript" in metadata:
             issues.extend(self.validate_manuscript_field(file_path, metadata["manuscript"]))
+
+        if "events" in metadata:
+            issues.extend(self.validate_events_field(file_path, metadata["events"]))
+
+        if "tags" in metadata:
+            issues.extend(self.validate_tags_field(file_path, metadata["tags"]))
+
+        if "related_entries" in metadata:
+            issues.extend(self.validate_related_entries_field(file_path, metadata["related_entries"]))
 
         return issues
 
