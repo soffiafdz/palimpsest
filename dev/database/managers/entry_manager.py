@@ -1002,13 +1002,14 @@ class EntryManager(BaseManager):
         dates_data: List[Union[str, Dict[str, Any]]],
     ) -> None:
         """
-        Process mentioned dates with optional context, locations, and people.
+        Process mentioned dates with optional context, locations, people, and events.
 
         Each date can have:
         - date: ISO format date string (required)
         - context: Optional text context
         - locations: List of location names (creates relationships)
         - people: List of person specs (creates relationships)
+        - events: List of event names (creates relationships)
 
         Args:
             entry: Entry to attach dates to
@@ -1041,6 +1042,11 @@ class EntryManager(BaseManager):
                 if "people" in date_item and date_item["people"]:
                     self._update_mentioned_date_people(
                         mentioned_date, date_item["people"]
+                    )
+
+                if "events" in date_item and date_item["events"]:
+                    self._update_mentioned_date_events(
+                        mentioned_date, date_item["events"]
                     )
             else:
                 continue
@@ -1151,6 +1157,43 @@ class EntryManager(BaseManager):
                 mentioned_date.people.append(person)
 
         if people_data:
+            self.session.flush()
+
+    def _update_mentioned_date_events(
+        self,
+        mentioned_date: Moment,
+        events_data: List[str],
+    ) -> None:
+        """
+        Update events associated with a mentioned date (moment).
+
+        Links events to specific moments, enabling tracking of which events
+        occurred on specific dates within an entry.
+
+        Args:
+            mentioned_date: Moment to update
+            events_data: List of event names
+        """
+        if mentioned_date.id is None:
+            raise ValueError("Moment must be persisted before linking events")
+
+        # Get existing event IDs to avoid duplicates
+        existing_event_ids = {e.id for e in mentioned_date.events}
+
+        for event_name in events_data:
+            # Normalize event name
+            norm_name = DataValidator.normalize_string(event_name)
+            if not norm_name:
+                continue
+
+            # Get or create the event
+            event = self._get_or_create(Event, {"event": norm_name})
+
+            # Link if not already linked
+            if event.id not in existing_event_ids:
+                mentioned_date.events.append(event)
+
+        if events_data:
             self.session.flush()
 
     def _process_tags(

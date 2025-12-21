@@ -326,7 +326,7 @@ class YamlToDbParser:
         """
         Parse dates field with inline or nested format.
 
-        Associates locations/people to specific dates.
+        Associates locations/people/events to specific dates (moments).
         For people values in dates, looks them up in people_parsed.
 
         Supports:
@@ -335,6 +335,7 @@ class YamlToDbParser:
         - Nested format: {"date": "2025-06-01", "context": "thesis exam"}
         - Entry date shorthand: {"date": "."}
         - Opt-out marker: "~" (excludes entry date)
+        - Events: {"date": "2025-06-01", "events": ["summer-trip"]}
 
         Args:
             dates_data: List of date specifications
@@ -454,6 +455,23 @@ class YamlToDbParser:
 
                     if people_list:
                         date_dict["people"] = people_list
+
+                # --- Events ---
+                if "events" in item:
+                    events_field = item["events"]
+                    if isinstance(events_field, str):
+                        events_field = [events_field]
+
+                    if isinstance(events_field, list):
+                        # Normalize event names (hyphen to space, strip)
+                        from dev.utils.parsers import split_hyphenated_to_spaces
+                        events_list = [
+                            split_hyphenated_to_spaces(DataValidator.normalize_string(ev))
+                            for ev in events_field
+                            if DataValidator.normalize_string(ev)
+                        ]
+                        if events_list:
+                            date_dict["events"] = events_list
 
                 normalized.append(date_dict)
 

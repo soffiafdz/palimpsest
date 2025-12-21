@@ -483,6 +483,55 @@ class TestParseDatesField:
         )
         assert len(dates) == 3
 
+    def test_date_with_events_string(self, parser):
+        """Test date with single event as string."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-06-01", "events": "summer-trip"}],
+            None
+        )
+        assert "events" in dates[0]
+        assert dates[0]["events"] == ["summer trip"]
+
+    def test_date_with_events_list(self, parser):
+        """Test date with multiple events as list."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-06-01", "events": ["summer-trip", "europe-2024"]}],
+            None
+        )
+        assert "events" in dates[0]
+        assert len(dates[0]["events"]) == 2
+        assert "summer trip" in dates[0]["events"]
+        assert "europe 2024" in dates[0]["events"]
+
+    def test_date_with_events_and_other_fields(self, parser):
+        """Test date with events combined with people, locations, context."""
+        people_parsed = {
+            "people": [{"name": "Alice"}],
+            "alias": []
+        }
+        dates, exclude = parser.parse_dates_field(
+            [{
+                "date": "2024-06-01",
+                "context": "First day of vacation",
+                "events": ["summer-trip"],
+                "locations": ["Airport"],
+                "people": "Alice"
+            }],
+            people_parsed
+        )
+        assert dates[0]["events"] == ["summer trip"]
+        assert dates[0]["locations"] == ["Airport"]
+        assert "people" in dates[0]
+        assert "context" in dates[0]
+
+    def test_date_with_empty_events(self, parser):
+        """Test date with empty events list is not included."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-06-01", "events": []}],
+            None
+        )
+        assert "events" not in dates[0]
+
 
 # =============================================================================
 # Test parse_references_field

@@ -631,13 +631,13 @@ class FrontmatterValidator:
                             ))
 
                 # Check valid subfields
-                valid_keys = {"date", "context", "people", "locations", "description"}
+                valid_keys = {"date", "context", "people", "locations", "events", "description"}
                 unknown = set(date_entry.keys()) - valid_keys
                 if unknown:
                     issues.append(self._warning(
                         file_path, f"dates[{idx}]",
                         f"Unknown fields in date dict: {', '.join(unknown)}",
-                        "Valid fields: date, context, people, locations"
+                        "Valid fields: date, context, people, locations, events"
                     ))
 
                 # Check types of subfields
@@ -661,6 +661,13 @@ class FrontmatterValidator:
                         file_path, f"dates[{idx}].locations",
                         "Date locations should be a list or string",
                         "Use: locations: [loc1, loc2]"
+                    ))
+
+                if "events" in date_entry and not isinstance(date_entry["events"], (list, str)):
+                    issues.append(self._warning(
+                        file_path, f"dates[{idx}].events",
+                        "Date events should be a list or string",
+                        "Use: events: [event1, event2]"
                     ))
 
                 # Validate people existence if main people list is available

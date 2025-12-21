@@ -194,7 +194,7 @@ class DbToYamlExporter:
         """
         Extract mentioned dates with context from database Entry.
 
-        Builds date items as dicts with date, locations, people, and context.
+        Builds date items as dicts with date, locations, people, events, and context.
         Adds "~" marker if entry date is not in mentioned dates.
 
         Args:
@@ -248,6 +248,10 @@ class DbToYamlExporter:
             # Add context
             if mentioned_date.context:
                 date_dict["context"] = mentioned_date.context
+
+            # Add events
+            if mentioned_date.events:
+                date_dict["events"] = [event.event for event in mentioned_date.events]
 
             dates_list.append(date_dict)
 

@@ -78,7 +78,7 @@ Database table: moments          ← After migration (renamed from 'dates')
 - `context`: what happened
 - `people`: who was involved (via `moment_people` table)
 - `locations`: where it happened (via `moment_locations` table)
-- `events`: which events it's part of (via `moment_events` table)
+- `events`: which events it's part of (via `moment_events` table) - **NEW**
 
 **Example mapping:**
 
@@ -89,9 +89,10 @@ dates:
     context: "Birthday party at Café"
     people: [Alice]
     locations: [Café Olimpico]
+    events: [birthday-celebrations]  # NEW: associate with events
 ```
 
-This creates a `Moment` object in the database with relationships to the Person "Alice" and Location "Café Olimpico".
+This creates a `Moment` object in the database with relationships to the Person "Alice", Location "Café Olimpico", and Event "birthday celebrations".
 
 ---
 
@@ -479,7 +480,7 @@ cities:
     locations: [CN Tower]
 ```
 
-### Dates
+### Dates (Moments)
 ```yaml
 # Simple
 dates:
@@ -491,12 +492,13 @@ dates:
   - date: .
     context: "Today's context"
 
-# With associations
+# With associations (people, locations, events)
 dates:
   - date: 2025-01-15
     context: "Meeting at cafe"
     people: [Alice]
     locations: [Café Olimpico]
+    events: [summer-trip]  # NEW: link moment to events
 
 # Exclude entry date from dates list
 dates:

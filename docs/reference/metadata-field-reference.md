@@ -512,9 +512,9 @@ people:
 
 **Type:** List (strings or dicts)
 **Required:** No
-**SQL:** `dates` table (`mentioned_dates`), many-to-many via `entry_dates`
+**SQL:** `moments` table, many-to-many via `entry_moments`
 
-Track dates mentioned in entry (past events, future appointments, etc.).
+Track dates mentioned in entry (past events, future appointments, etc.). Each date becomes a "Moment" in the database - a point in time that can be associated with people, locations, and events.
 
 **Format 1: Simple Date Strings**
 
@@ -556,7 +556,7 @@ Parsed to:
 }
 ```
 
-Creates `people_dates` and `location_dates` relationships.
+Creates `moment_people` and `moment_locations` relationships.
 
 **Format 4: Explicit Dict**
 
@@ -571,9 +571,29 @@ dates:
       - Dr. Johnson
 ```
 
+**Format 5: With Events**
+
+Associate specific events with dates (moments):
+
+```yaml
+dates:
+  - date: "2024-06-15"
+    context: "First day of vacation"
+    events:
+      - summer-trip
+      - europe-2024
+    locations:
+      - Paris Airport
+```
+
+This creates `moment_events` relationships, linking the moment to specific events. Useful for:
+- Tracking when multi-day events start/end
+- Associating specific dates with ongoing events
+- Building event timelines with precise date markers
+
 **Entry Date Auto-Inclusion**
 
-By default, the entry's own date is automatically added to `mentioned_dates`.
+By default, the entry's own date is automatically added as a Moment.
 
 ```yaml
 ---
@@ -581,7 +601,7 @@ date: 2024-01-15
 # No dates field
 ---
 
-# Result: MentionedDate(date='2024-01-15') automatically created
+# Result: Moment(date='2024-01-15') automatically created
 ```
 
 **To opt out:**
