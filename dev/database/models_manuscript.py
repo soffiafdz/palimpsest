@@ -51,7 +51,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .models import Base, Entry, Event, Person, SoftDeleteMixin
 
 
-# ----- Association table -----
+# ----- Association tables -----
 entry_themes = Table(
     "entry_themes",
     Base.metadata,
@@ -62,6 +62,18 @@ entry_themes = Table(
         primary_key=True,
     ),
     Column("theme_id", Integer, ForeignKey("themes.id"), primary_key=True),
+)
+
+entry_motifs = Table(
+    "entry_motifs",
+    Base.metadata,
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("manuscript_entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("motif_id", Integer, ForeignKey("motifs.id"), primary_key=True),
 )
 
 
@@ -159,14 +171,18 @@ class ManuscriptEntry(Base):
         entry_type: Narrative form (vignette, scene, summary, reflection, dialogue)
         character_notes: Notes about character development in this entry
         narrative_arc: Name of narrative arc this entry belongs to
+        narrative_rating: Narrative quality rating (1-5) from analysis
+        summary: Narrative summary from analysis
 
     Relationships:
         themes: Many-to-many with Theme (thematic elements)
+        motifs: Many-to-many with Motif (thematic patterns/motifs)
         entry: One-to-one with Entry (source journal entry)
 
     Computed Properties:
         is_ready_for_manuscript: Check if entry is ready for inclusion
         theme_names: List of theme names for this entry
+        motif_names: List of motif names for this entry
         theme_count: Number of themes associated with entry
         word_count: Word count from associated entry
         date: Date from associated entry
@@ -195,6 +211,16 @@ class ManuscriptEntry(Base):
     character_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     narrative_arc: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    # ---- Narrative analysis fields ----
+    narrative_rating: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        CheckConstraint("narrative_rating >= 1 AND narrative_rating <= 5"),
+        nullable=True,
+        index=True,
+    )
+    rating_justification: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     # ---- Foreign key ----
     entry_id: Mapped[int] = mapped_column(
         ForeignKey("entries.id"),
@@ -203,12 +229,15 @@ class ManuscriptEntry(Base):
     )
 
     # ---- Relationships ----
-    themes: Mapped[List[Theme]] = relationship(
+    themes: Mapped[List["Theme"]] = relationship(
         "Theme", secondary=entry_themes, back_populates="entries"
+    )
+    motifs: Mapped[List["Motif"]] = relationship(
+        "Motif", secondary=entry_motifs, back_populates="entries"
     )
     entry: Mapped[Entry] = relationship("Entry", back_populates="manuscript")
 
-    # ---- Computed property ----
+    # ---- Computed properties ----
     @property
     def is_ready_for_manuscript(self) -> bool:
         """Check if entry is ready for manuscript inclusion."""
@@ -223,6 +252,16 @@ class ManuscriptEntry(Base):
     def theme_count(self) -> int:
         """Number of themes associated with this entry."""
         return len(self.themes)
+
+    @property
+    def motif_names(self) -> List[str]:
+        """Get list of motif names for this entry."""
+        return [motif.name for motif in self.motifs]
+
+    @property
+    def motif_count(self) -> int:
+        """Number of thematic motifs associated with this entry."""
+        return len(self.motifs)
 
     def has_theme(self, theme_name: str) -> bool:
         """
@@ -453,7 +492,10 @@ class Arc(Base, SoftDeleteMixin):
     Story arcs that group related events in the manuscript.
 
     Represents major narrative arcs that span multiple events,
-    providing structure to the manuscript narrative.
+    providing structure to the manuscript narrative. These are
+    storyline-based groupings (e.g., "The Bea Arc", "The Clara Arc").
+
+    For thematic patterns that recur across entries, see the Motif model.
 
     Attributes:
         id: Primary key
@@ -632,3 +674,105 @@ class Theme(Base, SoftDeleteMixin):
             return f"Theme '{self.theme}' (1 entry)"
         else:
             return f"Theme '{self.theme}' ({count} entries)"
+
+
+class Motif(Base, SoftDeleteMixin):
+    """
+    Thematic motifs that recur across manuscript entries.
+
+    Represents recurring thematic patterns identified through narrative
+    analysis. Unlike Themes (entry-specific thematic elements), Motifs
+    are overarching patterns that weave through multiple entries.
+
+    The 15 predefined motifs from narrative analysis:
+        THE BODY, DIGITAL SURVEILLANCE, WRITING AS SURVIVAL,
+        CLOSURE & ENDINGS, WAITING & TIME, THE OBSESSIVE LOOP,
+        LANGUAGE & SILENCE, HAUNTED GEOGRAPHY, MASKS & PERFORMANCE,
+        VALIDATION & REJECTION, SUBSTITUTION & REPLACEMENT,
+        THE UNRELIABLE NARRATOR, GHOSTS & PALIMPSESTS, THE CAVALRY,
+        MEDICALIZATION
+
+    For storyline-based groupings (e.g., "The Bea Arc"), see the Arc model.
+
+    Attributes:
+        id: Primary key
+        name: Name of the motif (unique, e.g., "THE OBSESSIVE LOOP")
+        description: Optional description of what this motif encompasses
+
+    Relationships:
+        entries: Many-to-many with ManuscriptEntry (entries with this motif)
+
+    Computed Properties:
+        entry_count: Number of entries with this motif
+        first_appearance: Date of first entry with this motif
+        last_appearance: Date of most recent entry with this motif
+        usage_span_days: Days between first and last appearance
+    """
+
+    __tablename__ = "motifs"
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_motif_non_empty_name"),
+    )
+
+    # ---- Primary fields ----
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # ---- Relationship ----
+    entries: Mapped[List["ManuscriptEntry"]] = relationship(
+        "ManuscriptEntry", secondary=entry_motifs, back_populates="motifs"
+    )
+
+    # ---- Computed properties ----
+    @property
+    def entry_count(self) -> int:
+        """Number of manuscript entries with this motif."""
+        return len(self.entries)
+
+    @property
+    def first_appearance(self) -> Optional[date]:
+        """Date of first entry with this motif."""
+        if not self.entries:
+            return None
+        dates = [entry.date for entry in self.entries if entry.date]
+        return min(dates) if dates else None
+
+    @property
+    def last_appearance(self) -> Optional[date]:
+        """Date of most recent entry with this motif."""
+        if not self.entries:
+            return None
+        dates = [entry.date for entry in self.entries if entry.date]
+        return max(dates) if dates else None
+
+    @property
+    def usage_span_days(self) -> int:
+        """Days between first and last appearance of this motif."""
+        first = self.first_appearance
+        last = self.last_appearance
+        if not first or not last or first == last:
+            return 0
+        return (last - first).days
+
+    @property
+    def chronological_entries(self) -> List["ManuscriptEntry"]:
+        """Get entries with this motif in chronological order."""
+        return sorted(
+            [e for e in self.entries if e.date],
+            key=lambda e: e.date
+        )
+
+    def __repr__(self) -> str:
+        return f"<Motif(id={self.id}, name='{self.name}')>"
+
+    def __str__(self) -> str:
+        count = self.entry_count
+        if count == 0:
+            return f"Motif '{self.name}' (no entries)"
+        elif count == 1:
+            return f"Motif '{self.name}' (1 entry)"
+        else:
+            return f"Motif '{self.name}' ({count} entries)"

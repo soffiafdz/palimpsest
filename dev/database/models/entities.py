@@ -7,6 +7,7 @@ Models for people, aliases, and tags in the journal.
 Models:
     - Person: People mentioned in journal entries
     - Alias: Alternative names for people
+    - TagCategory: Semantic categories for grouping tags
     - Tag: Simple keyword tags for categorizing entries
 
 These models track who appears in the journal and how entries are categorized.
@@ -300,16 +301,94 @@ class Alias(Base):
             )
 
 
+class TagCategory(Base):
+    """
+    Semantic categories for grouping tags.
+
+    Provides a hierarchical organization for tags based on narrative
+    analysis categories. Categories are predefined based on the
+    narrative analysis taxonomy.
+
+    Attributes:
+        id: Primary key
+        name: Category name (unique, e.g., "Digital Surveillance", "Writing/Poetry")
+        description: Optional description of what this category encompasses
+
+    Relationships:
+        tags: One-to-many with Tag (tags in this category)
+
+    Computed Properties:
+        tag_count: Number of tags in this category
+        entry_count: Total entries across all tags in category
+
+    Predefined Categories (24):
+        Digital Surveillance, Photography, AI/Technology, Writing/Poetry,
+        Medication, Crisis/Suicidality, Food/Diet, Academia, Sleep/Insomnia,
+        Depression/Grief, Literature, Identity, Therapy, Dysphoria/Body,
+        Obsession/Control, Meta-narrative, Mania/Bipolar, Music,
+        Rejection/Ghosting, Intimacy, Alcohol, Messaging, Anxiety/Panic,
+        Film/TV, Dating Apps, Romance/Dating, Sexual, Smoking/Drugs,
+        Tarot/Divination, Transition, Relics/Objects, Physical Health,
+        Isolation, Hygiene
+    """
+
+    __tablename__ = "tag_categories"
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_tag_category_non_empty_name"),
+    )
+
+    # ---- Primary fields ----
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # ---- Relationship ----
+    tags: Mapped[List["Tag"]] = relationship("Tag", back_populates="category")
+
+    # ---- Computed properties ----
+    @property
+    def tag_count(self) -> int:
+        """Number of tags in this category."""
+        return len(self.tags)
+
+    @property
+    def entry_count(self) -> int:
+        """Total entries across all tags in this category."""
+        entries = set()
+        for tag in self.tags:
+            entries.update(tag.entries)
+        return len(entries)
+
+    @property
+    def all_tag_names(self) -> List[str]:
+        """Get all tag names in this category."""
+        return [tag.tag for tag in self.tags]
+
+    def __repr__(self) -> str:
+        return f"<TagCategory(id={self.id}, name='{self.name}')>"
+
+    def __str__(self) -> str:
+        return f"TagCategory '{self.name}' ({self.tag_count} tags)"
+
+
 class Tag(Base):
     """
-    Simple keyword tags for entries.
+    Keyword tags for entries with optional category grouping.
 
     Provides a flexible tagging system for categorizing and
-    searching journal entries.
+    searching journal entries. Tags can optionally belong to
+    a semantic category for hierarchical organization.
 
     Attributes:
         id: Primary key
         tag: The tag text (unique)
+        category_id: Optional FK to TagCategory
+
+    Relationships:
+        category: Many-to-one with TagCategory (optional)
+        entries: Many-to-many with Entry
     """
 
     __tablename__ = "tags"
@@ -320,8 +399,14 @@ class Tag(Base):
     tag: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
     )
+    category_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("tag_categories.id", ondelete="SET NULL"), nullable=True
+    )
 
-    # ---- Relationship ----
+    # ---- Relationships ----
+    category: Mapped[Optional["TagCategory"]] = relationship(
+        "TagCategory", back_populates="tags"
+    )
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_tags, back_populates="tags"
     )

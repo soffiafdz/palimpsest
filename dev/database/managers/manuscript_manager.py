@@ -54,6 +54,7 @@ from dev.database.models_manuscript import (
     ManuscriptEvent,
     Arc,
     Theme,
+    Motif,
     ManuscriptStatus,
 )
 from .base_manager import BaseManager
@@ -84,13 +85,17 @@ class ManuscriptManager(BaseManager):
                 - edited: Boolean editing state
                 - notes: Text notes
                 - themes: List of theme names
+                - motifs: List of motif names
+                - narrative_rating: 1-5 rating from narrative analysis
+                - summary: Narrative summary from analysis
 
         Returns:
             ManuscriptEntry object, or None if deleted
 
         Notes:
             - Status accepts both enum and string (flexible matching)
-            - Themes are replaced (not incremental)
+            - Themes and motifs are replaced (not incremental)
+            - narrative_rating must be an integer 1-5
         """
         with DatabaseOperation(self.logger, "create_or_update_manuscript_entry"):
             if entry.id is None:
@@ -127,6 +132,20 @@ class ManuscriptManager(BaseManager):
                 child_data["notes"] = DataValidator.normalize_string(
                     manuscript_data["notes"]
                 )
+            if "narrative_rating" in manuscript_data:
+                rating = manuscript_data["narrative_rating"]
+                if rating is not None:
+                    rating_int = int(round(rating))
+                    if 1 <= rating_int <= 5:
+                        child_data["narrative_rating"] = rating_int
+            if "rating_justification" in manuscript_data:
+                child_data["rating_justification"] = DataValidator.normalize_string(
+                    manuscript_data["rating_justification"]
+                )
+            if "summary" in manuscript_data:
+                child_data["summary"] = DataValidator.normalize_string(
+                    manuscript_data["summary"]
+                )
 
             # Create or update ManuscriptEntry (entity-specific logic)
             # Query database directly to avoid lazy loading issues
@@ -153,6 +172,9 @@ class ManuscriptManager(BaseManager):
 
             if ms_entry and "themes" in manuscript_data:
                 self._update_themes(ms_entry, manuscript_data["themes"])
+
+            if ms_entry and "motifs" in manuscript_data:
+                self._update_motifs(ms_entry, manuscript_data["motifs"])
 
             return ms_entry
 
@@ -197,6 +219,35 @@ class ManuscriptManager(BaseManager):
         for theme in theme_objs:
             if theme not in manuscript_entry.themes:
                 manuscript_entry.themes.append(theme)
+        self.session.flush()
+
+    def _update_motifs(
+        self, manuscript_entry: ManuscriptEntry, motifs_list: List[str]
+    ) -> None:
+        """
+        Update motifs for a manuscript entry (replacement mode).
+
+        Args:
+            manuscript_entry: ManuscriptEntry to update
+            motifs_list: List of motif names
+        """
+        # Normalize motif names
+        normalized_motifs = [
+            DataValidator.normalize_string(m) for m in motifs_list
+        ]
+        normalized_motifs = [m for m in normalized_motifs if m]  # Filter empty
+
+        # Get or create Motif objects
+        motif_objs = []
+        for motif_name in normalized_motifs:
+            motif = self._get_or_create(Motif, {"name": motif_name})
+            motif_objs.append(motif)
+
+        # Replace all motifs
+        manuscript_entry.motifs.clear()
+        for motif in motif_objs:
+            if motif not in manuscript_entry.motifs:
+                manuscript_entry.motifs.append(motif)
         self.session.flush()
 
     # =========================================================================
@@ -517,6 +568,56 @@ class ManuscriptManager(BaseManager):
             if not include_deleted:
                 query = query.filter(Theme.deleted_at.is_(None))
             return query.order_by(Theme.theme).all()
+
+    # =========================================================================
+    # MOTIF OPERATIONS
+    # =========================================================================
+
+    def get_motif(
+        self, motif_name: str, include_deleted: bool = False
+    ) -> Optional[Motif]:
+        """Get motif by name."""
+        with DatabaseOperation(self.logger, "get_motif"):
+            normalized = DataValidator.normalize_string(motif_name)
+            if not normalized:
+                return None
+
+            query = self.session.query(Motif).filter_by(name=normalized)
+
+            if not include_deleted:
+                query = query.filter(Motif.deleted_at.is_(None))
+
+            return query.first()
+
+    def get_or_create_motif(self, motif_name: str) -> Motif:
+        """Get existing motif or create it."""
+        with DatabaseOperation(self.logger, "get_or_create_motif"):
+            normalized = DataValidator.normalize_string(motif_name)
+            if not normalized:
+                raise ValidationError("Motif name cannot be empty")
+
+            return self._get_or_create(Motif, {"name": normalized})
+
+    def get_all_motifs(self, include_deleted: bool = False) -> List[Motif]:
+        """Get all motifs."""
+        with DatabaseOperation(self.logger, "get_all_motifs"):
+            query = self.session.query(Motif)
+            if not include_deleted:
+                query = query.filter(Motif.deleted_at.is_(None))
+            return query.order_by(Motif.name).all()
+
+    def get_entries_by_motif(
+        self, motif: Motif, include_deleted: bool = False
+    ) -> List[ManuscriptEntry]:
+        """Get all manuscript entries with a specific motif."""
+        with DatabaseOperation(self.logger, "get_entries_by_motif"):
+            if include_deleted:
+                return motif.entries
+            else:
+                return [
+                    e for e in motif.entries
+                    if not hasattr(motif, 'deleted_at') or not motif.deleted_at
+                ]
 
     # =========================================================================
     # QUERY METHODS

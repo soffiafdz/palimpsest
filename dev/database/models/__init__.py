@@ -49,7 +49,7 @@ from .core import Entry, SchemaInfo
 from .geography import City, Location, Moment
 
 # Entity models
-from .entities import Alias, Person, Tag
+from .entities import Alias, Person, Tag, TagCategory
 
 # Creative works
 from .creative import Event, Poem, PoemVersion, Reference, ReferenceSource
@@ -97,6 +97,7 @@ __all__ = [
     "PoemVersion",
     # Tags
     "Tag",
+    "TagCategory",
     # Sync
     "AssociationTombstone",
     "SyncState",
