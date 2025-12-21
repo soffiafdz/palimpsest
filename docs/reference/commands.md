@@ -1,7 +1,7 @@
 # Palimpsest Complete Command Reference
 
-**Last Updated:** 2025-11-26
-**Coverage:** 100% of all CLI commands (70+ commands documented)
+**Last Updated:** 2025-12-20
+**Coverage:** 100% of all CLI commands (60+ commands documented)
 
 ---
 
@@ -13,8 +13,7 @@
 4. [METADB - Database Management](#metadb---database-management)
 5. [VALIDATE - Validation Tools](#validate---validation-tools)
 6. [JSEARCH - Full-Text Search](#jsearch---full-text-search)
-7. [NLP - Text Analysis](#nlp---ai-analysis)
-8. [Neovim Integration](#neovim-integration)
+7. [Neovim Integration](#neovim-integration)
 
 ---
 
@@ -27,22 +26,13 @@
 pip install -e .
 ```
 
-This installs 5 CLI entry points in `~/.local/bin/`:
+This installs 4 CLI entry points in `~/.local/bin/`:
 - `plm` - Main pipeline
 - `metadb` - Database management
 - `validate` - Validation tools
 - `jsearch` - Full-text search
-- `nlp` - Text analysis (optional dependencies)
 
 Ensure `~/.local/bin` is in your PATH.
-
-### Environment Variables
-
-```bash
-# For NLP Level 4 (optional)
-export ANTHROPIC_API_KEY='your-claude-api-key'
-export OPENAI_API_KEY='your-openai-api-key'
-```
 
 ---
 
@@ -93,7 +83,6 @@ validate consistency all
 | Backup database | `metadb backup` |
 | List backups | `metadb backups` |
 | Search entries | `jsearch query "text" in:2024` |
-| Text analysis | `nlp analyze 2024-11-01 --level 2` |
 | Build PDFs | `plm build-pdf 2024` |
 | Full pipeline | `plm run-all --year 2024` |
 | Check status | `plm status` or `metadb health` |
@@ -1291,164 +1280,6 @@ therapy session with alice discussing...
 
 ---
 
-## JAI - Automated Text Analysis
-
-**About these tools:** These commands use computational linguistics techniques (named entity recognition, keyword extraction, pattern matching) to assist with metadata organization. These are standard text processing methods used in digital humanities and library science. **These tools analyze existing text only—they do not generate, modify, or contribute to any creative writing content.** All journal text and manuscript content is written entirely by the author.
-
-### Analysis Capabilities Check
-
-#### `nlp status`
-Check analysis capabilities and API configuration.
-
-```bash
-nlp status
-```
-
-**Checks performed:**
-
-**Level 1 (Always Available):**
-- ✓ Built-in keyword matching
-
-**Level 2 (spaCy NER):**
-- Package installed: Yes/No
-- Model downloaded: en_core_web_sm
-- Installation command if missing
-
-**Level 3 (Semantic Search):**
-- Package installed: sentence-transformers
-- Model available: Yes/No
-- Installation command if missing
-
-**Level 4 (LLM APIs):**
-- Anthropic package: Yes/No
-- ANTHROPIC_API_KEY set: Yes/No
-- OpenAI package: Yes/No
-- OPENAI_API_KEY set: Yes/No
-
-**Use cases:**
-- Verify NLP setup after installation
-- Troubleshoot missing dependencies
-- Check API key configuration
-
-### Entry Analysis
-
-#### `nlp analyze`
-Analyze a single journal entry using NLP.
-
-```bash
-nlp analyze DATE [--level LEVEL] [--provider PROVIDER] [--manuscript]
-```
-
-**Arguments:**
-- `DATE` - Entry date (YYYY-MM-DD)
-
-**Processing Levels:**
-
-**Level 2 (spaCy NER)** - Free, local, fast:
-```bash
-nlp analyze 2024-11-26 --level 2
-```
-
-**Extracts:**
-- People (PERSON entities)
-- Cities (GPE entities)
-- Locations (LOC entities)
-- Events (EVENT entities)
-- Themes (NLP pattern matching)
-- Confidence scores for each
-
-**Requirements:**
-```bash
-pip install spacy
-python -m spacy download en_core_web_sm
-```
-
-**Level 4 (LLM API)** - Paid, cloud, advanced:
-```bash
-nlp analyze 2024-11-26 --level 4 --provider claude
-nlp analyze 2024-11-26 --level 4 --provider openai
-```
-
-**Extracts:**
-- Summary (2-3 sentences)
-- Mood/emotional tone
-- People with relationships
-- Themes and tags
-- Significance assessment
-
-**With manuscript analysis:**
-```bash
-nlp analyze 2024-11-26 --level 4 --provider claude --manuscript
-```
-
-**Additional extracts:**
-- Entry type (scene, summary, reflection)
-- Narrative potential score
-- Suggested arc placement
-- Character development notes
-
-**Requirements:**
-```bash
-# For Claude
-pip install anthropic
-export ANTHROPIC_API_KEY='sk-ant-...'
-
-# For OpenAI
-pip install openai
-export OPENAI_API_KEY='sk-...'
-```
-
-**Output format:**
-```
-=== NLP Analysis (Level 2) ===
-
-People:
-- Alice (confidence: 0.95)
-- Bob (confidence: 0.87)
-
-Cities:
-- Montreal (confidence: 0.92)
-
-Themes:
-- therapy
-- self-discovery
-- relationships
-
-Events:
-- therapy session
-
-=== NLP Analysis (Level 4) ===
-
-Summary:
-Reflective entry about a breakthrough in therapy with Alice,
-discussing childhood patterns and their impact on current
-relationships.
-
-Mood: contemplative, hopeful
-
-People:
-- Alice (therapist, trusted)
-- Bob (friend, mentioned)
-
-Themes:
-- self-discovery
-- healing
-- relationships
-
-Tags:
-- therapy
-- introspection
-- breakthrough
-
-[Manuscript Analysis]
-Entry Type: reflection
-Narrative Potential: 7/10
-Suggested Arc: "Therapy Journey"
-Notes: Strong introspective voice, could be condensed
-```
-
----
-
 ## Neovim Integration
 
 Palimpsest includes a Neovim plugin for browsing and searching your wiki directly in your editor.
@@ -1652,12 +1483,6 @@ validate consistency metadata
 plm sync-db  # Re-sync from markdown
 ```
 
-### "Text analysis not working"
-```bash
-nlp status  # Check what's available
-# Install missing dependencies based on output
-```
-
 ### "Slow database queries"
 ```bash
 metadb optimize
@@ -1674,7 +1499,6 @@ plm --help
 metadb --help
 validate --help
 jsearch --help
-nlp --help
 
 # Subcommand help
 metadb backup --help
@@ -1686,7 +1510,6 @@ jsearch query --help
 ```bash
 plm status
 metadb health
-nlp status
 ```
 
 **Documentation:**
@@ -1696,6 +1519,6 @@ nlp status
 
 ---
 
-**Last Updated:** 2025-11-26
-**Documentation Coverage:** 100% (70+ commands)
+**Last Updated:** 2025-12-20
+**Documentation Coverage:** 100% (60+ commands)
 **Maintained by:** Palimpsest Project

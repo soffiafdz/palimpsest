@@ -1,6 +1,6 @@
 # Palimpsest Modular Architecture
 
-**Last Updated**: 2025-11-29
+**Last Updated**: 2025-12-20
 
 ---
 
@@ -138,51 +138,58 @@ plm import-wiki                # Import wiki → Database
 
 ---
 
-### 4. Wiki Pages Builder (`dev/builders/wiki_pages/`)
+### 4. Wiki Export System (`dev/wiki/`)
 
-**Purpose**: Wiki page generation with shared utilities
+**Purpose**: Jinja2 template-based wiki page generation
 
 **Structure**:
 ```
-dev/builders/wiki_pages/
-├── __init__.py          # Public API exports
-├── entries.py           # Entry pages with navigation
-├── index.py             # Wiki homepage
-├── stats.py             # Statistics dashboard
-├── timeline.py          # Chronological timeline
-├── analysis.py          # Entity relationship analysis
-└── utils/
-    ├── charts.py        # ASCII visualization functions
-    ├── queries.py       # Database query helpers
-    └── formatters.py    # Text/link formatting
+dev/wiki/
+├── __init__.py          # Public API (WikiRenderer, WikiExporter)
+├── renderer.py          # Jinja2 template rendering engine
+├── exporter.py          # Database → wiki export orchestration
+├── configs.py           # Entity export configurations
+├── filters.py           # Custom Jinja2 filters
+├── parser.py            # Wiki page parsing for import
+└── templates/
+    ├── entry.jinja2     # Entry wiki page template
+    ├── person.jinja2    # Person page template
+    ├── city.jinja2      # City page template
+    ├── location.jinja2  # Location page template
+    ├── event.jinja2     # Event page template
+    ├── tag.jinja2       # Tag page template
+    ├── theme.jinja2     # Theme page template
+    ├── poem.jinja2      # Poem page template
+    ├── reference.jinja2 # Reference page template
+    └── indexes/         # Index page templates
 ```
 
 **Key Patterns**:
-- **Utility Extraction**: Common functions in `utils/` package
-- **DRY Principle**: Reusable ASCII charts, formatters
-- **Clear Public API**: Only page builders exported from `__init__.py`
-- **Database Separation**: Queries isolated in `utils/queries.py`
+- **Template-Based**: Jinja2 templates replace wiki dataclasses
+- **ORM Direct**: SQLAlchemy models passed directly to templates
+- **Config-Driven**: Entity configs define queries and output paths
+- **Custom Filters**: Jinja2 filters for wiki link formatting
 
 **Import Examples**:
 ```python
-# Public API - only page builders
-from dev.builders.wiki_pages import (
-    export_entries_with_navigation,
-    export_index,
-    export_stats,
-    export_timeline,
-    export_analysis_report
-)
+# Public API
+from dev.wiki import WikiRenderer, WikiExporter
 
-# Internal utilities (not exposed in public API)
-from dev.builders.wiki_pages.utils.charts import ascii_bar_chart
-from dev.builders.wiki_pages.utils.queries import get_entry_statistics
+# Create exporter with database session
+exporter = WikiExporter(session, wiki_dir, logger)
+
+# Export all entities
+exporter.export_all()
+
+# Export specific entity type
+exporter.export_entity_type("people")
 ```
 
-**Utility Functions**:
-- **charts.py**: `ascii_bar_chart()`, `monthly_heatmap()`
-- **queries.py**: `get_entry_statistics()`, `get_top_people()`, `get_tag_cloud()`
-- **formatters.py**: `format_entity_link()`, `format_date_link()`, `format_count()`
+**Template System**:
+- Templates receive SQLAlchemy ORM objects directly
+- Custom Jinja2 filters format wiki links (`[[Entity Name]]`)
+- Editable notes sections preserved during re-export
+- Backlinks automatically generated from database relationships
 
 ---
 
@@ -368,31 +375,34 @@ from dev.database.models import Entry, Person  # ✓ Works
 
 ---
 
-### Pattern 3: Utility Module Extraction
+### Pattern 3: Template-Based Rendering
 
-**Used in**: Wiki Pages Builder
+**Used in**: Wiki Export System
 
 **Implementation**:
 ```python
-# utils/charts.py - Reusable utilities
-def ascii_bar_chart(data: Dict[str, int], max_width: int = 20) -> List[str]:
-    """Generate ASCII bar chart from data"""
-    # ... implementation
+# renderer.py - Jinja2 template rendering
+class WikiRenderer:
+    def __init__(self, template_dir: Path):
+        self.env = Environment(loader=FileSystemLoader(template_dir))
+        self.env.filters["wiki_link"] = format_wiki_link
 
-# stats.py - Uses utility
-from .utils.charts import ascii_bar_chart
+    def render(self, template_name: str, context: dict) -> str:
+        template = self.env.get_template(template_name)
+        return template.render(**context)
 
-def export_stats(session, wiki_dir):
-    data = get_statistics(session)
-    chart_lines = ascii_bar_chart(data["people_by_month"])
-    # ... use chart_lines
+# exporter.py - Uses renderer
+class WikiExporter:
+    def export_person(self, person: Person) -> None:
+        content = self.renderer.render("person.jinja2", {"person": person})
+        self._write_page(self.wiki_dir / "people" / f"{person.slug}.wiki", content)
 ```
 
 **Benefits**:
-- Eliminates code duplication
-- Consistent formatting across pages
-- Testable in isolation
-- Clear separation: data logic vs. presentation
+- Separation of logic and presentation
+- Non-programmers can edit templates
+- Consistent formatting via shared filters
+- Easy to add new entity types
 
 ---
 
@@ -654,14 +664,17 @@ The Palimpsest refactoring created a clean, modular architecture:
 ✅ **Consistent patterns** across codebase
 
 **Recent Improvements**:
+- **2025-12-20**: Wiki system migrated to Jinja2 templates
+  - Replaced `dev/builders/wiki_pages/` with `dev/wiki/`
+  - Templates receive ORM objects directly
+  - Custom Jinja2 filters for wiki formatting
 - **2025-11-29**: MdEntry dataclass refactored (50% size reduction)
   - Extracted parsers: `YamlToDbParser`, `DbToYamlExporter`
   - Separated validation: `MdEntryValidator`
-  - All 70 tests passing
 
 **Key Takeaway**: Modular architecture improves maintainability without sacrificing compatibility.
 
 ---
 
-**Last Updated**: 2025-11-29
+**Last Updated**: 2025-12-20
 **Maintained By**: Palimpsest Development Team

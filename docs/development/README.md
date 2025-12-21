@@ -57,15 +57,21 @@ dev/
 ├── database/           # Database layer (SQLAlchemy ORM)
 │   ├── models/        # Entity models
 │   ├── managers/      # CRUD operations
-│   └── validators/    # Data validation
+│   └── cli/           # Database CLI commands
 ├── dataclasses/       # Intermediary data structures
 │   ├── md_entry.py   # YAML ↔ Database conversion
-│   └── wiki_*.py     # Wiki entity representations
+│   └── parsers/      # YAML/DB parsing logic
 ├── pipeline/          # Data pipeline scripts
 │   ├── yaml2sql.py   # YAML → SQL import
-│   ├── sql2wiki.py   # SQL → Wiki export
-│   └── wiki2sql.py   # Wiki → SQL import
-└── nlp/              # Optional NLP features
+│   └── sql2yaml.py   # SQL → YAML export
+├── wiki/              # Wiki generation system
+│   ├── exporter.py   # Wiki page exporter
+│   ├── renderer.py   # Jinja2 template renderer
+│   └── templates/    # Wiki page templates
+├── search/            # Full-text search (FTS5)
+├── validators/        # Validation tools
+├── builders/          # PDF/TXT builders
+└── utils/             # Shared utilities
 ```
 
 **Core Principles**:

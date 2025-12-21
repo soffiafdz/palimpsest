@@ -369,7 +369,7 @@ You'll know Palimpsest is working when:
 2. **Add rich metadata**: Explore [all available fields](reference/metadata-field-reference.md)
 3. **Set up multi-machine sync**: Follow the [Synchronization Guide](guides/synchronization.md)
 4. **Integrate with your editor**: Try the [Neovim Integration](integrations/neovim.md)
-5. **Explore advanced features**: Manuscript wikis, NLP analysis, PDF export
+5. **Explore advanced features**: Manuscript wikis, full-text search, PDF export
 
 ## Troubleshooting
 
