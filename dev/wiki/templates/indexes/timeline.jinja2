@@ -1,33 +1,59 @@
-{# Timeline/Calendar Template #}
+{# Timeline/Calendar Template - Chronological navigation with metadata #}
 # Palimpsest — Timeline
 
-Chronological calendar view of all journal entries.
+Navigate all journal entries chronologically with rich metadata overlay.
 
 ---
 
-## Statistics
+## Overview
 
-- **Total Entries:** {{ stats.entries }}
-- **Time Span:** {{ stats.years }} years ({{ stats.span_days }} days)
-- **First Entry:** {{ stats.first_date|format_date('%Y-%m-%d') }}
-- **Last Entry:** {{ stats.last_date|format_date('%Y-%m-%d') }}
-- **Average per Year:** {{ stats.avg_per_year|format_number(1) }} entries
+| Metric | Value |
+|--------|-------|
+| **Total Entries** | {{ stats.entries }} |
+| **Time Span** | {{ stats.years }} years ({{ stats.span_days|format_number }} days) |
+| **First Entry** | {{ stats.first_date|format_date('%Y-%m-%d') }} |
+| **Last Entry** | {{ stats.last_date|format_date('%Y-%m-%d') }} |
+| **Average per Year** | {{ stats.avg_per_year|format_number(1) }} entries |
 
 ---
 
-## Timeline by Year
+## Quick Jump
 
 {% for year_data in timeline %}
-### {{ year_data.year }} ({{ year_data.count }} entries)
+[[#{{ year_data.year }}|{{ year_data.year }}]] ({{ year_data.count }}){% if not loop.last %} • {% endif %}
+{% endfor %}
+
+---
+
+## Timeline
+
+{% for year_data in timeline %}
+### {{ year_data.year }}
+
+{{ year_data.count }} entries | {{ year_data.words|format_number }} words
 
 {% for month_data in year_data.months %}
-#### {{ month_data.name }} {{ year_data.year }} ({{ month_data.count }} entries)
+#### {{ month_data.name }} ({{ month_data.count }} entries)
 
 {% for entry in month_data.entries %}
-- [[{{ entry.path }}|{{ entry.date|format_date('%Y-%m-%d') }}]] — {{ entry.word_count }} words
-{% endfor %}
+**{{ entry.date|format_date('%d') }}** | [[{{ entry.path }}|{{ entry.word_count }} words]]{% if entry.cities %} | {{ entry.cities|join(', ') }}{% endif %}
+
+{% if entry.people %}
+  → People: {{ entry.people[:5]|join(', ') }}{% if entry.people|length > 5 %} +{{ entry.people|length - 5 }}{% endif %}
+
+{% endif %}
+{% if entry.moments > 0 or entry.references > 0 %}
+  → Moments: {{ entry.moments }}{% if entry.references > 0 %} | References: {{ entry.references }}{% endif %}
+
+{% endif %}
+{% if entry.tags %}
+  → Tags: {{ entry.tags|join(', ') }}
+{% endif %}
 
 {% endfor %}
+{% endfor %}
+---
+
 {% endfor %}
 
 ---

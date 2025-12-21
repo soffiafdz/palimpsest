@@ -146,12 +146,18 @@ class WikiExporter:
         slug = config.get_slug(entity)
         output_path = self.wiki_dir / config.folder / f"{slug}.md"
 
+        # Compute extra context for specific entity types
+        extra_context = {}
+        if config.name == "person":
+            extra_context = self._compute_person_context(entity)
+
         # Render template
         content = self.renderer.render(
             config.template,
             output_path=output_path,
             entity=entity,
             config=config,
+            **extra_context,
         )
 
         # Write file
@@ -167,6 +173,56 @@ class WikiExporter:
                 stats.entries_updated += 1
             else:
                 stats.entries_skipped += 1
+
+    def _compute_person_context(self, person) -> dict:
+        """
+        Compute extra context for person template.
+
+        Args:
+            person: Person entity
+
+        Returns:
+            Dict with co_appearances and locations data
+        """
+        from collections import Counter
+
+        # Compute co-appearances (people who appear in the same entries)
+        co_appearance_counter = Counter()
+        for entry in person.entries:
+            for other_person in entry.people:
+                if other_person.id != person.id:
+                    co_appearance_counter[other_person] += 1
+
+        co_appearances = [
+            {
+                "name": p.display_name,
+                "slug": slugify(p.display_name),
+                "count": count,
+            }
+            for p, count in co_appearance_counter.most_common(10)
+        ]
+
+        # Compute locations from moments
+        location_counter = Counter()
+        for moment in person.moments:
+            for location in moment.locations:
+                location_counter[location] += 1
+
+        locations = [
+            {
+                "name": loc.name,
+                "slug": slugify(loc.name),
+                "city": loc.city.city if loc.city else "Unknown",
+                "city_slug": slugify(loc.city.city) if loc.city else "unknown",
+                "count": count,
+            }
+            for loc, count in location_counter.most_common(10)
+        ]
+
+        return {
+            "co_appearances": co_appearances,
+            "locations": locations,
+        }
 
     def export_all(self, force: bool = False) -> ConversionStats:
         """
@@ -213,6 +269,7 @@ class WikiExporter:
             self._export_events_index(session, force, stats)
             self._export_locations_index(session, force, stats)
             self._export_cities_index(session, force, stats)
+            self._export_moments_index(session, force, stats)
             self._export_simple_index(session, "tags", "Tags", force, stats)
             self._export_simple_index(session, "themes", "Themes", force, stats)
             self._export_simple_index(session, "poems", "Poems", force, stats)
@@ -235,8 +292,8 @@ class WikiExporter:
     def _export_people_index(
         self, session, force: bool, stats: ConversionStats
     ) -> None:
-        """Export people index grouped by category."""
-        from collections import defaultdict
+        """Export people index grouped by category with frequency bars."""
+        from collections import Counter, defaultdict
         from dev.database.models import Person
 
         # Category ordering
@@ -249,15 +306,73 @@ class WikiExporter:
         # Query all people
         people = session.query(Person).filter(Person.deleted_at.is_(None)).all()
 
-        # Group by category
+        # Find max mentions for bar normalization
+        all_mentions = [len(p.entries) for p in people]
+        max_mentions = max(all_mentions) if all_mentions else 1
+
+        # Group by category with frequency bars
         groups = defaultdict(list)
+        category_counts = Counter()
+
         for person in people:
             category = person.relation_type.value.title() if person.relation_type else "Unknown"
+            mentions = len(person.entries)
+            bar_length = int((mentions / max_mentions) * 15) if max_mentions else 0
+            bar = "█" * bar_length + "░" * (15 - bar_length)
+
             groups[category].append({
                 "name": person.display_name,
                 "path": f"people/{slugify(person.display_name)}.md",
-                "mentions": len(person.entries),
+                "mentions": mentions,
+                "bar": bar,
             })
+            category_counts[category] += 1
+
+        # Top people (across all categories)
+        top_people = sorted(
+            [
+                {
+                    "name": p.display_name,
+                    "path": f"people/{slugify(p.display_name)}.md",
+                    "mentions": len(p.entries),
+                    "category": p.relation_type.value.title() if p.relation_type else "Unknown",
+                }
+                for p in people
+            ],
+            key=lambda x: x["mentions"],
+            reverse=True,
+        )[:15]
+
+        # Category distribution
+        max_cat_count = max(category_counts.values()) if category_counts else 1
+        category_distribution = []
+        for cat in categories:
+            if cat in category_counts:
+                count = category_counts[cat]
+                bar_length = int((count / max_cat_count) * 20)
+                bar = "█" * bar_length + "░" * (20 - bar_length)
+                category_distribution.append({
+                    "name": cat,
+                    "count": count,
+                    "bar": bar,
+                })
+
+        # Most recent appearance
+        recent_appearance = None
+        people_with_entries = [p for p in people if p.entries]
+        if people_with_entries:
+            sorted_people = sorted(
+                people_with_entries,
+                key=lambda p: max(e.date for e in p.entries),
+                reverse=True
+            )
+            most_recent = sorted_people[0]
+            latest_entry = max(most_recent.entries, key=lambda e: e.date)
+            recent_appearance = {
+                "name": most_recent.display_name,
+                "path": f"people/{slugify(most_recent.display_name)}.md",
+                "date": latest_entry.date,
+            }
 
         # Write file
         output_path = self.wiki_dir / "people" / "people.md"
@@ -269,6 +384,9 @@ class WikiExporter:
             categories=categories,
             groups=dict(groups),
             total=len(people),
+            top_people=top_people,
+            category_distribution=category_distribution,
+            recent_appearance=recent_appearance,
         )
         self._write_index(output_path, content, force, stats)
 
@@ -318,11 +436,13 @@ class WikiExporter:
         # Query all events
         events = session.query(Event).filter(Event.deleted_at.is_(None)).all()
 
-        # Group by year
+        # Group by year (derive from first entry date)
         groups = defaultdict(list)
         for event in events:
-            if event.date:
-                year = event.date.year
+            # Get year from first entry if available
+            if event.entries:
+                first_entry_date = min(e.date for e in event.entries)
+                year = first_entry_date.year
             else:
                 year = "Unknown"
             groups[year].append({
@@ -359,11 +479,11 @@ class WikiExporter:
         # Query all locations
         locations = session.query(Location).all()
 
-        # Group by country → region → city
+        # Group by country → state/province → city
         groups = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         for loc in locations:
             country = loc.city.country or "Unknown" if loc.city else "Unknown"
-            region = loc.city.region or "Unspecified" if loc.city else "Unspecified"
+            region = loc.city.state_province or "Unspecified" if loc.city else "Unspecified"
             city = loc.city.city if loc.city else "Unknown City"
             groups[country][region][city].append({
                 "name": loc.name,
@@ -400,11 +520,11 @@ class WikiExporter:
         # Query all cities
         cities = session.query(City).all()
 
-        # Group by country → region
+        # Group by country → state/province
         groups = defaultdict(lambda: defaultdict(list))
         for city in cities:
             country = city.country or "Unknown"
-            region = city.region or "Unspecified"
+            region = city.state_province or "Unspecified"
             groups[country][region].append({
                 "name": city.city,
                 "path": f"cities/{slugify(city.city)}.md",
@@ -424,6 +544,172 @@ class WikiExporter:
             countries=list(groups.keys()),
             groups=groups_dict,
             total=len(cities),
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_moments_index(
+        self, session, force: bool, stats: ConversionStats
+    ) -> None:
+        """
+        Export moments dashboard showing temporal echoes.
+
+        This dashboard shows:
+        - Moment vs reference counts
+        - Most echoed dates (dates referenced multiple times)
+        - Reference patterns (temporal distance)
+        - Recent references
+        """
+        from collections import defaultdict
+        from datetime import datetime
+
+        from dev.database.models import Entry, Moment
+        from dev.database.models.enums import MomentType
+
+        # Query all moments
+        moments = session.query(Moment).all()
+
+        # Basic stats
+        moment_count = len([m for m in moments if m.type == MomentType.MOMENT])
+        reference_count = len([m for m in moments if m.type == MomentType.REFERENCE])
+
+        moment_stats = {
+            "moments": moment_count,
+            "references": reference_count,
+            "total": len(moments),
+        }
+
+        # Find most echoed dates (dates that are referenced multiple times)
+        # A date is "echoed" when it appears as a reference in later entries
+        references = [m for m in moments if m.type == MomentType.REFERENCE]
+
+        # Group references by date to find most echoed
+        refs_by_date = defaultdict(list)
+        for ref in references:
+            refs_by_date[ref.date].append(ref)
+
+        # Build most echoed list
+        most_echoed = []
+        for ref_date, refs in sorted(
+            refs_by_date.items(),
+            key=lambda x: len(x[1]),
+            reverse=True
+        )[:10]:
+            # Find original entry for this date
+            original_entry = session.query(Entry).filter(
+                Entry.date == ref_date
+            ).first()
+
+            # Get context from first reference
+            context = refs[0].context if refs else None
+
+            # Build reference list
+            ref_list = []
+            for ref in refs:
+                for entry in ref.entries:
+                    ref_list.append({
+                        "entry_date": entry.date,
+                        "entry_path": f"entries/{entry.date.year}/{entry.date.isoformat()}.md",
+                        "context": ref.context or "",
+                    })
+
+            most_echoed.append({
+                "date": ref_date,
+                "context": context,
+                "original_entry": original_entry,
+                "reference_count": len(ref_list),
+                "references": ref_list[:5],
+            })
+
+        # Calculate temporal distance patterns
+        temporal_distance = []
+        distance_counts = {"< 1 month": 0, "1-3 months": 0, "3-12 months": 0, "> 1 year": 0}
+
+        for ref in references:
+            for entry in ref.entries:
+                days = (entry.date - ref.date).days
+                if days < 30:
+                    distance_counts["< 1 month"] += 1
+                elif days < 90:
+                    distance_counts["1-3 months"] += 1
+                elif days < 365:
+                    distance_counts["3-12 months"] += 1
+                else:
+                    distance_counts["> 1 year"] += 1
+
+        max_dist = max(distance_counts.values()) if distance_counts.values() else 0
+        for label, count in distance_counts.items():
+            bar_length = int((count / max_dist) * 20) if max_dist else 0
+            bar = "█" * bar_length + "░" * (20 - bar_length)
+            temporal_distance.append({
+                "label": label,
+                "count": count,
+                "bar": bar,
+            })
+
+        # Recent references (last 5 entries with references)
+        entries_with_refs = defaultdict(list)
+        for ref in references:
+            for entry in ref.entries:
+                entries_with_refs[entry.date].append({
+                    "date": ref.date,
+                    "context": ref.context,
+                })
+
+        recent_references = []
+        for entry_date in sorted(entries_with_refs.keys(), reverse=True)[:5]:
+            recent_references.append({
+                "date": entry_date,
+                "refs": entries_with_refs[entry_date],
+            })
+
+        # Moments by year/month
+        moments_by_year = defaultdict(list)
+        month_names = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        for moment in moments:
+            year = moment.date.year
+            month = moment.date.month
+
+            # Find or create month entry
+            month_entry = None
+            for me in moments_by_year[year]:
+                if me["month"] == month:
+                    month_entry = me
+                    break
+
+            if not month_entry:
+                month_entry = {
+                    "month": month,
+                    "month_name": month_names[month - 1],
+                    "moment_count": 0,
+                    "reference_count": 0,
+                }
+                moments_by_year[year].append(month_entry)
+
+            if moment.type == MomentType.MOMENT:
+                month_entry["moment_count"] += 1
+            else:
+                month_entry["reference_count"] += 1
+
+        # Sort months within each year
+        for year in moments_by_year:
+            moments_by_year[year].sort(key=lambda x: x["month"])
+
+        # Render template
+        output_path = self.wiki_dir / "moments" / "moments.md"
+
+        content = self.renderer.render_index(
+            "moments",
+            output_path,
+            stats=moment_stats,
+            most_echoed=most_echoed,
+            temporal_distance=temporal_distance,
+            recent_references=recent_references,
+            moments_by_year=dict(moments_by_year),
+            generated_at=datetime.now(),
         )
         self._write_index(output_path, content, force, stats)
 
@@ -502,34 +788,64 @@ class WikiExporter:
         Returns:
             Statistics for home page generation
         """
+        from collections import defaultdict
         from datetime import datetime
+
+        from sqlalchemy.orm import joinedload
 
         from dev.database.models import (
             City,
             Entry,
             Event,
             Location,
+            Moment,
             Person,
             Poem,
             PoemVersion,
             ReferenceSource,
             Tag,
         )
+        from dev.database.models.enums import MomentType, RelationType
         from dev.database.models_manuscript import Theme
 
         stats = ConversionStats()
 
         with self.db.session_scope() as session:
-            # Gather statistics
-            entries = session.query(Entry).all()
+            # Gather statistics with eager loading for recent entries
+            entries = session.query(Entry).options(
+                joinedload(Entry.people)
+            ).all()
             people = session.query(Person).filter(Person.deleted_at.is_(None)).all()
+            locations = session.query(Location).all()
+            moments = session.query(Moment).all()
 
+            # Calculate years span
+            years = set(e.date.year for e in entries)
+            first_year = min(years) if years else None
+            last_year = max(years) if years else None
+
+            # Count close relationships (family, friend, romantic)
+            close_types = {RelationType.FAMILY, RelationType.FRIEND, RelationType.ROMANTIC}
+            close_relationships = len([
+                p for p in people
+                if p.relation_type and p.relation_type in close_types
+            ])
+
+            # Count moments vs references
+            moment_count = len([m for m in moments if m.type == MomentType.MOMENT])
+            reference_count = len([m for m in moments if m.type == MomentType.REFERENCE])
+
+            total_words = sum(e.word_count or 0 for e in entries)
             wiki_stats = {
                 "entries": len(entries),
-                "words": sum(e.word_count or 0 for e in entries),
-                "years": len(set(e.date.year for e in entries)),
+                "words": total_words,
+                "avg_words": total_words // len(entries) if entries else 0,
+                "years": len(years),
+                "first_year": first_year,
+                "last_year": last_year,
                 "people": len(people),
-                "locations": session.query(Location).count(),
+                "close_relationships": close_relationships,
+                "locations": len(locations),
                 "cities": session.query(City).count(),
                 "countries": len(
                     set(c.country for c in session.query(City).all() if c.country)
@@ -537,38 +853,74 @@ class WikiExporter:
                 "events": session.query(Event).filter(
                     Event.deleted_at.is_(None)
                 ).count(),
+                "moments": moment_count,
+                "references": reference_count,
                 "tags": session.query(Tag).count(),
                 "themes": session.query(Theme).filter(
                     Theme.deleted_at.is_(None)
                 ).count(),
                 "poems": session.query(Poem).count(),
                 "poem_versions": session.query(PoemVersion).count(),
-                "references": session.query(ReferenceSource).count(),
+                "external_refs": session.query(ReferenceSource).count(),
             }
 
-            # Recent entries (latest 5)
+            # Recent entries (latest 5) with people names
+            sorted_entries = sorted(entries, key=lambda x: x.date, reverse=True)[:5]
             recent_entries = [
                 {
                     "date": e.date,
                     "path": f"entries/{e.date.year}/{e.date.isoformat()}.md",
                     "word_count": e.word_count or 0,
+                    "people": [p.display_name for p in e.people[:3]],
                 }
-                for e in sorted(entries, key=lambda x: x.date, reverse=True)[:5]
+                for e in sorted_entries
             ]
 
-            # Most mentioned people (top 5)
+            # Most mentioned people (top 5) with category
             recent_people = sorted(
                 [
                     {
                         "name": p.display_name,
                         "path": f"people/{slugify(p.display_name)}.md",
                         "mentions": len(p.entries),
+                        "category": p.relationship_display if p.relation_type else "Unknown",
                     }
                     for p in people
                 ],
                 key=lambda x: x["mentions"],
                 reverse=True,
             )[:5]
+
+            # Top locations by visit count
+            top_locations = sorted(
+                [
+                    {
+                        "name": loc.name,
+                        "path": f"locations/{slugify(loc.city.city)}/{slugify(loc.name)}.md",
+                        "visits": loc.visit_count,
+                    }
+                    for loc in locations if loc.city
+                ],
+                key=lambda x: x["visits"],
+                reverse=True,
+            )[:5]
+
+            # Year distribution with bar chart
+            entries_by_year = defaultdict(int)
+            for entry in entries:
+                entries_by_year[entry.date.year] += 1
+
+            max_year_count = max(entries_by_year.values()) if entries_by_year else 1
+            yearly_distribution = []
+            for year in sorted(entries_by_year.keys()):
+                count = entries_by_year[year]
+                bar_length = int((count / max_year_count) * 20)
+                bar = "█" * bar_length + "░" * (20 - bar_length)
+                yearly_distribution.append({
+                    "year": year,
+                    "bar": bar,
+                    "count": count,
+                })
 
             # Render home template
             output_path = self.wiki_dir / "index.md"
@@ -578,6 +930,8 @@ class WikiExporter:
                 stats=wiki_stats,
                 recent_entries=recent_entries,
                 recent_people=recent_people,
+                top_locations=top_locations,
+                yearly_distribution=yearly_distribution,
                 generated_at=datetime.now(),
             )
 
@@ -793,7 +1147,7 @@ class WikiExporter:
 
     def export_timeline(self, force: bool = False) -> ConversionStats:
         """
-        Export the timeline/calendar view.
+        Export the timeline/calendar view with rich metadata overlay.
 
         Args:
             force: If True, regenerate even if unchanged
@@ -804,12 +1158,26 @@ class WikiExporter:
         from collections import defaultdict
         from datetime import datetime
 
+        from sqlalchemy.orm import joinedload
+
         from dev.database.models import Entry
+        from dev.database.models.enums import MomentType
 
         stats = ConversionStats()
 
         with self.db.session_scope() as session:
-            entries = session.query(Entry).order_by(Entry.date).all()
+            # Load entries with relationships for rich metadata
+            entries = (
+                session.query(Entry)
+                .options(
+                    joinedload(Entry.people),
+                    joinedload(Entry.cities),
+                    joinedload(Entry.tags),
+                    joinedload(Entry.moments),
+                )
+                .order_by(Entry.date)
+                .all()
+            )
 
             if not entries:
                 safe_logger(self.logger).log_warning("No entries found for timeline")
@@ -832,10 +1200,16 @@ class WikiExporter:
                 "July", "August", "September", "October", "November", "December"
             ]
 
-            # Build timeline structure
+            # Build timeline structure with rich entry data
             timeline = []
             for year in sorted(entries_by_year.keys(), reverse=True):
-                year_count = sum(len(e) for e in entries_by_year[year].values())
+                year_entries = []
+                for month_entries in entries_by_year[year].values():
+                    year_entries.extend(month_entries)
+
+                year_count = len(year_entries)
+                year_words = sum(e.word_count or 0 for e in year_entries)
+
                 months = []
                 for month in range(1, 13):
                     if month in entries_by_year[year]:
@@ -848,13 +1222,25 @@ class WikiExporter:
                                     "date": e.date,
                                     "path": f"entries/{year}/{e.date.isoformat()}.md",
                                     "word_count": e.word_count or 0,
+                                    "people": [p.display_name for p in e.people],
+                                    "cities": [c.city for c in e.cities],
+                                    "tags": [t.tag for t in e.tags],
+                                    "moments": len([
+                                        m for m in e.moments
+                                        if m.type == MomentType.MOMENT
+                                    ]),
+                                    "references": len([
+                                        m for m in e.moments
+                                        if m.type == MomentType.REFERENCE
+                                    ]),
                                 }
-                                for e in reversed(month_entries)
+                                for e in sorted(month_entries, key=lambda x: x.date, reverse=True)
                             ],
                         })
                 timeline.append({
                     "year": year,
                     "count": year_count,
+                    "words": year_words,
                     "months": months,
                 })
 

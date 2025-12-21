@@ -1,68 +1,96 @@
 {# Home Dashboard Template - Main wiki landing page #}
-# Palimpsest — Journal Wiki
+# Palimpsest — Journal
 
-Welcome to the Palimpsest journal wiki. This is a comprehensive archive of all journal entries, people, places, events, and creative works.
-
----
-
-## Quick Stats
-
-| Category | Count |
-|----------|-------|
-| Journal Entries | {{ stats.entries }} |
-| Total Words | {{ stats.words|format_number }} |
-| People | {{ stats.people }} |
-| Locations | {{ stats.locations }} |
-| Cities | {{ stats.cities }} |
-| Events | {{ stats.events }} |
-| Tags | {{ stats.tags }} |
-| Themes | {{ stats.themes }} |
-| Poems | {{ stats.poems }} |
-| Reference Sources | {{ stats.references }} |
+A decade of life, documented.
 
 ---
 
-## Browse by Section
+## The Corpus
 
-### Journal Entries
-[[entries/entries.md|Browse all entries]] organized by year. {{ stats.entries }} entries spanning {{ stats.years }} years.
-
-### People
-[[people/people.md|Browse all people]] organized by relationship. {{ stats.people }} people mentioned across {{ stats.entries }} entries.
-
-### Places
-
-- [[cities/cities.md|Cities]] — {{ stats.cities }} cities across {{ stats.countries }} countries
-- [[locations/locations.md|Locations]] — {{ stats.locations }} specific venues and places
-
-### Events
-[[events/events.md|Browse all events]] organized by year. {{ stats.events }} notable events.
-
-### Tags & Themes
-- [[tags/tags.md|Tags]] — {{ stats.tags }} topic tags
-- [[themes/themes.md|Themes]] — {{ stats.themes }} thematic categories
-
-### Creative Works
-- [[poems/poems.md|Poems]] — {{ stats.poems }} poems with {{ stats.poem_versions }} versions
-- [[references/references.md|References]] — {{ stats.references }} external sources cited
+| Metric | Value |
+|--------|-------|
+| **Entries** | {{ stats.entries }} |
+| **Words** | {{ stats.words|format_number }} |
+| **Time Span** | {{ stats.first_year }} → {{ stats.last_year }} (~{{ stats.years }} years) |
+| **Avg Words/Entry** | {{ stats.avg_words|format_number }} |
 
 ---
 
-## Recent Activity
+## Dimensions
+
+| Dimension | Count | Details |
+|-----------|-------|---------|
+| **People** | {{ stats.people }} | [[people/people.md|Browse]] → {{ stats.close_relationships }} close relationships |
+| **Places** | {{ stats.cities }} cities | [[cities/cities.md|Browse]] → {{ stats.locations }} specific locations |
+| **Events** | {{ stats.events }} | [[events/events.md|Browse]] → Multi-entry narrative groupings |
+| **Moments** | {{ stats.moments }} | [[moments/moments.md|Browse]] → {{ stats.references }} references |
+| **Tags** | {{ stats.tags }} | [[tags/tags.md|Browse]] → Topic categories |
+| **Poems** | {{ stats.poems }} | [[poems/poems.md|Browse]] → {{ stats.poem_versions }} versions |
+| **References** | {{ stats.external_refs }} | [[references/references.md|Browse]] → External sources cited |
+
+---
+
+## Quick Navigation
+
+### Journal
+- [[timeline.md|Timeline]] — Chronological navigation
+- [[entries/entries.md|All Entries]] — Browse by year
+- [[stats.md|Statistics]] — Detailed analytics
+- [[analysis.md|Analysis]] — Patterns and insights
+
+### Entities
+- [[people/people.md|People]] — Social universe ({{ stats.people }})
+- [[cities/cities.md|Cities]] — Geography ({{ stats.cities }})
+- [[events/events.md|Events]] — Narrative groupings ({{ stats.events }})
+- [[moments/moments.md|Moments]] — Temporal echoes
+
+### Content
+- [[tags/tags.md|Tags]] — Topic categories
+- [[themes/themes.md|Themes]] — Thematic elements
+- [[poems/poems.md|Poems]] — Poetry archive
+- [[references/references.md|References]] — External sources
+
+### Manuscript
+- [[manuscript/index.md|Manuscript Home]] — Auto-fiction project
+
+---
+
+## Recent Entries
 
 {% if recent_entries %}
-### Latest Entries
-
 {% for entry in recent_entries[:5] %}
-- [[{{ entry.path }}|{{ entry.date|format_date('%Y-%m-%d') }}]] — {{ entry.word_count }} words
+- [[{{ entry.path }}|{{ entry.date|format_date('%Y-%m-%d') }}]] — {{ entry.word_count }} words{% if entry.people %} — {{ entry.people|join(', ') }}{% endif %}
+
 {% endfor %}
 {% endif %}
 
+---
+
+## Most Mentioned
+
 {% if recent_people %}
-### Most Mentioned People
+### People
 
 {% for person in recent_people[:5] %}
-- [[{{ person.path }}|{{ person.name }}]] — {{ person.mentions }} mentions
+| [[{{ person.path }}|{{ person.name }}]] | {{ person.mentions }} entries | {{ person.category }} |
+{% endfor %}
+{% endif %}
+
+{% if top_locations %}
+### Locations
+
+{% for loc in top_locations[:5] %}
+| [[{{ loc.path }}|{{ loc.name }}]] | {{ loc.visits }} visits |
+{% endfor %}
+{% endif %}
+
+---
+
+## Year Distribution
+
+{% if yearly_distribution %}
+{% for year in yearly_distribution %}
+| {{ year.year }} | {{ year.bar }} | {{ year.count }} entries |
 {% endfor %}
 {% endif %}
 

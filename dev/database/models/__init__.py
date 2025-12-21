@@ -24,7 +24,7 @@ Usage:
 from .base import Base, SoftDeleteMixin
 
 # Enumerations
-from .enums import ReferenceMode, ReferenceType, RelationType
+from .enums import MomentType, ReferenceMode, ReferenceType, RelationType
 
 # Association tables (for direct usage if needed)
 from .associations import (
@@ -62,6 +62,7 @@ __all__ = [
     "Base",
     "SoftDeleteMixin",
     # Enums
+    "MomentType",
     "ReferenceMode",
     "ReferenceType",
     "RelationType",

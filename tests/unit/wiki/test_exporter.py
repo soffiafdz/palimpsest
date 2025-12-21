@@ -159,7 +159,10 @@ class TestExportTimeline(TestWikiExporter):
     def test_export_timeline_empty(self, mock_db, wiki_dir):
         """Test export_timeline returns empty stats when no entries."""
         session = mock_db.session_scope.return_value.__enter__.return_value
-        session.query.return_value.order_by.return_value.all.return_value = []
+
+        query = MagicMock()
+        query.options.return_value.order_by.return_value.all.return_value = []
+        session.query.return_value = query
 
         exporter = WikiExporter(mock_db, wiki_dir)
         stats = exporter.export_timeline()
@@ -171,8 +174,12 @@ class TestExportTimeline(TestWikiExporter):
         """Test successful timeline export."""
         session = mock_db.session_scope.return_value.__enter__.return_value
 
+        # Add moments to entries for the new template
+        for entry in sample_entries:
+            entry.moments = []
+
         entry_query = MagicMock()
-        entry_query.order_by.return_value.all.return_value = sample_entries
+        entry_query.options.return_value.order_by.return_value.all.return_value = sample_entries
 
         session.query.return_value = entry_query
 
@@ -253,11 +260,24 @@ class TestExportHome(TestWikiExporter):
         """Test successful home page export."""
         session = mock_db.session_scope.return_value.__enter__.return_value
 
+        # Add required attributes to mock people
+        for person in sample_people:
+            person.created_at = datetime.now()
+            person.moments = []
+
+        # Configure Entry query with options
         entry_query = MagicMock()
-        entry_query.all.return_value = sample_entries
+        entry_query.options.return_value.all.return_value = sample_entries
 
         person_query = MagicMock()
         person_query.filter.return_value.all.return_value = sample_people
+
+        # For Location and Moment queries
+        location_query = MagicMock()
+        location_query.all.return_value = []
+
+        moment_query = MagicMock()
+        moment_query.all.return_value = []
 
         count_query = MagicMock()
         count_query.count.return_value = 5
@@ -270,6 +290,10 @@ class TestExportHome(TestWikiExporter):
                 return entry_query
             elif name == "Person":
                 return person_query
+            elif name == "Location":
+                return location_query
+            elif name == "Moment":
+                return moment_query
             else:
                 return count_query
 
@@ -285,4 +309,5 @@ class TestExportHome(TestWikiExporter):
 
         content = home_file.read_text()
         assert "Palimpsest" in content
-        assert "Journal Wiki" in content
+        # Updated assertion for new template
+        assert "Journal" in content

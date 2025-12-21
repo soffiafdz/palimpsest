@@ -147,11 +147,10 @@ def _query_events(session: Session) -> List[Event]:
 
 
 def _query_tags(session: Session) -> List[Tag]:
-    """Query all non-deleted tags with relationships loaded."""
+    """Query all tags with relationships loaded."""
     return session.scalars(
         select(Tag)
         .options(joinedload(Tag.entries))
-        .where(Tag.deleted_at.is_(None))
         .order_by(Tag.tag)
     ).unique().all()
 

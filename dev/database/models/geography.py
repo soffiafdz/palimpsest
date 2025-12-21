@@ -22,8 +22,10 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Date, Enum as SAEnum, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .enums import MomentType
 
 from .associations import (
     entry_cities,
@@ -48,10 +50,17 @@ class Moment(Base):
     who was involved, where it took place, and which events it was part of.
     This enables rich temporal and relational queries across the journal.
 
+    Moments can be of two types:
+    - MOMENT (default): An event that actually happened on the referenced date
+      and is narrated in the journal entry.
+    - REFERENCE: A contextual link to another date. The action described happens
+      on the entry date, but references something from another time.
+
     Attributes:
         id: Primary key
         date: The date of this moment
         context: Optional context about what happened
+        type: MomentType (moment or reference), defaults to moment
 
     Relationships:
         entries: Many-to-many with Entry (entries that mention this moment)
@@ -64,13 +73,18 @@ class Moment(Base):
         entry_count: Number of entries referencing this moment
         first_mention_date: When this moment was first written about
         last_mention_date: Most recent mention of this moment
+        is_reference: Whether this is a reference (not a moment)
 
     Examples:
-        # Simple moment
+        # Simple moment (default type)
         Moment(date=date(2020, 3, 15))
 
         # Moment with context
         Moment(date=date(2020, 3, 15), context="thesis defense")
+
+        # Reference to another date
+        Moment(date=date(2025, 1, 11), type=MomentType.REFERENCE,
+               context="I give Clara the negatives from the anti-date")
 
         # Full moment with relationships (set after creation)
         moment = Moment(date=date(2024, 7, 4), context="July 4th party")
@@ -85,6 +99,13 @@ class Moment(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     context: Mapped[Optional[str]] = mapped_column(Text)
+    type: Mapped[MomentType] = mapped_column(
+        SAEnum(MomentType, name="momenttype", create_constraint=True),
+        nullable=False,
+        default=MomentType.MOMENT,
+        server_default="moment",
+        index=True,
+    )
 
     # --- Relationships ---
     entries: Mapped[List["Entry"]] = relationship(
@@ -155,17 +176,28 @@ class Moment(Base):
         """Names of events this moment is part of."""
         return [event.event for event in self.events] if self.events else []
 
+    @property
+    def is_reference(self) -> bool:
+        """Check if this moment is a reference (not an actual moment)."""
+        return self.type == MomentType.REFERENCE
+
+    @property
+    def type_display(self) -> str:
+        """Get human-readable type name."""
+        return self.type.display_name if self.type else "Moment"
+
     def __repr__(self) -> str:
-        return f"<Moment(id={self.id}, date={self.date})>"
+        return f"<Moment(id={self.id}, date={self.date}, type={self.type.value})>"
 
     def __str__(self) -> str:
         count = self.entry_count
+        type_label = "Reference" if self.is_reference else "Moment"
         if count == 0:
-            return f"Moment {self.date_formatted} (no entries)"
+            return f"{type_label} {self.date_formatted} (no entries)"
         elif count == 1:
-            return f"Moment {self.date_formatted} (1 entry)"
+            return f"{type_label} {self.date_formatted} (1 entry)"
         else:
-            return f"Moment {self.date_formatted} ({count} entries)"
+            return f"{type_label} {self.date_formatted} ({count} entries)"
 
 
 class City(Base):

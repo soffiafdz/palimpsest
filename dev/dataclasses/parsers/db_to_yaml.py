@@ -194,8 +194,13 @@ class DbToYamlExporter:
         """
         Extract mentioned dates with context from database Entry.
 
-        Builds date items as dicts with date, locations, people, events, and context.
-        Adds "~" marker if entry date is not in mentioned dates.
+        Builds date items as dicts with date, type, locations, people, events,
+        and context. Adds "~" marker if entry date is not in mentioned dates
+        (moments only, not references).
+
+        For simple references (just date + context), uses the compact "~DATE (context)"
+        string format. For complex references with locations/people/events, uses
+        dict format with "type": "reference".
 
         Args:
             entry: Database Entry ORM object
@@ -206,30 +211,57 @@ class DbToYamlExporter:
         Examples:
             >>> build_dates_metadata(entry)
             [
-                "~",  # Entry date not mentioned
+                "~",  # Entry date not mentioned in moments
                 {
                     "date": "2024-01-15",
                     "locations": ["Café X"],
                     "people": [{"name": "John"}],
                     "context": "Meeting"
+                },
+                "~2025-01-11 (negatives from the anti-date)",  # Simple reference
+                {
+                    "date": "2025-01-11",
+                    "type": "reference",
+                    "people": [{"name": "Clara"}],
+                    "context": "Complex reference with people"
                 }
             ]
         """
+        from dev.database.models import MomentType
+
         if not entry.moments:
             return None
 
         dates_list: List[Union[str, Dict[str, Any]]] = []
 
-        # Check if entry date is in mentioned dates
-        entry_date_in_mentioned = any(md.date == entry.date for md in entry.moments)
+        # Check if entry date is in mentioned dates (moments only, not references)
+        entry_date_in_moments = any(
+            md.date == entry.date and md.type == MomentType.MOMENT
+            for md in entry.moments
+        )
 
-        # Add ~ if entry date NOT in mentioned dates
-        if not entry_date_in_mentioned:
+        # Add ~ if entry date NOT in mentioned moments
+        if not entry_date_in_moments:
             dates_list.append("~")
 
-        # Build all date items as dicts
+        # Build all date items
         for mentioned_date in entry.moments:
+            is_reference = mentioned_date.type == MomentType.REFERENCE
+
+            # For simple references (only date + context), use compact string format
+            if is_reference and not mentioned_date.locations and not mentioned_date.people and not mentioned_date.events:
+                if mentioned_date.context:
+                    dates_list.append(f"~{mentioned_date.date.isoformat()} ({mentioned_date.context})")
+                else:
+                    dates_list.append(f"~{mentioned_date.date.isoformat()}")
+                continue
+
+            # Build dict format for complex entries
             date_dict: Dict[str, Any] = {"date": mentioned_date.date.isoformat()}
+
+            # Add type only for references (moment is the default)
+            if is_reference:
+                date_dict["type"] = "reference"
 
             # Add locations
             if mentioned_date.locations:

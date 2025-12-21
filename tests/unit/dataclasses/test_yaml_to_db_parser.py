@@ -532,6 +532,109 @@ class TestParseDatesField:
         )
         assert "events" not in dates[0]
 
+    # --- Reference type tests ---
+
+    def test_simple_date_has_moment_type(self, parser):
+        """Test simple date string defaults to 'moment' type."""
+        dates, exclude = parser.parse_dates_field(["2024-06-01"], None)
+        assert dates[0]["type"] == "moment"
+
+    def test_dict_date_defaults_to_moment_type(self, parser):
+        """Test dict date defaults to 'moment' type."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-06-01", "context": "meeting"}],
+            None
+        )
+        assert dates[0]["type"] == "moment"
+
+    def test_reference_prefix_string(self, parser):
+        """Test ~prefix marks date as reference type."""
+        dates, exclude = parser.parse_dates_field(
+            ["~2024-01-11 (negatives from anti-date)"],
+            None
+        )
+        assert len(dates) == 1
+        assert dates[0]["date"] == "2024-01-11"
+        assert dates[0]["type"] == "reference"
+        assert "negatives from anti-date" in dates[0]["context"]
+
+    def test_reference_prefix_simple_date(self, parser):
+        """Test ~prefix on simple date (no context)."""
+        dates, exclude = parser.parse_dates_field(["~2024-01-11"], None)
+        assert dates[0]["date"] == "2024-01-11"
+        assert dates[0]["type"] == "reference"
+
+    def test_reference_prefix_with_space(self, parser):
+        """Test ~prefix with space after tilde."""
+        dates, exclude = parser.parse_dates_field(
+            ["~ 2024-01-11 (with space)"],
+            None
+        )
+        assert dates[0]["date"] == "2024-01-11"
+        assert dates[0]["type"] == "reference"
+
+    def test_dict_with_type_reference(self, parser):
+        """Test dict with explicit type: reference."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-01-11", "type": "reference", "context": "old negatives"}],
+            None
+        )
+        assert dates[0]["type"] == "reference"
+        assert dates[0]["date"] == "2024-01-11"
+
+    def test_dict_with_type_moment_explicit(self, parser):
+        """Test dict with explicit type: moment."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-06-01", "type": "moment", "context": "actual event"}],
+            None
+        )
+        assert dates[0]["type"] == "moment"
+
+    def test_invalid_type_defaults_to_moment(self, parser):
+        """Test invalid type value defaults to 'moment'."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-06-01", "type": "invalid"}],
+            None
+        )
+        assert dates[0]["type"] == "moment"
+
+    def test_tilde_alone_still_opt_out(self, parser):
+        """Test ~ alone (without date) still triggers opt-out."""
+        dates, exclude = parser.parse_dates_field(["~"], None)
+        assert dates == []
+        assert exclude is True
+
+    def test_mixed_moments_and_references(self, parser):
+        """Test mixing moments and references in same dates field."""
+        dates, exclude = parser.parse_dates_field([
+            "2024-06-01 (actual event)",
+            "~2024-01-11 (reference to old date)",
+            {"date": "2024-07-01", "type": "reference", "context": "another ref"}
+        ], None)
+        assert len(dates) == 3
+        assert dates[0]["type"] == "moment"
+        assert dates[1]["type"] == "reference"
+        assert dates[2]["type"] == "reference"
+
+    def test_reference_with_locations(self, parser):
+        """Test reference type with locations."""
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-01-11", "type": "reference", "locations": ["Old Café"]}],
+            None
+        )
+        assert dates[0]["type"] == "reference"
+        assert "locations" in dates[0]
+
+    def test_reference_with_people(self, parser):
+        """Test reference type with people."""
+        people_parsed = {"people": [{"name": "Clara"}], "alias": []}
+        dates, exclude = parser.parse_dates_field(
+            [{"date": "2024-01-11", "type": "reference", "people": ["Clara"]}],
+            people_parsed
+        )
+        assert dates[0]["type"] == "reference"
+        assert "people" in dates[0]
+
 
 # =============================================================================
 # Test parse_references_field

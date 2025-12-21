@@ -329,12 +329,19 @@ class YamlToDbParser:
         Associates locations/people/events to specific dates (moments).
         For people values in dates, looks them up in people_parsed.
 
-        Supports:
-        - Simple date: "2025-06-01"
-        - Inline context: "2025-06-01 (thesis exam)"
-        - Nested format: {"date": "2025-06-01", "context": "thesis exam"}
-        - Entry date shorthand: {"date": "."}
-        - Opt-out marker: "~" (excludes entry date)
+        Supports two types of date entries:
+        - MOMENT (default): An event that actually happened on the referenced date
+        - REFERENCE: A contextual link where the action happens on entry date,
+          but references something from another time
+
+        Formats:
+        - Simple date: "2025-06-01" → moment
+        - Inline context: "2025-06-01 (thesis exam)" → moment
+        - Reference prefix: "~2025-01-11 (negatives from anti-date)" → reference
+        - Nested format: {"date": "2025-06-01", "context": "..."} → moment
+        - Explicit reference: {"date": "2025-01-11", "type": "reference", ...}
+        - Entry date shorthand: {"date": "."} → moment on entry date
+        - Opt-out marker: "~" alone (excludes entry date from moments)
         - Events: {"date": "2025-06-01", "events": ["summer-trip"]}
 
         Args:
@@ -343,14 +350,16 @@ class YamlToDbParser:
 
         Returns:
             Tuple of (parsed_dates, exclude_entry_date_flag)
+            Each parsed date includes a "type" field: "moment" or "reference"
 
         Examples:
             >>> parse_dates_field([
             ...     "2025-06-01",
-            ...     "2025-06-15 (birthday party)",
-            ...     {"date": "2025-07-01", "context": "celebration", "people": "Alda"}
+            ...     "~2025-01-11 (negatives from anti-date)",
+            ...     {"date": "2025-07-01", "type": "reference", "context": "..."}
             ... ], people_parsed)
-            ([{"date": "2025-06-01"}, ...], False)
+            ([{"date": "2025-06-01", "type": "moment"},
+              {"date": "2025-01-11", "type": "reference", ...}, ...], False)
         """
         if isinstance(dates_data, dict):
             dates_data = [dates_data]
@@ -366,13 +375,23 @@ class YamlToDbParser:
 
             # --- Inline string ---
             if isinstance(item, str):
-                date_obj, raw_context = parsers.parse_date_context(item)
+                # Check for reference prefix (~)
+                is_reference = False
+                date_str = item
+                if item.startswith("~"):
+                    is_reference = True
+                    date_str = item[1:].lstrip()  # Remove ~ and any leading whitespace
+
+                date_obj, raw_context = parsers.parse_date_context(date_str)
 
                 if not DataValidator.validate_date_string(date_obj):
                     logger.warning(f"Invalid date format, skipping: {date_obj}")
                     continue
 
-                date_dict: Dict[str, Union[date, str, List]] = {"date": date_obj}
+                date_dict: Dict[str, Union[date, str, List]] = {
+                    "date": date_obj,
+                    "type": "reference" if is_reference else "moment",
+                }
 
                 if raw_context:
                     context_dict = parsers.extract_context_refs(raw_context)
@@ -398,7 +417,15 @@ class YamlToDbParser:
                     logger.warning(f"Invalid date format, skipping: {item}")
                     continue
 
-                date_dict = {"date": date_value}
+                # Handle type field (default to "moment")
+                moment_type = item.get("type", "moment")
+                if moment_type not in ("moment", "reference"):
+                    logger.warning(
+                        f"Invalid moment type '{moment_type}', defaulting to 'moment'"
+                    )
+                    moment_type = "moment"
+
+                date_dict = {"date": date_value, "type": moment_type}
                 all_locations = []
                 people_context = []
 

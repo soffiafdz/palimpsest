@@ -10,7 +10,9 @@ This guide walks you through transitioning the refactored Palimpsest codebase in
 - 384 journal entries total
 - 360 clean entries (94%)
 - 24 entries with issues (20 errors, 4 warnings)
-- 1 pending database migration
+- 2 pending database migrations:
+  1. MentionedDate → Moment rename
+  2. Add `type` column to Moment (for reference support)
 
 ---
 
@@ -75,10 +77,27 @@ Database table: moments          ← After migration (renamed from 'dates')
 
 **Why the rename?** A "moment" is more than just a date - it captures:
 - `date`: when it happened
+- `type`: "moment" (default) or "reference" - **NEW**
 - `context`: what happened
 - `people`: who was involved (via `moment_people` table)
 - `locations`: where it happened (via `moment_locations` table)
 - `events`: which events it's part of (via `moment_events` table) - **NEW**
+
+### Moments vs References (NEW)
+
+The `type` field distinguishes between two use cases:
+
+1. **Moment** (default): An event that actually happened on the referenced date and is narrated in the journal entry.
+
+2. **Reference**: A contextual link to another date. The action described happens on the *entry* date, but references something from another time.
+
+**Example:**
+- Entry date: February 2025
+- You write: "I gave Clara the negatives from January's anti-date"
+- The **giving** happens in February (entry date)
+- The **negatives** are from January 11th (referenced date)
+
+This is a *reference* to January 11th, not a moment that happened on January 11th.
 
 **Example mapping:**
 
@@ -482,7 +501,7 @@ cities:
 
 ### Dates (Moments)
 ```yaml
-# Simple
+# Simple moment (default)
 dates:
   - "2025-01-15"
   - "2025-01-20 (birthday party)"
@@ -498,13 +517,30 @@ dates:
     context: "Meeting at cafe"
     people: [Alice]
     locations: [Café Olimpico]
-    events: [summer-trip]  # NEW: link moment to events
+    events: [summer-trip]  # Link moment to events
 
 # Exclude entry date from dates list
 dates:
-  - "~"  # Opt-out marker
+  - "~"  # Opt-out marker (~ alone)
   - "2025-01-20"
+
+# REFERENCE to another date (NEW)
+# Quick syntax: ~prefix before date
+dates:
+  - "~2025-01-11 (I give Clara the negatives from the anti-date)"
+
+# Reference with full details (dict format)
+dates:
+  - date: 2025-01-11
+    type: reference  # Explicitly mark as reference
+    context: "I give Clara the negatives from the anti-date"
+    people: [Clara]
 ```
+
+**When to use references:**
+- When describing an action that happens TODAY but relates to another date
+- When mentioning past events in context of current narration
+- For "the negatives from that night", "photos from the trip", etc.
 
 ### Poems
 ```yaml

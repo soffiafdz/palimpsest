@@ -2,55 +2,146 @@
   person.jinja2
   -------------
   Wiki template for Person entity.
-  Displays person metadata, appearances timeline, themes, and notes.
+  Displays person metadata, appearances timeline, co-appearances,
+  locations, moments (with type distinction), and notes.
 #}
 # Palimpsest — Person
 
 ## {{ entity.display_name }}
 
-### Category
-{{ entity.relationship_display }}
+---
 
-### Alias
+### Identity
+
+| Attribute | Value |
+|-----------|-------|
+| **Name** | {{ entity.display_name }} |
+| **Relationship** | {{ entity.relationship_display }} |
 {% if entity.aliases %}
-{% for alias in entity.aliases|sort(attribute='alias') %}
-- {{ alias.alias }}
+| **Aliases** | {{ entity.aliases|map(attribute='alias')|join(', ') }} |
+{% endif %}
+{% if entity.privacy_level %}
+| **Privacy** | {{ entity.privacy_level }}/5 |
+{% endif %}
+
+---
+
+### Presence in Journal
+
+| Metric | Value |
+|--------|-------|
+| **Entries** | {{ entity.entries|length }} |
+| **Moments** | {{ entity.moments|selectattr('type', 'equalto', 'moment')|list|length if entity.moments else 0 }} (actual appearances) |
+| **References** | {{ entity.moments|selectattr('type', 'equalto', 'reference')|list|length if entity.moments else 0 }} (dates mentioned in context) |
+{% if entity.first_appearance and entity.last_appearance %}
+| **First Appearance** | {{ entity.first_appearance|format_date }} |
+| **Last Appearance** | {{ entity.last_appearance|format_date }} |
+| **Span** | {{ ((entity.last_appearance - entity.first_appearance).days) }} days |
+{% endif %}
+
+---
+
+{% if entity.entries|length > 0 %}
+### Appearance Timeline
+
+{% set entries_by_year = {} %}
+{% for entry in entity.entries %}
+{% set year = entry.date.year %}
+{% if year not in entries_by_year %}
+{% set _ = entries_by_year.update({year: []}) %}
+{% endif %}
+{% set _ = entries_by_year[year].append(entry) %}
+{% endfor %}
+
+{% for year in entries_by_year.keys()|sort(reverse=true) %}
+**{{ year }}** ({{ entries_by_year[year]|length }} entries)
+{% for entry in entries_by_year[year]|sort(attribute='date', reverse=true) %}
+- [[entries/{{ year }}/{{ entry.date.isoformat() }}.md|{{ entry.date|format_date('%m-%d') }}]]{% if entry.word_count %} ({{ entry.word_count }} words){% endif %}
+
+{% endfor %}
+{% endfor %}
+{% endif %}
+
+---
+
+{% if co_appearances %}
+### Co-Appearances
+
+People who appear together with {{ entity.display_name }}:
+
+| Person | Shared Entries |
+|--------|----------------|
+{% for coapp in co_appearances[:10] %}
+| [[people/{{ coapp.slug }}.md|{{ coapp.name }}]] | {{ coapp.count }} |
+{% endfor %}
+{% endif %}
+
+---
+
+{% if locations %}
+### Locations
+
+Places associated with {{ entity.display_name }}:
+
+{% for loc in locations[:10] %}
+- [[locations/{{ loc.city_slug }}/{{ loc.slug }}.md|{{ loc.name }}]] ({{ loc.city }}) — {{ loc.count }} moments
+{% endfor %}
+{% endif %}
+
+---
+
+{% if entity.moments %}
+### Moments (Actual Appearances)
+
+{% set actual_moments = entity.moments|selectattr('type.value', 'equalto', 'moment')|list|sort(attribute='date', reverse=true) %}
+{% if actual_moments %}
+{% for moment in actual_moments[:15] %}
+- **{{ moment.date|format_date('%Y-%m-%d') }}**{% if moment.context %}: {{ moment.context }}{% endif %}
+
+{% endfor %}
+{% if actual_moments|length > 15 %}
+*...and {{ actual_moments|length - 15 }} more moments*
+{% endif %}
+{% else %}
+*No specific dated moments recorded.*
+{% endif %}
+
+---
+
+### References (Dates Mentioned in Context)
+
+{% set references = entity.moments|selectattr('type.value', 'equalto', 'reference')|list|sort(attribute='date', reverse=true) %}
+{% if references %}
+These are dates that appear as references in entries involving {{ entity.display_name }}, linking current moments to past events:
+
+{% for ref in references[:10] %}
+- **~{{ ref.date|format_date('%Y-%m-%d') }}**{% if ref.context %}: "{{ ref.context }}"{% endif %}
+
+{% endfor %}
+{% if references|length > 10 %}
+*...and {{ references|length - 10 }} more references*
+{% endif %}
+{% else %}
+*No date references found.*
+{% endif %}
+{% endif %}
+
+---
+
+### Events
+
+{% if entity.events %}
+{% for event in entity.events %}
+- [[events/{{ event.event|slugify }}.md|{{ event.display_name }}]] ({{ event.entries|length }} entries)
 {% endfor %}
 {% else %}
--
+*No narrative events associated.*
 {% endif %}
 
-### Appearances
-{% if entity.appearances_count == 0 %}
-- No appearances recorded
-{% elif entity.appearances_count == 1 %}
-- Appearance: {{ entity.first_appearance|format_date }}
-- Mentions: 1 entry
-{% set first_moment = entity.moments|sort(attribute='date')|first %}
-{% set entry = first_moment.entries|first %}
-{% if entry %}
--> Entry: {{ entity_link(entry, 'entries', wiki_dir, output_path) }}{% if first_moment.context %} — {{ first_moment.context }}{% endif %}
-
-{% endif %}
-{% else %}
-- Range: {{ entity.first_appearance|format_date }} -> {{ entity.last_appearance|format_date }}
-- Mentions: {{ entity.appearances_count }} entries
-{% set sorted_moments = entity.moments|sort(attribute='date') %}
-{% set first_moment = sorted_moments|first %}
-{% set last_moment = sorted_moments|last %}
-{% set first_entry = first_moment.entries|first %}
-{% set last_entry = last_moment.entries|first %}
-{% if first_entry %}
--> First: {{ entity_link(first_entry, 'entries', wiki_dir, output_path) }}{% if first_moment.context %} — {{ first_moment.context }}{% endif %}
-
-{% endif %}
-{% if last_entry %}
--> Last: {{ entity_link(last_entry, 'entries', wiki_dir, output_path) }}{% if last_moment.context %} — {{ last_moment.context }}{% endif %}
-
-{% endif %}
-{% endif %}
+---
 
 ### Themes
+
 {% if entity.entries %}
 {% set themes = [] %}
 {% for entry in entity.entries %}
@@ -67,14 +158,20 @@
 - {{ theme }}
 {% endfor %}
 {% else %}
--
+*No themes tagged.*
 {% endif %}
 {% else %}
--
+*No themes tagged.*
 {% endif %}
 
+---
+
 ### Vignettes
+
 -
 
+---
+
 ### Notes
+
 {{ entity.notes or '[Add your notes here]' }}

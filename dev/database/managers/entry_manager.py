@@ -1002,10 +1002,11 @@ class EntryManager(BaseManager):
         dates_data: List[Union[str, Dict[str, Any]]],
     ) -> None:
         """
-        Process mentioned dates with optional context, locations, people, and events.
+        Process mentioned dates with optional context, locations, people, events, and type.
 
         Each date can have:
         - date: ISO format date string (required)
+        - type: "moment" (default) or "reference"
         - context: Optional text context
         - locations: List of location names (creates relationships)
         - people: List of person specs (creates relationships)
@@ -1015,23 +1016,34 @@ class EntryManager(BaseManager):
             entry: Entry to attach dates to
             dates_data: List of date specifications
         """
+        from dev.database.models import MomentType
+
         existing_date_ids = {d.id for d in entry.moments}
 
         for date_item in dates_data:
             mentioned_date = None
 
             if isinstance(date_item, str):
-                # Simple date string
+                # Simple date string (type defaults to moment)
                 date_obj = date.fromisoformat(date_item)
-                mentioned_date = self._get_or_create(Moment, {"date": date_obj})
+                mentioned_date = self._get_or_create(
+                    Moment, {"date": date_obj, "type": MomentType.MOMENT}
+                )
 
             elif isinstance(date_item, dict) and "date" in date_item:
-                # Date with context
+                # Date with optional context and type
                 date_obj = date.fromisoformat(date_item["date"])
                 context = date_item.get("context")
 
+                # Parse type field (default to "moment")
+                type_str = date_item.get("type", "moment")
+                moment_type = (
+                    MomentType.REFERENCE if type_str == "reference"
+                    else MomentType.MOMENT
+                )
+
                 mentioned_date = self._get_or_create(
-                    Moment, {"date": date_obj, "context": context}
+                    Moment, {"date": date_obj, "context": context, "type": moment_type}
                 )
 
                 if "locations" in date_item and date_item["locations"]:

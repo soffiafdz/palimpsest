@@ -521,12 +521,18 @@ class FrontmatterValidator:
         Based on: md_entry.py:_parse_dates_field()
 
         Formats:
-        - Simple: "2024-01-15"
+        - Simple: "2024-01-15" (moment, default)
         - With context: "2024-01-15 (context)"
         - With refs: "2024-01-15 (meeting with @John at #Café)"
+        - Reference prefix: "~2024-01-15 (negatives from anti-date)"
         - Dict: {date: "2024-01-15", context: "...", people: [...], locations: [...]}
-        - Opt-out: "~"
+        - Dict reference: {date: "2024-01-15", type: "reference", ...}
+        - Opt-out: "~" alone (excludes entry date)
         - Entry date shorthand: "."
+
+        The type field distinguishes between:
+        - "moment" (default): An event that actually happened on the referenced date
+        - "reference": A contextual link where action happens on entry date
 
         Also validates that referenced people exist in the main people list (if provided).
         """
@@ -582,11 +588,20 @@ class FrontmatterValidator:
                 continue
 
             if isinstance(date_entry, str):
-                # Parse context out first
-                date_part = date_entry.split("(")[0].strip()
+                # Check for reference prefix (~) at start of date string
+                work_entry = date_entry
+                if date_entry.startswith("~"):
+                    # Could be opt-out marker "~" alone or reference "~2024-01-15 (...)"
+                    if date_entry.strip() == "~":
+                        continue  # Opt-out marker
+                    # It's a reference - strip the ~ for date validation
+                    work_entry = date_entry[1:].lstrip()
 
-                # Check for opt-out marker or entry date shorthand
-                if date_part in ("~", "."):
+                # Parse context out first
+                date_part = work_entry.split("(")[0].strip()
+
+                # Check for entry date shorthand
+                if date_part == ".":
                     continue
 
                 # Check for date format
@@ -594,17 +609,17 @@ class FrontmatterValidator:
                     issues.append(self._error(
                         file_path, f"dates[{idx}]",
                         f"Invalid date format: '{date_entry}'",
-                        "Use YYYY-MM-DD format, optionally with (context)",
+                        "Use YYYY-MM-DD format, optionally with (context). Use ~ prefix for references.",
                         date_entry
                     ))
 
                 # Check parentheses balance
-                if "(" in date_entry:
-                    if not date_entry.rstrip().endswith(")"):
+                if "(" in work_entry:
+                    if not work_entry.rstrip().endswith(")"):
                         issues.append(self._error(
                             file_path, f"dates[{idx}]",
                             f"Unclosed parenthesis in: '{date_entry}'",
-                            "Use format: YYYY-MM-DD (context)"
+                            "Use format: YYYY-MM-DD (context) or ~YYYY-MM-DD (context)"
                         ))
 
             elif isinstance(date_entry, dict):
@@ -630,14 +645,25 @@ class FrontmatterValidator:
                                 "Use YYYY-MM-DD format"
                             ))
 
+                # Validate type field if present
+                if "type" in date_entry:
+                    type_val = date_entry["type"]
+                    if type_val not in ("moment", "reference"):
+                        issues.append(self._error(
+                            file_path, f"dates[{idx}].type",
+                            f"Invalid moment type: '{type_val}'",
+                            "Use: type: moment or type: reference",
+                            type_val
+                        ))
+
                 # Check valid subfields
-                valid_keys = {"date", "context", "people", "locations", "events", "description"}
+                valid_keys = {"date", "type", "context", "people", "locations", "events", "description"}
                 unknown = set(date_entry.keys()) - valid_keys
                 if unknown:
                     issues.append(self._warning(
                         file_path, f"dates[{idx}]",
                         f"Unknown fields in date dict: {', '.join(unknown)}",
-                        "Valid fields: date, context, people, locations, events"
+                        "Valid fields: date, type, context, people, locations, events"
                     ))
 
                 # Check types of subfields
