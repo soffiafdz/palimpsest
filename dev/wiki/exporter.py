@@ -1706,3 +1706,168 @@ class WikiExporter:
             total=len(ms_events),
         )
         self._write_index(output_path, content, force, stats)
+
+    # =========================================================================
+    # Narrative Export (from manifest files)
+    # =========================================================================
+
+    def export_narrative(self, force: bool = False) -> ConversionStats:
+        """
+        Export narrative structure pages from manifest files.
+
+        Exports arc and event pages from the narrative_analysis manifests,
+        not from the database. This provides wiki pages for the
+        scenes/events/arcs hierarchy.
+
+        Args:
+            force: If True, regenerate all pages
+
+        Returns:
+            Statistics for narrative export
+        """
+        from .narrative_parser import NarrativeParser
+
+        stats = ConversionStats()
+        parser = NarrativeParser()
+
+        arcs = parser.get_arcs()
+        events = parser.get_events()
+        narrative_stats = parser.get_stats()
+
+        # Build lookup dicts
+        events_lookup = {e.name: e for e in events}
+        arc_lookup = {a.name: a for a in arcs}
+
+        # Export arcs index
+        self._export_narrative_arcs_index(
+            arcs, events_lookup, narrative_stats, force, stats
+        )
+
+        # Export individual arc pages
+        for arc in arcs:
+            self._export_narrative_arc_page(
+                arc, arcs, events_lookup, force, stats
+            )
+
+        # Export events index
+        self._export_narrative_events_index(
+            events, arcs, events_lookup, narrative_stats, force, stats
+        )
+
+        # Export individual event pages
+        for event in events:
+            self._export_narrative_event_page(
+                event, arc_lookup, force, stats
+            )
+
+        safe_logger(self.logger).log_info(
+            f"Narrative export complete: "
+            f"{stats.entries_created} created, {stats.entries_updated} updated, "
+            f"{stats.entries_skipped} unchanged"
+        )
+
+        return stats
+
+    def _export_narrative_arcs_index(
+        self,
+        arcs,
+        events_lookup: dict,
+        narrative_stats: dict,
+        force: bool,
+        stats: ConversionStats,
+    ) -> None:
+        """Export narrative arcs index page."""
+        output_path = self.wiki_dir / "narrative" / "arcs" / "arcs.md"
+
+        content = self.renderer.render_index(
+            "narrative_arcs",
+            output_path,
+            arcs=arcs,
+            events_lookup=events_lookup,
+            stats=narrative_stats,
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_narrative_arc_page(
+        self,
+        arc,
+        arcs,
+        events_lookup: dict,
+        force: bool,
+        stats: ConversionStats,
+    ) -> None:
+        """Export a single narrative arc page."""
+        output_path = self.wiki_dir / "narrative" / "arcs" / f"{arc.slug}.md"
+
+        content = self.renderer.render(
+            "narrative_arc",
+            output_path=output_path,
+            arc=arc,
+            arcs=arcs,
+            events_lookup=events_lookup,
+        )
+
+        if force:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(content, encoding="utf-8")
+            stats.entries_updated += 1
+        else:
+            status = write_if_changed(output_path, content)
+            if status == "created":
+                stats.entries_created += 1
+            elif status == "updated":
+                stats.entries_updated += 1
+            else:
+                stats.entries_skipped += 1
+
+    def _export_narrative_events_index(
+        self,
+        events,
+        arcs,
+        events_lookup: dict,
+        narrative_stats: dict,
+        force: bool,
+        stats: ConversionStats,
+    ) -> None:
+        """Export narrative events index page."""
+        output_path = self.wiki_dir / "narrative" / "events" / "events.md"
+
+        content = self.renderer.render_index(
+            "narrative_events",
+            output_path,
+            events=events,
+            arcs=arcs,
+            events_lookup=events_lookup,
+            stats=narrative_stats,
+        )
+        self._write_index(output_path, content, force, stats)
+
+    def _export_narrative_event_page(
+        self,
+        event,
+        arc_lookup: dict,
+        force: bool,
+        stats: ConversionStats,
+    ) -> None:
+        """Export a single narrative event page."""
+        output_path = self.wiki_dir / "narrative" / "events" / f"{event.slug}.md"
+
+        content = self.renderer.render(
+            "narrative_event",
+            output_path=output_path,
+            event=event,
+            arc_lookup=arc_lookup,
+        )
+
+        if force:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(content, encoding="utf-8")
+            stats.entries_updated += 1
+        else:
+            status = write_if_changed(output_path, content)
+            if status == "created":
+                stats.entries_created += 1
+            elif status == "updated":
+                stats.entries_updated += 1
+            else:
+                stats.entries_skipped += 1

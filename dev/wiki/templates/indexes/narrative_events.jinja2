@@ -1,0 +1,61 @@
+{#
+  narrative_events.jinja2
+  -----------------------
+  Index page for narrative events parsed from manifest files.
+  Shows all events grouped by batch/timeframe.
+#}
+# Palimpsest — Narrative Events
+
+{{ events|length }} events across {{ stats.entries }} entries.
+
+## Events by Timeframe
+
+{% set current_batch = None %}
+{% for event in events %}
+{% if event.batch_label != current_batch %}
+{% set current_batch = event.batch_label %}
+
+### {{ current_batch }}
+
+{% endif %}
+- [[narrative/events/{{ event.slug }}|{{ event.name }}]]
+  - Entries: {{ event.entries|length }} | Scenes: {{ event.scenes|length }}{% if event.arc_name %} | Arc: [[narrative/arcs/{{ event.arc_name|lower|replace(' ', '-')|replace('(', '')|replace(')', '') }}|{{ event.arc_name }}]]{% endif %}
+
+{% endfor %}
+
+## Events by Arc
+
+{% for arc in arcs %}
+### [[narrative/arcs/{{ arc.slug }}|{{ arc.name }}]] ({{ arc.events|length }} events)
+
+{% for event_name in arc.events[:5] %}
+{% set event = events_lookup.get(event_name) %}
+{% if event %}
+- [[narrative/events/{{ event.slug }}|{{ event.name }}]]
+{% endif %}
+{% endfor %}
+{% if arc.events|length > 5 %}
+- *... and {{ arc.events|length - 5 }} more*
+{% endif %}
+
+{% endfor %}
+
+## Ungrouped Events
+
+{% set ungrouped = [] %}
+{% for event in events %}
+{% if not event.arc_name %}
+{% set _ = ungrouped.append(event) %}
+{% endif %}
+{% endfor %}
+{% if ungrouped %}
+{% for event in ungrouped %}
+- [[narrative/events/{{ event.slug }}|{{ event.name }}]] ({{ event.batch_label }})
+{% endfor %}
+{% else %}
+*All events are assigned to arcs*
+{% endif %}
+
+---
+
+[[narrative/arcs|Arcs]] | [[index|Home]]

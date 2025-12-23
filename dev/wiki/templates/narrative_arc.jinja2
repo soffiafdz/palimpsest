@@ -1,0 +1,62 @@
+{#
+  narrative_arc.jinja2
+  --------------------
+  Wiki template for a narrative arc (from manifest).
+  Displays arc theme, events timeline, and cross-references.
+#}
+# Palimpsest — {{ arc.name }}
+
+## Arc Info
+
+- **Theme:** {{ arc.theme }}
+- **Timespan:** {{ arc.timespan }}
+- **Events:** {{ arc.events|length }}
+
+## Summary
+
+{{ arc.summary }}
+
+## Events in This Arc
+
+{% for event_name in arc.events %}
+{% set event = events_lookup.get(event_name) %}
+{% if event %}
+### {{ loop.index }}. [[narrative/events/{{ event.slug }}|{{ event.name }}]]
+
+- **Batch:** {{ event.batch_label }}
+- **Entries:** {{ event.entries|join(', ') }}
+- **Scenes:** {{ event.scenes|length }}
+
+{% else %}
+### {{ loop.index }}. {{ event_name }}
+
+*(Event details not found)*
+
+{% endif %}
+{% endfor %}
+
+## Cross-Arc Events
+
+{% set cross_arc = [] %}
+{% for event_name in arc.events %}
+{% set event = events_lookup.get(event_name) %}
+{% if event %}
+{% for other_arc in arcs %}
+{% if other_arc.name != arc.name and event_name in other_arc.events %}
+{% set _ = cross_arc.append({'event': event_name, 'arc': other_arc.name}) %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% if cross_arc %}
+Events that also appear in other arcs:
+{% for item in cross_arc %}
+- **{{ item.event }}** → [[narrative/arcs/{{ item.arc|lower|replace(' ', '-')|replace('(', '')|replace(')', '') }}|{{ item.arc }}]]
+{% endfor %}
+{% else %}
+*No events shared with other arcs*
+{% endif %}
+
+---
+
+[[narrative/arcs|← All Arcs]] | [[index|Home]]
