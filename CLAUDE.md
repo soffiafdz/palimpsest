@@ -116,14 +116,17 @@ Always use the inherited helpers from `BaseManager`:
 - `_update_relationships(entity, metadata, relationship_configs)` - Update M2M
 - `_resolve_parent(spec, model, get_method)` - Resolve parent entities
 
-### Decorators
+### Database Operations
 
-Use standard decorators in this order:
+Use the DatabaseOperation context manager for all database methods:
 ```python
-@handle_db_errors
-@log_database_operation("operation_name")
-@validate_metadata(["required_field"])
-def method(self, ...):
+from dev.database.decorators import DatabaseOperation
+from dev.core.validators import DataValidator
+
+def method(self, metadata):
+    DataValidator.validate_required_fields(metadata, ["required_field"])
+    with DatabaseOperation(self.logger, "operation_name"):
+        # actual database logic here
 ```
 
 ### Custom Exceptions

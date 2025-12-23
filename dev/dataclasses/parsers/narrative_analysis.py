@@ -341,7 +341,7 @@ def parse_all_analyses(directory: Path) -> Dict[date, AnalysisData]:
         logger.warning(f"Directory not found: {directory}")
         return analyses
 
-    for file_path in sorted(directory.glob("*_analysis.md")):
+    for file_path in sorted(directory.glob("**/*_analysis.md")):
         analysis = parse_analysis_file(file_path)
         if analysis:
             analyses[analysis.entry_date] = analysis
