@@ -48,41 +48,29 @@ def upgrade() -> None:
     )
     op.create_index('ix_tag_categories_name', 'tag_categories', ['name'], unique=True)
 
-    # Add category_id to tags
-    op.add_column(
-        'tags',
-        sa.Column('category_id', sa.Integer(), nullable=True)
-    )
-    op.create_foreign_key(
-        'fk_tags_category_id',
-        'tags', 'tag_categories',
-        ['category_id'], ['id'],
-        ondelete='SET NULL'
-    )
+    # Add category_id to tags (using batch for SQLite FK support)
+    with op.batch_alter_table('tags', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('category_id', sa.Integer(), nullable=True))
+        batch_op.create_foreign_key(
+            'fk_tags_category_id',
+            'tag_categories',
+            ['category_id'], ['id'],
+            ondelete='SET NULL'
+        )
 
-    # Add narrative_rating and summary to manuscript_entries
-    op.add_column(
-        'manuscript_entries',
-        sa.Column('narrative_rating', sa.Integer(), nullable=True)
-    )
-    op.create_check_constraint(
-        'ck_manuscript_entries_rating_range',
-        'manuscript_entries',
-        'narrative_rating >= 1 AND narrative_rating <= 5'
-    )
-    op.create_index(
-        'ix_manuscript_entries_narrative_rating',
-        'manuscript_entries',
-        ['narrative_rating']
-    )
-    op.add_column(
-        'manuscript_entries',
-        sa.Column('rating_justification', sa.Text(), nullable=True)
-    )
-    op.add_column(
-        'manuscript_entries',
-        sa.Column('summary', sa.Text(), nullable=True)
-    )
+    # Add narrative_rating and summary to manuscript_entries (using batch for SQLite)
+    with op.batch_alter_table('manuscript_entries', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('narrative_rating', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('rating_justification', sa.Text(), nullable=True))
+        batch_op.add_column(sa.Column('summary', sa.Text(), nullable=True))
+        batch_op.create_check_constraint(
+            'ck_manuscript_entries_rating_range',
+            'narrative_rating >= 1 AND narrative_rating <= 5'
+        )
+        batch_op.create_index(
+            'ix_manuscript_entries_narrative_rating',
+            ['narrative_rating']
+        )
 
     # Create motifs table
     op.create_table(
@@ -125,15 +113,17 @@ def downgrade() -> None:
     op.drop_table('motifs')
 
     # Remove summary, rating_justification, and narrative_rating from manuscript_entries
-    op.drop_column('manuscript_entries', 'summary')
-    op.drop_column('manuscript_entries', 'rating_justification')
-    op.drop_index('ix_manuscript_entries_narrative_rating', table_name='manuscript_entries')
-    op.drop_constraint('ck_manuscript_entries_rating_range', 'manuscript_entries', type_='check')
-    op.drop_column('manuscript_entries', 'narrative_rating')
+    with op.batch_alter_table('manuscript_entries', schema=None) as batch_op:
+        batch_op.drop_column('summary')
+        batch_op.drop_column('rating_justification')
+        batch_op.drop_index('ix_manuscript_entries_narrative_rating')
+        batch_op.drop_constraint('ck_manuscript_entries_rating_range', type_='check')
+        batch_op.drop_column('narrative_rating')
 
     # Remove category_id from tags
-    op.drop_constraint('fk_tags_category_id', 'tags', type_='foreignkey')
-    op.drop_column('tags', 'category_id')
+    with op.batch_alter_table('tags', schema=None) as batch_op:
+        batch_op.drop_constraint('fk_tags_category_id', type_='foreignkey')
+        batch_op.drop_column('category_id')
 
     # Drop tag_categories
     op.drop_index('ix_tag_categories_name', table_name='tag_categories')
