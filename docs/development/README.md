@@ -6,6 +6,7 @@ Welcome to the Palimpsest development documentation. This section contains techn
 
 ## Quick Links
 
+- [Full Setup Guide](full-setup.md) - Complete setup from scratch
 - [Architecture](architecture.md) - System design and modular organization
 - [Database Managers](database-managers.md) - Entity manager patterns
 - [Validators](validators.md) - Validation system architecture
@@ -248,6 +249,7 @@ Contributions are welcome! Please:
 
 ## Resources
 
+- [Full Setup Guide](full-setup.md) - Complete setup from scratch
 - [Architecture](architecture.md) - System design
 - [Database Managers](database-managers.md) - Entity patterns
 - [Validators](validators.md) - Validation system
