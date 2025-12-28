@@ -612,6 +612,9 @@ class WikiExporter:
                         "context": ref.context or "",
                     })
 
+            # Sort by entry date (chronological order of when references were made)
+            ref_list.sort(key=lambda x: x["entry_date"])
+
             most_echoed.append({
                 "date": ref_date,
                 "context": context,

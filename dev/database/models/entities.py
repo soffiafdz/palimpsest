@@ -321,7 +321,7 @@ class TagCategory(Base):
         tag_count: Number of tags in this category
         entry_count: Total entries across all tags in category
 
-    Predefined Categories (24):
+    Predefined Categories (30):
         Digital Surveillance, Photography, AI/Technology, Writing/Poetry,
         Medication, Crisis/Suicidality, Food/Diet, Academia, Sleep/Insomnia,
         Depression/Grief, Literature, Identity, Therapy, Dysphoria/Body,
@@ -329,7 +329,8 @@ class TagCategory(Base):
         Rejection/Ghosting, Intimacy, Alcohol, Messaging, Anxiety/Panic,
         Film/TV, Dating Apps, Romance/Dating, Sexual, Smoking/Drugs,
         Tarot/Divination, Transition, Relics/Objects, Physical Health,
-        Isolation, Hygiene
+        Isolation, Hygiene, Family, Childhood, Friendship/Platonic,
+        Immigration/Visa, Dreams/Dreaming, Work/Productivity
     """
 
     __tablename__ = "tag_categories"

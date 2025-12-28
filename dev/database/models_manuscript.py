@@ -684,13 +684,16 @@ class Motif(Base, SoftDeleteMixin):
     analysis. Unlike Themes (entry-specific thematic elements), Motifs
     are overarching patterns that weave through multiple entries.
 
-    The 15 predefined motifs from narrative analysis:
+    The 22 predefined motifs from narrative analysis:
         THE BODY, DIGITAL SURVEILLANCE, WRITING AS SURVIVAL,
         CLOSURE & ENDINGS, WAITING & TIME, THE OBSESSIVE LOOP,
         LANGUAGE & SILENCE, HAUNTED GEOGRAPHY, MASKS & PERFORMANCE,
         VALIDATION & REJECTION, SUBSTITUTION & REPLACEMENT,
         THE UNRELIABLE NARRATOR, GHOSTS & PALIMPSESTS, THE CAVALRY,
-        MEDICALIZATION
+        MEDICALIZATION, RESURRECTION & RETURN, ISOLATION,
+        PASSING & VISIBILITY, DISCLOSURE & THE SECRET,
+        THE DOUBLE/MIRRORING, THE ARCHIVE/DOCUMENTATION,
+        THRESHOLD & LIMINAL SPACE
 
     For storyline-based groupings (e.g., "The Bea Arc"), see the Arc model.
 

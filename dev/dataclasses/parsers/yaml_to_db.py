@@ -89,7 +89,7 @@ class YamlToDbParser:
         return []
 
     def parse_locations_field(
-        self, locations_data: Union[List[str], Dict[str, List[str]]], cities: List[str]
+        self, locations_data: Union[str, List[str], Dict[str, List[str]]], cities: List[str]
     ) -> Dict[str, List[str]]:
         """
         Parse locations field supporting both flat and nested formats.
@@ -123,6 +123,10 @@ class YamlToDbParser:
 
         result = {}
 
+        # Normalize single string to list
+        if isinstance(locations_data, str):
+            locations_data = [locations_data]
+
         if isinstance(locations_data, list):
             # Flat list - all locations belong to single city
             if len(cities) != 1:
@@ -146,7 +150,7 @@ class YamlToDbParser:
         return result
 
     def parse_people_field(
-        self, people_list: List[Union[str, Dict]]
+        self, people_list: Union[str, List[Union[str, Dict]]]
     ) -> Dict[str, Any]:
         """
         Parse people field with name/full_name/alias logic.
@@ -181,6 +185,10 @@ class YamlToDbParser:
             {"people": [{"name": "Jane"}], "alias": [{"alias": "Johnny", "name": "John"}]}
         """
         result: Dict[str, List[Dict[str, Optional[str]]]] = {"people": [], "alias": []}
+
+        # Normalize single string to list
+        if isinstance(people_list, str):
+            people_list = [people_list]
 
         for item in people_list:
             # Dict format - use directly
