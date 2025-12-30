@@ -6,7 +6,7 @@ Use propagation mappings to auto-assign tag categories and thematic arcs
 to narrative analysis files based on their tags and themes.
 
 This script reads each analysis file, applies the keyword mappings from
-_propagation_mappings.py, and updates the Tag Categories and Thematic Arcs
+propagation_mappings, and updates the Tag Categories and Thematic Arcs
 sections accordingly.
 
 Usage:
@@ -23,15 +23,11 @@ from __future__ import annotations
 
 import argparse
 import re
-import sys
 from pathlib import Path
 from typing import List, Set, Tuple
 
 from dev.core.paths import JOURNAL_DIR
-
-# Import propagation functions
-sys.path.insert(0, str(JOURNAL_DIR / "narrative_analysis"))
-from _propagation_mappings import (
+from dev.pipeline.configs.propagation_mappings import (
     clean_tags,
     get_tag_categories,
     get_thematic_arcs,

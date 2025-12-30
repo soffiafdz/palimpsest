@@ -81,6 +81,11 @@ TXT_DIR = JOURNAL_DIR / "sources" / "txt"
 MD_DIR = JOURNAL_DIR / "content" / "md"
 PDF_DIR = JOURNAL_DIR / "content" / "pdf"
 
+# ---- Narrative Structure (Scenes/Events/Arcs) ----
+NARRATIVE_ANALYSIS_DIR = JOURNAL_DIR / "narrative_analysis"
+EVENTS_DIR = NARRATIVE_ANALYSIS_DIR / "_events"
+ARCS_DIR = NARRATIVE_ANALYSIS_DIR / "_arcs"
+
 # ---- Logs & Temp & Backups----
 LOG_DIR = ROOT / "logs"
 TMP_DIR = ROOT / "tmp"

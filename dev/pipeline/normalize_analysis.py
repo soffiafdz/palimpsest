@@ -42,7 +42,7 @@ TAG_CATEGORY_MAPPINGS: Dict[str, str] = {
     "None": "",
 }
 
-# New categories to add to _propagation_mappings.py
+# New categories to add to dev/pipeline/configs/propagation_mappings.py
 NEW_TAG_CATEGORIES = {
     "Mental Health": [
         "mental health", "psychological", "emotional wellbeing"
@@ -66,7 +66,7 @@ MOTIF_MAPPINGS: Dict[str, str] = {
     "None": "",
 }
 
-# New motifs to add to _propagation_mappings.py
+# New motifs to add to dev/pipeline/configs/propagation_mappings.py
 NEW_MOTIFS = {
     "MENTAL HEALTH": [
         "mental health", "psychological", "emotional state", "mood",

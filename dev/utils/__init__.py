@@ -7,12 +7,13 @@ This package provides commonly-used utilities organized by domain:
 - parsers: Name, location, and context extraction
 - wiki: Wiki file parsing for database import
 - txt: Text formatting and metrics
+- narrative: Scene matching, event parsing, arc formatting
 
 Import commonly-used utilities directly from this package:
     from dev.utils import split_frontmatter, get_file_hash, extract_context_refs
 
 Or import specific modules:
-    from dev.utils import md, fs, parsers, wiki, txt
+    from dev.utils import md, fs, parsers, wiki, txt, narrative
 """
 
 # Markdown and YAML utilities
@@ -70,6 +71,22 @@ from .txt import (
     compute_metrics,
 )
 
+# Narrative analysis utilities
+from .narrative import (
+    normalize_scene_title,
+    fuzzy_match_scene,
+    parse_events_file,
+    parse_events_file_full,
+    build_scene_event_mapping,
+    parse_scenes,
+    extract_thematic_arcs,
+    format_arc,
+    CORE_RANGE,
+    FLASHBACK_RANGE,
+    CORE_MONTHS,
+    FLASHBACK_MONTHS,
+)
+
 __all__ = [
     # Markdown/YAML
     "split_frontmatter",
@@ -110,4 +127,17 @@ __all__ = [
     "format_body",
     "reflow_paragraph",
     "compute_metrics",
+    # Narrative
+    "normalize_scene_title",
+    "fuzzy_match_scene",
+    "parse_events_file",
+    "parse_events_file_full",
+    "build_scene_event_mapping",
+    "parse_scenes",
+    "extract_thematic_arcs",
+    "format_arc",
+    "CORE_RANGE",
+    "FLASHBACK_RANGE",
+    "CORE_MONTHS",
+    "FLASHBACK_MONTHS",
 ]

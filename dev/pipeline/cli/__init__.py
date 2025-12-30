@@ -81,6 +81,7 @@ from .database import sync_db, export_db  # noqa: E402
 from .wiki import export_wiki, import_wiki  # noqa: E402
 from .pdf import build_pdf  # noqa: E402
 from .maintenance import backup_full, backup_list_full, run_all, status, validate  # noqa: E402
+from .narrative_structure import narrative  # noqa: E402
 
 # Register commands
 cli.add_command(inbox)
@@ -95,6 +96,7 @@ cli.add_command(backup_list_full)
 cli.add_command(run_all)
 cli.add_command(status)
 cli.add_command(validate)
+cli.add_command(narrative)
 
 
 if __name__ == "__main__":
