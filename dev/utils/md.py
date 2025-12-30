@@ -271,6 +271,33 @@ def extract_section(lines: List[str], header_name: str) -> List[str]:
     return section
 
 
+def extract_section_text(content: str, section_name: str) -> str:
+    """
+    Extract text content of a markdown section by name.
+
+    Uses regex to find section content between ## headers.
+    More convenient than extract_section() when working with
+    file content as a string rather than a list of lines.
+
+    Args:
+        content: Full markdown content as string
+        section_name: Section header to find (without ##)
+
+    Returns:
+        Section content as string, or empty string if not found
+
+    Examples:
+        >>> content = "## Summary\\nThis is summary.\\n\\n## Tags\\ntag1"
+        >>> extract_section_text(content, "Summary")
+        'This is summary.'
+    """
+    pattern = rf"## {re.escape(section_name)}\s*\n(.*?)(?=\n## |\Z)"
+    match = re.search(pattern, content, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return ""
+
+
 def get_all_headers(lines: List[str]) -> List[Tuple[int, str]]:
     """
     Returns a list of (level, title) tuples for all headers in the document.

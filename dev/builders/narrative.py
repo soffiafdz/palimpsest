@@ -67,7 +67,7 @@ from dev.utils.narrative import (
     parse_events_file_full,
     parse_scenes,
 )
-from dev.utils.md import extract_section, split_frontmatter
+from dev.utils.md import extract_section_text, split_frontmatter
 
 
 # ============================================================================
@@ -111,7 +111,7 @@ def build_pdf(md_path: Path, pdf_path: Path, use_notes_preamble: bool = False) -
 
 def _extract_thematic_arcs(content: str) -> List[str]:
     """Extract thematic arcs from an analysis file."""
-    arcs_section = extract_section(content, "Thematic Arcs")
+    arcs_section = extract_section_text(content, "Thematic Arcs")
     if not arcs_section:
         return []
     return [a.strip() for a in arcs_section.split(",") if a.strip()]
@@ -265,8 +265,8 @@ def compile_review(
                 date_str = file_path.stem.replace("_analysis", "")
                 content = file_path.read_text(encoding="utf-8")
 
-                summary = extract_section(content, "Summary") or "*No summary*"
-                scenes_text = extract_section(content, "Scenes") or ""
+                summary = extract_section_text(content, "Summary") or "*No summary*"
+                scenes_text = extract_section_text(content, "Scenes") or ""
                 entry_arcs = _extract_thematic_arcs(content)
                 scenes = parse_scenes(scenes_text)
 
@@ -471,8 +471,8 @@ def compile_source_review(
 
                 # Read analysis
                 analysis_content = analysis_path.read_text(encoding="utf-8")
-                summary = extract_section(analysis_content, "Summary") or ""
-                scenes_text = extract_section(analysis_content, "Scenes") or ""
+                summary = extract_section_text(analysis_content, "Summary") or ""
+                scenes_text = extract_section_text(analysis_content, "Scenes") or ""
                 entry_arcs = _extract_thematic_arcs(analysis_content)
                 scenes = parse_scenes(scenes_text)
 
@@ -481,7 +481,8 @@ def compile_source_review(
 
                 # Read journal entry
                 journal_content = journal_path.read_text(encoding="utf-8")
-                _, journal_body = split_frontmatter(journal_content)
+                _, journal_body_lines = split_frontmatter(journal_content)
+                journal_body = "\n".join(journal_body_lines)
 
                 # Reset line counter
                 parts.append("\\setcounter{linenumber}{1}\n")
@@ -847,14 +848,19 @@ def extract_unmapped_scenes(
 
     # Build content
     parts = []
-    parts.append(f"# {title}\n")
-    parts.append(f"**Total unmapped scenes: {len(unmapped)}**\n")
+    parts.append(f"# {title}")
+    parts.append("")
+    parts.append(f"**Total unmapped scenes: {len(unmapped)}**")
+    parts.append("")
     parts.append("Use this checklist to assign scenes to events.")
-    parts.append("Mark with [x] when resolved.\n")
-    parts.append("---\n")
+    parts.append("Mark with [x] when resolved.")
+    parts.append("")
+    parts.append("---")
+    parts.append("")
 
     for month in sorted(by_month.keys()):
-        parts.append(f"## {month}\n")
+        parts.append(f"## {month}")
+        parts.append("")
         for date, scene in by_month[month]:
             parts.append(f"- [ ] **{date}**: {scene}")
         parts.append("")
@@ -918,29 +924,40 @@ def compile_events_view(
 
     # Build content
     parts = []
-    parts.append(f"# {title}\n")
-    parts.append(f"**Total events: {len(all_events)}**\n")
+    parts.append(f"# {title}")
+    parts.append("")
+    parts.append(f"**Total events: {len(all_events)}**")
+    parts.append("")
     parts.append("Use this view to validate event groupings.")
-    parts.append("Check: Are all scenes correctly assigned to this event?\n")
-    parts.append("---\n")
+    parts.append("Check: Are all scenes correctly assigned to this event?")
+    parts.append("")
+    parts.append("---")
+    parts.append("")
 
     current_month = None
     for event in all_events:
         if event['month'] != current_month:
             current_month = event['month']
-            parts.append(f"## {current_month}\n")
+            parts.append(f"## {current_month}")
+            parts.append("")
 
-        parts.append(f"### {event['name']}\n")
-        parts.append(f"**Entries**: {', '.join(event['entries'])}\n")
+        parts.append(f"### {event['name']}")
+        parts.append("")
+        parts.append(f"**Entries**: {', '.join(event['entries'])}")
+        parts.append("")
 
         if event['arcs']:
             arcs_formatted = [format_arc(a) for a in event['arcs']]
-            parts.append(f"**Arcs**: {', '.join(arcs_formatted)}\n")
+            parts.append(f"**Arcs**: {', '.join(arcs_formatted)}")
+            parts.append("")
 
         parts.append("**Scenes**:")
+        parts.append("")
         for scene in event['scenes']:
             parts.append(f"- {scene}")
-        parts.append("\n---\n")
+        parts.append("")
+        parts.append("---")
+        parts.append("")
 
     content = "\n".join(parts)
 
