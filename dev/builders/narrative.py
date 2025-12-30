@@ -796,9 +796,11 @@ def compile_timeline(
 
 def extract_unmapped_scenes(
     review_file: Path,
-    output_file: Path,
-    title: str
-) -> int:
+    output_dir: Path,
+    title: str,
+    output_name: str,
+    pdf: bool = False
+) -> Tuple[int, Path]:
     """
     Extract unmapped scenes from a review document into a checklist.
 
@@ -807,18 +809,20 @@ def extract_unmapped_scenes(
 
     Args:
         review_file: Path to review document (e.g., core_review.md)
-        output_file: Path for output checklist
+        output_dir: Directory for output file
         title: Title for the checklist document
+        output_name: Base name for output file (without extension)
+        pdf: If True, generate PDF instead of markdown
 
     Returns:
-        Number of unmapped scenes found
+        Tuple of (unmapped_count, output_path)
     """
-    content = review_file.read_text(encoding="utf-8")
+    source_content = review_file.read_text(encoding="utf-8")
 
     current_date = None
     unmapped: List[Tuple[str, str]] = []
 
-    lines = content.split('\n')
+    lines = source_content.split('\n')
     for i, line in enumerate(lines):
         # Match date headers
         if line.startswith('## 20'):
@@ -841,21 +845,37 @@ def extract_unmapped_scenes(
             by_month[month] = []
         by_month[month].append((date, scene))
 
-    # Write output
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(f"# {title}\n\n")
-        f.write(f"**Total unmapped scenes: {len(unmapped)}**\n\n")
-        f.write("Use this checklist to assign scenes to events.\n")
-        f.write("Mark with [x] when resolved.\n\n")
-        f.write("---\n\n")
+    # Build content
+    parts = []
+    parts.append(f"# {title}\n")
+    parts.append(f"**Total unmapped scenes: {len(unmapped)}**\n")
+    parts.append("Use this checklist to assign scenes to events.")
+    parts.append("Mark with [x] when resolved.\n")
+    parts.append("---\n")
 
-        for month in sorted(by_month.keys()):
-            f.write(f"## {month}\n\n")
-            for date, scene in by_month[month]:
-                f.write(f"- [ ] **{date}**: {scene}\n")
-            f.write("\n")
+    for month in sorted(by_month.keys()):
+        parts.append(f"## {month}\n")
+        for date, scene in by_month[month]:
+            parts.append(f"- [ ] **{date}**: {scene}")
+        parts.append("")
 
-    return len(unmapped)
+    content = "\n".join(parts)
+
+    if pdf:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+
+        pdf_path = output_dir / f"{output_name}.pdf"
+        build_pdf(tmp_path, pdf_path)
+        tmp_path.unlink()
+        return len(unmapped), pdf_path
+    else:
+        output_path = output_dir / f"{output_name}.md"
+        output_path.write_text(content, encoding="utf-8")
+        return len(unmapped), output_path
 
 
 # ============================================================================
@@ -864,9 +884,11 @@ def extract_unmapped_scenes(
 
 def compile_events_view(
     period: str,
-    output_file: Path,
-    title: str
-) -> int:
+    output_dir: Path,
+    title: str,
+    output_name: str,
+    pdf: bool = False
+) -> Tuple[int, Path]:
     """
     Compile event-centric validation view.
 
@@ -875,11 +897,13 @@ def compile_events_view(
 
     Args:
         period: Either "core" or "flashback"
-        output_file: Path for output file
+        output_dir: Directory for output file
         title: Title for the document
+        output_name: Base name for output file (without extension)
+        pdf: If True, generate PDF instead of markdown
 
     Returns:
-        Number of events compiled
+        Tuple of (event_count, output_path)
     """
     months = CORE_MONTHS if period == "core" else FLASHBACK_MONTHS
     all_events: List[Dict[str, Any]] = []
@@ -892,29 +916,46 @@ def compile_events_view(
                 e['month'] = month
             all_events.extend(events)
 
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(f"# {title}\n\n")
-        f.write(f"**Total events: {len(all_events)}**\n\n")
-        f.write("Use this view to validate event groupings.\n")
-        f.write("Check: Are all scenes correctly assigned to this event?\n\n")
-        f.write("---\n\n")
+    # Build content
+    parts = []
+    parts.append(f"# {title}\n")
+    parts.append(f"**Total events: {len(all_events)}**\n")
+    parts.append("Use this view to validate event groupings.")
+    parts.append("Check: Are all scenes correctly assigned to this event?\n")
+    parts.append("---\n")
 
-        current_month = None
-        for event in all_events:
-            if event['month'] != current_month:
-                current_month = event['month']
-                f.write(f"## {current_month}\n\n")
+    current_month = None
+    for event in all_events:
+        if event['month'] != current_month:
+            current_month = event['month']
+            parts.append(f"## {current_month}\n")
 
-            f.write(f"### {event['name']}\n\n")
-            f.write(f"**Entries**: {', '.join(event['entries'])}\n\n")
+        parts.append(f"### {event['name']}\n")
+        parts.append(f"**Entries**: {', '.join(event['entries'])}\n")
 
-            if event['arcs']:
-                arcs_formatted = [format_arc(a) for a in event['arcs']]
-                f.write(f"**Arcs**: {', '.join(arcs_formatted)}\n\n")
+        if event['arcs']:
+            arcs_formatted = [format_arc(a) for a in event['arcs']]
+            parts.append(f"**Arcs**: {', '.join(arcs_formatted)}\n")
 
-            f.write("**Scenes**:\n")
-            for scene in event['scenes']:
-                f.write(f"- {scene}\n")
-            f.write("\n---\n\n")
+        parts.append("**Scenes**:")
+        for scene in event['scenes']:
+            parts.append(f"- {scene}")
+        parts.append("\n---\n")
 
-    return len(all_events)
+    content = "\n".join(parts)
+
+    if pdf:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+
+        pdf_path = output_dir / f"{output_name}.pdf"
+        build_pdf(tmp_path, pdf_path)
+        tmp_path.unlink()
+        return len(all_events), pdf_path
+    else:
+        output_path = output_dir / f"{output_name}.md"
+        output_path.write_text(content, encoding="utf-8")
+        return len(all_events), output_path

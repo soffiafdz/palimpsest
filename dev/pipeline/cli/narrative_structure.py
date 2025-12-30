@@ -179,6 +179,7 @@ def compile_timeline_cmd(
 
 
 @narrative.command("extract-unmapped")
+@click.option("--pdf", "-p", is_flag=True, help="Generate PDF instead of markdown")
 @click.option(
     "--output",
     "-o",
@@ -186,14 +187,12 @@ def compile_timeline_cmd(
     default=str(REVIEW_DIR),
     help="Output directory for checklists",
 )
-def extract_unmapped_cmd(output: str) -> None:
+def extract_unmapped_cmd(pdf: bool, output: str) -> None:
     """
     Generate unmapped scenes checklists.
 
     Extracts scenes marked as NOT MAPPED from review documents
     and creates actionable checklists organized by month.
-
-    Generates review markdown in temp files to extract unmapped scenes.
     """
     output_dir = Path(output)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -201,29 +200,34 @@ def extract_unmapped_cmd(output: str) -> None:
     # Core - generate review markdown to temp, then extract
     click.echo("Generating core review for analysis...")
     core_review = compile_review("core", output_dir, pdf=False)
-    count = extract_unmapped_scenes(
+    count, out_path = extract_unmapped_scenes(
         core_review,
-        output_dir / "unmapped_core.md",
-        "Unmapped Scenes: Core Story"
+        output_dir,
+        "Unmapped Scenes: Core Story",
+        "unmapped_core",
+        pdf=pdf
     )
-    click.echo(f"Core: {count} unmapped scenes")
+    click.echo(f"Core: {count} unmapped scenes → {out_path.name}")
     core_review.unlink()  # Clean up temp markdown
 
     # Flashback
     click.echo("Generating flashback review for analysis...")
     flashback_review = compile_review("flashback", output_dir, pdf=False)
-    count = extract_unmapped_scenes(
+    count, out_path = extract_unmapped_scenes(
         flashback_review,
-        output_dir / "unmapped_flashback.md",
-        "Unmapped Scenes: Flashback Material"
+        output_dir,
+        "Unmapped Scenes: Flashback Material",
+        "unmapped_flashback",
+        pdf=pdf
     )
-    click.echo(f"Flashback: {count} unmapped scenes")
+    click.echo(f"Flashback: {count} unmapped scenes → {out_path.name}")
     flashback_review.unlink()  # Clean up temp markdown
 
     click.echo("Done!")
 
 
 @narrative.command("events-view")
+@click.option("--pdf", "-p", is_flag=True, help="Generate PDF instead of markdown")
 @click.option(
     "--output",
     "-o",
@@ -231,7 +235,7 @@ def extract_unmapped_cmd(output: str) -> None:
     default=str(REVIEW_DIR),
     help="Output directory (default: _review/)",
 )
-def events_view_cmd(output: str) -> None:
+def events_view_cmd(pdf: bool, output: str) -> None:
     """
     Create event-centric validation view.
 
@@ -242,20 +246,24 @@ def events_view_cmd(output: str) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Core
-    core_count = compile_events_view(
+    core_count, out_path = compile_events_view(
         "core",
-        output_dir / "events_view_core.md",
-        "Events View: Core Story"
+        output_dir,
+        "Events View: Core Story",
+        "events_view_core",
+        pdf=pdf
     )
-    click.echo(f"Core: {core_count} events")
+    click.echo(f"Core: {core_count} events → {out_path.name}")
 
     # Flashback
-    flashback_count = compile_events_view(
+    flashback_count, out_path = compile_events_view(
         "flashback",
-        output_dir / "events_view_flashback.md",
-        "Events View: Flashback Material"
+        output_dir,
+        "Events View: Flashback Material",
+        "events_view_flashback",
+        pdf=pdf
     )
-    click.echo(f"Flashback: {flashback_count} events")
+    click.echo(f"Flashback: {flashback_count} events → {out_path.name}")
 
     click.echo("Done!")
 
