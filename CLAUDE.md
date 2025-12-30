@@ -8,8 +8,19 @@ This file contains project-specific instructions for Claude Code that persist ac
 - Use single-line commit messages only
 - Do NOT include AI attribution (no "Generated with Claude", no "Co-Authored-By" lines)
 - Keep messages concise and descriptive
+- **NEVER use `git add -A` or `git add .`** — always explicitly list the specific files being staged
+- This applies to submodules (like `data/`) as well
 
-Example: `git commit -m "Add entity manager consolidation for P3 refactoring"`
+Example:
+```bash
+# Good - explicit files
+git add dev/utils/narrative.py dev/builders/narrative.py
+git commit -m "Add narrative analysis utilities and builders"
+
+# Bad - never do this
+git add -A
+git add .
+```
 
 ## Code Style Requirements
 
