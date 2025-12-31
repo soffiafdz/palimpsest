@@ -52,10 +52,7 @@ from dev.core.paths import (
     TEX_DIR,
     TMP_DIR,
 )
-
-# Default output directories
-REVIEW_DIR = NARRATIVE_ANALYSIS_DIR / "_curation"
-"""Directory for curation PDFs and working documents."""
+from dev.utils.md import extract_section_text, split_frontmatter
 from dev.utils.narrative import (
     CORE_MONTHS,
     CORE_RANGE,
@@ -67,7 +64,10 @@ from dev.utils.narrative import (
     parse_events_file_full,
     parse_scenes,
 )
-from dev.utils.md import extract_section_text, split_frontmatter
+
+# Default output directories
+REVIEW_DIR = NARRATIVE_ANALYSIS_DIR / "_curation"
+"""Directory for curation PDFs and working documents."""
 
 
 # ============================================================================
@@ -685,15 +685,15 @@ def compile_timeline(
 
     # Part I: Main content
     if include_coda:
-        parts.append(f"""
-\\newpage
-\\thispagestyle{{empty}}
-\\vspace*{{\\fill}}
-\\begin{{center}}
-{{\\Huge\\bfseries Part I\\\\[0.5em]Core Story\\\\[0.3em]{{\\large November 2024 – October 2025}}}}
-\\end{{center}}
-\\vspace*{{\\fill}}
-\\newpage
+        parts.append(r"""
+\newpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\Huge\bfseries Part I\\[0.5em]Core Story\\[0.3em]{\large November 2024 – October 2025}}
+\end{center}
+\vspace*{\fill}
+\newpage
 
 """)
 
@@ -727,15 +727,15 @@ def compile_timeline(
 
     # Part II: Coda (if applicable)
     if include_coda and coda_range:
-        parts.append(f"""
-\\newpage
-\\thispagestyle{{empty}}
-\\vspace*{{\\fill}}
-\\begin{{center}}
-{{\\Huge\\bfseries Part II\\\\[0.5em]Coda / Epilogue\\\\[0.3em]{{\\large November – December 2025}}}}
-\\end{{center}}
-\\vspace*{{\\fill}}
-\\newpage
+        parts.append(r"""
+\newpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\Huge\bfseries Part II\\[0.5em]Coda / Epilogue\\[0.3em]{\large November – December 2025}}
+\end{center}
+\vspace*{\fill}
+\newpage
 
 """)
         first_month_in_part = True

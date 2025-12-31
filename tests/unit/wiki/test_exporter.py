@@ -1,13 +1,11 @@
 """Tests for WikiExporter class."""
 import pytest
 from datetime import date, datetime
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from dev.wiki.exporter import WikiExporter
 from dev.database.manager import PalimpsestDB
-from dev.database.models import Entry, Person, Tag, Location, City, Event, RelationType
-from dev.core.cli import ConversionStats
+from dev.database.models import Entry, Person, Tag, City, RelationType
 
 
 class TestWikiExporter:

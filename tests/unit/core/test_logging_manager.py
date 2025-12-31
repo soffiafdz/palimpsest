@@ -4,9 +4,7 @@ Tests for logging_manager module.
 Tests the safe_logger function and NullLogger class that provide
 null-safe logging throughout the codebase.
 """
-import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from dev.core.logging_manager import (
     NullLogger,

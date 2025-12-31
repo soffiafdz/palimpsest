@@ -40,10 +40,10 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from dataclasses import dataclass, field
-from datetime import date, datetime
+from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 # --- Local imports ---
 from dev.core.paths import DB_PATH, JOURNAL_DIR
@@ -243,7 +243,7 @@ def run_import(
     # Import to database
     db = PalimpsestDB(db_path)
 
-    with db.session_scope() as session:
+    with db.session_scope():
         for entry_date, analysis in sorted(analyses.items()):
             try:
                 import_analysis_to_db(

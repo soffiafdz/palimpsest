@@ -33,7 +33,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # --- Local imports ---
 from dev.core.paths import NARRATIVE_ANALYSIS_DIR

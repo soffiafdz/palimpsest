@@ -36,7 +36,6 @@ from dev.builders.narrative import (
     extract_unmapped_scenes,
     REVIEW_DIR,
 )
-from dev.core.paths import NARRATIVE_ANALYSIS_DIR, TMP_DIR
 
 
 @click.group("narrative")

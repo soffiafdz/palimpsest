@@ -26,7 +26,6 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from datetime import date
-from pathlib import Path
 from typing import List, Tuple
 
 from dev.core.paths import JOURNAL_DIR
@@ -206,8 +205,6 @@ def create_batches(entries: List[date]) -> List[Batch]:
         ("Aug-Dec 2025", [(2025, 8), (2025, 9), (2025, 10), (2025, 11), (2025, 12)]),
     ]
 
-    sorted_keys = sorted(monthly.keys())
-
     for batch_num, (label, month_keys) in enumerate(batch_specs, 1):
         # Collect entries for this batch
         batch_entries = []
@@ -243,7 +240,6 @@ def format_entry_list(entries: List[date], include_paths: bool = True) -> str:
     for entry in entries:
         if include_paths:
             content_path = f"{CONTENT_DIR}/{entry.year}/{entry}.md"
-            analysis_path = f"{ANALYSIS_DIR}/{entry.year}/{entry}_analysis.md"
             lines.append(f"- {entry} (content: `{content_path}`)")
         else:
             lines.append(f"- {entry}")

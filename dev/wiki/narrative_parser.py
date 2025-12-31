@@ -35,7 +35,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 # --- Local imports ---
 from dev.core.paths import JOURNAL_DIR

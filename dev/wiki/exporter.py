@@ -954,7 +954,6 @@ class WikiExporter:
         Returns:
             Statistics for stats page generation
         """
-        import calendar
         from collections import Counter, defaultdict
         from datetime import date, datetime
 
