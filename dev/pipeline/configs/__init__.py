@@ -3,25 +3,31 @@
 Pipeline configuration modules.
 
 This package contains declarative configurations for data pipeline operations:
-- propagation_mappings: Tag/arc mappings for narrative analysis
+- vocabulary: Consolidated vocabulary definitions for narrative analysis
 """
 
-from dev.pipeline.configs.propagation_mappings import (
-    PEOPLE_NAMES,
-    LOCATIONS,
-    TAG_CATEGORIES,
-    THEMATIC_ARCS,
-    clean_tags,
-    get_tag_categories,
-    get_thematic_arcs,
+from dev.pipeline.configs.vocabulary import (
+    MOTIFS,
+    TAGS,
+    THEMATIC_ARC_TO_MOTIF,
+    TAG_CATEGORY_TO_TAG,
+    PEOPLE_ALIASES,
+    LOCATION_ALIASES,
+    get_motifs_for_entry,
+    get_tags_for_entry,
+    normalize_person,
+    normalize_location,
 )
 
 __all__ = [
-    "PEOPLE_NAMES",
-    "LOCATIONS",
-    "TAG_CATEGORIES",
-    "THEMATIC_ARCS",
-    "clean_tags",
-    "get_tag_categories",
-    "get_thematic_arcs",
+    "MOTIFS",
+    "TAGS",
+    "THEMATIC_ARC_TO_MOTIF",
+    "TAG_CATEGORY_TO_TAG",
+    "PEOPLE_ALIASES",
+    "LOCATION_ALIASES",
+    "get_motifs_for_entry",
+    "get_tags_for_entry",
+    "normalize_person",
+    "normalize_location",
 ]

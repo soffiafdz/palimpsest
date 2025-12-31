@@ -54,8 +54,8 @@ from dev.core.paths import (
 )
 
 # Default output directories
-REVIEW_DIR = NARRATIVE_ANALYSIS_DIR / "_review"
-"""Directory for review PDFs and working documents."""
+REVIEW_DIR = NARRATIVE_ANALYSIS_DIR / "_curation"
+"""Directory for curation PDFs and working documents."""
 from dev.utils.narrative import (
     CORE_MONTHS,
     CORE_RANGE,

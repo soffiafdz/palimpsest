@@ -49,13 +49,13 @@ def narrative() -> None:
 @click.option("--core", "-c", is_flag=True, help="Compile core story (Nov 2024 - Dec 2025)")
 @click.option("--flashback", "-f", is_flag=True, help="Compile flashback material (2015 - Oct 2024)")
 @click.option("--all", "-a", "do_all", is_flag=True, help="Compile both core and flashback")
-@click.option("--pdf", "-p", is_flag=True, help="Generate PDF (default outputs to _review/)")
+@click.option("--pdf", "-p", is_flag=True, help="Generate PDF (default outputs to _curation/)")
 @click.option(
     "--output",
     "-o",
     type=click.Path(),
     default=None,
-    help="Output directory (default: _review/ for PDF, narrative_analysis/ for markdown)",
+    help="Output directory (default: _curation/ for PDF, narrative_analysis/ for markdown)",
 )
 def compile_review_cmd(
     core: bool,
@@ -71,7 +71,7 @@ def compile_review_cmd(
     structure hierarchy. Each entry displays its summary, scenes with
     event assignments, and thematic arc mappings.
 
-    PDFs are generated directly to _review/ by default (no intermediate markdown).
+    PDFs are generated directly to _curation/ by default (no intermediate markdown).
     """
     output_dir = Path(output) if output else None
     do_core = core or do_all
@@ -97,13 +97,13 @@ def compile_review_cmd(
 @click.option("--core", "-c", is_flag=True, help="Compile core story")
 @click.option("--flashback", "-f", is_flag=True, help="Compile flashback material")
 @click.option("--all", "-a", "do_all", is_flag=True, help="Compile both")
-@click.option("--pdf", "-p", is_flag=True, help="Generate PDF with line numbers (default outputs to _review/)")
+@click.option("--pdf", "-p", is_flag=True, help="Generate PDF with line numbers (default outputs to _curation/)")
 @click.option(
     "--output",
     "-o",
     type=click.Path(),
     default=None,
-    help="Output directory (default: _review/ for PDF, narrative_analysis/ for markdown)",
+    help="Output directory (default: _curation/ for PDF, narrative_analysis/ for markdown)",
 )
 def compile_source_cmd(
     core: bool,
@@ -119,7 +119,7 @@ def compile_source_cmd(
     with original journal text. Useful for validating scene accuracy
     against source material.
 
-    PDFs are generated directly to _review/ by default (no intermediate markdown).
+    PDFs are generated directly to _curation/ by default (no intermediate markdown).
     """
     output_dir = Path(output) if output else None
     do_core = core or do_all
@@ -233,7 +233,7 @@ def extract_unmapped_cmd(pdf: bool, output: str) -> None:
     "-o",
     type=click.Path(),
     default=str(REVIEW_DIR),
-    help="Output directory (default: _review/)",
+    help="Output directory (default: _curation/)",
 )
 def events_view_cmd(pdf: bool, output: str) -> None:
     """
