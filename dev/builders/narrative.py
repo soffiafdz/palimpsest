@@ -946,11 +946,6 @@ def compile_events_view(
         parts.append(f"**Entries**: {', '.join(event['entries'])}")
         parts.append("")
 
-        if event['arcs']:
-            arcs_formatted = [format_arc(a) for a in event['arcs']]
-            parts.append(f"**Arcs**: {', '.join(arcs_formatted)}")
-            parts.append("")
-
         parts.append("**Scenes**:")
         parts.append("")
         for scene in event['scenes']:
