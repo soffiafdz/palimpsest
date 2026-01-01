@@ -23,60 +23,60 @@ from typing import Dict, List, Set
 # =============================================================================
 
 MOTIFS: Dict[str, str] = {
-    "THE_BODY": "Physical embodiment, dysphoria, transition changes, medical procedures",
-    "VALIDATION_REJECTION": "Seeking/receiving approval, rejection experiences, ghosting",
-    "MASKS_PERFORMANCE": "Presenting different selves, authenticity vs. facade, passing",
-    "WAITING_TIME": "Anticipation, time distortion, waiting for messages/events",
-    "OBSESSIVE_LOOP": "Repetitive thoughts, checking behaviors, fixation patterns",
-    "GHOSTS_PALIMPSESTS": "Past selves, layered memories, haunting presence of history",
-    "ISOLATION": "Loneliness, social withdrawal, disconnection",
-    "UNRELIABLE_NARRATOR": "Self-deception, memory distortion, narrative uncertainty",
-    "DIGITAL_SURVEILLANCE": "Social media monitoring, online stalking, digital traces",
-    "RESURRECTION_RETURN": "Reconnecting with past people/places, revival of relationships",
-    "CLOSURE_ENDINGS": "Finality, goodbyes, completing chapters",
-    "MEDICALIZATION": "Medical system, prescriptions, clinical encounters",
-    "HAUNTED_GEOGRAPHY": "Places carrying emotional weight, location-based memories",
-    "THRESHOLD_LIMINAL": "In-between states, transitions, neither-here-nor-there",
-    "WRITING_SURVIVAL": "Journal as lifeline, documenting to exist",
-    "LANGUAGE_SILENCE": "Communication failures, things unsaid, linguistic barriers",
-    "THE_CAVALRY": "Support arriving, rescue figures, external help",
-    "SUBSTITUTION": "Replacement dynamics, transferring feelings to new people",
-    "THE_DOUBLE": "Mirror images, doppelgangers, seeing self in others",
-    "DISCLOSURE_SECRET": "Coming out, revealing hidden truths, vulnerability",
-    "SEX_DESIRE": "Sexual experiences, fantasy, physical intimacy",
+    "The Body": "Physical embodiment, dysphoria, transition changes, medical procedures",
+    "Validation & Rejection": "Seeking/receiving approval, rejection experiences, ghosting",
+    "Masks & Performance": "Presenting different selves, authenticity vs. facade, passing",
+    "Waiting & Time": "Anticipation, time distortion, waiting for messages/events",
+    "The Obsessive Loop": "Repetitive thoughts, checking behaviors, fixation patterns",
+    "Ghosts & Palimpsests": "Past selves, layered memories, haunting presence of history",
+    "Isolation": "Loneliness, social withdrawal, disconnection",
+    "The Unreliable Narrator": "Self-deception, memory distortion, narrative uncertainty",
+    "Digital Surveillance": "Social media monitoring, online stalking, digital traces",
+    "Resurrection & Return": "Reconnecting with past people/places, revival of relationships",
+    "Closure & Endings": "Finality, goodbyes, completing chapters",
+    "Medicalization": "Medical system, prescriptions, clinical encounters",
+    "Haunted Geography": "Places carrying emotional weight, location-based memories",
+    "Threshold & Liminal Space": "In-between states, transitions, neither-here-nor-there",
+    "Writing as Survival": "Journal as lifeline, documenting to exist",
+    "Language & Silence": "Communication failures, things unsaid, linguistic barriers",
+    "The Cavalry": "Support arriving, rescue figures, external help",
+    "Substitution": "Replacement dynamics, transferring feelings to new people",
+    "The Double": "Mirror images, doppelgangers, seeing self in others",
+    "Disclosure & The Secret": "Coming out, revealing hidden truths, vulnerability",
+    "Sex & Desire": "Sexual experiences, fantasy, physical intimacy",
 }
 
 # Mapping from raw "Thematic Arc" values to consolidated motifs
 THEMATIC_ARC_TO_MOTIF: Dict[str, str] = {
     # Direct mappings
-    "THE BODY": "THE_BODY",
-    "VALIDATION & REJECTION": "VALIDATION_REJECTION",
-    "MASKS & PERFORMANCE": "MASKS_PERFORMANCE",
-    "WAITING & TIME": "WAITING_TIME",
-    "THE OBSESSIVE LOOP": "OBSESSIVE_LOOP",
-    "OBSESSIVE LOOP": "OBSESSIVE_LOOP",
-    "GHOSTS & PALIMPSESTS": "GHOSTS_PALIMPSESTS",
-    "ISOLATION": "ISOLATION",
-    "THE UNRELIABLE NARRATOR": "UNRELIABLE_NARRATOR",
-    "DIGITAL SURVEILLANCE": "DIGITAL_SURVEILLANCE",
-    "RESURRECTION & RETURN": "RESURRECTION_RETURN",
-    "CLOSURE & ENDINGS": "CLOSURE_ENDINGS",
-    "MEDICALIZATION": "MEDICALIZATION",
-    "PASSING & VISIBILITY": "MASKS_PERFORMANCE",  # merge with MASKS
-    "HAUNTED GEOGRAPHY": "HAUNTED_GEOGRAPHY",
-    "THRESHOLD & LIMINAL SPACE": "THRESHOLD_LIMINAL",
-    "WRITING AS SURVIVAL": "WRITING_SURVIVAL",
-    "LANGUAGE & SILENCE": "LANGUAGE_SILENCE",
-    "LANGUAGE & IDENTITY": "LANGUAGE_SILENCE",
-    "THE CAVALRY": "THE_CAVALRY",
-    "SUPPORT NETWORK": "THE_CAVALRY",
-    "SUBSTITUTION & REPLACEMENT": "SUBSTITUTION",
-    "THE DOUBLE/MIRRORING": "THE_DOUBLE",
-    "DISCLOSURE & THE SECRET": "DISCLOSURE_SECRET",
-    "THE ARCHIVE/DOCUMENTATION": "WRITING_SURVIVAL",  # merge
-    "SEX & DESIRE": "SEX_DESIRE",
-    "MOTHERHOOD/CHILDLESSNESS": "THE_BODY",  # merge with body
-    "BUREAUCRATIC TRAUMA": "MEDICALIZATION",  # merge
+    "THE BODY": "The Body",
+    "VALIDATION & REJECTION": "Validation & Rejection",
+    "MASKS & PERFORMANCE": "Masks & Performance",
+    "WAITING & TIME": "Waiting & Time",
+    "THE OBSESSIVE LOOP": "The Obsessive Loop",
+    "OBSESSIVE LOOP": "The Obsessive Loop",
+    "GHOSTS & PALIMPSESTS": "Ghosts & Palimpsests",
+    "ISOLATION": "Isolation",
+    "THE UNRELIABLE NARRATOR": "The Unreliable Narrator",
+    "DIGITAL SURVEILLANCE": "Digital Surveillance",
+    "RESURRECTION & RETURN": "Resurrection & Return",
+    "CLOSURE & ENDINGS": "Closure & Endings",
+    "MEDICALIZATION": "Medicalization",
+    "PASSING & VISIBILITY": "Masks & Performance",  # merge with MASKS
+    "HAUNTED GEOGRAPHY": "Haunted Geography",
+    "THRESHOLD & LIMINAL SPACE": "Threshold & Liminal Space",
+    "WRITING AS SURVIVAL": "Writing as Survival",
+    "LANGUAGE & SILENCE": "Language & Silence",
+    "LANGUAGE & IDENTITY": "Language & Silence",
+    "THE CAVALRY": "The Cavalry",
+    "SUPPORT NETWORK": "The Cavalry",
+    "SUBSTITUTION & REPLACEMENT": "Substitution",
+    "THE DOUBLE/MIRRORING": "The Double",
+    "DISCLOSURE & THE SECRET": "Disclosure & The Secret",
+    "THE ARCHIVE/DOCUMENTATION": "Writing as Survival",  # merge
+    "SEX & DESIRE": "Sex & Desire",
+    "MOTHERHOOD/CHILDLESSNESS": "The Body",  # merge with body
+    "BUREAUCRATIC TRAUMA": "Medicalization",  # merge
     # Tag categories that leaked into thematic arcs - ignore (return None)
     "DEPRESSION/GRIEF": None,
     "MENTAL HEALTH": None,
@@ -222,7 +222,7 @@ def map_thematic_arc_to_motif(arc: str) -> str | None:
     Returns:
         Consolidated motif name, or None if should be dropped
     """
-    return THEMATIC_ARC_TO_MOTIF.get(arc, arc.upper().replace(" ", "_").replace("&", "").replace("/", "_"))
+    return THEMATIC_ARC_TO_MOTIF.get(arc, arc.title())
 
 
 def map_tag_category_to_tag(category: str) -> str | None:
