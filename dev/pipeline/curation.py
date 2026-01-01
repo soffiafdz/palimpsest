@@ -432,7 +432,7 @@ def generate_summary_markdown(
         "# Narrative Analysis Curation Review (Summary)",
         "",
         "Review each entry and mark corrections.",
-        "- Use `[X]` to reject, `[✓]` to approve",
+        "- Use `[X]` to reject, `[v]` to approve",
         "- Use the Full Review document for source context.",
         "",
         "---",
@@ -472,6 +472,7 @@ def generate_summary_markdown(
 
         # Proposed Motifs with checkboxes
         lines.append("**Motifs:**")
+        lines.append("")
         if curated.proposed_motifs:
             for motif in sorted(curated.proposed_motifs):
                 lines.append(f"- [ ] {motif}")
@@ -479,17 +480,15 @@ def generate_summary_markdown(
             lines.append("- _(none proposed)_")
         lines.append("")
 
-        # Proposed Tags (no checkboxes per user request)
-        if curated.proposed_tags:
-            tags = ", ".join(sorted(curated.proposed_tags))
-            lines.append(f"**Tags:** {tags}")
-        else:
-            lines.append("**Tags:** _(none proposed)_")
-        lines.append("")
+        # Tags (raw tags from analysis)
+        if entry.tags:
+            lines.append(f"**Tags:** {', '.join(entry.tags)}")
+            lines.append("")
 
         # Themes with checkboxes
         if entry.themes:
             lines.append("**Themes:**")
+            lines.append("")
             for theme_name, theme_desc in entry.themes.items():
                 if theme_desc:
                     lines.append(f"- [ ] **{theme_name}:** {theme_desc}")
@@ -518,6 +517,7 @@ def generate_summary_markdown(
                         unmapped_scenes.append(scene)
 
                 lines.append("**Scenes:**")
+                lines.append("")
                 for event_name in sorted(events_scenes.keys()):
                     lines.append(f"- [ ] *{event_name}*")
                     for scene in events_scenes[event_name]:
@@ -530,6 +530,7 @@ def generate_summary_markdown(
             else:
                 # Simple list for non-core
                 lines.append("**Scenes:**")
+                lines.append("")
                 for scene in entry.scenes:
                     lines.append(f"- [ ] **{scene['title']}**")
                 lines.append("")
@@ -586,7 +587,7 @@ def generate_full_markdown(
         "# Narrative Analysis Curation Review (Full)",
         "",
         "Complete review with journal source text, themes, and scenes.",
-        "- Use `[X]` to reject, `[✓]` to approve",
+        "- Use `[X]` to reject, `[v]` to approve",
         "",
         "---",
         "",
@@ -628,6 +629,7 @@ def generate_full_markdown(
 
         # Proposed Motifs with checkboxes
         lines.append("**Proposed Motifs:**")
+        lines.append("")
         if curated.proposed_motifs:
             for motif in sorted(curated.proposed_motifs):
                 lines.append(f"- [ ] {motif}")
@@ -635,13 +637,10 @@ def generate_full_markdown(
             lines.append("- _(none)_")
         lines.append("")
 
-        # Proposed Tags (no checkboxes per user request)
-        if curated.proposed_tags:
-            tags = ", ".join(sorted(curated.proposed_tags))
-            lines.append(f"**Proposed Tags:** {tags}")
-        else:
-            lines.append("**Proposed Tags:** _(none)_")
-        lines.append("")
+        # Tags (raw tags from analysis)
+        if entry.tags:
+            lines.append(f"**Tags:** {', '.join(entry.tags)}")
+            lines.append("")
 
         # People
         if curated.normalized_people:

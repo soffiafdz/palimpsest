@@ -941,7 +941,7 @@ def compile_events_view(
             parts.append(f"## {current_month}")
             parts.append("")
 
-        parts.append(f"### {event['name']}")
+        parts.append(f"### [ ] {event['name']}")
         parts.append("")
         parts.append(f"**Entries**: {', '.join(event['entries'])}")
         parts.append("")
@@ -954,7 +954,7 @@ def compile_events_view(
         parts.append("**Scenes**:")
         parts.append("")
         for scene in event['scenes']:
-            parts.append(f"- {scene}")
+            parts.append(f"- [ ] {scene}")
         parts.append("")
         parts.append("---")
         parts.append("")
