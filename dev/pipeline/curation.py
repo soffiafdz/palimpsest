@@ -38,6 +38,7 @@ from typing import Dict, List, Optional, Set, Tuple
 # --- Local imports ---
 from dev.core.paths import NARRATIVE_ANALYSIS_DIR
 from dev.utils.md import extract_section, split_frontmatter
+from dev.utils.narrative import build_scene_event_mapping, fuzzy_match_scene
 
 
 @dataclass
@@ -166,19 +167,35 @@ def parse_analysis_file(path: Path) -> Optional[AnalysisEntry]:
                 theme_desc = match.group(2).strip() if match.group(2) else ""
                 entry.themes[theme_name] = theme_desc
 
-        # Parse Thematic Arcs (comma-separated line)
-        arcs_lines = extract_section(lines, "Thematic Arcs")
-        if arcs_lines:
-            arcs_text = " ".join(arcs_lines)
-            entry.thematic_arcs = [a.strip() for a in arcs_text.split(",") if a.strip()]
+        # Parse Motifs (try new "Motifs" section first, fall back to "Thematic Arcs")
+        motifs_lines = extract_section(lines, "Motifs")
+        if not motifs_lines:
+            motifs_lines = extract_section(lines, "Thematic Arcs")
+        if motifs_lines:
+            # First line(s) may be comma-separated motif names
+            for line in motifs_lines:
+                line = line.strip()
+                if not line:
+                    continue
+                # Check if it's a descriptive bullet point (- MOTIF_NAME: description)
+                if match := re.match(r"-\s*([A-Z_/&\s]+):\s*(.+)", line):
+                    motif_name = match.group(1).strip()
+                    motif_desc = match.group(2).strip()
+                    entry.additional_motifs[motif_name] = motif_desc
+                elif "," in line and not line.startswith("-"):
+                    # Comma-separated motif names
+                    entry.thematic_arcs.extend([a.strip() for a in line.split(",") if a.strip()])
+                elif line.isupper() or (line.replace(" ", "").replace("&", "").replace("/", "").isalpha() and line == line.upper()):
+                    # Single motif name (all caps)
+                    entry.thematic_arcs.append(line)
 
-        # Parse Tag Categories
+        # Parse Tag Categories (for backwards compatibility, will be removed after cleanup)
         cat_lines = extract_section(lines, "Tag Categories")
         if cat_lines:
             cat_text = " ".join(cat_lines)
             entry.tag_categories = [c.strip() for c in cat_text.split(",") if c.strip()]
 
-        # Parse Cleaned Tags
+        # Parse Cleaned Tags (for backwards compatibility, will be removed after cleanup)
         cleaned_lines = extract_section(lines, "Cleaned Tags")
         if cleaned_lines:
             cleaned_text = " ".join(cleaned_lines)
@@ -193,9 +210,9 @@ def parse_analysis_file(path: Path) -> Optional[AnalysisEntry]:
                     "description": match.group(2).strip(),
                 })
 
-        # Parse Additional Motifs
-        motifs_lines = extract_section(lines, "Additional Motifs")
-        for line in motifs_lines:
+        # Parse Additional Motifs (for backwards compatibility, will be merged after cleanup)
+        add_motifs_lines = extract_section(lines, "Additional Motifs")
+        for line in add_motifs_lines:
             if match := re.match(r"-\s*([A-Z_/&\s]+):\s*(.+)", line):
                 motif_name = match.group(1).strip()
                 motif_desc = match.group(2).strip()
@@ -388,20 +405,35 @@ def curate_all_entries(results: AuditResults) -> List[CuratedEntry]:
     return [curate_entry(entry) for entry in results.entries]
 
 
-def generate_summary_markdown(curated_entries: List[CuratedEntry]) -> str:
+def generate_summary_markdown(
+    curated_entries: List[CuratedEntry],
+    period: Optional[str] = None,
+) -> str:
     """
     Generate summary review markdown document.
 
     Args:
         curated_entries: List of curated entries
+        period: Period key ("core", "early_mtl", "mexico") for format adjustments
 
     Returns:
         Markdown content for summary review
     """
+    is_core = period == "core"
+
+    # Load event mappings for core period
+    scene_event_mapping: Dict[str, Dict] = {}
+    if is_core:
+        events_dir = NARRATIVE_ANALYSIS_DIR / "_events"
+        from dev.utils.narrative import CORE_RANGE
+        scene_event_mapping = build_scene_event_mapping(events_dir, CORE_RANGE)
+
     lines = [
         "# Narrative Analysis Curation Review (Summary)",
         "",
-        "Review each entry and mark corrections. Use the Full Review document for source context.",
+        "Review each entry and mark corrections.",
+        "- Use `[X]` to reject, `[✓]` to approve",
+        "- Use the Full Review document for source context.",
         "",
         "---",
         "",
@@ -438,15 +470,16 @@ def generate_summary_markdown(curated_entries: List[CuratedEntry]) -> str:
             lines.append(f"**Summary:** {summary}")
             lines.append("")
 
-        # Proposed Motifs
+        # Proposed Motifs with checkboxes
+        lines.append("**Motifs:**")
         if curated.proposed_motifs:
-            motifs = ", ".join(sorted(curated.proposed_motifs))
-            lines.append(f"**Motifs:** {motifs}")
+            for motif in sorted(curated.proposed_motifs):
+                lines.append(f"- [ ] {motif}")
         else:
-            lines.append("**Motifs:** _(none proposed)_")
+            lines.append("- _(none proposed)_")
         lines.append("")
 
-        # Proposed Tags
+        # Proposed Tags (no checkboxes per user request)
         if curated.proposed_tags:
             tags = ", ".join(sorted(curated.proposed_tags))
             lines.append(f"**Tags:** {tags}")
@@ -454,17 +487,64 @@ def generate_summary_markdown(curated_entries: List[CuratedEntry]) -> str:
             lines.append("**Tags:** _(none proposed)_")
         lines.append("")
 
-        # People
-        if curated.normalized_people:
-            people = ", ".join(curated.normalized_people)
-            lines.append(f"**People:** {people}")
-        lines.append("")
+        # Themes with checkboxes
+        if entry.themes:
+            lines.append("**Themes:**")
+            for theme_name, theme_desc in entry.themes.items():
+                if theme_desc:
+                    lines.append(f"- [ ] **{theme_name}:** {theme_desc}")
+                else:
+                    lines.append(f"- [ ] **{theme_name}**")
+            lines.append("")
 
-        # Locations
-        if curated.normalized_locations:
-            locations = ", ".join(curated.normalized_locations)
-            lines.append(f"**Locations:** {locations}")
-        lines.append("")
+        # Scenes grouped by events (for core) with checkboxes
+        if entry.scenes:
+            month_key = f"{entry.date.year}-{entry.date.month:02d}"
+            month_mapping = scene_event_mapping.get(month_key, {})
+
+            if is_core and month_mapping:
+                # Group scenes by event
+                events_scenes: Dict[str, List[Dict]] = {}
+                unmapped_scenes: List[Dict] = []
+
+                for scene in entry.scenes:
+                    event_info = fuzzy_match_scene(scene["title"], month_mapping)
+                    if event_info:
+                        event_name = event_info["event_name"]
+                        if event_name not in events_scenes:
+                            events_scenes[event_name] = []
+                        events_scenes[event_name].append(scene)
+                    else:
+                        unmapped_scenes.append(scene)
+
+                lines.append("**Scenes:**")
+                for event_name in sorted(events_scenes.keys()):
+                    lines.append(f"- [ ] *{event_name}*")
+                    for scene in events_scenes[event_name]:
+                        lines.append(f"  - [ ] **{scene['title']}**")
+                if unmapped_scenes:
+                    lines.append("- *(Unmapped)*")
+                    for scene in unmapped_scenes:
+                        lines.append(f"  - [ ] **{scene['title']}**")
+                lines.append("")
+            else:
+                # Simple list for non-core
+                lines.append("**Scenes:**")
+                for scene in entry.scenes:
+                    lines.append(f"- [ ] **{scene['title']}**")
+                lines.append("")
+
+        # People and Locations only for non-core periods
+        if not is_core:
+            if curated.normalized_people:
+                people = ", ".join(curated.normalized_people)
+                lines.append(f"**People:** {people}")
+                lines.append("")
+
+            if curated.normalized_locations:
+                locations = ", ".join(curated.normalized_locations)
+                lines.append(f"**Locations:** {locations}")
+                lines.append("")
 
         lines.append("---")
         lines.append("")
@@ -475,6 +555,7 @@ def generate_summary_markdown(curated_entries: List[CuratedEntry]) -> str:
 def generate_full_markdown(
     curated_entries: List[CuratedEntry],
     journal_dir: Optional[Path] = None,
+    period: Optional[str] = None,
 ) -> str:
     """
     Generate full review markdown document with journal text.
@@ -482,6 +563,7 @@ def generate_full_markdown(
     Args:
         curated_entries: List of curated entries
         journal_dir: Directory containing journal markdown files
+        period: Period key ("core", "early_mtl", "mexico") for format adjustments
 
     Returns:
         Markdown content for full review
@@ -491,10 +573,20 @@ def generate_full_markdown(
     if journal_dir is None:
         journal_dir = MD_DIR
 
+    is_core = period == "core"
+
+    # Load event mappings for core period
+    scene_event_mapping: Dict[str, Dict] = {}
+    if is_core:
+        events_dir = NARRATIVE_ANALYSIS_DIR / "_events"
+        from dev.utils.narrative import CORE_RANGE
+        scene_event_mapping = build_scene_event_mapping(events_dir, CORE_RANGE)
+
     lines = [
         "# Narrative Analysis Curation Review (Full)",
         "",
         "Complete review with journal source text, themes, and scenes.",
+        "- Use `[X]` to reject, `[✓]` to approve",
         "",
         "---",
         "",
@@ -534,15 +626,16 @@ def generate_full_markdown(
             lines.append(f"**Rating Justification:** {entry.rating_justification}")
             lines.append("")
 
-        # Proposed Motifs
+        # Proposed Motifs with checkboxes
+        lines.append("**Proposed Motifs:**")
         if curated.proposed_motifs:
-            motifs = ", ".join(sorted(curated.proposed_motifs))
-            lines.append(f"**Proposed Motifs:** {motifs}")
+            for motif in sorted(curated.proposed_motifs):
+                lines.append(f"- [ ] {motif}")
         else:
-            lines.append("**Proposed Motifs:** _(none)_")
+            lines.append("- _(none)_")
         lines.append("")
 
-        # Proposed Tags
+        # Proposed Tags (no checkboxes per user request)
         if curated.proposed_tags:
             tags = ", ".join(sorted(curated.proposed_tags))
             lines.append(f"**Proposed Tags:** {tags}")
@@ -554,29 +647,62 @@ def generate_full_markdown(
         if curated.normalized_people:
             people = ", ".join(curated.normalized_people)
             lines.append(f"**People:** {people}")
-        lines.append("")
+            lines.append("")
 
         # Locations
         if curated.normalized_locations:
             locations = ", ".join(curated.normalized_locations)
             lines.append(f"**Locations:** {locations}")
-        lines.append("")
-
-        # Themes with descriptions
-        if entry.themes:
-            lines.append("**Themes:**")
-            for theme_name, theme_desc in entry.themes.items():
-                if theme_desc:
-                    lines.append(f"- **{theme_name}:** {theme_desc}")
-                else:
-                    lines.append(f"- **{theme_name}**")
             lines.append("")
 
-        # Scenes
+        # Themes with descriptions and checkboxes (proper list formatting)
+        if entry.themes:
+            lines.append("**Themes:**")
+            lines.append("")  # Blank line to ensure proper list rendering
+            for theme_name, theme_desc in entry.themes.items():
+                if theme_desc:
+                    lines.append(f"- [ ] **{theme_name}:** {theme_desc}")
+                else:
+                    lines.append(f"- [ ] **{theme_name}**")
+            lines.append("")
+
+        # Scenes grouped by events (for core) with checkboxes
         if entry.scenes:
+            month_key = f"{entry.date.year}-{entry.date.month:02d}"
+            month_mapping = scene_event_mapping.get(month_key, {})
+
             lines.append("**Scenes:**")
-            for i, scene in enumerate(entry.scenes, 1):
-                lines.append(f"{i}. **{scene['title']}** - {scene['description']}")
+            lines.append("")  # Blank line to ensure proper list rendering
+
+            if is_core and month_mapping:
+                # Group scenes by event
+                events_scenes: Dict[str, List[Dict]] = {}
+                unmapped_scenes: List[Dict] = []
+
+                for scene in entry.scenes:
+                    event_info = fuzzy_match_scene(scene["title"], month_mapping)
+                    if event_info:
+                        event_name = event_info["event_name"]
+                        if event_name not in events_scenes:
+                            events_scenes[event_name] = []
+                        events_scenes[event_name].append(scene)
+                    else:
+                        unmapped_scenes.append(scene)
+
+                for event_name in sorted(events_scenes.keys()):
+                    lines.append(f"- [ ] *{event_name}*")
+                    for scene in events_scenes[event_name]:
+                        lines.append(f"  - [ ] **{scene['title']}** — {scene['description']}")
+
+                if unmapped_scenes:
+                    lines.append("- *(Unmapped)*")
+                    for scene in unmapped_scenes:
+                        lines.append(f"  - [ ] **{scene['title']}** — {scene['description']}")
+            else:
+                # Simple list for non-core
+                for scene in entry.scenes:
+                    lines.append(f"- [ ] **{scene['title']}** — {scene['description']}")
+
             lines.append("")
 
         # Journal text
@@ -584,6 +710,7 @@ def generate_full_markdown(
         journal_file = journal_dir / year_str / f"{entry.date.isoformat()}.md"
         if journal_file.exists():
             lines.append("**Journal Entry:**")
+            lines.append("")
             lines.append("```")
             journal_content = journal_file.read_text(encoding="utf-8")
             # Skip frontmatter
@@ -757,7 +884,7 @@ def generate_period_documents(
 
     # Generate summary
     print("  Generating summary PDF...")
-    summary_content = generate_summary_markdown(filtered)
+    summary_content = generate_summary_markdown(filtered, period=period)
     summary_md = output_dir / f"curation_{period}_summary.md"
     summary_md.write_text(summary_content, encoding="utf-8")
     summary_pdf = output_dir / f"curation_{period}_summary.pdf"
@@ -767,7 +894,7 @@ def generate_period_documents(
 
     # Generate full
     print("  Generating full PDF...")
-    full_content = generate_full_markdown(filtered)
+    full_content = generate_full_markdown(filtered, period=period)
     full_md = output_dir / f"curation_{period}_full.md"
     full_md.write_text(full_content, encoding="utf-8")
     full_pdf = output_dir / f"curation_{period}_full.pdf"
@@ -788,6 +915,204 @@ def generate_all_period_documents(output_dir: Optional[Path] = None) -> None:
     for period in PERIODS:
         generate_period_documents(period, output_dir)
     print("\nDone!")
+
+
+# Sections to remove during cleanup (redundant with vocabulary mapping)
+SECTIONS_TO_REMOVE = {"Tag Categories", "Cleaned Tags", "Thematic Arcs", "Additional Motifs"}
+
+# Standard section order for consistent formatting
+SECTION_ORDER = [
+    "Summary",
+    "Narrative Rating",
+    "Tags",
+    "People",
+    "Locations",
+    "Themes",
+    "Motifs",  # Consolidated from "Thematic Arcs" + "Additional Motifs"
+    "Scenes",
+]
+
+
+def clean_analysis_file(path: Path, dry_run: bool = False) -> Tuple[bool, str]:
+    """
+    Clean a single narrative analysis markdown file.
+
+    - Removes redundant sections (Tag Categories, Cleaned Tags)
+    - Renames "Thematic Arcs" to "Motifs"
+    - Merges "Additional Motifs" into "Motifs"
+    - Standardizes formatting while preserving all qualitative content
+
+    Args:
+        path: Path to the analysis file
+        dry_run: If True, only report what would be changed
+
+    Returns:
+        Tuple of (was_modified, description)
+    """
+    content = path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+
+    # Parse into sections
+    sections: Dict[str, List[str]] = {}
+    current_section: Optional[str] = None
+
+    for line in lines:
+        # Check for section header (## Section Name or ## Section Name: value)
+        if line.startswith("## "):
+            # Extract section name (handle "## Narrative Rating: 4/5" format)
+            header_text = line[3:].strip()
+            section_name = header_text.split(":")[0].strip()
+
+            current_section = section_name
+            sections[current_section] = [line]
+        elif line.startswith("# ") and "Narrative Analysis" in line:
+            # Title line
+            if "title" not in sections:
+                sections["title"] = []
+            sections["title"].append(line)
+            current_section = "title"
+        elif current_section:
+            sections[current_section].append(line)
+
+    # Determine changes
+    changes = []
+    has_thematic_arcs = "Thematic Arcs" in sections
+    has_additional_motifs = "Additional Motifs" in sections
+    has_tag_categories = "Tag Categories" in sections
+    has_cleaned_tags = "Cleaned Tags" in sections
+
+    if has_tag_categories:
+        changes.append("remove Tag Categories")
+    if has_cleaned_tags:
+        changes.append("remove Cleaned Tags")
+    if has_thematic_arcs:
+        changes.append("rename Thematic Arcs → Motifs")
+    if has_additional_motifs:
+        changes.append("merge Additional Motifs")
+
+    if not changes:
+        return False, "No changes needed"
+
+    if dry_run:
+        return True, "; ".join(changes)
+
+    # Build merged Motifs section
+    motifs_lines: List[str] = ["## Motifs"]
+
+    # Add thematic arcs as comma-separated list (the core motifs)
+    if has_thematic_arcs:
+        arc_content = sections["Thematic Arcs"][1:]
+        # Remove leading/trailing blanks
+        while arc_content and not arc_content[0].strip():
+            arc_content.pop(0)
+        while arc_content and not arc_content[-1].strip():
+            arc_content.pop()
+        if arc_content:
+            motifs_lines.extend(arc_content)
+
+    # Add additional motifs with descriptions (as bullet list)
+    if has_additional_motifs:
+        add_content = sections["Additional Motifs"][1:]
+        # Remove leading/trailing blanks
+        while add_content and not add_content[0].strip():
+            add_content.pop(0)
+        while add_content and not add_content[-1].strip():
+            add_content.pop()
+        if add_content:
+            # Add blank line separator if we had thematic arcs
+            if has_thematic_arcs and any(ln.strip() for ln in motifs_lines[1:]):
+                motifs_lines.append("")
+            motifs_lines.extend(add_content)
+
+    # Store merged motifs
+    sections["Motifs"] = motifs_lines
+
+    # Rebuild the file
+    new_lines: List[str] = []
+
+    # Add title
+    if "title" in sections:
+        new_lines.extend(sections["title"])
+        if new_lines and new_lines[-1].strip():
+            new_lines.append("")
+
+    # Add sections in order
+    for section_name in SECTION_ORDER:
+        if section_name in sections:
+            section_lines = sections[section_name]
+
+            # Ensure blank line before section
+            if new_lines and new_lines[-1].strip():
+                new_lines.append("")
+
+            # Add section header
+            new_lines.append(section_lines[0])
+
+            # Add section content
+            content_lines = section_lines[1:]
+
+            # Remove leading blank lines from content
+            while content_lines and not content_lines[0].strip():
+                content_lines.pop(0)
+
+            # Remove trailing blank lines from content
+            while content_lines and not content_lines[-1].strip():
+                content_lines.pop()
+
+            # Add content with proper spacing
+            if content_lines:
+                # For list sections, ensure blank line after header
+                if section_name in {"Themes", "Scenes", "Motifs"}:
+                    new_lines.append("")
+                new_lines.extend(content_lines)
+
+    # Ensure file ends with newline
+    new_lines.append("")
+
+    # Write back
+    path.write_text("\n".join(new_lines), encoding="utf-8")
+
+    return True, "; ".join(changes)
+
+
+def clean_all_analysis_files(
+    base_dir: Optional[Path] = None,
+    dry_run: bool = False,
+) -> Dict[str, int]:
+    """
+    Clean all narrative analysis files in the directory.
+
+    Args:
+        base_dir: Base directory for analysis files (defaults to NARRATIVE_ANALYSIS_DIR)
+        dry_run: If True, only report what would be changed
+
+    Returns:
+        Dict with counts: {"modified": N, "unchanged": N, "errors": N}
+    """
+    if base_dir is None:
+        base_dir = NARRATIVE_ANALYSIS_DIR
+
+    analysis_files = sorted(base_dir.glob("20*/*_analysis.md"))
+
+    stats = {"modified": 0, "unchanged": 0, "errors": 0}
+
+    action = "Would modify" if dry_run else "Modified"
+
+    for path in analysis_files:
+        try:
+            modified, description = clean_analysis_file(path, dry_run=dry_run)
+            if modified:
+                stats["modified"] += 1
+                print(f"  {action}: {path.name} - {description}")
+            else:
+                stats["unchanged"] += 1
+        except Exception as e:
+            stats["errors"] += 1
+            print(f"  Error: {path.name} - {e}")
+
+    print(f"\nSummary: {stats['modified']} modified, {stats['unchanged']} unchanged, {stats['errors']} errors")
+
+    return stats
 
 
 if __name__ == "__main__":
