@@ -714,11 +714,9 @@ def generate_full_markdown(
             journal_content = journal_file.read_text(encoding="utf-8")
             # Skip frontmatter
             _, body_lines = split_frontmatter(journal_content)
-            # Add line numbers
-            for i, line in enumerate(body_lines[:100], 1):  # Limit to 100 lines
+            # Add line numbers (no limit - include full journal entry)
+            for i, line in enumerate(body_lines, 1):
                 lines.append(f"{i:3d} | {line}")
-            if len(body_lines) > 100:
-                lines.append(f"... ({len(body_lines) - 100} more lines)")
             lines.append("```")
             lines.append("")
 
