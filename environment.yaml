@@ -1,66 +1,53 @@
 name: palimpsest
 channels:
-  - pytorch
   - conda-forge
 dependencies:
   # Core Python
   - python=3.10
 
   # Database & ORM
-  - alembic
-  - sqlalchemy
+  - sqlalchemy>=2.0
+  - alembic>=1.16
+  - greenlet>=3.2
 
-  # CLI & Terminal UI
-  - click
-  - rich
-  - typer
-  - tqdm
+  # CLI
+  - click>=8.3
 
   # Data processing
-  - pandas
-  - pyyaml
-  - pydantic
+  - pyyaml>=6.0
+  - jinja2>=3.1
+  - mako>=1.3
+  - markupsafe>=3.0
 
-  # HTTP & Networking
-  - requests
+  # Text processing
+  - ftfy>=6.3
+  - textstat>=0.7
 
-  # Document processing
-  - jinja2
-  - pypandoc
-  - pandoc
-  - pillow
-
-  # LaTeX (cross-platform)
+  # Document conversion
+  - pypandoc>=1.15
+  - pandoc>=2.19
   - tectonic
 
-  # NLP & ML (CPU-compatible, works on both Linux and macOS)
-  - pytorch::pytorch
-  - sentence-transformers
-  - spacy
-  - scikit-learn
-
   # Development tools
-  - ruff
+  - ruff>=0.2
   - pyright
-  - pytest
-  - pytest-cov
+  - pytest>=8.0
+  - pytest-cov>=4.1
   - pytest-mock
-  - coverage
 
   # Version control
   - git
   - git-filter-repo
   - git-lfs
 
-  # Prose linting
+  # Prose linting (optional)
   - vale
   - write-good
 
-  # Neovim integration
+  # Neovim integration (optional)
   - pynvim
 
   # Build tools
-  - make
   - pip
   - setuptools
   - wheel
