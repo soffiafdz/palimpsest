@@ -1,11 +1,14 @@
-local MiniIcons = require("mini.icons")
-local icon_data = MiniIcons.get("extension", ".md")
-local palimpsest_icon = icon_data and icon_data.icon or ""
-local wk = require("which-key")
+local palimpsest_icon = ""
+local has_wk, wk = pcall(require, "which-key")
 
 local M = {}
 
 function M.setup()
+	if not has_wk then
+		vim.notify("which-key not found - palimpsest keymaps disabled", vim.log.levels.WARN)
+		return
+	end
+
 	if #vim.g.vimwiki_list > 1 then
 		-- If there are another vimwiki(s) set up:
 		-- create a new group specifically for Palimpsest.
