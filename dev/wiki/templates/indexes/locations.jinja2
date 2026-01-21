@@ -1,0 +1,33 @@
+{# Locations Index Template - Hierarchical grouping by country/region/city #}
+# Palimpsest — Locations
+
+Index of all locations, organized by country → region → city.
+
+{% for country in countries|sort %}
+{% set regions = groups[country] %}
+
+## {{ country }}
+
+{% for region in regions|sort %}
+{% set cities = regions[region] %}
+{% if region != 'Unspecified' %}
+### {{ region }}
+
+{% endif %}
+{% for city in cities|sort %}
+{% set city_locations = cities[city] %}
+#### {{ city }}
+
+{% for location in city_locations|sort(attribute='mentions', reverse=true) %}
+- [[{{ location.path }}|{{ location.name }}]] ({{ location.mentions }} mention{{ 's' if location.mentions != 1 else '' }})
+{% endfor %}
+
+{% endfor %}
+{% endfor %}
+{% endfor %}
+---
+
+## Statistics
+
+- **Total Locations**: {{ total }}
+- **Countries**: {{ countries|length }}

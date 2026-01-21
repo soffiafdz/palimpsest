@@ -161,7 +161,7 @@ def yaml_list(items: List[Any], hyphenated: bool = False) -> str:
 
     Args:
         items: List of items to format
-        hyphenated: Whether to hyphenate items
+        hyphenated: Whether to hyphenate items (preserves existing hyphens)
 
     Returns:
         YAML inline list string
@@ -173,6 +173,8 @@ def yaml_list(items: List[Any], hyphenated: bool = False) -> str:
         '["Has spaces", "Has: colon"]'
         >>> yaml_list(["Has spaces"], hyphenated=True)
         '["Has-spaces"]'
+        >>> yaml_list(["Rue St-Hubert"], hyphenated=True)
+        '["Rue_St-Hubert"]'
         >>> yaml_list([])
         '[]'
     """
@@ -182,11 +184,10 @@ def yaml_list(items: List[Any], hyphenated: bool = False) -> str:
     formatted = []
     for item in items:
         if isinstance(item, str) and (" " in item or ":" in item or '"' in item):
-            item = (
-                yaml_escape(spaces_to_hyphenated(item))
-                if hyphenated
-                else yaml_escape(item)
-            )
+            if hyphenated:
+                item = yaml_escape(spaces_to_hyphenated(item))
+            else:
+                item = yaml_escape(item)
             formatted.append(f'"{item}"')
         else:
             formatted.append(str(item))
@@ -268,6 +269,33 @@ def extract_section(lines: List[str], header_name: str) -> List[str]:
         elif in_section:
             section.append(ln.rstrip())
     return section
+
+
+def extract_section_text(content: str, section_name: str) -> str:
+    """
+    Extract text content of a markdown section by name.
+
+    Uses regex to find section content between ## headers.
+    More convenient than extract_section() when working with
+    file content as a string rather than a list of lines.
+
+    Args:
+        content: Full markdown content as string
+        section_name: Section header to find (without ##)
+
+    Returns:
+        Section content as string, or empty string if not found
+
+    Examples:
+        >>> content = "## Summary\\nThis is summary.\\n\\n## Tags\\ntag1"
+        >>> extract_section_text(content, "Summary")
+        'This is summary.'
+    """
+    pattern = rf"## {re.escape(section_name)}\s*\n(.*?)(?=\n## |\Z)"
+    match = re.search(pattern, content, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return ""
 
 
 def get_all_headers(lines: List[str]) -> List[Tuple[int, str]]:

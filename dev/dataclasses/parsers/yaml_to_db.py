@@ -1,16 +1,40 @@
+#!/usr/bin/env python3
 """
-YAML to Database Parser
+yaml_to_db.py
+-------------
+YAML frontmatter to database format parser.
 
 Converts YAML frontmatter structures to database-compatible metadata format.
-Handles complex field parsing including people, locations, dates, references, and poems.
-"""
+Handles complex field parsing including people, locations, dates, references,
+and poems. Used by MdEntry.to_database_metadata() for yaml2sql workflow.
 
+Classes:
+    YamlToDbParser: Parser for converting YAML to database format
+
+Key Methods:
+    parse_city_field: Parse city/cities (single or list)
+    parse_locations_field: Parse flat or nested location structures
+    parse_people_field: Parse people with name/full_name/alias logic
+    parse_dates_field: Parse dates with locations/people associations
+    parse_references_field: Parse references with source handling
+    parse_poems_field: Parse poems with revision dates
+
+Usage:
+    from dev.dataclasses.parsers import YamlToDbParser
+
+    parser = YamlToDbParser(entry_date, metadata)
+    cities = parser.parse_city_field(metadata["city"])
+    people = parser.parse_people_field(metadata["people"])
+"""
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import logging
 from datetime import date
 from typing import Dict, Any, List, Optional, Union, Tuple
 
+# --- Local imports ---
 from dev.core.validators import DataValidator
 from dev.utils import parsers
 
@@ -65,7 +89,7 @@ class YamlToDbParser:
         return []
 
     def parse_locations_field(
-        self, locations_data: Union[List[str], Dict[str, List[str]]], cities: List[str]
+        self, locations_data: Union[str, List[str], Dict[str, List[str]]], cities: List[str]
     ) -> Dict[str, List[str]]:
         """
         Parse locations field supporting both flat and nested formats.
@@ -99,6 +123,10 @@ class YamlToDbParser:
 
         result = {}
 
+        # Normalize single string to list
+        if isinstance(locations_data, str):
+            locations_data = [locations_data]
+
         if isinstance(locations_data, list):
             # Flat list - all locations belong to single city
             if len(cities) != 1:
@@ -122,7 +150,7 @@ class YamlToDbParser:
         return result
 
     def parse_people_field(
-        self, people_list: List[Union[str, Dict]]
+        self, people_list: Union[str, List[Union[str, Dict]]]
     ) -> Dict[str, Any]:
         """
         Parse people field with name/full_name/alias logic.
@@ -157,6 +185,10 @@ class YamlToDbParser:
             {"people": [{"name": "Jane"}], "alias": [{"alias": "Johnny", "name": "John"}]}
         """
         result: Dict[str, List[Dict[str, Optional[str]]]] = {"people": [], "alias": []}
+
+        # Normalize single string to list
+        if isinstance(people_list, str):
+            people_list = [people_list]
 
         for item in people_list:
             # Dict format - use directly
@@ -204,17 +236,36 @@ class YamlToDbParser:
                 continue
 
             # Simple name/full_name (no parentheses)
-            # Replace hyphens with spaces (or underscores if present)
-            from dev.utils.parsers import split_hyphenated_to_spaces
-            cleaned = split_hyphenated_to_spaces(person_str)
+            # CRITICAL: Split by spaces FIRST to identify entity boundaries
+            # Then dehyphenate each part for storage
+            # Example: "María-José Castro" → ["María-José", "Castro"] (2 entities)
+            #   First entity = first_name(s): "María-José"
+            #   Rest = last_name(s): "Castro"
+            #   Then dehyphenate: first_name="María José", last_name="Castro"
 
-            # Check if multiple words (full name) or single word (name)
-            if " " in cleaned:
-                # Multiple words → full_name
-                result["people"].append({"name": None, "full_name": cleaned})
+            from dev.utils.parsers import split_hyphenated_to_spaces
+
+            # Split by spaces to identify entity boundaries (BEFORE dehyphenation)
+            parts = person_str.split()
+
+            if len(parts) > 1:
+                # Multiple entities → construct full_name with proper structure
+                # First part is first_name(s), rest is last_name(s)
+                first_name_raw = parts[0]
+                last_name_raw = " ".join(parts[1:])
+
+                # Now dehyphenate each part for storage
+                first_name = split_hyphenated_to_spaces(first_name_raw)
+                last_name = split_hyphenated_to_spaces(last_name_raw)
+
+                # Construct full_name
+                full_name = f"{first_name} {last_name}"
+
+                result["people"].append({"name": first_name, "full_name": full_name})
             else:
-                # Single word → name
-                result["people"].append({"name": cleaned, "full_name": None})
+                # Single entity → just a name
+                name = split_hyphenated_to_spaces(person_str)
+                result["people"].append({"name": name, "full_name": None})
 
         return result
 
@@ -253,11 +304,25 @@ class YamlToDbParser:
             return None
 
         # Search in regular people
+        # Priority: exact name match > exact full_name match > first name of full_name
         for person_spec in people_parsed.get("people", []):
+            # Exact match on name field
             if person_spec.get("name") == search_str:
                 return person_spec
+            # Exact match on full_name field
             if person_spec.get("full_name") == search_str:
                 return person_spec
+
+        # Second pass: try matching against first name from full_name
+        # This allows "Daniel" to match {"name": "Daniel", "full_name": "Daniel Andrews"}
+        for person_spec in people_parsed.get("people", []):
+            name = person_spec.get("name")
+            if name and search_str:
+                # If name matches search exactly, already returned above
+                # Check if search_str matches first word of name (for compound first names)
+                first_word = name.split()[0] if " " in name else name
+                if first_word == search_str:
+                    return person_spec
 
         return None
 
@@ -269,15 +334,23 @@ class YamlToDbParser:
         """
         Parse dates field with inline or nested format.
 
-        Associates locations/people to specific dates.
+        Associates locations/people/events to specific dates (moments).
         For people values in dates, looks them up in people_parsed.
 
-        Supports:
-        - Simple date: "2025-06-01"
-        - Inline context: "2025-06-01 (thesis exam)"
-        - Nested format: {"date": "2025-06-01", "context": "thesis exam"}
-        - Entry date shorthand: {"date": "."}
-        - Opt-out marker: "~" (excludes entry date)
+        Supports two types of date entries:
+        - MOMENT (default): An event that actually happened on the referenced date
+        - REFERENCE: A contextual link where the action happens on entry date,
+          but references something from another time
+
+        Formats:
+        - Simple date: "2025-06-01" → moment
+        - Inline context: "2025-06-01 (thesis exam)" → moment
+        - Reference prefix: "~2025-01-11 (negatives from anti-date)" → reference
+        - Nested format: {"date": "2025-06-01", "context": "..."} → moment
+        - Explicit reference: {"date": "2025-01-11", "type": "reference", ...}
+        - Entry date shorthand: {"date": "."} → moment on entry date
+        - Opt-out marker: "~" alone (excludes entry date from moments)
+        - Events: {"date": "2025-06-01", "events": ["summer-trip"]}
 
         Args:
             dates_data: List of date specifications
@@ -285,14 +358,16 @@ class YamlToDbParser:
 
         Returns:
             Tuple of (parsed_dates, exclude_entry_date_flag)
+            Each parsed date includes a "type" field: "moment" or "reference"
 
         Examples:
             >>> parse_dates_field([
             ...     "2025-06-01",
-            ...     "2025-06-15 (birthday party)",
-            ...     {"date": "2025-07-01", "context": "celebration", "people": "Alda"}
+            ...     "~2025-01-11 (negatives from anti-date)",
+            ...     {"date": "2025-07-01", "type": "reference", "context": "..."}
             ... ], people_parsed)
-            ([{"date": "2025-06-01"}, ...], False)
+            ([{"date": "2025-06-01", "type": "moment"},
+              {"date": "2025-01-11", "type": "reference", ...}, ...], False)
         """
         if isinstance(dates_data, dict):
             dates_data = [dates_data]
@@ -308,13 +383,23 @@ class YamlToDbParser:
 
             # --- Inline string ---
             if isinstance(item, str):
-                date_obj, raw_context = parsers.parse_date_context(item)
+                # Check for reference prefix (~)
+                is_reference = False
+                date_str = item
+                if item.startswith("~"):
+                    is_reference = True
+                    date_str = item[1:].lstrip()  # Remove ~ and any leading whitespace
+
+                date_obj, raw_context = parsers.parse_date_context(date_str)
 
                 if not DataValidator.validate_date_string(date_obj):
                     logger.warning(f"Invalid date format, skipping: {date_obj}")
                     continue
 
-                date_dict: Dict[str, Union[date, str, List]] = {"date": date_obj}
+                date_dict: Dict[str, Union[date, str, List]] = {
+                    "date": date_obj,
+                    "type": "reference" if is_reference else "moment",
+                }
 
                 if raw_context:
                     context_dict = parsers.extract_context_refs(raw_context)
@@ -340,7 +425,15 @@ class YamlToDbParser:
                     logger.warning(f"Invalid date format, skipping: {item}")
                     continue
 
-                date_dict = {"date": date_value}
+                # Handle type field (default to "moment")
+                moment_type = item.get("type", "moment")
+                if moment_type not in ("moment", "reference"):
+                    logger.warning(
+                        f"Invalid moment type '{moment_type}', defaulting to 'moment'"
+                    )
+                    moment_type = "moment"
+
+                date_dict = {"date": date_value, "type": moment_type}
                 all_locations = []
                 people_context = []
 
@@ -397,6 +490,23 @@ class YamlToDbParser:
 
                     if people_list:
                         date_dict["people"] = people_list
+
+                # --- Events ---
+                if "events" in item:
+                    events_field = item["events"]
+                    if isinstance(events_field, str):
+                        events_field = [events_field]
+
+                    if isinstance(events_field, list):
+                        # Normalize event names (hyphen to space, strip)
+                        from dev.utils.parsers import split_hyphenated_to_spaces
+                        events_list = [
+                            split_hyphenated_to_spaces(DataValidator.normalize_string(ev))
+                            for ev in events_field
+                            if DataValidator.normalize_string(ev)
+                        ]
+                        if events_list:
+                            date_dict["events"] = events_list
 
                 normalized.append(date_dict)
 

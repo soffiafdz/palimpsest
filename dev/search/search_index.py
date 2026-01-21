@@ -32,7 +32,7 @@ from sqlalchemy import text, Engine
 from sqlalchemy.orm import Session
 
 # --- Local imports ---
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class SearchIndexManager:
@@ -73,8 +73,7 @@ class SearchIndexManager:
 
             conn.commit()
 
-            if self.logger:
-                self.logger.log_info("Created FTS5 search index")
+            safe_logger(self.logger).log_info("Created FTS5 search index")
 
     def populate_index(self, session: Session) -> int:
         """
@@ -114,8 +113,7 @@ class SearchIndexManager:
                             else:
                                 body_text = content
                     except Exception as e:
-                        if self.logger:
-                            self.logger.log_warning(f"Could not read {entry.file_path}: {e}")
+                        safe_logger(self.logger).log_warning(f"Could not read {entry.file_path}: {e}")
 
                 # Insert into FTS index
                 conn.execute(
@@ -136,8 +134,7 @@ class SearchIndexManager:
 
             conn.commit()
 
-        if self.logger:
-            self.logger.log_info(f"Indexed {indexed_count} entries")
+        safe_logger(self.logger).log_info(f"Indexed {indexed_count} entries")
 
         return indexed_count
 
@@ -191,8 +188,7 @@ class SearchIndexManager:
 
             conn.commit()
 
-            if self.logger:
-                self.logger.log_info("Created FTS sync triggers")
+            safe_logger(self.logger).log_info("Created FTS sync triggers")
 
     def update_entry_body(self, entry_id: int, body_text: str) -> None:
         """
@@ -223,8 +219,7 @@ class SearchIndexManager:
         Returns:
             Number of entries indexed
         """
-        if self.logger:
-            self.logger.log_info("Rebuilding search index...")
+        safe_logger(self.logger).log_info("Rebuilding search index...")
 
         # Recreate table
         self.create_index()
@@ -235,8 +230,7 @@ class SearchIndexManager:
         # Setup triggers
         self.setup_triggers()
 
-        if self.logger:
-            self.logger.log_info(f"Index rebuild complete: {count} entries")
+        safe_logger(self.logger).log_info(f"Index rebuild complete: {count} entries")
 
         return count
 

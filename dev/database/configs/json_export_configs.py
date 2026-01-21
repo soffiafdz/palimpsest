@@ -18,7 +18,7 @@ from ..models import (
     Tag,
     ReferenceSource,
     Reference,
-    MentionedDate,
+    Moment,
     Poem,
     PoemVersion,
     Alias,
@@ -111,8 +111,8 @@ def _serialize_reference(ref: Reference) -> Dict[str, Any]:
     }
 
 
-def _serialize_mentioned_date(md: MentionedDate) -> Dict[str, Any]:
-    """Serialize MentionedDate entity."""
+def _serialize_mentioned_date(md: Moment) -> Dict[str, Any]:
+    """Serialize Moment entity."""
     return {
         "id": md.id,
         "entry_ids": [e.id for e in md.entries] if md.entries else [],
@@ -213,7 +213,7 @@ EXPORT_CONFIGS = [
     EntityExportConfig("tags", Tag, _serialize_tag),
     EntityExportConfig("reference_sources", ReferenceSource, _serialize_reference_source),
     EntityExportConfig("references", Reference, _serialize_reference),
-    EntityExportConfig("mentioned_dates", MentionedDate, _serialize_mentioned_date),
+    EntityExportConfig("mentioned_dates", Moment, _serialize_mentioned_date),
     EntityExportConfig("poems", Poem, _serialize_poem),
     EntityExportConfig("poem_versions", PoemVersion, _serialize_poem_version),
     EntityExportConfig("aliases", Alias, _serialize_alias),

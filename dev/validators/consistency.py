@@ -36,7 +36,7 @@ from dev.database.manager import PalimpsestDB
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
 from dev.core.validators import DataValidator
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 @dataclass
@@ -137,8 +137,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking entry existence across systems...")
+        safe_logger(self.logger).log_info("Checking entry existence across systems...")
 
         # Get entry dates from each system
         md_dates = self._get_md_dates()
@@ -208,8 +207,7 @@ class ConsistencyValidator:
             issues.append(issue)
             self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} entry existence issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} entry existence issues")
 
         return issues
 
@@ -223,8 +221,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking entry metadata consistency...")
+        safe_logger(self.logger).log_info("Checking entry metadata consistency...")
 
         with self.db.session_scope() as session:
             for entry_db in session.query(Entry).all():
@@ -286,8 +283,7 @@ class ConsistencyValidator:
                     issues.append(issue)
                     self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} metadata consistency issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} metadata consistency issues")
 
         return issues
 
@@ -301,8 +297,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking referential integrity...")
+        safe_logger(self.logger).log_info("Checking referential integrity...")
 
         with self.db.session_scope() as session:
             for entry in session.query(Entry).all():
@@ -348,8 +343,7 @@ class ConsistencyValidator:
                         issues.append(issue)
                         self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} referential integrity issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} referential integrity issues")
 
         return issues
 
@@ -363,8 +357,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking file integrity...")
+        safe_logger(self.logger).log_info("Checking file integrity...")
 
         with self.db.session_scope() as session:
             for entry in session.query(Entry).all():
@@ -406,8 +399,7 @@ class ConsistencyValidator:
                         issues.append(issue)
                         self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} file integrity issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} file integrity issues")
 
         return issues
 

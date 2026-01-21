@@ -1,0 +1,85 @@
+{#
+  city.jinja2
+  -----------
+  Wiki template for City entity.
+  Displays city info, locations, visit statistics, and people encountered.
+#}
+# Palimpsest — City
+
+## {{ entity.city }}
+
+### Location Info
+{% if entity.state_province %}
+- **State/Province:** {{ entity.state_province }}
+{% endif %}
+{% if entity.country %}
+- **Country:** {{ entity.country }}
+{% endif %}
+- **Total Entries:** {{ entity.entry_count }}
+- **Tracked Locations:** {{ entity.locations|length }}
+
+### Statistics
+{% if entity.entries %}
+{% set sorted_entries = entity.entries|sort(attribute='date') %}
+{% set first_entry = sorted_entries|first %}
+{% set last_entry = sorted_entries|last %}
+- **First Entry:** {{ first_entry.date.isoformat() }}
+- **Last Entry:** {{ last_entry.date.isoformat() }}
+- **Span:** {{ (last_entry.date - first_entry.date).days }} days
+
+{% set freq = entity.visit_frequency %}
+{% if freq %}
+**Visit Frequency by Year:**
+
+{% set years = {} %}
+{% for ym, count in freq.items() %}
+{% set year = ym[:4] %}
+{% if year not in years %}
+{% set _ = years.update({year: {}}) %}
+{% endif %}
+{% set _ = years[year].update({ym[5:7]: count}) %}
+{% endfor %}
+{% for year in years.keys()|sort(reverse=true) %}
+{% set months = years[year] %}
+{% set total = months.values()|sum %}
+**{{ year }}** ({{ total }} entries):
+
+{% for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] %}
+{% if month in months %}
+- {{ month }}: {{ '█' * [months[month], 20]|min }} ({{ months[month] }})
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+{% endif %}
+
+### Locations in {{ entity.city }}
+{% if entity.locations %}
+{% for loc in entity.locations|sort(attribute='visit_count', reverse=true) %}
+- {{ entity_link(loc, 'locations', wiki_dir, output_path) }} ({{ loc.visit_count }} visit{{ 's' if loc.visit_count != 1 else '' }})
+{% endfor %}
+{% endif %}
+
+### People Encountered
+{% if entity.entries %}
+{% set people_dict = {} %}
+{% for entry in entity.entries %}
+{% for person in entry.people %}
+{% if person.display_name not in people_dict %}
+{% set _ = people_dict.update({person.display_name: {'person': person, 'count': 0}}) %}
+{% endif %}
+{% set _ = people_dict[person.display_name].update({'count': people_dict[person.display_name].count + 1}) %}
+{% endfor %}
+{% endfor %}
+{% set people_list = people_dict.values()|sort(attribute='count', reverse=true)|list %}
+{% for data in people_list[:20] %}
+- {{ entity_link(data.person, 'people', wiki_dir, output_path) }} ({{ data.count }} entr{{ 'ies' if data.count != 1 else 'y' }})
+{% endfor %}
+{% if people_list|length > 20 %}
+- ... and {{ people_list|length - 20 }} more
+{% endif %}
+{% endif %}
+
+### Notes
+{{ entity.notes or '[Add notes about this city for manuscript use]' }}

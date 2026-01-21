@@ -7,12 +7,13 @@ This package provides commonly-used utilities organized by domain:
 - parsers: Name, location, and context extraction
 - wiki: Wiki file parsing for database import
 - txt: Text formatting and metrics
+- narrative: Scene matching, event parsing, arc formatting
 
 Import commonly-used utilities directly from this package:
     from dev.utils import split_frontmatter, get_file_hash, extract_context_refs
 
 Or import specific modules:
-    from dev.utils import md, fs, parsers, wiki, txt
+    from dev.utils import md, fs, parsers, wiki, txt, narrative
 """
 
 # Markdown and YAML utilities
@@ -56,6 +57,11 @@ from .parsers import (
 
 # Wiki parsing utilities (for wiki→database import)
 # Note: Section extraction functions moved to md.py
+from .wiki import (
+    slugify,
+    entity_filename,
+    entity_path,
+)
 
 # Text processing utilities
 from .txt import (
@@ -63,6 +69,22 @@ from .txt import (
     format_body,
     reflow_paragraph,
     compute_metrics,
+)
+
+# Narrative analysis utilities
+from .narrative import (
+    normalize_scene_title,
+    fuzzy_match_scene,
+    parse_events_file,
+    parse_events_file_full,
+    build_scene_event_mapping,
+    parse_scenes,
+    extract_thematic_arcs,
+    format_arc,
+    CORE_RANGE,
+    FLASHBACK_RANGE,
+    CORE_MONTHS,
+    FLASHBACK_MONTHS,
 )
 
 __all__ = [
@@ -97,9 +119,25 @@ __all__ = [
     "resolve_relative_link",
     "find_section_line_indexes",
     "update_section",
+    "slugify",
+    "entity_filename",
+    "entity_path",
     # Text
     "ordinal",
     "format_body",
     "reflow_paragraph",
     "compute_metrics",
+    # Narrative
+    "normalize_scene_title",
+    "fuzzy_match_scene",
+    "parse_events_file",
+    "parse_events_file_full",
+    "build_scene_event_mapping",
+    "parse_scenes",
+    "extract_thematic_arcs",
+    "format_arc",
+    "CORE_RANGE",
+    "FLASHBACK_RANGE",
+    "CORE_MONTHS",
+    "FLASHBACK_MONTHS",
 ]

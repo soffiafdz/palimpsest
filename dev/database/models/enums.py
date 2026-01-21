@@ -5,6 +5,7 @@ Enumeration Types
 Enum classes for the Palimpsest database models.
 
 Enums:
+    - MomentType: Type of moment (moment vs reference)
     - ReferenceMode: How a reference is used (direct, indirect, paraphrase, visual)
     - ReferenceType: Type of reference source (book, article, film, etc.)
     - RelationType: Type of relationship with a person (family, friend, etc.)
@@ -17,6 +18,56 @@ from __future__ import annotations
 # --- Standard library imports ---
 from enum import Enum
 from typing import List
+
+
+class MomentType(str, Enum):
+    """
+    Enumeration of moment types.
+
+    Distinguishes between events that happened and contextual references:
+    - MOMENT: An event that actually happened and is narrated in the entry.
+      The date represents when the described action occurred.
+    - REFERENCE: A contextual link to another date. The action described
+      happens on the entry date, but references something from another time.
+
+    Examples:
+        # Moment: The retreat actually happened on Dec 1st
+        dates:
+          - date: 2025-12-01
+            context: "First day of the retreat"
+
+        # Reference: The negatives are FROM Jan 11th, but given in February
+        dates:
+          - "~2025-01-11 (I give Clara the negatives from the anti-date)"
+
+        # Reference: Explicit dict format
+        dates:
+          - date: 2025-01-11
+            type: reference
+            context: "I give Clara the negatives from the anti-date"
+    """
+
+    MOMENT = "moment"
+    REFERENCE = "reference"
+
+    @classmethod
+    def choices(cls) -> List[str]:
+        """Get all available moment type choices."""
+        return [moment_type.value for moment_type in cls]
+
+    @property
+    def display_name(self) -> str:
+        """Get human-readable display name."""
+        display_map = {
+            self.MOMENT: "Moment",
+            self.REFERENCE: "Reference",
+        }
+        return display_map.get(self, self.value.title())
+
+    @property
+    def is_reference(self) -> bool:
+        """Check if this is a reference type (not a moment)."""
+        return self == self.REFERENCE
 
 
 class ReferenceMode(str, Enum):
@@ -65,6 +116,7 @@ class ReferenceType(str, Enum):
     - SPEECH: Speeches and talks
     - TV_SHOW: Television programs
     - VIDEO: Online videos, YouTube content
+    - WEBSITE: Web pages, blog posts, online articles
     - OTHER: Miscellaneous sources
     """
 
@@ -78,6 +130,7 @@ class ReferenceType(str, Enum):
     SPEECH = "speech"
     TV_SHOW = "tv_show"
     VIDEO = "video"
+    WEBSITE = "website"
     OTHER = "other"
 
     @classmethod
@@ -88,7 +141,7 @@ class ReferenceType(str, Enum):
     @classmethod
     def written_types(cls) -> List["ReferenceType"]:
         """Get types that are primarily written/text-based."""
-        return [cls.BOOK, cls.POEM, cls.ARTICLE]
+        return [cls.BOOK, cls.POEM, cls.ARTICLE, cls.WEBSITE]
 
     @classmethod
     def audiovisual_types(cls) -> List["ReferenceType"]:
@@ -128,6 +181,7 @@ class ReferenceType(str, Enum):
             self.SPEECH: "Speech",
             self.TV_SHOW: "TV Show",
             self.VIDEO: "Video",
+            self.WEBSITE: "Website",
             self.OTHER: "Other",
         }
         return display_map.get(self, self.value.title())

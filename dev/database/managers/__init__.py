@@ -9,9 +9,10 @@ following the Single Responsibility Principle and inheriting from BaseManager.
 
 Available Managers:
     BaseManager: Abstract base class with common utilities
-    TagManager: Manages Tag entities and their relationships
-    EventManager: Manages Event entities
-    DateManager: Manages MentionedDate entities
+    SimpleManager: Config-driven manager for Tag, Moment, Event
+    TagManager: Factory for Tag SimpleManager
+    EventManager: Factory for Event SimpleManager
+    MomentManager: Factory for Moment SimpleManager
     LocationManager: Manages City and Location entities
     ReferenceManager: Manages ReferenceSource and Reference entities
     PoemManager: Manages Poem and PoemVersion entities
@@ -20,15 +21,14 @@ Available Managers:
     EntryManager: Manages Entry entities (most complex)
 
 Usage:
-    from dev.database.managers import PersonManager, EntryManager
+    from dev.database.managers import PersonManager, TagManager, MomentManager
 
     person_mgr = PersonManager(session, logger)
-    person = person_mgr.create({"name": "John Doe"})
+    tag_mgr = TagManager(session, logger)  # Returns SimpleManager
+    moment_mgr = MomentManager(session, logger)  # Returns SimpleManager
 """
 from .base_manager import BaseManager
-from .tag_manager import TagManager
-from .event_manager import EventManager
-from .date_manager import DateManager
+from .simple_manager import SimpleManager, TagManager, MomentManager, EventManager
 from .location_manager import LocationManager
 from .reference_manager import ReferenceManager
 from .poem_manager import PoemManager
@@ -38,9 +38,10 @@ from .entry_manager import EntryManager
 
 __all__ = [
     "BaseManager",
+    "SimpleManager",
     "TagManager",
     "EventManager",
-    "DateManager",
+    "MomentManager",
     "LocationManager",
     "ReferenceManager",
     "PoemManager",
@@ -48,16 +49,3 @@ __all__ = [
     "ManuscriptManager",
     "EntryManager",
 ]
-
-# Phase 1: Core entity managers complete (8/8)! 🎉
-# Phase 2: Integration and cleanup complete! 🎉
-# Phase 3: EntryManager complete! 🎉
-#
-# All entity managers are now fully operational.
-# See REFACTORING_GUIDE.md for usage patterns and implementation details
-#
-# Refactoring Complete Summary:
-#   - 9 modular managers (Base + 8 entities + Entry)
-#   - manager.py reduced from 3,241 lines to ~1,500 lines (54% reduction)
-#   - Clean separation of concerns
-#   - All entity operations delegated to specialized managers

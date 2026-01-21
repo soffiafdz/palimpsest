@@ -31,14 +31,19 @@ Usage:
     # List all unresolved conflicts
     conflicts = mgr.list_conflicts()
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from datetime import datetime
 from typing import Optional, List
+
+# --- Third party imports ---
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.database.models import SyncState
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class SyncStateManager:
@@ -115,15 +120,14 @@ class SyncStateManager:
             sync_state.modified_since_sync = False  # Reset flag
             # Note: Don't reset conflict_detected - that's explicit
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Updated sync state: {entity_type} {entity_id}",
-                    {
-                        "source": sync_source,
-                        "hash": sync_hash[:8] if sync_hash else None,
-                        "machine": machine_id
-                    }
-                )
+            safe_logger(self.logger).log_debug(
+                f"Updated sync state: {entity_type} {entity_id}",
+                {
+                    "source": sync_source,
+                    "hash": sync_hash[:8] if sync_hash else None,
+                    "machine": machine_id
+                }
+            )
         else:
             # Create new
             sync_state = SyncState(
@@ -139,15 +143,14 @@ class SyncStateManager:
             )
             self.session.add(sync_state)
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Created sync state: {entity_type} {entity_id}",
-                    {
-                        "source": sync_source,
-                        "hash": sync_hash[:8] if sync_hash else None,
-                        "machine": machine_id
-                    }
-                )
+            safe_logger(self.logger).log_debug(
+                f"Created sync state: {entity_type} {entity_id}",
+                {
+                    "source": sync_source,
+                    "hash": sync_hash[:8] if sync_hash else None,
+                    "machine": machine_id
+                }
+            )
 
         self.session.flush()
         return sync_state
@@ -220,16 +223,15 @@ class SyncStateManager:
             sync_state.conflict_detected = True
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_warning(
-                    f"Conflict detected: {entity_type} {entity_id}",
-                    {
-                        "last_sync": sync_state.last_synced_at.isoformat(),
-                        "machine": sync_state.machine_id,
-                        "old_hash": sync_state.sync_hash[:8],
-                        "new_hash": new_hash[:8],
-                    }
-                )
+            safe_logger(self.logger).log_warning(
+                f"Conflict detected: {entity_type} {entity_id}",
+                {
+                    "last_sync": sync_state.last_synced_at.isoformat(),
+                    "machine": sync_state.machine_id,
+                    "old_hash": sync_state.sync_hash[:8],
+                    "new_hash": new_hash[:8],
+                }
+            )
 
             return True
 
@@ -262,10 +264,9 @@ class SyncStateManager:
             sync_state.conflict_resolved = True
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_info(
-                    f"Marked conflict as resolved: {entity_type} {entity_id}"
-                )
+            safe_logger(self.logger).log_info(
+                f"Marked conflict as resolved: {entity_type} {entity_id}"
+            )
 
             return True
 
@@ -297,10 +298,9 @@ class SyncStateManager:
             sync_state.conflict_resolved = False
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Reset conflict flags: {entity_type} {entity_id}"
-                )
+            safe_logger(self.logger).log_debug(
+                f"Reset conflict flags: {entity_type} {entity_id}"
+            )
 
             return True
 
@@ -369,10 +369,9 @@ class SyncStateManager:
             self.session.delete(sync_state)
             self.session.flush()
 
-            if self.logger:
-                self.logger.log_debug(
-                    f"Deleted sync state: {entity_type} {entity_id}"
-                )
+            safe_logger(self.logger).log_debug(
+                f"Deleted sync state: {entity_type} {entity_id}"
+            )
 
             return True
 

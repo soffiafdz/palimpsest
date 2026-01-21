@@ -30,7 +30,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
-import sys
 from pathlib import Path
 from typing import List, Set, Optional
 from dataclasses import dataclass, field
@@ -40,9 +39,7 @@ from collections import defaultdict
 import click
 
 # --- Local imports ---
-from dev.core.paths import WIKI_DIR, LOG_DIR
-from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli import setup_logger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class WikiValidationError(Exception):
@@ -166,8 +163,7 @@ def validate_wiki(
     Returns:
         ValidationResult with findings
     """
-    if logger:
-        logger.log_operation("validate_wiki_start", {"wiki_dir": str(wiki_dir)})
+    safe_logger(logger).log_operation("validate_wiki_start", {"wiki_dir": str(wiki_dir)})
 
     result = ValidationResult()
 
@@ -176,8 +172,7 @@ def validate_wiki(
     result.total_files = len(all_files)
     result.all_files = set(all_files)
 
-    if logger:
-        logger.log_info(f"Found {len(all_files)} wiki files")
+    safe_logger(logger).log_info(f"Found {len(all_files)} wiki files")
 
     # Parse links from each file
     for wiki_file in all_files:
@@ -188,8 +183,8 @@ def validate_wiki(
             target_exists = link.resolved_target.exists()
             result.add_link(link, target_exists)
 
-            if logger and not target_exists:
-                logger.log_warning(
+            if not target_exists:
+                safe_logger(logger).log_warning(
                     f"Broken link: {wiki_file.relative_to(wiki_dir)} → "
                     f"{link.target_path} (line {link.line_number})"
                 )
@@ -197,13 +192,12 @@ def validate_wiki(
     # Calculate orphaned files
     result.calculate_orphans()
 
-    if logger:
-        logger.log_operation("validate_wiki_complete", {
-            "total_files": result.total_files,
-            "total_links": result.total_links,
-            "broken_links": len(result.broken_links),
-            "orphaned_files": len(result.orphaned_files),
-        })
+    safe_logger(logger).log_operation("validate_wiki_complete", {
+        "total_files": result.total_files,
+        "total_links": result.total_links,
+        "broken_links": len(result.broken_links),
+        "orphaned_files": len(result.orphaned_files),
+    })
 
     return result
 
@@ -328,84 +322,3 @@ def print_stats_report(result: ValidationResult, wiki_dir: Path) -> None:
         click.echo(f"  Average links per file: {avg_links:.1f}")
 
     click.echo("\n" + "=" * 70 + "\n")
-
-
-# ===== CLI =====
-
-
-@click.group()
-@click.option(
-    "--wiki-dir",
-    type=click.Path(exists=True),
-    default=str(WIKI_DIR),
-    help="Wiki root directory",
-)
-@click.option(
-    "--log-dir",
-    type=click.Path(),
-    default=str(LOG_DIR),
-    help="Logging directory",
-)
-@click.pass_context
-def cli(ctx: click.Context, wiki_dir: str, log_dir: str) -> None:
-    """Validate vimwiki cross-references and detect issues."""
-    ctx.ensure_object(dict)
-    ctx.obj["wiki_dir"] = Path(wiki_dir)
-    ctx.obj["log_dir"] = Path(log_dir)
-    ctx.obj["logger"] = setup_logger(Path(log_dir), "validate_wiki")
-
-
-@cli.command()
-@click.pass_context
-def check(ctx: click.Context) -> None:
-    """Check all wiki links for broken references."""
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-    logger: PalimpsestLogger = ctx.obj["logger"]
-
-    try:
-        click.echo(f"🔍 Validating wiki links in {wiki_dir}...")
-        result = validate_wiki(wiki_dir, logger)
-        print_validation_report(result, wiki_dir)
-
-        # Exit with error if issues found
-        if result.broken_links or result.orphaned_files:
-            sys.exit(1)
-
-    except WikiValidationError as e:
-        handle_cli_error(ctx, e, "check")
-
-
-@cli.command()
-@click.pass_context
-def orphans(ctx: click.Context) -> None:
-    """Find orphaned pages (no incoming links)."""
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-    logger: PalimpsestLogger = ctx.obj["logger"]
-
-    try:
-        click.echo(f"🔍 Finding orphaned files in {wiki_dir}...")
-        result = validate_wiki(wiki_dir, logger)
-        print_orphans_report(result, wiki_dir)
-
-    except WikiValidationError as e:
-        handle_cli_error(ctx, e, "orphans")
-
-
-@cli.command()
-@click.pass_context
-def stats(ctx: click.Context) -> None:
-    """Show wiki statistics."""
-    wiki_dir: Path = ctx.obj["wiki_dir"]
-    logger: PalimpsestLogger = ctx.obj["logger"]
-
-    try:
-        click.echo(f"📊 Calculating wiki statistics for {wiki_dir}...")
-        result = validate_wiki(wiki_dir, logger)
-        print_stats_report(result, wiki_dir)
-
-    except WikiValidationError as e:
-        handle_cli_error(ctx, e, "stats")
-
-
-if __name__ == "__main__":
-    cli(obj={})

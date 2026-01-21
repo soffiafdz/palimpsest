@@ -17,7 +17,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional
 
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class BuilderStats(ABC):
@@ -106,8 +106,7 @@ class BaseBuilder(ABC):
             operation: Operation identifier string
             details: Optional dictionary of operation details
         """
-        if self.logger:
-            self.logger.log_operation(operation, details or {})
+        safe_logger(self.logger).log_operation(operation, details or {})
 
     def _log_debug(self, message: str) -> None:
         """
@@ -116,8 +115,7 @@ class BaseBuilder(ABC):
         Args:
             message: Debug message string
         """
-        if self.logger:
-            self.logger.log_debug(message)
+        safe_logger(self.logger).log_debug(message)
 
     def _log_info(self, message: str) -> None:
         """
@@ -126,8 +124,7 @@ class BaseBuilder(ABC):
         Args:
             message: Info message string
         """
-        if self.logger:
-            self.logger.log_info(message)
+        safe_logger(self.logger).log_info(message)
 
     def _log_warning(self, message: str) -> None:
         """
@@ -136,8 +133,7 @@ class BaseBuilder(ABC):
         Args:
             message: Warning message string
         """
-        if self.logger:
-            self.logger.log_warning(message)
+        safe_logger(self.logger).log_warning(message)
 
     def _log_error(self, error: Exception, context: Optional[dict] = None) -> None:
         """
@@ -147,5 +143,4 @@ class BaseBuilder(ABC):
             error: Exception that occurred
             context: Optional dictionary with error context
         """
-        if self.logger:
-            self.logger.log_error(error, context or {})
+        safe_logger(self.logger).log_error(error, context or {})

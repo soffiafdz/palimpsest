@@ -1,16 +1,48 @@
+#!/usr/bin/env python3
 """
 wiki.py
 -------
-Utilities for parsing vimwiki markdown files for import to database.
+Utilities for parsing vimwiki markdown files and generating entity paths.
 
-Used by wiki2sql phase to extract editable fields from wiki pages
-and sync them back to the database.
+Provides functions for parsing wiki page sections, extracting editable fields,
+and generating consistent file paths for wiki entities. Used by wiki2sql
+for syncing wiki edits back to the database.
+
+Functions:
+    parse_wiki_file: Parse wiki file into sections dictionary
+    get_section: Get content from a specific section
+    extract_notes: Extract Notes section (handles placeholders)
+    extract_vignette: Extract Vignette section (Person entities)
+    extract_category: Extract category from Metadata section
+    extract_list_items: Extract bullet items from section
+    extract_metadata_field: Extract specific field from Metadata
+    is_placeholder: Check if text is placeholder content
+    parse_wiki_links: Parse vimwiki [[path|text]] links
+    slugify: Convert name to wiki-safe filename slug
+    entity_filename: Generate wiki markdown filename for entity
+    entity_path: Generate full path to entity wiki file
+
+Usage:
+    from dev.utils.wiki import parse_wiki_file, slugify, entity_path
+
+    # Parse wiki file into sections
+    sections = parse_wiki_file(Path("/wiki/people/alice.md"))
+    notes = sections.get("Notes")
+
+    # Generate entity paths
+    path = entity_path(wiki_dir, "people", "María José")
+    # Returns: /wiki/people/maría_josé.md
+
+    # Slugify names for filenames
+    slug = slugify("New York City")  # "new_york_city"
 """
+# --- Annotations ---
+from __future__ import annotations
 
 # --- Standard library imports ---
+import re
 from pathlib import Path
 from typing import Dict, Optional, List
-import re
 
 
 def parse_wiki_file(file_path: Path) -> Dict[str, str]:
@@ -67,13 +99,16 @@ def parse_wiki_file(file_path: Path) -> Dict[str, str]:
     return sections
 
 
-def extract_section(sections: Dict[str, str], header: str) -> Optional[str]:
+def get_section(sections: Dict[str, str], header: str) -> Optional[str]:
     """
-    Extract content from a specific section.
+    Get content from a specific section by header name.
+
+    Simple dictionary lookup wrapper for parsed wiki sections.
+    Use md.extract_section() for parsing markdown content directly.
 
     Args:
         sections: Dictionary from parse_wiki_file()
-        header: Section header to extract
+        header: Section header to get
 
     Returns:
         Section content or None if not found
@@ -93,7 +128,7 @@ def extract_notes(sections: Dict[str, str]) -> Optional[str]:
     Returns:
         Notes content or None if empty/placeholder
     """
-    notes = extract_section(sections, "Notes")
+    notes = get_section(sections, "Notes")
 
     if not notes:
         return None
@@ -124,7 +159,7 @@ def extract_vignette(sections: Dict[str, str]) -> Optional[str]:
     Returns:
         Vignette content or None if empty/placeholder
     """
-    vignette = extract_section(sections, "Vignette")
+    vignette = get_section(sections, "Vignette")
 
     if not vignette:
         return None
@@ -155,7 +190,7 @@ def extract_category(sections: Dict[str, str]) -> Optional[str]:
     Returns:
         Category value or None
     """
-    metadata = extract_section(sections, "Metadata")
+    metadata = get_section(sections, "Metadata")
 
     if not metadata:
         return None
@@ -242,7 +277,7 @@ def extract_metadata_field(sections: Dict[str, str], field_name: str) -> Optiona
     Returns:
         Field value or None
     """
-    metadata = extract_section(sections, "Metadata")
+    metadata = get_section(sections, "Metadata")
 
     if not metadata:
         return None
@@ -285,3 +320,68 @@ def parse_wiki_links(text: str) -> List[Dict[str, str]]:
         })
 
     return links
+
+
+def slugify(name: str) -> str:
+    """
+    Convert name to wiki-safe filename slug.
+
+    Transforms a display name into a safe slug for use in file paths
+    and wiki links. Handles spaces and special characters.
+
+    Rules:
+    - Lowercase the string
+    - Replace spaces with underscores
+    - Replace forward slashes with hyphens
+
+    Args:
+        name: Display name to slugify
+
+    Returns:
+        Wiki-safe slug
+
+    Examples:
+        >>> slugify("María José")
+        'maría_josé'
+        >>> slugify("The Person/Character")
+        'the_person-character'
+        >>> slugify("New York City")
+        'new_york_city'
+    """
+    return name.lower().replace(" ", "_").replace("/", "-")
+
+
+def entity_filename(name: str) -> str:
+    """
+    Generate wiki markdown filename for an entity.
+
+    Args:
+        name: Entity display name
+
+    Returns:
+        Filename with .md extension
+
+    Examples:
+        >>> entity_filename("María José")
+        'maría_josé.md'
+    """
+    return f"{slugify(name)}.md"
+
+
+def entity_path(wiki_dir: Path, subdir: str, name: str) -> Path:
+    """
+    Generate standard entity path within wiki directory.
+
+    Args:
+        wiki_dir: Root wiki directory
+        subdir: Entity type subdirectory (e.g., "people", "locations")
+        name: Entity display name
+
+    Returns:
+        Full path to entity wiki file
+
+    Examples:
+        >>> entity_path(Path("/wiki"), "people", "María José")
+        PosixPath('/wiki/people/maría_josé.md')
+    """
+    return wiki_dir / subdir / entity_filename(name)

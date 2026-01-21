@@ -1,0 +1,32 @@
+{#
+  tag.jinja2
+  ----------
+  Wiki template for Tag entity.
+  Displays tag info, usage statistics, and entries list.
+#}
+# Palimpsest — Tags
+
+## {{ entity.tag }}
+
+### Description
+{% if entity.entries %}
+**Statistics:**
+- Usage count: {{ entity.usage_count }}
+- First used: {{ entity.first_used.isoformat() if entity.first_used else 'N/A' }}
+- Last used: {{ entity.last_used.isoformat() if entity.last_used else 'N/A' }}
+- Span: {{ entity.usage_span_days }} days
+{% else %}
+**Statistics:** No usage data
+{% endif %}
+
+### Entries
+{% if entity.entries %}
+{% for entry in entity.chronological_entries %}
+- {{ entity_link(entry, 'entries', wiki_dir, output_path) }}
+{% endfor %}
+{% else %}
+- No entries with this tag
+{% endif %}
+
+### Notes
+{{ entity.notes or '' }}

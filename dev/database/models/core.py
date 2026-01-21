@@ -26,9 +26,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .associations import (
     entry_aliases,
     entry_cities,
-    entry_dates,
     entry_events,
     entry_locations,
+    entry_moments,
     entry_people,
     entry_related,
     entry_tags,
@@ -38,7 +38,7 @@ from .base import Base, SoftDeleteMixin
 if TYPE_CHECKING:
     from .creative import Event, PoemVersion, Reference
     from .entities import Alias, Person, Tag
-    from .geography import City, Location, MentionedDate
+    from .geography import City, Location, Moment
     from ..models_manuscript import ManuscriptEntry
 
 
@@ -143,8 +143,8 @@ class Entry(Base, SoftDeleteMixin):
     )
 
     # --- Many-to-many Relationships ---
-    dates: Mapped[List["MentionedDate"]] = relationship(
-        "MentionedDate", secondary=entry_dates, back_populates="entries"
+    moments: Mapped[List["Moment"]] = relationship(
+        "Moment", secondary=entry_moments, back_populates="entries"
     )
     related_entries: Mapped[List["Entry"]] = relationship(
         "Entry",
@@ -226,10 +226,10 @@ class Entry(Base, SoftDeleteMixin):
             Dictionary with count, min_date, max_date, and duration,
             or None if no dates are mentioned
         """
-        if not self.dates:
+        if not self.moments:
             return None
 
-        date_vals = [d.date for d in self.dates if d.date is not None]
+        date_vals = [d.date for d in self.moments if d.date is not None]
 
         if not date_vals:
             return None

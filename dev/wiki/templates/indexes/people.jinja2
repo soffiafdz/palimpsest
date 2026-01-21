@@ -1,0 +1,61 @@
+{# People Index Template - Groups by relationship category #}
+# Palimpsest — People
+
+{{ total }} individuals across all journal entries.
+
+---
+
+## By Relationship Type
+
+{% for category in categories %}
+{% set category_people = groups[category] %}
+{% if category_people %}
+{% set category_count = category_people|length %}
+{% set category_mentions = category_people|sum(attribute='mentions') %}
+
+### {{ category }} ({{ category_count }})
+
+| Person | Entries | Frequency |
+|--------|---------|-----------|
+{% for person in category_people|sort(attribute='mentions', reverse=true) %}
+| [[{{ person.path }}|{{ person.name }}]] | {{ person.mentions }} | {{ person.bar }} |
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+
+---
+
+## Most Mentioned
+
+{% if top_people %}
+| Rank | Person | Entries | Category |
+|------|--------|---------|----------|
+{% for person in top_people %}
+| {{ loop.index }} | [[{{ person.path }}|{{ person.name }}]] | {{ person.mentions }} | {{ person.category }} |
+{% endfor %}
+{% endif %}
+
+---
+
+## Relationship Distribution
+
+{% if category_distribution %}
+| Category | People | Bar |
+|----------|--------|-----|
+{% for cat in category_distribution %}
+| {{ cat.name }} | {{ cat.count }} | {{ cat.bar }} |
+{% endfor %}
+{% endif %}
+
+---
+
+## Statistics
+
+| Metric | Value |
+|--------|-------|
+| **Total People** | {{ total }} |
+| **Categories** | {{ categories|select('in', groups)|list|length }} |
+{% if recent_appearance %}
+| **Most Recent Appearance** | [[{{ recent_appearance.path }}|{{ recent_appearance.name }}]] ({{ recent_appearance.date|format_date('%Y-%m-%d') }}) |
+{% endif %}

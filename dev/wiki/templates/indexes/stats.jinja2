@@ -1,0 +1,127 @@
+{# Statistics Dashboard Template #}
+# Palimpsest — Statistics Dashboard
+
+Comprehensive analytics and insights from your journal.
+
+---
+
+## Writing Activity
+
+### Overview
+
+- **Total Entries:** {{ stats.entries }}
+- **Total Words:** {{ stats.words|format_number }}
+- **Average Words per Entry:** {{ stats.avg_words }}
+- **Date Range:** {{ stats.first_date|format_date('%Y-%m-%d') }} to {{ stats.last_date|format_date('%Y-%m-%d') }}
+- **Span:** {{ stats.span_days }} days
+
+### Entry Frequency (Last 12 Months)
+
+```
+{% for month in monthly_frequency %}
+{{ month.name|ljust(12) }} {{ month.bar|ljust(20) }} ({{ month.count }})
+{% endfor %}
+```
+
+### Word Count Distribution
+
+```
+{% for range in word_distribution %}
+{{ range.name|ljust(12) }} {{ range.bar|ljust(20) }} {{ range.count|rjust(3) }} ({{ range.percent|format_number(1) }}%)
+{% endfor %}
+```
+
+---
+
+## People Network
+
+**Total People:** {{ stats.people }}
+
+{% if top_people %}
+### Most Mentioned People (Top 10)
+
+{% for person in top_people[:10] %}
+{% if person.mentions > 0 %}
+- **{{ person.name }}** — {{ person.mentions }} mentions ({{ person.category }})
+{% endif %}
+{% endfor %}
+
+### Relationship Distribution
+
+```
+{% for relation in relation_distribution %}
+{{ relation.name|ljust(15) }} {{ relation.bar|ljust(20) }} {{ relation.count|rjust(3) }} ({{ relation.percent|format_number(1) }}%)
+{% endfor %}
+```
+{% endif %}
+
+---
+
+## Geographic Coverage
+
+- **Total Locations:** {{ stats.locations }}
+- **Total Cities:** {{ stats.cities }}
+
+---
+
+## Thematic Analysis
+
+- **Total Themes:** {{ stats.themes }}
+- **Total Tags:** {{ stats.tags }}
+
+{% if top_tags %}
+### Most Used Tags
+
+{% for tag in top_tags[:10] %}
+{% if tag.count > 0 %}
+- **{{ tag.name }}** — {{ tag.count }} entries
+{% endif %}
+{% endfor %}
+{% endif %}
+
+---
+
+## Events
+
+- **Total Events:** {{ stats.events }}
+
+---
+
+## Timeline Heatmap
+
+Entry frequency by year:
+
+```
+{% for year in yearly_frequency %}
+{{ year.year }}: {{ year.bar }} ({{ year.count }} entries)
+{% endfor %}
+```
+
+---
+
+## Summary
+
+### Entity Counts
+
+| Entity | Count |
+|--------|-------|
+| Entries | {{ stats.entries }} |
+| People | {{ stats.people }} |
+| Locations | {{ stats.locations }} |
+| Cities | {{ stats.cities }} |
+| Events | {{ stats.events }} |
+| Themes | {{ stats.themes }} |
+| Tags | {{ stats.tags }} |
+
+### Writing Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total Words | {{ stats.words|format_number }} |
+| Average Words/Entry | {{ stats.avg_words }} |
+| Entries per Day | {{ stats.entries_per_day|format_number(2) }} |
+| Days Active | {{ stats.span_days }} |
+
+---
+
+*Last updated: {{ generated_at|format_date('%Y-%m-%d %H:%M') }}*

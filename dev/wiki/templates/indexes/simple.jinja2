@@ -1,0 +1,14 @@
+{# Simple Index Template - Alphabetical list #}
+# Palimpsest — {{ title }}
+
+{{ description }}
+
+{% for item in items|sort(attribute='name') %}
+- [[{{ item.path }}|{{ item.name }}]] ({{ item.mentions }} mention{{ 's' if item.mentions != 1 else '' }})
+{% endfor %}
+
+---
+
+## Statistics
+
+- **Total {{ title }}**: {{ items|length }}

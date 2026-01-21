@@ -1,0 +1,23 @@
+{# Entries Index Template - Groups by year #}
+# Palimpsest — Journal Entries
+
+Index of all journal entries, organized by year.
+
+{% for year in years|sort(reverse=true) %}
+{% set year_entries = groups[year] %}
+
+## {{ year }} ({{ year_entries|length }} entries)
+
+{% for entry in year_entries|sort(attribute='date') %}
+- [[{{ entry.path }}|{{ entry.date|format_date('%B %d') }}]] ({{ entry.word_count }} words)
+{% endfor %}
+{% endfor %}
+
+---
+
+## Statistics
+
+- **Total Entries**: {{ total }}
+- **Total Words**: {{ total_words|format_number }}
+- **Years Covered**: {{ years|length }}
+- **Average Words per Entry**: {{ (total_words // total) if total else 0 }}

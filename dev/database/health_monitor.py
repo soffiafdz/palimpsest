@@ -81,18 +81,21 @@ Notes:
 See Also:
     - query_optimizer.py: Efficient database queries
     - manager.py: Main database interface
-    - decorators.py: @handle_db_errors, @log_database_operation
+    - decorators.py: DatabaseOperation context manager
 """
+# --- Standard library imports ---
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
+# --- Third party imports ---
 from sqlalchemy import text, func
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.exceptions import HealthCheckError
-from dev.core.logging_manager import PalimpsestLogger
-from .decorators import handle_db_errors, log_database_operation
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from .decorators import DatabaseOperation
 from .query_optimizer import QueryOptimizer
 
 # Import models for health checks
@@ -105,7 +108,7 @@ from .models import (
     Tag,
     Reference,
     ReferenceSource,
-    MentionedDate,
+    Moment,
     Poem,
     PoemVersion,
     Alias,
@@ -134,8 +137,6 @@ class HealthMonitor:
         """
         self.logger = logger
 
-    @handle_db_errors
-    @log_database_operation("health_check")
     def health_check(
         self,
         session: Session,
@@ -155,65 +156,79 @@ class HealthMonitor:
         Raises:
             HealthCheckError: If health check encounters critical errors
         """
-        health = {
-            "status": "healthy",
-            "issues": [],
-            "metrics": {},
-            "recommendations": [],
-        }
+        with DatabaseOperation(self.logger, "health_check"):
+            health = {
+                "status": "healthy",
+                "issues": [],
+                "metrics": {},
+                "recommendations": [],
+            }
 
-        try:
-            # Test basic connectivity
-            session.execute(text("SELECT 1"))
+            try:
+                # Test basic connectivity
+                session.execute(text("SELECT 1"))
 
-            # Check for orphaned records
-            orphan_results = self.check_orphaned_records(session)
-            health["metrics"]["orphaned_records"] = orphan_results
+                # Check for orphaned records
+                orphan_results = self.check_orphaned_records(session)
+                health["metrics"]["orphaned_records"] = orphan_results
 
-            # Check for data integrity issues
-            integrity_results = self.check_data_integrity(session)
-            health["metrics"]["integrity"] = integrity_results
+                # Check for data integrity issues
+                integrity_results = self.check_data_integrity(session)
+                health["metrics"]["integrity"] = integrity_results
 
-            # Check relationship integrity
-            rel_integrity = self._check_relationship_integrity(session)
-            health["metrics"]["relationship_integrity"] = rel_integrity
+                # Check relationship integrity
+                rel_integrity = self._check_relationship_integrity(session)
+                health["metrics"]["relationship_integrity"] = rel_integrity
 
-            # Check reference integrity
-            ref_integrity = self._check_reference_integrity(session)
-            health["metrics"]["reference_integrity"] = ref_integrity
+                # Check reference integrity
+                ref_integrity = self._check_reference_integrity(session)
+                health["metrics"]["reference_integrity"] = ref_integrity
 
-            # Check poem integrity
-            poem_integrity = self._check_poem_integrity(session)
-            health["metrics"]["poem_integrity"] = poem_integrity
+                # Check poem integrity
+                poem_integrity = self._check_poem_integrity(session)
+                health["metrics"]["poem_integrity"] = poem_integrity
 
-            # Check manuscript integrity
-            manuscript_integrity = self._check_manuscript_integrity(session)
-            health["metrics"]["manuscript_integrity"] = manuscript_integrity
+                # Check manuscript integrity
+                manuscript_integrity = self._check_manuscript_integrity(session)
+                health["metrics"]["manuscript_integrity"] = manuscript_integrity
 
-            # Check mentioned date integrity
-            date_integrity = self._check_mentioned_date_integrity(session)
-            health["metrics"]["mentioned_date_integrity"] = date_integrity
+                # Check mentioned date integrity
+                date_integrity = self._check_mentioned_date_integrity(session)
+                health["metrics"]["mentioned_date_integrity"] = date_integrity
 
-            # Check file references if db_path provided
-            if check_files and db_path:
-                file_results = self._check_file_references(session)
-                health["metrics"]["file_references"] = file_results
+                # Check file references if db_path provided
+                if check_files and db_path:
+                    file_results = self._check_file_references(session)
+                    health["metrics"]["file_references"] = file_results
 
-            # Database size and performance metrics
-            perf_metrics = self._get_performance_metrics(session)
-            health["metrics"]["performance"] = perf_metrics
+                # Database size and performance metrics
+                perf_metrics = self._get_performance_metrics(session)
+                health["metrics"]["performance"] = perf_metrics
 
-            # Evaluate overall health
-            health = self._evaluate_health_status(health)
+                # Evaluate overall health
+                health = self._evaluate_health_status(health)
 
-        except Exception as e:
-            health["status"] = "error"
-            health["issues"].append(f"Database connectivity issue: {e}")
-            if self.logger:
-                self.logger.log_error(e, {"operation": "health_check"})
-            raise HealthCheckError(f"Health check failed: {e}")
+            except Exception as e:
+                health["status"] = "error"
+                health["issues"].append(f"Database connectivity issue: {e}")
+                safe_logger(self.logger).log_error(e, {"operation": "health_check"})
+                raise HealthCheckError(f"Health check failed: {e}")
 
-        return health
+            return health
+
+    # Orphan detection config: (name, model, fk_attr, parent_model)
+    _ORPHAN_CHECKS = [
+        ("aliases", Alias, "person_id", Person),
+        ("references", Reference, "entry_id", Entry),
+        ("manuscript_entries", ManuscriptEntry, "entry_id", Entry),
+        ("manuscript_people", ManuscriptPerson, "person_id", Person),
+        ("manuscript_events", ManuscriptEvent, "event_id", Event),
+    ]
+
+    def _get_orphaned_query(self, session: Session, model, fk_attr: str, parent_model):
+        """Build query for orphaned records of a specific type."""
+        fk_column = getattr(model, fk_attr)
+        return session.query(model).filter(~fk_column.in_(session.query(parent_model.id)))
 
     def check_orphaned_records(self, session: Session) -> Dict[str, int]:
         """
@@ -227,46 +242,16 @@ class HealthMonitor:
         """
         orphans = {}
 
-        # Check orphaned aliases (person deleted)
-        orphans["aliases"] = (
-            session.query(Alias)
-            .filter(~Alias.person_id.in_(session.query(Person.id)))
-            .count()
-        )
+        for name, model, fk_attr, parent_model in self._ORPHAN_CHECKS:
+            orphans[name] = self._get_orphaned_query(session, model, fk_attr, parent_model).count()
 
-        # Check orphaned references (entry deleted)
-        orphans["references"] = (
-            session.query(Reference)
-            .filter(~Reference.entry_id.in_(session.query(Entry.id)))
-            .count()
-        )
-
-        # Check orphaned poem versions (entry deleted)
+        # Special case: poem versions with entry_id that doesn't exist
         orphans["poem_versions"] = (
             session.query(PoemVersion)
             .filter(
                 PoemVersion.entry_id.isnot(None),
                 ~PoemVersion.entry_id.in_(session.query(Entry.id)),
             )
-            .count()
-        )
-
-        # Check manuscript orphans
-        orphans["manuscript_entries"] = (
-            session.query(ManuscriptEntry)
-            .filter(~ManuscriptEntry.entry_id.in_(session.query(Entry.id)))
-            .count()
-        )
-
-        orphans["manuscript_people"] = (
-            session.query(ManuscriptPerson)
-            .filter(~ManuscriptPerson.person_id.in_(session.query(Person.id)))
-            .count()
-        )
-
-        orphans["manuscript_events"] = (
-            session.query(ManuscriptEvent)
-            .filter(~ManuscriptEvent.event_id.in_(session.query(Event.id)))
             .count()
         )
 
@@ -444,8 +429,6 @@ class HealthMonitor:
 
         return file_checks
 
-    @handle_db_errors
-    @log_database_operation("optimize_database")
     def optimize_database(self, session: Session) -> Dict[str, Any]:
         """
         Optimize database by running VACUUM and ANALYZE.
@@ -462,48 +445,46 @@ class HealthMonitor:
         Note:
             VACUUM requires exclusive access and can take time on large databases.
         """
-        from sqlalchemy import text
+        with DatabaseOperation(self.logger, "optimize_database"):
+            from sqlalchemy import text
 
-        results = {"vacuum_completed": False, "analyze_completed": False, "errors": []}
+            results = {"vacuum_completed": False, "analyze_completed": False, "errors": []}
 
-        try:
-            # Get size before optimization
-            db_size_query = text(
-                "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"
-            )
-            size_before = session.execute(db_size_query).scalar()
-            results["size_before_bytes"] = size_before
+            try:
+                # Get size before optimization
+                db_size_query = text(
+                    "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"
+                )
+                size_before = session.execute(db_size_query).scalar()
+                results["size_before_bytes"] = size_before
 
-            # Run VACUUM (must be outside transaction)
-            session.commit()  # Commit any pending transaction
-            session.execute(text("VACUUM"))
-            results["vacuum_completed"] = True
+                # Run VACUUM (must be outside transaction)
+                session.commit()  # Commit any pending transaction
+                session.execute(text("VACUUM"))
+                results["vacuum_completed"] = True
 
-            if self.logger:
-                self.logger.log_operation(
+                safe_logger(self.logger).log_operation(
                     "vacuum_completed", {"size_before": size_before}
                 )
 
-            # Run ANALYZE
-            session.execute(text("ANALYZE"))
-            results["analyze_completed"] = True
+                # Run ANALYZE
+                session.execute(text("ANALYZE"))
+                results["analyze_completed"] = True
 
-            # Get size after optimization
-            size_after = session.execute(db_size_query).scalar()
-            if size_after:
-                results["size_after_bytes"] = size_after
-                results["space_reclaimed_bytes"] = size_before - size_after
+                # Get size after optimization
+                size_after = session.execute(db_size_query).scalar()
+                if size_after:
+                    results["size_after_bytes"] = size_after
+                    results["space_reclaimed_bytes"] = size_before - size_after
 
-            if self.logger:
-                self.logger.log_operation("optimize_completed", results)
+                safe_logger(self.logger).log_operation("optimize_completed", results)
 
-        except Exception as e:
-            results["errors"].append(str(e))
-            if self.logger:
-                self.logger.log_error(e, {"operation": "optimize_database"})
-            raise HealthCheckError(f"Database optimization failed: {e}")
+            except Exception as e:
+                results["errors"].append(str(e))
+                safe_logger(self.logger).log_error(e, {"operation": "optimize_database"})
+                raise HealthCheckError(f"Database optimization failed: {e}")
 
-        return results
+            return results
 
     def _get_performance_metrics(self, session: Session) -> Dict[str, Any]:
         """
@@ -529,7 +510,7 @@ class HealthMonitor:
             "reference_sources": session.query(ReferenceSource).count(),
             "poems": session.query(Poem).count(),
             "poem_versions": session.query(PoemVersion).count(),
-            "mentioned_dates": session.query(MentionedDate).count(),
+            "mentioned_dates": session.query(Moment).count(),
         }
 
         # Recent activity
@@ -549,9 +530,44 @@ class HealthMonitor:
 
         return metrics
 
+    # Health evaluation rules: (metric_path, key, issue_msg, recommendation, is_warning)
+    _HEALTH_RULES = [
+        # Integrity checks
+        ("integrity", "duplicate_file_paths", "Duplicate file paths detected",
+         "Review and resolve duplicate file path entries", True),
+        ("integrity", "future_dated_entries", "Entries with future dates detected",
+         "Review entries with future dates for data entry errors", False),
+        ("integrity", "entries_without_file_path", "Entries without file paths detected",
+         "Investigate entries missing file_path field", True),
+        # Reference integrity
+        ("reference_integrity", "references_with_invalid_source", "References with invalid source IDs detected",
+         "Clean up references with invalid source references", True),
+        ("reference_integrity", "references_without_content", "References without content detected",
+         "Review and fix references with empty content", False),
+        # Poem integrity
+        ("poem_integrity", "poems_without_versions", "Poems without any versions detected",
+         "Remove poems without versions or add missing versions", False),
+        ("poem_integrity", "orphaned_poem_versions", "Orphaned poem versions detected",
+         "Clean up orphaned poem versions", True),
+        ("poem_integrity", "poem_versions_without_content", "Poem versions without content detected",
+         "Review and fix poem versions with empty content", False),
+        # Manuscript integrity
+        ("manuscript_integrity", "orphaned_themes", "Orphaned themes detected",
+         "Remove unused themes", False),
+        ("manuscript_integrity", "orphaned_arcs", "Orphaned arcs detected",
+         "Remove unused arcs", False),
+        # Mentioned date integrity
+        ("mentioned_date_integrity", "orphaned_mentioned_dates", "Orphaned mentioned dates detected",
+         "Remove unused mentioned dates", False),
+        ("mentioned_date_integrity", "duplicate_date_contexts", "Duplicate date+context combinations detected",
+         "Consolidate duplicate mentioned dates", False),
+        ("mentioned_date_integrity", "far_future_mentioned_dates", "Mentioned dates far in future detected",
+         "Review mentioned dates for data entry errors", False),
+    ]
+
     def _evaluate_health_status(self, health: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Evaluate overall health status based on metrics.
+        Evaluate overall health status based on metrics using data-driven rules.
 
         Args:
             health: Current health dictionary
@@ -562,118 +578,31 @@ class HealthMonitor:
         # Check orphaned records
         orphans = health["metrics"].get("orphaned_records", {})
         total_orphans = sum(orphans.values())
-
         if total_orphans > 0:
             health["issues"].append(f"{total_orphans} orphaned records found")
-            health["recommendations"].append(
-                "Run cleanup_orphaned_records() to remove orphans"
-            )
+            health["recommendations"].append("Run cleanup_orphaned_records() to remove orphans")
 
-        # Check integrity
-        integrity = health["metrics"].get("integrity", {})
-        if integrity.get("duplicate_file_paths", 0) > 0:
-            health["issues"].append("Duplicate file paths detected")
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Review and resolve duplicate file path entries"
-            )
+        # Apply data-driven health rules
+        for metric_path, key, issue_msg, recommendation, is_warning in self._HEALTH_RULES:
+            metric_data = health["metrics"].get(metric_path, {})
+            if metric_data.get(key, 0) > 0:
+                health["issues"].append(issue_msg)
+                health["recommendations"].append(recommendation)
+                if is_warning:
+                    health["status"] = "warning"
 
-        if integrity.get("future_dated_entries", 0) > 0:
-            health["issues"].append("Entries with future dates detected")
-            health["recommendations"].append(
-                "Review entries with future dates for data entry errors"
-            )
-
-        if integrity.get("entries_without_file_path", 0) > 0:
-            health["issues"].append("Entries without file paths detected")
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Investigate entries missing file_path field"
-            )
-
-        # Check reference integrity
-        ref_integrity = health["metrics"].get("reference_integrity", {})
-        if ref_integrity.get("references_with_invalid_source", 0) > 0:
-            health["issues"].append("References with invalid source IDs detected")
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Clean up references with invalid source references"
-            )
-
-        if ref_integrity.get("references_without_content", 0) > 0:
-            health["issues"].append("References without content detected")
-            health["recommendations"].append(
-                "Review and fix references with empty content"
-            )
-
-        # Check poem integrity
-        poem_integrity = health["metrics"].get("poem_integrity", {})
-        if poem_integrity.get("poems_without_versions", 0) > 0:
-            health["issues"].append("Poems without any versions detected")
-            health["recommendations"].append(
-                "Remove poems without versions or add missing versions"
-            )
-
-        if poem_integrity.get("orphaned_poem_versions", 0) > 0:
-            health["issues"].append("Orphaned poem versions detected")
-            health["status"] = "warning"
-            health["recommendations"].append("Clean up orphaned poem versions")
-
-        if poem_integrity.get("poem_versions_without_content", 0) > 0:
-            health["issues"].append("Poem versions without content detected")
-            health["recommendations"].append(
-                "Review and fix poem versions with empty content"
-            )
-
-        # Check manuscript integrity
-        manuscript_integrity = health["metrics"].get("manuscript_integrity", {})
-        if manuscript_integrity.get("orphaned_themes", 0) > 0:
-            health["issues"].append("Orphaned themes detected")
-            health["recommendations"].append("Remove unused themes")
-
-        if manuscript_integrity.get("orphaned_arcs", 0) > 0:
-            health["issues"].append("Orphaned arcs detected")
-            health["recommendations"].append("Remove unused arcs")
-
-        # Check mentioned date integrity
-        date_integrity = health["metrics"].get("mentioned_date_integrity", {})
-        if date_integrity.get("orphaned_mentioned_dates", 0) > 0:
-            health["issues"].append("Orphaned mentioned dates detected")
-            health["recommendations"].append("Remove unused mentioned dates")
-
-        if date_integrity.get("duplicate_date_contexts", 0) > 0:
-            health["issues"].append("Duplicate date+context combinations detected")
-            health["recommendations"].append("Consolidate duplicate mentioned dates")
-
-        if date_integrity.get("far_future_mentioned_dates", 0) > 0:
-            health["issues"].append("Mentioned dates far in future detected")
-            health["recommendations"].append(
-                "Review mentioned dates for data entry errors"
-            )
-
-        # Check file references
+        # Check file references (special case with dynamic message)
         file_refs = health["metrics"].get("file_references", {})
         if file_refs.get("total_missing", 0) > 0:
-            health["issues"].append(
-                f"{file_refs['total_missing']} entries reference missing files"
-            )
+            health["issues"].append(f"{file_refs['total_missing']} entries reference missing files")
             health["status"] = "warning"
 
-        # Set final status
-        if health["issues"] and health["status"] == "healthy":
-            health["status"] = "warning"
-            health["recommendations"].append(
-                "Verify file paths and restore missing files or update entries"
-            )
-
-        # Set final status
+        # Set final status if any issues found
         if health["issues"] and health["status"] == "healthy":
             health["status"] = "warning"
 
         return health
 
-    @handle_db_errors
-    @log_database_operation("cleanup_orphaned_records")
     def cleanup_orphaned_records(
         self, session: Session, dry_run: bool = True
     ) -> Dict[str, int | bool]:
@@ -687,72 +616,37 @@ class HealthMonitor:
         Returns:
             Dictionary with cleanup results
         """
-        results: Dict[str, bool | int] = {"dry_run": dry_run}
+        with DatabaseOperation(self.logger, "cleanup_orphaned_records"):
+            results: Dict[str, bool | int] = {"dry_run": dry_run}
 
-        # Find and optionally delete orphaned aliases
-        orphaned_aliases = (
-            session.query(Alias)
-            .filter(~Alias.person_id.in_(session.query(Person.id)))
-            .all()
-        )
+            # Clean up standard orphan types using config
+            for name, model, fk_attr, parent_model in self._ORPHAN_CHECKS:
+                orphaned = self._get_orphaned_query(session, model, fk_attr, parent_model).all()
+                results[f"orphaned_{name}"] = len(orphaned)
+                if not dry_run and orphaned:
+                    for record in orphaned:
+                        session.delete(record)
 
-        results["orphaned_aliases"] = len(orphaned_aliases)
-
-        if not dry_run and orphaned_aliases:
-            for alias in orphaned_aliases:
-                session.delete(alias)
-
-        # Find and optionally delete orphaned references
-        orphaned_refs = (
-            session.query(Reference)
-            .filter(~Reference.entry_id.in_(session.query(Entry.id)))
-            .all()
-        )
-
-        results["orphaned_references"] = len(orphaned_refs)
-
-        if not dry_run and orphaned_refs:
-            for ref in orphaned_refs:
-                session.delete(ref)
-
-        # Find and optionally delete orphaned poem versions
-        orphaned_poems = (
-            session.query(PoemVersion)
-            .filter(
-                PoemVersion.entry_id.isnot(None),
-                ~PoemVersion.entry_id.in_(session.query(Entry.id)),
+            # Special case: poem versions with entry_id that doesn't exist
+            orphaned_poems = (
+                session.query(PoemVersion)
+                .filter(
+                    PoemVersion.entry_id.isnot(None),
+                    ~PoemVersion.entry_id.in_(session.query(Entry.id)),
+                )
+                .all()
             )
-            .all()
-        )
+            results["orphaned_poem_versions"] = len(orphaned_poems)
+            if not dry_run and orphaned_poems:
+                for poem in orphaned_poems:
+                    session.delete(poem)
 
-        results["orphaned_poem_versions"] = len(orphaned_poems)
+            if not dry_run:
+                session.flush()
+                safe_logger(self.logger).log_operation("orphaned_records_cleaned", results)
 
-        if not dry_run and orphaned_poems:
-            for poem in orphaned_poems:
-                session.delete(poem)
+            return results
 
-        # Manuscript orphans
-        orphaned_manuscript_entries = (
-            session.query(ManuscriptEntry)
-            .filter(~ManuscriptEntry.entry_id.in_(session.query(Entry.id)))
-            .all()
-        )
-
-        results["orphaned_manuscript_entries"] = len(orphaned_manuscript_entries)
-
-        if not dry_run and orphaned_manuscript_entries:
-            for ms in orphaned_manuscript_entries:
-                session.delete(ms)
-
-        if not dry_run:
-            session.flush()
-            if self.logger:
-                self.logger.log_operation("orphaned_records_cleaned", results)
-
-        return results
-
-    @handle_db_errors
-    @log_database_operation("bulk_cleanup_unused")
     def bulk_cleanup_unused(
         self, session: Session, cleanup_config: Dict[str, tuple]
     ) -> Dict[str, int]:
@@ -766,28 +660,28 @@ class HealthMonitor:
         Returns:
             Dictionary with cleanup results
         """
-        results = {}
+        with DatabaseOperation(self.logger, "bulk_cleanup_unused"):
+            results = {}
 
-        for table_name, (model_class, relationship_attr) in cleanup_config.items():
-            # Use bulk delete for better performance
-            subquery = (
-                session.query(model_class.id)
-                .filter(~getattr(model_class, relationship_attr).any())
-                .subquery()
-            )
+            for table_name, (model_class, relationship_attr) in cleanup_config.items():
+                # Use bulk delete for better performance
+                subquery = (
+                    session.query(model_class.id)
+                    .filter(~getattr(model_class, relationship_attr).any())
+                    .subquery()
+                )
 
-            deleted_count = (
-                session.query(model_class)
-                .filter(model_class.id.in_(subquery.select()))
-                .delete(synchronize_session=False)
-            )
+                deleted_count = (
+                    session.query(model_class)
+                    .filter(model_class.id.in_(subquery.select()))
+                    .delete(synchronize_session=False)
+                )
 
-            results[table_name] = deleted_count
-            if self.logger:
-                self.logger.log_operation(
+                results[table_name] = deleted_count
+                safe_logger(self.logger).log_operation(
                     "cleanup_table",
                     {"table": table_name, "deleted_count": deleted_count},
                 )
 
-        session.flush()
-        return results
+            session.flush()
+            return results

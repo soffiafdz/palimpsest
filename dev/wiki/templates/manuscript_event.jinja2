@@ -1,0 +1,74 @@
+{#
+  manuscript_event.jinja2
+  -----------------------
+  Wiki template for ManuscriptEvent entity.
+  Displays event info, arc connection, entries, and adaptation notes.
+#}
+# Palimpsest — Manuscript Event
+
+## {{ entity.display_name }}
+
+### Event Info
+- **Original Event:** {{ entity_link(entity.event, 'events', wiki_dir, output_path) }}
+- **Entries:** {{ entity.entry_count }}
+{% if entity.start_date and entity.end_date %}
+- **Date Range:** {{ entity.start_date.isoformat() }} to {{ entity.end_date.isoformat() }}
+- **Duration:** {{ entity.duration_days }} days
+{% elif entity.start_date %}
+- **Date:** {{ entity.start_date.isoformat() }}
+{% endif %}
+
+### Story Arc
+{% if entity.arc %}
+- **Arc:** {{ entity_link(entity.arc, 'arcs', wiki_dir, output_path) }}
+{% else %}
+- [Assign this event to a story arc]
+{% endif %}
+
+### Entries
+{% if entity.event and entity.event.entries %}
+{% set entries_by_year = {} %}
+{% for entry in entity.event.entries %}
+{% set year = entry.date.year %}
+{% if year not in entries_by_year %}
+{% set _ = entries_by_year.update({year: []}) %}
+{% endif %}
+{% set _ = entries_by_year[year].append(entry) %}
+{% endfor %}
+{% for year in entries_by_year.keys()|sort(reverse=true) %}
+{% set year_entries = entries_by_year[year] %}
+#### {{ year }} ({{ year_entries|length }} entries)
+
+{% for entry in year_entries|sort(attribute='date', reverse=true) %}
+{% if entry.manuscript %}
+- {{ entity_link(entry, 'entries', wiki_dir, output_path) }} [{{ entry.manuscript.status.value }}]
+{% else %}
+- {{ entity_link(entry, 'entries', wiki_dir, output_path) }}
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+{% else %}
+- No entries in this event
+{% endif %}
+
+### Characters Involved
+{% if entity.people_involved %}
+{% for person_name in entity.people_involved|sort %}
+- {{ person_name }}
+{% endfor %}
+{% else %}
+-
+{% endif %}
+
+### Locations
+{% if entity.event and entity.event.moment_locations %}
+{% for location in entity.event.moment_locations|sort(attribute='name') %}
+- {{ entity_link(location, 'locations', wiki_dir, output_path) }}
+{% endfor %}
+{% else %}
+-
+{% endif %}
+
+### Adaptation Notes
+{{ entity.notes or '[Add notes about how this event is adapted for the manuscript]' }}

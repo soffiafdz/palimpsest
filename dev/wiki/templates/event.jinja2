@@ -1,0 +1,91 @@
+{#
+  event.jinja2
+  ------------
+  Wiki template for Event entity.
+  Displays event info, entries timeline, people involved, and locations.
+#}
+# Palimpsest — Event
+
+## {{ entity.display_name }}
+
+### Event Info
+- **Event ID:** {{ entity.event }}
+{% if entity.title %}
+- **Title:** {{ entity.title }}
+{% endif %}
+- **Total Entries:** {{ entity.entries|length }}
+{% if entity.start_date and entity.end_date %}
+- **Date Range:** {{ entity.start_date.isoformat() }} to {{ entity.end_date.isoformat() }}
+- **Duration:** {{ entity.duration_days }} days
+{% endif %}
+{% if entity.manuscript %}
+{% if entity.manuscript.status %}
+- **Manuscript Status:** {{ entity.manuscript.status.value }}
+{% endif %}
+{% if entity.manuscript.narrative_arc %}
+- **Narrative Arc:** {{ entity.manuscript.narrative_arc }}
+{% endif %}
+{% if entity.manuscript.themes %}
+- **Themes:**
+{% for theme in entity.manuscript.themes|sort(attribute='name') %}
+  - {{ entity_link(theme, 'themes', wiki_dir, output_path) }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+### Description
+{% if entity.description %}
+{{ entity.description }}
+{% endif %}
+
+### Entries
+{% if entity.entries %}
+{% set entries_by_year = {} %}
+{% for entry in entity.chronological_entries %}
+{% set year = entry.date.year %}
+{% if year not in entries_by_year %}
+{% set _ = entries_by_year.update({year: []}) %}
+{% endif %}
+{% set _ = entries_by_year[year].append(entry) %}
+{% endfor %}
+{% for year in entries_by_year.keys()|sort(reverse=true) %}
+{% set year_entries = entries_by_year[year] %}
+#### {{ year }} ({{ year_entries|length }} entries)
+
+{% for entry in year_entries|sort(attribute='date', reverse=true) %}
+- {{ entity_link(entry, 'entries', wiki_dir, output_path) }} — {{ entry.word_count or 'no content' }} words
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+
+### People Involved
+{% if entity.all_people %}
+{% set people_counts = {} %}
+{% for person in entity.all_people %}
+{% set count = 0 %}
+{% for entry in entity.entries %}
+{% if person in entry.people %}
+{% set count = count + 1 %}
+{% endif %}
+{% endfor %}
+{% set _ = people_counts.update({person.display_name: {'person': person, 'count': count}}) %}
+{% endfor %}
+{% set sorted_people = people_counts.values()|sort(attribute='count', reverse=true)|list %}
+{% for data in sorted_people[:20] %}
+- {{ entity_link(data.person, 'people', wiki_dir, output_path) }} ({{ data.count }} entr{{ 'ies' if data.count != 1 else 'y' }})
+{% endfor %}
+{% if sorted_people|length > 20 %}
+- ... and {{ sorted_people|length - 20 }} more
+{% endif %}
+{% endif %}
+
+### Locations
+{% if entity.moment_locations %}
+{% for location in entity.moment_locations|sort(attribute='name') %}
+- {{ entity_link(location, 'locations', wiki_dir, output_path) }}
+{% endfor %}
+{% endif %}
+
+### Notes
+{{ entity.notes or '[Add notes about this event for manuscript use]' }}

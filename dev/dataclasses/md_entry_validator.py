@@ -1,15 +1,31 @@
+#!/usr/bin/env python3
 """
-MdEntry Validator
+md_entry_validator.py
+---------------------
+Validation functions for MdEntry objects and their metadata.
 
-Provides validation functions for MdEntry objects and their metadata.
-This handles structural validation of the dataclass itself, not the
-frontmatter YAML (which is handled by dev/validators/md.py).
+Provides structural validation for MdEntry dataclasses, ensuring required
+fields are present and metadata values are valid. This complements
+frontmatter YAML validation (handled by dev/validators/md.py).
+
+Classes:
+    MdEntryValidator: Static methods for validating MdEntry structures
+
+Usage:
+    from dev.dataclasses.md_entry_validator import MdEntryValidator
+
+    # Validate entry data
+    issues = MdEntryValidator.validate_entry(entry_date, body, metadata)
+    if issues:
+        print("Validation errors:", issues)
 """
-
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from typing import List, Dict, Any, TYPE_CHECKING
 
+# --- Local imports ---
 from dev.core.validators import DataValidator
 
 if TYPE_CHECKING:

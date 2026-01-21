@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Database Models Package
 ------------------------
@@ -10,45 +11,45 @@ This package provides a modular organization of database models:
 - enums: Enumeration types
 - core: Entry model and schema info
 - entities: Person, Alias, Tag
-- geography: MentionedDate, City, Location
+- geography: Moment, City, Location
 - creative: Poem, Reference, Event
 - sync: Tombstone, SyncState, EntitySnapshot
 
-For backward compatibility, all models are re-exported from the root package.
+Note: MentionedDate was renamed to Moment (P25 schema enhancement).
 
 Usage:
-    from dev.database.models import Entry, Person, Tag
-    # All imports work as before
+    from dev.database.models import Entry, Person, Tag, Moment
 """
 # Base classes
 from .base import Base, SoftDeleteMixin
 
 # Enumerations
-from .enums import ReferenceMode, ReferenceType, RelationType
+from .enums import MomentType, ReferenceMode, ReferenceType, RelationType
 
 # Association tables (for direct usage if needed)
 from .associations import (
     entry_aliases,
     entry_cities,
-    entry_dates,
     entry_events,
     entry_locations,
+    entry_moments,
     entry_people,
     entry_related,
     entry_tags,
     event_people,
-    location_dates,
-    people_dates,
+    moment_events,
+    moment_locations,
+    moment_people,
 )
 
 # Core models
 from .core import Entry, SchemaInfo
 
 # Geography models
-from .geography import City, Location, MentionedDate
+from .geography import City, Location, Moment
 
 # Entity models
-from .entities import Alias, Person, Tag
+from .entities import Alias, Person, Tag, TagCategory
 
 # Creative works
 from .creative import Event, Poem, PoemVersion, Reference, ReferenceSource
@@ -61,26 +62,28 @@ __all__ = [
     "Base",
     "SoftDeleteMixin",
     # Enums
+    "MomentType",
     "ReferenceMode",
     "ReferenceType",
     "RelationType",
     # Association tables
     "entry_aliases",
     "entry_cities",
-    "entry_dates",
     "entry_events",
     "entry_locations",
+    "entry_moments",
     "entry_people",
     "entry_related",
     "entry_tags",
     "event_people",
-    "location_dates",
-    "people_dates",
+    "moment_events",
+    "moment_locations",
+    "moment_people",
     # Core
     "SchemaInfo",
     "Entry",
     # Geography
-    "MentionedDate",
+    "Moment",
     "City",
     "Location",
     # People
@@ -94,6 +97,7 @@ __all__ = [
     "PoemVersion",
     # Tags
     "Tag",
+    "TagCategory",
     # Sync
     "AssociationTombstone",
     "SyncState",

@@ -21,8 +21,10 @@ Key Design:
 - Database-mappable: every field maps to ORM models
 - Lossless conversion: round-trip preserves all data
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import logging
 import yaml
 from dataclasses import dataclass, field
@@ -30,12 +32,11 @@ from datetime import date
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union, TypedDict
 
+# --- Local imports ---
 from dev.core.exceptions import EntryParseError, EntryValidationError
 from dev.core.validators import DataValidator
 from dev.database.models import Entry
 from dev.utils import md, parsers
-
-# Import new parser modules
 from dev.dataclasses.md_entry_validator import MdEntryValidator
 from dev.dataclasses.parsers import DbToYamlExporter, YamlToDbParser
 
@@ -677,7 +678,8 @@ class MdEntry:
                     parts.append(f"  - date: {date_str}")
 
                     if locations:
-                        parts.append(f"    locations: {md.yaml_list(locations)}")
+                        # hyphenated=True preserves existing hyphens with underscores
+                        parts.append(f"    locations: {md.yaml_list(locations, hyphenated=True)}")
 
                     if people:
                         parts.append("    people:")

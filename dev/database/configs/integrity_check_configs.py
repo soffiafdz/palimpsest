@@ -20,9 +20,9 @@ from ..models import (
     ReferenceSource,
     Poem,
     PoemVersion,
-    MentionedDate,
+    Moment,
 )
-from ..models.associations import entry_dates
+from ..models.associations import entry_moments
 from ..models_manuscript import (
     ManuscriptEntry,
     ManuscriptPerson,
@@ -224,13 +224,13 @@ MANUSCRIPT_INTEGRITY_CHECKS = IntegrityCheckGroup(
 # ========================================
 
 def _count_orphaned_mentioned_dates(session: Session) -> int:
-    """Count mentioned dates without parent entry."""
-    # Query dates that don't appear in the entry_dates association table
+    """Count moments without parent entry."""
+    # Query moments that don't appear in the entry_moments association table
     return (
-        session.query(MentionedDate)
+        session.query(Moment)
         .filter(
-            ~MentionedDate.id.in_(
-                select(entry_dates.c.date_id)
+            ~Moment.id.in_(
+                select(entry_moments.c.moment_id)
             )
         )
         .count()
@@ -240,8 +240,8 @@ def _count_orphaned_mentioned_dates(session: Session) -> int:
 def _count_mentioned_dates_no_date(session: Session) -> int:
     """Count mentioned dates without actual date."""
     return (
-        session.query(MentionedDate)
-        .filter(MentionedDate.date.is_(None))
+        session.query(Moment)
+        .filter(Moment.date.is_(None))
         .count()
     )
 
@@ -249,8 +249,8 @@ def _count_mentioned_dates_no_date(session: Session) -> int:
 def _count_mentioned_dates_no_context(session: Session) -> int:
     """Count mentioned dates without context."""
     return (
-        session.query(MentionedDate)
-        .filter((MentionedDate.context.is_(None)) | (MentionedDate.context == ""))
+        session.query(Moment)
+        .filter((Moment.context.is_(None)) | (Moment.context == ""))
         .count()
     )
 

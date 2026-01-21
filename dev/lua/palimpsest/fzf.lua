@@ -15,8 +15,9 @@ function M.browse(entity_type)
 
 	-- Define search paths for each entity type
 	local entity_paths = {
-		all = wiki_dir,
+		all = { journal_dir, wiki_dir },
 		journal = journal_dir,
+		wiki = wiki_dir,
 		people = wiki_dir .. "/people",
 		entries = wiki_dir .. "/entries",
 		locations = wiki_dir .. "/locations",
@@ -26,6 +27,12 @@ function M.browse(entity_type)
 		tags = wiki_dir .. "/tags",
 		poems = wiki_dir .. "/poems",
 		references = wiki_dir .. "/references",
+		-- Manuscript paths
+		manuscript = wiki_dir .. "/manuscript",
+		["manuscript-entries"] = wiki_dir .. "/manuscript/entries",
+		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
+		["manuscript-arcs"] = wiki_dir .. "/manuscript/arcs",
+		["manuscript-events"] = wiki_dir .. "/manuscript/events",
 	}
 
 	local search_path = entity_paths[entity_type] or wiki_dir
@@ -65,7 +72,6 @@ function M.search(entity_type)
 
 	-- Define search paths for each entity type
 	local entity_paths = {
-		all = { wiki_dir, journal_dir },
 		wiki = wiki_dir,
 		journal = journal_dir,
 		people = wiki_dir .. "/people",
@@ -77,57 +83,36 @@ function M.search(entity_type)
 		tags = wiki_dir .. "/tags",
 		poems = wiki_dir .. "/poems",
 		references = wiki_dir .. "/references",
+		-- Manuscript paths
+		manuscript = wiki_dir .. "/manuscript",
+		["manuscript-entries"] = wiki_dir .. "/manuscript/entries",
+		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
+		["manuscript-arcs"] = wiki_dir .. "/manuscript/arcs",
+		["manuscript-events"] = wiki_dir .. "/manuscript/events",
 	}
 
-	local search_paths = entity_paths[entity_type]
+	local search_path = entity_paths[entity_type]
 
-	-- Handle both single path and multiple paths
-	if type(search_paths) == "string" then
-		search_paths = { search_paths }
-	elseif not search_paths then
-		search_paths = { wiki_dir }
+	if not search_path then
+		vim.notify("Invalid search type: " .. (entity_type or "nil"), vim.log.levels.ERROR)
+		return
 	end
 
-	-- Verify all paths exist
-	for _, path in ipairs(search_paths) do
-		if vim.fn.isdirectory(path) == 0 then
-			vim.notify("Directory not found: " .. path, vim.log.levels.WARN)
-		end
+	-- Verify path exists
+	if vim.fn.isdirectory(search_path) == 0 then
+		vim.notify("Directory not found: " .. search_path, vim.log.levels.WARN)
+		return
 	end
 
-	-- For multiple paths, use glob pattern to search both
-	if #search_paths > 1 then
-		-- Create a glob pattern that matches both directories
-		local search_pattern = ""
-		for i, path in ipairs(search_paths) do
-			if i > 1 then
-				search_pattern = search_pattern .. " "
-			end
-			search_pattern = search_pattern .. path
-		end
-
-		fzf.live_grep({
-			prompt = "Search All Content: " .. (entity_type or "all") .. "> ",
-			cmd = "rg --column --line-number --no-heading --color=always --smart-case -- ",
-			-- fzf-lua will search in all specified directories
-			cwd = search_paths[1], -- Use first as base
-			rg_opts = "--hidden --follow -g '!.git' -- " .. table.concat(search_paths, " "),
-			winopts = {
-				height = 0.85,
-				width = 0.80,
-			},
-		})
-	else
-		-- Single path, simpler
-		fzf.live_grep({
-			prompt = "Search: " .. (entity_type or "all") .. "> ",
-			cwd = search_paths[1],
-			winopts = {
-				height = 0.85,
-				width = 0.80,
-			},
-		})
-	end
+	-- Use live_grep with single directory
+	fzf.live_grep({
+		prompt = "Search " .. entity_type .. "> ",
+		cwd = search_path,
+		winopts = {
+			height = 0.85,
+			width = 0.80,
+		},
+	})
 end
 
 -- Quick access to specific wiki pages
@@ -154,6 +139,12 @@ function M.quick_access()
 		{ name = "Tags Index", path = wiki_dir .. "/tags.md" },
 		{ name = "Poems Index", path = wiki_dir .. "/poems.md" },
 		{ name = "References Index", path = wiki_dir .. "/references.md" },
+		-- Manuscript pages
+		{ name = "Manuscript Homepage", path = wiki_dir .. "/manuscript/index.md" },
+		{ name = "Manuscript Entries", path = wiki_dir .. "/manuscript/entries/entries.md" },
+		{ name = "Manuscript Characters", path = wiki_dir .. "/manuscript/characters/characters.md" },
+		{ name = "Manuscript Arcs", path = wiki_dir .. "/manuscript/arcs/arcs.md" },
+		{ name = "Manuscript Events", path = wiki_dir .. "/manuscript/events/events.md" },
 	}
 
 	-- Filter to only existing pages and format for fzf

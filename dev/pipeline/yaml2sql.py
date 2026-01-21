@@ -65,28 +65,15 @@ Processing Modes:
         - Optional deletion of missing entries
         - Comprehensive validation
 
-CLI Commands:
-    update <file>:
-        Process single Markdown file
-        Options: --force to update even if unchanged
+Programmatic API:
+    from dev.pipeline.yaml2sql import process_entry_file, process_directory
+    from dev.database.manager import PalimpsestDB
 
-    batch <dir>:
-        Process all files in directory
-        Options: --pattern for file matching, --force
+    # Process single file
+    stats = process_entry_file(file_path, db, force_update=False, logger=logger)
 
-    sync <dir>:
-        Synchronize database with directory
-        Options: --delete-missing to remove orphaned entries
-
-Examples:
-    # Update single entry
-    yaml2sql update journal/md/2024/2024-01-15.md
-
-    # Process year directory
-    yaml2sql batch journal/md/2024/ --force
-
-    # Full sync with cleanup
-    yaml2sql sync journal/md/ --delete-missing
+    # Process directory
+    stats = process_directory(input_dir, db, force_update=False, logger=logger)
 
 Error Handling:
     - Validation errors logged with context
@@ -103,7 +90,6 @@ Notes:
 """
 from __future__ import annotations
 
-import click
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -113,9 +99,7 @@ from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
 from dev.database.sync_state_manager import SyncStateManager
 from dev.core.exceptions import Yaml2SqlError
-from dev.core.paths import LOG_DIR, DB_PATH, ALEMBIC_DIR, BACKUP_DIR
-from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
-from dev.core.cli import setup_logger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.utils import fs
 import socket
@@ -208,23 +192,20 @@ def process_entry_file(
         Yaml2SqlError: If processing fails and raise_on_error=True
     """
     try:
-        if logger:
-            logger.log_debug(f"Processing {file_path.name}")
+        safe_logger(logger).log_debug(f"Processing {file_path.name}")
 
         # Parse markdown entry
         try:
             md_entry: MdEntry = MdEntry.from_file(file_path, verbose=False)
         except Exception as e:
-            if logger:
-                logger.log_error(e, {"operation": "parse_file", "file": str(file_path)})
+            safe_logger(logger).log_error(e, {"operation": "parse_file", "file": str(file_path)})
             raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
 
         # Validate entry
         validation_errors: List[str] = md_entry.validate()
         if validation_errors:
             error_msg: str = f"Validation failed: {', '.join(validation_errors)}"
-            if logger:
-                logger.log_warning(error_msg, {"file": str(file_path)})
+            safe_logger(logger).log_warning(error_msg, {"file": str(file_path)})
             raise Yaml2SqlError(error_msg)
 
         # Convert to database format
@@ -246,19 +227,17 @@ def process_entry_file(
             if existing:
                 # Check for conflicts before updating
                 if sync_mgr.check_conflict("Entry", existing.id, file_hash):
-                    if logger:
-                        logger.log_warning(
-                            f"Conflict detected for entry {md_entry.date}",
-                            {
-                                "file": str(file_path),
-                                "action": "proceeding_with_update"
-                            }
-                        )
+                    safe_logger(logger).log_warning(
+                        f"Conflict detected for entry {md_entry.date}",
+                        {
+                            "file": str(file_path),
+                            "action": "proceeding_with_update"
+                        }
+                    )
                     # Continue with update - conflict logged for user review
 
                 if fs.should_skip_file(file_path, existing.file_hash, force_update):
-                    if logger:
-                        logger.log_debug(f"Entry {md_entry.date} unchanged, skipping")
+                    safe_logger(logger).log_debug(f"Entry {md_entry.date} unchanged, skipping")
                     return "skipped"
 
                 # Update existing entry
@@ -280,17 +259,15 @@ def process_entry_file(
                         machine_id=machine_id
                     )
 
-                    if logger:
-                        logger.log_operation(
-                            "entry_updated",
-                            {"date": str(md_entry.date), "file": str(file_path)},
-                        )
+                    safe_logger(logger).log_operation(
+                        "entry_updated",
+                        {"date": str(md_entry.date), "file": str(file_path)},
+                    )
                     return "updated"
                 except Exception as e:
-                    if logger:
-                        logger.log_error(
-                            e, {"operation": "update_entry", "date": str(md_entry.date)}
-                        )
+                    safe_logger(logger).log_error(
+                        e, {"operation": "update_entry", "date": str(md_entry.date)}
+                    )
                     raise Yaml2SqlError(f"Failed to update entry: {e}") from e
             else:
                 # Create new entry
@@ -311,21 +288,18 @@ def process_entry_file(
                         machine_id=machine_id
                     )
 
-                    if logger:
-                        logger.log_operation(
-                            "entry_created",
-                            {"date": str(md_entry.date), "file": str(file_path)},
-                        )
+                    safe_logger(logger).log_operation(
+                        "entry_created",
+                        {"date": str(md_entry.date), "file": str(file_path)},
+                    )
                     return "created"
                 except Exception as e:
-                    if logger:
-                        logger.log_error(
-                            e, {"operation": "create_entry", "date": str(md_entry.date)}
-                        )
+                    safe_logger(logger).log_error(
+                        e, {"operation": "create_entry", "date": str(md_entry.date)}
+                    )
                     raise Yaml2SqlError(f"Failed to create entry: {e}") from e
     except Exception as e:
-        if logger:
-            logger.log_error(e, {"operation": "parse_file", "file": str(file_path)})
+        safe_logger(logger).log_error(e, {"operation": "parse_file", "file": str(file_path)})
 
         if raise_on_error:
             raise Yaml2SqlError(f"Failed to parse {file_path}: {e}") from e
@@ -362,14 +336,12 @@ def process_directory(
     md_files: List[Path] = fs.find_markdown_files(input_dir, pattern)
 
     if not md_files:
-        if logger:
-            logger.log_info(f"No .md files found in {input_dir}")
+        safe_logger(logger).log_info(f"No .md files found in {input_dir}")
         return stats
 
-    if logger:
-        logger.log_operation(
-            "batch_start", {"input": str(input_dir), "files_found": len(md_files)}
-        )
+    safe_logger(logger).log_operation(
+        "batch_start", {"input": str(input_dir), "files_found": len(md_files)}
+    )
 
     # Process each file
     for md_file in md_files:
@@ -393,11 +365,9 @@ def process_directory(
 
         except Yaml2SqlError as e:
             stats.errors += 1
-            if logger:
-                logger.log_error(e, {"operation": "process_file", "file": str(md_file)})
+            safe_logger(logger).log_error(e, {"operation": "process_file", "file": str(md_file)})
 
-    if logger:
-        logger.log_operation("batch_complete", {"stats": stats.summary()})
+    safe_logger(logger).log_operation("batch_complete", {"stats": stats.summary()})
 
     return stats
 
@@ -426,10 +396,9 @@ def sync_directory(
     """
     stats = ConversionStats()
 
-    if logger:
-        logger.log_operation(
-            "sync_start", {"input": str(input_dir), "delete_missing": delete_missing}
-        )
+    safe_logger(logger).log_operation(
+        "sync_start", {"input": str(input_dir), "delete_missing": delete_missing}
+    )
 
     # Process all files (force update)
     batch_stats: ConversionStats = process_directory(
@@ -458,170 +427,20 @@ def sync_directory(
                             reason="removed_from_source"
                         )
                         stats.entries_skipped += 1  # Reuse as "deleted" counter
-                        if logger:
-                            logger.log_operation(
-                                "entry_soft_deleted",
-                                {"date": str(entry.date), "file": entry.file_path},
-                            )
+                        safe_logger(logger).log_operation(
+                            "entry_soft_deleted",
+                            {"date": str(entry.date), "file": entry.file_path},
+                        )
                     except Exception as e:
                         stats.errors += 1
-                        if logger:
-                            logger.log_error(
-                                e,
-                                {"operation": "delete_entry", "date": str(entry.date)},
-                            )
+                        safe_logger(logger).log_error(
+                            e,
+                            {"operation": "delete_entry", "date": str(entry.date)},
+                        )
 
-    if logger:
-        logger.log_operation("sync_complete", {"stats": stats.summary()})
+    safe_logger(logger).log_operation("sync_complete", {"stats": stats.summary()})
 
     return stats
 
 
 # --- CLI ---
-@click.group()
-@click.option(
-    "--db-path",
-    type=click.Path(),
-    default=str(DB_PATH),
-    help="Path to database file",
-)
-@click.option(
-    "--log-dir",
-    type=click.Path(),
-    default=str(LOG_DIR),
-    help="Directory for log files",
-)
-@click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
-@click.pass_context
-def cli(ctx: click.Context, db_path: str, log_dir: str, verbose: bool) -> None:
-    """yaml2sql - Parse YAML frontmatter and populate database"""
-    ctx.ensure_object(dict)
-    ctx.obj["db_path"] = Path(db_path)
-    ctx.obj["log_dir"] = Path(log_dir)
-    ctx.obj["verbose"] = verbose
-    ctx.obj["logger"] = setup_logger(Path(log_dir), "yaml2sql")
-
-    # Initialize database
-    ctx.obj["db"] = PalimpsestDB(
-        db_path=Path(db_path),
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=Path(log_dir),
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
-
-
-@cli.command()
-@click.argument("input_file", type=click.Path(exists=True))
-@click.option("-f", "--force", is_flag=True, help="Force update even if unchanged")
-@click.pass_context
-def update(ctx: click.Context, input_file: str, force: bool) -> None:
-    """Update database from a single Markdown file."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
-    db: PalimpsestDB = ctx.obj["db"]
-
-    try:
-        file_path: Path = Path(input_file)
-
-        click.echo(f"📄 Processing {file_path.name}")
-
-        result: str = process_entry_file(file_path, db, force, logger)
-
-        if result == "created":
-            click.echo("✅ Entry created")
-        elif result == "updated":
-            click.echo("✅ Entry updated")
-        elif result == "skipped":
-            click.echo("⏭️  Entry skipped (unchanged)")
-
-    except (Yaml2SqlError, Exception) as e:
-        handle_cli_error(ctx, e, "update", {"file": input_file})
-
-
-@cli.command()
-@click.argument("input_dir", type=click.Path(exists=True))
-@click.option(
-    "-p",
-    "--pattern",
-    default="**/*.md",
-    help="File pattern to match (default: **/*.md)",
-)
-@click.option("-f", "--force", is_flag=True, help="Force update all files")
-@click.pass_context
-def batch(ctx: click.Context, input_dir: str, pattern: str, force: bool) -> None:
-    """Process all Markdown files in a directory."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
-    db: PalimpsestDB = ctx.obj["db"]
-
-    try:
-        dir_path: Path = Path(input_dir)
-
-        click.echo(f"📁 Processing directory: {dir_path}")
-
-        stats: ConversionStats = process_directory(dir_path, db, pattern, force, logger)
-
-        click.echo("\n✅ Batch processing complete:")
-        click.echo(f"  Files processed: {stats.files_processed}")
-        click.echo(f"  Entries created: {stats.entries_created}")
-        click.echo(f"  Entries updated: {stats.entries_updated}")
-        click.echo(f"  Entries skipped: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
-
-    except (Yaml2SqlError, Exception) as e:
-        handle_cli_error(ctx, e, "batch", {"input_dir": input_dir})
-
-
-@cli.command()
-@click.argument("input_dir", type=click.Path(exists=True))
-@click.option(
-    "-p",
-    "--pattern",
-    default="**/*.md",
-    help="File pattern to match (default: **/*.md)",
-)
-@click.option(
-    "--delete-missing", is_flag=True, help="Delete database entries for missing files"
-)
-@click.confirmation_option(
-    prompt="This will update all entries and optionally delete missing. Continue?"
-)
-@click.pass_context
-def sync(
-    ctx: click.Context, input_dir: str, pattern: str, delete_missing: bool
-) -> None:
-    """Synchronize database with directory contents."""
-    logger: PalimpsestLogger = ctx.obj["logger"]
-    db: PalimpsestDB = ctx.obj["db"]
-
-    try:
-        dir_path: Path = Path(input_dir)
-
-        click.echo(f"🔄 Synchronizing database with: {dir_path}")
-
-        stats: ConversionStats = sync_directory(
-            dir_path, db, pattern, delete_missing, logger
-        )
-
-        click.echo("\n✅ Synchronization complete:")
-        click.echo(f"  Files processed: {stats.files_processed}")
-        click.echo(f"  Entries created: {stats.entries_created}")
-        click.echo(f"  Entries updated: {stats.entries_updated}")
-        if delete_missing:
-            click.echo(f"  Entries deleted: {stats.entries_skipped}")
-        if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
-        click.echo(f"  Duration: {stats.duration():.2f}s")
-
-    except (Yaml2SqlError, Exception) as e:
-        handle_cli_error(
-            ctx,
-            e,
-            "sync",
-            {"input_dir": input_dir, "delete_missing": delete_missing},
-        )
-
-
-if __name__ == "__main__":
-    cli(obj={})

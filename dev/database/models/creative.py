@@ -22,13 +22,15 @@ from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .associations import entry_events, event_people
+from .associations import entry_events, event_people, moment_events
 from .base import Base, SoftDeleteMixin
 from .enums import ReferenceMode, ReferenceType
 
 if TYPE_CHECKING:
     from .core import Entry
+    from .geography import Location
     from .entities import Person
+    from .geography import Moment
     from ..models_manuscript import ManuscriptEvent
 
 
@@ -123,9 +125,10 @@ class ReferenceSource(Base):
 
     Attributes:
         id: Primary key
-        type: Type of source (book/article/film/poem/song/etc.)
+        type: Type of source (book/article/film/poem/song/website/etc.)
         title: Title of the source (unique)
         author: Author or creator of the source (optional)
+        url: URL of the source (optional, typically used for website type)
 
     Relationships:
         references: One-to-many with Reference (references from this source)
@@ -137,6 +140,7 @@ class ReferenceSource(Base):
 
     Note:
         Some source types (book, article) typically require an author field.
+        Website type typically uses the url field.
     """
 
     __tablename__ = "reference_sources"
@@ -155,6 +159,7 @@ class ReferenceSource(Base):
         String(255), unique=True, nullable=False, index=True
     )
     author: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    url: Mapped[Optional[str]] = mapped_column(String(500))
 
     # --- Relationship ---
     references: Mapped[List["Reference"]] = relationship(
@@ -224,6 +229,9 @@ class Event(Base, SoftDeleteMixin):
     people: Mapped[List["Person"]] = relationship(
         "Person", secondary=event_people, back_populates="events"
     )
+    moments: Mapped[List["Moment"]] = relationship(
+        "Moment", secondary=moment_events, back_populates="events"
+    )
     manuscript: Mapped[Optional["ManuscriptEvent"]] = relationship(
         "ManuscriptEvent", uselist=False, back_populates="event"
     )
@@ -251,19 +259,52 @@ class Event(Base, SoftDeleteMixin):
 
     @property
     def start_date(self) -> Optional[date]:
-        """Start date of the event."""
-        if not self.entries:
-            return None
-        dates = [entry.date for entry in self.entries if entry.date]
-        return min(dates) if dates else None
+        """Start date of the event (from moments if available, else entries)."""
+        if self.moments:
+            moment_dates = [m.date for m in self.moments]
+            return min(moment_dates) if moment_dates else None
+        if self.entries:
+            entry_dates = [e.date for e in self.entries if e.date]
+            return min(entry_dates) if entry_dates else None
+        return None
 
     @property
     def end_date(self) -> Optional[date]:
-        """End date of the event."""
-        if not self.entries:
-            return None
-        dates = [entry.date for entry in self.entries if entry.date]
-        return max(dates) if dates else None
+        """End date of the event (from moments if available, else entries)."""
+        if self.moments:
+            moment_dates = [m.date for m in self.moments]
+            return max(moment_dates) if moment_dates else None
+        if self.entries:
+            entry_dates = [e.date for e in self.entries if e.date]
+            return max(entry_dates) if entry_dates else None
+        return None
+
+    @property
+    def moment_locations(self) -> List["Location"]:
+        """All locations associated with this event's moments."""
+        locations_set: set = set()
+        for moment in self.moments:
+            for loc in moment.locations:
+                locations_set.add(loc)
+        return list(locations_set)
+
+    @property
+    def moment_people(self) -> List["Person"]:
+        """All people associated with this event's moments (in addition to direct links)."""
+        people_set: set = set()
+        for moment in self.moments:
+            for person in moment.people:
+                people_set.add(person)
+        return list(people_set)
+
+    @property
+    def all_people(self) -> List["Person"]:
+        """All people associated with this event (direct + via moments)."""
+        people_set: set = set(self.people)
+        for moment in self.moments:
+            for person in moment.people:
+                people_set.add(person)
+        return list(people_set)
 
     def __repr__(self) -> str:
         return f"<Event(id={self.id}, event={self.event})>"

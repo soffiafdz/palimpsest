@@ -22,11 +22,9 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 - **Database-backed queries**: SQLAlchemy ORM with relationship mapping and analytics
 - **Wiki system**: Bidirectional sync between database and Markdown wiki for editing and curation
 - **Full-text search**: SQLite FTS5 with advanced filtering (people, dates, themes, word count, etc.)
-- **Automated metadata extraction** (optional): NLP-based tagging, named entity recognition, and pattern matching for organizational purposes
 - **Manuscript subwiki**: Dedicated wiki for curating journal entries into literary material
 - **PDF generation**: Create clean reading copies and annotated review versions
 - **Vim/Neovim integration**: Vimwiki templates and automation (optional)
-- **Makefile orchestration**: Simple commands for batch processing and year-based builds
 
 ---
 
@@ -72,23 +70,6 @@ plm build-pdf 2024
 
 # Or run complete pipeline
 plm run-all 2024
-```
-
-### Using Make
-
-```bash
-# Process everything
-make all
-
-# Year-specific
-make 2024
-make 2024-md   # Markdown only
-make 2024-pdf  # PDFs only
-
-# Database operations
-make init-db
-make backup
-make stats
 ```
 
 ---
@@ -148,7 +129,7 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 1. **Journal → Database**: `inbox → txt → md → database` (via YAML frontmatter)
 2. **Database → Wiki**: `database → wiki` (for editing and curation)
 3. **Wiki → Database**: `wiki → database` (import edits back)
-4. **Search & Analysis**: Query database with FTS5, extract metadata with NLP tools
+4. **Search & Analysis**: Query database with FTS5
 5. **Export**: `database → pdf` (annotated reading copies)
 
 ---
@@ -158,12 +139,6 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 ```
 palimpsest/
 ├── dev/                        # Source code
-│   ├── nlp/                    # NLP analysis (optional)
-│   │   ├── extractors.py      # spaCy NER, theme extraction
-│   │   ├── semantic_search.py # Sentence transformers
-│   │   ├── claude_assistant.py # Claude API integration
-│   │   └── openai_assistant.py # OpenAI API integration
-│   ├── bin/                    # CLI wrappers (journal, metadb)
 │   ├── builders/               # PDF and text builders
 │   ├── core/                   # Logging, validation, paths
 │   ├── database/               # SQLAlchemy ORM and managers
@@ -181,13 +156,11 @@ palimpsest/
 │   │   ├── sql2wiki.py        # Database → Wiki
 │   │   ├── wiki2sql.py        # Wiki → Database
 │   │   ├── search.py          # Search CLI
-│   │   └── nlp_assist.py      # NLP analysis CLI
 │   └── utils/                  # Utilities (fs, md, parsers)
 ├── templates/                  # LaTeX preambles, wiki templates
 ├── tests/                      # Integration tests
 │   └── integration/
 │       ├── test_search.py     # Search tests
-│       ├── test_nlp_extraction.py # NLP tests
 │       ├── test_sql_to_wiki.py # Wiki export tests
 │       └── test_wiki_to_sql.py # Wiki import tests
 ├── data/                       # Personal content (git submodule)
@@ -205,10 +178,14 @@ palimpsest/
 │   │   └── manuscript/
 │   └── metadata/
 │       └── palimpsest.db
-├── docs/
-│   └── BIDIRECTIONAL_SYNC_GUIDE.md # Wiki sync documentation
+├── docs/                       # Documentation
+│   ├── README.md              # Documentation index
+│   ├── getting-started.md     # New user onboarding
+│   ├── reference/             # Command and field references
+│   ├── guides/                # User guides and workflows
+│   ├── integrations/          # Editor integrations
+│   └── development/           # Developer documentation
 ├── environment.yaml
-├── Makefile
 └── README.md
 ```
 
@@ -297,36 +274,6 @@ jsearch index --status
 # sort:relevance|date|word_count, limit:N
 ```
 
-### Text Analysis Commands
-
-```bash
-# Check analysis capabilities
-nlp status
-
-# Analyze single entry (Level 2: spaCy NER)
-nlp analyze 2024-11-01 --level 2
-
-# Analyze with LLM API (Level 4)
-nlp analyze 2024-11-01 --level 4 --manuscript
-
-# Batch analyze entries
-nlp batch --level 2 --limit 10
-
-# Find semantically similar entries (Level 3)
-nlp similar 2024-11-01 --limit 10
-
-# Cluster entries by theme
-nlp cluster --num-clusters 10
-```
-
-**Analysis Processing Levels:**
-
-- **Level 2**: spaCy NER (free) - Entity extraction, theme detection
-- **Level 3**: Sentence Transformers (free) - Semantic similarity search
-- **Level 4**: LLM APIs (paid) - Advanced analysis, manuscript curation (Claude or OpenAI)
-
-See [Search & Analysis Documentation](#search--analysis-features) for details.
-
 ---
 
 ## Wiki System
@@ -397,7 +344,7 @@ wiki/
 - Characters: Character description, arc, voice notes, appearance notes
 - Themes, arcs, and other manuscript-specific metadata
 
-See [docs/bidirectional-sync-guide.md](/docs/dev-guides/architecture/bidirectional-sync-guide.md) for complete documentation.
+See [Synchronization Guide](docs/guides/synchronization.md) for complete documentation.
 
 ---
 
@@ -430,116 +377,6 @@ jsearch "reflection" city:montreal words:500-1000 has:manuscript
 ```bash
 jsearch index --create
 ```
-
-### Automated Text Analysis (Optional)
-
-Progressive intelligence levels - use what you need:
-
-#### Level 2: spaCy NER (Free) ⭐⭐⭐⭐☆
-
-**Entity extraction using ML:**
-
-- Detects people, locations, cities, organizations, events
-- Theme identification
-- Confidence scoring
-
-**Install:**
-
-```bash
-pip install spacy
-python -m spacy download en_core_web_sm
-```
-
-**Usage:**
-
-```bash
-nlp analyze 2024-11-01 --level 2
-```
-
-#### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
-
-**Semantic similarity search:**
-
-- Find similar entries by meaning (not just keywords)
-- Theme clustering
-- Understanding context
-
-**Install:**
-
-```bash
-pip install sentence-transformers
-pip install faiss-cpu  # optional, for faster search
-```
-
-**Usage:**
-
-```bash
-# Find similar entries
-nlp similar 2024-11-01 --limit 10
-
-# Cluster by theme
-nlp cluster --num-clusters 10
-```
-
-#### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
-
-**Most accurate analysis:**
-
-- Advanced entity extraction
-- Theme identification with context
-
-**Two providers supported:**
-
-**Claude (Anthropic):**
-
-- Cost: ~$0.007/entry (Haiku), ~$0.075/entry (Sonnet)
-- Install: `pip install anthropic`
-- API Key: `export ANTHROPIC_API_KEY='your-key'`
-
-**OpenAI (GPT-4):**
-
-- Cost: ~$0.003/entry (GPT-4o mini), ~$0.025/entry (GPT-4o)
-- Install: `pip install openai`
-- API Key: `export OPENAI_API_KEY='your-key'`
-
-**Usage:**
-
-```bash
-# Analyze with Claude (default)
-nlp analyze 2024-11-01 --level 4 --manuscript
-
-# Analyze with OpenAI
-nlp analyze 2024-11-01 --level 4 --provider openai --manuscript
-
-# Batch analyze with OpenAI
-nlp batch --level 4 --provider openai --limit 10
-```
-
-**Check what's installed:**
-
-```bash
-nlp status
-```
-
-#### Disclaimer About Automated Analysis Tools
-
-**The optional text analysis tools in this project (`dev/nlp/` and `nlp` command) use standard computational linguistics techniques**—specifically named entity recognition (NER), keyword extraction, and pattern matching to assist with metadata organization of existing journal content.
-
-**Technical approach:**
-
-- Uses spaCy for named entity recognition (local, open-source)
-- Employs regex and keyword matching for theme detection
-- Optional: sentence transformers for semantic similarity search
-
-**Important clarifications:**
-
-- ✅ Extracts entities, themes, and tags from already-written text
-- ✅ Suggests organizational structures based on text analysis
-- ✅ Assists with cataloging and searchability through pattern matching
-- ❌ **Does NOT generate, write, or modify any content**
-- ❌ **All journal entries are human-written and human-edited**
-
-These are standard text processing techniques used in digital humanities, archives, and library science for organizing large text corpora.
 
 ---
 
@@ -584,7 +421,7 @@ manuscript:
 Entry content here...
 ```
 
-See `example_yaml.md` for complete examples.
+See [Metadata Examples](docs/reference/metadata-examples.md) for complete examples.
 
 ---
 
@@ -678,34 +515,6 @@ Uses Ruff for linting. Code follows:
 
 See `environment.yaml` for complete list.
 
-### Optional NLP Dependencies
-
-**Level 2 (spaCy NER):**
-
-```bash
-pip install spacy
-python -m spacy download en_core_web_sm
-```
-
-**Level 3 (Semantic Search):**
-
-```bash
-pip install sentence-transformers
-pip install faiss-cpu  # optional, faster search
-```
-
-**Level 4 (LLM APIs):**
-
-```bash
-# Claude (Anthropic)
-pip install anthropic
-export ANTHROPIC_API_KEY='your-key'
-
-# OpenAI (GPT-4)
-pip install openai
-export OPENAI_API_KEY='your-key'
-```
-
 ---
 
 ## Configuration
@@ -716,6 +525,40 @@ Edit `dev/core/paths.py` to customize:
 - Database path
 - Output directories
 - Template paths
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+### Getting Started
+- **[Getting Started Guide](docs/getting-started.md)** - New user onboarding with core concepts and first workflow
+
+### Reference
+- **[Command Reference](docs/reference/commands.md)** - Complete CLI command documentation (70+ commands)
+- **[Metadata Field Reference](docs/reference/metadata-field-reference.md)** - All YAML frontmatter fields with examples
+- **[Metadata Examples](docs/reference/metadata-examples.md)** - Template entries and patterns
+- **[Wiki Field Reference](docs/reference/wiki-fields.md)** - Wiki page structure and editable fields
+
+### Guides
+- **[Synchronization Guide](docs/guides/synchronization.md)** - Multi-machine workflows and bidirectional sync
+- **[Conflict Resolution](docs/guides/conflict-resolution.md)** - Handling concurrent edits across machines
+- **[Manuscript Features](docs/guides/manuscript-features.md)** - Manuscript wiki and curation features
+- **[Migration Guide](docs/guides/migration.md)** - Upgrading between versions
+
+### Integrations
+- **[Neovim Integration](docs/integrations/neovim.md)** - Editor integration and vimwiki features
+
+### Development
+- **[Development Overview](docs/development/README.md)** - Contributing and architecture
+- **[Architecture](docs/development/architecture.md)** - System design and modular organization
+- **[Database Managers](docs/development/database-managers.md)** - Entity manager patterns
+- **[Validators](docs/development/validators.md)** - Validation system architecture
+- **[Tombstones](docs/development/tombstones.md)** - Deletion tracking implementation
+- **[Type Checking](docs/development/type-checking.md)** - Pyright configuration and patterns
+- **[Testing](docs/development/testing.md)** - Comprehensive testing guide
+- **[Neovim Plugin Development](docs/development/neovim-plugin-dev.md)** - Extending the Neovim integration
 
 ---
 

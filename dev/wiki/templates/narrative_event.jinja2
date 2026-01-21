@@ -1,0 +1,57 @@
+{#
+  narrative_event.jinja2
+  ----------------------
+  Wiki template for a narrative event (from manifest).
+  Displays event info, scenes, entries, and arc context.
+#}
+# Palimpsest — {{ event.name }}
+
+## Event Info
+
+- **Batch:** {{ event.batch_label }}
+- **Entries:** {{ event.entries|length }}
+- **Scenes:** {{ event.scenes|length }}
+{% if event.date_range %}
+- **Date Range:** {{ event.date_range }}
+{% endif %}
+{% if event.arc_name %}
+- **Arc:** [[narrative/arcs/{{ event.arc_name|lower|replace(' ', '-')|replace('(', '')|replace(')', '') }}|{{ event.arc_name }}]]
+{% endif %}
+
+## Scenes
+
+{% if event.scenes %}
+{% for scene in event.scenes %}
+{{ loop.index }}. **{{ scene.title }}**{% if scene.description %} — {{ scene.description }}{% endif %}
+
+{% endfor %}
+{% else %}
+*No scenes identified for this event*
+{% endif %}
+
+## Entries
+
+{% for entry_date in event.entries %}
+- [[entries/{{ entry_date }}|{{ entry_date }}]]
+{% endfor %}
+
+{% if event.arc_name %}
+## Arc Context
+
+This event is part of **[[narrative/arcs/{{ event.arc_name|lower|replace(' ', '-')|replace('(', '')|replace(')', '') }}|{{ event.arc_name }}]]**.
+
+{% set arc = arc_lookup.get(event.arc_name) %}
+{% if arc %}
+{% set event_index = arc.events.index(event.name) if event.name in arc.events else -1 %}
+{% if event_index > 0 %}
+**Previous:** [[narrative/events/{{ arc.events[event_index - 1]|lower|replace(' ', '-')|replace('(', '')|replace(')', '')|replace('&', 'and') }}|{{ arc.events[event_index - 1] }}]]
+{% endif %}
+{% if event_index >= 0 and event_index < arc.events|length - 1 %}
+**Next:** [[narrative/events/{{ arc.events[event_index + 1]|lower|replace(' ', '-')|replace('(', '')|replace(')', '')|replace('&', 'and') }}|{{ arc.events[event_index + 1] }}]]
+{% endif %}
+{% endif %}
+{% endif %}
+
+---
+
+[[narrative/events|← All Events]] | [[narrative/arcs|Arcs]] | [[index|Home]]

@@ -2,10 +2,35 @@
 """
 parsers.py
 --------------------
-General parsing utilities for extracting structured data.
+Parsing utilities for extracting structured data from formatted text.
 
-Provides parsing functions used across multiple modules for extracting
-names, abbreviations, and other structured information from formatted text.
+Provides parsing functions for extracting names, abbreviations, context
+references (@people, #locations), and handling hyphenation conventions
+in the Palimpsest project.
+
+Functions:
+    extract_name_and_expansion: Parse "Short (Full Expansion)" format
+    extract_context_refs: Extract @people and #location references
+    format_person_ref: Format person name as @reference for YAML
+    format_location_ref: Format location name as #reference for YAML
+    parse_date_context: Parse "2024-01-15 (context)" format
+    split_hyphenated_to_spaces: Convert hyphens/underscores to spaces
+    spaces_to_hyphenated: Convert spaces to hyphens (smart handling)
+
+Usage:
+    from dev.utils.parsers import extract_context_refs, extract_name_and_expansion
+
+    # Parse context with @people and #locations
+    refs = extract_context_refs("Dinner with @Majo at #Aliza's")
+    # Returns: {"context": "...", "people": ["Majo"], "locations": ["Aliza's"]}
+
+    # Extract name with optional expansion
+    name, expansion = extract_name_and_expansion("Mtl (Montreal)")
+    # Returns: ("Mtl", "Montreal")
+
+    # Handle hyphenation conventions
+    display_name = split_hyphenated_to_spaces("María-José")  # "María José"
+    yaml_ref = spaces_to_hyphenated("María José")  # "María-José"
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -77,13 +102,25 @@ def extract_context_refs(context: str) -> Dict[str, List | str]:
     for word in words:
         if word.startswith("@"):
             person = word[1:].strip(".,;:!?")
+
+            # Strip possessive apostrophes from people names
+            # "@Aliza's thesis" → "Aliza"
+            if person.endswith("'s"):
+                person = person[:-2]
+            elif person.endswith("'"):  # Handle trailing apostrophe without 's'
+                person = person[:-1]
+
             person = split_hyphenated_to_spaces(person)
             if person:
                 people.append(person)
                 cleaned_words.append(person)
         elif word.startswith("#"):
             loc_name = word[1:].strip(".,;:!?")
+
+            # Just dehyphenate normally - keep apostrophes as-is
+            # The database layer will handle checking if it's a person's house
             loc_name = split_hyphenated_to_spaces(loc_name)
+
             if loc_name:
                 locations.append(loc_name)
                 cleaned_words.append(loc_name)
@@ -106,7 +143,18 @@ def format_person_ref(person_ref: str) -> str:
 
 
 def format_location_ref(location_name: str) -> str:
-    """Format location name as @reference for YAML."""
+    """
+    Format location name as #reference for YAML.
+
+    Uses smart hyphenation: if location contains hyphens (like "St-Hubert"),
+    uses underscores for spaces to preserve the distinction.
+
+    Examples:
+        >>> format_location_ref("Cinema Moderne")
+        '#Cinema-Moderne'
+        >>> format_location_ref("Rue St-Hubert")
+        '#Rue_St-Hubert'
+    """
     hyphenated = spaces_to_hyphenated(location_name)
     return f"#{hyphenated}"
 
@@ -164,12 +212,34 @@ def split_hyphenated_to_spaces(text: str) -> str:
 
 def spaces_to_hyphenated(text: str) -> str:
     """
-    Convert spaces to hyphens (for names and locations).
+    Convert spaces to hyphens, preserving existing hyphens with underscores.
+
+    This preserves the distinction between original hyphens (part of the name)
+    and spaces (word separators).
+
+    Rules:
+    - If text contains NO hyphens: replace spaces with hyphens (standard)
+    - If text contains hyphens: replace spaces with underscores (preserve hyphens)
 
     Examples:
         >>> spaces_to_hyphenated("María José")
         'María-José'
         >>> spaces_to_hyphenated("San Diego")
         'San-Diego'
+        >>> spaces_to_hyphenated("Rue St-Hubert")
+        'Rue_St-Hubert'
+        >>> spaces_to_hyphenated("Station Berri-UQAM")
+        'Station_Berri-UQAM'
+        >>> spaces_to_hyphenated("Jean-Pierre Martin")
+        'Jean-Pierre_Martin'
     """
-    return text.replace(" ", "-")
+    if not text:
+        return text
+
+    # Check if text already contains hyphens
+    if "-" in text:
+        # Use underscores for spaces to preserve existing hyphens
+        return text.replace(" ", "_")
+    else:
+        # Use hyphens for spaces (standard case)
+        return text.replace(" ", "-")

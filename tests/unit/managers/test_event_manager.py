@@ -327,7 +327,7 @@ class TestEventManagerUpdate:
         """Test update raises when event doesn't exist."""
         fake_event = Event(event="fake", id=99999)
 
-        with pytest.raises(DatabaseError, match="does not exist"):
+        with pytest.raises(DatabaseError, match="not found"):
             event_manager.update(fake_event, {"title": "New"})
 
     def test_update_raises_when_event_deleted(self, event_manager, db_session):
@@ -697,103 +697,3 @@ class TestEventManagerGetByDateRange:
         )
 
         assert len(result) == 0
-
-
-class TestEventManagerGetForPerson:
-    """Test EventManager.get_for_person() method."""
-
-    def test_get_for_person_returns_linked_events(self, event_manager, db_session):
-        """Test get all events for a person."""
-        person = Person(name="Alice")
-        event1 = Event(event="trip1")
-        event2 = Event(event="trip2")
-        event3 = Event(event="trip3")
-        event1.people.append(person)
-        event2.people.append(person)
-        db_session.add_all([person, event1, event2, event3])
-        db_session.commit()
-
-        result = event_manager.get_for_person(person)
-
-        assert len(result) == 2
-        event_names = {e.event for e in result}
-        assert event_names == {"trip1", "trip2"}
-
-    def test_get_for_person_excludes_deleted(self, event_manager, db_session):
-        """Test get_for_person excludes deleted events."""
-        person = Person(name="Alice")
-        event1 = Event(event="trip1")
-        event2 = Event(event="trip2", deleted_at=datetime.now(timezone.utc))
-        event1.people.append(person)
-        event2.people.append(person)
-        db_session.add_all([person, event1, event2])
-        db_session.commit()
-
-        result = event_manager.get_for_person(person)
-
-        assert len(result) == 1
-        assert result[0].event == "trip1"
-
-    def test_get_for_person_includes_deleted_when_requested(self, event_manager, db_session):
-        """Test get_for_person includes deleted when requested."""
-        person = Person(name="Alice")
-        event1 = Event(event="trip1")
-        event2 = Event(event="trip2", deleted_at=datetime.now(timezone.utc))
-        event1.people.append(person)
-        event2.people.append(person)
-        db_session.add_all([person, event1, event2])
-        db_session.commit()
-
-        result = event_manager.get_for_person(person, include_deleted=True)
-
-        assert len(result) == 2
-
-
-class TestEventManagerGetForEntry:
-    """Test EventManager.get_for_entry() method."""
-
-    def test_get_for_entry_returns_linked_events(self, event_manager, db_session):
-        """Test get all events for an entry."""
-        entry = Entry(date=date(2024, 1, 1), file_path="/path/to/entry-2024-01-01.md")
-        event1 = Event(event="trip1")
-        event2 = Event(event="trip2")
-        event3 = Event(event="trip3")
-        event1.entries.append(entry)
-        event2.entries.append(entry)
-        db_session.add_all([entry, event1, event2, event3])
-        db_session.commit()
-
-        result = event_manager.get_for_entry(entry)
-
-        assert len(result) == 2
-        event_names = {e.event for e in result}
-        assert event_names == {"trip1", "trip2"}
-
-    def test_get_for_entry_excludes_deleted(self, event_manager, db_session):
-        """Test get_for_entry excludes deleted events."""
-        entry = Entry(date=date(2024, 1, 1), file_path="/path/to/entry-2024-01-01.md")
-        event1 = Event(event="trip1")
-        event2 = Event(event="trip2", deleted_at=datetime.now(timezone.utc))
-        event1.entries.append(entry)
-        event2.entries.append(entry)
-        db_session.add_all([entry, event1, event2])
-        db_session.commit()
-
-        result = event_manager.get_for_entry(entry)
-
-        assert len(result) == 1
-        assert result[0].event == "trip1"
-
-    def test_get_for_entry_includes_deleted_when_requested(self, event_manager, db_session):
-        """Test get_for_entry includes deleted when requested."""
-        entry = Entry(date=date(2024, 1, 1), file_path="/path/to/entry-2024-01-01.md")
-        event1 = Event(event="trip1")
-        event2 = Event(event="trip2", deleted_at=datetime.now(timezone.utc))
-        event1.entries.append(entry)
-        event2.entries.append(entry)
-        db_session.add_all([entry, event1, event2])
-        db_session.commit()
-
-        result = event_manager.get_for_entry(entry, include_deleted=True)
-
-        assert len(result) == 2

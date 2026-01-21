@@ -46,10 +46,7 @@ from datetime import datetime, timezone
 
 from dev.core.validators import DataValidator
 from dev.core.exceptions import ValidationError, DatabaseError
-from dev.database.decorators import (
-    handle_db_errors,
-    log_database_operation,
-)
+from dev.database.decorators import DatabaseOperation
 from dev.database.models import Entry, Person, Event
 from dev.database.models_manuscript import (
     ManuscriptEntry,
@@ -57,6 +54,7 @@ from dev.database.models_manuscript import (
     ManuscriptEvent,
     Arc,
     Theme,
+    Motif,
     ManuscriptStatus,
 )
 from .base_manager import BaseManager
@@ -74,8 +72,6 @@ class ManuscriptManager(BaseManager):
     # MANUSCRIPT ENTRY OPERATIONS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("create_or_update_manuscript_entry")
     def create_or_update_entry(
         self, entry: Entry, manuscript_data: Dict[str, Any]
     ) -> Optional[ManuscriptEntry]:
@@ -89,79 +85,99 @@ class ManuscriptManager(BaseManager):
                 - edited: Boolean editing state
                 - notes: Text notes
                 - themes: List of theme names
+                - motifs: List of motif names
+                - narrative_rating: 1-5 rating from narrative analysis
+                - summary: Narrative summary from analysis
 
         Returns:
             ManuscriptEntry object, or None if deleted
 
         Notes:
             - Status accepts both enum and string (flexible matching)
-            - Themes are replaced (not incremental)
+            - Themes and motifs are replaced (not incremental)
+            - narrative_rating must be an integer 1-5
         """
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before manuscript operations")
+        with DatabaseOperation(self.logger, "create_or_update_manuscript_entry"):
+            if entry.id is None:
+                raise ValueError("Entry must be persisted before manuscript operations")
 
-        # Normalize status (flexible matching)
-        status = None
-        if "status" in manuscript_data:
-            status_val = manuscript_data["status"]
-            if isinstance(status_val, ManuscriptStatus):
-                status = status_val
-            elif isinstance(status_val, str):
-                # Try enum name first, then value
-                status_val_upper = status_val.upper()
-                try:
-                    status = ManuscriptStatus[status_val_upper]
-                except KeyError:
-                    # Try by value (case-insensitive)
-                    status_val_lower = status_val.lower()
-                    for ms in ManuscriptStatus:
-                        if ms.value == status_val_lower:
-                            status = ms
-                            break
+            # Normalize status (flexible matching)
+            status = None
+            if "status" in manuscript_data:
+                status_val = manuscript_data["status"]
+                if isinstance(status_val, ManuscriptStatus):
+                    status = status_val
+                elif isinstance(status_val, str):
+                    # Try enum name first, then value
+                    status_val_upper = status_val.upper()
+                    try:
+                        status = ManuscriptStatus[status_val_upper]
+                    except KeyError:
+                        # Try by value (case-insensitive)
+                        status_val_lower = status_val.lower()
+                        for ms in ManuscriptStatus:
+                            if ms.value == status_val_lower:
+                                status = ms
+                                break
 
-        # Prepare child data
-        child_data = {}
-        if status:
-            child_data["status"] = status
-        if "edited" in manuscript_data:
-            child_data["edited"] = DataValidator.normalize_bool(
-                manuscript_data["edited"]
-            )
-        if "notes" in manuscript_data:
-            child_data["notes"] = DataValidator.normalize_string(
-                manuscript_data["notes"]
-            )
+            # Prepare child data
+            child_data = {}
+            if status:
+                child_data["status"] = status
+            if "edited" in manuscript_data:
+                child_data["edited"] = DataValidator.normalize_bool(
+                    manuscript_data["edited"]
+                )
+            if "notes" in manuscript_data:
+                child_data["notes"] = DataValidator.normalize_string(
+                    manuscript_data["notes"]
+                )
+            if "narrative_rating" in manuscript_data:
+                rating = manuscript_data["narrative_rating"]
+                if rating is not None:
+                    rating_int = int(round(rating))
+                    if 1 <= rating_int <= 5:
+                        child_data["narrative_rating"] = rating_int
+            if "rating_justification" in manuscript_data:
+                child_data["rating_justification"] = DataValidator.normalize_string(
+                    manuscript_data["rating_justification"]
+                )
+            if "summary" in manuscript_data:
+                child_data["summary"] = DataValidator.normalize_string(
+                    manuscript_data["summary"]
+                )
 
-        # Create or update ManuscriptEntry (entity-specific logic)
-        # Query database directly to avoid lazy loading issues
-        ms_entry = self.session.query(ManuscriptEntry).filter_by(entry_id=entry.id).first()
+            # Create or update ManuscriptEntry (entity-specific logic)
+            # Query database directly to avoid lazy loading issues
+            ms_entry = self.session.query(ManuscriptEntry).filter_by(entry_id=entry.id).first()
 
-        if ms_entry:
-            # Existing manuscript entry
-            if manuscript_data.get("delete", False):
-                self.session.delete(ms_entry)
-                self.session.flush()
-                return None
-            # Update existing
-            if child_data:
-                for key, value in child_data.items():
-                    setattr(ms_entry, key, value)
-                self.session.flush()
-        else:
-            # Create new manuscript entry
-            if not manuscript_data.get("delete", False):
-                child_data["entry_id"] = entry.id
-                ms_entry = ManuscriptEntry(**child_data)
-                self.session.add(ms_entry)
-                self.session.flush()
+            if ms_entry:
+                # Existing manuscript entry
+                if manuscript_data.get("delete", False):
+                    self.session.delete(ms_entry)
+                    self.session.flush()
+                    return None
+                # Update existing
+                if child_data:
+                    for key, value in child_data.items():
+                        setattr(ms_entry, key, value)
+                    self.session.flush()
+            else:
+                # Create new manuscript entry
+                if not manuscript_data.get("delete", False):
+                    child_data["entry_id"] = entry.id
+                    ms_entry = ManuscriptEntry(**child_data)
+                    self.session.add(ms_entry)
+                    self.session.flush()
 
-        if ms_entry and "themes" in manuscript_data:
-            self._update_themes(ms_entry, manuscript_data["themes"])
+            if ms_entry and "themes" in manuscript_data:
+                self._update_themes(ms_entry, manuscript_data["themes"])
 
-        return ms_entry
+            if ms_entry and "motifs" in manuscript_data:
+                self._update_motifs(ms_entry, manuscript_data["motifs"])
 
-    @handle_db_errors
-    @log_database_operation("delete_manuscript_entry")
+            return ms_entry
+
     def delete_entry(self, entry: Entry) -> None:
         """
         Delete manuscript metadata for an entry.
@@ -169,9 +185,10 @@ class ManuscriptManager(BaseManager):
         Args:
             entry: Entry whose manuscript data to delete
         """
-        if entry.manuscript:
-            self.session.delete(entry.manuscript)
-            self.session.flush()
+        with DatabaseOperation(self.logger, "delete_manuscript_entry"):
+            if entry.manuscript:
+                self.session.delete(entry.manuscript)
+                self.session.flush()
 
     def _update_themes(
         self, manuscript_entry: ManuscriptEntry, themes_list: List[str]
@@ -204,12 +221,39 @@ class ManuscriptManager(BaseManager):
                 manuscript_entry.themes.append(theme)
         self.session.flush()
 
+    def _update_motifs(
+        self, manuscript_entry: ManuscriptEntry, motifs_list: List[str]
+    ) -> None:
+        """
+        Update motifs for a manuscript entry (replacement mode).
+
+        Args:
+            manuscript_entry: ManuscriptEntry to update
+            motifs_list: List of motif names
+        """
+        # Normalize motif names
+        normalized_motifs = [
+            DataValidator.normalize_string(m) for m in motifs_list
+        ]
+        normalized_motifs = [m for m in normalized_motifs if m]  # Filter empty
+
+        # Get or create Motif objects
+        motif_objs = []
+        for motif_name in normalized_motifs:
+            motif = self._get_or_create(Motif, {"name": motif_name})
+            motif_objs.append(motif)
+
+        # Replace all motifs
+        manuscript_entry.motifs.clear()
+        for motif in motif_objs:
+            if motif not in manuscript_entry.motifs:
+                manuscript_entry.motifs.append(motif)
+        self.session.flush()
+
     # =========================================================================
     # MANUSCRIPT PERSON OPERATIONS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("create_or_update_manuscript_person")
     def create_or_update_person(
         self, person: Person, manuscript_data: Dict[str, Any]
     ) -> Optional[ManuscriptPerson]:
@@ -227,44 +271,43 @@ class ManuscriptManager(BaseManager):
         Raises:
             ValidationError: If character is missing or empty
         """
-        if person.id is None:
-            raise ValueError("Person must be persisted before manuscript operations")
+        with DatabaseOperation(self.logger, "create_or_update_manuscript_person"):
+            if person.id is None:
+                raise ValueError("Person must be persisted before manuscript operations")
 
-        # Validate character field
-        character = DataValidator.normalize_string(manuscript_data.get("character"))
-        if not character:
-            raise ValidationError("Character name is required for manuscript person")
+            # Validate character field
+            character = DataValidator.normalize_string(manuscript_data.get("character"))
+            if not character:
+                raise ValidationError("Character name is required for manuscript person")
 
-        # Prepare child data
-        child_data = {"character": character}
+            # Prepare child data
+            child_data = {"character": character}
 
-        # Create or update ManuscriptPerson (entity-specific logic)
-        # Query database directly to avoid lazy loading issues
-        ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
+            # Create or update ManuscriptPerson (entity-specific logic)
+            # Query database directly to avoid lazy loading issues
+            ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
 
-        if ms_person:
-            # Existing manuscript person
-            if manuscript_data.get("delete", False):
-                self.session.delete(ms_person)
-                self.session.flush()
-                return None
-            # Update existing
-            if child_data:
-                for key, value in child_data.items():
-                    setattr(ms_person, key, value)
-                self.session.flush()
-        else:
-            # Create new manuscript person
-            if not manuscript_data.get("delete", False):
-                child_data["person_id"] = str(person.id)
-                ms_person = ManuscriptPerson(**child_data)
-                self.session.add(ms_person)
-                self.session.flush()
+            if ms_person:
+                # Existing manuscript person
+                if manuscript_data.get("delete", False):
+                    self.session.delete(ms_person)
+                    self.session.flush()
+                    return None
+                # Update existing
+                if child_data:
+                    for key, value in child_data.items():
+                        setattr(ms_person, key, value)
+                    self.session.flush()
+            else:
+                # Create new manuscript person
+                if not manuscript_data.get("delete", False):
+                    child_data["person_id"] = str(person.id)
+                    ms_person = ManuscriptPerson(**child_data)
+                    self.session.add(ms_person)
+                    self.session.flush()
 
-        return ms_person
+            return ms_person
 
-    @handle_db_errors
-    @log_database_operation("delete_manuscript_person")
     def delete_person(
         self,
         person: Person,
@@ -281,22 +324,21 @@ class ManuscriptManager(BaseManager):
             reason: Deletion reason
             hard_delete: If True, permanently delete
         """
-        # Query database directly to avoid lazy loading issues
-        ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
-        if not ms_person:
-            return
+        with DatabaseOperation(self.logger, "delete_manuscript_person"):
+            # Query database directly to avoid lazy loading issues
+            ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
+            if not ms_person:
+                return
 
-        if hard_delete:
-            self.session.delete(ms_person)
-        else:
-            ms_person.deleted_at = datetime.now(timezone.utc)
-            ms_person.deleted_by = deleted_by
-            ms_person.deletion_reason = reason
+            if hard_delete:
+                self.session.delete(ms_person)
+            else:
+                ms_person.deleted_at = datetime.now(timezone.utc)
+                ms_person.deleted_by = deleted_by
+                ms_person.deletion_reason = reason
 
-        self.session.flush()
+            self.session.flush()
 
-    @handle_db_errors
-    @log_database_operation("restore_manuscript_person")
     def restore_person(self, person: Person) -> ManuscriptPerson:
         """
         Restore soft-deleted manuscript person.
@@ -310,30 +352,29 @@ class ManuscriptManager(BaseManager):
         Raises:
             DatabaseError: If not deleted or doesn't exist
         """
-        # Query database directly to avoid lazy loading issues
-        ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
-        if not ms_person:
-            raise DatabaseError(f"No manuscript data for person: {person.display_name}")
+        with DatabaseOperation(self.logger, "restore_manuscript_person"):
+            # Query database directly to avoid lazy loading issues
+            ms_person = self.session.query(ManuscriptPerson).filter_by(person_id=person.id).first()
+            if not ms_person:
+                raise DatabaseError(f"No manuscript data for person: {person.display_name}")
 
-        if not ms_person.deleted_at:
-            raise DatabaseError(
-                f"Manuscript person not deleted: {person.display_name}"
-            )
+            if not ms_person.deleted_at:
+                raise DatabaseError(
+                    f"Manuscript person not deleted: {person.display_name}"
+                )
 
-        ms_person.deleted_at = None
-        ms_person.deleted_by = None
-        ms_person.deletion_reason = None
+            ms_person.deleted_at = None
+            ms_person.deleted_by = None
+            ms_person.deletion_reason = None
 
-        self.session.flush()
+            self.session.flush()
 
-        return ms_person
+            return ms_person
 
     # =========================================================================
     # MANUSCRIPT EVENT OPERATIONS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("create_or_update_manuscript_event")
     def create_or_update_event(
         self, event: Event, manuscript_data: Dict[str, Any]
     ) -> Optional[ManuscriptEvent]:
@@ -349,51 +390,50 @@ class ManuscriptManager(BaseManager):
         Returns:
             ManuscriptEvent object, or None if deleted
         """
-        if event.id is None:
-            raise ValueError("Event must be persisted before manuscript operations")
+        with DatabaseOperation(self.logger, "create_or_update_manuscript_event"):
+            if event.id is None:
+                raise ValueError("Event must be persisted before manuscript operations")
 
-        # Prepare child data
-        child_data = {}
-        if "notes" in manuscript_data:
-            child_data["notes"] = DataValidator.normalize_string(
-                manuscript_data["notes"]
-            )
+            # Prepare child data
+            child_data = {}
+            if "notes" in manuscript_data:
+                child_data["notes"] = DataValidator.normalize_string(
+                    manuscript_data["notes"]
+                )
 
-        # Create or update ManuscriptEvent (entity-specific logic)
-        # Query database directly to avoid lazy loading issues
-        ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
+            # Create or update ManuscriptEvent (entity-specific logic)
+            # Query database directly to avoid lazy loading issues
+            ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
 
-        if ms_event:
-            # Existing manuscript event
-            if manuscript_data.get("delete", False):
-                self.session.delete(ms_event)
-                self.session.flush()
-                return None
-            # Update existing
-            if child_data:
-                for key, value in child_data.items():
-                    setattr(ms_event, key, value)
-                self.session.flush()
-        else:
-            # Create new manuscript event
-            if not manuscript_data.get("delete", False):
-                child_data["event_id"] = event.id
-                ms_event = ManuscriptEvent(**child_data)
-                self.session.add(ms_event)
-                self.session.flush()
+            if ms_event:
+                # Existing manuscript event
+                if manuscript_data.get("delete", False):
+                    self.session.delete(ms_event)
+                    self.session.flush()
+                    return None
+                # Update existing
+                if child_data:
+                    for key, value in child_data.items():
+                        setattr(ms_event, key, value)
+                    self.session.flush()
+            else:
+                # Create new manuscript event
+                if not manuscript_data.get("delete", False):
+                    child_data["event_id"] = event.id
+                    ms_event = ManuscriptEvent(**child_data)
+                    self.session.add(ms_event)
+                    self.session.flush()
 
-        # Handle arc assignment
-        if ms_event and "arc" in manuscript_data:
-            arc_name = DataValidator.normalize_string(manuscript_data["arc"])
-            if arc_name:
-                arc = self._get_or_create(Arc, {"arc": arc_name})
-                ms_event.arc = arc
-                self.session.flush()
+            # Handle arc assignment
+            if ms_event and "arc" in manuscript_data:
+                arc_name = DataValidator.normalize_string(manuscript_data["arc"])
+                if arc_name:
+                    arc = self._get_or_create(Arc, {"arc": arc_name})
+                    ms_event.arc = arc
+                    self.session.flush()
 
-        return ms_event
+            return ms_event
 
-    @handle_db_errors
-    @log_database_operation("delete_manuscript_event")
     def delete_event(
         self,
         event: Event,
@@ -410,22 +450,21 @@ class ManuscriptManager(BaseManager):
             reason: Deletion reason
             hard_delete: If True, permanently delete
         """
-        # Query database directly to avoid lazy loading issues
-        ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
-        if not ms_event:
-            return
+        with DatabaseOperation(self.logger, "delete_manuscript_event"):
+            # Query database directly to avoid lazy loading issues
+            ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
+            if not ms_event:
+                return
 
-        if hard_delete:
-            self.session.delete(ms_event)
-        else:
-            ms_event.deleted_at = datetime.now(timezone.utc)
-            ms_event.deleted_by = deleted_by
-            ms_event.deletion_reason = reason
+            if hard_delete:
+                self.session.delete(ms_event)
+            else:
+                ms_event.deleted_at = datetime.now(timezone.utc)
+                ms_event.deleted_by = deleted_by
+                ms_event.deletion_reason = reason
 
-        self.session.flush()
+            self.session.flush()
 
-    @handle_db_errors
-    @log_database_operation("restore_manuscript_event")
     def restore_event(self, event: Event) -> ManuscriptEvent:
         """
         Restore soft-deleted manuscript event.
@@ -439,108 +478,151 @@ class ManuscriptManager(BaseManager):
         Raises:
             DatabaseError: If not deleted or doesn't exist
         """
-        # Query database directly to avoid lazy loading issues
-        ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
-        if not ms_event:
-            raise DatabaseError(f"No manuscript data for event: {event.display_name}")
+        with DatabaseOperation(self.logger, "restore_manuscript_event"):
+            # Query database directly to avoid lazy loading issues
+            ms_event = self.session.query(ManuscriptEvent).filter_by(event_id=event.id).first()
+            if not ms_event:
+                raise DatabaseError(f"No manuscript data for event: {event.display_name}")
 
-        if not ms_event.deleted_at:
-            raise DatabaseError(f"Manuscript event not deleted: {event.display_name}")
+            if not ms_event.deleted_at:
+                raise DatabaseError(f"Manuscript event not deleted: {event.display_name}")
 
-        ms_event.deleted_at = None
-        ms_event.deleted_by = None
-        ms_event.deletion_reason = None
+            ms_event.deleted_at = None
+            ms_event.deleted_by = None
+            ms_event.deletion_reason = None
 
-        self.session.flush()
+            self.session.flush()
 
-        return ms_event
+            return ms_event
 
     # =========================================================================
     # ARC OPERATIONS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_arc")
     def get_arc(self, arc_name: str, include_deleted: bool = False) -> Optional[Arc]:
         """Get arc by name."""
-        normalized = DataValidator.normalize_string(arc_name)
-        if not normalized:
-            return None
+        with DatabaseOperation(self.logger, "get_arc"):
+            normalized = DataValidator.normalize_string(arc_name)
+            if not normalized:
+                return None
 
-        query = self.session.query(Arc).filter_by(arc=normalized)
+            query = self.session.query(Arc).filter_by(arc=normalized)
 
-        if not include_deleted:
-            query = query.filter(Arc.deleted_at.is_(None))
+            if not include_deleted:
+                query = query.filter(Arc.deleted_at.is_(None))
 
-        return query.first()
+            return query.first()
 
-    @handle_db_errors
-    @log_database_operation("get_or_create_arc")
     def get_or_create_arc(self, arc_name: str) -> Arc:
         """Get existing arc or create it."""
-        normalized = DataValidator.normalize_string(arc_name)
-        if not normalized:
-            raise ValidationError("Arc name cannot be empty")
+        with DatabaseOperation(self.logger, "get_or_create_arc"):
+            normalized = DataValidator.normalize_string(arc_name)
+            if not normalized:
+                raise ValidationError("Arc name cannot be empty")
 
-        return self._get_or_create(Arc, {"arc": normalized})
+            return self._get_or_create(Arc, {"arc": normalized})
 
-    @handle_db_errors
-    @log_database_operation("get_all_arcs")
     def get_all_arcs(self, include_deleted: bool = False) -> List[Arc]:
         """Get all arcs."""
-        query = self.session.query(Arc)
+        with DatabaseOperation(self.logger, "get_all_arcs"):
+            query = self.session.query(Arc)
 
-        if not include_deleted:
-            query = query.filter(Arc.deleted_at.is_(None))
+            if not include_deleted:
+                query = query.filter(Arc.deleted_at.is_(None))
 
-        return query.order_by(Arc.arc).all()
+            return query.order_by(Arc.arc).all()
 
     # =========================================================================
     # THEME OPERATIONS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_theme")
     def get_theme(
         self, theme_name: str, include_deleted: bool = False
     ) -> Optional[Theme]:
         """Get theme by name."""
-        normalized = DataValidator.normalize_string(theme_name)
-        if not normalized:
-            return None
+        with DatabaseOperation(self.logger, "get_theme"):
+            normalized = DataValidator.normalize_string(theme_name)
+            if not normalized:
+                return None
 
-        query = self.session.query(Theme).filter_by(theme=normalized)
+            query = self.session.query(Theme).filter_by(theme=normalized)
 
-        if not include_deleted:
-            query = query.filter(Theme.deleted_at.is_(None))
+            if not include_deleted:
+                query = query.filter(Theme.deleted_at.is_(None))
 
-        return query.first()
+            return query.first()
 
-    @handle_db_errors
-    @log_database_operation("get_or_create_theme")
     def get_or_create_theme(self, theme_name: str) -> Theme:
         """Get existing theme or create it."""
-        normalized = DataValidator.normalize_string(theme_name)
-        if not normalized:
-            raise ValidationError("Theme name cannot be empty")
+        with DatabaseOperation(self.logger, "get_or_create_theme"):
+            normalized = DataValidator.normalize_string(theme_name)
+            if not normalized:
+                raise ValidationError("Theme name cannot be empty")
 
-        return self._get_or_create(Theme, {"theme": normalized})
+            return self._get_or_create(Theme, {"theme": normalized})
 
-    @handle_db_errors
-    @log_database_operation("get_all_themes")
     def get_all_themes(self, include_deleted: bool = False) -> List[Theme]:
         """Get all themes."""
-        query = self.session.query(Theme)
-        if not include_deleted:
-            query = query.filter(Theme.deleted_at.is_(None))
-        return query.order_by(Theme.theme).all()
+        with DatabaseOperation(self.logger, "get_all_themes"):
+            query = self.session.query(Theme)
+            if not include_deleted:
+                query = query.filter(Theme.deleted_at.is_(None))
+            return query.order_by(Theme.theme).all()
+
+    # =========================================================================
+    # MOTIF OPERATIONS
+    # =========================================================================
+
+    def get_motif(
+        self, motif_name: str, include_deleted: bool = False
+    ) -> Optional[Motif]:
+        """Get motif by name."""
+        with DatabaseOperation(self.logger, "get_motif"):
+            normalized = DataValidator.normalize_string(motif_name)
+            if not normalized:
+                return None
+
+            query = self.session.query(Motif).filter_by(name=normalized)
+
+            if not include_deleted:
+                query = query.filter(Motif.deleted_at.is_(None))
+
+            return query.first()
+
+    def get_or_create_motif(self, motif_name: str) -> Motif:
+        """Get existing motif or create it."""
+        with DatabaseOperation(self.logger, "get_or_create_motif"):
+            normalized = DataValidator.normalize_string(motif_name)
+            if not normalized:
+                raise ValidationError("Motif name cannot be empty")
+
+            return self._get_or_create(Motif, {"name": normalized})
+
+    def get_all_motifs(self, include_deleted: bool = False) -> List[Motif]:
+        """Get all motifs."""
+        with DatabaseOperation(self.logger, "get_all_motifs"):
+            query = self.session.query(Motif)
+            if not include_deleted:
+                query = query.filter(Motif.deleted_at.is_(None))
+            return query.order_by(Motif.name).all()
+
+    def get_entries_by_motif(
+        self, motif: Motif, include_deleted: bool = False
+    ) -> List[ManuscriptEntry]:
+        """Get all manuscript entries with a specific motif."""
+        with DatabaseOperation(self.logger, "get_entries_by_motif"):
+            if include_deleted:
+                return motif.entries
+            else:
+                return [
+                    e for e in motif.entries
+                    if not hasattr(motif, 'deleted_at') or not motif.deleted_at
+                ]
 
     # =========================================================================
     # QUERY METHODS
     # =========================================================================
 
-    @handle_db_errors
-    @log_database_operation("get_ready_entries")
     def get_ready_entries(self) -> List[ManuscriptEntry]:
         """
         Get entries ready for manuscript (edited=True AND status.is_content=True).
@@ -548,66 +630,64 @@ class ManuscriptManager(BaseManager):
         Returns:
             List of ManuscriptEntry objects ready for publication
         """
-        all_entries = self.session.query(ManuscriptEntry).all()
+        with DatabaseOperation(self.logger, "get_ready_entries"):
+            all_entries = self.session.query(ManuscriptEntry).all()
 
-        ready = [
-            me
-            for me in all_entries
-            if me.edited and me.status and me.status.is_content
-        ]
+            ready = [
+                me
+                for me in all_entries
+                if me.edited and me.status and me.status.is_content
+            ]
 
-        # Sort by entry date
-        return sorted(ready, key=lambda me: me.entry.date)
+            # Sort by entry date
+            return sorted(ready, key=lambda me: me.entry.date)
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_status")
     def get_entries_by_status(
         self, status: Union[ManuscriptStatus, str]
     ) -> List[ManuscriptEntry]:
         """Get all manuscript entries with specific status."""
-        if isinstance(status, str):
-            try:
-                status = ManuscriptStatus[status.upper()]
-            except KeyError:
-                status_lower = status.lower()
-                for ms in ManuscriptStatus:
-                    if ms.value == status_lower:
-                        status = ms
-                        break
+        with DatabaseOperation(self.logger, "get_entries_by_status"):
+            if isinstance(status, str):
+                try:
+                    status = ManuscriptStatus[status.upper()]
+                except KeyError:
+                    status_lower = status.lower()
+                    for ms in ManuscriptStatus:
+                        if ms.value == status_lower:
+                            status = ms
+                            break
 
-        if not isinstance(status, ManuscriptStatus):
-            return []
+            if not isinstance(status, ManuscriptStatus):
+                return []
 
-        return (
-            self.session.query(ManuscriptEntry)
-            .filter_by(status=status)
-            .order_by(ManuscriptEntry.entry_id)
-            .all()
-        )
+            return (
+                self.session.query(ManuscriptEntry)
+                .filter_by(status=status)
+                .order_by(ManuscriptEntry.entry_id)
+                .all()
+            )
 
-    @handle_db_errors
-    @log_database_operation("get_events_by_arc")
     def get_events_by_arc(
         self, arc: Arc, include_deleted: bool = False
     ) -> List[ManuscriptEvent]:
         """Get all manuscript events in an arc."""
-        query = self.session.query(ManuscriptEvent).filter_by(arc_id=arc.id)
+        with DatabaseOperation(self.logger, "get_events_by_arc"):
+            query = self.session.query(ManuscriptEvent).filter_by(arc_id=arc.id)
 
-        if not include_deleted:
-            query = query.filter(ManuscriptEvent.deleted_at.is_(None))
+            if not include_deleted:
+                query = query.filter(ManuscriptEvent.deleted_at.is_(None))
 
-        return query.all()
+            return query.all()
 
-    @handle_db_errors
-    @log_database_operation("get_entries_by_theme")
     def get_entries_by_theme(
         self, theme: Theme, include_deleted: bool = False
     ) -> List[ManuscriptEntry]:
         """Get all manuscript entries with a specific theme."""
-        if include_deleted:
-            return theme.entries
-        else:
-            # Filter out entries from soft-deleted themes
-            return [
-                e for e in theme.entries if not hasattr(theme, 'deleted_at') or not theme.deleted_at
-            ]
+        with DatabaseOperation(self.logger, "get_entries_by_theme"):
+            if include_deleted:
+                return theme.entries
+            else:
+                # Filter out entries from soft-deleted themes
+                return [
+                    e for e in theme.entries if not hasattr(theme, 'deleted_at') or not theme.deleted_at
+                ]

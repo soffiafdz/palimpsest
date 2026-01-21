@@ -7,6 +7,7 @@ Models for people, aliases, and tags in the journal.
 Models:
     - Person: People mentioned in journal entries
     - Alias: Alternative names for people
+    - TagCategory: Semantic categories for grouping tags
     - Tag: Simple keyword tags for categorizing entries
 
 These models track who appears in the journal and how entries are categorized.
@@ -30,7 +31,7 @@ from .associations import (
     entry_people,
     entry_tags,
     event_people,
-    people_dates,
+    moment_people,
 )
 from .base import Base, SoftDeleteMixin
 from .enums import RelationType
@@ -38,7 +39,7 @@ from .enums import RelationType
 if TYPE_CHECKING:
     from .core import Entry
     from .creative import Event
-    from .geography import MentionedDate
+    from .geography import Moment
     from ..models_manuscript import ManuscriptPerson
 
 
@@ -101,8 +102,8 @@ class Person(Base, SoftDeleteMixin):
     aliases: Mapped[List["Alias"]] = relationship(
         "Alias", back_populates="person", cascade="all, delete-orphan"
     )
-    dates: Mapped[List["MentionedDate"]] = relationship(
-        "MentionedDate", secondary=people_dates, back_populates="people"
+    moments: Mapped[List["Moment"]] = relationship(
+        "Moment", secondary=moment_people, back_populates="people"
     )
     events: Mapped[List["Event"]] = relationship(
         "Event", secondary=event_people, back_populates="people"
@@ -136,8 +137,8 @@ class Person(Base, SoftDeleteMixin):
 
     @property
     def appearances_count(self) -> int:
-        """Total number of appearances (explicit dates)."""
-        return len(self.dates)
+        """Total number of appearances (explicit moments)."""
+        return len(self.moments)
 
     @property
     def event_count(self) -> int:
@@ -147,14 +148,14 @@ class Person(Base, SoftDeleteMixin):
     @property
     def first_appearance(self) -> Optional[date]:
         """Earliest date this person was mentioned."""
-        dates = [md.date for md in self.dates]
-        return min(dates) if dates else None
+        moment_dates = [m.date for m in self.moments]
+        return min(moment_dates) if moment_dates else None
 
     @property
     def last_appearance(self) -> Optional[date]:
         """Most recent date this person was mentioned."""
-        dates = [md.date for md in self.dates]
-        return max(dates) if dates else None
+        moment_dates = [m.date for m in self.moments]
+        return max(moment_dates) if moment_dates else None
 
     @property
     def mention_timeline(self) -> List[Dict[str, Any]]:
@@ -162,7 +163,7 @@ class Person(Base, SoftDeleteMixin):
         Complete timeline of mentions with context.
 
         Returns:
-            List of dicts with keys: date, source ('entry'|'mentioned'), context
+            List of dicts with keys: date, source ('entry'|'moment'), context
         """
         timeline = []
 
@@ -177,14 +178,14 @@ class Person(Base, SoftDeleteMixin):
                 }
             )
 
-        # Add explicit mentioned dates
-        for md in self.dates:
+        # Add explicit moments
+        for moment in self.moments:
             timeline.append(
                 {
-                    "date": md.date,
-                    "source": "date",
-                    "context": md.context,
-                    "mentioned_date_id": md.id,
+                    "date": moment.date,
+                    "source": "moment",
+                    "context": moment.context,
+                    "moment_id": moment.id,
                 }
             )
 
@@ -196,14 +197,14 @@ class Person(Base, SoftDeleteMixin):
     def mention_frequency(self) -> Dict[str, int]:
         """
         Calculate mention frequency by year-month.
-        Uses all mentions (entries + mentioned dates).
+        Uses all mentions (from moments).
 
         Returns:
             Dictionary mapping YYYY-MM strings to mention counts
         """
         frequency: Dict[str, int] = {}
-        for md in self.dates:
-            year_month = md.date.strftime("%Y-%m")
+        for moment in self.moments:
+            year_month = moment.date.strftime("%Y-%m")
             frequency[year_month] = frequency.get(year_month, 0) + 1
         return frequency
 
@@ -300,16 +301,95 @@ class Alias(Base):
             )
 
 
+class TagCategory(Base):
+    """
+    Semantic categories for grouping tags.
+
+    Provides a hierarchical organization for tags based on narrative
+    analysis categories. Categories are predefined based on the
+    narrative analysis taxonomy.
+
+    Attributes:
+        id: Primary key
+        name: Category name (unique, e.g., "Digital Surveillance", "Writing/Poetry")
+        description: Optional description of what this category encompasses
+
+    Relationships:
+        tags: One-to-many with Tag (tags in this category)
+
+    Computed Properties:
+        tag_count: Number of tags in this category
+        entry_count: Total entries across all tags in category
+
+    Predefined Categories (30):
+        Digital Surveillance, Photography, AI/Technology, Writing/Poetry,
+        Medication, Crisis/Suicidality, Food/Diet, Academia, Sleep/Insomnia,
+        Depression/Grief, Literature, Identity, Therapy, Dysphoria/Body,
+        Obsession/Control, Meta-narrative, Mania/Bipolar, Music,
+        Rejection/Ghosting, Intimacy, Alcohol, Messaging, Anxiety/Panic,
+        Film/TV, Dating Apps, Romance/Dating, Sexual, Smoking/Drugs,
+        Tarot/Divination, Transition, Relics/Objects, Physical Health,
+        Isolation, Hygiene, Family, Childhood, Friendship/Platonic,
+        Immigration/Visa, Dreams/Dreaming, Work/Productivity
+    """
+
+    __tablename__ = "tag_categories"
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_tag_category_non_empty_name"),
+    )
+
+    # ---- Primary fields ----
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # ---- Relationship ----
+    tags: Mapped[List["Tag"]] = relationship("Tag", back_populates="category")
+
+    # ---- Computed properties ----
+    @property
+    def tag_count(self) -> int:
+        """Number of tags in this category."""
+        return len(self.tags)
+
+    @property
+    def entry_count(self) -> int:
+        """Total entries across all tags in this category."""
+        entries = set()
+        for tag in self.tags:
+            entries.update(tag.entries)
+        return len(entries)
+
+    @property
+    def all_tag_names(self) -> List[str]:
+        """Get all tag names in this category."""
+        return [tag.tag for tag in self.tags]
+
+    def __repr__(self) -> str:
+        return f"<TagCategory(id={self.id}, name='{self.name}')>"
+
+    def __str__(self) -> str:
+        return f"TagCategory '{self.name}' ({self.tag_count} tags)"
+
+
 class Tag(Base):
     """
-    Simple keyword tags for entries.
+    Keyword tags for entries with optional category grouping.
 
     Provides a flexible tagging system for categorizing and
-    searching journal entries.
+    searching journal entries. Tags can optionally belong to
+    a semantic category for hierarchical organization.
 
     Attributes:
         id: Primary key
         tag: The tag text (unique)
+        category_id: Optional FK to TagCategory
+
+    Relationships:
+        category: Many-to-one with TagCategory (optional)
+        entries: Many-to-many with Entry
     """
 
     __tablename__ = "tags"
@@ -320,8 +400,14 @@ class Tag(Base):
     tag: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
     )
+    category_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("tag_categories.id", ondelete="SET NULL"), nullable=True
+    )
 
-    # ---- Relationship ----
+    # ---- Relationships ----
+    category: Mapped[Optional["TagCategory"]] = relationship(
+        "TagCategory", back_populates="tags"
+    )
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_tags, back_populates="tags"
     )

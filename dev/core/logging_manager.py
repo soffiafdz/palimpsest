@@ -2,10 +2,40 @@
 """
 logging_manager.py
 --------------------
-Centralized logging system for all palimpsest operations.
+Centralized logging system for all Palimpsest operations.
 
-Provides structured logging with rotation for database operations,
+Provides structured logging with file rotation for database operations,
 conversion pipelines, and any process requiring comprehensive logging.
+
+Features:
+    - Rotating file handlers (10MB max, 5 backups)
+    - Separate error log for quick issue scanning
+    - Console handler for warnings and above
+    - JSON-formatted structured logging
+    - Null Object pattern for optional logging
+
+Classes:
+    PalimpsestLogger: Main logger with operation/error/debug/info methods
+    NullLogger: No-op logger implementing same interface
+    safe_logger: Factory function for null-safe logging
+
+Usage:
+    from dev.core.logging_manager import PalimpsestLogger, safe_logger
+
+    # Create logger
+    logger = PalimpsestLogger(Path("/path/to/logs"), "my_component")
+
+    # Log operations
+    logger.log_operation("sync_started", {"entries": 100})
+    logger.log_info("Processing complete")
+    logger.log_error(exception, {"context": "sync"})
+
+    # Use safe_logger for optional logging (avoids if logger: checks)
+    safe_logger(optional_logger).log_info("Works even if None")
+
+    # CLI error handling
+    from dev.core.logging_manager import handle_cli_error
+    handle_cli_error(ctx, exception, "operation_name")
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -289,17 +319,8 @@ def handle_cli_error(
     if additional_context:
         context.update(additional_context)
 
-    # Format error message
-    if logger:
-        error_msg = logger.log_cli_error(error, context, show_traceback=verbose)
-    else:
-        # Fallback if logger not available
-        error_type = type(error).__name__
-        error_msg = (
-            f"❌ {operation.replace('_', ' ').title()} failed: {error_type}: {error}"
-        )
-        if verbose:
-            error_msg += f"\n\n{traceback.format_exc()}"
+    # Format error message using safe_logger for null-safety
+    error_msg = safe_logger(logger).log_cli_error(error, context, show_traceback=verbose)
 
     # Display and exit
     click.echo(error_msg, err=True)

@@ -12,8 +12,10 @@ Available validators:
     - wiki: Wiki link integrity, orphan detection, broken links
     - db: Database referential integrity, constraint violations
     - md: Markdown file validation, broken links, malformed frontmatter
-    - metadata: Metadata parser compatibility checks
+    - frontmatter: YAML frontmatter structure and parser compatibility
     - consistency: Cross-system consistency (wiki ↔ db, md ↔ db)
+
+Note: The 'metadata' command has been renamed to 'frontmatter' for clarity.
 
 Architecture:
     This CLI aggregates validators from individual modules (wiki.py, db.py, etc.)
@@ -32,8 +34,8 @@ Usage:
     validate md links           # Check markdown links
     validate md all             # Run all markdown checks
 
-    validate metadata people    # Validate people metadata
-    validate metadata all       # Run all metadata checks
+    validate frontmatter people # Validate people metadata
+    validate frontmatter all    # Run all frontmatter checks
 
     validate consistency existence   # Check entry existence
     validate consistency all         # Run all consistency checks
@@ -48,7 +50,7 @@ import click
 from .wiki import wiki
 from .database import db
 from .markdown import md
-from .metadata import metadata
+from .frontmatter import frontmatter
 from .consistency import consistency
 
 
@@ -58,7 +60,7 @@ def cli():
     Palimpsest Validation Suite.
 
     Run comprehensive validation checks on wiki links, database integrity,
-    markdown files, and cross-system consistency.
+    markdown files, and YAML frontmatter.
     """
     pass
 
@@ -67,7 +69,7 @@ def cli():
 cli.add_command(wiki)
 cli.add_command(db)
 cli.add_command(md)
-cli.add_command(metadata)
+cli.add_command(frontmatter)
 cli.add_command(consistency)
 
 

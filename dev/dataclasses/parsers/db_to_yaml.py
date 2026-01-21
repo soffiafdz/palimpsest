@@ -1,12 +1,36 @@
+#!/usr/bin/env python3
 """
-Database to YAML Exporter
+db_to_yaml.py
+-------------
+Database Entry to YAML frontmatter exporter.
 
 Converts database Entry ORM objects to YAML frontmatter-compatible metadata format.
-Handles complex field building including people, locations, dates, references, and poems.
-"""
+Handles complex field building including people, locations, dates, references,
+and poems. Used by MdEntry.from_database() for sql2yaml workflow.
 
+Classes:
+    DbToYamlExporter: Exporter with static methods for building metadata
+
+Key Methods:
+    build_cities_metadata: Extract city/cities (single or list)
+    build_locations_metadata: Extract locations (flat or nested by city)
+    build_people_metadata: Extract people with aliases
+    build_dates_metadata: Extract mentioned dates with context
+    build_references_metadata: Extract references with sources
+    build_poems_metadata: Extract poems with revision dates
+    build_manuscript_metadata: Extract manuscript status and themes
+
+Usage:
+    from dev.dataclasses.parsers import DbToYamlExporter
+
+    exporter = DbToYamlExporter()
+    cities = exporter.build_cities_metadata(entry)
+    people = exporter.build_people_metadata(entry)
+"""
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 from typing import Dict, Any, List, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -113,19 +137,39 @@ class DbToYamlExporter:
         people_list: List[Dict[str, Any]] = []
         aliases_by_person: Dict[int, Dict[str, Any]] = {}
 
+        # Import hyphenation utility
+        from dev.utils.parsers import spaces_to_hyphenated
+
+        # Helper function to re-hyphenate names for export
+        def rehyphenate_name(name: str) -> str:
+            """Re-hyphenate first name portion if it contains spaces."""
+            if not name or " " not in name:
+                return name
+            # Hyphenate spaces in name
+            return spaces_to_hyphenated(name)
+
+        def rehyphenate_full_name(full_name: str) -> str:
+            """Re-hyphenate only the first name portion of a full name."""
+            if not full_name or " " not in full_name:
+                return full_name
+            # For now, just hyphenate ALL spaces - this matches the input format
+            return spaces_to_hyphenated(full_name)
+
         # Process aliases first - group by person
         if entry.aliases_used:
             for alias in entry.aliases_used:
                 person_id = alias.person_id
                 if person_id not in aliases_by_person:
+                    # Re-hyphenate the name for export
+                    name_hyphenated = rehyphenate_name(alias.person.name) if alias.person.name else None
                     aliases_by_person[person_id] = {
                         "alias": [],
-                        "name": alias.person.name,
+                        "name": name_hyphenated,
                     }
                     # Add full_name if name_fellow
                     if alias.person.name_fellow and alias.person.full_name:
-                        fname = alias.person.full_name
-                        aliases_by_person[person_id]["full_name"] = fname
+                        fname_hyphenated = rehyphenate_full_name(alias.person.full_name)
+                        aliases_by_person[person_id]["full_name"] = fname_hyphenated
                 aliases_by_person[person_id]["alias"].append(alias.alias)
 
         # Process regular people (skip those already in aliases)
@@ -133,9 +177,11 @@ class DbToYamlExporter:
             if aliases_by_person and p.id in aliases_by_person:
                 continue
             if p.name_fellow:
-                people_list.append({"full_name": p.full_name})
+                full_name_hyphenated = rehyphenate_full_name(p.full_name)
+                people_list.append({"full_name": full_name_hyphenated})
             else:
-                people_list.append({"name": p.name})
+                name_hyphenated = rehyphenate_name(p.name)
+                people_list.append({"name": name_hyphenated})
 
         # Add alias entries
         people_list.extend(aliases_by_person.values())
@@ -148,8 +194,13 @@ class DbToYamlExporter:
         """
         Extract mentioned dates with context from database Entry.
 
-        Builds date items as dicts with date, locations, people, and context.
-        Adds "~" marker if entry date is not in mentioned dates.
+        Builds date items as dicts with date, type, locations, people, events,
+        and context. Adds "~" marker if entry date is not in mentioned dates
+        (moments only, not references).
+
+        For simple references (just date + context), uses the compact "~DATE (context)"
+        string format. For complex references with locations/people/events, uses
+        dict format with "type": "reference".
 
         Args:
             entry: Database Entry ORM object
@@ -160,30 +211,57 @@ class DbToYamlExporter:
         Examples:
             >>> build_dates_metadata(entry)
             [
-                "~",  # Entry date not mentioned
+                "~",  # Entry date not mentioned in moments
                 {
                     "date": "2024-01-15",
                     "locations": ["Café X"],
                     "people": [{"name": "John"}],
                     "context": "Meeting"
+                },
+                "~2025-01-11 (negatives from the anti-date)",  # Simple reference
+                {
+                    "date": "2025-01-11",
+                    "type": "reference",
+                    "people": [{"name": "Clara"}],
+                    "context": "Complex reference with people"
                 }
             ]
         """
-        if not entry.dates:
+        from dev.database.models import MomentType
+
+        if not entry.moments:
             return None
 
         dates_list: List[Union[str, Dict[str, Any]]] = []
 
-        # Check if entry date is in mentioned dates
-        entry_date_in_mentioned = any(md.date == entry.date for md in entry.dates)
+        # Check if entry date is in mentioned dates (moments only, not references)
+        entry_date_in_moments = any(
+            md.date == entry.date and md.type == MomentType.MOMENT
+            for md in entry.moments
+        )
 
-        # Add ~ if entry date NOT in mentioned dates
-        if not entry_date_in_mentioned:
+        # Add ~ if entry date NOT in mentioned moments
+        if not entry_date_in_moments:
             dates_list.append("~")
 
-        # Build all date items as dicts
-        for mentioned_date in entry.dates:
+        # Build all date items
+        for mentioned_date in entry.moments:
+            is_reference = mentioned_date.type == MomentType.REFERENCE
+
+            # For simple references (only date + context), use compact string format
+            if is_reference and not mentioned_date.locations and not mentioned_date.people and not mentioned_date.events:
+                if mentioned_date.context:
+                    dates_list.append(f"~{mentioned_date.date.isoformat()} ({mentioned_date.context})")
+                else:
+                    dates_list.append(f"~{mentioned_date.date.isoformat()}")
+                continue
+
+            # Build dict format for complex entries
             date_dict: Dict[str, Any] = {"date": mentioned_date.date.isoformat()}
+
+            # Add type only for references (moment is the default)
+            if is_reference:
+                date_dict["type"] = "reference"
 
             # Add locations
             if mentioned_date.locations:
@@ -202,6 +280,10 @@ class DbToYamlExporter:
             # Add context
             if mentioned_date.context:
                 date_dict["context"] = mentioned_date.context
+
+            # Add events
+            if mentioned_date.events:
+                date_dict["events"] = [event.event for event in mentioned_date.events]
 
             dates_list.append(date_dict)
 

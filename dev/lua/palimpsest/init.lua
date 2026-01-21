@@ -2,7 +2,14 @@
 local M = {}
 
 function M.setup()
-	-- Load files
+	local config = require("palimpsest.config")
+
+	-- Only activate if we're inside a palimpsest project
+	if not config.in_project() then
+		return
+	end
+
+	-- Load modules
 	require("palimpsest.vimwiki").setup()
 	require("palimpsest.commands").setup()
 	require("palimpsest.validators").setup()

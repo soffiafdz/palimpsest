@@ -113,8 +113,9 @@ See Also:
     - query_optimizer.py: Efficient database queries
     - query_analytics.py: Analytics and reporting
     - sql2yaml.py: Markdown export callback implementation
-    - decorators.py: @handle_db_errors, @log_database_operation
+    - decorators.py: DatabaseOperation context manager
 """
+# --- Standard library imports ---
 import csv
 import json
 import shutil
@@ -122,13 +123,15 @@ from pathlib import Path
 from datetime import datetime, timezone, date
 from typing import Dict, Any, Union, Optional, List, Callable
 
+# --- Third party imports ---
 from sqlalchemy.orm import Session
 
+# --- Local imports ---
 from dev.core.exceptions import ExportError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.temporal_files import TemporalFileManager
 
-from .decorators import handle_db_errors, log_database_operation
+from .decorators import DatabaseOperation
 from .query_analytics import QueryAnalytics
 from .query_optimizer import QueryOptimizer, HierarchicalBatcher, DateBatch
 
@@ -141,7 +144,7 @@ from .models import (
     Tag,
     Reference,
     ReferenceSource,
-    MentionedDate,
+    Moment,
     Poem,
     PoemVersion,
     Alias,
@@ -173,8 +176,6 @@ class ExportManager:
         """
         self.logger = logger
 
-    @handle_db_errors
-    @log_database_operation("export_entries_optimized")
     def export_entries_optimized(
         self,
         session: Session,
@@ -210,32 +211,30 @@ class ExportManager:
             ...     output_dir="/path/to/output"
             ... )
         """
-        stats = {
-            "total": len(entry_ids),
-            "processed": 0,
-            "errors": 0,
-            "start_time": datetime.now(),
-        }
+        with DatabaseOperation(self.logger, "export_entries_optimized"):
+            stats = {
+                "total": len(entry_ids),
+                "processed": 0,
+                "errors": 0,
+                "start_time": datetime.now(),
+            }
 
-        # Use optimized loading internally
-        entries = QueryOptimizer.for_export(session, entry_ids)
+            # Use optimized loading internally
+            entries = QueryOptimizer.for_export(session, entry_ids)
 
-        for entry in entries:
-            try:
-                export_callback(entry, **callback_kwargs)
-                stats["processed"] += 1
-            except Exception as e:
-                stats["errors"] += 1
-                if self.logger:
-                    self.logger.log_error(
+            for entry in entries:
+                try:
+                    export_callback(entry, **callback_kwargs)
+                    stats["processed"] += 1
+                except Exception as e:
+                    stats["errors"] += 1
+                    safe_logger(self.logger).log_error(
                         e, {"operation": "export_entry", "entry_id": entry.id}
                     )
 
-        stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
-        return stats
+            stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
+            return stats
 
-    @handle_db_errors
-    @log_database_operation("export_hierarchical")
     def export_hierarchical(
         self,
         session: Session,
@@ -270,47 +269,46 @@ class ExportManager:
             ...     output_dir="/path/to/output"
             ... )
         """
-        stats = {
-            "total_batches": 0,
-            "total_entries": 0,
-            "processed": 0,
-            "errors": 0,
-            "batches": [],
-            "start_time": datetime.now(),
-        }
-
-        # Use HierarchicalBatcher internally
-        batches = HierarchicalBatcher.create_batches(session, threshold)
-        stats["total_batches"] = len(batches)
-
-        for batch in batches:
-            batch_stats = {
-                "period": batch.period_label,
-                "entries": batch.entry_count,
+        with DatabaseOperation(self.logger, "export_hierarchical"):
+            stats = {
+                "total_batches": 0,
+                "total_entries": 0,
                 "processed": 0,
                 "errors": 0,
+                "batches": [],
+                "start_time": datetime.now(),
             }
 
-            stats["total_entries"] += batch.entry_count
+            # Use HierarchicalBatcher internally
+            batches = HierarchicalBatcher.create_batches(session, threshold)
+            stats["total_batches"] = len(batches)
 
-            # All relationships already preloaded by QueryOptimizer!
-            for entry in batch.entries:
-                try:
-                    export_callback(entry, **callback_kwargs)
-                    batch_stats["processed"] += 1
-                    stats["processed"] += 1
-                except Exception as e:
-                    batch_stats["errors"] += 1
-                    stats["errors"] += 1
-                    if self.logger:
-                        self.logger.log_error(
+            for batch in batches:
+                batch_stats = {
+                    "period": batch.period_label,
+                    "entries": batch.entry_count,
+                    "processed": 0,
+                    "errors": 0,
+                }
+
+                stats["total_entries"] += batch.entry_count
+
+                # All relationships already preloaded by QueryOptimizer!
+                for entry in batch.entries:
+                    try:
+                        export_callback(entry, **callback_kwargs)
+                        batch_stats["processed"] += 1
+                        stats["processed"] += 1
+                    except Exception as e:
+                        batch_stats["errors"] += 1
+                        stats["errors"] += 1
+                        safe_logger(self.logger).log_error(
                             e, {"operation": "export_entry", "entry_id": entry.id}
                         )
 
-            stats["batches"].append(batch_stats)
+                stats["batches"].append(batch_stats)
 
-            if self.logger:
-                self.logger.log_operation(
+                safe_logger(self.logger).log_operation(
                     "batch_exported",
                     {
                         "period": batch.period_label,
@@ -319,11 +317,9 @@ class ExportManager:
                     },
                 )
 
-        stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
-        return stats
+            stats["duration"] = (datetime.now() - stats["start_time"]).total_seconds()
+            return stats
 
-    @handle_db_errors
-    @log_database_operation("get_export_batches")
     def get_export_batches(
         self, session: Session, threshold: int = 500
     ) -> List[DateBatch]:
@@ -348,10 +344,9 @@ class ExportManager:
             ...         # All relationships already loaded
             ...         process_entry(entry)
         """
-        return HierarchicalBatcher.create_batches(session, threshold)
+        with DatabaseOperation(self.logger, "get_export_batches"):
+            return HierarchicalBatcher.create_batches(session, threshold)
 
-    @handle_db_errors
-    @log_database_operation("export_to_csv")
     def export_to_csv(
         self, session: Session, export_dir: Union[str, Path]
     ) -> Dict[str, Path]:
@@ -365,51 +360,50 @@ class ExportManager:
         Returns:
             Dictionary mapping table names to exported file paths
         """
-        export_dir = Path(export_dir)
-        export_dir.mkdir(parents=True, exist_ok=True)
+        with DatabaseOperation(self.logger, "export_to_csv"):
+            export_dir = Path(export_dir)
+            export_dir.mkdir(parents=True, exist_ok=True)
 
-        exported_files = {}
+            exported_files = {}
 
-        # Define tables to export
-        tables = {
-            "entries": Entry,
-            "people": Person,
-            "locations": Location,
-            "events": Event,
-            "tags": Tag,
-            "references": Reference,
-            "reference_sources": ReferenceSource,
-            "mentioned_dates": MentionedDate,
-            "poems": Poem,
-            "poem_versions": PoemVersion,
-            "aliases": Alias,
-            "manuscript_entries": ManuscriptEntry,
-            "manuscript_people": ManuscriptPerson,
-            "manuscript_events": ManuscriptEvent,
-            "themes": Theme,
-            "arcs": Arc,
-        }
+            # Define tables to export
+            tables = {
+                "entries": Entry,
+                "people": Person,
+                "locations": Location,
+                "events": Event,
+                "tags": Tag,
+                "references": Reference,
+                "reference_sources": ReferenceSource,
+                "mentioned_dates": Moment,
+                "poems": Poem,
+                "poem_versions": PoemVersion,
+                "aliases": Alias,
+                "manuscript_entries": ManuscriptEntry,
+                "manuscript_people": ManuscriptPerson,
+                "manuscript_events": ManuscriptEvent,
+                "themes": Theme,
+                "arcs": Arc,
+            }
 
-        with TemporalFileManager() as temp_manager:
-            for table_name, model_class in tables.items():
-                try:
-                    exported_files[table_name] = self._export_table_to_csv(
-                        session, model_class, table_name, export_dir, temp_manager
-                    )
-                except ExportError as e:
-                    if self.logger:
-                        self.logger.log_error(
+            with TemporalFileManager() as temp_manager:
+                for table_name, model_class in tables.items():
+                    try:
+                        exported_files[table_name] = self._export_table_to_csv(
+                            session, model_class, table_name, export_dir, temp_manager
+                        )
+                    except ExportError as e:
+                        safe_logger(self.logger).log_error(
                             e, {"operation": "export_table_csv", "table": table_name}
                         )
-                    raise  # Re-raise instead of continuing
-                except Exception as e:
-                    if self.logger:
-                        self.logger.log_error(
+                        raise  # Re-raise instead of continuing
+                    except Exception as e:
+                        safe_logger(self.logger).log_error(
                             e, {"operation": "export_table_csv", "table": table_name}
                         )
-                    raise ExportError(f"Failed to export table {table_name}: {e}")
+                        raise ExportError(f"Failed to export table {table_name}: {e}")
 
-        return exported_files
+            return exported_files
 
     def _export_table_to_csv(
         self,
@@ -460,8 +454,6 @@ class ExportManager:
         shutil.move(str(temp_file), str(final_file))
         return final_file
 
-    @handle_db_errors
-    @log_database_operation("export_to_json")
     def _write_entity_json_array(
         self,
         f,
@@ -478,20 +470,21 @@ class ExportManager:
             config: EntityExportConfig with model and serializer
             is_last: If True, don't add trailing comma
         """
-        f.write(f'  "{config.json_key}": [\n')
-        entities = session.query(config.model).all()
+        with DatabaseOperation(self.logger, "export_to_json"):
+            f.write(f'  "{config.json_key}": [\n')
+            entities = session.query(config.model).all()
 
-        for i, entity in enumerate(entities):
-            if i > 0:
-                f.write(",\n")
-            f.write("    ")
-            entity_data = config.serializer(entity)
-            f.write(json.dumps(entity_data, ensure_ascii=False, default=str))
+            for i, entity in enumerate(entities):
+                if i > 0:
+                    f.write(",\n")
+                f.write("    ")
+                entity_data = config.serializer(entity)
+                f.write(json.dumps(entity_data, ensure_ascii=False, default=str))
 
-        if is_last:
-            f.write("\n  ]\n")
-        else:
-            f.write("\n  ],\n")
+            if is_last:
+                f.write("\n  ]\n")
+            else:
+                f.write("\n  ],\n")
 
     def export_to_json(
         self,
@@ -599,7 +592,7 @@ class ExportManager:
             # Relationships
             "mentioned_dates": [
                 {"date": md.date.isoformat(), "context": md.context}
-                for md in entry.dates
+                for md in entry.moments
             ],
             "cities": [city.city for city in entry.cities],
             "locations": [

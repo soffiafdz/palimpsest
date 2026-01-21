@@ -70,6 +70,7 @@ function M.export(entity_type)
 		"index",
 		"stats",
 		"timeline",
+		"analysis",
 		"entries",
 		"people",
 		"locations",
@@ -79,6 +80,11 @@ function M.export(entity_type)
 		"tags",
 		"poems",
 		"references",
+		"manuscript",
+		"manuscript-entries",
+		"manuscript-characters",
+		"manuscript-arcs",
+		"manuscript-events",
 	}
 
 	-- Validate entity type
@@ -89,7 +95,7 @@ function M.export(entity_type)
 	end
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && python -m dev.pipeline.sql2wiki export %s", root, entity_type)
+	local cmd = string.format("cd %s && plm export-wiki %s", root, entity_type)
 
 	execute_command(cmd, { show_output = true })
 end
@@ -183,15 +189,14 @@ end
 
 -- Export manuscript entities to wiki
 function M.manuscript_export(entity_type)
-	entity_type = entity_type or "all"
+	entity_type = entity_type or "manuscript"
 
 	local valid_types = {
-		"all",
-		"entries",
-		"characters",
-		"events",
-		"arcs",
-		"themes",
+		"manuscript",
+		"manuscript-entries",
+		"manuscript-characters",
+		"manuscript-arcs",
+		"manuscript-events",
 	}
 
 	-- Validate entity type
@@ -202,7 +207,7 @@ function M.manuscript_export(entity_type)
 	end
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && python -m dev.pipeline.manuscript2wiki export %s", root, entity_type)
+	local cmd = string.format("cd %s && plm export-wiki %s", root, entity_type)
 
 	execute_command(cmd, { show_output = true })
 end
@@ -226,7 +231,7 @@ function M.manuscript_import(entity_type)
 	end
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && python -m dev.pipeline.wiki2sql import %s", root, entity_type)
+	local cmd = string.format("cd %s && plm import-wiki %s", root, entity_type)
 
 	execute_command(cmd, { show_output = true })
 end
@@ -278,6 +283,11 @@ function M.setup()
 				"tags",
 				"poems",
 				"references",
+				"manuscript",
+				"manuscript-entries",
+				"manuscript-characters",
+				"manuscript-arcs",
+				"manuscript-events",
 			}
 		end,
 	})
@@ -322,12 +332,11 @@ function M.setup()
 		desc = "Export manuscript entities to wiki",
 		complete = function()
 			return {
-				"all",
-				"entries",
-				"characters",
-				"events",
-				"arcs",
-				"themes",
+				"manuscript",
+				"manuscript-entries",
+				"manuscript-characters",
+				"manuscript-arcs",
+				"manuscript-events",
 			}
 		end,
 	})
@@ -375,20 +384,24 @@ function M.setup()
 				"tags",
 				"poems",
 				"references",
+				"manuscript",
+				"manuscript-entries",
+				"manuscript-characters",
+				"manuscript-arcs",
+				"manuscript-events",
 			}
 		end,
 	})
 
 	-- fzf-lua search command
 	vim.api.nvim_create_user_command("PalimpsestSearch", function(opts)
-		local entity_type = opts.args ~= "" and opts.args or "all"
+		local entity_type = opts.args ~= "" and opts.args or "wiki"
 		require("palimpsest.fzf").search(entity_type)
 	end, {
 		nargs = "?",
 		desc = "Search wiki content with fzf-lua",
 		complete = function()
 			return {
-				"all",
 				"wiki",
 				"journal",
 				"people",
@@ -400,6 +413,11 @@ function M.setup()
 				"tags",
 				"poems",
 				"references",
+				"manuscript",
+				"manuscript-entries",
+				"manuscript-characters",
+				"manuscript-arcs",
+				"manuscript-events",
 			}
 		end,
 	})

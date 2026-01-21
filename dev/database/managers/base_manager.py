@@ -10,8 +10,8 @@ Key Features:
     - Retry logic for database lock handling
     - Generic get-or-create utilities
     - Object resolution helpers
-    - Consistent error handling with decorators
-    - Consistent logging with decorators
+    - Consistent error handling via DatabaseOperation context manager
+    - Consistent logging via DatabaseOperation context manager
     - Support for both soft and hard delete where applicable
     - Transaction management helpers
 
@@ -29,24 +29,28 @@ Example:
         def __init__(self, session: Session, logger: Optional[PalimpsestLogger] = None):
             super().__init__(session, logger)
 
-        @handle_db_errors
-        @log_database_operation("create_person")
-        @validate_metadata(["name"])
         def create(self, metadata: Dict[str, Any]) -> Person:
-            # Entity-specific creation logic
-            ...
+            DataValidator.validate_required_fields(metadata, ["name"])
+            with DatabaseOperation(self.logger, "create_person"):
+                # Entity-specific creation logic
+                ...
 """
+# --- Annotations ---
 from __future__ import annotations
 
+# --- Standard library imports ---
 import time
 from abc import ABC
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union, Protocol
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, Protocol
 
+# --- Third party imports ---
 from sqlalchemy.orm import Session, Mapped
 from sqlalchemy.exc import IntegrityError, OperationalError
 
+# --- Local imports ---
 from dev.core.exceptions import DatabaseError
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from dev.core.validators import DataValidator
 
 
 class HasId(Protocol):
@@ -117,11 +121,10 @@ class BaseManager(ABC):
                 ) and attempt < max_retries - 1:
                     wait_time = retry_delay * (2**attempt)  # Exponential backoff
 
-                    if self.logger:
-                        self.logger.log_debug(
-                            f"Database locked, retrying in {wait_time}s",
-                            {"attempt": attempt + 1, "max_retries": max_retries},
-                        )
+                    safe_logger(self.logger).log_debug(
+                        f"Database locked, retrying in {wait_time}s",
+                        {"attempt": attempt + 1, "max_retries": max_retries},
+                    )
 
                     time.sleep(wait_time)
                     continue
@@ -219,6 +222,354 @@ class BaseManager(ABC):
             raise TypeError(
                 f"Expected {model_class.__name__} instance or int, got {type(item)}"
             )
+
+    # -------------------------------------------------------------------------
+    # Generic CRUD Helpers
+    # -------------------------------------------------------------------------
+
+    def _exists(
+        self,
+        model_class: Type[T],
+        field_name: str,
+        value: Any,
+        normalize: bool = True,
+        include_deleted: bool = False,
+    ) -> bool:
+        """
+        Generic existence check for any entity.
+
+        Args:
+            model_class: ORM model class to query
+            field_name: Field name to filter by
+            value: Value to check for
+            normalize: Whether to normalize string values
+            include_deleted: Include soft-deleted entities
+
+        Returns:
+            True if entity exists, False otherwise
+        """
+        if value is None:
+            return False
+
+        # Normalize string values
+        if normalize and isinstance(value, str):
+            value = DataValidator.normalize_string(value)
+            if not value:
+                return False
+
+        query = self.session.query(model_class).filter_by(**{field_name: value})
+
+        # Handle soft delete if model supports it
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        return query.first() is not None
+
+    def _get_by_id(
+        self,
+        model_class: Type[T],
+        entity_id: int,
+        include_deleted: bool = False,
+    ) -> Optional[T]:
+        """
+        Get entity by ID with optional soft-delete filtering.
+
+        Args:
+            model_class: ORM model class
+            entity_id: The entity ID
+            include_deleted: Include soft-deleted entities
+
+        Returns:
+            Entity if found, None otherwise
+        """
+        entity = self.session.get(model_class, entity_id)
+        if entity is None:
+            return None
+
+        if not include_deleted and hasattr(entity, "deleted_at"):
+            if entity.deleted_at is not None:
+                return None
+
+        return entity
+
+    def _get_by_field(
+        self,
+        model_class: Type[T],
+        field_name: str,
+        value: Any,
+        normalize: bool = True,
+        include_deleted: bool = False,
+    ) -> Optional[T]:
+        """
+        Get entity by a specific field value.
+
+        Args:
+            model_class: ORM model class
+            field_name: Field name to filter by
+            value: Value to look up
+            normalize: Whether to normalize string values
+            include_deleted: Include soft-deleted entities
+
+        Returns:
+            Entity if found, None otherwise
+        """
+        if value is None:
+            return None
+
+        # Normalize string values
+        if normalize and isinstance(value, str):
+            value = DataValidator.normalize_string(value)
+            if not value:
+                return None
+
+        query = self.session.query(model_class).filter_by(**{field_name: value})
+
+        # Handle soft delete if model supports it
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        return query.first()
+
+    def _get_all(
+        self,
+        model_class: Type[T],
+        order_by: Optional[str] = None,
+        include_deleted: bool = False,
+        **filters: Any,
+    ) -> List[T]:
+        """
+        Get all entities of a type with optional filtering and ordering.
+
+        Args:
+            model_class: ORM model class
+            order_by: Field name to order by (optional)
+            include_deleted: Include soft-deleted entities
+            **filters: Additional filter conditions
+
+        Returns:
+            List of entities
+        """
+        query = self.session.query(model_class)
+
+        # Apply filters
+        if filters:
+            query = query.filter_by(**filters)
+
+        # Handle soft delete if model supports it
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        # Apply ordering
+        if order_by and hasattr(model_class, order_by):
+            attr = getattr(model_class, order_by)
+            # Check if it's a column attribute (not a Python property)
+            if hasattr(attr, "__clause_element__") or hasattr(attr, "property"):
+                query = query.order_by(attr)
+
+        return query.all()
+
+    def _count(
+        self,
+        model_class: Type[T],
+        include_deleted: bool = False,
+        **filters: Any,
+    ) -> int:
+        """
+        Count entities with optional filtering.
+
+        Args:
+            model_class: ORM model class
+            include_deleted: Include soft-deleted entities
+            **filters: Additional filter conditions
+
+        Returns:
+            Count of matching entities
+        """
+        query = self.session.query(model_class)
+
+        if filters:
+            query = query.filter_by(**filters)
+
+        if not include_deleted and hasattr(model_class, "deleted_at"):
+            query = query.filter(model_class.deleted_at.is_(None))
+
+        return query.count()
+
+    # -------------------------------------------------------------------------
+    # Generic Relationship Helpers
+    # -------------------------------------------------------------------------
+
+    def _update_collection(
+        self,
+        entity: Any,
+        attr_name: str,
+        items: List[Any],
+        model_class: Type[T],
+        remove_items: Optional[List[Any]] = None,
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update a many-to-many relationship collection.
+
+        Args:
+            entity: Entity whose collection to update
+            attr_name: Name of the relationship attribute (e.g., 'entries', 'tags')
+            items: Items to add (can be objects or IDs)
+            model_class: Model class for resolving IDs
+            remove_items: Items to remove in incremental mode
+            incremental: If True, add/remove items; if False, replace entire collection
+
+        Example:
+            self._update_collection(
+                person, "events", metadata.get("events", []),
+                Event, metadata.get("remove_events", [])
+            )
+        """
+        collection = getattr(entity, attr_name)
+
+        if not incremental:
+            # Replacement mode: clear and add all
+            collection.clear()
+
+        # Add items
+        for item in items:
+            try:
+                resolved = self._resolve_object(item, model_class)
+                if resolved and resolved not in collection:
+                    collection.append(resolved)
+            except (ValueError, TypeError):
+                safe_logger(self.logger).log_warning(
+                    f"Could not resolve {model_class.__name__} for {attr_name}",
+                    {"item": item},
+                )
+
+        # Remove items (only in incremental mode)
+        if incremental and remove_items:
+            for item in remove_items:
+                try:
+                    resolved = self._resolve_object(item, model_class)
+                    if resolved and resolved in collection:
+                        collection.remove(resolved)
+                except (ValueError, TypeError):
+                    pass  # Silently skip items that can't be resolved
+
+        self.session.flush()
+
+    def _update_relationships(
+        self,
+        entity: Any,
+        metadata: Dict[str, Any],
+        relationship_configs: List[tuple],
+        incremental: bool = True,
+    ) -> None:
+        """
+        Update multiple many-to-many relationships from metadata.
+
+        Args:
+            entity: Entity to update
+            metadata: Dictionary containing relationship data
+            relationship_configs: List of (attr_name, meta_key, model_class) tuples
+            incremental: If True, add/remove items; if False, replace
+
+        Example:
+            self._update_relationships(person, metadata, [
+                ("events", "events", Event),
+                ("entries", "entries", Entry),
+                ("dates", "dates", Moment),
+            ])
+        """
+        for attr_name, meta_key, model_class in relationship_configs:
+            if meta_key not in metadata:
+                continue
+
+            items = metadata[meta_key]
+            remove_items = metadata.get(f"remove_{meta_key}", [])
+
+            self._update_collection(
+                entity, attr_name, items, model_class, remove_items, incremental
+            )
+
+    # -------------------------------------------------------------------------
+    # Scalar Field Update Helpers
+    # -------------------------------------------------------------------------
+
+    def _update_scalar_fields(
+        self,
+        entity: Any,
+        metadata: Dict[str, Any],
+        field_configs: List[tuple],
+    ) -> None:
+        """
+        Update multiple scalar fields from metadata using normalizers.
+
+        Args:
+            entity: Entity to update
+            metadata: Dictionary containing field values
+            field_configs: List of tuples:
+                - (field_name, normalizer) for required fields
+                - (field_name, normalizer, allow_none) for optional fields
+
+        Example:
+            self._update_scalar_fields(city, metadata, [
+                ("city", DataValidator.normalize_string),
+                ("state_province", DataValidator.normalize_string, True),
+                ("country", DataValidator.normalize_string, True),
+            ])
+        """
+        for config in field_configs:
+            field_name = config[0]
+            normalizer = config[1]
+            allow_none = config[2] if len(config) > 2 else False
+
+            if field_name not in metadata:
+                continue
+
+            value = normalizer(metadata[field_name])
+            if value is not None or allow_none:
+                setattr(entity, field_name, value)
+
+    def _resolve_parent(
+        self,
+        parent_spec: Any,
+        parent_model: Type[T],
+        get_method: Callable,
+        get_or_create_method: Optional[Callable] = None,
+        id_param: str = "id",
+    ) -> Optional[T]:
+        """
+        Resolve a parent entity from various input types.
+
+        Args:
+            parent_spec: Parent object, ID, or name string
+            parent_model: Parent model class
+            get_method: Method to get parent by name/id (e.g., self.get_city)
+            get_or_create_method: Optional method for string-based creation
+            id_param: Parameter name for ID lookup (default: "id")
+
+        Returns:
+            Resolved parent entity or None
+
+        Example:
+            city = self._resolve_parent(
+                metadata.get("city"),
+                City,
+                lambda **kw: self.get_city(city_id=kw.get("id"), city_name=kw.get("name")),
+                self.get_or_create_city
+            )
+        """
+        if parent_spec is None:
+            return None
+
+        if isinstance(parent_spec, parent_model):
+            return parent_spec
+        elif isinstance(parent_spec, int):
+            return get_method(**{id_param: parent_spec})
+        elif isinstance(parent_spec, str) and get_or_create_method:
+            return get_or_create_method(parent_spec)
+        elif isinstance(parent_spec, str):
+            return get_method(name=parent_spec)
+
+        return None
 
     # -------------------------------------------------------------------------
     # Abstract CRUD Methods (to be implemented by subclasses)
