@@ -18,7 +18,6 @@ using Jinja2 templates for all entity pages, indexes, and special pages
 from dev.builders.base import BaseBuilder, BuilderStats
 from dev.builders.pdfbuilder import BuildStats, PdfBuilder
 from dev.builders.txtbuilder import ProcessingStats, TxtBuilder
-from dev.builders.wiki import EntityConfig, GenericEntityExporter, write_if_changed
 from dev.builders.narrative import (
     compile_review,
     compile_source_review,
@@ -37,10 +36,6 @@ __all__ = [
     # Text builder
     "TxtBuilder",
     "ProcessingStats",
-    # Wiki builders - legacy (use dev.wiki.WikiExporter instead)
-    "EntityConfig",
-    "GenericEntityExporter",
-    "write_if_changed",
     # Narrative review builders
     "compile_review",
     "compile_source_review",
