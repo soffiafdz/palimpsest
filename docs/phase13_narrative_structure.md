@@ -180,15 +180,16 @@ python -m pytest tests/ -q
 
 ## Status
 
-- [ ] Phase 13a: Legacy Code Cleanup
-  - [ ] Run baseline tests
-  - [ ] Delete root-level scripts
-  - [ ] Delete pipeline standalone scripts
-  - [ ] Delete templates/wiki/ directory
-  - [ ] Update dev/builders/__init__.py
-  - [ ] Delete dev/builders/wiki.py
-  - [ ] Delete docs/wiki-redesign-proposal.md
-  - [ ] Verify tests pass
+- [x] Phase 13a: Legacy Code Cleanup
+  - [x] Run baseline tests
+  - [x] Delete root-level scripts
+  - [x] Delete pipeline standalone scripts
+  - [x] Delete templates/wiki/ directory
+  - [x] Update dev/builders/__init__.py
+  - [x] Delete dev/builders/wiki.py
+  - [x] Delete docs/wiki-redesign-proposal.md
+  - [x] Delete dev/wiki/narrative_parser.py
+  - [x] Verify tests pass (1126 passed, 57.10% coverage)
 - [ ] Phase 13b: New Narrative Structure Support
   - [ ] Add database models
   - [ ] Create Alembic migration
