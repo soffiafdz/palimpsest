@@ -79,18 +79,13 @@ Dependencies:
 - Use `List[T]`, `Dict[K, V]` for collections
 - Import typing constructs: `from typing import Any, Dict, List, Optional, Type`
 
-## Workplan Reference
-
-The project workplan is at `docs/unified_simplification_workplan.md`. Check this file for:
-- Current priorities (P0-P35)
-- Completion status of tasks
-- Dependencies between tasks
-
 ## Project Structure
 
 Key directories:
-- `dev/database/managers/` - Entity managers (being consolidated in P3)
-- `dev/wiki/` - Jinja2 template-based wiki renderer (P26 complete)
+- `dev/core/` - Path configuration, validators, exceptions, logging
+- `dev/database/models/` - SQLAlchemy ORM models
+- `dev/database/managers/` - Entity managers
+- `dev/wiki/` - Jinja2 template-based wiki renderer
 - `dev/pipeline/` - Data conversion pipelines
 - `tests/` - Pytest test suite
 
@@ -200,7 +195,6 @@ Create tests before considering a feature complete:
 
 Update relevant docs:
 - `CLAUDE.md` for persistent instructions
-- `docs/unified_simplification_workplan.md` for task status
 - Module docstrings for usage guidance
 
 ## Avoid Over-Engineering
@@ -213,11 +207,20 @@ Update relevant docs:
 
 ## Enum Values
 
-Important enum references:
-- `ManuscriptStatus`: unspecified, reference, quote, fragments, source
-- `ReferenceType`: book, article, film, etc.
-- `ReferenceMode`: direct, indirect, paraphrase
-- `RelationType`: family, friend, romantic, colleague, etc.
+Important enum references (see `dev/database/models/enums.py`):
+
+Journal Domain:
+- `ReferenceType`: book, article, film, song, podcast, etc.
+- `ReferenceMode`: direct, indirect, paraphrase, visual, thematic
+- `RelationType`: family, friend, romantic, colleague, professional, etc.
+
+Manuscript Domain:
+- `ChapterType`: prose, vignette, poem
+- `ChapterStatus`: draft, revised, final
+- `SceneOrigin`: journaled, inferred, invented, composite
+- `SceneStatus`: fragment, draft, included, cut
+- `SourceType`: scene, entry, thread, external
+- `ContributionType`: primary, composite, inspiration
 
 ## Running Common Commands
 
