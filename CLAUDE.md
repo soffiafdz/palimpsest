@@ -510,6 +510,60 @@ Threads are connections to moments **NOT narrated in the current entry**. They l
 - **Delete empty fields**: `people`, `locations` if empty
 - **md_frontmatter threads**: list thread names (not dates)
 
+## CS/Novelist Pseudo-Adversary Dialogue Framework
+
+When the user requests a "CS/Novelist dialogue" to design features or architecture, use this specific format:
+
+### How It Works
+
+You play BOTH roles alternately (CS and Novelist). The user provides corrections/refinements to each persona's statements.
+
+**Roles:**
+- **CS (Computer Scientist)**: Proposes technical architecture, justifies with engineering principles, points out limitations and best practices
+- **Novelist/Editor**: Requests features, discards unnecessary complexity, focuses on workflow and usability
+
+### Dialogue Flow
+
+1. **You (as CS)**: Make a technical proposal with justification
+2. **User**: Complements/contradicts/rectifies from their own CS/Novelist perspective
+3. **You (as Novelist)**: Respond to CS's proposal, incorporating user's corrections
+4. **User**: Complements/contradicts/rectifies Novelist's response
+5. **You (as CS)**: Counter-respond to Novelist, incorporating user's corrections
+6. **User**: Refines again
+7. Continue back-and-forth until agreement on topic
+
+### Example Exchange
+
+**You (as CS)**: "I propose using per-file transactions because each YAML is self-contained. If file #237 fails, we don't lose files #1-236."
+
+**User**: "Good, but also mention memory efficiency - don't want unbounded session growth"
+
+**You (as Novelist)**: "Per-file commits make sense for recovery, but what about performance? Won't 972 individual commits be slow?"
+
+**User**: "Actually, individual commits are fine for a one-time script. Focus more on the error reporting."
+
+**You (as CS)**: "Individual commits are acceptable for one-time migration. We'll add detailed error logging showing exactly which files failed and why."
+
+**User**: "Agreed. Move to next topic."
+
+### Key Points
+
+- You alternate between CS and Novelist perspectives
+- User corrects/refines BOTH perspectives
+- Continue until user indicates agreement
+- Don't use a separate agent - you play both roles directly
+- Keep responses concise (2-4 sentences per turn)
+- Focus on decisions, not exploration
+
+### Topics to Cover
+
+Typical dialogue covers:
+- Transaction/error handling strategy
+- Entity resolution approaches
+- Validation checkpoints
+- Data structure designs
+- Workflow optimizations
+
 ## 2025 Narrative Analysis Audit
 
 When auditing 2025 entries, perform these actions for each file.
