@@ -201,35 +201,155 @@ Update relevant docs:
 
 **CRITICAL: Documentation is timeless code documentation, not implementation reports**
 
-### Never Include In Documentation:
-- Phase numbers or plan references
-- "Old" vs "new" comparisons
-- Migration/transition language
-- Deprecated/legacy code mentions
-- Implementation timelines or history
-- "One-time" processes or "after X is done"
+Documentation exists in `docs/` and should be production-level quality. Follow these strict rules to prevent report-style formatting and plan leakage.
+
+### Absolute Prohibitions
+
+**NEVER include in documentation:**
+- Phase numbers (Phase 1, Phase 14b, etc.)
+- Plan references (Phase 5, future enhancement)
+- Migration language (migrate from X to Y, after migration)
+- Transition language (transition guide, moving to new system)
+- "Old" vs "new" comparisons (replaced old X with new Y)
+- Deprecated/legacy code mentions (this replaces the old...)
+- Implementation timelines (Phase 1 will..., next we'll...)
+- Historical proposals (we decided to..., originally we...)
+- "One-time" processes (run this once to migrate)
+- "After X is done" conditional language
 - References to what "changed" or "was replaced"
+- Analysis reports (test failure analysis, performance report)
 
-### Documentation Should:
-- Describe what the code IS and HOW to use it
-- Act as if current implementation is how it always was
-- Be clean, timeless reference material
-- Focus on current functionality only
+**These are planning artifacts, not documentation. Use git history for historical context.**
 
-### Examples:
+### Documentation Must Be
 
-**BAD:**
+1. **Timeless** - Act as if current implementation is how it always was
+2. **Reference Material** - Explain what exists and how to use it
+3. **Production-Level** - Clean, well-organized, professional
+4. **Integrated** - Update existing docs, don't create scattered new ones
+
+### Directory Organization
+
+- `docs/reference/` - API references, field specs, command references
+- `docs/guides/` - Task-oriented workflows (how to do X)
+- `docs/development/` - Architecture, patterns, contributor guides
+- `docs/integrations/` - Editor and tool integrations
+- `docs/narrative_structure/` - Narrative analysis guidelines (user-specific)
+
+**DO NOT create:**
+- `docs/migrations/` - Migration docs are temporary, not reference material
+- `docs/plans/` or `docs/proposals/` - Use issue tracker or planning files
+- `dev/docs/` - Development docs belong in `docs/development/`
+- Random scattered markdown files - Integrate into existing structure
+
+### What Documentation Should Contain
+
+**Explain:**
+- **What**: What does this feature/component do?
+- **Why**: What problem does it solve?
+- **How**: How do you use it?
+
+**Include:**
+- Clear examples
+- Common patterns
+- Troubleshooting (for current system)
+- Cross-references to related docs
+
+### Examples
+
+**BAD - Plan Language:**
 ```markdown
 # Phase 14b: Jumpstart Migration
+
 This replaces the old Moment model with Scene/Thread.
-After the one-time migration...
+After the one-time migration, narrative_analysis/ will be deleted.
+
+## Migration Steps
+1. Run jumpstart.py (one-time)
+2. Validate data
+3. Delete old files
 ```
 
-**GOOD:**
+**GOOD - Timeless Reference:**
 ```markdown
 # Entity Curation Workflow
+
 Extract and curate entities from YAML files before database import.
+
+## Workflow
+1. Extract entities with auto-grouping
+2. Review and refine in draft file
+3. Validate with disambiguation rules
+4. Import to database
 ```
+
+**BAD - Historical Comparison:**
+```markdown
+# Database Schema
+
+The new schema replaces MentionedDate with Moment and adds Scene/Thread.
+This was changed in Phase 14a to support narrative structure.
+```
+
+**GOOD - Current State:**
+```markdown
+# Database Schema
+
+The database tracks narrative structure using:
+- **Moment**: Temporal points with context
+- **Scene**: Narrative units within entries
+- **Thread**: Connections across time
+```
+
+**BAD - Future Enhancement:**
+```markdown
+# Conflict Resolution
+
+Currently uses last-write-wins. Phase 5 will add three-way merge.
+```
+
+**GOOD - Current with Potential:**
+```markdown
+# Conflict Resolution
+
+Uses last-write-wins strategy for simplicity.
+
+## Potential Enhancements
+- Three-way merge for automatic non-conflicting changes
+- Interactive resolution UI
+```
+
+### When Writing Documentation
+
+**Before creating a new doc:**
+1. Check if existing doc covers this - update it instead
+2. Determine proper directory (reference/guides/development)
+3. Ensure it's timeless reference material, not a report
+
+**When updating existing docs:**
+1. Read the full document first
+2. Maintain consistent style and voice
+3. Update cross-references if needed
+4. Don't leave orphaned sections
+
+**After writing:**
+1. Search for phase/plan/migration keywords
+2. Remove any historical or temporal language
+3. Verify all cross-references work
+4. Check it fits the directory's purpose
+
+### Documentation Cleanup Checklist
+
+If you find yourself creating documentation that:
+- References phases or plans → It's a planning doc, not reference material
+- Describes a transition → It's temporary, not timeless
+- Analyzes test failures → It's a report, not documentation
+- Explains "how we got here" → It's history, use git log
+
+**Then either:**
+- Rewrite to be timeless reference material
+- Move to issue tracker/planning system
+- Delete after extracting useful information
 
 ## Avoid Over-Engineering
 
