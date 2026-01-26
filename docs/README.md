@@ -20,7 +20,6 @@ Task-oriented guides for common workflows:
 - [Conflict Resolution](guides/conflict-resolution.md) - Understanding and resolving sync conflicts
 - [Wiki System](reference/wiki-fields.md) - Working with the bidirectional wiki system
 - [Manuscript Features](guides/manuscript-features.md) - Manuscript-specific wiki and metadata
-- [Migration Guide](guides/migration.md) - Upgrading your Palimpsest installation
 
 ### Integrations
 Editor and tool integrations:

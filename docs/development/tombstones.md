@@ -7,9 +7,8 @@ This document provides technical details about the **tombstone pattern** impleme
 **Audience**: Developers and advanced users who want to understand the internals of the deletion tracking system.
 
 **Related Documents**:
-- User guide: `../../user-guides/multi-machine-sync.md`
-- Conflict resolution: `conflict-resolution.md`
-- Migration guide: `migration-guide.md`
+- Synchronization guide: `../guides/synchronization.md`
+- Conflict resolution: `../guides/conflict-resolution.md`
 
 ---
 
@@ -1082,9 +1081,8 @@ metadb tombstone import tombstones.json
 
 ### Documentation
 
-- **User Guide**: `docs/multi-machine-sync.md`
-- **Conflict Resolution**: `docs/conflict-resolution.md`
-- **Migration Guide**: `docs/migration-guide.md`
+- **Synchronization Guide**: `../guides/synchronization.md`
+- **Conflict Resolution**: `../guides/conflict-resolution.md`
 
 ### Related Concepts
 

@@ -7,9 +7,8 @@ This guide explains how Palimpsest detects and resolves conflicts when the same 
 **Audience**: Users working on Palimpsest across multiple machines (laptop, desktop, etc.)
 
 **Related Documents**:
-- User guide: `../../user-guides/multi-machine-sync.md`
-- Technical guide: `tombstone-guide.md`
-- Migration guide: `migration-guide.md`
+- Synchronization guide: `synchronization.md`
+- Tombstones technical guide: `../development/tombstones.md`
 
 ---
 
@@ -274,7 +273,7 @@ Machine B (T3, after pulling):
 
 **Recovery**: User must manually review conflict and re-apply lost change.
 
-### Alternative Strategy: Three-Way Merge (Phase 5)
+### Alternative Strategy: Three-Way Merge
 
 **Not currently implemented.** Would require a robust snapshot system to record previous states and enable a three-way comparison.
 
@@ -291,7 +290,7 @@ Machine B (T3, after pulling):
 
 **Advantage**: Significantly reduces the likelihood of lost changes and minimizes the manual effort required for conflict resolution by automating non-conflicting merges.
 
-**Disadvantage**: Substantially more complex to implement, requiring sophisticated change tracking, a historical snapshot system, and a more interactive resolution UI, placing it in a later development phase (Phase 5).
+**Disadvantage**: Substantially more complex to implement, requiring sophisticated change tracking, a historical snapshot system, and a more interactive resolution UI.
 
 ---
 
@@ -637,7 +636,7 @@ git push
 
 **Future Multi-User**:
 - Would need better conflict resolution
-- Consider implementing Phase 5 (three-way merge)
+- Consider implementing three-way merge
 - Add user attribution to changes
 
 ### 5. Resolve Conflicts Promptly
@@ -954,10 +953,10 @@ metadb sync stats --machine laptop
 
 ## Future Enhancements
 
-### 1. Three-Way Merge (Phase 5)
+### 1. Three-Way Merge
 
 **Current**: Last-write-wins
-**Future**: Smart merging with baseline comparison
+**Potential Enhancement**: Smart merging with baseline comparison
 
 **Would Enable**:
 - Auto-resolve non-conflicting fields

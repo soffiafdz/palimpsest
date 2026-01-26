@@ -297,37 +297,6 @@ Use wiki hierarchy:
 - Main Wiki: `Home > Entries > 2024 > 2024-11-01`
 - Manuscript: `Home > Manuscript > Entries > 2024 > 2024-11-01`
 
-## Implementation Phases
-
-### Phase 1: Database Schema
-1. Add migration for ManuscriptEntry fields (entry_type, character_notes, narrative_arc)
-2. Add migration for ManuscriptPerson fields (character_description, character_arc, voice_notes)
-3. Update models with new fields
-
-### Phase 2: Manuscript Dataclasses
-1. Create `dev/dataclasses/manuscript_entry.py`
-2. Create `dev/dataclasses/manuscript_person.py` (Character)
-3. Create `dev/dataclasses/manuscript_event.py`
-4. Create `dev/dataclasses/manuscript_arc.py`
-5. All inherit from WikiEntity, implement from_database() and to_wiki()
-
-### Phase 3: Export Pipeline
-1. Create `dev/pipeline/manuscript2wiki.py`
-2. Implement export functions for all manuscript entities
-3. Add CLI interface matching sql2wiki.py pattern
-4. Create manuscript wiki indexes
-
-### Phase 4: Import Pipeline
-1. Extend `wiki2sql.py` to handle manuscript wiki imports
-2. Add import functions for manuscript-specific fields
-3. Test bidirectional sync for manuscript metadata
-
-### Phase 5: Integration
-1. Add cross-wiki links between main and manuscript
-2. Update main wiki entry export to show manuscript status
-3. Create manuscript homepage and navigation
-4. Update Neovim integration to handle manuscript wiki
-
 ## Benefits of Separation
 
 1. **Clear Boundaries**: Editorial notes (Entry.notes) vs Adaptation notes (ManuscriptEntry.notes)

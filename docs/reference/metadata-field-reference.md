@@ -2,6 +2,8 @@
 
 Complete reference for Palimpsest's YAML frontmatter metadata fields. This guide uses progressive disclosure - start with Quick Start if you're new, dive deeper as needed.
 
+**Important**: This guide focuses on **Markdown frontmatter** (the YAML at the top of `.md` files). For information about the YAML file system and export formats, see [YAML Specifications](yaml_specifications.md).
+
 ---
 
 ## Navigation
@@ -16,6 +18,7 @@ Complete reference for Palimpsest's YAML frontmatter metadata fields. This guide
 - [SQL Schema](#sql-schema-quick-reference) - Database structure
 
 **Related Documentation:**
+- [YAML Specifications](yaml_specifications.md) - YAML file formats and export system
 - [Metadata Examples](metadata-examples.md) - Complex entry templates
 - [Wiki Field Reference](wiki-fields.md) - SQL↔Wiki system
 - [Command Reference](commands.md) - CLI commands

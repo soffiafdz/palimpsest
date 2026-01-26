@@ -9,21 +9,21 @@
 
 1. [Overview](#overview)
 2. [Testing Checklist Summary](#testing-checklist-summary)
-3. [Phase 1: Environment & Setup Testing](#phase-1-environment--setup-testing)
-4. [Phase 2: Basic Pipeline Testing](#phase-2-basic-pipeline-testing)
-5. [Phase 3: Rich Metadata Testing](#phase-3-rich-metadata-testing)
-6. [Phase 4: Wiki System Testing](#phase-4-wiki-system-testing)
-7. [Phase 5: Search & Query Testing](#phase-5-search--query-testing)
-8. [Phase 6: Advanced Metadata Testing](#phase-6-advanced-metadata-testing)
-9. [Phase 7: NLP & Analysis Testing](#phase-7-nlp--analysis-testing)
-10. [Phase 8: PDF Generation Testing](#phase-8-pdf-generation-testing)
-11. [Phase 9: Batch Operations & Integration Testing](#phase-9-batch-operations--integration-testing)
-12. [Phase 10: Database Management Testing](#phase-10-database-management-testing)
-13. [Phase 11: Conflict Resolution & Sync Testing](#phase-11-conflict-resolution--sync-testing)
-14. [Phase 12: Export & Migration Testing](#phase-12-export--migration-testing)
-15. [Phase 13: Neovim Integration Testing](#phase-13-neovim-integration-testing)
-16. [Phase 14: Stress Testing](#phase-14-stress-testing)
-17. [Phase 15: Error Handling & Edge Cases](#phase-15-error-handling--edge-cases)
+3. [Environment & Setup Testing](#environment--setup-testing)
+4. [Basic Pipeline Testing](#basic-pipeline-testing)
+5. [Rich Metadata Testing](#rich-metadata-testing)
+6. [Wiki System Testing](#wiki-system-testing)
+7. [Search & Query Testing](#search--query-testing)
+8. [Advanced Metadata Testing](#advanced-metadata-testing)
+9. [NLP & Analysis Testing](#nlp--analysis-testing)
+10. [PDF Generation Testing](#pdf-generation-testing)
+11. [Batch Operations & Integration Testing](#batch-operations--integration-testing)
+12. [Database Management Testing](#database-management-testing)
+13. [Conflict Resolution & Sync Testing](#conflict-resolution--sync-testing)
+14. [Export Testing](#export-testing)
+15. [Neovim Integration Testing](#neovim-integration-testing)
+16. [Stress Testing](#stress-testing)
+17. [Error Handling & Edge Cases](#error-handling--edge-cases)
 18. [Recommended Testing Order](#recommended-testing-order)
 
 ---
@@ -123,7 +123,7 @@ Use this checklist to track your progress:
 
 ---
 
-## Phase 1: Environment & Setup Testing
+## Environment & Setup Testing
 
 **Goal:** Verify your environment is correctly configured
 
@@ -235,7 +235,7 @@ plm status
 
 ---
 
-## Phase 2: Basic Pipeline Testing
+## Basic Pipeline Testing
 
 **Goal:** Test the core X2Y pipeline with minimal data
 
@@ -320,7 +320,7 @@ diff data/journal/content/md/2024/2024-11-25.md [exported file]
 
 ---
 
-## Phase 3: Rich Metadata Testing
+## Rich Metadata Testing
 
 **Goal:** Test complex metadata extraction and relationships
 
@@ -409,7 +409,7 @@ validate db integrity
 
 ---
 
-## Phase 4: Wiki System Testing
+## Wiki System Testing
 
 **Goal:** Test bidirectional wiki sync
 
@@ -485,7 +485,7 @@ cat data/wiki/events/thesis-writing.md | grep "Entries:"
 
 ---
 
-## Phase 5: Search & Query Testing
+## Search & Query Testing
 
 **Goal:** Test full-text search and filtering
 
@@ -553,7 +553,7 @@ jsearch query "thesis" --sort relevance
 
 ---
 
-## Phase 6: Advanced Metadata Testing
+## Advanced Metadata Testing
 
 **Goal:** Test poems, manuscript wiki, and complex relationships
 
@@ -632,7 +632,7 @@ metadb query show 2024-11-25 | grep -A5 "manuscript"
 
 ---
 
-## Phase 7: NLP & Analysis Testing
+## NLP & Analysis Testing
 
 **Goal:** Test automated text analysis (optional, requires dependencies)
 
@@ -671,7 +671,7 @@ nlp analyze 2024-11-25 --level 4 --manuscript
 
 ---
 
-## Phase 8: PDF Generation Testing
+## PDF Generation Testing
 
 **Goal:** Test PDF compilation
 
@@ -703,7 +703,7 @@ Open PDFs and check:
 
 ---
 
-## Phase 9: Batch Operations & Integration Testing
+## Batch Operations & Integration Testing
 
 **Goal:** Test complete pipeline end-to-end
 
@@ -759,7 +759,7 @@ validate consistency all
 
 ---
 
-## Phase 10: Database Management Testing
+## Database Management Testing
 
 **Goal:** Test backup, restore, and maintenance
 
@@ -825,7 +825,7 @@ metadb stats
 
 ---
 
-## Phase 11: Conflict Resolution & Sync Testing
+## Conflict Resolution & Sync Testing
 
 **Goal:** Test sync state management and conflict handling
 
@@ -875,7 +875,7 @@ metadb tombstone cleanup --days 30
 
 ---
 
-## Phase 12: Export & Migration Testing
+## Export Testing
 
 **Goal:** Test data export capabilities
 
@@ -906,7 +906,7 @@ cat data/exports/palimpsest-export.json | jq '.entries | length'
 
 ---
 
-## Phase 13: Neovim Integration Testing
+## Neovim Integration Testing
 
 **Goal:** Test Neovim plugin (if using)
 
@@ -938,7 +938,7 @@ cat data/exports/palimpsest-export.json | jq '.entries | length'
 
 ---
 
-## Phase 14: Stress Testing
+## Stress Testing
 
 **Goal:** Test with larger datasets
 
@@ -989,7 +989,7 @@ metadb stats --verbose
 
 ---
 
-## Phase 15: Error Handling & Edge Cases
+## Error Handling & Edge Cases
 
 **Goal:** Test system resilience
 
@@ -1041,13 +1041,13 @@ jsearch query "anything"
 
 ## Recommended Testing Order
 
-1. **Start Simple (Phases 1-2):** Environment setup + basic pipeline with 1 entry
-2. **Add Complexity (Phases 3-4):** Rich metadata + wiki system
-3. **Test Queries (Phase 5):** Search functionality
-4. **Advanced Features (Phases 6-7):** Poems, manuscript, NLP
-5. **End-to-End (Phases 8-9):** PDF + complete pipeline
-6. **Maintenance (Phase 10):** Backup, restore, optimization
-7. **Edge Cases (Phases 11-15):** Conflicts, errors, stress testing
+1. **Start Simple:** Environment setup + basic pipeline with 1 entry
+2. **Add Complexity:** Rich metadata + wiki system
+3. **Test Queries:** Search functionality
+4. **Advanced Features:** Poems, manuscript, NLP
+5. **End-to-End:** PDF + complete pipeline
+6. **Maintenance:** Backup, restore, optimization
+7. **Edge Cases:** Conflicts, errors, stress testing
 
 ---
 
