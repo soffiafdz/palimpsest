@@ -123,6 +123,7 @@ from .managers import (
     ReferenceManager,
     PoemManager,
     EntryManager,
+    EventManager,
 )
 
 

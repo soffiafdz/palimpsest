@@ -363,7 +363,7 @@ class Thread(Base):
         "Person", secondary=thread_people, back_populates="threads"
     )
     locations: Mapped[List["Location"]] = relationship(
-        "Location", secondary=thread_locations, back_populates="locations"
+        "Location", secondary=thread_locations, back_populates="threads"
     )
 
     # --- Computed properties ---

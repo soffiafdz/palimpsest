@@ -82,9 +82,10 @@ class EntryManager(BaseManager):
         # self.helpers = EntryRelationshipHelper(session, logger)
 
         # Cache manager instances to avoid repeated instantiation
-        from dev.database.managers import PersonManager, LocationManager
+        from dev.database.managers import PersonManager, LocationManager, EventManager
         self._person_mgr = PersonManager(session, logger)
         self._location_mgr = LocationManager(session, logger)
+        self._event_mgr = EventManager(session, logger)
 
     # -------------------------------------------------------------------------
     # Core CRUD Operations
@@ -254,11 +255,11 @@ class EntryManager(BaseManager):
                     reading_time=DataValidator.normalize_float(
                         metadata.get("reading_time")
                     ),
-                    epigraph=DataValidator.normalize_string(metadata.get("epigraph")),
-                    epigraph_attribution=DataValidator.normalize_string(
-                        metadata.get("epigraph_attribution")
+                    summary=DataValidator.normalize_string(metadata.get("summary")),
+                    rating=DataValidator.normalize_float(metadata.get("rating")),
+                    rating_justification=DataValidator.normalize_string(
+                        metadata.get("rating_justification")
                     ),
-                    notes=DataValidator.normalize_string(metadata.get("notes")),
                 )
                 self.session.add(entry)
                 self.session.flush()
@@ -321,9 +322,9 @@ class EntryManager(BaseManager):
                     "file_hash": DataValidator.normalize_string,
                     "word_count": DataValidator.normalize_int,
                     "reading_time": DataValidator.normalize_float,
-                    "epigraph": DataValidator.normalize_string,
-                    "epigraph_attribution": DataValidator.normalize_string,
-                    "notes": DataValidator.normalize_string,
+                    "summary": DataValidator.normalize_string,
+                    "rating": DataValidator.normalize_float,
+                    "rating_justification": DataValidator.normalize_string,
                 }
 
                 for field, normalizer in field_updates.items():
@@ -332,9 +333,8 @@ class EntryManager(BaseManager):
 
                     value = normalizer(metadata[field])
                     if value is not None or field in [
-                        "epigraph",
-                        "epigraph_attribution",
-                        "notes",
+                        "summary",
+                        "rating_justification",
                     ]:
                         if field == "file_path" and value is not None:
                             file_hash = fs.get_file_hash(value)
@@ -454,24 +454,24 @@ class EntryManager(BaseManager):
                     if file_path and not file_hash:
                         file_hash = fs.get_file_hash(file_path)
 
+                    # Use default values for NOT NULL fields with defaults
+                    word_count = DataValidator.normalize_int(metadata.get("word_count"))
+                    reading_time = DataValidator.normalize_float(metadata.get("reading_time"))
+
                     mappings.append(
                         {
                             "date": parsed_date,
                             "file_path": file_path,
                             "file_hash": file_hash,
-                            "word_count": DataValidator.normalize_int(
-                                metadata.get("word_count")
+                            "word_count": word_count if word_count is not None else 0,
+                            "reading_time": reading_time if reading_time is not None else 0.0,
+                            "summary": DataValidator.normalize_string(
+                                metadata.get("summary")
                             ),
-                            "reading_time": DataValidator.normalize_float(
-                                metadata.get("reading_time")
+                            "rating": DataValidator.normalize_float(metadata.get("rating")),
+                            "rating_justification": DataValidator.normalize_string(
+                                metadata.get("rating_justification")
                             ),
-                            "epigraph": DataValidator.normalize_string(
-                                metadata.get("epigraph")
-                            ),
-                            "epigraph_attribution": DataValidator.normalize_string(
-                                metadata.get("epigraph_attribution")
-                            ),
-                            "notes": DataValidator.normalize_string(metadata.get("notes")),
                             "created_at": datetime.now(timezone.utc),
                             "updated_at": datetime.now(timezone.utc),
                         }
@@ -661,51 +661,51 @@ class EntryManager(BaseManager):
 
                     # Replacement mode: clear and add all
                     if not incremental:
-                        # Create tombstones for all removed items
-                        for existing_item in list(collection):
-                            self.tombstones.create(
-                                table_name=table_name,
-                                left_id=entry.id,
-                                right_id=existing_item.id,
-                                removed_by=removed_by,
-                                sync_source=sync_source,
-                                reason="replacement_mode",
-                            )
+                        # TODO: Create tombstones for all removed items (tombstones disabled)
+                        # for existing_item in list(collection):
+                        #     self.tombstones.create(
+                        #         table_name=table_name,
+                        #         left_id=entry.id,
+                        #         right_id=existing_item.id,
+                        #         removed_by=removed_by,
+                        #         sync_source=sync_source,
+                        #         reason="replacement_mode",
+                        #     )
 
                         collection.clear()
 
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
-                                # Remove tombstone if re-adding
-                                self.tombstones.remove_tombstone(
-                                    table_name, entry.id, resolved_item.id
-                                )
+                                # TODO: Remove tombstone if re-adding (tombstones disabled)
+                                # self.tombstones.remove_tombstone(
+                                #     table_name, entry.id, resolved_item.id
+                                # )
                                 collection.append(resolved_item)
                     else:
                         # Incremental mode: add new items
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
-                                # Remove tombstone if re-adding previously removed item
-                                self.tombstones.remove_tombstone(
-                                    table_name, entry.id, resolved_item.id
-                                )
+                                # TODO: Remove tombstone if re-adding (tombstones disabled)
+                                # self.tombstones.remove_tombstone(
+                                #     table_name, entry.id, resolved_item.id
+                                # )
                                 collection.append(resolved_item)
 
                         # Remove specified items
                         for item in remove_items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item in collection:
-                                # Create tombstone before removing
-                                self.tombstones.create(
-                                    table_name=table_name,
-                                    left_id=entry.id,
-                                    right_id=resolved_item.id,
-                                    removed_by=removed_by,
-                                    sync_source=sync_source,
-                                    reason="removed_from_source",
-                                )
+                                # TODO: Create tombstone before removing (tombstones disabled)
+                                # self.tombstones.create(
+                                #     table_name=table_name,
+                                #     left_id=entry.id,
+                                #     right_id=resolved_item.id,
+                                #     removed_by=removed_by,
+                                #     sync_source=sync_source,
+                                #     reason="removed_from_source",
+                                # )
                                 collection.remove(resolved_item)
 
                     self.session.flush()
