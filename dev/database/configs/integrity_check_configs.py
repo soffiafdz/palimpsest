@@ -10,22 +10,21 @@ duplication in health_monitor.py's _check_*_integrity methods.
 """
 from dataclasses import dataclass
 from typing import Callable, List
+
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, select
 
 from ..models import (
+    Chapter,
+    Character,
     Entry,
+    NarratedDate,
     Person,
-    Reference,
-    ReferenceSource,
+    PersonCharacterMap,
     Poem,
     PoemVersion,
-    Moment,
-)
-from ..models.associations import entry_moments
-from ..models_manuscript import (
-    ManuscriptEntry,
-    ManuscriptPerson,
+    Reference,
+    ReferenceSource,
 )
 
 
@@ -170,29 +169,31 @@ POEM_INTEGRITY_CHECKS = IntegrityCheckGroup(
 # Manuscript Integrity Checks
 # ========================================
 
-def _count_orphaned_ms_entries(session: Session) -> int:
-    """Count manuscript entries without base entry."""
+def _count_orphaned_chapters(session: Session) -> int:
+    """Count chapters with invalid part reference."""
+    from ..models import Part
     return (
-        session.query(ManuscriptEntry)
-        .filter(~ManuscriptEntry.entry_id.in_(session.query(Entry.id)))
+        session.query(Chapter)
+        .filter(Chapter.part_id.isnot(None))
+        .filter(~Chapter.part_id.in_(session.query(Part.id)))
         .count()
     )
 
 
-def _count_orphaned_ms_people(session: Session) -> int:
-    """Count manuscript people without base person."""
+def _count_orphaned_character_mappings(session: Session) -> int:
+    """Count character mappings with invalid person reference."""
     return (
-        session.query(ManuscriptPerson)
-        .filter(~ManuscriptPerson.person_id.in_(session.query(Person.id)))
+        session.query(PersonCharacterMap)
+        .filter(~PersonCharacterMap.person_id.in_(session.query(Person.id)))
         .count()
     )
 
 
-def _count_ms_people_no_character(session: Session) -> int:
-    """Count manuscript people without character name."""
+def _count_characters_no_name(session: Session) -> int:
+    """Count characters without name."""
     return (
-        session.query(ManuscriptPerson)
-        .filter((ManuscriptPerson.character.is_(None)) | (ManuscriptPerson.character == ""))
+        session.query(Character)
+        .filter((Character.name.is_(None)) | (Character.name == ""))
         .count()
     )
 
@@ -201,77 +202,58 @@ MANUSCRIPT_INTEGRITY_CHECKS = IntegrityCheckGroup(
     group_name="manuscript_integrity",
     checks=[
         IntegrityCheck(
-            "orphaned_manuscript_entries",
-            _count_orphaned_ms_entries,
-            "Manuscript entries whose base entry was deleted"
+            "orphaned_chapters",
+            _count_orphaned_chapters,
+            "Chapters whose part reference is invalid"
         ),
         IntegrityCheck(
-            "orphaned_manuscript_people",
-            _count_orphaned_ms_people,
-            "Manuscript characters whose base person was deleted"
+            "orphaned_character_mappings",
+            _count_orphaned_character_mappings,
+            "Character mappings whose person was deleted"
         ),
         IntegrityCheck(
-            "manuscript_people_without_character_name",
-            _count_ms_people_no_character,
-            "Manuscript people missing character name"
+            "characters_without_name",
+            _count_characters_no_name,
+            "Characters missing name"
         ),
     ]
 )
 
 
 # ========================================
-# Mentioned Date Integrity Checks
+# Narrated Date Integrity Checks
 # ========================================
 
-def _count_orphaned_mentioned_dates(session: Session) -> int:
-    """Count moments without parent entry."""
-    # Query moments that don't appear in the entry_moments association table
+def _count_orphaned_narrated_dates(session: Session) -> int:
+    """Count narrated dates without parent entry."""
     return (
-        session.query(Moment)
-        .filter(
-            ~Moment.id.in_(
-                select(entry_moments.c.moment_id)
-            )
-        )
+        session.query(NarratedDate)
+        .filter(~NarratedDate.entry_id.in_(session.query(Entry.id)))
         .count()
     )
 
 
-def _count_mentioned_dates_no_date(session: Session) -> int:
-    """Count mentioned dates without actual date."""
+def _count_narrated_dates_no_date(session: Session) -> int:
+    """Count narrated dates without actual date value."""
     return (
-        session.query(Moment)
-        .filter(Moment.date.is_(None))
+        session.query(NarratedDate)
+        .filter(NarratedDate.date.is_(None))
         .count()
     )
 
 
-def _count_mentioned_dates_no_context(session: Session) -> int:
-    """Count mentioned dates without context."""
-    return (
-        session.query(Moment)
-        .filter((Moment.context.is_(None)) | (Moment.context == ""))
-        .count()
-    )
-
-
-MENTIONED_DATE_INTEGRITY_CHECKS = IntegrityCheckGroup(
-    group_name="mentioned_date_integrity",
+NARRATED_DATE_INTEGRITY_CHECKS = IntegrityCheckGroup(
+    group_name="narrated_date_integrity",
     checks=[
         IntegrityCheck(
-            "orphaned_mentioned_dates",
-            _count_orphaned_mentioned_dates,
-            "Mentioned dates whose parent entry was deleted"
+            "orphaned_narrated_dates",
+            _count_orphaned_narrated_dates,
+            "Narrated dates whose parent entry was deleted"
         ),
         IntegrityCheck(
-            "mentioned_dates_without_date",
-            _count_mentioned_dates_no_date,
-            "Mentioned dates missing date value"
-        ),
-        IntegrityCheck(
-            "mentioned_dates_without_context",
-            _count_mentioned_dates_no_context,
-            "Mentioned dates missing context"
+            "narrated_dates_without_date",
+            _count_narrated_dates_no_date,
+            "Narrated dates missing date value"
         ),
     ]
 )
@@ -285,5 +267,5 @@ ALL_INTEGRITY_CHECK_GROUPS = [
     REFERENCE_INTEGRITY_CHECKS,
     POEM_INTEGRITY_CHECKS,
     MANUSCRIPT_INTEGRITY_CHECKS,
-    MENTIONED_DATE_INTEGRITY_CHECKS,
+    NARRATED_DATE_INTEGRITY_CHECKS,
 ]

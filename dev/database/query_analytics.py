@@ -77,26 +77,22 @@ from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from .decorators import DatabaseOperation
 from .query_optimizer import QueryOptimizer, HierarchicalBatcher
 from .models import (
-    Entry,
-    Person,
+    Arc,
+    Chapter,
+    ChapterStatus,
     City,
-    Location,
+    Entry,
     Event,
-    Tag,
-    Reference,
-    ReferenceSource,
-    Moment,
+    Location,
+    Person,
     Poem,
     PoemVersion,
-    Alias,
-)
-from .models_manuscript import (
-    ManuscriptEntry,
-    ManuscriptPerson,
-    ManuscriptEvent,
+    Reference,
+    ReferenceSource,
+    Scene,
+    Tag,
     Theme,
-    Arc,
-    ManuscriptStatus,
+    Thread,
 )
 
 
@@ -135,21 +131,16 @@ class QueryAnalytics:
             stats["people"] = session.query(Person).count()
             stats["cities"] = session.query(City).count()
             stats["locations"] = session.query(Location).count()
+            stats["scenes"] = session.query(Scene).count()
             stats["events"] = session.query(Event).count()
+            stats["arcs"] = session.query(Arc).count()
+            stats["threads"] = session.query(Thread).count()
             stats["tags"] = session.query(Tag).count()
+            stats["themes"] = session.query(Theme).count()
             stats["references"] = session.query(Reference).count()
             stats["reference_sources"] = session.query(ReferenceSource).count()
             stats["poems"] = session.query(Poem).count()
             stats["poem_versions"] = session.query(PoemVersion).count()
-            stats["mentioned_dates"] = session.query(Moment).count()
-            stats["aliases"] = session.query(Alias).count()
-
-            # Manuscript stats
-            stats["manuscript_entries"] = session.query(ManuscriptEntry).count()
-            stats["manuscript_people"] = session.query(ManuscriptPerson).count()
-            stats["manuscript_events"] = session.query(ManuscriptEvent).count()
-            stats["themes"] = session.query(Theme).count()
-            stats["arcs"] = session.query(Arc).count()
 
             # Date range
             first_entry = session.query(Entry).order_by(Entry.date).first()
@@ -330,7 +321,7 @@ class QueryAnalytics:
         """Get all entries at a specific city."""
         with DatabaseOperation(self.logger, "get_entries_by_city"):
             city = (
-                session.query(City).filter(City.city.ilike(f"%{city_name}%")).first()
+                session.query(City).filter(City.name.ilike(f"%{city_name}%")).first()
             )
 
             return city.entries if city else []
@@ -518,42 +509,31 @@ class QueryAnalytics:
                 "by_status": {},
                 "by_theme": {},
                 "by_arc": {},
-                "edited_count": 0,
-                "unedited_count": 0,
+                "chapter_count": 0,
             }
 
-            # Count by status
-            for status in ManuscriptStatus:
+            # Count chapters by status
+            for status in ChapterStatus:
                 count = (
-                    session.query(ManuscriptEntry)
-                    .filter(ManuscriptEntry.status == status)
+                    session.query(Chapter)
+                    .filter(Chapter.status == status)
                     .count()
                 )
                 analytics["by_status"][status.value] = count
 
-            # Count by theme
+            # Total chapters
+            analytics["chapter_count"] = session.query(Chapter).count()
+
+            # Count entries by theme
             themes = session.query(Theme).all()
             for theme in themes:
                 count = len(theme.entries)
-                analytics["by_theme"][theme.theme] = count
+                analytics["by_theme"][theme.name] = count
 
-            # Count by arc
+            # Count entries by arc
             arcs = session.query(Arc).all()
             for arc in arcs:
-                count = len(arc.events)
-                analytics["by_arc"][arc.arc] = count
-
-            # Edited vs unedited
-            analytics["edited_count"] = (
-                session.query(ManuscriptEntry)
-                .filter(ManuscriptEntry.edited.is_(True))
-                .count()
-            )
-
-            analytics["unedited_count"] = (
-                session.query(ManuscriptEntry)
-                .filter(ManuscriptEntry.edited.is_(False))
-                .count()
-            )
+                count = len(arc.entries)
+                analytics["by_arc"][arc.name] = count
 
             return analytics

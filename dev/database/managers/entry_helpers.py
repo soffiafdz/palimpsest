@@ -48,7 +48,6 @@ class EntryRelationshipHelper:
         location_manager: Cached LocationManager instance
         reference_manager: Cached ReferenceManager instance
         poem_manager: Cached PoemManager instance
-        manuscript_manager: Cached ManuscriptManager instance
     """
 
     def __init__(self, session: Session, logger: Optional[PalimpsestLogger] = None):
@@ -67,14 +66,12 @@ class EntryRelationshipHelper:
         from .location_manager import LocationManager
         from .reference_manager import ReferenceManager
         from .poem_manager import PoemManager
-        from .manuscript_manager import ManuscriptManager
 
         # Cache manager instances to avoid repeated instantiation
         self.person_manager = PersonManager(session, logger)
         self.location_manager = LocationManager(session, logger)
         self.reference_manager = ReferenceManager(session, logger)
         self.poem_manager = PoemManager(session, logger)
-        self.manuscript_manager = ManuscriptManager(session, logger)
 
     def get_person(
         self,
@@ -255,25 +252,6 @@ class EntryRelationshipHelper:
                 "entry": entry,
             })
 
-    def create_or_update_manuscript_entry(
-        self,
-        entry: Entry,
-        manuscript_data: Dict[str, Any],
-    ) -> None:
-        """
-        Create or update manuscript metadata for an entry.
-
-        Delegates to ManuscriptManager to handle manuscript entry associations.
-
-        Args:
-            entry: The Entry object to associate with manuscript
-            manuscript_data: Dictionary containing manuscript metadata
-
-        Raises:
-            ValueError: If entry is not persisted
-        """
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before adding manuscript data")
-
-        # Delegate to ManuscriptManager
-        self.manuscript_manager.create_or_update_entry(entry, manuscript_data)
+    # -------------------------------------------------------------------------
+    # DEPRECATED: Manuscript entry creation removed - use Chapter model directly
+    # -------------------------------------------------------------------------

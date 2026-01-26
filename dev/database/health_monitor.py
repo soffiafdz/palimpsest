@@ -100,23 +100,20 @@ from .query_optimizer import QueryOptimizer
 
 # Import models for health checks
 from .models import (
-    Entry,
-    Person,
+    Arc,
     City,
-    Location,
+    Entry,
     Event,
-    Tag,
-    Reference,
-    ReferenceSource,
-    Moment,
+    Location,
+    Person,
     Poem,
     PoemVersion,
-    Alias,
-)
-from .models_manuscript import (
-    ManuscriptEntry,
-    ManuscriptPerson,
-    ManuscriptEvent,
+    Reference,
+    ReferenceSource,
+    Scene,
+    Tag,
+    Theme,
+    Thread,
 )
 
 
@@ -218,11 +215,10 @@ class HealthMonitor:
 
     # Orphan detection config: (name, model, fk_attr, parent_model)
     _ORPHAN_CHECKS = [
-        ("aliases", Alias, "person_id", Person),
         ("references", Reference, "entry_id", Entry),
-        ("manuscript_entries", ManuscriptEntry, "entry_id", Entry),
-        ("manuscript_people", ManuscriptPerson, "person_id", Person),
-        ("manuscript_events", ManuscriptEvent, "event_id", Event),
+        ("scenes", Scene, "entry_id", Entry),
+        ("events", Event, "entry_id", Entry),
+        ("threads", Thread, "entry_id", Entry),
     ]
 
     def _get_orphaned_query(self, session: Session, model, fk_attr: str, parent_model):
@@ -504,13 +500,16 @@ class HealthMonitor:
             "people": session.query(Person).count(),
             "cities": session.query(City).count(),
             "locations": session.query(Location).count(),
+            "scenes": session.query(Scene).count(),
             "events": session.query(Event).count(),
+            "arcs": session.query(Arc).count(),
+            "threads": session.query(Thread).count(),
             "tags": session.query(Tag).count(),
+            "themes": session.query(Theme).count(),
             "references": session.query(Reference).count(),
             "reference_sources": session.query(ReferenceSource).count(),
             "poems": session.query(Poem).count(),
             "poem_versions": session.query(PoemVersion).count(),
-            "mentioned_dates": session.query(Moment).count(),
         }
 
         # Recent activity

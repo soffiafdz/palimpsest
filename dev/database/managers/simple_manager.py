@@ -2,35 +2,35 @@
 """
 simple_manager.py
 -----------------
-Config-driven manager for simple entities: Tag, Moment, Event.
+Config-driven manager for simple entities: Tag, Theme, Arc.
 
-This module consolidates the common patterns from tag_manager.py,
-date_manager.py, and event_manager.py into a single configurable class.
+This module provides a generic manager for simple lookup entities
+that share common patterns: get_or_create, link to entries, etc.
+
 Each entity type is defined by a SimpleManagerConfig that specifies:
 - The model class and primary lookup field
-- Input normalization (string vs date)
+- Input normalization
 - Soft delete support
 - Relationship configuration
 
 Usage:
     # Get pre-configured managers
     tag_mgr = SimpleManager.for_tags(session, logger)
-    date_mgr = SimpleManager.for_dates(session, logger)
-    event_mgr = SimpleManager.for_events(session, logger)
+    theme_mgr = SimpleManager.for_themes(session, logger)
+    arc_mgr = SimpleManager.for_arcs(session, logger)
 
     # Common operations
     tag = tag_mgr.get_or_create("python")
-    date = date_mgr.get_or_create(date(2023, 6, 15))
-    event = event_mgr.get_or_create("paris_trip")
+    theme = theme_mgr.get_or_create("identity")
+    arc = arc_mgr.get_or_create("The Long Wanting")
 
     # Relationships
     tag_mgr.link_to_entry(tag, entry)
-    event_mgr.link_to_person(event, person)
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from sqlalchemy.orm import Session
@@ -39,7 +39,7 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
-from dev.database.models import Entry, Event, Location, Moment, Person, Tag
+from dev.database.models import Arc, Entry, Tag, Theme
 from .base_manager import BaseManager
 
 
@@ -58,11 +58,11 @@ class SimpleManagerConfig:
 
     Attributes:
         model_class: SQLAlchemy model class
-        name_field: Primary lookup field name (e.g., 'tag', 'date', 'event')
+        name_field: Primary lookup field name (e.g., 'name')
         display_name: Human-readable name for error messages
         normalizer: Function to normalize input values
         supports_soft_delete: Whether entity supports soft delete
-        extra_fields: Additional fields for create/update (e.g., ['title', 'description'])
+        extra_fields: Additional fields for create/update
         relationships: List of relationship configurations
     """
 
@@ -80,22 +80,10 @@ def _normalize_string(value: Any) -> Optional[str]:
     return DataValidator.normalize_string(value)
 
 
-def _normalize_date(value: Any) -> date:
-    """Parse and validate a date value."""
-    if isinstance(value, date):
-        return value
-    if isinstance(value, str):
-        try:
-            return date.fromisoformat(value)
-        except ValueError as e:
-            raise ValidationError(f"Invalid date format: {value}") from e
-    raise ValidationError(f"Invalid date type: {type(value)}")
-
-
 # Pre-defined configurations for each entity type
 TAG_CONFIG = SimpleManagerConfig(
     model_class=Tag,
-    name_field="tag",
+    name_field="name",
     display_name="tag",
     normalizer=_normalize_string,
     supports_soft_delete=False,
@@ -103,39 +91,30 @@ TAG_CONFIG = SimpleManagerConfig(
     relationships=[RelationshipConfig("entries", Entry)],
 )
 
-MOMENT_CONFIG = SimpleManagerConfig(
-    model_class=Moment,
-    name_field="date",
-    display_name="moment",
-    normalizer=_normalize_date,
-    extra_fields=["context"],
+THEME_CONFIG = SimpleManagerConfig(
+    model_class=Theme,
+    name_field="name",
+    display_name="theme",
+    normalizer=_normalize_string,
     supports_soft_delete=False,
-    relationships=[
-        RelationshipConfig("entries", Entry),
-        RelationshipConfig("locations", Location),
-        RelationshipConfig("people", Person),
-        RelationshipConfig("events", Event),
-    ],
+    extra_fields=[],
+    relationships=[RelationshipConfig("entries", Entry)],
 )
 
-
-EVENT_CONFIG = SimpleManagerConfig(
-    model_class=Event,
-    name_field="event",
-    display_name="event",
+ARC_CONFIG = SimpleManagerConfig(
+    model_class=Arc,
+    name_field="name",
+    display_name="arc",
     normalizer=_normalize_string,
-    supports_soft_delete=True,
-    extra_fields=["title", "description", "notes"],
-    relationships=[
-        RelationshipConfig("entries", Entry),
-        RelationshipConfig("people", Person),
-    ],
+    supports_soft_delete=False,
+    extra_fields=["description"],
+    relationships=[RelationshipConfig("entries", Entry)],
 )
 
 
 class SimpleManager(BaseManager):
     """
-    Generic manager for simple entities (Tag, Moment, Event).
+    Generic manager for simple entities (Tag, Theme, Arc).
 
     Uses configuration to provide consistent CRUD operations and relationship
     management across different entity types.
@@ -170,18 +149,18 @@ class SimpleManager(BaseManager):
         return cls(session, logger, TAG_CONFIG)
 
     @classmethod
-    def for_moments(
+    def for_themes(
         cls, session: Session, logger: Optional[PalimpsestLogger] = None
     ) -> "SimpleManager":
-        """Create a manager for Moment entities."""
-        return cls(session, logger, MOMENT_CONFIG)
+        """Create a manager for Theme entities."""
+        return cls(session, logger, THEME_CONFIG)
 
     @classmethod
-    def for_events(
+    def for_arcs(
         cls, session: Session, logger: Optional[PalimpsestLogger] = None
     ) -> "SimpleManager":
-        """Create a manager for Event entities."""
-        return cls(session, logger, EVENT_CONFIG)
+        """Create a manager for Arc entities."""
+        return cls(session, logger, ARC_CONFIG)
 
     # -------------------------------------------------------------------------
     # Core CRUD Operations
@@ -192,7 +171,7 @@ class SimpleManager(BaseManager):
         Check if an entity exists.
 
         Args:
-            value: The lookup value (tag name, date, event name)
+            value: The lookup value (e.g., tag name)
             include_deleted: Include soft-deleted entities (if supported)
 
         Returns:
@@ -221,23 +200,14 @@ class SimpleManager(BaseManager):
         value: Optional[Any] = None,
         entity_id: Optional[int] = None,
         include_deleted: bool = False,
-        # Backward compatibility aliases
-        target_date: Optional[Any] = None,
-        date_id: Optional[int] = None,
-        event_name: Optional[str] = None,
-        event_id: Optional[int] = None,
     ) -> Optional[Any]:
         """
         Retrieve an entity by value or ID.
 
         Args:
-            value: The lookup value (tag name, date, event name)
+            value: The lookup value (e.g., tag name)
             entity_id: The entity ID
             include_deleted: Include soft-deleted entities (if supported)
-            target_date: Alias for value (DateManager compatibility)
-            date_id: Alias for entity_id (DateManager compatibility)
-            event_name: Alias for value (EventManager compatibility)
-            event_id: Alias for entity_id (EventManager compatibility)
 
         Returns:
             Entity object if found, None otherwise
@@ -246,16 +216,6 @@ class SimpleManager(BaseManager):
             If both value and ID provided, ID takes precedence.
         """
         with DatabaseOperation(self.logger, "get"):
-            # Handle backward compatibility aliases
-            if target_date is not None:
-                value = target_date
-            if event_name is not None:
-                value = event_name
-            if date_id is not None:
-                entity_id = date_id
-            if event_id is not None:
-                entity_id = event_id
-
             if entity_id is not None:
                 entity = self.session.get(self.config.model_class, entity_id)
                 if entity:
@@ -295,7 +255,6 @@ class SimpleManager(BaseManager):
         self,
         include_deleted: bool = False,
         order_by: Optional[str] = None,
-        order_by_date: bool = True,  # DateManager compatibility
     ) -> List[Any]:
         """
         Retrieve all entities.
@@ -303,7 +262,6 @@ class SimpleManager(BaseManager):
         Args:
             include_deleted: Include soft-deleted entities (if supported)
             order_by: Field to order by (defaults to name_field)
-            order_by_date: If True and this is DateManager, order by date
 
         Returns:
             List of entity objects
@@ -323,12 +281,6 @@ class SimpleManager(BaseManager):
                     key=lambda e: len(e.entries) if hasattr(e, "entries") else 0,
                     reverse=True,
                 )
-
-            # For Moment, order_by_date controls ordering
-            if self.config.model_class == Moment:
-                if order_by_date:
-                    query = query.order_by(Moment.date)
-                return query.all()
 
             # Default ordering by name_field
             order_field = order_by or self.config.name_field
@@ -483,7 +435,7 @@ class SimpleManager(BaseManager):
             # Attach to session
             entity = self.session.merge(db_entity)
 
-            # Update name field if provided (for Event manager: event field can be renamed)
+            # Update name field if provided
             name_field = self.config.name_field
             if name_field in metadata:
                 value = metadata[name_field]
@@ -675,7 +627,7 @@ class SimpleManager(BaseManager):
 
                     safe_logger(self.logger).log_debug(
                         "Linked tag to entry",
-                        {"tag": tag.tag, "entry_date": entry.date},
+                        {"tag": tag.name, "entry_date": entry.date},
                     )
                 return tag
 
@@ -715,7 +667,7 @@ class SimpleManager(BaseManager):
 
                 safe_logger(self.logger).log_debug(
                     "Unlinked tag from entry",
-                    {"tag": tag.tag, "entry_date": entry.date},
+                    {"tag": tag.name, "entry_date": entry.date},
                 )
                 return True
 
@@ -762,7 +714,7 @@ class SimpleManager(BaseManager):
                 self.session.flush()
 
             # Get existing tags
-            existing_tags = {tag.tag for tag in entry.tags}
+            existing_tags = {tag.name for tag in entry.tags}
 
             # Add new tags
             new_tags = norm_tags - existing_tags
@@ -782,26 +734,6 @@ class SimpleManager(BaseManager):
                         "incremental": incremental,
                     },
                 )
-
-    def link_to_person(self, entity: Any, person: Person) -> None:
-        """Link an entity to a person (if relationship exists)."""
-        with DatabaseOperation(self.logger, "link_to_person"):
-            self._link(entity, person, "people")
-
-    def unlink_from_person(self, entity: Any, person: Person) -> bool:
-        """Unlink an entity from a person (if relationship exists)."""
-        with DatabaseOperation(self.logger, "unlink_from_person"):
-            return self._unlink(entity, person, "people")
-
-    def link_to_location(self, entity: Any, location: Location) -> None:
-        """Link an entity to a location (if relationship exists)."""
-        with DatabaseOperation(self.logger, "link_to_location"):
-            self._link(entity, location, "locations")
-
-    def unlink_from_location(self, entity: Any, location: Location) -> bool:
-        """Unlink an entity from a location (if relationship exists)."""
-        with DatabaseOperation(self.logger, "unlink_from_location"):
-            return self._unlink(entity, location, "locations")
 
     def _link(self, entity: Any, related: Any, attr_name: str) -> None:
         """Generic link helper."""
@@ -903,60 +835,8 @@ class SimpleManager(BaseManager):
         with DatabaseOperation(self.logger, "get_unused"):
             return self.get_by_usage(min_count=0, max_count=0)
 
-    def get_by_date_range(
-        self,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        include_deleted: bool = False,
-    ) -> List[Any]:
-        """
-        Get entities within a date range.
-
-        For Moment: filters by the date field itself.
-        For Event: filters by entry dates.
-
-        Args:
-            start_date: Start date (inclusive)
-            end_date: End date (inclusive)
-            include_deleted: Include soft-deleted entities
-
-        Returns:
-            List of entities in the date range
-        """
-        with DatabaseOperation(self.logger, "get_by_date_range"):
-            if self.config.model_class == Moment:
-                # Filter Moment by date field
-                from sqlalchemy import and_
-
-                query = self.session.query(self.config.model_class)
-                conditions = []
-                if start_date:
-                    conditions.append(Moment.date >= start_date)
-                if end_date:
-                    conditions.append(Moment.date <= end_date)
-                if conditions:
-                    query = query.filter(and_(*conditions))
-                return query.order_by(Moment.date).all()
-
-            elif self.config.model_class == Event:
-                # Filter Event by entry dates
-                query = self.session.query(Event).join(Event.entries)
-                if start_date:
-                    query = query.filter(Entry.date >= start_date)
-                if end_date:
-                    query = query.filter(Entry.date <= end_date)
-                if not include_deleted:
-                    query = query.filter(Event.deleted_at.is_(None))
-                return query.order_by(Event.event).distinct().all()
-
-            # Tags don't have date ranges
-            return []
-
-    # Alias for backward compatibility with DateManager
-    get_by_range = get_by_date_range
-
 
 # Convenience factory functions
 TagManager = SimpleManager.for_tags
-MomentManager = SimpleManager.for_moments
-EventManager = SimpleManager.for_events
+ThemeManager = SimpleManager.for_themes
+ArcManager = SimpleManager.for_arcs

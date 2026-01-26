@@ -42,8 +42,8 @@ Navigate all journal entries chronologically with rich metadata overlay.
   → People: {{ entry.people[:5]|join(', ') }}{% if entry.people|length > 5 %} +{{ entry.people|length - 5 }}{% endif %}
 
 {% endif %}
-{% if entry.moments > 0 or entry.references > 0 %}
-  → Moments: {{ entry.moments }}{% if entry.references > 0 %} | References: {{ entry.references }}{% endif %}
+{% if entry.scenes > 0 or entry.threads > 0 %}
+  → Scenes: {{ entry.scenes }}{% if entry.threads > 0 %} | Threads: {{ entry.threads }}{% endif %}
 
 {% endif %}
 {% if entry.tags %}

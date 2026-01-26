@@ -2,53 +2,45 @@
 """
 person_manager.py
 --------------------
-Manages Person and Alias entities with name disambiguation and soft delete support.
+Manages Person entities with soft delete support.
 
-Person represents individuals mentioned in journal entries. The manager handles complex
-name disambiguation logic (name_fellow) when multiple people share the same name,
-requiring full_name for differentiation.
+Person represents individuals mentioned in journal entries, scenes,
+and threads. The manager handles alias-based lookup and provides
+CRUD operations with soft delete support.
 
 Key Features:
-    - CRUD operations for persons and aliases
-    - Name disambiguation with name_fellow flag
+    - CRUD operations for persons
     - Soft delete support (preserves data with deleted_at flag)
-    - One-to-many relationship (Person → Aliases)
-    - M2M relationships with entries, events, and mentioned dates
+    - Alias-based lookup (unique field on Person)
+    - M2M relationships with entries, scenes, and threads
     - Relationship type categorization (family, friend, romantic, etc.)
-    - Alias resolution and management
 
 Usage:
     person_mgr = PersonManager(session, logger)
 
-    # Create person (simple)
+    # Create person with alias
     person = person_mgr.create({
-        "name": "Alice",
+        "alias": "majo",
+        "name": "Maria Jose",
+        "lastname": "Castro",
         "relation_type": "friend"
     })
 
-    # Create person with name disambiguation
-    person2 = person_mgr.create({
-        "name": "Alice",  # Same name!
-        "full_name": "Alice Johnson",  # Required due to conflict
-        "relation_type": "colleague"
-    })  # Both Alices now have name_fellow=True
-
-    # Get person (handles disambiguation)
-    alice = person_mgr.get(person_name="Alice")  # Raises error if multiple
-    alice_j = person_mgr.get(person_full_name="Alice Johnson")  # Unique lookup
+    # Get person by alias or name
+    majo = person_mgr.get(alias="majo")
+    maria = person_mgr.get(name="Maria Jose")
 
     # Soft delete
     person_mgr.delete(person, deleted_by="admin", reason="Duplicate")
 
     # Restore
     person_mgr.restore(person)
-
-    # Add aliases
-    person_mgr.add_alias(person, "Ali")
-    person_mgr.add_aliases(person, ["Allie", "A."])
 """
+# --- Annotations ---
+from __future__ import annotations
+
 # --- Standard library imports ---
-from typing import Any, cast, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 # --- Third-party imports ---
 from sqlalchemy.orm import Session
@@ -58,39 +50,17 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
-from dev.database.models import Alias, Entry, Event, Moment, Person, RelationType
+from dev.database.models import Entry, Person, RelationType, Scene, Thread
 
-from .entity_manager import EntityManager, EntityManagerConfig
-
-# Configuration for Person entity
-PERSON_CONFIG = EntityManagerConfig(
-    model_class=Person,
-    name_field="name",
-    display_name="person",
-    supports_soft_delete=True,
-    order_by="name",
-    scalar_fields=[
-        ("name", DataValidator.normalize_string),
-        ("full_name", DataValidator.normalize_string, True),
-    ],
-    relationships=[
-        ("events", "events", Event),
-        ("entries", "entries", Entry),
-        ("dates", "dates", Moment),
-    ],
-)
+from .base_manager import BaseManager
 
 
-class PersonManager(EntityManager):
+class PersonManager(BaseManager):
     """
-    Manages Person and Alias table operations with name disambiguation.
+    Manages Person table operations with soft delete support.
 
-    Inherits EntityManager for base CRUD but overrides create/update/get
-    to handle the complex name_fellow logic where multiple people can share
-    the same name, requiring full_name for disambiguation.
-
-    This manager also handles Alias as a child entity with string-based input,
-    unlike other parent-child relationships that use entity objects.
+    Provides CRUD operations for Person entities with alias-based
+    lookup and relationship management.
     """
 
     def __init__(
@@ -105,90 +75,85 @@ class PersonManager(EntityManager):
             session: SQLAlchemy session
             logger: Optional logger for operation tracking
         """
-        super().__init__(session, logger, PERSON_CONFIG)
+        super().__init__(session, logger)
 
     # =========================================================================
-    # PERSON OPERATIONS (Overrides for name_fellow logic)
+    # PERSON OPERATIONS
     # =========================================================================
-
-    # Inherited from EntityManager:
-    # - get_all(include_deleted) -> List[Person]
-    # - delete(entity, deleted_by, reason, hard) -> None
-    # - restore(entity) -> Person
 
     def exists(
         self,
-        person_name: Optional[str] = None,
-        person_full_name: Optional[str] = None,
+        alias: Optional[str] = None,
+        name: Optional[str] = None,
         include_deleted: bool = False,
     ) -> bool:
         """
         Check if a person exists.
 
         Args:
-            person_name: The person's primary name
-            person_full_name: The person's full name (unique)
+            alias: The person's alias (unique identifier)
+            name: The person's name
             include_deleted: Whether to include soft-deleted persons
 
         Returns:
             True if person exists, False otherwise
 
         Notes:
-            - If both provided, full_name takes precedence
-            - Name alone may match multiple people (name_fellows)
+            - Alias lookup is preferred (unique)
+            - Name alone may match multiple people
         """
         with DatabaseOperation(self.logger, "person_exists"):
-            if person_full_name:
+            if alias:
                 return self._exists(
-                    Person, "full_name", person_full_name, include_deleted=include_deleted
+                    Person, "alias", alias, include_deleted=include_deleted
                 )
-            if person_name:
+            if name:
                 return self._exists(
-                    Person, "name", person_name, include_deleted=include_deleted
+                    Person, "name", name, include_deleted=include_deleted
                 )
             return False
 
     def get(
         self,
-        person_name: Optional[str] = None,
-        person_full_name: Optional[str] = None,
+        alias: Optional[str] = None,
+        name: Optional[str] = None,
         person_id: Optional[int] = None,
         include_deleted: bool = False,
     ) -> Optional[Person]:
         """
-        Retrieve a person by name, full_name, or ID.
+        Retrieve a person by alias, name, or ID.
 
         Args:
-            person_name: The person's primary name
-            person_full_name: The person's full name (unique)
+            alias: The person's alias (unique)
+            name: The person's name
             person_id: The person ID
             include_deleted: Whether to include soft-deleted persons
 
         Returns:
             Person object if found, None otherwise
 
-        Raises:
-            ValidationError: If person_name matches multiple people (name_fellows)
-
         Notes:
-            - Lookup priority: ID > full_name > name
-            - If name matches multiple people, raises error requiring full_name
-            - By default, soft-deleted persons are excluded
+            - Lookup priority: ID > alias > name
+            - Alias is unique, so always returns single match
+            - Name may match multiple people; returns first match
         """
         with DatabaseOperation(self.logger, "get_person"):
             # ID lookup
             if person_id is not None:
                 return self._get_by_id(Person, person_id, include_deleted=include_deleted)
 
-            # Full name lookup (unique)
-            if person_full_name is not None:
+            # Alias lookup (unique)
+            if alias is not None:
+                normalized = DataValidator.normalize_string(alias)
+                if not normalized:
+                    return None
                 return self._get_by_field(
-                    Person, "full_name", person_full_name, include_deleted=include_deleted
+                    Person, "alias", normalized, include_deleted=include_deleted
                 )
 
-            # Name lookup (may be ambiguous - requires special handling)
-            if person_name is not None:
-                normalized = DataValidator.normalize_string(person_name)
+            # Name lookup
+            if name is not None:
+                normalized = DataValidator.normalize_string(name)
                 if not normalized:
                     return None
 
@@ -196,17 +161,7 @@ class PersonManager(EntityManager):
                 if not include_deleted:
                     query = query.filter(Person.deleted_at.is_(None))
 
-                count = query.count()
-                if count == 0:
-                    return None
-                elif count == 1:
-                    return query.first()
-                else:
-                    # Multiple people with same name - require full_name
-                    raise ValidationError(
-                        f"Multiple people exist with name '{normalized}'. "
-                        f"Use person_full_name for disambiguation."
-                    )
+                return query.first()
 
             return None
 
@@ -225,30 +180,25 @@ class PersonManager(EntityManager):
 
     def create(self, metadata: Dict[str, Any]) -> Person:
         """
-        Create a new person with name disambiguation.
+        Create a new person.
 
         Args:
             metadata: Dictionary with required key:
                 - name: Primary name (required)
                 Optional keys:
-                - full_name: Full legal name (required if name_fellows exist)
+                - alias: Unique alias for lookup
+                - lastname: Last/family name
                 - relation_type: RelationType enum or string
-                - aliases: List of alias strings
-                - events: List of Event objects or IDs
                 - entries: List of Entry objects or IDs
-                - dates: List of Moment objects or IDs
+                - scenes: List of Scene objects or IDs
+                - threads: List of Thread objects or IDs
 
         Returns:
             Created Person object
 
         Raises:
-            ValidationError: If name is invalid
-            ValidationError: If name_fellows exist but full_name not provided
-            ValidationError: If full_name already exists
-
-        Notes:
-            - Automatically sets name_fellow=True for all people with same name
-            - If creating second person with existing name, full_name is required
+            ValidationError: If name is invalid or empty
+            DatabaseError: If alias already exists
         """
         DataValidator.validate_required_fields(metadata, ["name"])
         with DatabaseOperation(self.logger, "create_person"):
@@ -257,34 +207,15 @@ class PersonManager(EntityManager):
             if not p_name:
                 raise ValidationError(f"Invalid person name: {metadata.get('name')}")
 
-            # Normalize full_name
-            p_fname = DataValidator.normalize_string(metadata.get("full_name"))
+            # Normalize optional fields
+            p_alias = DataValidator.normalize_string(metadata.get("alias"))
+            p_lastname = DataValidator.normalize_string(metadata.get("lastname"))
 
-            # Check for name conflicts (name_fellows)
-            name_fellows = (
-                self.session.query(Person)
-                .filter_by(name=p_name)
-                .filter(Person.deleted_at.is_(None))
-                .all()
-            )
-
-            if name_fellows:
-                # Name conflict exists - require full_name
-                if not p_fname:
-                    raise ValidationError(
-                        f"Person(s) already exist with name '{p_name}'. "
-                        f"Provide full_name for disambiguation."
-                    )
-
-                # Check full_name uniqueness
-                for fellow in name_fellows:
-                    if fellow.full_name == p_fname:
-                        raise ValidationError(
-                            f"Person already exists with full_name '{p_fname}'"
-                        )
-
-                # Merge all name_fellows into session for update
-                name_fellows = [self.session.merge(f) for f in name_fellows]
+            # Check alias uniqueness
+            if p_alias:
+                existing = self.get(alias=p_alias, include_deleted=True)
+                if existing:
+                    raise DatabaseError(f"Person already exists with alias '{p_alias}'")
 
             # Normalize relation_type
             relation_type = DataValidator.normalize_enum(
@@ -294,7 +225,8 @@ class PersonManager(EntityManager):
             # Create person
             person = Person(
                 name=p_name,
-                full_name=p_fname,
+                alias=p_alias,
+                lastname=p_lastname,
                 relation_type=relation_type,
             )
             self.session.add(person)
@@ -304,67 +236,59 @@ class PersonManager(EntityManager):
                 f"Created person: {p_name}",
                 {
                     "person_id": person.id,
-                    "full_name": p_fname,
-                    "has_name_fellows": len(name_fellows) > 0,
+                    "alias": p_alias,
+                    "lastname": p_lastname,
                 },
             )
 
-            # Set name_fellow flag for all people with same name
-            if name_fellows:
-                name_fellows.append(person)  # Include newly created person
-                for fellow in name_fellows:
-                    fellow.name_fellow = True
-
-                safe_logger(self.logger).log_debug(
-                    f"Set name_fellow=True for {len(name_fellows)} people named '{p_name}'"
-                )
-
             # Update relationships
-            self._update_relationships(person, metadata, incremental=False)
+            self._update_person_relationships(person, metadata, incremental=False)
 
             return person
 
-    def get_or_create(self, person_name: str, full_name: Optional[str] = None) -> Person:
+    def get_or_create(
+        self,
+        name: str,
+        alias: Optional[str] = None,
+        **extra_fields,
+    ) -> Person:
         """
         Get existing person or create new one if not found.
 
-        This is a convenience method for use when processing YAML metadata that
-        contains person names as strings. It handles name disambiguation and
-        creates persons with minimal metadata.
+        Lookup priority: alias > name
 
         Args:
-            person_name: Primary name to search for or create
-            full_name: Optional full name (required if name_fellows exist)
+            name: Primary name to search for or create
+            alias: Optional alias for lookup or creation
+            **extra_fields: Additional fields for creation
 
         Returns:
             Existing or newly created Person object
 
         Raises:
-            ValidationError: If name is ambiguous and full_name not provided
+            ValidationError: If name is empty
         """
         with DatabaseOperation(self.logger, "get_or_create_person"):
-            normalized_name = DataValidator.normalize_string(person_name)
+            normalized_name = DataValidator.normalize_string(name)
             if not normalized_name:
                 raise ValidationError("Person name cannot be empty")
 
-            # Try to get existing person
-            try:
-                person = self.get(person_name=normalized_name)
+            # Try to get by alias first if provided
+            if alias:
+                person = self.get(alias=alias)
                 if person:
                     return person
-            except ValidationError:
-                # Multiple people with same name - need full_name
-                if full_name:
-                    person = self.get(person_full_name=full_name)
-                    if person:
-                        return person
-                else:
-                    raise  # Re-raise ValidationError about ambiguity
+
+            # Try to get by name
+            person = self.get(name=normalized_name)
+            if person:
+                return person
 
             # Person doesn't exist - create it
             metadata: Dict[str, Any] = {"name": normalized_name}
-            if full_name:
-                metadata["full_name"] = full_name
+            if alias:
+                metadata["alias"] = alias
+            metadata.update(extra_fields)
 
             return self.create(metadata)
 
@@ -375,21 +299,21 @@ class PersonManager(EntityManager):
         Args:
             person: Person object to update
             metadata: Dictionary with optional keys:
-                - name: Updated primary name (triggers name_fellow check)
-                - full_name: Updated full name
+                - name: Updated primary name
+                - alias: Updated alias
+                - lastname: Updated last name
                 - relation_type: Updated RelationType
-                - aliases: List of aliases (incremental by default)
-                - events: List of events (incremental by default)
                 - entries: List of entries (incremental by default)
-                - dates: List of mentioned dates (incremental by default)
-                - remove_aliases, remove_events, remove_entries, remove_dates
+                - scenes: List of scenes (incremental by default)
+                - threads: List of threads (incremental by default)
+                - remove_entries, remove_scenes, remove_threads
 
         Returns:
             Updated Person object
 
         Raises:
             DatabaseError: If person not found or is deleted
-            ValidationError: If name changed and name_fellows exist but no full_name
+            DatabaseError: If new alias conflicts with existing
         """
         with DatabaseOperation(self.logger, "update_person"):
             # Ensure exists and not deleted
@@ -402,36 +326,29 @@ class PersonManager(EntityManager):
             # Attach to session
             person = self.session.merge(db_person)
 
-            # Update name (with name_fellow check)
+            # Update name
             if "name" in metadata:
                 new_name = DataValidator.normalize_string(metadata["name"])
-                if new_name and new_name != person.name:
-                    # Check if new name creates name_fellows situation
-                    name_fellows = (
-                        self.session.query(Person)
-                        .filter_by(name=new_name)
-                        .filter(Person.deleted_at.is_(None))
-                        .filter(Person.id != person.id)  # Exclude self
-                        .all()
-                    )
-
-                    if name_fellows and not person.full_name:
-                        raise ValidationError(
-                            f"Changing name to '{new_name}' creates name conflict. "
-                            f"Provide full_name for disambiguation."
-                        )
-
+                if new_name:
                     person.name = new_name
 
-                    # Set name_fellow flags if needed
-                    if name_fellows:
-                        name_fellows.append(person)
-                        for fellow in name_fellows:
-                            fellow.name_fellow = True
+            # Update alias
+            if "alias" in metadata:
+                new_alias = DataValidator.normalize_string(metadata["alias"])
+                if new_alias and new_alias != person.alias:
+                    # Check uniqueness
+                    existing = self.get(alias=new_alias, include_deleted=True)
+                    if existing and existing.id != person.id:
+                        raise DatabaseError(
+                            f"Alias '{new_alias}' already used by another person"
+                        )
+                    person.alias = new_alias
+                elif metadata["alias"] is None:
+                    person.alias = None
 
-            # Update full_name
-            if "full_name" in metadata:
-                person.full_name = DataValidator.normalize_string(metadata["full_name"])
+            # Update lastname
+            if "lastname" in metadata:
+                person.lastname = DataValidator.normalize_string(metadata["lastname"])
 
             # Update relation_type
             if "relation_type" in metadata:
@@ -439,10 +356,10 @@ class PersonManager(EntityManager):
                     metadata["relation_type"], RelationType, "relation_type"
                 )
                 if relation_type:
-                    person.relation_type = relation_type  # type: ignore[misc]
+                    person.relation_type = relation_type
 
             # Update relationships
-            self._update_relationships(person, metadata, incremental=True)
+            self._update_person_relationships(person, metadata, incremental=True)
 
             return person
 
@@ -464,8 +381,8 @@ class PersonManager(EntityManager):
 
         Notes:
             - Soft delete preserves the person but hides from queries
-            - Hard delete removes person and all aliases (cascade)
-            - Relationships (entries, events) are preserved with soft delete
+            - Hard delete removes person (cascade handles relationships)
+            - Relationships (entries, scenes) are preserved with soft delete
         """
         with DatabaseOperation(self.logger, "delete_person"):
             # Handle int ID lookup
@@ -475,8 +392,24 @@ class PersonManager(EntityManager):
                     raise DatabaseError(f"Person not found with id: {person}")
                 person = fetched
 
-            # Delegate to parent's delete method
-            super().delete(person, deleted_by=deleted_by, reason=reason, hard=hard_delete)
+            person_name = person.display_name
+
+            if not hard_delete:
+                # Soft delete
+                safe_logger(self.logger).log_debug(
+                    f"Soft deleting person: {person_name}",
+                    {"id": person.id, "deleted_by": deleted_by, "reason": reason},
+                )
+                person.soft_delete(deleted_by=deleted_by, reason=reason)
+            else:
+                # Hard delete
+                safe_logger(self.logger).log_debug(
+                    f"Hard deleting person: {person_name}",
+                    {"id": person.id},
+                )
+                self.session.delete(person)
+
+            self.session.flush()
 
     def restore(self, person: Union[Person, int]) -> Person:
         """
@@ -499,243 +432,106 @@ class PersonManager(EntityManager):
                     raise DatabaseError(f"Person not found with id: {person}")
                 person = fetched
 
-            # Validate deletion status before delegating
+            # Validate deletion status
             if not person.deleted_at:
                 raise DatabaseError(f"Person is not deleted: {person.display_name}")
 
-            # Delegate to parent's restore method
-            return super().restore(person)
+            # Restore
+            person.restore()
+            self.session.flush()
 
-    def _update_relationships(
+            safe_logger(self.logger).log_debug(
+                f"Restored person: {person.display_name}",
+                {"id": person.id},
+            )
+
+            return person
+
+    def _update_person_relationships(
         self,
         person: Person,
         metadata: Dict[str, Any],
         incremental: bool = True,
     ) -> None:
-        """Update relationships for a person."""
-        # Handle aliases specially (one-to-many with string input)
-        if "aliases" in metadata:
-            self._update_person_aliases(person, metadata, incremental)
-
-        # Many-to-many relationships using base class helper
-        super()._update_relationships(
-            person,
-            metadata,
-            [
-                ("events", "events", Event),
-                ("entries", "entries", Entry),
-                ("dates", "dates", Moment),
-            ],
-            incremental,
-        )
-
-    def _update_person_aliases(
-        self,
-        person: Person,
-        metadata: Dict[str, Any],
-        incremental: bool,
-    ) -> None:
         """
-        Update aliases for a person.
-
-        Handles conversion of string aliases to Alias objects.
+        Update relationships for a person.
 
         Args:
-            person: Person to update aliases for
-            metadata: Metadata containing 'aliases' key
-            incremental: If False, clears existing aliases first
+            person: Person to update
+            metadata: Metadata with relationship keys
+            incremental: Add incrementally (True) or replace all (False)
         """
-        alias_strs = metadata.get("aliases", [])
-        if not alias_strs:
-            return
+        relationship_configs = [
+            ("entries", "entries", Entry),
+            ("scenes", "scenes", Scene),
+            ("threads", "threads", Thread),
+        ]
 
-        # Incremental mode: only add new aliases
-        if incremental:
-            existing_aliases = {a.alias for a in person.aliases}
-            for alias_str in alias_strs:
-                normalized = DataValidator.normalize_string(alias_str)
-                if normalized and normalized not in existing_aliases:
-                    alias_obj = Alias(alias=normalized, person=person)
-                    self.session.add(alias_obj)
-                    person.aliases.append(alias_obj)
-        else:
-            # Replacement mode: clear all and add new
-            # Clear existing aliases (cascade will handle DB deletion)
-            person.aliases.clear()
-            self.session.flush()
+        for meta_key, attr_name, model_class in relationship_configs:
+            if meta_key not in metadata:
+                continue
 
-            for alias_str in alias_strs:
-                normalized = DataValidator.normalize_string(alias_str)
-                if normalized:
-                    alias_obj = Alias(alias=normalized, person=person)
-                    self.session.add(alias_obj)
-                    person.aliases.append(alias_obj)
+            items = metadata[meta_key]
+            remove_items = metadata.get(f"remove_{meta_key}", [])
+            collection = getattr(person, attr_name)
+
+            if not incremental:
+                # Replacement mode: clear and add all
+                collection.clear()
+
+            # Add items
+            for item in items:
+                resolved = self._resolve_object(item, model_class)
+                if resolved and resolved not in collection:
+                    collection.append(resolved)
+
+            if incremental:
+                # Remove specified items
+                for item in remove_items:
+                    resolved = self._resolve_object(item, model_class)
+                    if resolved and resolved in collection:
+                        collection.remove(resolved)
 
         self.session.flush()
-
-    # =========================================================================
-    # ALIAS OPERATIONS
-    # =========================================================================
-
-    def get_alias(self, alias_id: int) -> Optional[Alias]:
-        """
-        Retrieve an alias by ID.
-
-        Args:
-            alias_id: The alias ID
-
-        Returns:
-            Alias object if found, None otherwise
-        """
-        with DatabaseOperation(self.logger, "get_alias"):
-            return self.session.get(Alias, alias_id)
-
-    def add_alias(self, person: Person, alias_name: str) -> Alias:
-        """
-        Add a single alias to a person.
-
-        Args:
-            person: Person object
-            alias_name: Alias string to add
-
-        Returns:
-            Created Alias object
-
-        Raises:
-            ValueError: If person is not persisted
-            ValidationError: If alias_name is empty
-        """
-        with DatabaseOperation(self.logger, "add_alias"):
-            if person.id is None:
-                raise ValueError("Person must be persisted before adding aliases")
-
-            normalized = DataValidator.normalize_string(alias_name)
-            if not normalized:
-                raise ValidationError("Alias cannot be empty")
-
-            # Check if alias already exists for this person
-            for existing in person.aliases:
-                if existing.alias == normalized:
-                    safe_logger(self.logger).log_debug(
-                        f"Alias '{normalized}' already exists for {person.display_name}"
-                    )
-                    return existing
-
-            # Create new alias
-            alias_obj = Alias(alias=normalized, person=person)
-            self.session.add(alias_obj)
-            self.session.flush()
-
-            safe_logger(self.logger).log_debug(
-                f"Added alias '{normalized}' to {person.display_name}",
-                {"alias_id": alias_obj.id, "person_id": person.id},
-            )
-
-            return alias_obj
-
-    def add_aliases(self, person: Person, alias_names: List[str]) -> List[Alias]:
-        """
-        Add multiple aliases to a person.
-
-        Args:
-            person: Person object
-            alias_names: List of alias strings
-
-        Returns:
-            List of Alias objects (created or existing)
-        """
-        with DatabaseOperation(self.logger, "add_aliases"):
-            aliases = []
-            for alias_name in alias_names:
-                try:
-                    alias = self.add_alias(person, alias_name)
-                    aliases.append(alias)
-                except ValidationError:
-                    # Skip empty/invalid aliases
-                    continue
-
-            return aliases
-
-    def remove_alias(self, person: Person, alias_name: str) -> bool:
-        """
-        Remove an alias from a person.
-
-        Args:
-            person: Person object
-            alias_name: Alias string to remove
-
-        Returns:
-            True if alias was removed, False if not found
-        """
-        with DatabaseOperation(self.logger, "remove_alias"):
-            normalized = DataValidator.normalize_string(alias_name)
-            if not normalized:
-                return False
-
-            for alias_obj in person.aliases:
-                if alias_obj.alias == normalized:
-                    self.session.delete(alias_obj)
-                    self.session.flush()
-
-                    safe_logger(self.logger).log_debug(
-                        f"Removed alias '{normalized}' from {person.display_name}",
-                        {"person_id": person.id},
-                    )
-                    return True
-
-            return False
 
     # =========================================================================
     # QUERY METHODS
     # =========================================================================
 
-    def get_aliases_for_person(self, person: Person) -> List[Alias]:
-        """
-        Get all aliases for a person.
-
-        Args:
-            person: Person object
-
-        Returns:
-            List of Alias objects, ordered by alias string
-        """
-        with DatabaseOperation(self.logger, "get_aliases_for_person"):
-            return sorted(person.aliases, key=lambda a: a.alias)
-
-    def find_person_by_alias(
-        self, alias_name: str, include_deleted: bool = False
+    def find_by_alias_or_name(
+        self,
+        identifier: str,
+        include_deleted: bool = False,
     ) -> Optional[Person]:
         """
-        Find a person by one of their aliases.
+        Find a person by alias or name.
+
+        Tries alias first, then name.
 
         Args:
-            alias_name: Alias to search for
+            identifier: Alias or name to search for
             include_deleted: Whether to include soft-deleted persons
 
         Returns:
             Person object if found, None otherwise
         """
-        with DatabaseOperation(self.logger, "find_person_by_alias"):
-            normalized = DataValidator.normalize_string(alias_name)
+        with DatabaseOperation(self.logger, "find_person_by_alias_or_name"):
+            normalized = DataValidator.normalize_string(identifier)
             if not normalized:
                 return None
 
-            alias_obj = (
-                self.session.query(Alias).filter_by(alias=normalized).first()
-            )
+            # Try alias first
+            person = self.get(alias=normalized, include_deleted=include_deleted)
+            if person:
+                return person
 
-            if not alias_obj:
-                return None
-
-            person = alias_obj.person
-
-            if not include_deleted and person.deleted_at:
-                return None
-
-            return person
+            # Try name
+            return self.get(name=normalized, include_deleted=include_deleted)
 
     def get_by_relation_type(
-        self, relation_type: Union[RelationType, str], include_deleted: bool = False
+        self,
+        relation_type: Union[RelationType, str],
+        include_deleted: bool = False,
     ) -> List[Person]:
         """
         Get all persons with a specific relation type.
@@ -749,15 +545,11 @@ class PersonManager(EntityManager):
         """
         with DatabaseOperation(self.logger, "get_persons_by_relation"):
             # Normalize type
-            normalized_type: Optional[RelationType] = None
-            if isinstance(relation_type, str):
-                enum_result = DataValidator.normalize_enum(
-                    relation_type, RelationType, "relation_type"
-                )
-                if enum_result is not None:
-                    normalized_type = cast(RelationType, enum_result)
-            else:
-                normalized_type = relation_type
+            normalized_type = DataValidator.normalize_enum(
+                relation_type if isinstance(relation_type, str) else relation_type.value,
+                RelationType,
+                "relation_type",
+            )
 
             if normalized_type is None:
                 return []
@@ -769,25 +561,35 @@ class PersonManager(EntityManager):
 
             return query.order_by(Person.name).all()
 
-    def get_name_fellows(self, person_name: str) -> List[Person]:
+    def search(
+        self,
+        query_text: str,
+        include_deleted: bool = False,
+    ) -> List[Person]:
         """
-        Get all persons with a specific name (name_fellows).
+        Search persons by name, lastname, or alias.
 
         Args:
-            person_name: Name to search for
+            query_text: Text to search for (case-insensitive partial match)
+            include_deleted: Whether to include soft-deleted persons
 
         Returns:
-            List of Person objects sharing this name (excluding deleted)
+            List of matching Person objects
         """
-        with DatabaseOperation(self.logger, "get_name_fellows"):
-            normalized = DataValidator.normalize_string(person_name)
+        with DatabaseOperation(self.logger, "search_persons"):
+            normalized = DataValidator.normalize_string(query_text)
             if not normalized:
                 return []
 
-            return (
-                self.session.query(Person)
-                .filter_by(name=normalized)
-                .filter(Person.deleted_at.is_(None))
-                .order_by(Person.full_name)
-                .all()
+            pattern = f"%{normalized}%"
+
+            query = self.session.query(Person).filter(
+                (Person.name.ilike(pattern)) |
+                (Person.lastname.ilike(pattern)) |
+                (Person.alias.ilike(pattern))
             )
+
+            if not include_deleted:
+                query = query.filter(Person.deleted_at.is_(None))
+
+            return query.order_by(Person.name).all()

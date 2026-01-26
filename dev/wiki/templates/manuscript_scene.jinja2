@@ -1,0 +1,44 @@
+{#
+  manuscript_scene.jinja2
+  -----------------------
+  Wiki template for ManuscriptScene entity.
+  Displays scene info, source material, chapter connection, and adaptation notes.
+#}
+# Palimpsest — Manuscript Scene
+
+## {{ entity.name }}
+
+### Scene Info
+{% if entity.chapter %}
+- **Chapter:** [[manuscript/chapters/{{ entity.chapter.title|slugify }}.md|{{ entity.chapter.title }}]]
+{% else %}
+- **Chapter:** *Unassigned*
+{% endif %}
+- **Origin:** {{ entity.origin.value if entity.origin else 'unknown' }}
+- **Status:** {{ entity.status.value if entity.status else 'fragment' }}
+
+### Description
+{{ entity.description or '*No description provided.*' }}
+
+### Source Material
+{% if entity.sources %}
+{% for source in entity.sources %}
+{% if source.source_type.value == 'scene' and source.scene %}
+- **Scene:** [[entries/{{ source.scene.entry.date.year }}/{{ source.scene.entry.date.isoformat() }}.md|{{ source.scene.name }}]] ({{ source.scene.entry.date.isoformat() }})
+{% elif source.source_type.value == 'entry' and source.entry %}
+- **Entry:** [[entries/{{ source.entry.date.year }}/{{ source.entry.date.isoformat() }}.md|{{ source.entry.date.isoformat() }}]]
+{% elif source.source_type.value == 'thread' and source.thread %}
+- **Thread:** {{ source.thread.name }} ({{ source.thread.from_date.isoformat() }} → {{ source.thread.to_date }})
+{% elif source.source_type.value == 'external' %}
+- **External:** {{ source.external_note or '*No note*' }}
+{% endif %}
+{% if source.notes %}
+  → {{ source.notes }}
+{% endif %}
+{% endfor %}
+{% else %}
+*No source material linked.*
+{% endif %}
+
+### Notes
+{{ entity.notes or '[Add notes about this manuscript scene]' }}

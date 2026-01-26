@@ -98,13 +98,17 @@ from dev.core.paths import ROOT
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from .models import (
     Base,
-    Moment,
+    Entry,
     Location,
     Reference,
     PoemVersion,
     Tag,
+    Theme,
+    Scene,
+    Event,
+    Arc,
+    Thread,
 )
-from .models_manuscript import Theme
 
 from .decorators import DatabaseOperation
 from .health_monitor import HealthMonitor
@@ -115,12 +119,9 @@ from .query_analytics import QueryAnalytics
 from .managers import (
     TagManager,
     PersonManager,
-    EventManager,
-    MomentManager,
     LocationManager,
     ReferenceManager,
     PoemManager,
-    ManuscriptManager,
     EntryManager,
 )
 
@@ -209,11 +210,9 @@ class PalimpsestDB:
     tags = ManagerProperty("_tag_manager", "TagManager")
     people = ManagerProperty("_person_manager", "PersonManager")
     events = ManagerProperty("_event_manager", "EventManager")
-    moments = ManagerProperty("_moment_manager", "MomentManager")
     locations = ManagerProperty("_location_manager", "LocationManager")
     references = ManagerProperty("_reference_manager", "ReferenceManager")
     poems = ManagerProperty("_poem_manager", "PoemManager")
-    manuscripts = ManagerProperty("_manuscript_manager", "ManuscriptManager")
     entries = ManagerProperty("_entry_manager", "EntryManager")
 
     # --- Initialization ---
@@ -269,11 +268,9 @@ class PalimpsestDB:
         self._tag_manager: Optional[TagManager] = None
         self._person_manager: Optional[PersonManager] = None
         self._event_manager: Optional[EventManager] = None
-        self._moment_manager: Optional[MomentManager] = None
         self._location_manager: Optional[LocationManager] = None
         self._reference_manager: Optional[ReferenceManager] = None
         self._poem_manager: Optional[PoemManager] = None
-        self._manuscript_manager: Optional[ManuscriptManager] = None
 
         # Initialize database
         self._setup_engine()
@@ -345,11 +342,9 @@ class PalimpsestDB:
         self._tag_manager = TagManager(session, self.logger)
         self._person_manager = PersonManager(session, self.logger)
         self._event_manager = EventManager(session, self.logger)
-        self._moment_manager = MomentManager(session, self.logger)
         self._location_manager = LocationManager(session, self.logger)
         self._reference_manager = ReferenceManager(session, self.logger)
         self._poem_manager = PoemManager(session, self.logger)
-        self._manuscript_manager = ManuscriptManager(session, self.logger)
         self._entry_manager = EntryManager(session, self.logger)
 
         safe_logger(self.logger).log_debug("session_start", {"session_id": session_id})
@@ -370,11 +365,9 @@ class PalimpsestDB:
             self._tag_manager = None
             self._person_manager = None
             self._event_manager = None
-            self._moment_manager = None
             self._location_manager = None
             self._reference_manager = None
             self._poem_manager = None
-            self._manuscript_manager = None
 
             session.close()
             safe_logger(self.logger).log_debug("session_close", {"session_id": session_id})
@@ -591,7 +584,7 @@ class PalimpsestDB:
     # -------------------------------------------------------------------------
     # Entity operations use modular managers via properties:
     #   db.entries, db.people, db.events, db.locations, db.references,
-    #   db.poems, db.manuscripts, db.tags, db.moments
+    #   db.poems, db.tags
     #
     # Example:
     #   with db.session_scope() as session:
@@ -613,7 +606,7 @@ class PalimpsestDB:
             cleanup_config = {
                 "tags": (Tag, "entries"),
                 "locations": (Location, "entries"),
-                "moments": (Moment, "entries"),
+                "scenes": (Scene, "entry"),
                 "themes": (Theme, "entries"),
                 "references": (Reference, "entry"),
                 "poem_versions": (PoemVersion, "entry"),

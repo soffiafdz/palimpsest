@@ -8,13 +8,28 @@ This module defines all project paths as Path objects for consistent path handli
 across the codebase. Paths are organized by category (journal, database, dev tools, etc.)
 and relative to the project root directory.
 
-The project structure:
+Project Structure:
     ROOT/
-    ├── dev/           # Development code and scripts
-    ├── data/          # User data (journal, metadata, wiki)
-    ├── logs/          # Application logs
-    ├── backups/       # Database backups
-    └── tmp/           # Temporary files
+    ├── dev/                          # Development code and scripts
+    ├── data/
+    │   ├── metadata/
+    │   │   ├── palimpsest.db         # SQLite database
+    │   │   ├── journal/{YYYY}/       # Journal YAML exports
+    │   │   └── manuscript/           # Manuscript YAML exports
+    │   ├── journal/
+    │   │   └── content/md/           # Journal entries (ground truth prose)
+    │   ├── wiki/                     # VimWiki output (source of truth for metadata)
+    │   ├── manuscript/drafts/        # Prose drafts for longer chapters
+    │   ├── legacy/                   # Archived data (extracted notes, etc.)
+    │   └── narrative_analysis/       # DEPRECATED: delete after jumpstart
+    ├── logs/                         # Application logs
+    ├── backups/                      # Database backups
+    └── tmp/                          # Temporary files
+
+Ground Truth Sources:
+    - Journal prose: MD files (data/journal/content/md/)
+    - Journal metadata: Wiki (editable) → DB → YAML export
+    - Manuscript content: Wiki + drafts → DB → YAML export
 
 All paths are resolved at import time and validated to ensure the project
 structure is intact.
@@ -81,10 +96,26 @@ TXT_DIR = JOURNAL_DIR / "sources" / "txt"
 MD_DIR = JOURNAL_DIR / "content" / "md"
 PDF_DIR = JOURNAL_DIR / "content" / "pdf"
 
-# ---- Narrative Structure (Scenes/Events/Arcs) ----
+# ---- Narrative Analysis (DEPRECATED) ----
 NARRATIVE_ANALYSIS_DIR = JOURNAL_DIR / "narrative_analysis"
 EVENTS_DIR = NARRATIVE_ANALYSIS_DIR / "_events"
 ARCS_DIR = NARRATIVE_ANALYSIS_DIR / "_arcs"
+
+# ---- Metadata YAML Exports ----
+# Machine-generated exports for git version control
+METADATA_DIR = DATA_DIR / "metadata"
+JOURNAL_YAML_DIR = METADATA_DIR / "journal"      # Journal YAML exports by year
+MANUSCRIPT_YAML_DIR = METADATA_DIR / "manuscript"  # Manuscript YAML exports
+MANUSCRIPT_CHAPTERS_DIR = MANUSCRIPT_YAML_DIR / "chapters"
+MANUSCRIPT_CHARACTERS_DIR = MANUSCRIPT_YAML_DIR / "characters"
+
+# ---- Manuscript Drafts ----
+MANUSCRIPT_DIR = DATA_DIR / "manuscript"
+DRAFTS_DIR = MANUSCRIPT_DIR / "drafts"           # Prose drafts for longer chapters
+
+# ---- Legacy Archive ----
+LEGACY_DIR = DATA_DIR / "legacy"
+NOTES_ARCHIVE = LEGACY_DIR / "notes_archive.yaml"  # Extracted notes from MD frontmatter
 
 # ---- Logs & Temp & Backups----
 LOG_DIR = ROOT / "logs"

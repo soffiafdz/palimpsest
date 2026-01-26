@@ -10,33 +10,38 @@
 
 ### Location Info
 - **City:** {{ entity_link(entity.city, 'cities', wiki_dir, output_path) }}
-- **Total Visits:** {{ entity.visit_count }}
+- **Total Entries:** {{ entity.entry_count }}
+- **Scenes:** {{ entity.scene_count }}
 
 ### Visit History
-{% if entity.moments %}
-{% set first_visit = entity.first_visit_date %}
-{% set last_visit = entity.last_visit_date %}
+{% if entity.entries %}
+{% set first_visit = entity.first_visit %}
+{% set last_visit = entity.last_visit %}
 {% if first_visit and last_visit %}
 - **First Visit:** {{ first_visit.isoformat() }}
 - **Last Visit:** {{ last_visit.isoformat() }}
-- **Span:** {{ entity.visit_span_days }} days
 {% endif %}
 {% endif %}
 
 ### Timeline
-{% if entity.moments %}
-{% set sorted_moments = entity.moments|sort(attribute='date', reverse=true) %}
+{% if entity.entries %}
+{% set sorted_entries = entity.entries|sort(attribute='date', reverse=true) %}
 {% set current_year = namespace(value=0) %}
-{% for moment in sorted_moments %}
-{% if moment.date.year != current_year.value %}
-{% set current_year.value = moment.date.year %}
+{% for entry in sorted_entries %}
+{% if entry.date.year != current_year.value %}
+{% set current_year.value = entry.date.year %}
 
 #### {{ current_year.value }}
 
 {% endif %}
-{% set entry = moment.entries|first %}
-- **{{ moment.date.isoformat() }}**{% if entry %} — {{ entity_link(entry, 'entries', wiki_dir, output_path) }}{% endif %}{% if moment.context %} — {{ moment.context }}{% endif %}
+- **{{ entry.date.isoformat() }}** — {{ entity_link(entry, 'entries', wiki_dir, output_path) }}
+{% endfor %}
+{% endif %}
 
+### Scenes at This Location
+{% if entity.scenes %}
+{% for scene in entity.scenes|sort(attribute='entry.date', reverse=true) %}
+- **{{ scene.name }}** ({{ scene.entry.date.isoformat() }}) — {{ scene.description[:80] }}{% if scene.description|length > 80 %}...{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -55,6 +60,3 @@
 - {{ entity_link(data.person, 'people', wiki_dir, output_path) }} ({{ data.count }} visit{{ 's' if data.count != 1 else '' }})
 {% endfor %}
 {% endif %}
-
-### Notes
-{{ entity.notes or '[Add notes about this location for manuscript use]' }}

@@ -28,8 +28,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 # --- Local imports ---
-from dev.database.models.enums import ReferenceType, ReferenceMode
-from dev.database.models_manuscript import ManuscriptStatus
+from dev.database.models.enums import ChapterStatus, ReferenceMode, ReferenceType
 from dev.core.validators import DataValidator
 
 
@@ -75,9 +74,9 @@ class SchemaValidator:
         return ReferenceMode.choices()
 
     @staticmethod
-    def get_valid_manuscript_status() -> List[str]:
+    def get_valid_chapter_status() -> List[str]:
         """Get valid manuscript status values."""
-        return ManuscriptStatus.choices()
+        return ChapterStatus.choices()
 
     # ========== Field Validators ==========
 
@@ -131,7 +130,7 @@ class SchemaValidator:
     ) -> Optional[SchemaIssue]:
         """Validate a manuscript status value."""
         return self._validate_enum_field(
-            status, self.get_valid_manuscript_status(), "manuscript status", field_path
+            status, self.get_valid_chapter_status(), "manuscript status", field_path
         )
 
     def validate_date_format(

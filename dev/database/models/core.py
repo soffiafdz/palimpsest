@@ -1,48 +1,64 @@
+#!/usr/bin/env python3
 """
-Core Models
-------------
+core.py
+-------
+Core models for the Palimpsest database.
 
-Central models for the Palimpsest database.
+This module contains the central Entry model and schema versioning:
 
 Models:
     - SchemaInfo: Schema version tracking for migrations
-    - Entry: Journal entry metadata (the primary model)
+    - Entry: Journal entry - the source text (core of journal domain)
+    - NarratedDate: Dates narrated within an entry
 
-The Entry model is the heart of the system, containing metadata extracted from
-Markdown frontmatter and relationships to all other entities.
+The Entry model is the heart of the journal system, representing a single
+journal entry with its metadata and relationships to all other entities.
+
+Design:
+    - Entry stores minimal metadata (file reference, computed stats)
+    - Analysis metadata (scenes, events, threads) lives in separate tables
+    - People/locations can be linked directly to Entry or via Scenes
+    - Soft delete support for recovery and sync
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
 from datetime import date, datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import CheckConstraint, Date, DateTime, Float, Integer, String, Text
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # --- Local imports ---
 from .associations import (
-    entry_aliases,
+    arc_entries,
     entry_cities,
-    entry_events,
     entry_locations,
-    entry_moments,
     entry_people,
-    entry_related,
     entry_tags,
+    entry_themes,
 )
 from .base import Base, SoftDeleteMixin
 
 if TYPE_CHECKING:
-    from .creative import Event, PoemVersion, Reference
-    from .entities import Alias, Person, Tag
-    from .geography import City, Location, Moment
-    from ..models_manuscript import ManuscriptEntry
+    from .analysis import Arc, Event, Scene, Thread
+    from .creative import PoemVersion, Reference
+    from .entities import Person, Tag, Theme
+    from .geography import City, Location
+    from .metadata import MotifInstance
 
 
-# --- Schema Versioning ---
 class SchemaInfo(Base):
     """
     Tracks schema versions for migration management.
@@ -71,66 +87,70 @@ class SchemaInfo(Base):
     )
 
 
-# --- Entry Model ---
 class Entry(Base, SoftDeleteMixin):
     """
     Central model representing a journal entry's metadata.
 
-       Each Entry corresponds to a single Markdown file in the journal,
-       with metadata extracted from the frontmatter and relationships
-       to various entities mentioned in the entry.
+    Each Entry corresponds to a single Markdown file in the journal.
+    This is the source text - the ground truth for journal prose.
 
-       Soft Delete Support:
-           Entries support soft deletion (marked as deleted without removing
-           from database) to enable recovery and multi-machine synchronization.
-           Inherited from SoftDeleteMixin.
+    Design:
+        - Minimal metadata on Entry itself
+        - People/locations can be linked directly or derived from Scenes
+        - Analysis data in Scene/Event/Thread tables
+        - Tags and Themes linked directly
 
-       Attributes:
-           id: Primary key
-           date: Date of the journal entry (unique)
-           file_path: Path to the Markdown file (unique)
-           file_hash: Hash of file content for change detection
-           word_count: Number of words in the entry
-           reading_time: Estimated reading time in minutes
-           epigraph: Opening quote or epigraph
-           epigraph_attribution: Attribution for epigraph (author, source)
-           notes: Additional notes or metadata
-           created_at: When this database record was created
-           updated_at: When this database record was last updated
-           deleted_at: When this entry was soft deleted (from SoftDeleteMixin)
-           deleted_by: Who/what deleted this entry (from SoftDeleteMixin)
-           deletion_reason: Why this entry was deleted (from SoftDeleteMixin)
+    Attributes:
+        id: Primary key
+        date: Date of the journal entry (unique)
+        file_path: Path to the Markdown file (unique)
+        file_hash: Hash of file content for change detection
+        word_count: Number of words in the entry
+        reading_time: Estimated reading time in minutes
+        summary: Narrative summary (from analysis)
+        rating: Narrative quality rating 1-5 (from analysis)
+        rating_justification: Explanation for rating
+        created_at: When this database record was created
+        updated_at: When this database record was last updated
 
-       Relationships:
-           dates: Many-to-many with MentionedDate (dates referenced in entry)
-           cities: Many-to-many with City (cities where entry took place)
-           locations: Many-to-many with Location (specific venues mentioned)
-           people: Many-to-many with Person (people mentioned)
-           events: Many-to-many with Event (thematic events entry belongs to)
-           tags: Many-to-many with Tag (keyword tags)
-           related_entries: Many-to-many self-referential (related entries)
-           references: One-to-many with Reference (external citations)
-           poems: One-to-many with PoemVersion (poems written in entry)
-           manuscript: One-to-one with ManuscriptEntry (manuscript metadata)
+    Relationships:
+        cities: M2M with City (cities where entry took place)
+        locations: M2M with Location (specific venues mentioned)
+        people: M2M with Person (people mentioned)
+        tags: M2M with Tag (keyword tags)
+        themes: M2M with Theme (thematic elements)
+        arcs: M2M with Arc (story arcs this entry belongs to)
+        scenes: One-to-many with Scene (granular narrative moments)
+        events: One-to-many with Event (scene groupings)
+        threads: One-to-many with Thread (temporal connections)
+        narrated_dates: One-to-many with NarratedDate (dates narrated)
+        references: One-to-many with Reference (external citations)
+        poems: One-to-many with PoemVersion (poems in entry)
     """
 
     __tablename__ = "entries"
     __table_args__ = (
         CheckConstraint("file_path != ''", name="ck_entry_non_empty_file_path"),
-        CheckConstraint("word_count >= 0", name="positive_entry_word_count"),
-        CheckConstraint("reading_time >= 0.0", name="positive_entry_reading_time"),
+        CheckConstraint("word_count >= 0", name="ck_entry_positive_word_count"),
+        CheckConstraint("reading_time >= 0.0", name="ck_entry_positive_reading_time"),
+        CheckConstraint(
+            "rating IS NULL OR (rating >= 1 AND rating <= 5)",
+            name="ck_entry_rating_range",
+        ),
     )
 
     # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     file_path: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    file_hash: Mapped[Optional[str]] = mapped_column(String)
+    file_hash: Mapped[Optional[str]] = mapped_column(String(64))
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     reading_time: Mapped[float] = mapped_column(Float, default=0.0)
-    epigraph: Mapped[Optional[str]] = mapped_column(Text)
-    epigraph_attribution: Mapped[Optional[str]] = mapped_column(String(255))
-    notes: Mapped[Optional[str]] = mapped_column(Text)
+
+    # --- Analysis fields (from narrative analysis) ---
+    summary: Mapped[Optional[str]] = mapped_column(Text)
+    rating: Mapped[Optional[float]] = mapped_column(Float)
+    rating_justification: Mapped[Optional[str]] = mapped_column(Text)
 
     # --- Timestamps ---
     created_at: Mapped[datetime] = mapped_column(
@@ -142,18 +162,7 @@ class Entry(Base, SoftDeleteMixin):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # --- Many-to-many Relationships ---
-    moments: Mapped[List["Moment"]] = relationship(
-        "Moment", secondary=entry_moments, back_populates="entries"
-    )
-    related_entries: Mapped[List["Entry"]] = relationship(
-        "Entry",
-        secondary=entry_related,
-        primaryjoin="Entry.id == entry_related.c.entry_id",
-        secondaryjoin="Entry.id == entry_related.c.related_entry_id",
-        back_populates=None,
-        overlaps="related_entries",
-    )
+    # --- M2M Relationships (metadata) ---
     cities: Mapped[List["City"]] = relationship(
         "City", secondary=entry_cities, back_populates="entries"
     )
@@ -163,17 +172,31 @@ class Entry(Base, SoftDeleteMixin):
     people: Mapped[List["Person"]] = relationship(
         "Person", secondary=entry_people, back_populates="entries"
     )
-    aliases_used: Mapped[List["Alias"]] = relationship(
-        "Alias", secondary=entry_aliases, back_populates="entries"
-    )
-    events: Mapped[List["Event"]] = relationship(
-        "Event", secondary=entry_events, back_populates="entries"
-    )
     tags: Mapped[List["Tag"]] = relationship(
         "Tag", secondary=entry_tags, back_populates="entries"
     )
+    themes: Mapped[List["Theme"]] = relationship(
+        "Theme", secondary=entry_themes, back_populates="entries"
+    )
+    arcs: Mapped[List["Arc"]] = relationship(
+        "Arc", secondary=arc_entries, back_populates="entries"
+    )
 
-    # --- One-to-many Relationships ---
+    # --- One-to-many Relationships (analysis) ---
+    scenes: Mapped[List["Scene"]] = relationship(
+        "Scene", back_populates="entry", cascade="all, delete-orphan"
+    )
+    events: Mapped[List["Event"]] = relationship(
+        "Event", back_populates="entry", cascade="all, delete-orphan"
+    )
+    threads: Mapped[List["Thread"]] = relationship(
+        "Thread", back_populates="entry", cascade="all, delete-orphan"
+    )
+    narrated_dates: Mapped[List["NarratedDate"]] = relationship(
+        "NarratedDate", back_populates="entry", cascade="all, delete-orphan"
+    )
+
+    # --- One-to-many Relationships (creative) ---
     references: Mapped[List["Reference"]] = relationship(
         "Reference", back_populates="entry", cascade="all, delete-orphan"
     )
@@ -181,9 +204,9 @@ class Entry(Base, SoftDeleteMixin):
         "PoemVersion", back_populates="entry", cascade="all, delete-orphan"
     )
 
-    # --- One-to-one Relationship ---
-    manuscript: Mapped[Optional["ManuscriptEntry"]] = relationship(
-        "ManuscriptEntry", uselist=False, back_populates="entry"
+    # --- One-to-many Relationships (motifs) ---
+    motif_instances: Mapped[List["MotifInstance"]] = relationship(
+        "MotifInstance", back_populates="entry", cascade="all, delete-orphan"
     )
 
     # --- Computed properties ---
@@ -214,33 +237,8 @@ class Entry(Base, SoftDeleteMixin):
 
     @property
     def date_formatted(self) -> str:
-        """Get date in YYYY-MM-DD format"""
+        """Get date in YYYY-MM-DD format."""
         return self.date.isoformat()
-
-    @property
-    def date_range(self) -> Optional[Dict[str, Any]]:
-        """
-        Calculate statistics about mentioned dates in this entry.
-
-        Returns:
-            Dictionary with count, min_date, max_date, and duration,
-            or None if no dates are mentioned
-        """
-        if not self.moments:
-            return None
-
-        date_vals = [d.date for d in self.moments if d.date is not None]
-
-        if not date_vals:
-            return None
-
-        min_date, max_date = (min(date_vals), max(date_vals))
-        return {
-            "count": len(date_vals),
-            "min_date": min_date,
-            "max_date": max_date,
-            "duration": (max_date - min_date).days,
-        }
 
     @property
     def reading_time_display(self) -> str:
@@ -257,6 +255,37 @@ class Entry(Base, SoftDeleteMixin):
                 return f"{hours}h read"
             return f"{hours}h {remaining}m read"
 
+    @property
+    def scene_count(self) -> int:
+        """Number of scenes in this entry."""
+        return len(self.scenes)
+
+    @property
+    def event_count(self) -> int:
+        """Number of events in this entry."""
+        return len(self.events)
+
+    @property
+    def thread_count(self) -> int:
+        """Number of threads in this entry."""
+        return len(self.threads)
+
+    @property
+    def all_scene_people(self) -> List["Person"]:
+        """Get all people from all scenes in this entry."""
+        people_set: set = set()
+        for scene in self.scenes:
+            people_set.update(scene.people)
+        return list(people_set)
+
+    @property
+    def all_scene_locations(self) -> List["Location"]:
+        """Get all locations from all scenes in this entry."""
+        locations_set: set = set()
+        for scene in self.scenes:
+            locations_set.update(scene.locations)
+        return list(locations_set)
+
     def has_person(self, person_name: str) -> bool:
         """
         Check if a specific person is mentioned in this entry.
@@ -270,7 +299,7 @@ class Entry(Base, SoftDeleteMixin):
         search_name = person_name.lower()
         return any(
             search_name in person.name.lower()
-            or (person.full_name and search_name in person.full_name.lower())
+            or (person.lastname and search_name in person.lastname.lower())
             for person in self.people
         )
 
@@ -285,7 +314,7 @@ class Entry(Base, SoftDeleteMixin):
             True if the tag is present
         """
         search_tag = tag_name.lower()
-        return any(tag.tag.lower() == search_tag for tag in self.tags)
+        return any(tag.name.lower() == search_tag for tag in self.tags)
 
     def needs_update(self, current_hash: str) -> bool:
         """
@@ -304,3 +333,31 @@ class Entry(Base, SoftDeleteMixin):
 
     def __str__(self) -> str:
         return f"Entry {self.date_formatted} ({self.word_count} words)"
+
+
+class NarratedDate(Base):
+    """
+    Dates narrated within an entry.
+
+    Tracks which dates are described/narrated within a journal entry.
+    This is derived from scene dates and used for the MD frontmatter.
+
+    Attributes:
+        id: Primary key
+        date: The narrated date
+        entry_id: Foreign key to parent Entry
+    """
+
+    __tablename__ = "narrated_dates"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    entry_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("entries.id", ondelete="CASCADE"), nullable=False
+    )
+
+    # --- Relationship ---
+    entry: Mapped["Entry"] = relationship("Entry", back_populates="narrated_dates")
+
+    def __repr__(self) -> str:
+        return f"<NarratedDate(date={self.date}, entry_id={self.entry_id})>"

@@ -33,18 +33,23 @@ from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.utils import fs
 from dev.database.models import (
-    Entry,
-    Moment,
+    Arc,
     City,
-    Person,
-    Alias,
+    Entry,
     Event,
+    NarratedDate,
+    Person,
+    Scene,
     Tag,
+    Theme,
+    Thread,
 )
 from dev.database.decorators import DatabaseOperation
-from dev.database.tombstone_manager import TombstoneManager
+# TODO: TombstoneManager needs rebuild for new model structure
+# from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
-from .entry_helpers import EntryRelationshipHelper
+# TODO: EntryRelationshipHelper needs rebuild for new model structure
+# from .entry_helpers import EntryRelationshipHelper
 
 
 class EntryManager(BaseManager):
@@ -72,14 +77,14 @@ class EntryManager(BaseManager):
             logger: Optional logger for operation tracking
         """
         super().__init__(session, logger)
-        self.tombstones = TombstoneManager(session, logger)
-        self.helpers = EntryRelationshipHelper(session, logger)
+        # TODO: Re-enable when tombstone system is rebuilt
+        # self.tombstones = TombstoneManager(session, logger)
+        # self.helpers = EntryRelationshipHelper(session, logger)
 
         # Cache manager instances to avoid repeated instantiation
-        from dev.database.managers import PersonManager, LocationManager, EventManager
+        from dev.database.managers import PersonManager, LocationManager
         self._person_mgr = PersonManager(session, logger)
         self._location_mgr = LocationManager(session, logger)
-        self._event_mgr = EventManager(session, logger)
 
     # -------------------------------------------------------------------------
     # Core CRUD Operations
@@ -706,19 +711,18 @@ class EntryManager(BaseManager):
                     self.session.flush()
 
             # --- Aliases ---
-            if "alias" in metadata:
-                self._process_aliases(entry, metadata["alias"])
+            # TODO: Alias model removed in new schema - person.alias is now a field
+            # if "alias" in metadata:
+            #     self._process_aliases(entry, metadata["alias"])
 
             # --- Locations ---
             if "locations" in metadata:
                 self._process_locations(entry, metadata["locations"], incremental)
 
-            # --- Dates ---
-            if "dates" in metadata:
-                if not incremental:
-                    entry.moments.clear()
-                    self.session.flush()
-                self._process_mentioned_dates(entry, metadata["dates"])
+            # --- Narrated Dates ---
+            # TODO: Rebuild for new NarratedDate model (replaces Moment)
+            # if "narrated_dates" in metadata:
+            #     self._process_narrated_dates(entry, metadata["narrated_dates"])
 
             # --- References ---
             # References need special handling because they involve ReferenceSource creation
@@ -740,8 +744,7 @@ class EntryManager(BaseManager):
                 self._process_tags(entry, metadata["tags"], incremental)
 
             # --- Manuscript ---
-            if "manuscript" in metadata:
-                self._process_manuscript(entry, metadata["manuscript"])
+            # TODO: Manuscript processing now handled via Chapter model
 
             self.session.flush()
 
@@ -758,455 +761,14 @@ class EntryManager(BaseManager):
             # Re-raise for higher-level handling
             raise
 
-    def _process_aliases(
-        self,
-        entry: Entry,
-        alias_data: Sequence[str | Sequence[str] | Dict[str, Any]],
-    ):
-        """
-        Process aliases with optional person context and link to entry.
-
-        Args:
-            entry: Entry to link aliases to
-            alias_data: List of alias specifications:
-                - str: single alias
-                - List[str]: multiple aliases for same person
-                - Dict: {"alias": str|List[str], "name": str, "full_name": str}
-
-        Raises:
-            ValueError: If entry not persisted or invalid alias data
-        """
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before linking aliases")
-
-        alias_orms = []
-
-        for alias_obj in alias_data:
-            person: Optional[Person] = None
-            aliases: List[str] = []
-            name: Optional[str] = None
-            full_name: Optional[str] = None
-
-            # Parse input format
-            if isinstance(alias_obj, dict):
-                # Dict format: {"alias": [...], "name": "...", "full_name": "..."}
-                alias_raw = alias_obj.get("alias", [])
-                if isinstance(alias_raw, str):
-                    alias_raw = [alias_raw]
-
-                aliases_raw = [
-                    DataValidator.normalize_string(a) for a in alias_raw if a
-                ]
-                aliases = [a for a in aliases_raw if a]
-
-                name = DataValidator.normalize_string(alias_obj.get("name"))
-                full_name = DataValidator.normalize_string(alias_obj.get("full_name"))
-
-            elif isinstance(alias_obj, list):
-                # List format: ["alias1", "alias2"]
-                aliases_raw = [DataValidator.normalize_string(a) for a in alias_obj]
-                aliases = [a for a in aliases_raw if a]
-
-            elif isinstance(alias_obj, str):
-                # String format: "alias"
-                normalized = DataValidator.normalize_string(alias_obj)
-                if normalized:
-                    aliases = [normalized]
-
-            else:
-                safe_logger(self.logger).log_warning(
-                    f"Invalid alias format: {type(alias_obj).__name__}",
-                    {"entry_id": entry.id, "alias_data": str(alias_obj)[:100]},
-                )
-                continue
-
-            if not aliases:
-                safe_logger(self.logger).log_warning(
-                    "Empty alias list after normalization",
-                    {"entry_id": entry.id, "raw_data": str(alias_obj)[:100]},
-                )
-                continue
-
-            # Try to resolve person from existing aliases
-            unresolved_aliases = aliases.copy()
-            alias_fellows = []
-            for alias in aliases:
-                existing_aliases = (
-                    self.session.query(Alias).filter_by(alias=alias).all()
-                )
-
-                if len(existing_aliases) == 1:
-                    # Unique alias found - use it
-                    alias_orms.append(existing_aliases[0])
-                    person = existing_aliases[0].person
-                    unresolved_aliases.remove(alias)
-
-                elif len(existing_aliases) > 1:
-                    # Ambiguous - multiple people have this alias
-                    alias_fellows.append(alias)
-                    unresolved_aliases.remove(alias)
-
-            if unresolved_aliases or alias_fellows:
-                if not person:
-                    if name or full_name:
-                        try:
-                            # Use helper to get or create person
-                            person = self.helpers.get_person(name, full_name)
-                        except ValidationError as e:
-                            safe_logger(self.logger).log_warning(
-                                f"Could not resolve person for aliases: {e}",
-                                {
-                                    "entry_id": entry.id,
-                                    "entry_date": str(entry.date),
-                                    "alias": [
-                                        *unresolved_aliases,
-                                        *alias_fellows,
-                                    ],
-                                    "name": name,
-                                    "full_name": full_name,
-                                },
-                            )
-                            continue
-
-                        if person is None:
-                            person_id = full_name if full_name else name
-                            safe_logger(self.logger).log_warning(
-                                f"Person '{person_id}' not found for alias",
-                                {
-                                    "entry_id": entry.id,
-                                    "entry_date": str(entry.date),
-                                    "alias": [
-                                        *unresolved_aliases,
-                                        *alias_fellows,
-                                    ],
-                                    "name": name,
-                                    "full_name": full_name,
-                                },
-                            )
-                            continue
-                    else:
-                        # No person context provided
-                        safe_logger(self.logger).log_warning(
-                            "Cannot resolve alias without person context",
-                            {
-                                "entry_id": entry.id,
-                                "entry_date": str(entry.date),
-                                "alias": [*unresolved_aliases, *alias_fellows],
-                                "hint": "Provide 'name' or 'full_name' in alias dict",
-                            },
-                        )
-                        continue
-
-                if alias_fellows:
-                    # Resolve ambiguous alias
-                    resolved_fellows = []
-                    for alias in alias_fellows:
-                        existing_aliases = (
-                            self.session.query(Alias)
-                            .filter_by(alias=alias, person_id=person.id)
-                            .all()
-                        )
-
-                        if len(existing_aliases) == 1:
-                            # Unique alias found - use it
-                            alias_orms.append(existing_aliases[0])
-                            resolved_fellows.append(alias)
-
-                    alias_fellows = [
-                        a for a in alias_fellows if a not in resolved_fellows
-                    ]
-                    # This shouldn't happen due to Tables limitation, leave here anyway
-                    if alias_fellows:
-                        safe_logger(self.logger).log_warning(
-                            f"Ambiguous alias(es) '{alias_fellows}' match multiple people",
-                            {
-                                "entry_id": entry.id,
-                                "entry_date": str(entry.date),
-                                "alias": alias_fellows,
-                            },
-                        )
-
-                # Create new alias records for this person
-                for alias in unresolved_aliases:
-                    try:
-                        alias_orm = self._get_or_create(
-                            Alias,
-                            lookup_fields={"alias": alias, "person_id": person.id},
-                        )
-                        alias_orms.append(alias_orm)
-
-                        safe_logger(self.logger).log_debug(
-                            f"Created alias '{alias}' for {person.display_name}",
-                            {
-                                "entry_id": entry.id,
-                                "person_id": person.id,
-                                "alias": alias,
-                            },
-                        )
-                    except Exception as e:
-                        safe_logger(self.logger).log_error(
-                            e,
-                            {
-                                "operation": "create_alias",
-                                "entry_id": entry.id,
-                                "person_id": person.id,
-                                "alias": alias,
-                            },
-                        )
-                        # Continue processing other aliases
-                        continue
-
-        # Link all collected aliases to entry
-        if alias_orms:
-            try:
-                # Incremental mode: add new aliases
-                for alias_orm in alias_orms:
-                    resolved_alias = self._resolve_object(alias_orm, Alias)
-                    if resolved_alias and resolved_alias not in entry.aliases_used:
-                        entry.aliases_used.append(resolved_alias)
-                self.session.flush()
-
-                safe_logger(self.logger).log_debug(
-                    f"Linked {len(alias_orms)} aliases to entry",
-                    {
-                        "entry_id": entry.id,
-                        "entry_date": str(entry.date),
-                        "alias_count": len(alias_orms),
-                    },
-                )
-            except Exception as e:
-                safe_logger(self.logger).log_error(
-                    e,
-                    {
-                        "operation": "link_aliases_to_entry",
-                        "entry_id": entry.id,
-                        "entry_date": str(entry.date),
-                        "alias_count": len(alias_orms),
-                    },
-                )
-                raise
-        else:
-            # No aliases were successfully processed
-            safe_logger(self.logger).log_debug(
-                "No alias linked to entry",
-                {
-                    "entry_id": entry.id,
-                    "entry_date": str(entry.date),
-                    "input_count": len(alias_data),
-                },
-            )
-
-    def _process_mentioned_dates(
-        self,
-        entry: Entry,
-        dates_data: List[Union[str, Dict[str, Any]]],
-    ) -> None:
-        """
-        Process mentioned dates with optional context, locations, people, events, and type.
-
-        Each date can have:
-        - date: ISO format date string (required)
-        - type: "moment" (default) or "reference"
-        - context: Optional text context
-        - locations: List of location names (creates relationships)
-        - people: List of person specs (creates relationships)
-        - events: List of event names (creates relationships)
-
-        Args:
-            entry: Entry to attach dates to
-            dates_data: List of date specifications
-        """
-        from dev.database.models import MomentType
-
-        existing_date_ids = {d.id for d in entry.moments}
-
-        for date_item in dates_data:
-            mentioned_date = None
-
-            if isinstance(date_item, str):
-                # Simple date string (type defaults to moment)
-                date_obj = date.fromisoformat(date_item)
-                mentioned_date = self._get_or_create(
-                    Moment, {"date": date_obj, "type": MomentType.MOMENT}
-                )
-
-            elif isinstance(date_item, dict) and "date" in date_item:
-                # Date with optional context and type
-                date_obj = date.fromisoformat(date_item["date"])
-                context = date_item.get("context")
-
-                # Parse type field (default to "moment")
-                type_str = date_item.get("type", "moment")
-                moment_type = (
-                    MomentType.REFERENCE if type_str == "reference"
-                    else MomentType.MOMENT
-                )
-
-                mentioned_date = self._get_or_create(
-                    Moment, {"date": date_obj, "context": context, "type": moment_type}
-                )
-
-                if "locations" in date_item and date_item["locations"]:
-                    self._update_mentioned_date_locations(
-                        mentioned_date, date_item["locations"]
-                    )
-
-                if "people" in date_item and date_item["people"]:
-                    self._update_mentioned_date_people(
-                        mentioned_date, date_item["people"]
-                    )
-
-                if "events" in date_item and date_item["events"]:
-                    self._update_mentioned_date_events(
-                        mentioned_date, date_item["events"]
-                    )
-            else:
-                continue
-
-            if mentioned_date and mentioned_date.id not in existing_date_ids:
-                entry.moments.append(mentioned_date)
-
-    def _update_mentioned_date_locations(
-        self,
-        mentioned_date: Moment,
-        locations_data: List[str],
-    ) -> None:
-        """
-        Update locations associated with a mentioned date.
-
-        Auto-creates locations that don't exist yet, similar to how
-        entry locations are handled.
-
-        Args:
-            mentioned_date: Moment to update
-            locations_data: List of location names
-        """
-        if mentioned_date.id is None:
-            raise ValueError("Moment must be persisted before linking locations")
-
-        # Get existing location IDs to avoid duplicates
-        existing_location_ids = {loc.id for loc in mentioned_date.locations}
-
-        for loc_name in locations_data:
-            # Normalize location name
-            norm_name = DataValidator.normalize_string(loc_name)
-            if not norm_name:
-                continue
-
-            # Handle possessive locations: check if this is a person's place
-            # If location ends with "'s", check if base name is a known person
-            # "#Alda's" → check if "Alda" is a person → "Alda's house"
-            # "#McDonald's" → "McDonald" not a person → "McDonald's" (keep as-is)
-            if norm_name.endswith("'s"):
-                base_name = norm_name[:-2]  # Remove "'s"
-
-                # Check if base_name matches a person in the database
-                person = self._person_mgr.get(base_name)
-
-                if person is not None:
-                    # It's a person's place! Convert to "Name's house"
-                    norm_name = f"{base_name}'s house"
-                # else: keep as-is (it's a business/location name with apostrophe)
-
-            # Get or create location (auto-create like we do for entries)
-            # If no city is specified, use "Unknown" as default
-            location = self._location_mgr.get_or_create_location(
-                norm_name, city_name="Unknown"
-            )
-
-            # Link if not already linked
-            if location.id not in existing_location_ids:
-                mentioned_date.locations.append(location)
-
-        if locations_data:
-            self.session.flush()
-
-    def _update_mentioned_date_people(
-        self,
-        mentioned_date: Moment,
-        people_data: List[Union[str, Dict[str, Any]]],
-    ) -> None:
-        """
-        Update people associated with a mentioned date.
-
-        Auto-creates people that don't exist yet, similar to how
-        entry people are handled.
-
-        Supports both simple names and full person specifications:
-        - String: "John" (auto-creates if needed)
-        - Dict: {"name": "John"} or {"full_name": "John Smith"}
-
-        Args:
-            mentioned_date: Moment to update
-            people_data: List of person specifications
-        """
-        if mentioned_date.id is None:
-            raise ValueError("Moment must be persisted before linking people")
-
-        # Get existing person IDs to avoid duplicates
-        existing_person_ids = {p.id for p in mentioned_date.people}
-
-        for person_spec in people_data:
-            person = None
-
-            if isinstance(person_spec, str):
-                # Simple name - use get_or_create
-                norm_name = DataValidator.normalize_string(person_spec)
-                if not norm_name:
-                    continue
-
-                person = self._person_mgr.get_or_create(norm_name)
-
-            elif isinstance(person_spec, dict):
-                # Dict with name or full_name - use get_or_create
-                name = DataValidator.normalize_string(person_spec.get("name"))
-                full_name = DataValidator.normalize_string(person_spec.get("full_name"))
-
-                if name or full_name:
-                    person = self._person_mgr.get_or_create(name or full_name, full_name)
-
-            if person and person.id not in existing_person_ids:
-                mentioned_date.people.append(person)
-
-        if people_data:
-            self.session.flush()
-
-    def _update_mentioned_date_events(
-        self,
-        mentioned_date: Moment,
-        events_data: List[str],
-    ) -> None:
-        """
-        Update events associated with a mentioned date (moment).
-
-        Links events to specific moments, enabling tracking of which events
-        occurred on specific dates within an entry.
-
-        Args:
-            mentioned_date: Moment to update
-            events_data: List of event names
-        """
-        if mentioned_date.id is None:
-            raise ValueError("Moment must be persisted before linking events")
-
-        # Get existing event IDs to avoid duplicates
-        existing_event_ids = {e.id for e in mentioned_date.events}
-
-        for event_name in events_data:
-            # Normalize event name
-            norm_name = DataValidator.normalize_string(event_name)
-            if not norm_name:
-                continue
-
-            # Get or create the event
-            event = self._get_or_create(Event, {"event": norm_name})
-
-            # Link if not already linked
-            if event.id not in existing_event_ids:
-                mentioned_date.events.append(event)
-
-        if events_data:
-            self.session.flush()
+    # -------------------------------------------------------------------------
+    # DEPRECATED: Alias processing removed - person.alias is now a field on Person
+    # -------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------
+    # DEPRECATED: Moment processing removed - replaced by NarratedDate/Scene/Thread
+    # TODO: Rebuild for new schema when needed
+    # -------------------------------------------------------------------------
 
     def _process_tags(
         self,
@@ -1243,11 +805,11 @@ class EntryManager(BaseManager):
             entry.tags.clear()
             self.session.flush()
 
-        existing_tags = {tag.tag for tag in entry.tags}
+        existing_tags = {tag.name for tag in entry.tags}
 
         # Add new tags
         for tag_name in norm_tags - existing_tags:
-            tag_obj = self._get_or_create(Tag, {"tag": tag_name})
+            tag_obj = self._get_or_create(Tag, {"name": tag_name})
             entry.tags.append(tag_obj)
 
         if norm_tags - existing_tags:
@@ -1320,19 +882,6 @@ class EntryManager(BaseManager):
         # Use helper for poem processing
         self.helpers.process_poems(entry, poems_data)
 
-    def _process_manuscript(
-        self,
-        entry: Entry,
-        manuscript_data: Dict[str, Any],
-    ) -> None:
-        """
-        Create or update manuscript entry.
-
-        Delegates to ManuscriptManager via helper.
-
-        Args:
-            entry: Entry to attach manuscript to
-            manuscript_data: Manuscript metadata dict
-        """
-        # Use helper for manuscript processing
-        self.helpers.create_or_update_manuscript_entry(entry, manuscript_data)
+    # -------------------------------------------------------------------------
+    # DEPRECATED: Manuscript processing removed - use Chapter model directly
+    # -------------------------------------------------------------------------

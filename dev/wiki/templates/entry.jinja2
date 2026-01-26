@@ -43,7 +43,7 @@
 **Locations ({{ entity.locations|length }})**
 
 {% for location in entity.locations|sort(attribute='name') %}
-- {{ entity_link(location, 'locations', wiki_dir, output_path) }} ({{ location.city.city }})
+- {{ entity_link(location, 'locations', wiki_dir, output_path) }} ({{ location.city.name }})
 {% endfor %}
 {% endif %}
 
@@ -51,16 +51,16 @@
 {% if entity.events %}
 **Events ({{ entity.events|length }})**
 
-{% for event in entity.events|sort(attribute='event') %}
+{% for event in entity.events|sort(attribute='name') %}
 - {{ entity_link(event, 'events', wiki_dir, output_path) }}
 {% endfor %}
 {% endif %}
 
 ### Themes
-{% if entity.manuscript and entity.manuscript.themes %}
-**Themes ({{ entity.manuscript.themes|length }})**
+{% if entity.themes %}
+**Themes ({{ entity.themes|length }})**
 
-{% for theme in entity.manuscript.themes|sort(attribute='name') %}
+{% for theme in entity.themes|sort(attribute='name') %}
 - {{ entity_link(theme, 'themes', wiki_dir, output_path) }}
 {% endfor %}
 {% endif %}
@@ -93,7 +93,7 @@
 {% if entity.tags %}
 **Tags ({{ entity.tags|length }})**
 
-{% for tag in entity.tags|sort(attribute='tag') %}#{{ tag.tag }} {% endfor %}
+{% for tag in entity.tags|sort(attribute='name') %}#{{ tag.name }} {% endfor %}
 
 {% endif %}
 

@@ -6,12 +6,9 @@
 #}
 # Palimpsest — City
 
-## {{ entity.city }}
+## {{ entity.name }}
 
 ### Location Info
-{% if entity.state_province %}
-- **State/Province:** {{ entity.state_province }}
-{% endif %}
 {% if entity.country %}
 - **Country:** {{ entity.country }}
 {% endif %}
@@ -54,7 +51,7 @@
 {% endif %}
 {% endif %}
 
-### Locations in {{ entity.city }}
+### Locations in {{ entity.name }}
 {% if entity.locations %}
 {% for loc in entity.locations|sort(attribute='visit_count', reverse=true) %}
 - {{ entity_link(loc, 'locations', wiki_dir, output_path) }} ({{ loc.visit_count }} visit{{ 's' if loc.visit_count != 1 else '' }})

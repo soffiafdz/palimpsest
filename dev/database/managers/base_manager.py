@@ -473,9 +473,8 @@ class BaseManager(ABC):
 
         Example:
             self._update_relationships(person, metadata, [
-                ("events", "events", Event),
                 ("entries", "entries", Entry),
-                ("dates", "dates", Moment),
+                ("scenes", "scenes", Scene),
             ])
         """
         for attr_name, meta_key, model_class in relationship_configs:

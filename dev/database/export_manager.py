@@ -137,26 +137,21 @@ from .query_optimizer import QueryOptimizer, HierarchicalBatcher, DateBatch
 
 # Import models for export
 from .models import (
+    Arc,
     Entry,
-    Person,
-    Location,
     Event,
-    Tag,
-    Reference,
-    ReferenceSource,
-    Moment,
+    Location,
+    Person,
     Poem,
     PoemVersion,
-    Alias,
+    Reference,
+    ReferenceSource,
+    Scene,
+    Tag,
+    Theme,
+    Thread,
 )
 from .configs.json_export_configs import EXPORT_CONFIGS
-from .models_manuscript import (
-    ManuscriptEntry,
-    ManuscriptPerson,
-    ManuscriptEvent,
-    Theme,
-    Arc,
-)
 
 
 class ExportManager:
@@ -371,19 +366,16 @@ class ExportManager:
                 "entries": Entry,
                 "people": Person,
                 "locations": Location,
+                "scenes": Scene,
                 "events": Event,
+                "arcs": Arc,
+                "threads": Thread,
                 "tags": Tag,
+                "themes": Theme,
                 "references": Reference,
                 "reference_sources": ReferenceSource,
-                "mentioned_dates": Moment,
                 "poems": Poem,
                 "poem_versions": PoemVersion,
-                "aliases": Alias,
-                "manuscript_entries": ManuscriptEntry,
-                "manuscript_people": ManuscriptPerson,
-                "manuscript_events": ManuscriptEvent,
-                "themes": Theme,
-                "arcs": Arc,
             }
 
             with TemporalFileManager() as temp_manager:
@@ -584,36 +576,35 @@ class ExportManager:
             "file_hash": entry.file_hash,
             "word_count": entry.word_count,
             "reading_time": entry.reading_time,
-            "epigraph": entry.epigraph,
-            "epigraph_attribution": entry.epigraph_attribution,
-            "notes": entry.notes,
+            "summary": entry.summary,
+            "rating": entry.rating,
+            "rating_justification": entry.rating_justification,
             "created_at": entry.created_at.isoformat() if entry.created_at else None,
             "updated_at": entry.updated_at.isoformat() if entry.updated_at else None,
             # Relationships
-            "mentioned_dates": [
-                {"date": md.date.isoformat(), "context": md.context}
-                for md in entry.moments
+            "narrated_dates": [
+                nd.date.isoformat() for nd in entry.narrated_dates
             ],
-            "cities": [city.city for city in entry.cities],
+            "cities": [city.name for city in entry.cities],
             "locations": [
-                {"name": loc.name, "city": loc.city.city if loc.city else None}
+                {"name": loc.name, "city": loc.city.name if loc.city else None}
                 for loc in entry.locations
             ],
             "people": [person.display_name for person in entry.people],
-            "events": [event.display_name for event in entry.events],
-            "tags": [tag.tag for tag in entry.tags],
-            "related_entries": [re.date.isoformat() for re in entry.related_entries],
+            "events": [event.name for event in entry.events],
+            "tags": [tag.name for tag in entry.tags],
+            "themes": [theme.name for theme in entry.themes],
+            "arcs": [arc.name for arc in entry.arcs],
             # References
             "references": [
                 {
                     "content": ref.content if ref.content else None,
                     "description": ref.description if ref.description else None,
                     "mode": ref.mode.value if ref.mode else "direct",
-                    "speaker": ref.speaker,
                     "source": (
                         {
                             "title": ref.source.title if ref.source else None,
-                            "type": ref.source.type if ref.source else None,
+                            "type": ref.source.type.value if ref.source and ref.source.type else None,
                             "author": ref.source.author if ref.source else None,
                         }
                         if ref.source
@@ -627,24 +618,31 @@ class ExportManager:
                 {
                     "title": pv.poem.title if pv.poem else None,
                     "content": pv.content,
-                    "notes": pv.notes,
-                    "revision_date": (
-                        pv.revision_date.isoformat() if pv.revision_date else None
-                    ),
                 }
                 for pv in entry.poems
             ],
-            # Manuscript data
-            "manuscript": (
+            # Scenes
+            "scenes": [
                 {
-                    "status": entry.manuscript.status.value,
-                    "edited": entry.manuscript.edited,
-                    "notes": entry.manuscript.notes,
-                    "themes": [theme.theme for theme in entry.manuscript.themes],
+                    "name": scene.name,
+                    "description": scene.description,
+                    "dates": [sd.date.isoformat() for sd in scene.dates],
+                    "people": [p.display_name for p in scene.people],
+                    "locations": [loc.name for loc in scene.locations],
                 }
-                if entry.manuscript
-                else None
-            ),
+                for scene in entry.scenes
+            ],
+            # Threads
+            "threads": [
+                {
+                    "name": thread.name,
+                    "from_date": thread.from_date.isoformat(),
+                    "to_date": thread.to_date,
+                    "content": thread.content,
+                    "people": [p.display_name for p in thread.people],
+                }
+                for thread in entry.threads
+            ],
         }
 
     def _serialize_person(self, person: Person) -> Dict[str, Any]:
@@ -659,14 +657,15 @@ class ExportManager:
         """
         return {
             "id": person.id,
+            "alias": person.alias,
             "name": person.name,
-            "full_name": person.full_name,
-            "name_fellow": person.name_fellow,
+            "lastname": person.lastname,
+            "display_name": person.display_name,
             "relation_type": (
                 person.relation_type.value if person.relation_type else None
             ),
-            "aliases": [alias.alias for alias in person.aliases],
             "entry_count": person.entry_count,
+            "scene_count": person.scene_count,
             "first_appearance": (
                 person.first_appearance.isoformat()
                 if person.first_appearance
@@ -677,9 +676,8 @@ class ExportManager:
                 if person.last_appearance
                 else None
             ),
-            "manuscript": (
-                {"character": person.manuscript.character}
-                if person.manuscript
-                else None
-            ),
+            "characters": [
+                {"name": mapping.character.name, "contribution": mapping.contribution.value}
+                for mapping in person.character_mappings
+            ],
         }

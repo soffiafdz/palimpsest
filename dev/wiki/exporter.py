@@ -202,18 +202,18 @@ class WikiExporter:
             for p, count in co_appearance_counter.most_common(10)
         ]
 
-        # Compute locations from moments
+        # Compute locations from scenes
         location_counter = Counter()
-        for moment in person.moments:
-            for location in moment.locations:
+        for scene in person.scenes:
+            for location in scene.locations:
                 location_counter[location] += 1
 
         locations = [
             {
                 "name": loc.name,
                 "slug": slugify(loc.name),
-                "city": loc.city.city if loc.city else "Unknown",
-                "city_slug": slugify(loc.city.city) if loc.city else "unknown",
+                "city": loc.city.name if loc.city else "Unknown",
+                "city_slug": slugify(loc.city.name) if loc.city else "unknown",
                 "count": count,
             }
             for loc, count in location_counter.most_common(10)
@@ -269,7 +269,7 @@ class WikiExporter:
             self._export_events_index(session, force, stats)
             self._export_locations_index(session, force, stats)
             self._export_cities_index(session, force, stats)
-            self._export_moments_index(session, force, stats)
+            self._export_threads_index(session, force, stats)
             self._export_simple_index(session, "tags", "Tags", force, stats)
             self._export_simple_index(session, "themes", "Themes", force, stats)
             self._export_simple_index(session, "poems", "Poems", force, stats)
@@ -446,9 +446,9 @@ class WikiExporter:
             else:
                 year = "Unknown"
             groups[year].append({
-                "name": event.display_name,
-                "path": f"events/{slugify(event.event)}.md",
-                "mentions": len(event.entries),
+                "name": event.name,
+                "path": f"events/{slugify(event.name)}.md",
+                "scenes": len(event.scenes),
             })
 
         # Sort years (numbers first, then "Unknown")
@@ -479,23 +479,19 @@ class WikiExporter:
         # Query all locations
         locations = session.query(Location).all()
 
-        # Group by country → state/province → city
-        groups = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        # Group by country → city
+        groups = defaultdict(lambda: defaultdict(list))
         for loc in locations:
             country = loc.city.country or "Unknown" if loc.city else "Unknown"
-            region = loc.city.state_province or "Unspecified" if loc.city else "Unspecified"
-            city = loc.city.city if loc.city else "Unknown City"
-            groups[country][region][city].append({
+            city = loc.city.name if loc.city else "Unknown City"
+            groups[country][city].append({
                 "name": loc.name,
                 "path": f"locations/{slugify(city)}/{slugify(loc.name)}.md",
                 "mentions": len(loc.entries),
             })
 
         # Convert to regular dicts for template
-        groups_dict = {
-            c: {r: dict(cities) for r, cities in regions.items()}
-            for c, regions in groups.items()
-        }
+        groups_dict = {c: dict(cities) for c, cities in groups.items()}
 
         # Write file
         output_path = self.wiki_dir / "locations" / "locations.md"
@@ -520,19 +516,18 @@ class WikiExporter:
         # Query all cities
         cities = session.query(City).all()
 
-        # Group by country → state/province
-        groups = defaultdict(lambda: defaultdict(list))
+        # Group by country
+        groups = defaultdict(list)
         for city in cities:
             country = city.country or "Unknown"
-            region = city.state_province or "Unspecified"
-            groups[country][region].append({
-                "name": city.city,
-                "path": f"cities/{slugify(city.city)}.md",
+            groups[country].append({
+                "name": city.name,
+                "path": f"cities/{slugify(city.name)}.md",
                 "mentions": sum(len(loc.entries) for loc in city.locations),
             })
 
-        # Convert to regular dicts for template
-        groups_dict = {c: dict(regions) for c, regions in groups.items()}
+        # Convert to regular dict for template
+        groups_dict = dict(groups)
 
         # Write file
         output_path = self.wiki_dir / "cities" / "cities.md"
@@ -547,138 +542,70 @@ class WikiExporter:
         )
         self._write_index(output_path, content, force, stats)
 
-    def _export_moments_index(
+    def _export_threads_index(
         self, session, force: bool, stats: ConversionStats
     ) -> None:
         """
-        Export moments dashboard showing temporal echoes.
+        Export threads dashboard showing temporal connections.
 
         This dashboard shows:
-        - Moment vs reference counts
-        - Most echoed dates (dates referenced multiple times)
-        - Reference patterns (temporal distance)
-        - Recent references
+        - Thread statistics (past vs future)
+        - Threads by entry
+        - Temporal distance patterns
         """
         from collections import defaultdict
         from datetime import datetime
 
-        from dev.database.models import Entry, Moment
-        from dev.database.models.enums import MomentType
+        from dev.database.models import Thread
 
-        # Query all moments
-        moments = session.query(Moment).all()
+        # Query all threads
+        threads = session.query(Thread).all()
 
         # Basic stats
-        moment_count = len([m for m in moments if m.type == MomentType.MOMENT])
-        reference_count = len([m for m in moments if m.type == MomentType.REFERENCE])
+        past_count = len([t for t in threads if t.is_past_thread])
+        future_count = len([t for t in threads if t.is_future_thread])
 
-        moment_stats = {
-            "moments": moment_count,
-            "references": reference_count,
-            "total": len(moments),
+        thread_stats = {
+            "past": past_count,
+            "future": future_count,
+            "total": len(threads),
         }
 
-        # Find most echoed dates (dates that are referenced multiple times)
-        # A date is "echoed" when it appears as a reference in later entries
-        references = [m for m in moments if m.type == MomentType.REFERENCE]
-
-        # Group references by date to find most echoed
-        refs_by_date = defaultdict(list)
-        for ref in references:
-            refs_by_date[ref.date].append(ref)
-
-        # Build most echoed list
-        most_echoed = []
-        for ref_date, refs in sorted(
-            refs_by_date.items(),
-            key=lambda x: len(x[1]),
-            reverse=True
-        )[:10]:
-            # Find original entry for this date
-            original_entry = session.query(Entry).filter(
-                Entry.date == ref_date
-            ).first()
-
-            # Get context from first reference
-            context = refs[0].context if refs else None
-
-            # Build reference list
-            ref_list = []
-            for ref in refs:
-                for entry in ref.entries:
-                    ref_list.append({
-                        "entry_date": entry.date,
-                        "entry_path": f"entries/{entry.date.year}/{entry.date.isoformat()}.md",
-                        "context": ref.context or "",
-                    })
-
-            # Sort by entry date (chronological order of when references were made)
-            ref_list.sort(key=lambda x: x["entry_date"])
-
-            most_echoed.append({
-                "date": ref_date,
-                "context": context,
-                "original_entry": original_entry,
-                "reference_count": len(ref_list),
-                "references": ref_list[:5],
+        # Group threads by entry
+        threads_by_entry = defaultdict(list)
+        for thread in threads:
+            threads_by_entry[thread.entry.date].append({
+                "name": thread.name,
+                "from_date": thread.from_date,
+                "to_date": thread.to_date,
+                "content": thread.content,
+                "is_past": thread.is_past_thread,
+                "people": thread.people_names,
             })
 
-        # Calculate temporal distance patterns
-        temporal_distance = []
-        distance_counts = {"< 1 month": 0, "1-3 months": 0, "3-12 months": 0, "> 1 year": 0}
-
-        for ref in references:
-            for entry in ref.entries:
-                days = (entry.date - ref.date).days
-                if days < 30:
-                    distance_counts["< 1 month"] += 1
-                elif days < 90:
-                    distance_counts["1-3 months"] += 1
-                elif days < 365:
-                    distance_counts["3-12 months"] += 1
-                else:
-                    distance_counts["> 1 year"] += 1
-
-        max_dist = max(distance_counts.values()) if distance_counts.values() else 0
-        for label, count in distance_counts.items():
-            bar_length = int((count / max_dist) * 20) if max_dist else 0
-            bar = "█" * bar_length + "░" * (20 - bar_length)
-            temporal_distance.append({
-                "label": label,
-                "count": count,
-                "bar": bar,
-            })
-
-        # Recent references (last 5 entries with references)
-        entries_with_refs = defaultdict(list)
-        for ref in references:
-            for entry in ref.entries:
-                entries_with_refs[entry.date].append({
-                    "date": ref.date,
-                    "context": ref.context,
-                })
-
-        recent_references = []
-        for entry_date in sorted(entries_with_refs.keys(), reverse=True)[:5]:
-            recent_references.append({
+        # Recent threads (last 10 entries with threads)
+        recent_threads = []
+        for entry_date in sorted(threads_by_entry.keys(), reverse=True)[:10]:
+            recent_threads.append({
                 "date": entry_date,
-                "refs": entries_with_refs[entry_date],
+                "path": f"entries/{entry_date.year}/{entry_date.isoformat()}.md",
+                "threads": threads_by_entry[entry_date],
             })
 
-        # Moments by year/month
-        moments_by_year = defaultdict(list)
+        # Threads by year
+        threads_by_year = defaultdict(list)
         month_names = [
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
         ]
 
-        for moment in moments:
-            year = moment.date.year
-            month = moment.date.month
+        for thread in threads:
+            year = thread.from_date.year
+            month = thread.from_date.month
 
             # Find or create month entry
             month_entry = None
-            for me in moments_by_year[year]:
+            for me in threads_by_year[year]:
                 if me["month"] == month:
                     month_entry = me
                     break
@@ -687,31 +614,29 @@ class WikiExporter:
                 month_entry = {
                     "month": month,
                     "month_name": month_names[month - 1],
-                    "moment_count": 0,
-                    "reference_count": 0,
+                    "past_count": 0,
+                    "future_count": 0,
                 }
-                moments_by_year[year].append(month_entry)
+                threads_by_year[year].append(month_entry)
 
-            if moment.type == MomentType.MOMENT:
-                month_entry["moment_count"] += 1
+            if thread.is_past_thread:
+                month_entry["past_count"] += 1
             else:
-                month_entry["reference_count"] += 1
+                month_entry["future_count"] += 1
 
         # Sort months within each year
-        for year in moments_by_year:
-            moments_by_year[year].sort(key=lambda x: x["month"])
+        for year in threads_by_year:
+            threads_by_year[year].sort(key=lambda x: x["month"])
 
         # Render template
-        output_path = self.wiki_dir / "moments" / "moments.md"
+        output_path = self.wiki_dir / "narrative" / "threads" / "threads.md"
 
         content = self.renderer.render_index(
-            "moments",
+            "threads",
             output_path,
-            stats=moment_stats,
-            most_echoed=most_echoed,
-            temporal_distance=temporal_distance,
-            recent_references=recent_references,
-            moments_by_year=dict(moments_by_year),
+            stats=thread_stats,
+            recent_threads=recent_threads,
+            threads_by_year=dict(threads_by_year),
             generated_at=datetime.now(),
         )
         self._write_index(output_path, content, force, stats)
@@ -725,13 +650,12 @@ class WikiExporter:
         stats: ConversionStats,
     ) -> None:
         """Export a simple alphabetical index for an entity type."""
-        from dev.database.models import Tag, Poem, ReferenceSource
-        from dev.database.models_manuscript import Theme
+        from dev.database.models import Poem, ReferenceSource, Tag, Theme
 
         # Map entity type to model and query
         model_map = {
-            "tags": (Tag, "tag", lambda t: len(t.entries)),
-            "themes": (Theme, "theme", lambda t: len(t.entries)),
+            "tags": (Tag, "name", lambda t: len(t.entries)),
+            "themes": (Theme, "name", lambda t: len(t.entries)),
             "poems": (Poem, "title", lambda p: len(p.versions)),
             "references": (ReferenceSource, "title", lambda r: len(r.references)),
         }
@@ -801,15 +725,15 @@ class WikiExporter:
             Entry,
             Event,
             Location,
-            Moment,
             Person,
             Poem,
             PoemVersion,
             ReferenceSource,
             Tag,
+            Theme,
+            Thread,
         )
-        from dev.database.models.enums import MomentType, RelationType
-        from dev.database.models_manuscript import Theme
+        from dev.database.models.enums import RelationType
 
         stats = ConversionStats()
 
@@ -820,7 +744,7 @@ class WikiExporter:
             ).all()
             people = session.query(Person).filter(Person.deleted_at.is_(None)).all()
             locations = session.query(Location).all()
-            moments = session.query(Moment).all()
+            threads = session.query(Thread).all()
 
             # Calculate years span
             years = set(e.date.year for e in entries)
@@ -834,9 +758,9 @@ class WikiExporter:
                 if p.relation_type and p.relation_type in close_types
             ])
 
-            # Count moments vs references
-            moment_count = len([m for m in moments if m.type == MomentType.MOMENT])
-            reference_count = len([m for m in moments if m.type == MomentType.REFERENCE])
+            # Count threads (past vs future)
+            past_threads = len([t for t in threads if t.is_past_thread])
+            future_threads = len([t for t in threads if t.is_future_thread])
 
             total_words = sum(e.word_count or 0 for e in entries)
             wiki_stats = {
@@ -853,15 +777,12 @@ class WikiExporter:
                 "countries": len(
                     set(c.country for c in session.query(City).all() if c.country)
                 ),
-                "events": session.query(Event).filter(
-                    Event.deleted_at.is_(None)
-                ).count(),
-                "moments": moment_count,
-                "references": reference_count,
+                "events": session.query(Event).count(),
+                "threads": len(threads),
+                "past_threads": past_threads,
+                "future_threads": future_threads,
                 "tags": session.query(Tag).count(),
-                "themes": session.query(Theme).filter(
-                    Theme.deleted_at.is_(None)
-                ).count(),
+                "themes": session.query(Theme).count(),
                 "poems": session.query(Poem).count(),
                 "poem_versions": session.query(PoemVersion).count(),
                 "external_refs": session.query(ReferenceSource).count(),
@@ -894,13 +815,13 @@ class WikiExporter:
                 reverse=True,
             )[:5]
 
-            # Top locations by visit count
+            # Top locations by entry count
             top_locations = sorted(
                 [
                     {
                         "name": loc.name,
-                        "path": f"locations/{slugify(loc.city.city)}/{slugify(loc.name)}.md",
-                        "visits": loc.visit_count,
+                        "path": f"locations/{slugify(loc.city.name)}/{slugify(loc.name)}.md",
+                        "visits": loc.entry_count,
                     }
                     for loc in locations if loc.city
                 ],
@@ -964,8 +885,8 @@ class WikiExporter:
             Location,
             Person,
             Tag,
+            Theme,
         )
-        from dev.database.models_manuscript import Theme
 
         stats = ConversionStats()
 
@@ -995,12 +916,8 @@ class WikiExporter:
             # Counts
             total_locations = session.query(Location).count()
             total_cities = session.query(City).count()
-            total_events = session.query(Event).filter(
-                Event.deleted_at.is_(None)
-            ).count()
-            total_themes = session.query(Theme).filter(
-                Theme.deleted_at.is_(None)
-            ).count()
+            total_events = session.query(Event).count()
+            total_themes = session.query(Theme).count()
 
             # Monthly frequency (last 12 months)
             entries_by_month = defaultdict(int)
@@ -1095,7 +1012,7 @@ class WikiExporter:
 
             # Top tags
             top_tags = sorted(
-                [{"name": t.tag, "count": len(t.entries)} for t in tags],
+                [{"name": t.name, "count": len(t.entries)} for t in tags],
                 key=lambda x: (-x["count"], x["name"]),
             )
 
@@ -1163,7 +1080,6 @@ class WikiExporter:
         from sqlalchemy.orm import joinedload
 
         from dev.database.models import Entry
-        from dev.database.models.enums import MomentType
 
         stats = ConversionStats()
 
@@ -1175,7 +1091,8 @@ class WikiExporter:
                     joinedload(Entry.people),
                     joinedload(Entry.cities),
                     joinedload(Entry.tags),
-                    joinedload(Entry.moments),
+                    joinedload(Entry.scenes),
+                    joinedload(Entry.threads),
                 )
                 .order_by(Entry.date)
                 .all()
@@ -1225,16 +1142,10 @@ class WikiExporter:
                                     "path": f"entries/{year}/{e.date.isoformat()}.md",
                                     "word_count": e.word_count or 0,
                                     "people": [p.display_name for p in e.people],
-                                    "cities": [c.city for c in e.cities],
-                                    "tags": [t.tag for t in e.tags],
-                                    "moments": len([
-                                        m for m in e.moments
-                                        if m.type == MomentType.MOMENT
-                                    ]),
-                                    "references": len([
-                                        m for m in e.moments
-                                        if m.type == MomentType.REFERENCE
-                                    ]),
+                                    "cities": [c.name for c in e.cities],
+                                    "tags": [t.name for t in e.tags],
+                                    "scenes": len(e.scenes),
+                                    "threads": len(e.threads),
                                 }
                                 for e in sorted(month_entries, key=lambda x: x.date, reverse=True)
                             ],
@@ -1330,9 +1241,9 @@ class WikiExporter:
                 for location in entry.locations:
                     location_counter[location.name] += 1
                 for city in entry.cities:
-                    city_counter[city.city] += 1
+                    city_counter[city.name] += 1
                 for tag in entry.tags:
-                    tag_counter[tag.tag] += 1
+                    tag_counter[tag.name] += 1
 
                 entries_by_year[entry.date.year] += 1
                 entries_by_month[f"{entry.date.year}-{entry.date.month:02d}"] += 1
@@ -1341,7 +1252,7 @@ class WikiExporter:
 
                 for person in entry.people:
                     for city in entry.cities:
-                        person_colocation[person.display_name][city.city] += 1
+                        person_colocation[person.display_name][city.name] += 1
 
             total_entries = len(entries)
             total_words = sum(e.word_count or 0 for e in entries)
@@ -1521,10 +1432,10 @@ class WikiExporter:
             # Export manuscript home
             self._export_manuscript_home(session, force, stats)
             # Export manuscript entity indexes
-            self._export_manuscript_entries_index(session, force, stats)
+            self._export_manuscript_chapters_index(session, force, stats)
             self._export_manuscript_characters_index(session, force, stats)
             self._export_manuscript_arcs_index(session, force, stats)
-            self._export_manuscript_events_index(session, force, stats)
+            self._export_manuscript_scenes_index(session, force, stats)
 
         safe_logger(self.logger).log_info(
             f"Manuscript index export complete: "
@@ -1540,41 +1451,24 @@ class WikiExporter:
         """Export manuscript subwiki home page."""
         from datetime import datetime
 
-        from dev.database.models_manuscript import (
-            Arc,
-            ManuscriptEntry,
-            ManuscriptEvent,
-            ManuscriptPerson,
-            ManuscriptStatus,
-        )
+        from dev.database.models import Arc, Chapter, Character, ChapterStatus
 
         # Gather manuscript statistics
-        ms_entries = session.query(ManuscriptEntry).all()
-        ms_characters = session.query(ManuscriptPerson).filter(
-            ManuscriptPerson.deleted_at.is_(None)
-        ).all()
-        ms_events = session.query(ManuscriptEvent).filter(
-            ManuscriptEvent.deleted_at.is_(None)
-        ).all()
-        arcs = session.query(Arc).filter(Arc.deleted_at.is_(None)).all()
+        chapters = session.query(Chapter).all()
+        characters = session.query(Character).all()
+        arcs = session.query(Arc).all()
 
         # Count by status
         status_counts = {}
-        for status in ManuscriptStatus:
+        for status in ChapterStatus:
             status_counts[status.value] = len(
-                [e for e in ms_entries if e.status == status]
+                [c for c in chapters if c.status == status]
             )
 
-        ready_count = len([e for e in ms_entries if e.is_ready_for_manuscript])
-        total_words = sum(e.word_count for e in ms_entries)
-
         ms_stats = {
-            "entries": len(ms_entries),
-            "ready": ready_count,
-            "characters": len(ms_characters),
-            "events": len(ms_events),
+            "chapters": len(chapters),
+            "characters": len(characters),
             "arcs": len(arcs),
-            "total_words": total_words,
             "status_counts": status_counts,
         }
 
@@ -1588,37 +1482,41 @@ class WikiExporter:
         )
         self._write_index(output_path, content, force, stats)
 
-    def _export_manuscript_entries_index(
+    def _export_manuscript_chapters_index(
         self, session, force: bool, stats: ConversionStats
     ) -> None:
-        """Export manuscript entries index grouped by year."""
+        """Export manuscript chapters index grouped by part."""
         from collections import defaultdict
 
-        from dev.database.models_manuscript import ManuscriptEntry
+        from dev.database.models import Chapter, Part
 
-        ms_entries = session.query(ManuscriptEntry).all()
+        chapters = session.query(Chapter).all()
+        parts = session.query(Part).all()
 
-        # Group by year
+        # Group by part
         groups = defaultdict(list)
-        for ms_entry in ms_entries:
-            if ms_entry.date:
-                year = ms_entry.date.year
-                groups[year].append({
-                    "date": ms_entry.date,
-                    "path": f"entries/{year}/{ms_entry.date.isoformat()}.md",
-                    "status": ms_entry.status.value if ms_entry.status else "unspecified",
-                    "edited": ms_entry.edited,
-                    "word_count": ms_entry.word_count,
-                })
+        for chapter in chapters:
+            part_name = chapter.part.title if chapter.part else "Unassigned"
+            groups[part_name].append({
+                "title": chapter.title,
+                "number": chapter.number,
+                "path": f"manuscript/chapters/{slugify(chapter.title)}.md",
+                "status": chapter.status.value if chapter.status else "draft",
+                "type": chapter.type.value if chapter.type else "prose",
+            })
+
+        # Sort chapters within each part by number
+        for part_name in groups:
+            groups[part_name].sort(key=lambda c: c["number"] or 999)
 
         # Render template
-        output_path = self.wiki_dir / "manuscript" / "entries" / "entries.md"
+        output_path = self.wiki_dir / "manuscript" / "chapters" / "chapters.md"
         content = self.renderer.render_index(
-            "manuscript_entries",
+            "manuscript_chapters",
             output_path,
-            years=sorted(groups.keys(), reverse=True),
+            parts=[p.title for p in parts] + (["Unassigned"] if any(c.part is None for c in chapters) else []),
             groups=dict(groups),
-            total=len(ms_entries),
+            total=len(chapters),
         )
         self._write_index(output_path, content, force, stats)
 
@@ -1626,19 +1524,25 @@ class WikiExporter:
         self, session, force: bool, stats: ConversionStats
     ) -> None:
         """Export manuscript characters index."""
-        from dev.database.models_manuscript import ManuscriptPerson
+        from dev.database.models import Character
 
-        characters = session.query(ManuscriptPerson).filter(
-            ManuscriptPerson.deleted_at.is_(None)
-        ).order_by(ManuscriptPerson.character).all()
+        characters = session.query(Character).order_by(Character.name).all()
 
         items = []
         for char in characters:
+            # Get primary person mapping if available
+            primary_person = None
+            for mapping in char.person_mappings:
+                if mapping.contribution.value == "primary":
+                    primary_person = mapping.person.display_name
+                    break
+
             items.append({
-                "name": char.character,
-                "path": f"characters/{slugify(char.character)}.md",
-                "real_name": char.real_name,
-                "entry_count": char.entry_count,
+                "name": char.name,
+                "path": f"manuscript/characters/{slugify(char.name)}.md",
+                "role": char.role,
+                "based_on": primary_person,
+                "chapter_count": len(char.chapters),
             })
 
         # Render template
@@ -1655,19 +1559,16 @@ class WikiExporter:
         self, session, force: bool, stats: ConversionStats
     ) -> None:
         """Export story arcs index."""
-        from dev.database.models_manuscript import Arc
+        from dev.database.models import Arc
 
-        arcs = session.query(Arc).filter(
-            Arc.deleted_at.is_(None)
-        ).order_by(Arc.arc).all()
+        arcs = session.query(Arc).order_by(Arc.name).all()
 
         items = []
         for arc in arcs:
             items.append({
-                "name": arc.arc,
-                "path": f"arcs/{slugify(arc.arc)}.md",
-                "event_count": arc.event_count,
-                "entry_count": arc.total_entry_count,
+                "name": arc.name,
+                "path": f"narrative/arcs/{slugify(arc.name)}.md",
+                "entry_count": arc.entry_count,
             })
 
         # Render template
@@ -1680,32 +1581,31 @@ class WikiExporter:
         )
         self._write_index(output_path, content, force, stats)
 
-    def _export_manuscript_events_index(
+    def _export_manuscript_scenes_index(
         self, session, force: bool, stats: ConversionStats
     ) -> None:
-        """Export manuscript events index."""
-        from dev.database.models_manuscript import ManuscriptEvent
+        """Export manuscript scenes index."""
+        from dev.database.models import ManuscriptScene
 
-        ms_events = session.query(ManuscriptEvent).filter(
-            ManuscriptEvent.deleted_at.is_(None)
-        ).all()
+        ms_scenes = session.query(ManuscriptScene).all()
 
         items = []
-        for ms_event in ms_events:
+        for ms_scene in ms_scenes:
             items.append({
-                "name": ms_event.display_name,
-                "path": f"events/{slugify(ms_event.display_name)}.md",
-                "arc": ms_event.arc_name,
-                "entry_count": ms_event.entry_count,
+                "name": ms_scene.name,
+                "path": f"manuscript/scenes/{slugify(ms_scene.name)}.md",
+                "chapter": ms_scene.chapter.title if ms_scene.chapter else "Unassigned",
+                "origin": ms_scene.origin.value if ms_scene.origin else "unknown",
+                "status": ms_scene.status.value if ms_scene.status else "fragment",
             })
 
         # Render template
-        output_path = self.wiki_dir / "manuscript" / "events" / "events.md"
+        output_path = self.wiki_dir / "manuscript" / "scenes" / "scenes.md"
         content = self.renderer.render_index(
-            "manuscript_events",
+            "manuscript_scenes",
             output_path,
             items=items,
-            total=len(ms_events),
+            total=len(ms_scenes),
         )
         self._write_index(output_path, content, force, stats)
 

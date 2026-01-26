@@ -33,8 +33,7 @@ from sqlalchemy import select, func
 
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
-from dev.database.models import Entry, Event, Person, Tag
-from dev.database.models_manuscript import Theme, ManuscriptPerson, ManuscriptEvent
+from dev.database.models import Character, Chapter, Entry, Event, Person, Tag, Theme
 from dev.database.sync_state_manager import SyncStateManager
 
 from dev.wiki.parser import (
@@ -43,9 +42,6 @@ from dev.wiki.parser import (
     parse_person_file,
     parse_tag_file,
     parse_theme_file,
-    parse_manuscript_entry_file,
-    parse_manuscript_character_file,
-    parse_manuscript_event_file,
 )
 
 from dev.core.logging_manager import PalimpsestLogger
@@ -181,7 +177,7 @@ def import_events(
 
         with db.session_scope() as session:
             event = session.execute(
-                select(Event).where(func.lower(Event.event) == data["event"].lower())
+                select(Event).where(func.lower(Event.name) == data["event"].lower())
             ).scalar_one_or_none()
 
             if not event:
@@ -231,7 +227,7 @@ def import_tags(
 
         with db.session_scope() as session:
             tag = session.execute(
-                select(Tag).where(func.lower(Tag.tag) == data["tag"].lower())
+                select(Tag).where(func.lower(Tag.name) == data["tag"].lower())
             ).scalar_one_or_none()
 
             if not tag:
@@ -271,7 +267,7 @@ def import_themes(
 
         with db.session_scope() as session:
             theme = session.execute(
-                select(Theme).where(func.lower(Theme.theme) == data["theme"].lower())
+                select(Theme).where(func.lower(Theme.name) == data["theme"].lower())
             ).scalar_one_or_none()
 
             if not theme:
@@ -309,141 +305,6 @@ def import_all(
 
 
 # --- Manuscript Import Functions ---
-
-
-def import_all_manuscript_entries(
-    db: PalimpsestDB, wiki_dir: Path, logger: Optional[PalimpsestLogger] = None
-) -> ImportStats:
-    """Import all manuscript entry notes from wiki."""
-    stats = ImportStats()
-    entries_dir = wiki_dir / "manuscript" / "entries"
-
-    if not entries_dir.exists():
-        return stats
-
-    for year_dir in entries_dir.iterdir():
-        if not year_dir.is_dir():
-            continue
-        for wiki_file in year_dir.glob("*.md"):
-            stats.files_processed += 1
-            data = parse_manuscript_entry_file(wiki_file)
-            if not data:
-                stats.records_skipped += 1
-                continue
-
-            with db.session_scope() as session:
-                entry = session.execute(
-                    select(Entry).where(Entry.date == data["date"])
-                ).scalar_one_or_none()
-
-                if not entry or not entry.manuscript:
-                    stats.records_skipped += 1
-                    continue
-
-                ms_entry = entry.manuscript
-                updated = False
-
-                if data["notes"] and data["notes"] != ms_entry.notes:
-                    ms_entry.notes = data["notes"]
-                    updated = True
-
-                if data["character_notes"] and data["character_notes"] != ms_entry.character_notes:
-                    ms_entry.character_notes = data["character_notes"]
-                    updated = True
-
-                if updated:
-                    session.commit()
-                    stats.records_updated += 1
-                else:
-                    stats.records_skipped += 1
-
-    return stats
-
-
-def import_all_manuscript_characters(
-    db: PalimpsestDB, wiki_dir: Path, logger: Optional[PalimpsestLogger] = None
-) -> ImportStats:
-    """Import all manuscript character notes from wiki."""
-    stats = ImportStats()
-    chars_dir = wiki_dir / "manuscript" / "characters"
-
-    if not chars_dir.exists():
-        return stats
-
-    for wiki_file in chars_dir.glob("*.md"):
-        stats.files_processed += 1
-        data = parse_manuscript_character_file(wiki_file)
-        if not data:
-            stats.records_skipped += 1
-            continue
-
-        with db.session_scope() as session:
-            ms_person = session.execute(
-                select(ManuscriptPerson).where(ManuscriptPerson.character == data["name"])
-            ).scalar_one_or_none()
-
-            if not ms_person:
-                stats.records_skipped += 1
-                continue
-
-            updated = False
-            for field in ["character_description", "character_arc", "voice_notes", "appearance_notes"]:
-                if data[field] and data[field] != getattr(ms_person, field):
-                    setattr(ms_person, field, data[field])
-                    updated = True
-
-            if updated:
-                session.commit()
-                stats.records_updated += 1
-            else:
-                stats.records_skipped += 1
-
-    return stats
-
-
-def import_all_manuscript_events(
-    db: PalimpsestDB, wiki_dir: Path, logger: Optional[PalimpsestLogger] = None
-) -> ImportStats:
-    """Import all manuscript event notes from wiki."""
-    stats = ImportStats()
-    events_dir = wiki_dir / "manuscript" / "events"
-
-    if not events_dir.exists():
-        return stats
-
-    for wiki_file in events_dir.glob("*.md"):
-        stats.files_processed += 1
-        data = parse_manuscript_event_file(wiki_file)
-        if not data:
-            stats.records_skipped += 1
-            continue
-
-        with db.session_scope() as session:
-            event = session.execute(
-                select(Event).where(func.lower(Event.event) == data["name"].lower())
-            ).scalar_one_or_none()
-
-            if not event:
-                stats.records_skipped += 1
-                continue
-
-            ms_event = session.execute(
-                select(ManuscriptEvent).where(ManuscriptEvent.event_id == event.id)
-            ).scalar_one_or_none()
-
-            if not ms_event:
-                stats.records_skipped += 1
-                continue
-
-            updated = False
-            if data["notes"] and data["notes"] != ms_event.notes:
-                ms_event.notes = data["notes"]
-                updated = True
-
-            if updated:
-                session.commit()
-                stats.records_updated += 1
-            else:
-                stats.records_skipped += 1
-
-    return stats
+# TODO: Implement chapter and character import for new model structure
+# - import_chapters: Import Chapter notes from wiki
+# - import_characters: Import Character notes from wiki

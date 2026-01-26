@@ -12,23 +12,18 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Type
 
 from ..models import (
-    Person,
-    Location,
+    Arc,
     Event,
-    Tag,
-    ReferenceSource,
-    Reference,
-    Moment,
+    Location,
+    Person,
     Poem,
     PoemVersion,
-    Alias,
-)
-from ..models_manuscript import (
-    ManuscriptEntry,
-    ManuscriptPerson,
-    ManuscriptEvent,
+    Reference,
+    ReferenceSource,
+    Scene,
+    Tag,
     Theme,
-    Arc,
+    Thread,
 )
 
 
@@ -55,8 +50,10 @@ def _serialize_person(person: Person) -> Dict[str, Any]:
     """Serialize Person entity."""
     return {
         "id": person.id,
+        "alias": person.alias,
         "name": person.name,
-        "full_name": person.full_name,
+        "lastname": person.lastname,
+        "relation_type": person.relation_type.value if person.relation_type else None,
         "entry_count": len(person.entries),
     }
 
@@ -66,6 +63,21 @@ def _serialize_location(location: Location) -> Dict[str, Any]:
     return {
         "id": location.id,
         "name": location.name,
+        "city_id": location.city_id,
+        "city_name": location.city.name if location.city else None,
+    }
+
+
+def _serialize_scene(scene: Scene) -> Dict[str, Any]:
+    """Serialize Scene entity."""
+    return {
+        "id": scene.id,
+        "name": scene.name,
+        "description": scene.description,
+        "entry_id": scene.entry_id,
+        "date_count": len(scene.dates),
+        "people_count": len(scene.people),
+        "location_count": len(scene.locations),
     }
 
 
@@ -73,9 +85,35 @@ def _serialize_event(event: Event) -> Dict[str, Any]:
     """Serialize Event entity."""
     return {
         "id": event.id,
-        "event": event.event,
-        "title": event.title,
-        "description": event.description,
+        "name": event.name,
+        "entry_id": event.entry_id,
+        "scene_count": len(event.scenes),
+    }
+
+
+def _serialize_arc(arc: Arc) -> Dict[str, Any]:
+    """Serialize Arc entity."""
+    return {
+        "id": arc.id,
+        "name": arc.name,
+        "description": arc.description,
+        "entry_count": len(arc.entries),
+    }
+
+
+def _serialize_thread(thread: Thread) -> Dict[str, Any]:
+    """Serialize Thread entity."""
+    return {
+        "id": thread.id,
+        "name": thread.name,
+        "from_date": thread.from_date.isoformat() if thread.from_date else None,
+        "to_date": thread.to_date,
+        "referenced_entry_date": (
+            thread.referenced_entry_date.isoformat()
+            if thread.referenced_entry_date else None
+        ),
+        "content": thread.content,
+        "entry_id": thread.entry_id,
     }
 
 
@@ -83,8 +121,17 @@ def _serialize_tag(tag: Tag) -> Dict[str, Any]:
     """Serialize Tag entity."""
     return {
         "id": tag.id,
-        "tag": tag.tag,
+        "name": tag.name,
         "entry_count": len(tag.entries),
+    }
+
+
+def _serialize_theme(theme: Theme) -> Dict[str, Any]:
+    """Serialize Theme entity."""
+    return {
+        "id": theme.id,
+        "name": theme.name,
+        "entry_count": len(theme.entries),
     }
 
 
@@ -93,8 +140,9 @@ def _serialize_reference_source(source: ReferenceSource) -> Dict[str, Any]:
     return {
         "id": source.id,
         "title": source.title,
-        "type": source.type.value if source.type else None,
         "author": source.author,
+        "type": source.type.value if source.type else None,
+        "url": source.url,
     }
 
 
@@ -107,17 +155,6 @@ def _serialize_reference(ref: Reference) -> Dict[str, Any]:
         "content": ref.content,
         "description": ref.description,
         "mode": ref.mode.value if ref.mode else "direct",
-        "speaker": ref.speaker,
-    }
-
-
-def _serialize_mentioned_date(md: Moment) -> Dict[str, Any]:
-    """Serialize Moment entity."""
-    return {
-        "id": md.id,
-        "entry_ids": [e.id for e in md.entries] if md.entries else [],
-        "date": md.date.isoformat() if md.date else None,
-        "context": md.context,
     }
 
 
@@ -137,67 +174,6 @@ def _serialize_poem_version(pv: PoemVersion) -> Dict[str, Any]:
         "poem_id": pv.poem_id,
         "entry_id": pv.entry_id,
         "content": pv.content,
-        "notes": pv.notes,
-        "revision_date": pv.revision_date.isoformat() if pv.revision_date else None,
-    }
-
-
-def _serialize_alias(alias: Alias) -> Dict[str, Any]:
-    """Serialize Alias entity."""
-    return {
-        "id": alias.id,
-        "person_id": alias.person_id,
-        "alias": alias.alias,
-    }
-
-
-def _serialize_manuscript_entry(me: ManuscriptEntry) -> Dict[str, Any]:
-    """Serialize ManuscriptEntry entity."""
-    return {
-        "id": me.id,
-        "entry_id": me.entry_id,
-        "status": me.status.value if me.status else None,
-        "edited": me.edited,
-        "notes": me.notes,
-    }
-
-
-def _serialize_manuscript_person(mp: ManuscriptPerson) -> Dict[str, Any]:
-    """Serialize ManuscriptPerson entity."""
-    return {
-        "id": mp.id,
-        "person_id": mp.person_id,
-        "character": mp.character,
-        "character_description": mp.character_description,
-        "character_arc": mp.character_arc,
-    }
-
-
-def _serialize_manuscript_event(me: ManuscriptEvent) -> Dict[str, Any]:
-    """Serialize ManuscriptEvent entity."""
-    return {
-        "id": me.id,
-        "event_id": me.event_id,
-        "arc_id": me.arc_id,
-        "notes": me.notes,
-    }
-
-
-def _serialize_manuscript_theme(mt: Theme) -> Dict[str, Any]:
-    """Serialize Theme entity."""
-    return {
-        "id": mt.id,
-        "theme": mt.theme,
-        "entry_count": len(mt.entries),
-    }
-
-
-def _serialize_arc(arc: Arc) -> Dict[str, Any]:
-    """Serialize Arc entity."""
-    return {
-        "id": arc.id,
-        "arc": arc.arc,
-        "event_count": len(arc.events),
     }
 
 
@@ -209,17 +185,14 @@ def _serialize_arc(arc: Arc) -> Dict[str, Any]:
 EXPORT_CONFIGS = [
     EntityExportConfig("people", Person, _serialize_person),
     EntityExportConfig("locations", Location, _serialize_location),
+    EntityExportConfig("scenes", Scene, _serialize_scene),
     EntityExportConfig("events", Event, _serialize_event),
+    EntityExportConfig("arcs", Arc, _serialize_arc),
+    EntityExportConfig("threads", Thread, _serialize_thread),
     EntityExportConfig("tags", Tag, _serialize_tag),
+    EntityExportConfig("themes", Theme, _serialize_theme),
     EntityExportConfig("reference_sources", ReferenceSource, _serialize_reference_source),
     EntityExportConfig("references", Reference, _serialize_reference),
-    EntityExportConfig("mentioned_dates", Moment, _serialize_mentioned_date),
     EntityExportConfig("poems", Poem, _serialize_poem),
     EntityExportConfig("poem_versions", PoemVersion, _serialize_poem_version),
-    EntityExportConfig("aliases", Alias, _serialize_alias),
-    EntityExportConfig("manuscript_entries", ManuscriptEntry, _serialize_manuscript_entry),
-    EntityExportConfig("manuscript_people", ManuscriptPerson, _serialize_manuscript_person),
-    EntityExportConfig("manuscript_events", ManuscriptEvent, _serialize_manuscript_event),
-    EntityExportConfig("manuscript_themes", Theme, _serialize_manuscript_theme),
-    EntityExportConfig("arcs", Arc, _serialize_arc),
 ]

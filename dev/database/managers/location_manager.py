@@ -6,13 +6,13 @@ Manages City and Location entities with their parent-child relationship.
 
 Cities are high-level geographic entities that contain specific Locations (venues).
 Both entities have many-to-many relationships with entries, and Locations also
-link to Moments for visit tracking.
+link to Scenes for narrative tracking.
 
 Key Features:
     - CRUD operations for cities and locations
     - Parent-child relationship management (City → Locations)
     - M2M relationships with entries (both entities)
-    - Location visit tracking via Moment M2M
+    - Location tracking via Scene M2M
     - Geographic analysis and frequency statistics
 
 Usage:
@@ -51,20 +51,19 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
-from dev.database.models import City, Entry, Location, Moment
+from dev.database.models import City, Entry, Location, Scene
 
 from .entity_manager import EntityManager, EntityManagerConfig
 
 # Configuration for City entity
 CITY_CONFIG = EntityManagerConfig(
     model_class=City,
-    name_field="city",
+    name_field="name",
     display_name="city",
     supports_soft_delete=False,
-    order_by="city",
+    order_by="name",
     scalar_fields=[
-        ("city", DataValidator.normalize_string),
-        ("state_province", DataValidator.normalize_string, True),
+        ("name", DataValidator.normalize_string),
         ("country", DataValidator.normalize_string, True),
     ],
     relationships=[
@@ -300,7 +299,7 @@ class LocationManager(EntityManager):
                 - city: City object, city ID, or city name (required)
                 Optional keys:
                 - entries: List of Entry objects or IDs
-                - dates: List of Moment objects or IDs
+                - scenes: List of Scene objects or IDs
 
         Returns:
             Created Location object
@@ -340,7 +339,7 @@ class LocationManager(EntityManager):
 
             safe_logger(self.logger).log_debug(
                 f"Created location: {location_name}",
-                {"location_id": location.id, "city": city.city},
+                {"location_id": location.id, "city": city.name},
             )
 
             # Update relationships
@@ -360,9 +359,9 @@ class LocationManager(EntityManager):
                 - name: Location name
                 - city: City object, ID, or name
                 - entries: List of entries (incremental by default)
-                - dates: List of mentioned dates (incremental by default)
+                - scenes: List of scenes (incremental by default)
                 - remove_entries: Entries to unlink
-                - remove_dates: Dates to unlink
+                - remove_scenes: Scenes to unlink
 
         Returns:
             Updated Location object
@@ -415,7 +414,7 @@ class LocationManager(EntityManager):
 
             safe_logger(self.logger).log_debug(
                 f"Deleting location: {location.name}",
-                {"location_id": location.id, "city": location.city.city},
+                {"location_id": location.id, "city": location.city.name},
             )
 
             self.session.delete(location)
@@ -457,7 +456,7 @@ class LocationManager(EntityManager):
 
             safe_logger(self.logger).log_debug(
                 f"Created location: {normalized_location}",
-                {"location_id": location.id, "city": city.city},
+                {"location_id": location.id, "city": city.name},
             )
 
             return location
@@ -481,7 +480,7 @@ class LocationManager(EntityManager):
             metadata,
             [
                 ("entries", "entries", Entry),
-                ("dates", "dates", Moment),
+                ("scenes", "scenes", Scene),
             ],
             incremental,
         )
@@ -514,7 +513,7 @@ class LocationManager(EntityManager):
             List of City objects, ordered by name
         """
         with DatabaseOperation(self.logger, "get_cities_for_entry"):
-            return sorted(entry.cities, key=lambda c: c.city)
+            return sorted(entry.cities, key=lambda c: c.name)
 
     def get_locations_for_entry(self, entry: Entry) -> List[Location]:
         """

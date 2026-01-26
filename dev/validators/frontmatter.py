@@ -907,8 +907,6 @@ class FrontmatterValidator:
         """
         Validate manuscript field structure.
 
-        Based on: models_manuscript.py and validation constants
-
         Required: status, edited
         Optional: themes, notes
         """

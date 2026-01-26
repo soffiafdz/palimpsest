@@ -36,8 +36,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, joinedload
 
 # --- Local imports ---
-from dev.database.models import Entry, Person, Tag, Event, City
-from dev.database.models_manuscript import ManuscriptEntry, ManuscriptStatus, Theme
+from dev.database.models import Chapter, ChapterStatus, Entry, Person, Tag, Event, City, Theme
 from dev.search.search_index import SearchIndexManager
 
 
@@ -322,18 +321,12 @@ class SearchEngine:
         if query.max_reading_time:
             conditions.append(Entry.reading_time <= query.max_reading_time)
 
-        # Manuscript filters
-        if query.has_manuscript:
-            stmt = stmt.join(ManuscriptEntry, Entry.id == ManuscriptEntry.entry_id)
-
-        if query.manuscript_status:
-            stmt = stmt.join(ManuscriptEntry, Entry.id == ManuscriptEntry.entry_id)
-            try:
-                status_enum = ManuscriptStatus[query.manuscript_status.upper()]
-                conditions.append(ManuscriptEntry.status == status_enum)
-            except KeyError:
-                # Invalid status, will return no results
-                conditions.append(False)
+        # Manuscript filters (currently not supported - entries don't have manuscript extensions)
+        # Chapter-based search would need different implementation
+        # if query.has_manuscript:
+        #     pass  # Not applicable in new architecture
+        # if query.manuscript_status:
+        #     pass  # Not applicable in new architecture
 
         # Apply basic conditions
         if conditions:
@@ -346,22 +339,20 @@ class SearchEngine:
 
         if query.tags:
             stmt = stmt.join(Entry.tags)
-            stmt = stmt.where(Tag.tag.in_(query.tags))
+            stmt = stmt.where(Tag.name.in_(query.tags))
 
         if query.events:
             stmt = stmt.join(Entry.events)
-            stmt = stmt.where(Event.event.in_(query.events))
+            stmt = stmt.where(Event.name.in_(query.events))
 
         if query.cities:
             stmt = stmt.join(Entry.cities)
-            stmt = stmt.where(City.city.in_(query.cities))
+            stmt = stmt.where(City.name.in_(query.cities))
 
         if query.themes:
-            # Themes are in manuscript
-            if not query.has_manuscript:
-                stmt = stmt.join(ManuscriptEntry, Entry.id == ManuscriptEntry.entry_id)
-            stmt = stmt.join(ManuscriptEntry.themes)
-            stmt = stmt.where(Theme.theme.in_(query.themes))
+            # Themes are M2M with entries
+            stmt = stmt.join(Entry.themes)
+            stmt = stmt.where(Theme.name.in_(query.themes))
 
         # Execute query
         entries = self.session.execute(stmt).unique().scalars().all()

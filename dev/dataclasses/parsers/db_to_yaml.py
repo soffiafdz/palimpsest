@@ -66,8 +66,8 @@ class DbToYamlExporter:
         if not entry.cities:
             return None
         if len(entry.cities) == 1:
-            return entry.cities[0].city
-        return [c.city for c in entry.cities]
+            return entry.cities[0].name
+        return [c.name for c in entry.cities]
 
     @staticmethod
     def build_locations_metadata(
@@ -102,7 +102,7 @@ class DbToYamlExporter:
             # Multiple cities - nested dict grouped by city
             locations_dict: Dict[str, List[str]] = {}
             for loc in entry.locations:
-                city_name = loc.city.city
+                city_name = loc.city.name
                 if city_name not in locations_dict:
                     locations_dict[city_name] = []
                 locations_dict[city_name].append(loc.name)
@@ -188,106 +188,26 @@ class DbToYamlExporter:
         return people_list
 
     @staticmethod
-    def build_dates_metadata(
+    def build_narrated_dates_metadata(
         entry: Entry,
-    ) -> Optional[List[Union[str, Dict[str, Any]]]]:
+    ) -> Optional[List[str]]:
         """
-        Extract mentioned dates with context from database Entry.
-
-        Builds date items as dicts with date, type, locations, people, events,
-        and context. Adds "~" marker if entry date is not in mentioned dates
-        (moments only, not references).
-
-        For simple references (just date + context), uses the compact "~DATE (context)"
-        string format. For complex references with locations/people/events, uses
-        dict format with "type": "reference".
+        Extract narrated dates from database Entry.
 
         Args:
             entry: Database Entry ORM object
 
         Returns:
-            List of date specifications (strings or dicts), None if no dates
+            List of date strings in ISO format, None if no narrated dates
 
         Examples:
-            >>> build_dates_metadata(entry)
-            [
-                "~",  # Entry date not mentioned in moments
-                {
-                    "date": "2024-01-15",
-                    "locations": ["Café X"],
-                    "people": [{"name": "John"}],
-                    "context": "Meeting"
-                },
-                "~2025-01-11 (negatives from the anti-date)",  # Simple reference
-                {
-                    "date": "2025-01-11",
-                    "type": "reference",
-                    "people": [{"name": "Clara"}],
-                    "context": "Complex reference with people"
-                }
-            ]
+            >>> build_narrated_dates_metadata(entry)
+            ["2024-01-15", "2024-01-16"]
         """
-        from dev.database.models import MomentType
-
-        if not entry.moments:
+        if not entry.narrated_dates:
             return None
 
-        dates_list: List[Union[str, Dict[str, Any]]] = []
-
-        # Check if entry date is in mentioned dates (moments only, not references)
-        entry_date_in_moments = any(
-            md.date == entry.date and md.type == MomentType.MOMENT
-            for md in entry.moments
-        )
-
-        # Add ~ if entry date NOT in mentioned moments
-        if not entry_date_in_moments:
-            dates_list.append("~")
-
-        # Build all date items
-        for mentioned_date in entry.moments:
-            is_reference = mentioned_date.type == MomentType.REFERENCE
-
-            # For simple references (only date + context), use compact string format
-            if is_reference and not mentioned_date.locations and not mentioned_date.people and not mentioned_date.events:
-                if mentioned_date.context:
-                    dates_list.append(f"~{mentioned_date.date.isoformat()} ({mentioned_date.context})")
-                else:
-                    dates_list.append(f"~{mentioned_date.date.isoformat()}")
-                continue
-
-            # Build dict format for complex entries
-            date_dict: Dict[str, Any] = {"date": mentioned_date.date.isoformat()}
-
-            # Add type only for references (moment is the default)
-            if is_reference:
-                date_dict["type"] = "reference"
-
-            # Add locations
-            if mentioned_date.locations:
-                date_dict["locations"] = [loc.name for loc in mentioned_date.locations]
-
-            # Add people
-            if mentioned_date.people:
-                people_formatted = []
-                for person in mentioned_date.people:
-                    if person.name_fellow:
-                        people_formatted.append({"full_name": person.full_name})
-                    else:
-                        people_formatted.append({"name": person.name})
-                date_dict["people"] = people_formatted
-
-            # Add context
-            if mentioned_date.context:
-                date_dict["context"] = mentioned_date.context
-
-            # Add events
-            if mentioned_date.events:
-                date_dict["events"] = [event.event for event in mentioned_date.events]
-
-            dates_list.append(date_dict)
-
-        return dates_list
+        return [nd.date.isoformat() for nd in entry.narrated_dates]
 
     @staticmethod
     def build_references_metadata(entry: Entry) -> Optional[List[Dict[str, Any]]]:
@@ -391,39 +311,6 @@ class DbToYamlExporter:
 
         return poems_list
 
-    @staticmethod
-    def build_manuscript_metadata(entry: Entry) -> Optional[Dict[str, Any]]:
-        """
-        Extract manuscript metadata from database Entry.
-
-        Includes status, edited flag, themes, and notes.
-
-        Args:
-            entry: Database Entry ORM object
-
-        Returns:
-            Manuscript metadata dict, None if no manuscript
-
-        Examples:
-            >>> build_manuscript_metadata(entry)
-            {
-                "status": "draft",
-                "edited": False,
-                "themes": ["love", "loss"],
-                "notes": "Needs work"
-            }
-        """
-        if not entry.manuscript:
-            return None
-
-        ms = entry.manuscript
-        ms_dict: Dict[str, Any] = {
-            "status": ms.status.value,
-            "edited": ms.edited,
-        }
-        if ms.themes:
-            ms_dict["themes"] = [theme.theme for theme in ms.themes]
-        if ms.notes:
-            ms_dict["notes"] = ms.notes
-
-        return ms_dict
+    # -------------------------------------------------------------------------
+    # DEPRECATED: Manuscript metadata now tracked differently via Chapter model
+    # -------------------------------------------------------------------------

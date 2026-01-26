@@ -18,6 +18,9 @@ Configs:
     - THEME_CONFIG: Theme entity export
     - REFERENCE_CONFIG: Reference entity export
     - POEM_CONFIG: Poem entity export
+    - ARC_CONFIG: Arc entity export
+    - CHAPTER_CONFIG: Chapter entity export
+    - CHARACTER_CONFIG: Character entity export
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -32,21 +35,18 @@ from sqlalchemy.orm import Session, joinedload
 
 # --- Local imports ---
 from dev.database.models import (
-    Person,
-    Location,
+    Arc,
+    Chapter,
+    Character,
     City,
     Entry,
     Event,
-    Tag,
+    Location,
+    Person,
     Poem,
     PoemVersion,
     ReferenceSource,
-)
-from dev.database.models_manuscript import (
-    Arc,
-    ManuscriptEntry,
-    ManuscriptEvent,
-    ManuscriptPerson,
+    Tag,
     Theme,
 )
 from dev.utils.wiki import slugify
@@ -84,8 +84,8 @@ def _query_people(session: Session) -> List[Person]:
         select(Person)
         .options(
             joinedload(Person.entries),
-            joinedload(Person.moments),
-            joinedload(Person.aliases),
+            joinedload(Person.scenes),
+            joinedload(Person.threads),
         )
         .where(Person.deleted_at.is_(None))
         .order_by(Person.name)
@@ -99,7 +99,7 @@ def _query_locations(session: Session) -> List[Location]:
         .options(
             joinedload(Location.city),
             joinedload(Location.entries),
-            joinedload(Location.moments),
+            joinedload(Location.scenes),
         )
         .order_by(Location.name)
     ).unique().all()
@@ -113,7 +113,7 @@ def _query_cities(session: Session) -> List[City]:
             joinedload(City.locations),
             joinedload(City.entries),
         )
-        .order_by(City.city)
+        .order_by(City.name)
     ).unique().all()
 
 
@@ -128,21 +128,22 @@ def _query_entries(session: Session) -> List[Entry]:
             joinedload(Entry.events),
             joinedload(Entry.poems),
             joinedload(Entry.references),
+            joinedload(Entry.scenes),
+            joinedload(Entry.threads),
         )
         .order_by(Entry.date.desc())
     ).unique().all()
 
 
 def _query_events(session: Session) -> List[Event]:
-    """Query all non-deleted events with relationships loaded."""
+    """Query all events with relationships loaded."""
     return session.scalars(
         select(Event)
         .options(
             joinedload(Event.entries),
-            joinedload(Event.moments),
+            joinedload(Event.scenes),
         )
-        .where(Event.deleted_at.is_(None))
-        .order_by(Event.event)
+        .order_by(Event.name)
     ).unique().all()
 
 
@@ -151,7 +152,7 @@ def _query_tags(session: Session) -> List[Tag]:
     return session.scalars(
         select(Tag)
         .options(joinedload(Tag.entries))
-        .order_by(Tag.tag)
+        .order_by(Tag.name)
     ).unique().all()
 
 
@@ -160,8 +161,7 @@ def _query_themes(session: Session) -> List[Theme]:
     return session.scalars(
         select(Theme)
         .options(joinedload(Theme.entries))
-        .where(Theme.deleted_at.is_(None))
-        .order_by(Theme.theme)
+        .order_by(Theme.name)
     ).unique().all()
 
 
@@ -180,6 +180,41 @@ def _query_poems(session: Session) -> List[Poem]:
         select(Poem)
         .options(joinedload(Poem.versions).joinedload(PoemVersion.entry))
         .order_by(Poem.title)
+    ).unique().all()
+
+
+def _query_arcs(session: Session) -> List[Arc]:
+    """Query all arcs with relationships loaded."""
+    return session.scalars(
+        select(Arc)
+        .options(joinedload(Arc.entries))
+        .order_by(Arc.name)
+    ).unique().all()
+
+
+def _query_chapters(session: Session) -> List[Chapter]:
+    """Query all chapters with relationships loaded."""
+    return session.scalars(
+        select(Chapter)
+        .options(
+            joinedload(Chapter.part),
+            joinedload(Chapter.poems),
+            joinedload(Chapter.characters),
+            joinedload(Chapter.arcs),
+        )
+        .order_by(Chapter.number, Chapter.title)
+    ).unique().all()
+
+
+def _query_characters(session: Session) -> List[Character]:
+    """Query all characters with relationships loaded."""
+    return session.scalars(
+        select(Character)
+        .options(
+            joinedload(Character.chapters),
+            joinedload(Character.person_mappings),
+        )
+        .order_by(Character.name)
     ).unique().all()
 
 
@@ -211,8 +246,8 @@ CITY_CONFIG = EntityConfig(
     template="city",
     folder="cities",
     query=_query_cities,
-    get_name=lambda c: c.city,
-    get_slug=lambda c: slugify(c.city),
+    get_name=lambda c: c.name,
+    get_slug=lambda c: slugify(c.name),
 )
 
 ENTRY_CONFIG = EntityConfig(
@@ -231,8 +266,8 @@ EVENT_CONFIG = EntityConfig(
     template="event",
     folder="events",
     query=_query_events,
-    get_name=lambda e: e.event,
-    get_slug=lambda e: slugify(e.event),
+    get_name=lambda e: e.name,
+    get_slug=lambda e: slugify(e.name),
 )
 
 TAG_CONFIG = EntityConfig(
@@ -241,8 +276,8 @@ TAG_CONFIG = EntityConfig(
     template="tag",
     folder="tags",
     query=_query_tags,
-    get_name=lambda t: t.tag,
-    get_slug=lambda t: slugify(t.tag),
+    get_name=lambda t: t.name,
+    get_slug=lambda t: slugify(t.name),
 )
 
 THEME_CONFIG = EntityConfig(
@@ -251,8 +286,8 @@ THEME_CONFIG = EntityConfig(
     template="theme",
     folder="themes",
     query=_query_themes,
-    get_name=lambda t: t.theme,
-    get_slug=lambda t: slugify(t.theme),
+    get_name=lambda t: t.name,
+    get_slug=lambda t: slugify(t.name),
 )
 
 REFERENCE_CONFIG = EntityConfig(
@@ -275,6 +310,16 @@ POEM_CONFIG = EntityConfig(
     get_slug=lambda p: slugify(p.title),
 )
 
+ARC_CONFIG = EntityConfig(
+    name="arc",
+    plural="arcs",
+    template="arc",
+    folder="narrative/arcs",
+    query=_query_arcs,
+    get_name=lambda a: a.name,
+    get_slug=lambda a: slugify(a.name),
+)
+
 # All entity configs for batch export
 ALL_CONFIGS = [
     PERSON_CONFIG,
@@ -286,76 +331,20 @@ ALL_CONFIGS = [
     THEME_CONFIG,
     REFERENCE_CONFIG,
     POEM_CONFIG,
+    ARC_CONFIG,
 ]
-
-
-# --- Manuscript Query Functions ---
-
-def _query_arcs(session: Session) -> List[Arc]:
-    """Query all non-deleted arcs with relationships loaded."""
-    return session.scalars(
-        select(Arc)
-        .options(joinedload(Arc.events).joinedload(ManuscriptEvent.event))
-        .where(Arc.deleted_at.is_(None))
-        .order_by(Arc.arc)
-    ).unique().all()
-
-
-def _query_manuscript_entries(session: Session) -> List[ManuscriptEntry]:
-    """Query all manuscript entries with relationships loaded."""
-    return session.scalars(
-        select(ManuscriptEntry)
-        .options(
-            joinedload(ManuscriptEntry.entry),
-            joinedload(ManuscriptEntry.themes),
-        )
-        .order_by(ManuscriptEntry.entry_id)
-    ).unique().all()
-
-
-def _query_manuscript_characters(session: Session) -> List[ManuscriptPerson]:
-    """Query all non-deleted manuscript characters with relationships loaded."""
-    return session.scalars(
-        select(ManuscriptPerson)
-        .options(joinedload(ManuscriptPerson.person))
-        .where(ManuscriptPerson.deleted_at.is_(None))
-        .order_by(ManuscriptPerson.character)
-    ).unique().all()
-
-
-def _query_manuscript_events(session: Session) -> List[ManuscriptEvent]:
-    """Query all non-deleted manuscript events with relationships loaded."""
-    return session.scalars(
-        select(ManuscriptEvent)
-        .options(
-            joinedload(ManuscriptEvent.event),
-            joinedload(ManuscriptEvent.arc),
-        )
-        .where(ManuscriptEvent.deleted_at.is_(None))
-        .order_by(ManuscriptEvent.event_id)
-    ).unique().all()
 
 
 # --- Manuscript Entity Configurations ---
 
-ARC_CONFIG = EntityConfig(
-    name="arc",
-    plural="arcs",
-    template="arc",
-    folder="manuscript/arcs",
-    query=_query_arcs,
-    get_name=lambda a: a.arc,
-    get_slug=lambda a: slugify(a.arc),
-)
-
-MANUSCRIPT_ENTRY_CONFIG = EntityConfig(
-    name="manuscript_entry",
-    plural="manuscript_entries",
-    template="manuscript_entry",
-    folder="manuscript/entries",
-    query=_query_manuscript_entries,
-    get_name=lambda me: me.date.isoformat() if me.date else str(me.entry_id),
-    get_slug=lambda me: me.date.isoformat() if me.date else str(me.entry_id),
+CHAPTER_CONFIG = EntityConfig(
+    name="chapter",
+    plural="chapters",
+    template="chapter",
+    folder="manuscript/chapters",
+    query=_query_chapters,
+    get_name=lambda c: c.title,
+    get_slug=lambda c: slugify(c.title),
 )
 
 CHARACTER_CONFIG = EntityConfig(
@@ -363,25 +352,13 @@ CHARACTER_CONFIG = EntityConfig(
     plural="characters",
     template="character",
     folder="manuscript/characters",
-    query=_query_manuscript_characters,
-    get_name=lambda c: c.character,
-    get_slug=lambda c: slugify(c.character),
-)
-
-MANUSCRIPT_EVENT_CONFIG = EntityConfig(
-    name="manuscript_event",
-    plural="manuscript_events",
-    template="manuscript_event",
-    folder="manuscript/events",
-    query=_query_manuscript_events,
-    get_name=lambda me: me.display_name,
-    get_slug=lambda me: slugify(me.display_name),
+    query=_query_characters,
+    get_name=lambda c: c.name,
+    get_slug=lambda c: slugify(c.name),
 )
 
 # All manuscript entity configs for manuscript export
 MANUSCRIPT_CONFIGS = [
-    ARC_CONFIG,
-    MANUSCRIPT_ENTRY_CONFIG,
+    CHAPTER_CONFIG,
     CHARACTER_CONFIG,
-    MANUSCRIPT_EVENT_CONFIG,
 ]

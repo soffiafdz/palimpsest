@@ -72,22 +72,22 @@ def entity_link(entity: Any, entity_type: str, wiki_dir: Path, from_path: Path) 
     elif entity_type == "locations":
         # Location: locations/{city}/{name}.md
         name = entity.name
-        city_slug = slugify(entity.city.city)
+        city_slug = slugify(entity.city.name)
         target = wiki_dir / "locations" / city_slug / f"{slugify(name)}.md"
     elif entity_type == "people":
         name = entity.display_name
         target = wiki_dir / "people" / f"{slugify(name)}.md"
     elif entity_type == "cities":
-        name = entity.city
+        name = entity.name
         target = wiki_dir / "cities" / f"{slugify(name)}.md"
     elif entity_type == "events":
-        name = entity.display_name
-        target = wiki_dir / "events" / f"{slugify(entity.event)}.md"
+        name = entity.name
+        target = wiki_dir / "events" / f"{slugify(entity.name)}.md"
     elif entity_type == "tags":
-        name = entity.tag
+        name = entity.name
         target = wiki_dir / "tags" / f"{slugify(name)}.md"
     elif entity_type == "themes":
-        name = entity.theme
+        name = entity.name
         target = wiki_dir / "themes" / f"{slugify(name)}.md"
     elif entity_type == "references":
         name = entity.title
@@ -103,19 +103,14 @@ def entity_link(entity: Any, entity_type: str, wiki_dir: Path, from_path: Path) 
         target = wiki_dir / "poems" / f"{slugify(name)}.md"
     # Manuscript entity types
     elif entity_type == "arcs":
-        name = entity.arc
-        target = wiki_dir / "manuscript" / "arcs" / f"{slugify(name)}.md"
+        name = entity.name
+        target = wiki_dir / "narrative" / "arcs" / f"{slugify(name)}.md"
     elif entity_type == "characters":
-        name = entity.character
+        name = entity.name
         target = wiki_dir / "manuscript" / "characters" / f"{slugify(name)}.md"
-    elif entity_type == "manuscript_entries":
-        # ManuscriptEntry uses date for path: manuscript/entries/YYYY/YYYY-MM-DD.md
-        name = entity.date.isoformat() if entity.date else str(entity.entry_id)
-        year = entity.date.year if entity.date else "unknown"
-        target = wiki_dir / "manuscript" / "entries" / str(year) / f"{name}.md"
-    elif entity_type == "manuscript_events":
-        name = entity.display_name
-        target = wiki_dir / "manuscript" / "events" / f"{slugify(name)}.md"
+    elif entity_type == "chapters":
+        name = entity.title
+        target = wiki_dir / "manuscript" / "chapters" / f"{slugify(name)}.md"
     else:
         # Fallback: try common name attributes
         if hasattr(entity, 'display_name'):
