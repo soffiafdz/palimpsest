@@ -197,6 +197,40 @@ Update relevant docs:
 - `CLAUDE.md` for persistent instructions
 - Module docstrings for usage guidance
 
+## Documentation Standards
+
+**CRITICAL: Documentation is timeless code documentation, not implementation reports**
+
+### Never Include In Documentation:
+- Phase numbers or plan references
+- "Old" vs "new" comparisons
+- Migration/transition language
+- Deprecated/legacy code mentions
+- Implementation timelines or history
+- "One-time" processes or "after X is done"
+- References to what "changed" or "was replaced"
+
+### Documentation Should:
+- Describe what the code IS and HOW to use it
+- Act as if current implementation is how it always was
+- Be clean, timeless reference material
+- Focus on current functionality only
+
+### Examples:
+
+**BAD:**
+```markdown
+# Phase 14b: Jumpstart Migration
+This replaces the old Moment model with Scene/Thread.
+After the one-time migration...
+```
+
+**GOOD:**
+```markdown
+# Entity Curation Workflow
+Extract and curate entities from YAML files before database import.
+```
+
 ## Avoid Over-Engineering
 
 - Only make changes directly requested

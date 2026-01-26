@@ -1,15 +1,15 @@
-# Entity Curation Workflow for Phase 14b Jumpstart
+# Entity Curation Workflow
 
 ## Overview
 
-Before importing 972 narrative_analysis YAML files into the database, we need to extract and curate all people and locations to:
+Before importing narrative_analysis YAML files into the database, extract and curate all people and locations to:
 - Resolve typos and spelling variations
 - Deduplicate entities (e.g., "María", "Maria", "@Majo" → one person)
 - Handle ambiguous cases (multiple people with same name)
 - Expand shorthand (e.g., "Alda's" → "Alda's apartment")
 - Add missing metadata (lastnames, city assignments, date ranges)
 
-This is a **one-time process** for the jumpstart. Once the database is populated and the ongoing pipeline is active, curation happens through the wiki interface.
+For bulk imports of historical data, curation happens via these YAML files. For ongoing entries, curation happens through the wiki interface.
 
 ---
 
@@ -65,7 +65,7 @@ python -m dev.bin.validate_curation
 ### Stage 4: Jumpstart Import
 
 ```bash
-python -m dev.bin.jumpstart
+python -m dev.bin.bulk import
 ```
 
 **What it does:**
@@ -544,7 +544,7 @@ python -m dev.bin.validate_curation
 
 ## Jumpstart Import Behavior
 
-Once curation is validated, the jumpstart script:
+Once curation is validated, the bulk import script:
 
 ### People Import:
 1. Read `people_curation.yaml`
@@ -613,7 +613,7 @@ Once curation is validated, the jumpstart script:
 - **Validation**: ~30 seconds (automated)
 - **Import**: ~5-10 minutes (972 entries)
 
-**Total: ~3-5 hours of manual work for one-time jumpstart**
+**Total: ~3-5 hours of manual work for one-time bulk import**
 
 ---
 
@@ -640,7 +640,7 @@ Once curation is validated, the jumpstart script:
 ## Next Steps After Curation
 
 1. Validate curation files
-2. Run jumpstart import
+2. Run bulk import import
 3. Verify database populated correctly (count checks)
 4. Export to new YAML format for git backup
 5. Delete `data/narrative_analysis/` and `data/legacy/` (no longer needed)
