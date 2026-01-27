@@ -365,11 +365,8 @@ def group_entities(
         groups_dict[root].append(mention)
 
     # Create EntityGroup objects
-    groups = []
-    for group_id, (_, members) in enumerate(
-        sorted(groups_dict.items(), key=lambda x: -sum(m.total_count for m in x[1])),
-        start=1
-    ):
+    unsorted_groups = []
+    for _, members in groups_dict.items():
         members.sort(key=lambda m: -m.total_count)
 
         # Pre-fill canonical with most common name (prefer non-@ version)
@@ -381,11 +378,20 @@ def group_entities(
         if not canonical_name:
             canonical_name = members[0].raw_name if members else None
 
-        groups.append(EntityGroup(
-            id=group_id,
+        unsorted_groups.append(EntityGroup(
+            id=0,  # Placeholder, will assign after sorting
             members=members,
             canonical={"name": canonical_name, "lastname": None, "alias": None} if canonical_name else None,
         ))
+
+    # Sort groups alphabetically by canonical name
+    unsorted_groups.sort(key=lambda g: g.canonical["name"].lower() if g.canonical and g.canonical.get("name") else "")
+
+    # Assign IDs
+    groups = []
+    for i, group in enumerate(unsorted_groups, start=1):
+        group.id = i
+        groups.append(group)
 
     return groups
 
@@ -439,20 +445,27 @@ def group_locations_by_city(
             groups_dict[root].append(mention)
 
         # Create groups for this city
-        city_groups = []
-        for _, members in sorted(
-            groups_dict.items(), key=lambda x: -sum(m.total_count for m in x[1])
-        ):
+        unsorted_city_groups = []
+        for _, members in groups_dict.items():
             members.sort(key=lambda m: -m.total_count)
 
             # Pre-fill canonical with most common name
             canonical_name = members[0].raw_name if members else None
 
-            city_groups.append(EntityGroup(
-                id=global_id,
+            unsorted_city_groups.append(EntityGroup(
+                id=0,  # Placeholder
                 members=members,
                 canonical={"name": canonical_name} if canonical_name else None,
             ))
+
+        # Sort groups alphabetically by canonical name
+        unsorted_city_groups.sort(key=lambda g: g.canonical["name"].lower() if g.canonical and g.canonical.get("name") else "")
+
+        # Assign IDs and add to result
+        city_groups = []
+        for group in unsorted_city_groups:
+            group.id = global_id
+            city_groups.append(group)
             global_id += 1
 
         result[city] = city_groups
