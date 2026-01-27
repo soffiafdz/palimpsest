@@ -59,6 +59,21 @@ class EntityMention:
     def total_count(self) -> int:
         return len(self.occurrences)
 
+    @property
+    def unique_dates(self) -> List[str]:
+        """Return sorted list of unique dates."""
+        return sorted(set(o.date for o in self.occurrences))
+
+    @property
+    def date_range(self) -> str:
+        """Return date range as 'YYYY-MM-DD to YYYY-MM-DD'."""
+        dates = self.unique_dates
+        if not dates:
+            return "N/A"
+        if len(dates) == 1:
+            return dates[0]
+        return f"{dates[0]} to {dates[-1]}"
+
     def sample_occurrences(self, limit: int = 5) -> List[Dict[str, str]]:
         """Return sample occurrences for the draft file."""
         samples = self.occurrences[:limit]
@@ -354,7 +369,8 @@ def generate_draft_yaml(
             member_data: Dict[str, Any] = {
                 "name": member.raw_name,
                 "total_count": member.total_count,
-                "occurrences": member.sample_occurrences(limit=5)
+                "date_range": member.date_range,
+                "sample_occurrences": member.sample_occurrences(limit=5)
             }
             group_data["members"].append(member_data)
 
