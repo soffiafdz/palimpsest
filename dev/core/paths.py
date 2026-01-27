@@ -96,10 +96,11 @@ TXT_DIR = JOURNAL_DIR / "sources" / "txt"
 MD_DIR = JOURNAL_DIR / "content" / "md"
 PDF_DIR = JOURNAL_DIR / "content" / "pdf"
 
-# ---- Narrative Analysis (DEPRECATED) ----
-NARRATIVE_ANALYSIS_DIR = JOURNAL_DIR / "narrative_analysis"
-EVENTS_DIR = NARRATIVE_ANALYSIS_DIR / "_events"
-ARCS_DIR = NARRATIVE_ANALYSIS_DIR / "_arcs"
+# ---- Narrative Analysis (DEPRECATED: delete after jumpstart) ----
+NARRATIVE_ANALYSIS_DIR = DATA_DIR / "narrative_analysis"
+
+# ---- Entity Curation ----
+CURATION_DIR = DATA_DIR / "curation"
 
 # ---- Metadata YAML Exports ----
 # Machine-generated exports for git version control
