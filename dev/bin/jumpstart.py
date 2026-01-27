@@ -165,75 +165,145 @@ class EntityResolver:
     @classmethod
     def load(cls) -> "EntityResolver":
         """
-        Load entity resolution maps from curated files.
+        Load entity resolution maps from per-year curated files.
 
         Returns:
             EntityResolver with populated mappings
 
         Raises:
-            FileNotFoundError: If curation files don't exist
+            FileNotFoundError: If no curation files exist
             ValueError: If curation files are invalid
         """
         resolver = cls()
 
-        # Load people curation
-        people_file = CURATION_DIR / "people_curation.yaml"
-        if not people_file.exists():
+        # Load all people curation files
+        people_files = sorted(CURATION_DIR.glob("*_people_curation.yaml"))
+        if not people_files:
             raise FileNotFoundError(
-                f"People curation file not found: {people_file}\n"
+                f"No people curation files found in {CURATION_DIR}\n"
                 "Run extract_entities.py and complete manual curation first."
             )
 
-        with open(people_file, "r", encoding="utf-8") as f:
-            people_data = yaml.safe_load(f)
+        # First pass: collect all canonicals
+        people_canonicals: Dict[str, Dict[str, Any]] = {}  # raw_name -> canonical
+        people_same_as: Dict[str, str] = {}  # raw_name -> target_name
 
-        for group in people_data.get("groups", []):
-            canonical = group.get("canonical")
-            if not canonical:
+        for people_file in people_files:
+            with open(people_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+
+            if not data:
                 continue
 
-            # Map all member names to this canonical
-            for member in group.get("members", []):
-                if isinstance(member, dict):
-                    raw_name = member.get("name", "")
-                else:
-                    raw_name = str(member)
-                if raw_name:
-                    resolver.people_map[raw_name.lower()] = canonical
-
-        # Load locations curation (hierarchical format: cities -> locations)
-        locations_file = CURATION_DIR / "locations_curation.yaml"
-        if not locations_file.exists():
-            raise FileNotFoundError(
-                f"Locations curation file not found: {locations_file}\n"
-                "Run extract_entities.py and complete manual curation first."
-            )
-
-        with open(locations_file, "r", encoding="utf-8") as f:
-            locations_data = yaml.safe_load(f)
-
-        # Iterate over cities and their locations
-        for city_data in locations_data.get("cities", []):
-            city_name = city_data.get("name")
-            if not city_name or city_name == "_unassigned":
-                continue
-
-            for loc_group in city_data.get("locations", []):
-                canonical_name = loc_group.get("canonical")
-                if not canonical_name:
+            for raw_name, entry in data.items():
+                if not isinstance(entry, dict):
                     continue
 
-                # Build canonical dict with name and city
-                canonical = {"name": canonical_name, "city": city_name}
+                # Skip entries marked as skip or self
+                if entry.get("skip") or entry.get("self"):
+                    continue
 
-                # Map all member names to this canonical
-                for member in loc_group.get("members", []):
-                    if isinstance(member, dict):
-                        raw_name = member.get("name", "")
-                    else:
-                        raw_name = str(member)
-                    if raw_name:
-                        resolver.locations_map[raw_name.lower()] = canonical
+                canonical = entry.get("canonical")
+                same_as = entry.get("same_as")
+
+                if canonical and isinstance(canonical, dict) and canonical.get("name"):
+                    people_canonicals[raw_name] = canonical
+                elif same_as:
+                    people_same_as[raw_name] = same_as
+
+        # Second pass: resolve same_as references
+        def resolve_person_canonical(name: str, visited: set) -> Optional[Dict[str, Any]]:
+            if name in visited:
+                return None  # Circular reference
+            visited.add(name)
+
+            if name in people_canonicals:
+                return people_canonicals[name]
+            if name in people_same_as:
+                return resolve_person_canonical(people_same_as[name], visited)
+            return None
+
+        # Build final people map
+        for raw_name in list(people_canonicals.keys()) + list(people_same_as.keys()):
+            canonical = resolve_person_canonical(raw_name, set())
+            if canonical:
+                resolver.people_map[raw_name.lower()] = canonical
+
+        # Load all locations curation files
+        locations_files = sorted(CURATION_DIR.glob("*_locations_curation.yaml"))
+        if not locations_files:
+            raise FileNotFoundError(
+                f"No locations curation files found in {CURATION_DIR}\n"
+                "Run extract_entities.py and complete manual curation first."
+            )
+
+        # First pass: collect all canonicals by city
+        # Structure: city -> raw_name -> canonical_name
+        loc_canonicals: Dict[str, Dict[str, str]] = {}
+        loc_same_as: Dict[str, Dict[str, str]] = {}  # city -> raw_name -> target_name
+
+        for locations_file in locations_files:
+            with open(locations_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+
+            if not data:
+                continue
+
+            for city, locations in data.items():
+                if not isinstance(locations, dict):
+                    continue
+
+                if city not in loc_canonicals:
+                    loc_canonicals[city] = {}
+                    loc_same_as[city] = {}
+
+                for raw_name, entry in locations.items():
+                    if not isinstance(entry, dict):
+                        continue
+
+                    # Skip entries marked as skip
+                    if entry.get("skip"):
+                        continue
+
+                    canonical = entry.get("canonical")
+                    same_as = entry.get("same_as")
+
+                    if canonical and isinstance(canonical, str):
+                        loc_canonicals[city][raw_name] = canonical
+                    elif same_as:
+                        loc_same_as[city][raw_name] = same_as
+
+        # Second pass: resolve same_as references within each city
+        def resolve_location_canonical(city: str, name: str, visited: set) -> Optional[str]:
+            key = f"{city}|{name}"
+            if key in visited:
+                return None  # Circular reference
+            visited.add(key)
+
+            if city in loc_canonicals and name in loc_canonicals[city]:
+                return loc_canonicals[city][name]
+            if city in loc_same_as and name in loc_same_as[city]:
+                return resolve_location_canonical(city, loc_same_as[city][name], visited)
+            return None
+
+        # Build final locations map
+        for city in set(loc_canonicals.keys()) | set(loc_same_as.keys()):
+            if city == "_unassigned":
+                continue
+
+            all_names = set()
+            if city in loc_canonicals:
+                all_names.update(loc_canonicals[city].keys())
+            if city in loc_same_as:
+                all_names.update(loc_same_as[city].keys())
+
+            for raw_name in all_names:
+                canonical_name = resolve_location_canonical(city, raw_name, set())
+                if canonical_name:
+                    resolver.locations_map[raw_name.lower()] = {
+                        "name": canonical_name,
+                        "city": city,
+                    }
 
         return resolver
 
@@ -979,7 +1049,7 @@ def run_pre_validation() -> bool:
     from dev.bin.validate_curation import validate_all
 
     print("Running pre-import validation...")
-    valid = validate_all(check_draft=False)
+    valid = validate_all()
     return valid
 
 
