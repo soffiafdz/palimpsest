@@ -201,7 +201,7 @@ class EntityResolver:
                 if raw_name:
                     resolver.people_map[raw_name.lower()] = canonical
 
-        # Load locations curation
+        # Load locations curation (hierarchical format: cities -> locations)
         locations_file = CURATION_DIR / "locations_curation.yaml"
         if not locations_file.exists():
             raise FileNotFoundError(
@@ -212,19 +212,28 @@ class EntityResolver:
         with open(locations_file, "r", encoding="utf-8") as f:
             locations_data = yaml.safe_load(f)
 
-        for group in locations_data.get("groups", []):
-            canonical = group.get("canonical")
-            if not canonical:
+        # Iterate over cities and their locations
+        for city_data in locations_data.get("cities", []):
+            city_name = city_data.get("name")
+            if not city_name or city_name == "_unassigned":
                 continue
 
-            # Map all member names to this canonical
-            for member in group.get("members", []):
-                if isinstance(member, dict):
-                    raw_name = member.get("name", "")
-                else:
-                    raw_name = str(member)
-                if raw_name:
-                    resolver.locations_map[raw_name.lower()] = canonical
+            for loc_group in city_data.get("locations", []):
+                canonical_name = loc_group.get("canonical")
+                if not canonical_name:
+                    continue
+
+                # Build canonical dict with name and city
+                canonical = {"name": canonical_name, "city": city_name}
+
+                # Map all member names to this canonical
+                for member in loc_group.get("members", []):
+                    if isinstance(member, dict):
+                        raw_name = member.get("name", "")
+                    else:
+                        raw_name = str(member)
+                    if raw_name:
+                        resolver.locations_map[raw_name.lower()] = canonical
 
         return resolver
 

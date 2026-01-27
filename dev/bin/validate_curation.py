@@ -9,13 +9,13 @@ are complete and consistent. Run after manual curation, before jumpstart.
 
 Validation Checks:
     - All groups have a non-null canonical form
-    - Required fields present (name for people, name+city for locations)
+    - Required fields present (name for people, name for locations)
     - No duplicate canonicals (would create duplicate DB entries)
     - Members are simplified (list of strings, not dicts)
-    - Date ranges are valid (if present, for disambiguation)
+    - Locations are properly nested under cities
 
 Usage:
-    python -m dev.bin.validate_curation [--fix-format]
+    python -m dev.bin.validate_curation [--final-only]
 
 Output:
     - Validation report to stdout
@@ -108,13 +108,16 @@ def validate_people_canonical(canonical: Dict[str, Any], group_id: Any) -> List[
     return errors
 
 
-def validate_location_canonical(canonical: Dict[str, Any], group_id: Any) -> List[ValidationError]:
+def validate_location_canonical(canonical: Any, group_id: Any, city_name: str) -> List[ValidationError]:
     """
     Validate a location canonical entry.
 
+    In the hierarchical format, canonical is just the location name (string).
+
     Args:
-        canonical: The canonical dict from the curation file
+        canonical: The canonical value (should be a string)
         group_id: Group ID for error reporting
+        city_name: City name for context
 
     Returns:
         List of validation errors
@@ -122,26 +125,19 @@ def validate_location_canonical(canonical: Dict[str, Any], group_id: Any) -> Lis
     errors = []
 
     if not canonical:
-        errors.append(ValidationError(group_id, "canonical", "canonical is null - must be filled"))
+        errors.append(ValidationError(
+            f"{city_name}/{group_id}",
+            "canonical",
+            "canonical is null - must be filled"
+        ))
         return errors
 
-    if not isinstance(canonical, dict):
-        errors.append(ValidationError(group_id, "canonical", f"canonical must be a dict, got {type(canonical).__name__}"))
-        return errors
-
-    # Required: name
-    name = canonical.get("name")
-    if not name:
-        errors.append(ValidationError(group_id, "canonical.name", "name is required"))
-    elif not isinstance(name, str):
-        errors.append(ValidationError(group_id, "canonical.name", f"name must be string, got {type(name).__name__}"))
-
-    # Required: city
-    city = canonical.get("city")
-    if not city:
-        errors.append(ValidationError(group_id, "canonical.city", "city is required for locations"))
-    elif not isinstance(city, str):
-        errors.append(ValidationError(group_id, "canonical.city", f"city must be string, got {type(city).__name__}"))
+    if not isinstance(canonical, str):
+        errors.append(ValidationError(
+            f"{city_name}/{group_id}",
+            "canonical",
+            f"canonical must be a string (location name), got {type(canonical).__name__}"
+        ))
 
     return errors
 
@@ -191,19 +187,10 @@ def validate_members(members: Any, group_id: Any) -> Tuple[List[ValidationError]
     return errors, warnings
 
 
-def check_duplicate_canonicals(groups: List[Dict[str, Any]], entity_type: str) -> List[ValidationError]:
-    """
-    Check for duplicate canonical entries.
-
-    Args:
-        groups: List of group dicts
-        entity_type: "people" or "locations"
-
-    Returns:
-        List of validation errors for duplicates
-    """
+def check_duplicate_people_canonicals(groups: List[Dict[str, Any]]) -> List[ValidationError]:
+    """Check for duplicate canonical entries in people."""
     errors = []
-    seen: Dict[str, Any] = {}  # key -> first group_id that used it
+    seen: Dict[str, Any] = {}
 
     for group in groups:
         canonical = group.get("canonical")
@@ -213,15 +200,10 @@ def check_duplicate_canonicals(groups: List[Dict[str, Any]], entity_type: str) -
         group_id = group.get("id", "unknown")
 
         # Build a unique key for this canonical
-        if entity_type == "people":
-            name = canonical.get("name", "")
-            lastname = canonical.get("lastname") or ""
-            alias = canonical.get("alias") or ""
-            key = f"{name}|{lastname}|{alias}".lower()
-        else:  # locations
-            name = canonical.get("name", "")
-            city = canonical.get("city") or ""
-            key = f"{name}|{city}".lower()
+        name = canonical.get("name", "")
+        lastname = canonical.get("lastname") or ""
+        alias = canonical.get("alias") or ""
+        key = f"{name}|{lastname}|{alias}".lower()
 
         if key in seen:
             errors.append(ValidationError(
@@ -235,18 +217,37 @@ def check_duplicate_canonicals(groups: List[Dict[str, Any]], entity_type: str) -
     return errors
 
 
-def validate_curation_file(file_path: Path, entity_type: str) -> ValidationResult:
-    """
-    Validate a curation file.
+def check_duplicate_location_canonicals(cities: List[Dict[str, Any]]) -> List[ValidationError]:
+    """Check for duplicate canonical entries in locations within each city."""
+    errors = []
 
-    Args:
-        file_path: Path to the curation YAML file
-        entity_type: "people" or "locations"
+    for city_data in cities:
+        city_name = city_data.get("name", "unknown")
+        seen: Dict[str, Any] = {}
 
-    Returns:
-        ValidationResult with all errors and warnings
-    """
-    result = ValidationResult(file_path=file_path, entity_type=entity_type, total_groups=0)
+        for loc in city_data.get("locations", []):
+            canonical = loc.get("canonical")
+            if not canonical:
+                continue
+
+            group_id = loc.get("id", "unknown")
+            key = str(canonical).lower()
+
+            if key in seen:
+                errors.append(ValidationError(
+                    f"{city_name}/{group_id}",
+                    "canonical",
+                    f"duplicate canonical in {city_name} - same as group {seen[key]}"
+                ))
+            else:
+                seen[key] = group_id
+
+    return errors
+
+
+def validate_people_file(file_path: Path) -> ValidationResult:
+    """Validate a people curation file."""
+    result = ValidationResult(file_path=file_path, entity_type="people", total_groups=0)
 
     if not file_path.exists():
         result.add_error("file", "path", f"File not found: {file_path}")
@@ -282,14 +283,69 @@ def validate_curation_file(file_path: Path, entity_type: str) -> ValidationResul
 
         # Validate canonical
         canonical = group.get("canonical")
-        if entity_type == "people":
-            canonical_errors = validate_people_canonical(canonical, group_id)
-        else:
-            canonical_errors = validate_location_canonical(canonical, group_id)
+        canonical_errors = validate_people_canonical(canonical, group_id)
         result.errors.extend(canonical_errors)
 
     # Check for duplicates
-    duplicate_errors = check_duplicate_canonicals(groups, entity_type)
+    duplicate_errors = check_duplicate_people_canonicals(groups)
+    result.errors.extend(duplicate_errors)
+
+    return result
+
+
+def validate_locations_file(file_path: Path) -> ValidationResult:
+    """Validate a hierarchical locations curation file."""
+    result = ValidationResult(file_path=file_path, entity_type="locations", total_groups=0)
+
+    if not file_path.exists():
+        result.add_error("file", "path", f"File not found: {file_path}")
+        return result
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        result.add_error("file", "yaml", f"YAML parse error: {e}")
+        return result
+
+    if not data:
+        result.add_error("file", "content", "File is empty")
+        return result
+
+    cities = data.get("cities", [])
+    if not cities:
+        result.add_error("file", "cities", "No cities found in file")
+        return result
+
+    # Count total location groups
+    for city_data in cities:
+        city_name = city_data.get("name", "unknown")
+        locations = city_data.get("locations", [])
+
+        if not locations:
+            result.add_warning(city_name, "locations", f"City {city_name} has no locations")
+            continue
+
+        result.total_groups += len(locations)
+
+        # Validate each location in this city
+        for loc in locations:
+            group_id = loc.get("id", "unknown")
+            full_id = f"{city_name}/{group_id}"
+
+            # Validate members
+            members = loc.get("members")
+            member_errors, member_warnings = validate_members(members, full_id)
+            result.errors.extend(member_errors)
+            result.warnings.extend(member_warnings)
+
+            # Validate canonical (should be a string for locations)
+            canonical = loc.get("canonical")
+            canonical_errors = validate_location_canonical(canonical, group_id, city_name)
+            result.errors.extend(canonical_errors)
+
+    # Check for duplicates within cities
+    duplicate_errors = check_duplicate_location_canonicals(cities)
     result.errors.extend(duplicate_errors)
 
     return result
@@ -341,17 +397,17 @@ def validate_all(check_draft: bool = True) -> bool:
         draft_people = CURATION_DIR / "people_curation_draft.yaml"
         draft_locations = CURATION_DIR / "locations_curation_draft.yaml"
         if draft_people.exists():
-            files_to_check.append((draft_people, "people"))
+            files_to_check.append(("people", draft_people))
         if draft_locations.exists():
-            files_to_check.append((draft_locations, "locations"))
+            files_to_check.append(("locations", draft_locations))
 
     # Check final files
     final_people = CURATION_DIR / "people_curation.yaml"
     final_locations = CURATION_DIR / "locations_curation.yaml"
     if final_people.exists():
-        files_to_check.append((final_people, "people"))
+        files_to_check.append(("people", final_people))
     if final_locations.exists():
-        files_to_check.append((final_locations, "locations"))
+        files_to_check.append(("locations", final_locations))
 
     if not files_to_check:
         print("No curation files found in", CURATION_DIR)
@@ -360,8 +416,12 @@ def validate_all(check_draft: bool = True) -> bool:
         print("  - locations_curation_draft.yaml (or locations_curation.yaml)")
         return False
 
-    for file_path, entity_type in files_to_check:
-        result = validate_curation_file(file_path, entity_type)
+    for entity_type, file_path in files_to_check:
+        if entity_type == "people":
+            result = validate_people_file(file_path)
+        else:
+            result = validate_locations_file(file_path)
+
         print_result(result)
         if not result.is_valid:
             all_valid = False
