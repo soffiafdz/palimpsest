@@ -182,27 +182,17 @@ def parse_person_name(raw_name: str) -> ParsedPerson:
             elif len(parts) == 1:
                 name = parts[0]
     else:
-        # No alias - try to parse as a plain name
-        base, expansion = extract_name_and_expansion(working)
-        if expansion:
-            # Has parenthetical - use expansion as the full name
-            expansion_clean = split_hyphenated_to_spaces(expansion)
-            parts = expansion_clean.split()
-            if len(parts) >= 2:
-                lastname = parts[-1]
-                name = " ".join(parts[:-1])
-            elif len(parts) == 1:
-                name = parts[0]
-        else:
-            # Plain name - dehyphenate and try to split
-            name_clean = split_hyphenated_to_spaces(base)
-            parts = name_clean.split()
-            if len(parts) >= 2:
-                # Could be "First Last" - but don't assume
-                # Just use the whole thing as name
-                name = name_clean
-            elif len(parts) == 1:
-                name = parts[0]
+        # No @ alias - parentheticals are annotations, not name expansions
+        # e.g., "Monica (discussed)" -> name=Monica, expansion ignored
+        base, _ = extract_name_and_expansion(working)
+        # Use the base name (before parenthetical)
+        name_clean = split_hyphenated_to_spaces(base)
+        parts = name_clean.split()
+        if len(parts) >= 2:
+            # Could be "First Last" - just use the whole thing as name
+            name = name_clean
+        elif len(parts) == 1:
+            name = parts[0]
 
     return ParsedPerson(
         raw_name=raw_name,
