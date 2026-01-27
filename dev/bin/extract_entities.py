@@ -2,16 +2,24 @@
 """
 extract_entities.py
 -------------------
-Extract people and locations from narrative_analysis YAML files for curation.
+Extract people and locations from journal MD frontmatter for curation.
 
-This script scans all narrative_analysis YAML files and extracts unique people
-and location mentions from scenes and threads. It parses structured name formats
-(e.g., @Majo (María-José Castro)) and groups by parsed alias/base name.
+This script scans all journal MD files and extracts unique people and location
+mentions from the YAML frontmatter. The MD frontmatter is the ground truth for
+entity data per the Phase 14 architecture.
+
+MD Frontmatter Format:
+    ---
+    date: 2024-12-03
+    locations:
+      Montréal: [The Neuro, Home]
+    people: [Dr-Franck, Fabiola, Aliza, Sonny, Majo, Clara]
+    ---
 
 Key Features:
-    - Parses @alias (Full Name) format for smart grouping
-    - Groups people by alias, pre-fills canonical from expansions
-    - Tracks locations by city (hierarchical output)
+    - Extracts from MD frontmatter (ground truth source)
+    - Groups similar names using Levenshtein distance
+    - Locations are already hierarchical by city in frontmatter
     - Generates draft YAML files for manual review
 
 Usage:
@@ -37,34 +45,14 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 # --- Local imports ---
-from dev.core.paths import NARRATIVE_ANALYSIS_DIR, CURATION_DIR
-from dev.utils.parsers import extract_name_and_expansion, split_hyphenated_to_spaces
+from dev.core.paths import MD_DIR, CURATION_DIR
 
 
 @dataclass
 class Occurrence:
-    """A single occurrence of an entity in the source files."""
+    """A single occurrence of an entity in a journal entry."""
     date: str
-    context_type: str  # "scene" or "thread"
-    context_name: str
-    city: Optional[str] = None  # For locations
-
-
-@dataclass
-class ParsedPerson:
-    """A parsed person reference with alias and expansion."""
-    raw_name: str
-    alias: Optional[str]  # The @handle part (without @)
-    expansion: Optional[str]  # The (Full Name) part
-    name: Optional[str]  # First name parsed from expansion
-    lastname: Optional[str]  # Last name parsed from expansion
-
-    @property
-    def grouping_key(self) -> str:
-        """Key used for grouping - alias if present, else normalized raw name."""
-        if self.alias:
-            return self.alias.lower()
-        return normalize_for_grouping(self.raw_name)
+    file_path: str
 
 
 @dataclass
@@ -72,7 +60,6 @@ class EntityMention:
     """An entity mention with all its occurrences."""
     raw_name: str
     occurrences: List[Occurrence] = field(default_factory=list)
-    parsed: Optional[ParsedPerson] = None  # For people
 
     @property
     def total_count(self) -> int:
@@ -96,10 +83,7 @@ class EntityMention:
     def sample_occurrences(self, limit: int = 5) -> List[Dict[str, str]]:
         """Return sample occurrences for the draft file."""
         samples = self.occurrences[:limit]
-        return [
-            {"date": o.date, f"{o.context_type}": o.context_name}
-            for o in samples
-        ]
+        return [{"date": o.date} for o in samples]
 
 
 @dataclass
@@ -107,29 +91,15 @@ class EntityGroup:
     """A group of similar entity mentions that likely refer to the same entity."""
     id: int
     members: List[EntityMention]
-    canonical: Optional[Dict[str, Any]] = None  # Pre-filled if determinable
-
-    @property
-    def total_count(self) -> int:
-        return sum(m.total_count for m in self.members)
+    canonical: Optional[Dict[str, Any]] = None
 
 
 def normalize_for_grouping(name: str) -> str:
     """
     Normalize a name for grouping comparison.
 
-    Removes @ prefix, parenthetical content, strips whitespace,
-    lowercases, removes accents, and normalizes punctuation.
+    Removes accents, lowercases, normalizes punctuation.
     """
-    # Remove @ prefix
-    if name.startswith("@"):
-        name = name[1:]
-
-    # Remove parenthetical content
-    if "(" in name:
-        name = name.split("(")[0]
-
-    # Lowercase and strip
     name = name.lower().strip()
 
     # Remove accents (NFD decomposition, then strip combining chars)
@@ -143,64 +113,6 @@ def normalize_for_grouping(name: str) -> str:
     name = re.sub(r"[^\w\s]", "", name)
 
     return name.strip()
-
-
-def parse_person_name(raw_name: str) -> ParsedPerson:
-    """
-    Parse a person reference into structured components.
-
-    Handles formats:
-        - @Majo (María-José Castro) -> alias=majo, name=María José, lastname=Castro
-        - @Majo (María) -> alias=majo, name=María, lastname=None
-        - @Majo -> alias=majo, name=None, lastname=None
-        - María José -> alias=None, name=María José, lastname=None
-        - María-José Castro -> alias=None, name=María José, lastname=Castro
-    """
-    alias = None
-    expansion = None
-    name = None
-    lastname = None
-
-    working = raw_name.strip()
-
-    # Extract @ alias
-    if working.startswith("@"):
-        working = working[1:]
-        # Use existing parser for parenthetical expansion
-        base, expansion = extract_name_and_expansion(working)
-        alias = base.strip()
-
-        if expansion:
-            # Parse expansion into name/lastname
-            # Dehyphenate the expansion first
-            expansion_clean = split_hyphenated_to_spaces(expansion)
-            parts = expansion_clean.split()
-            if len(parts) >= 2:
-                # Last word is lastname, rest is name
-                lastname = parts[-1]
-                name = " ".join(parts[:-1])
-            elif len(parts) == 1:
-                name = parts[0]
-    else:
-        # No @ alias - parentheticals are annotations, not name expansions
-        # e.g., "Monica (discussed)" -> name=Monica, expansion ignored
-        base, _ = extract_name_and_expansion(working)
-        # Use the base name (before parenthetical)
-        name_clean = split_hyphenated_to_spaces(base)
-        parts = name_clean.split()
-        if len(parts) >= 2:
-            # Could be "First Last" - just use the whole thing as name
-            name = name_clean
-        elif len(parts) == 1:
-            name = parts[0]
-
-    return ParsedPerson(
-        raw_name=raw_name,
-        alias=alias,
-        expansion=expansion,
-        name=name,
-        lastname=lastname,
-    )
 
 
 def levenshtein_distance(s1: str, s2: str) -> int:
@@ -224,33 +136,8 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     return previous_row[-1]
 
 
-def should_group_people(parsed1: ParsedPerson, parsed2: ParsedPerson) -> bool:
-    """
-    Determine if two parsed people should be grouped.
-
-    Groups by:
-    - Same alias (case-insensitive)
-    - Very similar base names (Levenshtein ≤ 1)
-    """
-    key1 = parsed1.grouping_key
-    key2 = parsed2.grouping_key
-
-    if not key1 or not key2:
-        return False
-
-    # Exact match on grouping key
-    if key1 == key2:
-        return True
-
-    # Levenshtein distance ≤ 1 for typos
-    if abs(len(key1) - len(key2)) <= 1 and levenshtein_distance(key1, key2) <= 1:
-        return True
-
-    return False
-
-
-def should_group_locations(name1: str, name2: str) -> bool:
-    """Determine if two location names should be grouped."""
+def should_group(name1: str, name2: str) -> bool:
+    """Determine if two names should be grouped."""
     n1 = normalize_for_grouping(name1)
     n2 = normalize_for_grouping(name2)
 
@@ -260,99 +147,104 @@ def should_group_locations(name1: str, name2: str) -> bool:
     if n1 == n2:
         return True
 
+    # Levenshtein distance <= 1 for typos
     if abs(len(n1) - len(n2)) <= 1 and levenshtein_distance(n1, n2) <= 1:
         return True
 
     return False
 
 
-def extract_from_yaml(
-    yaml_path: Path,
-) -> Tuple[Dict[str, Tuple[List[Occurrence], ParsedPerson]], Dict[str, Dict[str, List[Occurrence]]]]:
+def extract_frontmatter(md_path: Path) -> Optional[Dict[str, Any]]:
     """
-    Extract people and locations from a single YAML file.
+    Extract YAML frontmatter from a markdown file.
+
+    Returns:
+        Parsed frontmatter dict, or None if no frontmatter found
+    """
+    try:
+        with open(md_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except OSError as e:
+        print(f"Warning: Failed to read {md_path}: {e}")
+        return None
+
+    # Match YAML frontmatter between --- markers
+    match = re.match(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
+    if not match:
+        return None
+
+    try:
+        return yaml.safe_load(match.group(1))
+    except yaml.YAMLError as e:
+        print(f"Warning: Failed to parse frontmatter in {md_path}: {e}")
+        return None
+
+
+def extract_from_md(
+    md_path: Path,
+) -> Tuple[Dict[str, List[Occurrence]], Dict[str, Dict[str, List[Occurrence]]]]:
+    """
+    Extract people and locations from a single MD file's frontmatter.
 
     Returns:
         Tuple of:
-        - people_dict: raw_name -> (occurrences, parsed_person)
+        - people_dict: raw_name -> occurrences
         - locations_dict: city -> {raw_name -> occurrences}
     """
-    people: Dict[str, Tuple[List[Occurrence], ParsedPerson]] = {}
+    people: Dict[str, List[Occurrence]] = defaultdict(list)
     locations: Dict[str, Dict[str, List[Occurrence]]] = defaultdict(lambda: defaultdict(list))
 
-    try:
-        with open(yaml_path, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-    except (yaml.YAMLError, OSError) as e:
-        print(f"Warning: Failed to parse {yaml_path}: {e}")
+    frontmatter = extract_frontmatter(md_path)
+    if not frontmatter:
         return people, locations
 
-    if not data:
-        return people, locations
-
-    date_str = data.get("date", yaml_path.stem.split("_")[0])
-    if hasattr(date_str, "isoformat"):
-        date_str = date_str.isoformat()
+    # Get date
+    date_val = frontmatter.get("date")
+    if hasattr(date_val, "isoformat"):
+        date_str = date_val.isoformat()
+    elif date_val:
+        date_str = str(date_val)
     else:
-        date_str = str(date_str)
+        date_str = md_path.stem  # Fallback to filename
 
-    # Get city from entry-level data
-    city = data.get("city", "_unassigned")
-    if not city:
-        city = "_unassigned"
-    # Normalize city name
-    city = str(city).strip()
+    occ = Occurrence(date=date_str, file_path=str(md_path))
 
-    def process_people(person_list: List, context_type: str, context_name: str):
-        for person in person_list or []:
-            if not person:
+    # Extract people (flat list)
+    people_list = frontmatter.get("people", [])
+    if people_list:
+        for person in people_list:
+            if person:
+                people[str(person)].append(occ)
+
+    # Extract locations (hierarchical: {City: [loc1, loc2]})
+    locations_data = frontmatter.get("locations", {})
+    if isinstance(locations_data, dict):
+        for city, locs in locations_data.items():
+            if not city or not locs:
                 continue
-            raw = str(person)
-            occ = Occurrence(date=date_str, context_type=context_type, context_name=context_name)
-
-            if raw not in people:
-                parsed = parse_person_name(raw)
-                people[raw] = ([], parsed)
-            people[raw][0].append(occ)
-
-    def process_locations(loc_list: List, context_type: str, context_name: str):
-        for location in loc_list or []:
-            if not location:
-                continue
-            raw = str(location)
-            occ = Occurrence(date=date_str, context_type=context_type, context_name=context_name, city=city)
-            locations[city][raw].append(occ)
-
-    # Extract from scenes
-    for scene in data.get("scenes", []) or []:
-        if not isinstance(scene, dict):
-            continue
-        scene_name = scene.get("name", "Unknown Scene")
-        process_people(scene.get("people", []), "scene", scene_name)
-        process_locations(scene.get("locations", []), "scene", scene_name)
-
-    # Extract from threads
-    for thread in data.get("threads", []) or []:
-        if not isinstance(thread, dict):
-            continue
-        thread_name = thread.get("name", "Unknown Thread")
-        process_people(thread.get("people", []), "thread", thread_name)
-        process_locations(thread.get("locations", []), "thread", thread_name)
+            city_str = str(city)
+            if isinstance(locs, list):
+                for loc in locs:
+                    if loc:
+                        locations[city_str][str(loc)].append(occ)
+            elif locs:
+                # Single location as string
+                locations[city_str][str(locs)].append(occ)
 
     return people, locations
 
 
-def group_people(
-    all_people: Dict[str, Tuple[List[Occurrence], ParsedPerson]]
+def group_entities(
+    all_mentions: Dict[str, List[Occurrence]]
 ) -> List[EntityGroup]:
-    """Group people by parsed alias/name."""
-    if not all_people:
+    """Group entities by normalized name similarity."""
+    if not all_mentions:
         return []
 
     # Build mentions
     mentions = []
-    for raw_name, (occurrences, parsed) in all_people.items():
-        mention = EntityMention(raw_name=raw_name, occurrences=occurrences, parsed=parsed)
+    for raw_name, occurrences in all_mentions.items():
+        mention = EntityMention(raw_name=raw_name, occurrences=occurrences)
         mentions.append(mention)
 
     # Union-find for grouping
@@ -368,12 +260,10 @@ def group_people(
         if px != py:
             parent[px] = py
 
-    # Group by parsed alias/name
+    # Group by name similarity
     for i in range(len(mentions)):
         for j in range(i + 1, len(mentions)):
-            p1 = mentions[i].parsed
-            p2 = mentions[j].parsed
-            if p1 and p2 and should_group_people(p1, p2):
+            if should_group(mentions[i].raw_name, mentions[j].raw_name):
                 union(i, j)
 
     # Build groups
@@ -382,7 +272,7 @@ def group_people(
         root = find(i)
         groups_dict[root].append(mention)
 
-    # Create EntityGroup objects with pre-filled canonical
+    # Create EntityGroup objects
     groups = []
     for group_id, (_, members) in enumerate(
         sorted(groups_dict.items(), key=lambda x: -sum(m.total_count for m in x[1])),
@@ -390,66 +280,16 @@ def group_people(
     ):
         members.sort(key=lambda m: -m.total_count)
 
-        # Build canonical from the most detailed expansion
-        canonical = build_people_canonical(members)
+        # Pre-fill canonical with most common name
+        canonical_name = members[0].raw_name if members else None
 
-        groups.append(EntityGroup(id=group_id, members=members, canonical=canonical))
+        groups.append(EntityGroup(
+            id=group_id,
+            members=members,
+            canonical={"name": canonical_name, "lastname": None, "alias": None} if canonical_name else None,
+        ))
 
     return groups
-
-
-def build_people_canonical(members: List[EntityMention]) -> Optional[Dict[str, Any]]:
-    """
-    Build canonical dict from group members.
-
-    Picks the most detailed expansion available.
-    """
-    best_alias = None
-    best_name = None
-    best_lastname = None
-
-    for member in members:
-        parsed = member.parsed
-        if not parsed:
-            continue
-
-        # Prefer alias if any member has one
-        if parsed.alias and not best_alias:
-            best_alias = parsed.alias
-
-        # Prefer name from expansion (most detailed wins)
-        if parsed.name:
-            if not best_name or len(parsed.name) > len(best_name):
-                best_name = parsed.name
-
-        # Prefer lastname from expansion
-        if parsed.lastname:
-            if not best_lastname or len(parsed.lastname) > len(best_lastname):
-                best_lastname = parsed.lastname
-
-    # If we have at least a name or alias, build canonical
-    if best_name or best_alias:
-        return {
-            "name": best_name or (best_alias.title() if best_alias else None),
-            "lastname": best_lastname,
-            "alias": best_alias,
-        }
-
-    # Fallback: use the most common raw name
-    if members:
-        raw = members[0].raw_name
-        if raw.startswith("@"):
-            raw = raw[1:]
-        # Remove parenthetical
-        if "(" in raw:
-            raw = raw.split("(")[0].strip()
-        return {
-            "name": split_hyphenated_to_spaces(raw),
-            "lastname": None,
-            "alias": None,
-        }
-
-    return None
 
 
 def group_locations_by_city(
@@ -491,7 +331,7 @@ def group_locations_by_city(
 
         for i in range(len(mentions)):
             for j in range(i + 1, len(mentions)):
-                if should_group_locations(mentions[i].raw_name, mentions[j].raw_name):
+                if should_group(mentions[i].raw_name, mentions[j].raw_name):
                     union(i, j)
 
         # Build groups
@@ -529,6 +369,8 @@ def generate_people_draft(groups: List[EntityGroup]) -> Dict[str, Any]:
 # PEOPLE CURATION DRAFT
 #
 # This file was auto-generated by extract_entities.py
+# Source: Journal MD frontmatter (ground truth)
+#
 # Review each group and:
 # 1. CONFIRM if all members refer to the same person
 # 2. SPLIT if members refer to different people
@@ -570,6 +412,8 @@ def generate_locations_draft(
 # LOCATIONS CURATION DRAFT (Hierarchical by City)
 #
 # This file was auto-generated by extract_entities.py
+# Source: Journal MD frontmatter (ground truth)
+#
 # Review each city and its locations:
 # 1. CONFIRM if all members refer to the same location
 # 2. SPLIT if members refer to different locations
@@ -614,7 +458,7 @@ def generate_locations_draft(
 
 def extract_all(dry_run: bool = False) -> Tuple[int, int]:
     """
-    Extract all entities from narrative_analysis files.
+    Extract all entities from journal MD files.
 
     Args:
         dry_run: If True, don't write output files
@@ -622,23 +466,27 @@ def extract_all(dry_run: bool = False) -> Tuple[int, int]:
     Returns:
         Tuple of (people_group_count, location_group_count)
     """
-    yaml_files = sorted(NARRATIVE_ANALYSIS_DIR.glob("**/*.yaml"))
-    yaml_files = [f for f in yaml_files if not f.name.startswith("_")]
-
-    print(f"Scanning {len(yaml_files)} YAML files...")
+    md_files = sorted(MD_DIR.glob("**/*.md"))
+    print(f"Scanning {len(md_files)} MD files...")
 
     # Aggregate all data
-    all_people: Dict[str, Tuple[List[Occurrence], ParsedPerson]] = {}
+    all_people: Dict[str, List[Occurrence]] = defaultdict(list)
     all_locations: Dict[str, Dict[str, List[Occurrence]]] = defaultdict(lambda: defaultdict(list))
 
-    for yaml_path in yaml_files:
-        people, locations = extract_from_yaml(yaml_path)
+    files_with_people = 0
+    files_with_locations = 0
+
+    for md_path in md_files:
+        people, locations = extract_from_md(md_path)
+
+        if people:
+            files_with_people += 1
+        if locations:
+            files_with_locations += 1
 
         # Merge people
-        for raw_name, (occs, parsed) in people.items():
-            if raw_name not in all_people:
-                all_people[raw_name] = ([], parsed)
-            all_people[raw_name][0].extend(occs)
+        for raw_name, occs in people.items():
+            all_people[raw_name].extend(occs)
 
         # Merge locations by city
         for city, city_locs in locations.items():
@@ -646,7 +494,7 @@ def extract_all(dry_run: bool = False) -> Tuple[int, int]:
                 all_locations[city][raw_name].extend(occs)
 
     # Group entities
-    people_groups = group_people(all_people)
+    people_groups = group_entities(all_people)
     locations_by_city = group_locations_by_city(all_locations)
 
     # Generate drafts
@@ -654,7 +502,7 @@ def extract_all(dry_run: bool = False) -> Tuple[int, int]:
     locations_draft = generate_locations_draft(locations_by_city)
 
     # Statistics
-    total_people_mentions = sum(len(occs) for occs, _ in all_people.values())
+    total_people_mentions = sum(len(occs) for occs in all_people.values())
     unique_people = len(all_people)
     people_group_count = len(people_groups)
 
@@ -668,11 +516,13 @@ def extract_all(dry_run: bool = False) -> Tuple[int, int]:
     city_count = len(locations_by_city)
 
     print(f"\nPeople:")
+    print(f"  {files_with_people} files with people field")
     print(f"  {total_people_mentions} total mentions")
     print(f"  {unique_people} unique name variants")
     print(f"  {people_group_count} auto-grouped entities")
 
     print(f"\nLocations:")
+    print(f"  {files_with_locations} files with locations field")
     print(f"  {total_location_mentions} total mentions")
     print(f"  {unique_locations} unique name variants")
     print(f"  {location_group_count} auto-grouped entities")
@@ -715,7 +565,7 @@ def extract_all(dry_run: bool = False) -> Tuple[int, int]:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Extract people and locations from narrative_analysis YAMLs for curation"
+        description="Extract people and locations from journal MD frontmatter for curation"
     )
     parser.add_argument(
         "--dry-run",
