@@ -20,6 +20,8 @@ Command Groups:
     - Database Sync: sync-db, export-db
     - Wiki Sync: export-wiki, import-wiki
     - PDF Generation: build-pdf
+    - Curation: curation extract, curation validate, curation consolidate,
+                curation import, curation summary
     - Maintenance: backup-full, backup-list-full, run-all, status, validate
 
 Usage:
@@ -82,6 +84,7 @@ from .wiki import export_wiki, import_wiki  # noqa: E402
 from .pdf import build_pdf  # noqa: E402
 from .maintenance import backup_full, backup_list_full, run_all, status, validate  # noqa: E402
 from .narrative_structure import narrative  # noqa: E402
+from dev.curation.cli import curation  # noqa: E402
 
 # Register commands
 cli.add_command(inbox)
@@ -97,6 +100,7 @@ cli.add_command(run_all)
 cli.add_command(status)
 cli.add_command(validate)
 cli.add_command(narrative)
+cli.add_command(curation)
 
 
 if __name__ == "__main__":
