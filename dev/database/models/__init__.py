@@ -82,7 +82,7 @@ from .core import Entry, NarratedDate, SchemaInfo
 from .geography import City, Location
 
 # --- Entity models ---
-from .entities import Person, Tag, Theme
+from .entities import Person, PersonAlias, Tag, Theme
 
 # --- Analysis models ---
 from .analysis import Arc, Event, Scene, SceneDate, Thread
@@ -142,6 +142,7 @@ __all__ = [
     "Location",
     # Entities
     "Person",
+    "PersonAlias",
     "Tag",
     "Theme",
     # Analysis

@@ -27,7 +27,7 @@ from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import CheckConstraint, Index, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -53,48 +53,47 @@ class Person(Base, SoftDeleteMixin):
     A person mentioned in journal entries.
 
     Represents real people who appear in journal entries, scenes,
-    and threads. Supports alias-based lookup for flexible naming.
-
-    Design:
-        - Alias is nullable indexed field on Person (unique)
-        - Links to entries, scenes, and threads
+    and threads. Supports multiple aliases for flexible naming.
 
     Attributes:
         id: Primary key
-        alias: Short identifier for lookup (e.g., "majo", "dr-franck")
         name: First/given name
         lastname: Last/family name (optional)
+        disambiguator: Context tag for same-name people with unknown lastnames
         relation_type: Type of relationship (family, friend, romantic, etc.)
 
     Relationships:
+        aliases: O2M with PersonAlias (lookup names)
         entries: M2M with Entry (entries where person is mentioned)
         scenes: M2M with Scene (scenes where person appears)
         threads: M2M with Thread (threads involving person)
-        character_mappings: One-to-many with PersonCharacterMap (manuscript)
+        character_mappings: O2M with PersonCharacterMap (manuscript)
 
     Notes:
-        - Alias is unique and indexed for fast lookups
         - name is indexed for search
+        - Aliases are stored in separate table with unique constraint
     """
 
     __tablename__ = "people"
     __table_args__ = (
         CheckConstraint("name != ''", name="ck_person_non_empty_name"),
-        Index("ix_people_alias", "alias"),
         Index("ix_people_name", "name"),
     )
 
     # --- Primary fields ---
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    alias: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     lastname: Mapped[Optional[str]] = mapped_column(String(100))
+    disambiguator: Mapped[Optional[str]] = mapped_column(String(100))
     relation_type: Mapped[Optional[RelationType]] = mapped_column(
         SQLEnum(RelationType, values_callable=lambda x: [e.value for e in x]),
         nullable=True,
     )
 
     # --- Relationships ---
+    aliases: Mapped[List["PersonAlias"]] = relationship(
+        "PersonAlias", back_populates="person", cascade="all, delete-orphan"
+    )
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_people, back_populates="people"
     )
@@ -117,9 +116,14 @@ class Person(Base, SoftDeleteMixin):
         return self.name
 
     @property
+    def primary_alias(self) -> Optional[str]:
+        """Get the first alias if any exist."""
+        return self.aliases[0].alias if self.aliases else None
+
+    @property
     def lookup_key(self) -> str:
-        """Get the key used for lookups (alias or name-based slug)."""
-        return self.alias or self.name.lower().replace(" ", "-")
+        """Get the key used for lookups (primary alias or name-based slug)."""
+        return self.primary_alias or self.name.lower().replace(" ", "-")
 
     @property
     def entry_count(self) -> int:
@@ -177,15 +181,51 @@ class Person(Base, SoftDeleteMixin):
         if self.lastname:
             known_names.append(self.lastname.lower())
             known_names.append(f"{self.name} {self.lastname}".lower())
-        if self.alias:
-            known_names.append(self.alias.lower())
+        for alias_obj in self.aliases:
+            known_names.append(alias_obj.alias.lower())
         return search_name in known_names
 
     def __repr__(self) -> str:
-        return f"<Person(id={self.id}, name='{self.display_name}', alias={self.alias})>"
+        alias_str = self.primary_alias or "none"
+        return f"<Person(id={self.id}, name='{self.display_name}', alias={alias_str})>"
 
     def __str__(self) -> str:
         return self.display_name
+
+
+class PersonAlias(Base):
+    """
+    An alias for a person.
+
+    Stores alternative names/nicknames for a person, enabling lookup
+    by any known name.
+
+    Attributes:
+        id: Primary key
+        person_id: Foreign key to Person
+        alias: The alias string (unique across all people)
+
+    Relationships:
+        person: The Person this alias belongs to
+    """
+
+    __tablename__ = "person_aliases"
+    __table_args__ = (
+        Index("ix_person_aliases_alias", "alias"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    person_id: Mapped[int] = mapped_column(ForeignKey("people.id"), nullable=False)
+    alias: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+
+    # --- Relationships ---
+    person: Mapped["Person"] = relationship("Person", back_populates="aliases")
+
+    def __repr__(self) -> str:
+        return f"<PersonAlias(id={self.id}, alias='{self.alias}', person_id={self.person_id})>"
+
+    def __str__(self) -> str:
+        return self.alias
 
 
 class Tag(Base):
