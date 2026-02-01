@@ -627,6 +627,180 @@ class MetadataEntry:
 
         return result
 
+    def validate_people_consistency(
+        self, md_frontmatter: Dict[str, Any]
+    ) -> MetadataValidationResult:
+        """
+        Validate people consistency between MD frontmatter and metadata YAML.
+
+        Ensures bidirectional equality:
+        - Every person in metadata YAML has a match in MD frontmatter
+        - Every person in MD frontmatter has a match in metadata YAML
+
+        MD frontmatter can use: name only, full name (name lastname), or alias.
+        Metadata YAML has full person definitions with name/lastname/disambiguator/alias.
+
+        Args:
+            md_frontmatter: Parsed MD frontmatter dict
+
+        Returns:
+            MetadataValidationResult with any errors found
+        """
+        result = MetadataValidationResult(
+            file_path=str(self.file_path) if self.file_path else ""
+        )
+
+        md_people = md_frontmatter.get("people", [])
+        yaml_people = self.raw_data.get("people", [])
+
+        if not yaml_people and not md_people:
+            return result  # Both empty, valid
+
+        # Build sets of possible names from YAML people
+        yaml_names = set()
+        for person_data in yaml_people:
+            if isinstance(person_data, str):
+                yaml_names.add(person_data)
+            else:
+                name = person_data.get("name")
+                lastname = person_data.get("lastname")
+                alias = person_data.get("alias")
+
+                if name:
+                    yaml_names.add(name)
+                    if lastname:
+                        yaml_names.add(f"{name} {lastname}")
+                if alias:
+                    yaml_names.add(alias)
+
+        # Check 1: Every MD person must match a YAML person
+        md_people_set = set(md_people)
+        unmatched_md = md_people_set - yaml_names
+
+        if unmatched_md:
+            result.add_error(
+                f"MD frontmatter has people not in metadata YAML: {sorted(unmatched_md)}"
+            )
+
+        # Check 2: Every YAML person must match an MD person
+        for person_data in yaml_people:
+            if isinstance(person_data, str):
+                if person_data not in md_people_set:
+                    result.add_error(
+                        f"Metadata YAML has person '{person_data}' not in MD frontmatter"
+                    )
+            else:
+                name = person_data.get("name")
+                lastname = person_data.get("lastname")
+                alias = person_data.get("alias")
+
+                # Try to find match in MD frontmatter
+                matched = False
+                if name and name in md_people_set:
+                    matched = True
+                elif lastname and f"{name} {lastname}" in md_people_set:
+                    matched = True
+                elif alias and alias in md_people_set:
+                    matched = True
+
+                if not matched:
+                    # Build readable identifier for error message
+                    if alias:
+                        identifier = f"{name} (alias: {alias})"
+                    elif lastname:
+                        identifier = f"{name} {lastname}"
+                    else:
+                        identifier = name
+
+                    result.add_error(
+                        f"Metadata YAML has person '{identifier}' not in MD frontmatter"
+                    )
+
+        return result
+
+    def validate_scene_subsets(
+        self, md_frontmatter: Dict[str, Any]
+    ) -> MetadataValidationResult:
+        """
+        Validate that scene people/locations/dates are subsets of entry-level.
+
+        Scenes must reference only entities that exist in the entry's full set.
+        This ensures data consistency and prevents orphaned references.
+
+        Args:
+            md_frontmatter: Parsed MD frontmatter dict
+
+        Returns:
+            MetadataValidationResult with any errors found
+        """
+        result = MetadataValidationResult(
+            file_path=str(self.file_path) if self.file_path else ""
+        )
+
+        # Build entry-level sets from MD frontmatter
+        entry_people = set(md_frontmatter.get("people", []))
+
+        entry_locations = set()
+        locations_data = md_frontmatter.get("locations", {})
+        if isinstance(locations_data, dict):
+            for loc_list in locations_data.values():
+                if isinstance(loc_list, list):
+                    entry_locations.update(loc_list)
+
+        entry_dates = set()
+        narrated_dates = md_frontmatter.get("narrated_dates", [])
+        for date_val in narrated_dates:
+            if isinstance(date_val, date):
+                entry_dates.add(date_val)
+            elif isinstance(date_val, str):
+                try:
+                    entry_dates.add(date.fromisoformat(date_val))
+                except ValueError:
+                    pass
+
+        # Validate each scene
+        for scene_data in self.scenes:
+            scene_name = scene_data.get("name", "Unnamed Scene")
+
+            # Validate scene people
+            for person_name in scene_data.get("people", []):
+                if person_name not in entry_people:
+                    result.add_error(
+                        f"Scene '{scene_name}' references person '{person_name}' "
+                        f"not in entry people list"
+                    )
+
+            # Validate scene locations
+            for loc_name in scene_data.get("locations", []):
+                if loc_name not in entry_locations:
+                    result.add_error(
+                        f"Scene '{scene_name}' references location '{loc_name}' "
+                        f"not in entry locations list"
+                    )
+
+            # Validate scene dates
+            scene_dates = scene_data.get("date")
+            if scene_dates:
+                if not isinstance(scene_dates, list):
+                    scene_dates = [scene_dates]
+
+                for scene_date in scene_dates:
+                    # Convert to date object if string
+                    if isinstance(scene_date, str):
+                        try:
+                            scene_date = date.fromisoformat(scene_date)
+                        except ValueError:
+                            # Skip validation for approximate dates (~2021, etc.)
+                            continue
+
+                    if isinstance(scene_date, date) and scene_date not in entry_dates:
+                        result.add_error(
+                            f"Scene '{scene_name}' references date {scene_date} "
+                            f"not in entry narrated_dates"
+                        )
+
+        return result
+
     def get_all_people(self) -> List[str]:
         """
         Get all unique person references from scenes and threads.

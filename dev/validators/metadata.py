@@ -98,17 +98,20 @@ class DirectoryValidationResult:
 def validate_metadata_file(
     file_path: Path,
     resolver: Optional[Any] = None,  # EntityResolver, avoid circular import
+    md_frontmatter: Optional[Dict[str, Any]] = None,  # For consistency checks
     logger: Optional[PalimpsestLogger] = None,
 ) -> MetadataValidationResult:
     """
     Validate a single metadata YAML file.
 
     Performs structural validation and optionally entity validation if a
-    resolver is provided.
+    resolver is provided. Also validates consistency with MD frontmatter
+    if provided.
 
     Args:
         file_path: Path to metadata YAML file
         resolver: Optional EntityResolver for entity validation
+        md_frontmatter: Optional MD frontmatter dict for consistency checks
         logger: Optional logger for operation tracking
 
     Returns:
@@ -139,6 +142,18 @@ def validate_metadata_file(
         entity_result = entry.validate_entities(resolver)
         # Don't duplicate structural errors
         result.warnings.extend(entity_result.warnings)
+
+    # Consistency validation (if MD frontmatter provided)
+    if md_frontmatter is not None:
+        # Validate people consistency between MD and YAML
+        people_result = entry.validate_people_consistency(md_frontmatter)
+        result.errors.extend(people_result.errors)
+        result.warnings.extend(people_result.warnings)
+
+        # Validate scene subsets
+        scene_result = entry.validate_scene_subsets(md_frontmatter)
+        result.errors.extend(scene_result.errors)
+        result.warnings.extend(scene_result.warnings)
 
     if result.has_errors:
         log.log_warning(
@@ -198,7 +213,7 @@ def validate_metadata_directory(
     # Validate each file
     for yaml_file in yaml_files:
         result.files_processed += 1
-        file_result = validate_metadata_file(yaml_file, resolver, logger)
+        file_result = validate_metadata_file(yaml_file, resolver=resolver, logger=logger)
         result.results[str(yaml_file)] = file_result
 
         if file_result.has_errors:

@@ -284,6 +284,10 @@ class MetadataImporter:
         # Link entry-level people from metadata YAML (ground truth for person definitions)
         # Link entry-level locations from MD frontmatter (full sets)
         self._link_entry_people(entry, data, md_frontmatter)
+
+        # Validate people consistency between MD frontmatter and YAML
+        self._validate_people_consistency(entry, data, md_frontmatter)
+
         self._link_entry_locations(entry, md_frontmatter)
 
         # Create NarratedDates from MD frontmatter
@@ -545,6 +549,96 @@ class MetadataImporter:
 
             if person and person not in entry.people:
                 entry.people.append(person)
+
+    def _validate_people_consistency(
+        self,
+        entry: Entry,
+        metadata: Dict[str, Any],
+        md_frontmatter: Dict[str, Any]
+    ) -> None:
+        """
+        Validate people consistency between MD frontmatter and metadata YAML.
+
+        Ensures bidirectional equality:
+        - Every person in metadata YAML has a match in MD frontmatter
+        - Every person in MD frontmatter has a match in metadata YAML
+
+        MD frontmatter can use: name only, full name (name lastname), or alias.
+        Metadata YAML has full person definitions with name/lastname/disambiguator/alias.
+
+        Args:
+            entry: Entry entity with linked people from metadata YAML
+            metadata: Parsed metadata YAML dict
+            md_frontmatter: Parsed MD frontmatter dict
+
+        Raises:
+            ValueError: If people lists don't match bidirectionally
+        """
+        yaml_people = metadata.get("people", [])
+        md_people = md_frontmatter.get("people", [])
+
+        if not yaml_people and not md_people:
+            return  # Both empty, valid
+
+        # Build sets of possible names from YAML people
+        yaml_names = set()
+        for person_data in yaml_people:
+            if isinstance(person_data, str):
+                yaml_names.add(person_data)
+            else:
+                name = person_data.get("name")
+                lastname = person_data.get("lastname")
+                alias = person_data.get("alias")
+
+                if name:
+                    yaml_names.add(name)
+                    if lastname:
+                        # Full name format
+                        yaml_names.add(f"{name} {lastname}")
+                if alias:
+                    yaml_names.add(alias)
+
+        # Check 1: Every MD person must match a YAML person
+        md_people_set = set(md_people)
+        unmatched_md = md_people_set - yaml_names
+
+        if unmatched_md:
+            raise ValueError(
+                f"MD frontmatter has people not in metadata YAML: {sorted(unmatched_md)}"
+            )
+
+        # Check 2: Every YAML person must match an MD person
+        # Build list of YAML person identifiers (name or alias)
+        yaml_person_ids = []
+        for person_data in yaml_people:
+            if isinstance(person_data, str):
+                yaml_person_ids.append(person_data)
+            else:
+                name = person_data.get("name")
+                lastname = person_data.get("lastname")
+                alias = person_data.get("alias")
+
+                # Try to find match in MD frontmatter
+                matched = False
+                if name and name in md_people_set:
+                    matched = True
+                elif lastname and f"{name} {lastname}" in md_people_set:
+                    matched = True
+                elif alias and alias in md_people_set:
+                    matched = True
+
+                if not matched:
+                    # Build a readable identifier for error message
+                    if alias:
+                        identifier = f"{name} (alias: {alias})"
+                    elif lastname:
+                        identifier = f"{name} {lastname}"
+                    else:
+                        identifier = name
+
+                    raise ValueError(
+                        f"Metadata YAML has person '{identifier}' not in MD frontmatter people list"
+                    )
 
     def _link_entry_locations(
         self, entry: Entry, md_frontmatter: Dict[str, Any]
