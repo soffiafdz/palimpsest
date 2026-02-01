@@ -39,8 +39,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# --- Third-party imports ---
+import yaml as pyyaml
+
 # --- Local imports ---
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from dev.core.paths import MD_DIR
 from dev.dataclasses.metadata_entry import MetadataEntry, MetadataValidationResult
 
 
@@ -95,10 +99,50 @@ class DirectoryValidationResult:
 # =============================================================================
 
 
+def _load_md_frontmatter(yaml_file: Path) -> Optional[Dict[str, Any]]:
+    """
+    Load MD frontmatter for a metadata YAML file.
+
+    Finds the corresponding MD file and extracts its frontmatter.
+
+    Args:
+        yaml_file: Path to metadata YAML file (e.g., metadata/journal/2024/2024-12-03.yaml)
+
+    Returns:
+        Parsed frontmatter dict or None if MD file not found
+    """
+    # Extract date from YAML filename (YYYY-MM-DD.yaml)
+    filename = yaml_file.stem  # Remove .yaml extension
+    year = yaml_file.parent.name  # Year directory
+
+    # Build MD file path (data/journal/content/md/YYYY/YYYY-MM-DD.md)
+    md_file = MD_DIR / year / f"{filename}.md"
+
+    if not md_file.exists():
+        return None
+
+    # Read and extract frontmatter
+    content = md_file.read_text(encoding="utf-8")
+    if not content.startswith("---"):
+        return None
+
+    # Find end of frontmatter
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return None
+
+    frontmatter_text = content[3:end_idx].strip()
+    try:
+        return pyyaml.safe_load(frontmatter_text)
+    except Exception:
+        return None
+
+
 def validate_metadata_file(
     file_path: Path,
     resolver: Optional[Any] = None,  # EntityResolver, avoid circular import
     md_frontmatter: Optional[Dict[str, Any]] = None,  # For consistency checks
+    check_consistency: bool = False,  # Load MD frontmatter automatically
     logger: Optional[PalimpsestLogger] = None,
 ) -> MetadataValidationResult:
     """
@@ -106,12 +150,13 @@ def validate_metadata_file(
 
     Performs structural validation and optionally entity validation if a
     resolver is provided. Also validates consistency with MD frontmatter
-    if provided.
+    if provided or requested.
 
     Args:
         file_path: Path to metadata YAML file
         resolver: Optional EntityResolver for entity validation
         md_frontmatter: Optional MD frontmatter dict for consistency checks
+        check_consistency: Auto-load MD frontmatter and check consistency
         logger: Optional logger for operation tracking
 
     Returns:
@@ -143,7 +188,13 @@ def validate_metadata_file(
         # Don't duplicate structural errors
         result.warnings.extend(entity_result.warnings)
 
-    # Consistency validation (if MD frontmatter provided)
+    # Load MD frontmatter if consistency check requested
+    if check_consistency and md_frontmatter is None:
+        md_frontmatter = _load_md_frontmatter(file_path)
+        if md_frontmatter is None:
+            result.add_warning("MD frontmatter not found for consistency check")
+
+    # Consistency validation (if MD frontmatter available)
     if md_frontmatter is not None:
         # Validate people consistency between MD and YAML
         people_result = entry.validate_people_consistency(md_frontmatter)
@@ -175,6 +226,7 @@ def validate_metadata_directory(
     directory: Path,
     resolver: Optional[Any] = None,  # EntityResolver
     pattern: str = "*.yaml",
+    check_consistency: bool = False,  # Check MD frontmatter consistency
     logger: Optional[PalimpsestLogger] = None,
 ) -> DirectoryValidationResult:
     """
@@ -186,6 +238,7 @@ def validate_metadata_directory(
         directory: Path to directory containing metadata YAML files
         resolver: Optional EntityResolver for entity validation
         pattern: Glob pattern for matching files (default: "*.yaml")
+        check_consistency: Auto-load MD frontmatter and check consistency
         logger: Optional logger for operation tracking
 
     Returns:
@@ -213,7 +266,12 @@ def validate_metadata_directory(
     # Validate each file
     for yaml_file in yaml_files:
         result.files_processed += 1
-        file_result = validate_metadata_file(yaml_file, resolver=resolver, logger=logger)
+        file_result = validate_metadata_file(
+            yaml_file,
+            resolver=resolver,
+            check_consistency=check_consistency,
+            logger=logger
+        )
         result.results[str(yaml_file)] = file_result
 
         if file_result.has_errors:
