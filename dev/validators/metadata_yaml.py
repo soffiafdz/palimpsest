@@ -605,7 +605,9 @@ def normalize_for_matching(text: str) -> str:
     Handles:
     - Case: lowercase
     - Accents/diacritics: María → maria, Raphaël → raphael, brûlée → brulee
-    - Whitespace: strip and normalize
+    - Hyphens: Marc-Antoine → marc antoine (matches "Marc Antoine")
+    - Apostrophes: O'Brien → obrien (matches "OBrien")
+    - Whitespace: strip and normalize multiple spaces
 
     Args:
         text: Text to normalize
@@ -624,6 +626,15 @@ def normalize_for_matching(text: str) -> str:
     normalized = unicodedata.normalize("NFD", text)
     # Keep only non-combining characters (category starting with M = Mark)
     without_accents = "".join(c for c in normalized if unicodedata.category(c)[0] != "M")
+
+    # Replace hyphens with spaces (Marc-Antoine → marc antoine)
+    without_accents = without_accents.replace("-", " ")
+
+    # Remove apostrophes (O'Brien → obrien)
+    without_accents = without_accents.replace("'", "").replace("'", "")
+
+    # Normalize multiple spaces to single space
+    without_accents = " ".join(without_accents.split())
 
     return without_accents
 
