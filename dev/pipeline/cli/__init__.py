@@ -79,18 +79,21 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
 # These imports must come after CLI group definition
 from .sources import inbox  # noqa: E402
 from .text import convert  # noqa: E402
-from .database import sync_db, export_db  # noqa: E402
+from .database import sync_db, export_db, import_metadata, prune_orphans  # noqa: E402
+from .export import export_json  # noqa: E402
 from .wiki import export_wiki, import_wiki  # noqa: E402
 from .pdf import build_pdf  # noqa: E402
 from .maintenance import backup_full, backup_list_full, run_all, status, validate  # noqa: E402
 from .narrative_structure import narrative  # noqa: E402
-from dev.curation.cli import curation  # noqa: E402
 
 # Register commands
 cli.add_command(inbox)
 cli.add_command(convert)
 cli.add_command(sync_db)
 cli.add_command(export_db)
+cli.add_command(import_metadata)
+cli.add_command(export_json)
+cli.add_command(prune_orphans)
 cli.add_command(export_wiki)
 cli.add_command(import_wiki)
 cli.add_command(build_pdf)
@@ -100,7 +103,6 @@ cli.add_command(run_all)
 cli.add_command(status)
 cli.add_command(validate)
 cli.add_command(narrative)
-cli.add_command(curation)
 
 
 if __name__ == "__main__":
