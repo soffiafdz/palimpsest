@@ -597,8 +597,52 @@ def get_md_path_for_yaml(yaml_path: Path) -> Path:
     return MD_DIR / year / f"{date_str}.md"
 
 
+def get_all_person_keys(name: Any) -> Set[str]:
+    """
+    Get all possible lookup keys for a person.
+
+    Generates multiple keys so we can match by any form:
+    - Raw string (as-is)
+    - First name only
+    - Full name (name + lastname)
+    - Alias
+
+    Args:
+        name: Person name (string or dict)
+
+    Returns:
+        Set of all possible normalized lookup keys
+    """
+    keys: Set[str] = set()
+
+    if isinstance(name, dict):
+        # Dict format: {name: "Maria", lastname: "Lopez", alias: "Majo"}
+        first_name = name.get("name", "")
+        lastname = name.get("lastname", "")
+        alias = name.get("alias", "")
+
+        if first_name:
+            keys.add(str(first_name).lower().strip())
+            if lastname:
+                keys.add(f"{first_name} {lastname}".lower().strip())
+        if alias:
+            keys.add(str(alias).lower().strip())
+    else:
+        # Simple string - could be first name, full name, or alias
+        # Just add the normalized string
+        normalized = str(name).lower().strip()
+        if normalized:
+            keys.add(normalized)
+
+    return keys
+
+
 def normalize_person_name(name: Any) -> str:
-    """Normalize a person name for comparison."""
+    """
+    Normalize a person name for comparison.
+
+    Deprecated: Use get_all_person_keys() for flexible matching.
+    """
     if isinstance(name, dict):
         # Handle dict format: {name: "John", lastname: "Doe"}
         parts = []
@@ -615,9 +659,33 @@ def normalize_location_name(name: Any) -> str:
     return str(name).lower().strip()
 
 
+def extract_frontmatter_people_keys(frontmatter: Dict[str, Any]) -> Set[str]:
+    """
+    Extract all possible lookup keys for people from MD frontmatter.
+
+    For each person, generates multiple keys (first name, full name, alias)
+    so we can match scene people against any form.
+
+    Args:
+        frontmatter: Parsed frontmatter dict
+
+    Returns:
+        Set of all possible normalized person lookup keys
+    """
+    people = frontmatter.get("people", []) or []
+    all_keys: Set[str] = set()
+
+    for person in people:
+        all_keys.update(get_all_person_keys(person))
+
+    return all_keys
+
+
 def extract_frontmatter_people(frontmatter: Dict[str, Any]) -> Set[str]:
     """
     Extract normalized people names from MD frontmatter.
+
+    Deprecated: Use extract_frontmatter_people_keys() for flexible matching.
 
     Args:
         frontmatter: Parsed frontmatter dict
@@ -670,6 +738,24 @@ def extract_scene_locations(scene: Dict[str, Any]) -> Set[str]:
     return {normalize_location_name(loc) for loc in locations}
 
 
+def person_matches_frontmatter(person: Any, frontmatter_keys: Set[str]) -> bool:
+    """
+    Check if a scene person matches any entry-level person key.
+
+    Matches if ANY form of the scene person (name, full name, alias)
+    matches ANY form of an entry-level person.
+
+    Args:
+        person: Scene person (string or dict)
+        frontmatter_keys: Set of all entry-level person lookup keys
+
+    Returns:
+        True if person matches any frontmatter key
+    """
+    person_keys = get_all_person_keys(person)
+    return bool(person_keys & frontmatter_keys)
+
+
 def validate_entity_subsets(
     yaml_path: Path,
     data: Dict[str, Any],
@@ -677,6 +763,10 @@ def validate_entity_subsets(
 ) -> None:
     """
     Validate that scene people are subsets of MD frontmatter.
+
+    Uses flexible matching: scene person matches if ANY form (name, full name,
+    alias) matches ANY form of an entry-level person. This allows metadata YAML
+    to use partial entries (e.g., first name only) as long as they're unambiguous.
 
     Note: Location subset checking is done as warnings only since
     MD frontmatter often lacks location data.
@@ -700,13 +790,14 @@ def validate_entity_subsets(
     # Parse MD frontmatter
     frontmatter = parse_md_frontmatter(md_path)
 
-    # Get entry-level entities from frontmatter
-    entry_people = extract_frontmatter_people(frontmatter)
-    entry_locations = extract_frontmatter_locations(frontmatter)
-
     # Skip if frontmatter has no people field
     if not frontmatter.get("people"):
         return  # Can't validate subset if no frontmatter data
+
+    # Get entry-level entities from frontmatter
+    # Use the new flexible matching: get ALL possible keys for each person
+    entry_people_keys = extract_frontmatter_people_keys(frontmatter)
+    entry_locations = extract_frontmatter_locations(frontmatter)
 
     # Check each scene
     scenes = data.get("scenes", []) or []
@@ -714,15 +805,25 @@ def validate_entity_subsets(
         if not isinstance(scene, dict):
             continue
 
-        # Check people subset (ERROR - must be fixed)
-        scene_people = extract_scene_people(scene)
-        extra_people = scene_people - entry_people
-        if extra_people:
+        # Check people subset using flexible matching (ERROR - must be fixed)
+        scene_people_list = scene.get("people", []) or []
+        unmatched_people: List[str] = []
+
+        for person in scene_people_list:
+            if not person_matches_frontmatter(person, entry_people_keys):
+                # Report the display form for the error message
+                if isinstance(person, dict):
+                    display = person.get("alias") or f"{person.get('name', '')} {person.get('lastname', '')}".strip()
+                else:
+                    display = str(person)
+                unmatched_people.append(display)
+
+        if unmatched_people:
             report.add_error(
                 category="entity_subset",
                 field=f"scenes[{i}].people",
                 message="Scene contains people not in MD frontmatter",
-                value=", ".join(sorted(extra_people)),
+                value=", ".join(sorted(unmatched_people)),
                 suggestion="Add missing people to MD frontmatter or check spelling/alias",
             )
 
