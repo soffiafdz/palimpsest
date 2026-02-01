@@ -13,12 +13,16 @@ Validation Categories:
     2. Event Names: No parentheses, no date suffixes, globally unique
     3. Structure: Required fields, valid references
     4. Dates: Valid formats for scenes and threads
+    5. Entity Subset: Scene people/locations must be subset of MD frontmatter
+    6. Entity Existence: People must exist in DB or be marked new:true
+    7. Disambiguation: Ambiguous names must specify which person
 
 Key Features:
     - Strict mode: Fail on any violation
     - Report mode: Collect all violations for review
     - Pre-import validation gate
     - Cross-file event uniqueness checking
+    - Database entity verification
 
 Usage:
     from dev.validators.metadata_yaml import (
@@ -32,8 +36,8 @@ Usage:
     if not report.is_valid:
         print(report.format())
 
-    # Validate all files
-    reports = validate_all(year="2024")
+    # Validate all files with DB checks
+    reports = validate_all(year="2024", check_db=True)
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -50,7 +54,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import yaml
 
 # --- Local imports ---
-from dev.core.paths import JOURNAL_YAML_DIR
+from dev.core.paths import JOURNAL_YAML_DIR, MD_DIR
 
 
 # =============================================================================
@@ -544,17 +548,383 @@ def validate_thread_dates(
 
 
 # =============================================================================
+# Entity Validation (People/Locations)
+# =============================================================================
+
+
+def parse_md_frontmatter(md_path: Path) -> Dict[str, Any]:
+    """
+    Parse YAML frontmatter from an MD file.
+
+    Args:
+        md_path: Path to the MD file
+
+    Returns:
+        Dictionary of frontmatter fields
+    """
+    if not md_path.exists():
+        return {}
+
+    content = md_path.read_text(encoding="utf-8")
+
+    if not content.startswith("---"):
+        return {}
+
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return {}
+
+    try:
+        return yaml.safe_load(parts[1]) or {}
+    except yaml.YAMLError:
+        return {}
+
+
+def get_md_path_for_yaml(yaml_path: Path) -> Path:
+    """
+    Get the corresponding MD file path for a metadata YAML file.
+
+    Args:
+        yaml_path: Path to metadata YAML
+
+    Returns:
+        Path to corresponding MD file
+    """
+    # YAML: data/metadata/journal/YYYY/YYYY-MM-DD.yaml
+    # MD: data/journal/content/md/YYYY/YYYY-MM-DD.md
+    date_str = yaml_path.stem
+    year = yaml_path.parent.name
+    return MD_DIR / year / f"{date_str}.md"
+
+
+def normalize_person_name(name: Any) -> str:
+    """Normalize a person name for comparison."""
+    if isinstance(name, dict):
+        # Handle dict format: {name: "John", lastname: "Doe"}
+        parts = []
+        if name.get("name"):
+            parts.append(str(name["name"]))
+        if name.get("lastname"):
+            parts.append(str(name["lastname"]))
+        return " ".join(parts).lower().strip()
+    return str(name).lower().strip()
+
+
+def normalize_location_name(name: Any) -> str:
+    """Normalize a location name for comparison."""
+    return str(name).lower().strip()
+
+
+def extract_frontmatter_people(frontmatter: Dict[str, Any]) -> Set[str]:
+    """
+    Extract normalized people names from MD frontmatter.
+
+    Args:
+        frontmatter: Parsed frontmatter dict
+
+    Returns:
+        Set of normalized person names
+    """
+    people = frontmatter.get("people", []) or []
+    return {normalize_person_name(p) for p in people}
+
+
+def extract_frontmatter_locations(frontmatter: Dict[str, Any]) -> Set[str]:
+    """
+    Extract normalized location names from MD frontmatter.
+
+    Handles nested format: {City: [loc1, loc2]}
+
+    Args:
+        frontmatter: Parsed frontmatter dict
+
+    Returns:
+        Set of normalized location names
+    """
+    locations_data = frontmatter.get("locations", {})
+    locations: Set[str] = set()
+
+    if isinstance(locations_data, dict):
+        # Nested format: {City: [loc1, loc2]}
+        for city, locs in locations_data.items():
+            if isinstance(locs, list):
+                for loc in locs:
+                    locations.add(normalize_location_name(loc))
+    elif isinstance(locations_data, list):
+        # Flat format: [loc1, loc2]
+        for loc in locations_data:
+            locations.add(normalize_location_name(loc))
+
+    return locations
+
+
+def extract_scene_people(scene: Dict[str, Any]) -> Set[str]:
+    """Extract normalized people names from a scene."""
+    people = scene.get("people", []) or []
+    return {normalize_person_name(p) for p in people}
+
+
+def extract_scene_locations(scene: Dict[str, Any]) -> Set[str]:
+    """Extract normalized location names from a scene."""
+    locations = scene.get("locations", []) or []
+    return {normalize_location_name(loc) for loc in locations}
+
+
+def validate_entity_subsets(
+    yaml_path: Path,
+    data: Dict[str, Any],
+    report: ValidationReport,
+) -> None:
+    """
+    Validate that scene people are subsets of MD frontmatter.
+
+    Note: Location subset checking is done as warnings only since
+    MD frontmatter often lacks location data.
+
+    Args:
+        yaml_path: Path to the YAML file
+        data: Parsed YAML data
+        report: Report to add errors to
+    """
+    # Get corresponding MD file
+    md_path = get_md_path_for_yaml(yaml_path)
+    if not md_path.exists():
+        report.add_warning(
+            category="entity",
+            field="file",
+            message="No corresponding MD file found",
+            value=str(md_path),
+        )
+        return
+
+    # Parse MD frontmatter
+    frontmatter = parse_md_frontmatter(md_path)
+
+    # Get entry-level entities from frontmatter
+    entry_people = extract_frontmatter_people(frontmatter)
+    entry_locations = extract_frontmatter_locations(frontmatter)
+
+    # Skip if frontmatter has no people field
+    if not frontmatter.get("people"):
+        return  # Can't validate subset if no frontmatter data
+
+    # Check each scene
+    scenes = data.get("scenes", []) or []
+    for i, scene in enumerate(scenes):
+        if not isinstance(scene, dict):
+            continue
+
+        # Check people subset (ERROR - must be fixed)
+        scene_people = extract_scene_people(scene)
+        extra_people = scene_people - entry_people
+        if extra_people:
+            report.add_error(
+                category="entity_subset",
+                field=f"scenes[{i}].people",
+                message="Scene contains people not in MD frontmatter",
+                value=", ".join(sorted(extra_people)),
+                suggestion="Add missing people to MD frontmatter or check spelling/alias",
+            )
+
+        # Check locations subset (WARNING - MD frontmatter often lacks locations)
+        if entry_locations:  # Only check if frontmatter has locations
+            scene_locations = extract_scene_locations(scene)
+            extra_locations = scene_locations - entry_locations
+            if extra_locations:
+                report.add_warning(
+                    category="entity_subset",
+                    field=f"scenes[{i}].locations",
+                    message="Scene contains locations not in MD frontmatter",
+                    value=", ".join(sorted(extra_locations)),
+                    suggestion="Add missing locations to MD frontmatter or remove from scene",
+                )
+
+
+class PersonLookup:
+    """
+    Database lookup for person validation.
+
+    Caches person data to avoid repeated queries.
+    """
+
+    def __init__(self, session: Any = None):
+        """
+        Initialize with optional database session.
+
+        Args:
+            session: SQLAlchemy session (if None, DB checks are skipped)
+        """
+        self.session = session
+        self._cache: Dict[str, List[Dict[str, Any]]] = {}
+        self._loaded = False
+
+    def _load_people(self) -> None:
+        """Load all people from database into cache."""
+        if self._loaded or self.session is None:
+            return
+
+        from dev.database.models import Person
+
+        people = self.session.query(Person).all()
+
+        for person in people:
+            # Index by various name forms
+            keys = []
+
+            # Full name
+            if person.name:
+                keys.append(person.name.lower())
+                if person.lastname:
+                    keys.append(f"{person.name} {person.lastname}".lower())
+
+            # Alias
+            if person.alias:
+                keys.append(person.alias.lower())
+
+            person_data = {
+                "id": person.id,
+                "name": person.name,
+                "lastname": person.lastname,
+                "alias": person.alias,
+            }
+
+            for key in keys:
+                if key not in self._cache:
+                    self._cache[key] = []
+                self._cache[key].append(person_data)
+
+        self._loaded = True
+
+    def lookup(self, name: str) -> List[Dict[str, Any]]:
+        """
+        Look up a person by name.
+
+        Args:
+            name: Person name to look up
+
+        Returns:
+            List of matching person records (may be empty or have multiple)
+        """
+        if self.session is None:
+            return []
+
+        self._load_people()
+        return self._cache.get(name.lower().strip(), [])
+
+    def exists(self, name: str) -> bool:
+        """Check if a person exists in the database."""
+        return len(self.lookup(name)) > 0
+
+    def is_ambiguous(self, name: str) -> bool:
+        """Check if a person name matches multiple people."""
+        return len(self.lookup(name)) > 1
+
+    def get_disambiguation_options(self, name: str) -> List[str]:
+        """Get disambiguation options for an ambiguous name."""
+        matches = self.lookup(name)
+        options = []
+        for m in matches:
+            if m.get("lastname"):
+                options.append(f"{m['name']} {m['lastname']}")
+            elif m.get("alias"):
+                options.append(f"{m['name']} (alias: {m['alias']})")
+            else:
+                options.append(m["name"])
+        return options
+
+
+def validate_people_exist(
+    data: Dict[str, Any],
+    report: ValidationReport,
+    person_lookup: Optional[PersonLookup] = None,
+) -> None:
+    """
+    Validate that all people exist in the database or are marked as new.
+
+    People can be marked as new with: {name: "New Person", new: true}
+
+    Args:
+        data: Parsed YAML data
+        report: Report to add errors to
+        person_lookup: PersonLookup instance for DB checks
+    """
+    if person_lookup is None or person_lookup.session is None:
+        return  # Skip DB checks if no session
+
+    # Collect all person references from scenes
+    scenes = data.get("scenes", []) or []
+    all_people: Set[str] = set()
+    new_people: Set[str] = set()
+
+    for scene in scenes:
+        if not isinstance(scene, dict):
+            continue
+
+        for person in scene.get("people", []) or []:
+            if isinstance(person, dict):
+                name = person.get("name", "")
+                if person.get("new"):
+                    new_people.add(normalize_person_name(person))
+                else:
+                    all_people.add(normalize_person_name(person))
+            else:
+                all_people.add(normalize_person_name(person))
+
+    # Also check threads
+    threads = data.get("threads", []) or []
+    for thread in threads:
+        if not isinstance(thread, dict):
+            continue
+        for person in thread.get("people", []) or []:
+            if isinstance(person, dict):
+                if not person.get("new"):
+                    all_people.add(normalize_person_name(person))
+            else:
+                all_people.add(normalize_person_name(person))
+
+    # Check each person
+    for person_name in all_people:
+        if not person_name:
+            continue
+
+        if not person_lookup.exists(person_name):
+            report.add_error(
+                category="entity_existence",
+                field="people",
+                message="Person not found in database",
+                value=person_name,
+                suggestion="Add person to DB first, or mark as {name: \"...\", new: true}",
+            )
+        elif person_lookup.is_ambiguous(person_name):
+            options = person_lookup.get_disambiguation_options(person_name)
+            report.add_error(
+                category="entity_ambiguous",
+                field="people",
+                message=f"Ambiguous person name matches {len(options)} people",
+                value=person_name,
+                suggestion=f"Specify: {' | '.join(options)}",
+            )
+
+
+# =============================================================================
 # File Validation
 # =============================================================================
 
 
-def validate_file(path: Path, strict: bool = True) -> ValidationReport:
+def validate_file(
+    path: Path,
+    strict: bool = True,
+    check_entity_subsets: bool = True,
+    person_lookup: Optional[PersonLookup] = None,
+) -> ValidationReport:
     """
     Validate a single metadata YAML file.
 
     Args:
         path: Path to the YAML file
         strict: If True, colons in scene names are errors; if False, warnings
+        check_entity_subsets: If True, verify scene entities are subset of frontmatter
+        person_lookup: Optional PersonLookup for DB existence checks
 
     Returns:
         ValidationReport with all issues found
@@ -643,6 +1013,14 @@ def validate_file(path: Path, strict: bool = True) -> ValidationReport:
 
         validate_thread_dates(thread, i, report)
 
+    # Entity subset validation (scene people/locations ⊆ frontmatter)
+    if check_entity_subsets:
+        validate_entity_subsets(path, data, report)
+
+    # People existence check (requires DB session)
+    if person_lookup is not None:
+        validate_people_exist(data, report, person_lookup)
+
     return report
 
 
@@ -707,6 +1085,8 @@ def validate_all(
     year: Optional[str] = None,
     strict: bool = True,
     check_event_uniqueness_flag: bool = True,
+    check_entity_subsets: bool = True,
+    check_db: bool = False,
 ) -> Tuple[List[ValidationReport], List[Tuple[str, List[Tuple[str, str]]]]]:
     """
     Validate all metadata YAML files.
@@ -715,13 +1095,14 @@ def validate_all(
         year: Specific year to validate, or None for all
         strict: If True, use strict validation rules
         check_event_uniqueness_flag: If True, check for duplicate event names
+        check_entity_subsets: If True, verify scene entities ⊆ frontmatter
+        check_db: If True, verify people exist in database
 
     Returns:
         Tuple of (file reports, event duplicates)
     """
     # Find files
     if year:
-        pattern = JOURNAL_YAML_DIR / year / "*.yaml"
         files = sorted(JOURNAL_YAML_DIR.glob(f"{year}/*.yaml"))
     else:
         files = sorted(JOURNAL_YAML_DIR.glob("**/*.yaml"))
@@ -729,10 +1110,30 @@ def validate_all(
     # Filter out non-entry files
     files = [f for f in files if not f.name.startswith("_")]
 
+    # Set up person lookup if checking DB
+    person_lookup: Optional[PersonLookup] = None
+    if check_db:
+        try:
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import sessionmaker
+            from dev.core.paths import DB_PATH
+
+            engine = create_engine(f"sqlite:///{DB_PATH}")
+            Session = sessionmaker(bind=engine)
+            session = Session()
+            person_lookup = PersonLookup(session)
+        except Exception:
+            pass  # DB not available, skip DB checks
+
     # Validate each file
     reports = []
     for path in files:
-        report = validate_file(path, strict=strict)
+        report = validate_file(
+            path,
+            strict=strict,
+            check_entity_subsets=check_entity_subsets,
+            person_lookup=person_lookup,
+        )
         reports.append(report)
 
     # Check event uniqueness
@@ -745,19 +1146,37 @@ def validate_all(
 
 def validate_for_import(
     year: Optional[str] = None,
+    check_db: bool = False,
+    check_entity_subsets: bool = False,
 ) -> Tuple[bool, str]:
     """
     Validate files for database import.
 
     This is the pre-import gate. Returns pass/fail and a summary.
 
+    Core Checks (always run):
+        - Scene/event naming conventions (no screenwriting format, no date suffixes)
+        - Required fields and structure
+        - Valid date formats
+
+    Optional Checks:
+        - Scene people/locations are subset of MD frontmatter (check_entity_subsets)
+        - People exist in database and are unambiguous (check_db)
+
     Args:
         year: Specific year to validate, or None for all
+        check_db: If True, verify people exist in database
+        check_entity_subsets: If True, verify scene entities ⊆ frontmatter
 
     Returns:
         Tuple of (passed, summary_message)
     """
-    reports, event_duplicates = validate_all(year=year, strict=True)
+    reports, event_duplicates = validate_all(
+        year=year,
+        strict=True,
+        check_entity_subsets=check_entity_subsets,
+        check_db=check_db,
+    )
 
     total_errors = sum(r.error_count for r in reports)
     total_warnings = sum(r.warning_count for r in reports)
