@@ -105,7 +105,8 @@ class Entry(Base, SoftDeleteMixin):
         id: Primary key
         date: Date of the journal entry (unique)
         file_path: Path to the Markdown file (unique)
-        file_hash: Hash of file content for change detection
+        file_hash: Hash of MD file content for change detection
+        metadata_hash: Hash of metadata YAML file for change detection
         word_count: Number of words in the entry
         reading_time: Estimated reading time in minutes
         summary: Narrative summary (from analysis)
@@ -145,6 +146,7 @@ class Entry(Base, SoftDeleteMixin):
     date: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
     file_path: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     file_hash: Mapped[Optional[str]] = mapped_column(String(64))
+    metadata_hash: Mapped[Optional[str]] = mapped_column(String(64))
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     reading_time: Mapped[float] = mapped_column(Float, default=0.0)
 

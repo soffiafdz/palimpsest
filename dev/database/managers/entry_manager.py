@@ -45,7 +45,6 @@ from dev.database.models import (
     Thread,
 )
 from dev.database.decorators import DatabaseOperation
-# TODO: TombstoneManager needs rebuild for new model structure
 # from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
 # TODO: EntryRelationshipHelper needs rebuild for new model structure
@@ -77,7 +76,6 @@ class EntryManager(BaseManager):
             logger: Optional logger for operation tracking
         """
         super().__init__(session, logger)
-        # TODO: Re-enable when tombstone system is rebuilt
         # self.tombstones = TombstoneManager(session, logger)
         # self.helpers = EntryRelationshipHelper(session, logger)
 
@@ -661,7 +659,6 @@ class EntryManager(BaseManager):
 
                     # Replacement mode: clear and add all
                     if not incremental:
-                        # TODO: Create tombstones for all removed items (tombstones disabled)
                         # for existing_item in list(collection):
                         #     self.tombstones.create(
                         #         table_name=table_name,
@@ -677,7 +674,6 @@ class EntryManager(BaseManager):
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
-                                # TODO: Remove tombstone if re-adding (tombstones disabled)
                                 # self.tombstones.remove_tombstone(
                                 #     table_name, entry.id, resolved_item.id
                                 # )
@@ -687,7 +683,6 @@ class EntryManager(BaseManager):
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
-                                # TODO: Remove tombstone if re-adding (tombstones disabled)
                                 # self.tombstones.remove_tombstone(
                                 #     table_name, entry.id, resolved_item.id
                                 # )
@@ -697,7 +692,6 @@ class EntryManager(BaseManager):
                         for item in remove_items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item in collection:
-                                # TODO: Create tombstone before removing (tombstones disabled)
                                 # self.tombstones.create(
                                 #     table_name=table_name,
                                 #     left_id=entry.id,

@@ -113,44 +113,45 @@ from dev.database.models.enums import ReferenceMode
 ```
 dev/pipeline/cli/
 ├── __init__.py          # Main pipeline CLI group
-├── yaml2sql.py          # YAML → SQL (inbox, convert, sync-db)
-├── sql2wiki.py          # SQL → Wiki (export-db, export-wiki, build-pdf)
-├── wiki2sql.py          # Wiki → SQL (import-wiki)
+├── yaml2sql.py          # Metadata YAML → SQL (import journal metadata)
+├── sql2wiki.py          # SQL → Wiki (generate wiki from DB)
+├── wiki2sql.py          # Wiki → SQL (import manuscript edits)
+├── export_yaml.py       # SQL → Canonical YAML (export for git)
 └── maintenance.py       # Backup, status, validation
 ```
 
 **Key Pattern**: Data flow organization
-- Commands grouped by source → destination
-- Clear pipeline directionality
-- Shared configuration in main `__init__.py`
+- Initial import: Metadata YAML → DB → Wiki
+- Ongoing editing: Wiki ↔ DB (wiki is primary editable workspace)
+- Version control: DB → Canonical YAML (git-tracked)
+- Database is LOCAL ONLY (not version controlled)
 
 **Entry Point**: `plm` → `dev.pipeline.cli:cli`
 
 **Example Usage**:
 ```bash
 plm inbox                      # Process 750words inbox
-plm sync-db                    # Sync YAML → Database
-plm export-wiki                # Export entities to wiki
-plm export-db --year 2024      # Export entries to markdown
-plm build-pdf 2024             # Build PDF for year
-plm import-wiki                # Import wiki → Database
+plm convert                    # txt → md + skeleton metadata YAML
+plm sync-db                    # Initial import: metadata YAML → Database
+plm export-wiki                # Generate wiki from database
+plm import-wiki                # Sync wiki edits → Database
+plm export-yaml                # Export canonical YAML for git
 ```
 
 ---
 
 ### 4. Wiki Export System (`dev/wiki/`)
 
-**Purpose**: Jinja2 template-based wiki page generation
+**Purpose**: Jinja2 template-based wiki page generation from database
 
 **Structure**:
 ```
 dev/wiki/
 ├── __init__.py          # Public API (WikiRenderer, WikiExporter)
 ├── renderer.py          # Jinja2 template rendering engine
-├── exporter.py          # Database → wiki export orchestration
+├── exporter.py          # Database → wiki generation
 ├── configs.py           # Entity export configurations
 ├── filters.py           # Custom Jinja2 filters
-├── parser.py            # Wiki page parsing for import
 └── templates/
     ├── entry.jinja2     # Entry wiki page template
     ├── person.jinja2    # Person page template
@@ -165,10 +166,12 @@ dev/wiki/
 ```
 
 **Key Patterns**:
-- **Template-Based**: Jinja2 templates replace wiki dataclasses
+- **Template-Based**: Jinja2 templates for wiki generation
 - **ORM Direct**: SQLAlchemy models passed directly to templates
 - **Config-Driven**: Entity configs define queries and output paths
 - **Custom Filters**: Jinja2 filters for wiki link formatting
+- **One-Way for Journal**: Journal wiki is generated from DB (read-only)
+- **Two-Way for Manuscript**: Manuscript wiki is editable workspace
 
 **Import Examples**:
 ```python
@@ -188,8 +191,8 @@ exporter.export_entity_type("people")
 **Template System**:
 - Templates receive SQLAlchemy ORM objects directly
 - Custom Jinja2 filters format wiki links (`[[Entity Name]]`)
-- Editable notes sections preserved during re-export
-- Backlinks automatically generated from database relationships
+- Journal wiki regenerated from database
+- Manuscript wiki supports bidirectional editing
 
 ---
 

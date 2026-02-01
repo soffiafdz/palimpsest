@@ -27,22 +27,40 @@ Palimpsest supports reliable multi-machine synchronization using:
 1. **Tombstones**: Track deletions across machines
 2. **Hash-based conflict detection**: Identify concurrent edits
 3. **Soft delete**: Mark entries as deleted instead of removing
-4. **Three-layer bidirectional sync**: YAML ↔ SQL ↔ Wiki
+4. **Domain-specific sync**: Different data flows for journal vs manuscript
+
+### Data Flow by Domain
+
+**Journal Metadata** (metadata YAML is source of truth):
+```
+Metadata YAML (human-authored) → Import to DB → Wiki (generated, read-only)
+                                             → Canonical YAML (exported for git)
+```
+
+**Manuscript Content** (wiki is editable):
+```
+Wiki (human-edited) ↔ Database ↔ YAML export
+```
 
 ### How It Works
 
 ```
 Machine A                          Git Repository                    Machine B
 ---------                          --------------                    ---------
-Edit YAML
+Edit metadata YAML
   ↓
-yaml2sql (creates tombstones)
+yaml2sql (import to DB)
   ↓
-Commit & Push            →         Database & YAML files      →     Pull
+export-yaml (DB → canonical YAML)
+  ↓
+Commit & Push            →         YAML files (no database!)   →     Pull
                                                                      ↓
-                                                              yaml2sql (respects tombstones)
+                                                              yaml2sql (import to local DB)
                                                                      ↓
                                                               Changes applied
+
+NOTE: Database is LOCAL and NOT version controlled.
+Only YAML files are committed to git.
 ```
 
 ---
@@ -285,193 +303,232 @@ plm import-wiki
 
 ## Understanding the Architecture
 
-### Three-Layer Bidirectional Synchronization
+### Architecture Overview
 
-Palimpsest implements three-layer sync between Journal files, SQL database, and Wiki pages:
+**CRITICAL: Database is LOCAL and NOT version controlled. Only YAML files go in git.**
 
 ```
-┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
-│  Journal Files   │ ←────→  │   SQL Database   │ ←────→  │   Wiki Pages     │
-│  (Markdown)      │         │   (SQLite)       │         │   (Vimwiki)      │
-│                  │         │                  │         │                  │
-│  YAML metadata   │         │  Normalized      │         │  Human-readable  │
-│  Entry content   │         │  Relationships   │         │  Entity pages    │
-└──────────────────┘         └──────────────────┘         └──────────────────┘
-     Primary                      Central                     Navigation
-   Source Material              Source of Truth             & Exploration
+INITIAL IMPORT (one-time per entry)
+┌──────────────────┐
+│  Metadata YAML   │  ← Human creates/populates
+│  (git-tracked)   │
+└────────┬─────────┘
+         │ yaml2sql (import)
+         ↓
+┌──────────────────┐
+│   SQL Database   │  ← LOCAL ONLY (not in git)
+│   (derived)      │
+└────────┬─────────┘
+         │ sql2wiki (generate)
+         ↓
+┌──────────────────┐
+│   Wiki Pages     │  ← EDITABLE workspace
+│   (Vimwiki)      │
+└──────────────────┘
+
+ONGOING WORKFLOW (after initial import)
+┌──────────────────┐
+│   Wiki Pages     │  ← Human edits here
+│   (EDITABLE)     │
+└────────┬─────────┘
+         │ wiki2sql (sync edits)
+         ↓
+┌──────────────────┐
+│   SQL Database   │  ← LOCAL ONLY (not in git)
+│   (derived)      │
+└────────┬─────────┘
+         │ export-yaml
+         ↓
+┌──────────────────┐
+│  Canonical YAML  │  ← Git-tracked for version control
+│  (exported)      │
+└──────────────────┘
 ```
 
 ### Data Flow Principles
 
-1. **Journal → Database**: Single source of truth for life events
-   - Journal entries (Markdown with YAML frontmatter) are the primary record
-   - Database is a derived, structured representation
-   - Ensures human-readability and version control (Git)
+1. **Journal Metadata**: Metadata YAML is source of truth
+   - Companion YAML files (metadata/journal/YYYY/YYYY-MM-DD.yaml) are human-authored
+   - Created automatically when txt2md creates MD files
+   - Human populates with scenes, events, threads, arcs, etc.
+   - Imported to database via yaml2sql
+   - Wiki is GENERATED from database (read-only for journal content)
 
-2. **Database → Wiki**: Auto-generated navigation & exploration
-   - Wiki is a browsable, interlinked interface
-   - Auto-generated to reflect current database state
-   - One-way generation prevents conflicting sources
+2. **Journal Prose**: MD files are source of truth
+   - Journal entries (data/journal/content/md/) contain the prose
+   - Minimal frontmatter (date, word_count, reading_time, people, locations)
+   - Database links to these files but doesn't store content
 
-3. **Wiki → Database**: Editable notes only (not structural data)
-   - Wiki is workspace for editorial notes and annotations
-   - Only specific "notes" fields sync back to database
-   - Core structural metadata stays in Journal YAML
+3. **Manuscript Content**: Wiki is editable workspace
+   - Manuscript wiki pages (wiki/manuscript/) ARE editable
+   - Chapters, characters, arcs, themes edited in wiki
+   - Changes sync back to database via wiki2sql
+   - YAML exports are machine-generated for git version control
 
-### Three Synchronization Paths
+### Synchronization Paths
 
-#### Path 1: YAML ↔ SQL (Journal Entries)
+#### Path 1: Metadata YAML → SQL (Initial Import)
 
-- **Purpose**: Capture and persist journal metadata
-- **Direction**: Fully bidirectional
-  - YAML → SQL: Daily journaling (primary flow)
-  - SQL → YAML: Export/backup (reverse flow)
-- **Use Cases**:
-  - Write new entries in Markdown
-  - Sync metadata to database
-  - Export database back to Markdown for backup
+- **Purpose**: Initial import of journal metadata to database
+- **Direction**: One-way (Metadata YAML → SQL)
+- **When**: One-time per entry, to bootstrap the data
 
 **Example Flow**:
 ```bash
-# Write journal entry with YAML frontmatter
-vim journal/md/2024/2024-11-01.md
+# txt2md creates MD file + skeleton metadata YAML
+plm convert
 
-# Import to database (YAML → SQL)
-plm sync-db --file journal/md/2024/2024-11-01.md
+# Human populates metadata YAML with narrative analysis
+vim data/metadata/journal/2024/2024-11-01.yaml
 
-# Export back to Markdown (SQL → YAML)
-plm export-db --date 2024-11-01 --output backup/
+# Validate structure and entities
+plm validate-metadata data/metadata/journal/2024/2024-11-01.yaml
+
+# Import to database
+plm sync-db --file data/metadata/journal/2024/2024-11-01.yaml
+
+# Generate wiki from database
+plm export-wiki
+```
+
+**What gets imported**:
+- Scenes, events, threads, arcs
+- Tags, themes, motifs
+- Poems, references
+- People, locations
+
+#### Path 2: Wiki ↔ SQL (Ongoing Editing)
+
+- **Purpose**: Edit all metadata in wiki workspace
+- **Direction**: Bidirectional (Wiki ↔ SQL)
+- **When**: Primary editing workflow after initial import
+
+**Example Flow**:
+```bash
+# Edit wiki pages (ALL content is editable)
+vim wiki/entries/2024/2024-11-01.md
+vim wiki/people/alice.md
+vim wiki/manuscript/chapters/the-long-wanting.md
+
+# Import changes to database
+plm import-wiki
+
+# Export canonical YAML for git version control
+plm export-yaml
 ```
 
 **What syncs**:
-- Core fields (date, word_count, reading_time)
-- Geographic fields (city, locations)
-- People, events, tags
-- References, poems
-- Manuscript flags (status, edited)
+- ALL entity metadata (not just notes)
+- Entry analysis, scenes, events, threads
+- People, locations, tags, themes
+- Manuscript chapters, characters, arcs
 
-#### Path 2: SQL → Wiki (Entity Export)
+**Design rationale**: Wiki is the primary editable workspace; database is local derived state.
 
-- **Purpose**: Generate navigable wiki for exploration
-- **Direction**: One-way (SQL → Wiki)
-- **Update Mode**: Regenerate from database
+#### Path 3: SQL → Canonical YAML (Version Control)
+
+- **Purpose**: Export database to git-tracked YAML files
+- **Direction**: One-way (SQL → YAML)
+- **When**: After editing, before committing to git
 
 **Example Flow**:
 ```bash
-# Export all entities to wiki
-plm export-wiki all
+# Export all to canonical YAML
+plm export-yaml --all
 
-# Export specific entity type
-plm export-wiki people
-plm export-wiki entries
+# Commit to git
+git add data/metadata/
+git commit -m "Update journal metadata"
 ```
 
 **What gets exported**:
-- Entity pages (entries, people, locations, cities, events, tags, etc.)
-- Timeline views
-- Statistics dashboards
-- Manuscript subwiki (separate workspace)
+- All entities with full relationships
+- Structured YAML for clean diffs
+- Recovery/backup capability
 
-**Design rationale**: Wiki always reflects database state, preventing conflicts.
-
-#### Path 3: Wiki → SQL (Entity Import)
-
-- **Purpose**: Sync user edits back to database
-- **Direction**: One-way (Wiki → SQL)
-- **Update Mode**: Import only editable fields
-
-**Example Flow**:
-```bash
-# Edit notes in wiki
-vim wiki/people/alice.md
-
-# Import changes to database
-plm import-wiki people
-```
-
-**What syncs**:
-- Entry notes
-- Person notes
-- Event notes
-- Manuscript-specific fields (character notes, adaptation notes, etc.)
-
-**What does NOT sync** (structural data):
-- Dates
-- Relationships
-- Names
-- Core metadata
-
-**Design rationale**: Limits wiki-to-database sync to designated editable fields, preserving database as structural authority.
+**Design rationale**: Database is NOT in git; canonical YAML provides version control.
 
 ### Complete Data Flow
 
 ```
     ┌─────────────────────────────────────────────────────────────┐
     │                  PALIMPSEST DATA FLOW                        │
+    │  Database is LOCAL ONLY — not version controlled            │
+    │  Wiki is the primary EDITABLE workspace                     │
     └─────────────────────────────────────────────────────────────┘
 
-┌─────────────┐
-│   Journal   │  Write new entry
-│   (*.md)    │  with YAML metadata
-└──────┬──────┘
-       │
-       │ yaml2sql (import)
-       ↓
-┌─────────────────────────────────────────────────────┐
-│                   SQL Database                      │
-│                                                     │
-│  ┌──────────┐  ┌─────────┐  ┌──────────┐            │
-│  │ Entries  │  │ People  │  │ Events   │            │
-│  └────┬─────┘  └────┬────┘  └────┬─────┘            │
-│       │             │            │                  │
-│       └─────────────┴────────────┘                  │
-│              Relationships                          │
-└───────────┬─────────────────────┬───────────────────┘
-            │                     │
-            │ sql2wiki            │
-            │ (export)            │
-            ↓                     ↓
-┌─────────────────────┐  ┌─────────────────────┐
-│   Main Wiki         │  │ Manuscript Subwiki  │
-│   wiki/             │  │ wiki/manuscript     │
-│  - entries/         │  │  - entries/         │
-│  - people/          │  │  - characters/      │
-│  - events/          │  │  - events/          │
-│  - locations/       │  │  - arcs/            │
-│  - cities/          │  │  - themes/          │
-└──────┬──────────────┘  └──────┬──────────────┘
-       │                        │
-       │ wiki2sql               │
-       │ (import notes)         │
-       ↓                        ↓
-┌─────────────────────────────────────────────────────┐
-│         Database (Notes Updated)                    │
-│  Entry.notes ← wiki edits                           │
-│  Person.notes ← wiki edits                          │
-│  ManuscriptEntry.notes ← manuscript wiki edits      │
-└─────────────────────────────────────────────────────┘
+INITIAL SETUP (one-time per entry)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────┐     ┌─────────────────┐
+│  MD Files   │     │  Metadata YAML  │  ← Human creates (git-tracked)
+│  (prose)    │     │  (analysis)     │
+└─────────────┘     └────────┬────────┘
+                             │ yaml2sql (import)
+                             ↓
+                    ┌─────────────────┐
+                    │   SQL Database  │  ← LOCAL ONLY
+                    └────────┬────────┘
+                             │ sql2wiki (generate)
+                             ↓
+                    ┌─────────────────┐
+                    │   Wiki Pages    │  ← Now ready to edit
+                    └─────────────────┘
+
+ONGOING EDITING (primary workflow)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────┐
+│   Wiki Pages    │  ← Human edits here (primary workspace)
+│   (EDITABLE)    │
+└────────┬────────┘
+         │ wiki2sql (sync edits to DB)
+         ↓
+┌─────────────────┐
+│   SQL Database  │  ← LOCAL ONLY (derived state)
+└────────┬────────┘
+         │ export-yaml
+         ↓
+┌─────────────────┐
+│  Canonical YAML │  ← Git-tracked (version control & backup)
+└─────────────────┘
+
+VERSION CONTROLLED (in git):
+  ✓ MD files (journal prose)
+  ✓ Metadata YAML (initial import source)
+  ✓ Canonical YAML exports (ongoing version control)
+  ✓ Wiki pages (editable workspace)
+
+NOT VERSION CONTROLLED:
+  ✗ SQLite database (local derived state, rebuilt from YAML)
 ```
 
 ### Field Ownership Strategy
 
-**Database Fields** (never in wiki):
-- Primary keys (`id`)
-- Foreign keys (`entry_id`, `person_id`)
-- Timestamps (`created_at`, `updated_at`)
-- File metadata (`file_path`, `file_hash`)
-- Computed properties (word count, relationships)
+**MD Files** (journal prose - ground truth):
+- Entry content (the actual writing)
+- Minimal frontmatter: date, word_count, reading_time
 
-**Wiki-Editable Fields** (user can modify):
-- `notes` - Editorial/manuscript planning notes
-- `character_notes` - Character development
-- `character_description` - Character descriptions
-- `character_arc` - Character arc notes
-- `voice_notes`, `appearance_notes` - Manuscript-specific
+**Metadata YAML** (initial import source):
+- Used to bootstrap entries into the database
+- scenes, events, threads, arcs, tags, themes, motifs
+- poems, references, people, locations
 
-**YAML-Owned Fields** (structural):
-- date, people, locations, cities, events, tags
-- references, poems
-- Manuscript flags (status, edited)
+**Wiki** (primary editable workspace):
+- ALL metadata is editable in wiki
+- Entry pages, people, locations, events, tags
+- Manuscript chapters, characters, arcs, themes
+- This is where ongoing editing happens
+
+**Database** (local derived state - NOT in git):
+- Derived from wiki edits (via wiki2sql)
+- Queryable, normalized relationships
+- Rebuilt from canonical YAML if needed
+
+**Canonical YAML** (git-tracked exports):
+- Exported from database for version control
+- Recovery/backup capability
+- Clean diffs for tracking changes
 
 ---
 
@@ -814,11 +871,13 @@ plm import-wiki people
 ## Summary
 
 The Palimpsest synchronization system provides:
-- ✅ Three-layer bidirectional sync (YAML ↔ SQL ↔ Wiki)
+- ✅ Wiki as primary editable workspace (all metadata editable)
+- ✅ Database as local derived state (NOT version controlled)
+- ✅ Canonical YAML exports for git version control
+- ✅ Initial import from metadata YAML, then wiki editing
 - ✅ Reliable deletion propagation via tombstones
 - ✅ Conflict detection via hash comparison
 - ✅ Soft delete with restore capability
-- ✅ Field ownership separation (YAML/Database/Wiki)
 - ✅ Full CLI for monitoring and management
 
 By following this guide and best practices, you can work seamlessly across multiple machines while maintaining data consistency.

@@ -1,0 +1,835 @@
+{
+  "metadata": {
+    "description": "Rename proposals for problematic scenes and events in 2024 April-July narrative analysis files",
+    "generated": "2026-01-31",
+    "scope": "2024-04-04 through 2024-07-01"
+  },
+  "scenes": {
+    "2024-04-26": {
+      "file": "2024-04-26_analysis.yaml",
+      "problematic_scenes": [
+        {
+          "current": "Church Pub: The Breakup Circle",
+          "issue": "Location-prefixed with colon separator (non-standard pattern)",
+          "proposed": "The Breakup Circle",
+          "description": "Friends at happy hour cocktails discussing ended relationships",
+          "reasoning": "Scene name should capture the essence (shared relationship breakup stories) without location prefix, as location is already in metadata"
+        },
+        {
+          "current": "The Bar: First Date Confessions",
+          "issue": "Generic location prefix 'The Bar'",
+          "proposed": "First Date Confessions",
+          "description": "Two women share pre-date anxieties over pints at Typhoon lounge",
+          "reasoning": "Location is tracked in metadata; scene name should focus on the conversational content"
+        },
+        {
+          "current": "The Sidewalk: The Ask",
+          "issue": "Generic location prefix 'The Sidewalk'",
+          "proposed": "The Ask",
+          "description": "Night has fallen, she shivers, hand on waist: 'Can I kiss you?'",
+          "reasoning": "The moment is defined by the question asked, not the sidewalk"
+        },
+        {
+          "current": "The Walk: Five Minutes",
+          "issue": "Generic location prefix 'The Walk'",
+          "proposed": "Five Minutes of Anticipation",
+          "description": "Glasses abandoned, don't hold hands, cold night, silent anticipation to apartment",
+          "reasoning": "Captures both the temporal constraint and the emotional tension"
+        },
+        {
+          "current": "The Bedroom: Disclosure",
+          "issue": "Generic location prefix 'The Bedroom'",
+          "proposed": "You Do Know I Am Trans, Right?",
+          "description": "Kneeling over her on bed, narrator pauses to confirm disclosure",
+          "reasoning": "Direct quote captures the vulnerable moment more powerfully than location"
+        },
+        {
+          "current": "The Bedroom: The Broken Tooth",
+          "issue": "Generic location prefix 'The Bedroom'",
+          "proposed": "The Broken Tooth",
+          "description": "Mid-kiss, teeth collide, a crack, pebble between lips, mortified laughter",
+          "reasoning": "Already a strong name; remove redundant location prefix"
+        },
+        {
+          "current": "The Bedroom: Bodies in Negotiation",
+          "issue": "Generic location prefix 'The Bedroom'",
+          "proposed": "Bodies in Negotiation",
+          "description": "Questions about preference, hesitation, electric mouth, faked orgasm",
+          "reasoning": "Already evocative; remove redundant location prefix"
+        },
+        {
+          "current": "The Bedroom: The Tattoos",
+          "issue": "Generic location prefix 'The Bedroom'",
+          "proposed": "The Lighthouse and Islands",
+          "description": "Tangled together, she describes Virginia Woolf lighthouse, mother's islands",
+          "reasoning": "Specific reference to tattoo content is more evocative than generic 'The Tattoos'"
+        },
+        {
+          "current": "The Bedroom: The Invitation",
+          "issue": "Generic location prefix 'The Bedroom'",
+          "proposed": "The Photography Invitation",
+          "description": "Offer to be photographed, a future implied",
+          "reasoning": "More specific than generic 'The Invitation'; clarifies what's being offered"
+        },
+        {
+          "current": "The Door: The Exchange",
+          "issue": "Generic location prefix 'The Door'",
+          "proposed": "Moving Outside the App",
+          "description": "Time to leave, doubt in grayish-blue eyes, phone accepted, closing kiss",
+          "reasoning": "Captures the significant action (exchanging numbers, leaving app platform)"
+        }
+      ]
+    },
+    "2024-04-12": {
+      "file": "2024-04-12_analysis.yaml",
+      "problematic_scenes": [
+        {
+          "current": "Church Pub: The Breakup Circle",
+          "issue": "Duplicate name from 2024-04-26 entry (different scene)",
+          "proposed": "Friends at Happy Hour",
+          "description": "Friends share relationship stories at Church pub",
+          "reasoning": "Scene names must be unique across entries; this is a different April 11 scene from the later April 26 one"
+        }
+      ]
+    }
+  },
+  "events": {
+    "2024-04-04": {
+      "file": "2024-04-04_analysis.yaml",
+      "problems": [
+        {
+          "current": "Messaging (2024-04-04)",
+          "issue": "Generic pattern with date in parentheses",
+          "proposed": "Waiting for the Verdict",
+          "reasoning": "Captures the emotional weight (unopened notification, Amaretto, Sophie's gentle ending)"
+        },
+        {
+          "current": "At Tinder",
+          "issue": "'At location' pattern with app name",
+          "proposed": "The Disclosure Catalog",
+          "reasoning": "Already a scene name; event encompasses the systematic coming-out montage"
+        },
+        {
+          "current": "At Hinge",
+          "issue": "'At location' pattern with app name",
+          "proposed": "Accent Negotiations",
+          "reasoning": "Scene name already captures the linguistic flirtation dynamic with Eva"
+        },
+        {
+          "current": "At Hochelaga",
+          "issue": "'At location' pattern",
+          "proposed": "The Voice Test Refusal",
+          "reasoning": "Encompasses both Gabrielle's request and narrator's boundary-drawing refusal"
+        }
+      ]
+    },
+    "2024-04-06": {
+      "file": "2024-04-06_analysis.yaml",
+      "problems": [
+        {
+          "current": "Remembering (2024-04-06)",
+          "issue": "Generic pattern with date",
+          "proposed": "The Needle Returns",
+          "reasoning": "Self-injection as nostalgic body memory; thigh remembering transition"
+        },
+        {
+          "current": "At office",
+          "issue": "'At location' pattern",
+          "proposed": "Lab Meeting and Five-Minute Call",
+          "reasoning": "Specific academic activities (data review, prescription renewal)"
+        },
+        {
+          "current": "At Cafe Aunja",
+          "issue": "'At location' pattern",
+          "proposed": "Voice-Message Debrief",
+          "reasoning": "Central activity was processing the voice-test rejection with Alda"
+        },
+        {
+          "current": "Unable Moment",
+          "issue": "Truncated/vague naming",
+          "proposed": "The Strange Nostalgic Feeling",
+          "reasoning": "Direct quote from scene about injection nostalgia and setting the date"
+        }
+      ]
+    },
+    "2024-04-07": {
+      "file": "2024-04-07_analysis.yaml",
+      "problems": [
+        {
+          "current": "Messaging (2024-04-07)",
+          "issue": "Generic pattern with date",
+          "proposed": "Dressing for the Date",
+          "reasoning": "Pre-date preparation without confidence"
+        },
+        {
+          "current": "At Oui mais non cafe",
+          "issue": "'At location' pattern",
+          "proposed": "English in a French Room",
+          "reasoning": "Central tension of the date (language dynamics, child's question, goodbye)"
+        }
+      ]
+    },
+    "2024-04-08": {
+      "file": "2024-04-08_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Voice-Message Request",
+          "issue": "Truncated name (apostrophe issue)",
+          "proposed": "Morning Before the Final Session",
+          "reasoning": "Pre-therapy preparation and medication timing experiments"
+        },
+        {
+          "current": "But Honestly",
+          "issue": "Fragment from dialogue without context",
+          "proposed": "Woman Enough",
+          "reasoning": "The core wound named aloud in therapy; central revelation"
+        },
+        {
+          "current": "You Don",
+          "issue": "Truncated (apostrophe cutting)",
+          "proposed": "The Eclipse Gathering",
+          "reasoning": "Meeting friend, eclipse supplies, waiting for totality at the lake"
+        },
+        {
+          "current": "The How (2024-04-08-3)",
+          "issue": "Vague with confusing numbering",
+          "proposed": "Summer Plans Take Shape",
+          "reasoning": "Mexico City trip assembling, flirtation with place and person"
+        }
+      ]
+    },
+    "2024-04-09": {
+      "file": "2024-04-09_analysis.yaml",
+      "problems": [
+        {
+          "current": "Messaging (2024-04-09)",
+          "issue": "Generic with date",
+          "proposed": "Morning Wakefulness",
+          "reasoning": "3am insomnia, Tinder messages, timezone confusion before therapy"
+        },
+        {
+          "current": "Talking About What We Aren",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "The Movie Negotiation",
+          "reasoning": "Flirty banter about what they won't watch leading to hookup plans"
+        },
+        {
+          "current": "T Make Much Of A Difference But",
+          "issue": "Truncated mid-sentence (apostrophe issue)",
+          "proposed": "Unless We Get to Third Base",
+          "reasoning": "The disclosure framing; casual delivery strategy"
+        },
+        {
+          "current": "S A Deal-Breaker",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "Logistics and Landing",
+          "reasoning": "Final scene about hostess decision and logistics"
+        }
+      ]
+    },
+    "2024-04-10": {
+      "file": "2024-04-10_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Sexting Match Is Explicitly Identified As",
+          "issue": "Truncated long phrase",
+          "proposed": "The Catfisher Echo",
+          "reasoning": "Scene name already captures the pattern repetition"
+        },
+        {
+          "current": "She Is Called Gorgeous But Doesn",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "Photo Archaeology",
+          "reasoning": "Re-downloading Snapchat, confronting archive of former body, disbelieving compliments"
+        }
+      ]
+    },
+    "2024-04-12": {
+      "file": "2024-04-12_analysis.yaml",
+      "problems": [
+        {
+          "current": "I Feel Unattractive And Disgusting Unwanted",
+          "issue": "Long direct quote without punctuation",
+          "proposed": "Post-Date Crash",
+          "reasoning": "The vodka-and-grapefruit aftermath processing of unremarkable date"
+        },
+        {
+          "current": "Princess",
+          "issue": "Vague single word without context",
+          "proposed": "Half-Decade Crush",
+          "reasoning": "Telling friends about Mexico trip and Paty calling narrator 'princess'"
+        },
+        {
+          "current": "At Mistral",
+          "issue": "'At location' pattern",
+          "proposed": "Two Hours Without Food",
+          "reasoning": "The coffee date with Jay at Cafe Parvis"
+        }
+      ]
+    },
+    "2024-04-13": {
+      "file": "2024-04-13_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Messagelike Sophie",
+          "issue": "Truncated/malformed",
+          "proposed": "Waiting All Day",
+          "reasoning": "Bed all day, unseen messages from Sy/Jay/Paty, Sophie's echo"
+        },
+        {
+          "current": "Writing (2024-04-13)",
+          "issue": "Generic with date",
+          "proposed": "Paty's Origin Story",
+          "reasoning": "Central revelation about Yaaj event, confession, missed timing"
+        },
+        {
+          "current": "Considering Moment",
+          "issue": "Vague fragment",
+          "proposed": "The Unsent Question",
+          "reasoning": "Contemplating texting Jay, Tinder confusion, hovering question about trans experience"
+        }
+      ]
+    },
+    "2024-04-15": {
+      "file": "2024-04-15_analysis.yaml",
+      "problems": [
+        {
+          "current": "Just Looking For Some Fun",
+          "issue": "Profile quote without context",
+          "proposed": "Depression Weekend Unmoved",
+          "reasoning": "Fragmented memory, cancelled plans, French class prep"
+        },
+        {
+          "current": "Before Getting To The Plans I",
+          "issue": "Truncated mid-sentence",
+          "proposed": "The Disclosure and the Wait",
+          "reasoning": "Bea match, conversation flowing, disclosure, hour of silence, acceptance"
+        },
+        {
+          "current": "T Get In The Way",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "Third Night of Delivery",
+          "reasoning": "Scene name already clear; fries instead of salad, avoiding drinking"
+        },
+        {
+          "current": "Messaging (2024-04-15)",
+          "issue": "Generic with date",
+          "proposed": "What Am I Trying to Fill?",
+          "reasoning": "Scene name questioning the pattern; collecting matches, vapid texts"
+        }
+      ]
+    },
+    "2024-04-25": {
+      "file": "2024-04-25_analysis.yaml",
+      "problems": [
+        {
+          "current": "Waiting (2024-04-25)",
+          "issue": "Generic with date",
+          "proposed": "Two Weeks of Deep Depression",
+          "reasoning": "Depression inventory, Chloe date, Bea's midnight text"
+        },
+        {
+          "current": "Saturday Moment",
+          "issue": "Vague temporal marker",
+          "proposed": "Bea Cancels",
+          "reasoning": "Central event: makeup preparation, Aliza check-in, dog emergency cancellation"
+        },
+        {
+          "current": "Messaging (2024-04-25)",
+          "issue": "Generic with date (duplicate pattern)",
+          "proposed": "Sunday's Weight",
+          "reasoning": "Scene name; staying in bed, full weight of depression"
+        },
+        {
+          "current": "Meeting (2024-04-25)",
+          "issue": "Generic with date",
+          "proposed": "Skipping Wednesday's Class",
+          "reasoning": "Therapy session, Tabac frustration, proposition to Bea"
+        },
+        {
+          "current": "Alone at Home (4)",
+          "issue": "Numbered duplicate",
+          "proposed": "Nicest Bra, No Makeup",
+          "reasoning": "Scene name already captures calibration of presentation for hookup"
+        },
+        {
+          "current": "At Typhoon lounge",
+          "issue": "'At location' pattern",
+          "proposed": "Recognition",
+          "reasoning": "The moment of seeing Bea in the almost-empty bar"
+        }
+      ]
+    },
+    "2024-04-26": {
+      "file": "2024-04-26_analysis.yaml",
+      "problems": [
+        {
+          "current": "Can I Kiss You",
+          "issue": "Grammatically incomplete question",
+          "proposed": "The Bea Night",
+          "reasoning": "Encompasses entire arc from first date confessions through number exchange"
+        },
+        {
+          "current": "S Waist",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "The Morning After",
+          "reasoning": "Scene name; dentist appointment, smile repaired, sparkling wine"
+        }
+      ]
+    },
+    "2024-04-27": {
+      "file": "2024-04-27_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Wine-Drunk Processing Via Text",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "Laundry Finally Done",
+          "reasoning": "Scene captures mundane victory over depression"
+        },
+        {
+          "current": "D Be The Perfect Time For Her",
+          "issue": "Truncated mid-thought",
+          "proposed": "The Dental Repair",
+          "reasoning": "Morning wait, dental clinic, Spanish/French code-switching, plaque realization"
+        },
+        {
+          "current": "She Ruined It By Being Too Good",
+          "issue": "Long unquoted phrase",
+          "proposed": "The Paradox Articulated",
+          "reasoning": "Central revelation: enjoyed talking too much to have had sex with her"
+        },
+        {
+          "current": "You Met Her Once",
+          "issue": "Dialogue fragment without speaker context",
+          "proposed": "No Antipsychotics, Full Sleep",
+          "reasoning": "Scene name; the medication trade-off"
+        },
+        {
+          "current": "At Paris",
+          "issue": "'At location' pattern (city, not venue)",
+          "proposed": "Disclosure Before the Date",
+          "reasoning": "Scene name; new Parisian match, trans disclosure first"
+        }
+      ]
+    },
+    "2024-04-28": {
+      "file": "2024-04-28_analysis.yaml",
+      "problems": [
+        {
+          "current": "She Hasn",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "The Worst Night",
+          "reasoning": "Scene name; thunderstorm insomnia after skipping medication"
+        },
+        {
+          "current": "Walking (2024-04-28)",
+          "issue": "Generic with date",
+          "proposed": "At Least Not Yet",
+          "reasoning": "The catalog of evidence against abandonment, final suspended qualifier"
+        }
+      ]
+    },
+    "2024-04-30": {
+      "file": "2024-04-30_analysis.yaml",
+      "problems": [
+        {
+          "current": "At María's bar",
+          "issue": "'At location' pattern",
+          "proposed": "The Argument in French Class",
+          "reasoning": "Online class irritability, arguing back, emotions newly awake"
+        },
+        {
+          "current": "At metro station",
+          "issue": "'At location' pattern",
+          "proposed": "The Platform Bench",
+          "reasoning": "Scene name; ghost-watching for Sophie, purposefully discarding thought"
+        }
+      ]
+    },
+    "2024-05-01": {
+      "file": "2024-05-01_analysis.yaml",
+      "problems": [
+        {
+          "current": "Messaging (2024-05-01)",
+          "issue": "Generic with date",
+          "proposed": "The Water Dam",
+          "reasoning": "Scene name; on edge of breakdown, overflowing rather than empty"
+        },
+        {
+          "current": "At café",
+          "issue": "'At location' pattern",
+          "proposed": "Texting Against Advice",
+          "reasoning": "Fleeing house, hibiscus tisane, compulsive connection-seeking"
+        },
+        {
+          "current": "Realizing Moment",
+          "issue": "Vague fragment",
+          "proposed": "Realizing the Anger",
+          "reasoning": "Scene name; the revelation about texting from anger not desire"
+        }
+      ]
+    },
+    "2024-05-03": {
+      "file": "2024-05-03_analysis.yaml",
+      "problems": [
+        {
+          "current": "Energetic And Jumpy A Bit Impulsive",
+          "issue": "Long descriptive phrase",
+          "proposed": "Hypomanic Energy",
+          "reasoning": "Captures the 3am wake, restless body, burning phone, cafe afternoon"
+        },
+        {
+          "current": "The Entry Ends With Meta-Awareness",
+          "issue": "Meta-commentary, not event name",
+          "proposed": "Digital Reckoning",
+          "reasoning": "Scene name; replying to everyone, deleting more people"
+        },
+        {
+          "current": "Writing (2024-05-03)",
+          "issue": "Generic with date",
+          "proposed": "The Bribe",
+          "reasoning": "Scene name; offering journal entry as currency for connection"
+        }
+      ]
+    },
+    "2024-05-05": {
+      "file": "2024-05-05_analysis.yaml",
+      "problems": [
+        {
+          "current": "The Body",
+          "issue": "Too generic (motif name, not event)",
+          "proposed": "Saturday Before the Date",
+          "reasoning": "Mirror invitation, stagnant Saturday, tooth story match"
+        },
+        {
+          "current": "Remembering (2024-05-05)",
+          "issue": "Generic with date",
+          "proposed": "Disturbing Confessions",
+          "reasoning": "Intrusive thoughts about metro tracks, pregnancy dysphoria"
+        },
+        {
+          "current": "Writing (2024-05-05)",
+          "issue": "Generic with date",
+          "proposed": "The Deleted Text",
+          "reasoning": "Scene name; considering offering journal to Bea, deleting unsent message"
+        },
+        {
+          "current": "At Berri-UQAM",
+          "issue": "'At location' pattern",
+          "proposed": "The Unasked Kiss",
+          "reasoning": "Scene name already captures the umbrella walk, unspoken questions"
+        }
+      ]
+    },
+    "2024-05-06": {
+      "file": "2024-05-06_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Text About Not Kissing In The",
+          "issue": "Truncated mid-phrase",
+          "proposed": "The Compulsive Texting",
+          "reasoning": "French class, reviving dead conversations, texting ex during pause"
+        },
+        {
+          "current": "Needs Time Feels",
+          "issue": "Grammatically incomplete fragment",
+          "proposed": "Avoiding the Morning",
+          "reasoning": "Marie-Anne's 'flustered' and 'broken' response, postponed text"
+        }
+      ]
+    },
+    "2024-05-07": {
+      "file": "2024-05-07_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Rejection Arrives",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "Bea's Rejection",
+          "reasoning": "The notification, reading rejection, night compressed into flashback memory"
+        },
+        {
+          "current": "Writing (2024-05-07)",
+          "issue": "Generic with date",
+          "proposed": "The Core Wound Articulated",
+          "reasoning": "Scene name; the belief crystallized about being unworthy of relationships"
+        }
+      ]
+    },
+    "2024-05-10": {
+      "file": "2024-05-10_analysis.yaml",
+      "problems": [
+        {
+          "current": "Dreaming (2024-05-10)",
+          "issue": "Generic with date",
+          "proposed": "Medication Adjustment",
+          "reasoning": "Video call with Dr Franck, dose lowered to 20mg, return to sleep"
+        },
+        {
+          "current": "At La graine brûlée",
+          "issue": "'At location' pattern",
+          "proposed": "The Guilt",
+          "reasoning": "Date with Camille, lack of attraction, self-disgust"
+        }
+      ]
+    },
+    "2024-05-12": {
+      "file": "2024-05-12_analysis.yaml",
+      "problems": [
+        {
+          "current": "S Apartment She Sees A Photo Of",
+          "issue": "Truncated/malformed",
+          "proposed": "The Picnic Date",
+          "reasoning": "Dressing, walking to park, poutine, blankets on grass at Parc La Fontaine"
+        },
+        {
+          "current": "Imagining Her Date",
+          "issue": "Vague without possessive clarity",
+          "proposed": "The Catalog of Meaningful Nights",
+          "reasoning": "Scene name; mental inventory of past dates that mattered"
+        },
+        {
+          "current": "Dying Flowers",
+          "issue": "Metaphor without context",
+          "proposed": "The Photograph",
+          "reasoning": "Scene name; repulsed by own image, imagining date's disgust"
+        }
+      ]
+    },
+    "2024-05-13": {
+      "file": "2024-05-13_analysis.yaml",
+      "problems": [
+        {
+          "current": "At Google HQ",
+          "issue": "'At location' pattern",
+          "proposed": "The Cycle Begins",
+          "reasoning": "Scene name; redownload-unmatch-delete loop"
+        },
+        {
+          "current": "Messaging (2024-05-13)",
+          "issue": "Generic with date",
+          "proposed": "The Confession",
+          "reasoning": "Scene name; first kiss possibly sexual assault disclosure"
+        }
+      ]
+    },
+    "2024-05-14": {
+      "file": "2024-05-14_analysis.yaml",
+      "problems": [
+        {
+          "current": "At clinic",
+          "issue": "'At location' pattern",
+          "proposed": "Blood Work and Gatekeeping",
+          "reasoning": "HRT monitoring, requisition questioned, pamphlet, blood draw"
+        },
+        {
+          "current": "At symposium",
+          "issue": "'At location' pattern",
+          "proposed": "The Insufferable Undergrad",
+          "reasoning": "Scene name; symposium panel, lunch table with freshman"
+        },
+        {
+          "current": "Exhaustion Moment",
+          "issue": "Vague fragment",
+          "proposed": "The Dysphoric Poster",
+          "reasoning": "Scene name; gendered bathroom instructions triggering dysphoria"
+        }
+      ]
+    },
+    "2024-05-15": {
+      "file": "2024-05-15_analysis.yaml",
+      "problems": [
+        {
+          "current": "As Little As Possible",
+          "issue": "Fragment without clear subject",
+          "proposed": "Tomorrow I Have to Go to the Lab",
+          "reasoning": "The repeated refrain; alarm betrayal, French class purgatory, eating restriction"
+        }
+      ]
+    },
+    "2024-05-16": {
+      "file": "2024-05-16_analysis.yaml",
+      "problems": [
+        {
+          "current": "At bar",
+          "issue": "'At location' pattern",
+          "proposed": "The Empty Table",
+          "reasoning": "Scene name; bar full, remembering sitting with Sonny at that table"
+        },
+        {
+          "current": "Office Moment",
+          "issue": "Vague fragment",
+          "proposed": "The Meeting",
+          "reasoning": "Scene name; office performance, supervisor meeting about resubmissions"
+        }
+      ]
+    },
+    "2024-05-21": {
+      "file": "2024-05-21_analysis.yaml",
+      "problems": [
+        {
+          "current": "I Haven",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "The Formal Excuse",
+          "reasoning": "Scene name; composing French email about depressive episode from bed"
+        },
+        {
+          "current": "Waiting (2024-05-21)",
+          "issue": "Generic with date",
+          "proposed": "Two Hours at the Terrace",
+          "reasoning": "Couch, venue negotiation, waiting at Siboire, chatting with Alda"
+        },
+        {
+          "current": "Messaging (2024-05-21)",
+          "issue": "Generic with date",
+          "proposed": "Haven't Been Outside Since",
+          "reasoning": "Scene name; realization about isolation, declining beer, Monday lost"
+        },
+        {
+          "current": "At Table (2024-05-21)",
+          "issue": "'At location' pattern",
+          "proposed": "The Fast Temptation",
+          "reasoning": "Scene name; wet hair on screen, tempted to continue fasting indefinitely"
+        }
+      ]
+    },
+    "2024-05-23": {
+      "file": "2024-05-23_analysis.yaml",
+      "problems": [
+        {
+          "current": "This Time It Was Full Of Trans",
+          "issue": "Incomplete sentence fragment",
+          "proposed": "Seeing I Saw the TV Glow",
+          "reasoning": "Central event: trans cinema experience, first-date memory, lobby congregation"
+        }
+      ]
+    },
+    "2024-05-27": {
+      "file": "2024-05-27_analysis.yaml",
+      "problems": [
+        {
+          "current": "At pharmacy",
+          "issue": "'At location' pattern",
+          "proposed": "Two Clementines",
+          "reasoning": "Scene name; weight gain warning, beginning 36-hour fast"
+        },
+        {
+          "current": "At Terrasse Place d'armes",
+          "issue": "'At location' pattern",
+          "proposed": "The Wrong Party",
+          "reasoning": "Scene name; terrace sunset, underdressed outsiders, bathroom hiding"
+        },
+        {
+          "current": "36 Moment",
+          "issue": "Vague temporal reference",
+          "proposed": "36 Hours Without Food",
+          "reasoning": "Scene name; body's rebellion, finally cooking at 3am"
+        },
+        {
+          "current": "Messaging (2024-05-27)",
+          "issue": "Generic with date",
+          "proposed": "Reddit Dysphoria",
+          "reasoning": "Scene name; actuallesbian subreddit, genital preference post trigger"
+        }
+      ]
+    },
+    "2024-05-30": {
+      "file": "2024-05-30_analysis.yaml",
+      "problems": [
+        {
+          "current": "Dreaming (2024-05-30)",
+          "issue": "Generic with date",
+          "proposed": "The Sleepless Dawn",
+          "reasoning": "Scene name; 5am giving up on sleep"
+        },
+        {
+          "current": "Walking (2024-05-30)",
+          "issue": "Generic with date",
+          "proposed": "Transit Failures",
+          "reasoning": "Metro announcement, dismissive bus, infrastructure failing"
+        },
+        {
+          "current": "At Table (2024-05-30)",
+          "issue": "'At location' pattern",
+          "proposed": "The Weight Discovery",
+          "reasoning": "Scene name; 78kg, fasting to get used to hunger"
+        },
+        {
+          "current": "Hallway Moment",
+          "issue": "Vague fragment",
+          "proposed": "The First Pill",
+          "reasoning": "Scene name; Dr Perera appointment, platform breakdown, starting Seroquel"
+        }
+      ]
+    },
+    "2024-06-02": {
+      "file": "2024-06-02_analysis.yaml",
+      "problems": [
+        {
+          "current": "The Narrator Confesses",
+          "issue": "Meta-commentary, not event name",
+          "proposed": "The Stolen Weekend",
+          "reasoning": "Scene name; medication stealing hours, self-judgment"
+        },
+        {
+          "current": "Ve Been The Toxic One",
+          "issue": "Truncated (apostrophe issue)",
+          "proposed": "The Couch Confession",
+          "reasoning": "Scene name; first meeting, gossiping, admitting toxicity in relationships"
+        },
+        {
+          "current": "Bus Moment",
+          "issue": "Vague fragment",
+          "proposed": "The Bus Chase",
+          "reasoning": "Scene name; running for bus, driver's mercy"
+        },
+        {
+          "current": "Messaging (2024-06-02)",
+          "issue": "Generic with date",
+          "proposed": "Empty Sunday",
+          "reasoning": "Scene name; first pill swallowed, sleepless night, unmotivated day"
+        }
+      ]
+    },
+    "2024-07-01": {
+      "file": "2024-07-01_analysis.yaml",
+      "problems": [
+        {
+          "current": "Masculine",
+          "issue": "Single adjective without context",
+          "proposed": "Mexico City Week",
+          "reasoning": "Encompasses bar from 5 years ago, first Sunday with Paty, spicy wings, tattoos"
+        },
+        {
+          "current": "At Donceles",
+          "issue": "'At location' pattern",
+          "proposed": "Misgendering and Therapy",
+          "reasoning": "Camera shops with 'joven', therapy confession about detransitioning"
+        },
+        {
+          "current": "At Condesa",
+          "issue": "'At location' pattern",
+          "proposed": "The Kiss That Didn't Happen",
+          "reasoning": "Hidden fountain, the intersection, fantasy of missing flight"
+        },
+        {
+          "current": "Messaging (2024-07-01)",
+          "issue": "Generic with date",
+          "proposed": "Nymeria's Welcome",
+          "reasoning": "Scene name; cat welcoming narrator home, text about things going badly"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total_files_reviewed": 31,
+    "total_problematic_scenes": 10,
+    "total_problematic_events": 88,
+    "pattern_issues": {
+      "at_location": 35,
+      "truncated_apostrophes": 24,
+      "generic_with_dates": 14,
+      "vague_fragments": 11,
+      "long_unquoted_phrases": 4
+    }
+  }
+}

@@ -7,6 +7,7 @@ Validation tools for Palimpsest data integrity and quality checks.
 This package contains validators for different aspects of the Palimpsest system:
 - Wiki link integrity and orphan detection
 - Database schema drift, migrations, and referential integrity
+- Metadata YAML structural and entity validation
 - Markdown link validation (planned)
 - Cross-system consistency checks (planned)
 

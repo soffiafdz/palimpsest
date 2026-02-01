@@ -15,8 +15,6 @@ Command Structure:
     - Query & Browse (query)
     - Maintenance (maintenance)
     - Export (export)
-    - Tombstone Management (tombstone)
-    - Sync State Management (sync)
     - Stats & Health (stats, health, optimize)
 
 Usage:
@@ -103,8 +101,7 @@ from .backup import backup, backups, restore  # noqa: E402
 from .query import query  # noqa: E402
 from .maintenance import maintenance, stats, health, optimize  # noqa: E402
 from .export import export  # noqa: E402
-from .tombstone import tombstone  # noqa: E402
-from .sync import sync  # noqa: E402
+from .prune import prune_orphans  # noqa: E402
 
 # Register top-level commands
 cli.add_command(init)
@@ -115,14 +112,13 @@ cli.add_command(restore)
 cli.add_command(stats)
 cli.add_command(health)
 cli.add_command(optimize)
+cli.add_command(prune_orphans)
 
 # Register command groups
 cli.add_command(migration)
 cli.add_command(query)
 cli.add_command(maintenance)
 cli.add_command(export)
-cli.add_command(tombstone)
-cli.add_command(sync)
 
 
 if __name__ == "__main__":

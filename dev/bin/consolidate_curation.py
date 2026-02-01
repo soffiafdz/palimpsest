@@ -176,23 +176,28 @@ def validate_people_curation(
 
         # Group by canonical key to see if they're the same person
         canonical_groups: Dict[str, List[Tuple[str, str]]] = {}
+        # Also track disambiguation status per entry
+        disambiguated_entries: List[Tuple[str, str, str]] = []  # (year, raw_name, ckey)
+        undisambiguated_entries: List[Tuple[str, str, str]] = []  # (year, raw_name, ckey)
+
         for year, raw_name, canonical in occurrences:
             if canonical is None:
                 continue
             # Check if first-name-only (no lastname, no disambiguator)
             has_lastname = bool(canonical.get("lastname"))
             has_disambig = bool(canonical.get("disambiguator"))
+            ckey = canonical_key(canonical)
 
             if has_lastname or has_disambig:
-                continue  # Properly disambiguated
+                disambiguated_entries.append((year, raw_name, ckey))
+            else:
+                undisambiguated_entries.append((year, raw_name, ckey))
+                # First-name-only across multiple years
+                if ckey not in canonical_groups:
+                    canonical_groups[ckey] = []
+                canonical_groups[ckey].append((year, raw_name))
 
-            # First-name-only across multiple years
-            ckey = f"{canonical.get('name', '')}|"
-            if ckey not in canonical_groups:
-                canonical_groups[ckey] = []
-            canonical_groups[ckey].append((year, raw_name))
-
-        # Flag ambiguous entries
+        # Flag ambiguous entries (first-name-only in multiple years)
         for ckey, entries_list in canonical_groups.items():
             entry_years = set(year for year, _ in entries_list)
             if len(entry_years) > 1:
@@ -202,6 +207,19 @@ def validate_people_curation(
                     f"'{base_name}' appears in multiple years without disambiguation: "
                     f"[{years_str}] - Same person? If not, add disambiguator. ({entries_str})"
                 )
+
+        # Flag inconsistent disambiguation across years
+        # (some years have it, some don't - likely same person with inconsistent curation)
+        if disambiguated_entries and undisambiguated_entries:
+            disamb_years = set(year for year, _, _ in disambiguated_entries)
+            undis_years = set(year for year, _, _ in undisambiguated_entries)
+            disamb_str = "; ".join(f"{y}: {n}" for y, n, _ in sorted(disambiguated_entries))
+            undis_str = "; ".join(f"{y}: {n}" for y, n, _ in sorted(undisambiguated_entries))
+            result.warnings.append(
+                f"'{base_name}' has inconsistent disambiguation across years: "
+                f"WITH disambig [{', '.join(sorted(disamb_years))}]: {disamb_str} | "
+                f"WITHOUT [{', '.join(sorted(undis_years))}]: {undis_str}"
+            )
 
     return result
 
@@ -298,7 +316,7 @@ def canonical_key(canonical: Dict[str, Any]) -> str:
         # Multi-person entry gets unique key
         return f"_multi_{id(canonical)}"
 
-    name = canonical.get("name", "").lower()
+    name = (canonical.get("name") or "").lower()
     lastname = (canonical.get("lastname") or "").lower()
     disambiguator = (canonical.get("disambiguator") or "").lower()
 
@@ -619,16 +637,33 @@ def format_output(
     sorted_merged = sorted(merged.items(), key=sort_key)
 
     # Output merged people
+    # Track used keys to detect duplicates
+    used_keys: Dict[str, int] = {}
+
     for _, data in sorted_merged:
         canonical = data["canonical"]
 
-        # Use canonical name as key
+        # Use canonical name as key, including disambiguator to avoid duplicates
         if "_multi" in canonical:
             key_name = data["raw_names"][0]
         else:
             name = canonical.get("name", "")
             lastname = canonical.get("lastname")
-            key_name = f"{name} {lastname}".strip() if lastname else name
+            disambiguator = canonical.get("disambiguator")
+
+            if lastname:
+                key_name = f"{name} {lastname}"
+            elif disambiguator:
+                key_name = f"{name} ({disambiguator})"
+            else:
+                key_name = name
+
+        # Handle remaining duplicates by appending a number
+        if key_name in used_keys:
+            used_keys[key_name] += 1
+            key_name = f"{key_name} #{used_keys[key_name]}"
+        else:
+            used_keys[key_name] = 1
 
         lines.append(f"{key_name}:")
 
@@ -650,8 +685,9 @@ def format_output(
         lines.append("  canonical:")
         if "_multi" in canonical:
             lines.append("    _multi_person: true")
+            lines.append("    entries:")
             for c in canonical["_multi"]:
-                lines.append(f"    - {c}")
+                lines.append(f"      - {c}")
         else:
             for field in ["name", "lastname", "alias", "disambiguator"]:
                 val = canonical.get(field)

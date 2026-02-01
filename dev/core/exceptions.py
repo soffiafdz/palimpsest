@@ -7,6 +7,18 @@ Custom exception classes for the Palimpsest project.
 This module defines a hierarchy of exceptions used throughout the project
 to handle specific error conditions in different subsystems.
 
+Data Architecture:
+    Ground Truth Sources:
+    - Journal prose: MD files (minimal frontmatter: date, word_count, people, locations)
+    - Journal metadata: Wiki (editable) → DB → YAML export
+    - Manuscript content: Wiki + drafts → DB → YAML export
+
+    Data Flow:
+    1. inbox → txt → md (prose creation with minimal frontmatter)
+    2. Metadata YAML (humanly populated companion files)
+    3. Metadata YAML → validate → DB (import)
+    4. Wiki (edit) → DB (derived) → Canonical YAML (git export)
+
 Exception Hierarchy:
     Exception (built-in)
     ├── DatabaseError - Base for all database-related errors
@@ -14,11 +26,15 @@ Exception Hierarchy:
     │   ├── HealthCheckError - Database health check failures
     │   └── ExportError - Data export operation failures
     ├── ValidationError - Data validation failures
+    │   ├── EntryValidationError - Entry-specific validation failures
+    │   └── MetadataValidationError - Metadata YAML validation failures
     ├── TemporalFileError - Temporary file management errors
     ├── TxtBuildError - Raw export to text conversion errors
     ├── Txt2MdError - Text to Markdown conversion errors
-    ├── Yaml2SqlError - Markdown to database sync errors
-    ├── Sql2YamlError - Database to Markdown export errors
+    ├── Yaml2SqlError - Metadata YAML to database import errors
+    ├── Sql2YamlError - Database to canonical YAML export errors
+    ├── Wiki2SqlError - Wiki to database sync errors
+    ├── Sql2WikiError - Database to wiki export errors
     └── PdfBuildError - PDF generation errors
 
 Usage:
@@ -170,6 +186,28 @@ class EntryValidationError(ValidationError):
     pass
 
 
+class MetadataValidationError(ValidationError):
+    """
+    Exception for metadata YAML validation failures.
+
+    Raised when metadata YAML files (scenes, events, threads, etc.)
+    fail validation before database import:
+    - Missing required fields (date, name, description)
+    - Invalid field types or structures
+    - Unknown entities (people/locations not in curation)
+    - Ambiguous entity references
+
+    Pipeline: Metadata YAML → validate (this step) → DB
+
+    Examples:
+        >>> raise MetadataValidationError("Scene missing required 'name' field")
+        >>> raise MetadataValidationError("Unknown person 'Clara' - did you mean 'Clara Belais'?")
+        >>> raise MetadataValidationError("Invalid motif 'The Unknown' - not in controlled vocabulary")
+    """
+
+    pass
+
+
 class EntryParseError(Exception):
     """
     Exception for entry parsing failures.
@@ -200,7 +238,7 @@ class TxtBuildError(Exception):
     - Date parsing errors
     - I/O errors
 
-    Pipeline Stage: inbox → txt (Step 1)
+    Pipeline: inbox → txt (prose creation)
 
     Examples:
         >>> raise TxtBuildError("Cannot parse date from filename: invalid format")
@@ -221,7 +259,7 @@ class Txt2MdError(Exception):
     - File I/O problems
     - Date extraction failures
 
-    Pipeline Stage: txt → md (Step 2)
+    Pipeline: txt → md (prose creation)
 
     Examples:
         >>> raise Txt2MdError("Cannot extract date from text file")
@@ -234,21 +272,21 @@ class Txt2MdError(Exception):
 
 class Sql2YamlError(Exception):
     """
-    Exception for database to Markdown export errors.
+    Exception for database to canonical YAML export errors.
 
-    Raised during sql2yaml when exporting database entries back to
-    Markdown files with updated YAML frontmatter fails:
+    Raised when exporting database state to canonical YAML files for
+    git version control fails:
     - Database query failures
     - YAML serialization errors
     - File writing issues
     - Data conversion problems
 
-    Pipeline Stage: database → md (Step 4)
+    Pipeline: DB → canonical YAML (git-tracked exports)
 
     Examples:
         >>> raise Sql2YamlError("Cannot serialize relationship data to YAML")
         >>> raise Sql2YamlError("Entry not found in database: 2024-01-15")
-        >>> raise Sql2YamlError("Failed to write Markdown file")
+        >>> raise Sql2YamlError("Failed to write canonical YAML file")
     """
 
     pass
@@ -256,20 +294,20 @@ class Sql2YamlError(Exception):
 
 class Yaml2SqlError(Exception):
     """
-    Exception for Markdown to database sync errors.
+    Exception for metadata YAML to database import errors.
 
-    Raised during yaml2sql when parsing Markdown YAML frontmatter and
-    syncing to database fails:
+    Raised when importing metadata YAML files (scenes, events, threads,
+    arcs, etc.) to database fails:
     - YAML parsing errors
     - Database constraint violations
     - Invalid metadata format
-    - Relationship resolution failures
+    - Entity resolution failures (unknown people/locations)
 
-    Pipeline Stage: md → database (Step 3)
+    Pipeline: Metadata YAML → validate → DB
 
     Examples:
-        >>> raise Yaml2SqlError("Invalid YAML frontmatter: malformed syntax")
-        >>> raise Yaml2SqlError("Cannot resolve person reference: 'Unknown Person'")
+        >>> raise Yaml2SqlError("Invalid metadata YAML: malformed syntax")
+        >>> raise Yaml2SqlError("Cannot resolve person: 'Unknown Person'")
         >>> raise Yaml2SqlError("Database integrity error: duplicate entry")
     """
 
@@ -280,14 +318,14 @@ class Sql2WikiError(Exception):
     """
     Exception for database to vimwiki export errors.
 
-    Raised during sql2wiki when exporting database entities (people, themes,
-    tags, etc.) to vimwiki pages fails:
+    Raised when exporting database entities (people, locations, entries,
+    etc.) to vimwiki pages fails:
     - Database query failures
     - Wiki page generation errors
     - File writing issues
     - Entity serialization problems
 
-    Pipeline Stage: database → wiki (Step 6)
+    Pipeline: DB → Wiki (page generation)
 
     Examples:
         >>> raise Sql2WikiError("Cannot generate wiki page for person: 'Alice'")
@@ -302,14 +340,14 @@ class Wiki2SqlError(Exception):
     """
     Exception for vimwiki to database sync errors.
 
-    Raised during wiki2sql when parsing manually edited vimwiki entity
-    pages and syncing changes back to database fails:
+    Raised when parsing manually edited vimwiki pages and syncing
+    changes back to database fails:
     - Wiki page parsing errors
     - Database update conflicts
     - Invalid wiki structure
-    - Field ownership violations
+    - Entity resolution failures
 
-    Pipeline Stage: wiki → database (Step 7)
+    Pipeline: Wiki (edit) → DB (source of truth for metadata)
 
     Examples:
         >>> raise Wiki2SqlError("Cannot parse person wiki page: malformed structure")
@@ -332,7 +370,7 @@ class PdfBuildError(Exception):
     - File concatenation problems
     - Tectonic/XeLaTeX errors
 
-    Pipeline Stage: md → pdf (Step 5)
+    Pipeline: md → pdf
 
     Examples:
         >>> raise PdfBuildError("Pandoc conversion failed: LaTeX error")

@@ -87,6 +87,9 @@ from .narrative import (
     FLASHBACK_MONTHS,
 )
 
+# YAML formatting utilities
+from .yaml_formatter import YAMLFormatter
+
 __all__ = [
     # Markdown/YAML
     "split_frontmatter",
@@ -140,4 +143,6 @@ __all__ = [
     "FLASHBACK_RANGE",
     "CORE_MONTHS",
     "FLASHBACK_MONTHS",
+    # YAML formatting
+    "YAMLFormatter",
 ]

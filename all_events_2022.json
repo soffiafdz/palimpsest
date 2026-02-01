@@ -1,0 +1,3163 @@
+{
+  "2022-01-13.yaml": {
+    "date": "2022-01-13",
+    "events": [
+      {
+        "name": "Return Moment",
+        "scenes": [
+          "The Return",
+          "The Hospital Bed",
+          "The Test Results",
+          "Movie Night Disruption"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Return",
+            "description": "Interior, Montreal apartment. The narrator unpacks, confronting the ambiguity of \"home.\" Voiceover muses on what was left unwritten during the trip\u2014th"
+          },
+          {
+            "name": "The Hospital Bed",
+            "description": "Night, Puerto Vallarta clinic. Feverish, blood pressure low. Family members hover. The scale reads 70kg\u2014a number noted, filed away. Sent home with ant"
+          },
+          {
+            "name": "The Test Results",
+            "description": "Split screen: Guadalajara, rapid antigen. Tijuana, PCR swab. Christmas Eve. Both negative. Relief traveling north through Mexico."
+          },
+          {
+            "name": "Movie Night Disruption",
+            "description": "Evening, Montreal apartment. A film plays\u2014college hookup scene on a rooftop couch. The narrator shifts, notices something wrong. Looks down. Confusion"
+          }
+        ]
+      },
+      {
+        "name": "Waiting (2022-01-13)",
+        "scenes": [
+          "The Instagram Dance",
+          "The Haircut"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Instagram Dance",
+            "description": "Montage: midnight Christmas message, cat story reactions, the playful competition (\"Wait, then what am I?\"). The digital courtship establishing its rh"
+          },
+          {
+            "name": "The Haircut",
+            "description": "Salon chair. The ponytail falls. First time since Spain she can't tie it back. Later: the Instagram story posted without the result, fishing. Reaction"
+          }
+        ]
+      },
+      {
+        "name": "Writing (2022-01-13)",
+        "scenes": [
+          "The Pharmacy",
+          "Composing the Message"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Pharmacy",
+            "description": "Fluorescent lights, checkout counter. Antidepressants. Paper towels, soap. And condoms\u2014a box held, examined, purchased. The question hanging: Do I rea"
+          },
+          {
+            "name": "Composing the Message",
+            "description": "Night, alone with phone. Drafting, deleting. \"I can't stop thinking about you. Do you want to come over?\" No\u2014too direct. \"Option 8?\" The message unsen"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-14.yaml": {
+    "date": "2022-01-14",
+    "events": [
+      {
+        "name": "Writing (2022-01-14)",
+        "scenes": [
+          "Unsent Sensual Message",
+          "Sleepless Dawn",
+          "Trans Healthcare Debate",
+          "Seeking Molly"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Unsent Sensual Message",
+            "description": "Opening with drafted romantic texts about warmth of hands and whispered words, the eighth option, the desire to do more than just kiss."
+          },
+          {
+            "name": "Sleepless Dawn",
+            "description": "Unable to sleep past 5 AM, the narrator sends a message about considering getting up, then sleeps until 10, checking phone for a particular message th"
+          },
+          {
+            "name": "Trans Healthcare Debate",
+            "description": "A friend sends an article about backlash against psychological counseling requirements for trans teens; the narrator explains gatekeeping and policing"
+          },
+          {
+            "name": "Seeking Molly",
+            "description": "Asking about obtaining MDMA, getting referrals, but ultimately not reaching out\u2014the hesitation captured in \"Maybe tomorrow?\""
+          }
+        ]
+      },
+      {
+        "name": "Candidacy Moment",
+        "scenes": [
+          "Candidacy Exam Stress",
+          "Crawling Sensation"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Candidacy Exam Stress",
+            "description": "Confronting confusing deadlines about the PhD candidacy exam, the website's misinformation, the uncertainty of whether previous work counts."
+          },
+          {
+            "name": "Crawling Sensation",
+            "description": "Stress manifests as ants crawling from feet to ears, the urge to scratch skin off, feeling dirty and corrupted, the promise of a shower."
+          }
+        ]
+      },
+      {
+        "name": "Walking (2022-01-14)",
+        "scenes": [
+          "Masturbation and Fertility Fears",
+          "Condom Calculus",
+          "Self-Doubt Spiral"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Masturbation and Fertility Fears",
+            "description": "Late night sexual release leaves white spots on blue sheets, triggering dysphoric questions: Am I capable of getting someone pregnant? How would that "
+          },
+          {
+            "name": "Condom Calculus",
+            "description": "Walking uphill from the pharmacy, mentally rehearsing conversations about preferring the mild dysphoria of wearing a condom over the gargantuan one of"
+          },
+          {
+            "name": "Self-Doubt Spiral",
+            "description": "Acknowledging the romantic situation isn't working, doubting the sent message, the fear that revealing feelings would make her leave, the bitter comfo"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-15.yaml": {
+    "date": "2022-01-15",
+    "events": [
+      {
+        "name": "S Romantic Psychology The Question",
+        "scenes": [
+          "The Invitation",
+          "Am I Being Obsessive?",
+          "The Letter Never Sent",
+          "The Dream",
+          "The Pattern",
+          "The Reversed Dynamic",
+          "The Surveillance",
+          "Something Missing"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Invitation",
+            "description": "Narrator composes a message inviting the romantic interest to stay the night now that COVID results are negative."
+          },
+          {
+            "name": "The Letter Never Sent",
+            "description": "Reading on the Kindle triggers longing for intimate epistolary exchange; checking an old friend's profile before her birthday, ambivalent about reachi"
+          },
+          {
+            "name": "The Dream",
+            "description": "An ex appears sick, possibly cancer, something about her breasts. Later the narrator remembers her actual surgery from before they dated."
+          },
+          {
+            "name": "The Pattern",
+            "description": "A conversation with a confidant surfaces the insight: she always loses interest when someone wants her more. Past relationships parade through as evid"
+          },
+          {
+            "name": "The Reversed Dynamic",
+            "description": "Narrator realizes the current situation inverts the pattern\u2014she's the one more interested\u2014and questions whether mixed signals are ADHD or rejection."
+          },
+          {
+            "name": "The Surveillance",
+            "description": "Watching the romantic interest's reposted story multiple times, wondering if she watches back. Posting content, cataloguing who responds. She doesn't."
+          },
+          {
+            "name": "Something Missing",
+            "description": "The entry closes with vague unease: \"I feel like I'm missing something. Something doesn't feel right.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-16.yaml": {
+    "date": "2022-01-16",
+    "events": [
+      {
+        "name": "Messaging (2022-01-16)",
+        "scenes": [
+          "The Bed Prison",
+          "The Negative Result",
+          "The Third Message"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Bed Prison",
+            "description": "Waking at 8 AM but remaining paralyzed under the duvet until past noon; no hunger, no motivation, no craving for coffee\u2014depression's physical weight."
+          },
+          {
+            "name": "The Negative Result",
+            "description": "PCR test comes back negative, quarantine officially over, but the freedom is hollow: everything is closed, no one to see."
+          },
+          {
+            "name": "The Third Message",
+            "description": "Sending Kate another message about test results, hoping for a response; she hasn't even opened the conversation."
+          }
+        ]
+      },
+      {
+        "name": "Gender Moment",
+        "scenes": [
+          "The Gender Question",
+          "The Email Plea",
+          "The Silent Watcher",
+          "The Alcohol Wish"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Gender Question",
+            "description": "Internal interrogation: \"Do I hate these feelings because they're feminine? Or do I relate them more with childishness and immaturity?\""
+          },
+          {
+            "name": "The Email Plea",
+            "description": "Instagram story about longing for email exchanges gets responses\u2014playful dismissal, offense at being overlooked, Telegram offers\u2014but not from the one "
+          },
+          {
+            "name": "The Silent Watcher",
+            "description": "Kate views stories but sends nothing; posts videos of children sledding with Spanish music that the narrator watches twice, counting."
+          },
+          {
+            "name": "The Alcohol Wish",
+            "description": "Wanting something to numb the feelings but unable to get any; the early-setting winter sun distorting time."
+          }
+        ]
+      },
+      {
+        "name": "Teenager Moment",
+        "scenes": [
+          "The Teenager Confession"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Teenager Confession",
+            "description": "Recognizing these aren't feminine traits but emotional immaturity; feeling like a teenager despite being five years older than friends."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-17.yaml": {
+    "date": "2022-01-17",
+    "events": [
+      {
+        "name": "Email Moment",
+        "scenes": [
+          "The Email Re-Read"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Email Re-Read",
+            "description": "INT. BEDROOM - NIGHT - The narrator lies in bed re-reading the email she sent, loving its closure, feeling it reads like a letter from a book without "
+          }
+        ]
+      },
+      {
+        "name": "Waiting (2022-01-17)",
+        "scenes": [
+          "Typing, Typing",
+          "Morning Inertia",
+          "The Lab Meeting",
+          "Therapy Session",
+          "The Passing Inventory",
+          "The Red Pill Tweet",
+          "The Deletion"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Typing, Typing",
+            "description": "INT. APARTMENT - DAY - Seeing the friend typing on WhatsApp and rushing to send \"what are you typing?\" before she can respond; a playful moment of con"
+          },
+          {
+            "name": "Morning Inertia",
+            "description": "INT. BEDROOM - MORNING - Snoozing alarms repeatedly, barely wanting to wake despite having prepared; showering and changing just in time."
+          },
+          {
+            "name": "The Lab Meeting",
+            "description": "INT. APARTMENT (VIRTUAL) - DAY - A video call triggers memory of last year's final day in the city when she cancelled a meeting to meet someone, then "
+          },
+          {
+            "name": "Therapy Session",
+            "description": "INT. APARTMENT (VIRTUAL) - DAY - The therapist reveals she didn't start dating until her thirties; the narrator shares embarrassment about discussing "
+          },
+          {
+            "name": "The Passing Inventory",
+            "description": "INT. APARTMENT - DAY - The narrator alone with her thoughts, wishing someone would tell her it's all in her head\u2014that her voice doesn't sound masculin"
+          },
+          {
+            "name": "The Red Pill Tweet",
+            "description": "INT. APARTMENT - NIGHT - Responding publicly to a Matrix-themed Twitter post: as a trans woman, she would choose reliving childhood with memories inta"
+          },
+          {
+            "name": "The Deletion",
+            "description": "INT. APARTMENT - NIGHT - An hour later, with no engagement, she deletes the tweet\u2014her first public statement about being trans, possibly seen by colle"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-18.yaml": {
+    "date": "2022-01-18",
+    "events": [
+      {
+        "name": "Manic Dependence",
+        "scenes": [
+          "Morning Disclosure",
+          "Second Email",
+          "The Archive Reopens",
+          "Confusion and Flirtation",
+          "The YouTube Reckoning",
+          "The Ultimatum",
+          "The Double Bind",
+          "The Unlikeable Protagonist",
+          "Therapy Coda"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Morning Disclosure",
+            "description": "The narrator drafts a lengthy email confessing her trans identity, detailing a night in DC and a recurring dream; hours spent finding the right words,"
+          },
+          {
+            "name": "Second Email",
+            "description": "Another confession to a different friend, expressing anxiety about receiving \"I already knew\" responses to coming out."
+          },
+          {
+            "name": "The Archive Reopens",
+            "description": "After days of silence, Kate's messages appear\u2014nonchalant admission that she \"sometimes\" thinks of the narrator, vague and uncommitted."
+          },
+          {
+            "name": "Confusion and Flirtation",
+            "description": "Kate doesn't realize the narrator has been back for a week; a playful exchange about snow leads to: \"If I start to miss you, too, will I get to see yo"
+          },
+          {
+            "name": "The YouTube Reckoning",
+            "description": "Watching a video expecting validation for romantic eagerness, instead confronted with the term \"manic dependence\"\u2014the priority of never being alone ra"
+          },
+          {
+            "name": "The Ultimatum",
+            "description": "After Kate mentions feeling sick, a message: \"Let me know when you're feeling well and are not so busy. It's your turn to ask me out this time.\" Immed"
+          },
+          {
+            "name": "The Double Bind",
+            "description": "Interior monologue: hating the need to always initiate, the insecurity of silences, but also losing interest when women show too much attention. The t"
+          },
+          {
+            "name": "The Unlikeable Protagonist",
+            "description": "Meta-awareness: \"If this were a book and I were the main character, I'd be so unlikeable.\""
+          },
+          {
+            "name": "Therapy Coda",
+            "description": "The therapist's reminder to be self-forgiving, to feel emotions rather than push them away; closing mantra: \"this, like everything, will pass.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-19.yaml": {
+    "date": "2022-01-19",
+    "events": [
+      {
+        "name": "Only I Have You",
+        "scenes": [
+          "The Multiverse Letter",
+          "The Core Fear Articulated",
+          "Story Surveillance",
+          "Tinder Redux"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Multiverse Letter",
+            "description": "Spanish prose about vivid dreams as visits to alternate realities; across all universes, only one version of this friend exists, making the narrator f"
+          },
+          {
+            "name": "The Core Fear Articulated",
+            "description": "Interior monologue crystallizing the psychological pattern: \"I want to be the first one to stop caring, to leave before being abandoned.\" The question"
+          },
+          {
+            "name": "Story Surveillance",
+            "description": "The narrator compares her obsessive watching of Kate's social media stories to Kate's single question about returning; listening to a song on repeat; "
+          },
+          {
+            "name": "Tinder Redux",
+            "description": "Creating a new account, this time with the transgender flag in the bio. Swiping without hope. Hours later: 9 likes, 3-4 matches. None of them appealin"
+          }
+        ]
+      },
+      {
+        "name": "Shouldn",
+        "scenes": [
+          "Profile Haunting",
+          "The Disappointing Date Remembered"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Profile Haunting",
+            "description": "Repeatedly opening the Kate match, staring at her pictures, recalling the upfront statements about not wanting exclusivity. Mild anxiety that Kate's p"
+          },
+          {
+            "name": "The Disappointing Date Remembered",
+            "description": "Questioning how attachment formed after a disappointing first date; when a friend asked enthusiastically how it went, the narrator didn't know what to"
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-01-19)",
+        "scenes": [
+          "The Unread Reply",
+          "Mental Real Estate",
+          "Tomorrow's Errands"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Unread Reply",
+            "description": "An email from one friend sits unread. The narrator expected this nervous avoidance with another friend's reply, but not this one. Wondering if this is"
+          },
+          {
+            "name": "Mental Real Estate",
+            "description": "The admission that Kate occupies more mental space than is reciprocated. That this imbalance \"shouldn't be.\" The word \"Stop.\" cutting the spiral."
+          },
+          {
+            "name": "Tomorrow's Errands",
+            "description": "Planning vaccination, hormone pickup, currency exchange, coffee beans. Ambivalently hoping to feel sick from the vaccine\u2014wanting the external to match"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-20.yaml": {
+    "date": "2022-01-20",
+    "events": [
+      {
+        "name": "Writing (2022-01-20)",
+        "scenes": [
+          "Breathless Fantasy",
+          "The Non-Jealousy Puzzle",
+          "Reading Alex's Email",
+          "Enumeration of Waiting",
+          "Third Vaccine Dose",
+          "Pharmacy Run",
+          "The Vaccine Selfie"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Breathless Fantasy",
+            "description": "Despite telling herself to stop fixating, sensory fantasies overwhelm: hand on leg, her hand on the narrator's arm, fantasized skin on fresh sheets, w"
+          },
+          {
+            "name": "The Non-Jealousy Puzzle",
+            "description": "Questioning the absence of jealousy: thinking of her constantly, knowing she's probably seeing others, yet feeling no insecurity. \"Is it her loss, tho"
+          },
+          {
+            "name": "Reading Alex's Email",
+            "description": "Finally reading the response, finding comfort in similar-yet-different paths, uncertain what to write back, waiting for another response first."
+          },
+          {
+            "name": "Enumeration of Waiting",
+            "description": "\"Monica, Sonny, Aliza, Melissa, Kate. I am waiting for all these women's words.\" The deep-down disbelief that any will respond."
+          },
+          {
+            "name": "Third Vaccine Dose",
+            "description": "Morning errands: messy vaccination process, long wait, mild symptoms used as excuse to cancel a meeting despite pressing academic questions."
+          },
+          {
+            "name": "Pharmacy Run",
+            "description": "Buying vodka, changing 600 dollars, picking up hormones, getting coffee beans, chips, watermelon juice\u2014the mundane logistics of life."
+          },
+          {
+            "name": "The Vaccine Selfie",
+            "description": "Taking a photo in her room with the band-aid; friend calls it cute, urges her to post; finally posting on Facebook and Instagram after usually refusin"
+          }
+        ]
+      },
+      {
+        "name": "Like Moment",
+        "scenes": [
+          "The Like",
+          "Crush Denial"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Like",
+            "description": "She likes the Instagram post. Immediate dismissal: \"she must like everything she sees. Why am I this way?\""
+          },
+          {
+            "name": "Crush Denial",
+            "description": "Asked if she has a crush on a friend; denial follows, though with underlying doubt. \"Do I, though?\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-21.yaml": {
+    "date": "2022-01-21",
+    "events": [
+      {
+        "name": "Messaging (2022-01-21)",
+        "scenes": [
+          "Flash-Forward Hook",
+          "The Regretted Message",
+          "The Unanswered Inbox",
+          "The Wrong Productivity"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Flash-Forward Hook",
+            "description": "A future narrator addresses the audience: \"Now, like a lot of love stories back in 2022, this one starts with a Tinder date.\" The name Sophie spoken a"
+          },
+          {
+            "name": "The Regretted Message",
+            "description": "Living room, couch. Typing a flirtatious text to Kate asking if it counts as cheating, then offering to hold the messages. The snort of self-recogniti"
+          },
+          {
+            "name": "The Unanswered Inbox",
+            "description": "Mental arithmetic of Kate's viewing patterns: Thursday messages not seen until Monday. The evidence mounting that this isn't working. The dismissal of"
+          },
+          {
+            "name": "The Wrong Productivity",
+            "description": "A Teams message from a colleague. Uploading a dataset in under an hour. The question: why is efficiency available for everything except her own projec"
+          }
+        ]
+      },
+      {
+        "name": "Writing (2022-01-21)",
+        "scenes": [
+          "The Dead Conversation",
+          "The Genealogy Revelation",
+          "Waiting for Disclosure's Echo",
+          "Evening Fragments"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Dead Conversation",
+            "description": "Telling a Tinder match about Alda liking her vibes. The confused \"Ehmm, alright, I guess it's good(?)\" The conversation dying. The match not deleted. "
+          },
+          {
+            "name": "The Genealogy Revelation",
+            "description": "The chain named: Kate's French accent recalls Flore, whose face recalled Monica. The palimpsest of desire made visible. The admission: maybe she still"
+          },
+          {
+            "name": "Waiting for Disclosure's Echo",
+            "description": "Glancing at email, hoping for Aliza's response. Anticipating surprise, expecting confirmation she already knew. The memory of the pin, the comment. Th"
+          },
+          {
+            "name": "Evening Fragments",
+            "description": "SSH configuration fixed. Old video of the cat posted. The laptop clock still on Mexico City time. A drink served. The question of whether to read or c"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-22.yaml": {
+    "date": "2022-01-22",
+    "events": [
+      {
+        "name": "Dark Thoughts - That",
+        "scenes": [
+          "The Afternoon Waking",
+          "The Phone Vigil",
+          "The Dying Conversation",
+          "The Package Call",
+          "The Email Imagining",
+          "The Instagram Pose",
+          "The Seen Feature",
+          "Morning Replay",
+          "The Rejection She Won't Get"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Afternoon Waking",
+            "description": "Bedroom, past noon. The narrator surfaces from a weed-and-alcohol fog, does laundry, makes sandwiches at 2:30 PM, returns to bed. The day refuses to b"
+          },
+          {
+            "name": "The Phone Vigil",
+            "description": "Bedroom. Compulsive checking, as if a notification could rewrite her circumstances. The doctor's euphemism surfaces: \"dark thoughts.\" She hasn't had t"
+          },
+          {
+            "name": "The Dying Conversation",
+            "description": "Phone screen, Tinder open. A match replies but the exchange flatlines. The trans flag in her bio hangs like a question: is that what kills it?"
+          },
+          {
+            "name": "The Package Call",
+            "description": "Phone with mother. The blanket shipped for $200, customs a gamble. Self-indictment: \"I keep taking bad decisions.\""
+          },
+          {
+            "name": "The Email Imagining",
+            "description": "Interior monologue. Three sent emails, three different anxieties. She imagines herself as Aliza, knows she would repress and avoid. \"What could anybod"
+          },
+          {
+            "name": "The Instagram Pose",
+            "description": "Phone camera open. The narrator poses for a story she won't post, wanting to be seen but not by anyone. The contradiction bothers her."
+          },
+          {
+            "name": "The Seen Feature",
+            "description": "Phone screen, messages unseen. The futility of enabling read receipts when being ignored looks the same either way."
+          },
+          {
+            "name": "Morning Replay",
+            "description": "Memory of earlier: masturbation, wet panties, cum drops on sheets. The question emerges: \"Is sex what I am looking for?\""
+          },
+          {
+            "name": "The Rejection She Won't Get",
+            "description": "Interior. Knowing she needs a clear \"I'm not interested\" to let go of the flirtation. Knowing it won't come. \"I won't get that.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-23.yaml": {
+    "date": "2022-01-23",
+    "events": [
+      {
+        "name": "Do You Know That I Am Trans",
+        "scenes": [
+          "Medication Inventory",
+          "The Glance at the Phone",
+          "Vodka-Lemon Memory Cascade"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Medication Inventory",
+            "description": "Morning exhaustion; mentally rehearsing the psychiatrist appointment, cataloguing the medication's effects: initial improvement, then swinging to extr"
+          },
+          {
+            "name": "The Glance at the Phone",
+            "description": "The unconscious reach toward the device after writing, still expecting responses that won't come."
+          },
+          {
+            "name": "Vodka-Lemon Memory Cascade",
+            "description": "A drink triggers Granada: a bar, dancing, Fernando watching. Then Sevilla: the Mexican guide, a defending moment. Then Alice's kitchen: asked to name "
+          }
+        ]
+      },
+      {
+        "name": "SpadesFairy Moment",
+        "scenes": [
+          "SpadesFairy"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "SpadesFairy",
+            "description": "At the computer months ago, typing Alice's Reddit username, hoping to find her thoughts about that kitchen night. Instead: reading about lost jobs and"
+          }
+        ]
+      },
+      {
+        "name": "Writing (2022-01-23)",
+        "scenes": [
+          "The Loneliness Question",
+          "Rehearsing Disclosure",
+          "The Dreaming Fantasy",
+          "The Photos"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Loneliness Question",
+            "description": "A pause between drink and joint: \"What is it with these women that I keep writing about them after meeting them for a couple of hours?\""
+          },
+          {
+            "name": "Rehearsing Disclosure",
+            "description": "Drunk, high, alone in the apartment. The question forms: \"Alda, do you know that I am trans?\" Straight to the point. Never spoken."
+          },
+          {
+            "name": "The Dreaming Fantasy",
+            "description": "Not sex, but sleep. Holding someone under sheets, feeling warm by her company, sharing the intimacy of dreaming together."
+          },
+          {
+            "name": "The Photos",
+            "description": "A phone notification: pictures arrive for her to choose the best one. Even masked, that face. Wishing to see the smile in her eyes."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-24.yaml": {
+    "date": "2022-01-24",
+    "events": [
+      {
+        "name": "Writing (2022-01-24)",
+        "scenes": [
+          "Writing Without Mentioning Her",
+          "The Reckoning",
+          "The Deletion",
+          "Monica's Parallel Story",
+          "The Pattern Surfaces",
+          "Self-Compassion",
+          "Taking Stock"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Writing Without Mentioning Her",
+            "description": "Late night, vodka nearly gone. Managing to write an entire email to Monica without mentioning Kate once\u2014a small victory. The deep-down fantasy that Ka"
+          },
+          {
+            "name": "The Reckoning",
+            "description": "Self-confrontation. \"This is all on me. I did this to myself.\" The inability to accept disinterest without it being spelled out, the recognition that "
+          },
+          {
+            "name": "The Deletion",
+            "description": "The decisive act: deleting all the dating apps. The admission: \"I am clearly not ready to be dating, be it casually or not.\" Resolution to focus on th"
+          },
+          {
+            "name": "Monica's Parallel Story",
+            "description": "Reading about Leonel proposing movies \"and stuff\" at his house. Monica's disgust, her refusal to reply, knowing she deserves better. The comparison: i"
+          },
+          {
+            "name": "The Pattern Surfaces",
+            "description": "Feeling the exact same way as waiting for Molly after the camping trip, as sending Flore that vulnerable message about her PI's partner. The realizati"
+          },
+          {
+            "name": "Self-Compassion",
+            "description": "A moment of grace. \"These feelings are valid and human... They, like everything else bothering me right now, will eventually pass.\" Letting the sadnes"
+          },
+          {
+            "name": "Taking Stock",
+            "description": "The inventory of depletion: juice finished yesterday, meatballs eaten today, vodka bottle empty. Drinking the last with chamomile tea."
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-01-24)",
+        "scenes": [
+          "The Community Thread",
+          "The Screenshot to No One",
+          "The Final Check"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Community Thread",
+            "description": "Alex's gender therapist appointment today. Aliza still silent, might never write back. Johanna saw the message but didn't reply\u2014though last time it to"
+          },
+          {
+            "name": "The Screenshot to No One",
+            "description": "Browsing Facebook, Helena's face appearing in \"People you might know.\" Taking a screenshot with no one to send it to."
+          },
+          {
+            "name": "The Final Check",
+            "description": "Grabbing the phone to see if the deleted conversation somehow returned. Then finishing the drink before bed."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-25.yaml": {
+    "date": "2022-01-25",
+    "events": [
+      {
+        "name": "If I Didn",
+        "scenes": [
+          "The Anxiety Pendulum",
+          "The Therapy Omission",
+          "The Photoshoot",
+          "The Conditional Beauty",
+          "The Inbox Vigil"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Anxiety Pendulum",
+            "description": "Interior monologue swinging between catastrophic thinking and realizing problems are insignificant. The contrast between indifference toward one woman"
+          },
+          {
+            "name": "The Therapy Omission",
+            "description": "Postponing the alarm until minutes before the appointment. Lying about physical symptoms, then correcting herself to mention the low mood. The therapi"
+          },
+          {
+            "name": "The Photoshoot",
+            "description": "Taking pictures outside, hating most of them. Editing the acceptable two, posting them with a video story. The ritual of public presentation."
+          },
+          {
+            "name": "The Conditional Beauty",
+            "description": "Watching her own story walking down stairs. \"If I didn't know it was me, I'd think the picture is of a pretty woman.\" Wanting to reach through the scr"
+          },
+          {
+            "name": "The Inbox Vigil",
+            "description": "Likes accumulating on the post. Messages from friends unreplied. An email about submitting an abstract. The asymmetry of who she responds to and who s"
+          }
+        ]
+      },
+      {
+        "name": "Remembering (2022-01-25)",
+        "scenes": [
+          "The Self-Interrogation",
+          "The Depression Question"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Self-Interrogation",
+            "description": "Two possible reasons for silence: busy or actively ignoring. Neither warrants reaching out. \"Why am I so needy? What am I looking for? When did I beco"
+          },
+          {
+            "name": "The Depression Question",
+            "description": "Counting human contact today: a phone call, a greeting, a voice note. Unable to remember the last productive day. \"Is this what depression feels like?"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-26.yaml": {
+    "date": "2022-01-26",
+    "events": [
+      {
+        "name": "During The Confusion Of Adolescence",
+        "scenes": [
+          "Writer's Block",
+          "The 350-Word Abstract",
+          "Private Grooming Ritual",
+          "Mother's Package"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Writer's Block",
+            "description": "At the desk, unable to respond to friends' emails despite having thoughts to share; a knot presses the stomach, words won't come."
+          },
+          {
+            "name": "The 350-Word Abstract",
+            "description": "Spending most of the day drafting, unable to stop asking forgiveness for being a poor student; academic paralysis."
+          },
+          {
+            "name": "Private Grooming Ritual",
+            "description": "Alarm off again. Showering without going out. Shaving legs even though no one will see\u2014the pleasure anticipated: clean sheets, smooth skin."
+          },
+          {
+            "name": "Mother's Package",
+            "description": "Picking up the delivery, starting laundry; small tasks as motivation scaffolding."
+          }
+        ]
+      },
+      {
+        "name": "Weight Loss In High School Emerges",
+        "scenes": [
+          "The Closet Memory"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Closet Memory",
+            "description": "FLASHBACK: Middle school mornings when no one was home. The exhilarating chill hearing there would be no classes. Exploring the parents' closet, the d"
+          }
+        ]
+      },
+      {
+        "name": "At Table (2022-01-26)",
+        "scenes": [
+          "First Love as Normalcy",
+          "The Transformation"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "First Love as Normalcy",
+            "description": "FLASHBACK: High school. The closet exploration stopped around when first love began. \"She was my normalcy. Was I depressed before or after finally mee"
+          },
+          {
+            "name": "The Transformation",
+            "description": "FLASHBACK: Chubby middle schooler becoming slim young man in months. \"I stopped eating. I stopped caring.\""
+          }
+        ]
+      },
+      {
+        "name": "Remembering (2022-01-26)",
+        "scenes": [
+          "Deleting the Story",
+          "Crying Without Cause",
+          "The Unanswerable Question"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Deleting the Story",
+            "description": "Removing the vodka and tea post from somewhere. Knowing whose attention she wants but cutting off the reach."
+          },
+          {
+            "name": "Crying Without Cause",
+            "description": "Feeling like crying, unsure why. Pride in not mentioning her again. Knowing this period will be remembered as the obsession time."
+          },
+          {
+            "name": "The Unanswerable Question",
+            "description": "What would fix this hurt? A response? An apology? A smiling emoticon? \"The problem is within me. I am the one who should be able to fix it. But, how?\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-27.yaml": {
+    "date": "2022-01-27",
+    "events": [
+      {
+        "name": "Name Moment",
+        "scenes": [
+          "The Name Before the Name"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Name Before the Name",
+            "description": "Epigraph in Spanish: a friend recounts two times the narrator shared memories of being a girl. First, approaching her and saying she looked like a kin"
+          }
+        ]
+      },
+      {
+        "name": "At Medical clinic",
+        "scenes": [
+          "Quadruple-Texting Calculus",
+          "The Sledding Stories",
+          "The Vanishing",
+          "Blood Draw at Dawn"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Quadruple-Texting Calculus",
+            "description": "Half-joking with a friend about whether messaging on a different app counts as quadruple-texting; the absurdist arithmetic of digital pursuit."
+          },
+          {
+            "name": "The Sledding Stories",
+            "description": "Watching the crush's Instagram stories: sledding with roommate, green eyeshadow, tongue out, videos sliding down snow, then the climactic scream\u2014\"Tell"
+          },
+          {
+            "name": "The Vanishing",
+            "description": "Stories suddenly gone. The narrator messages about them; they were meant for someone's mother. Three people saw them. A brief exchange, then silence a"
+          },
+          {
+            "name": "Blood Draw at Dawn",
+            "description": "Three hours of sleep, a 3 AM email started and sent ninety minutes later. Blood drawn. No time to reply to anyone."
+          }
+        ]
+      },
+      {
+        "name": "Familiar Moment",
+        "scenes": [
+          "The Familiar Face",
+          "The Orientation Question",
+          "Trans Disclosure",
+          "The Feminine Urge"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Familiar Face",
+            "description": "New Tinder match: a face seen before, maybe Bumble, maybe the first time the app was deleted. A Brie Larson GIF sent: \"Hello again, friend of a friend"
+          },
+          {
+            "name": "The Orientation Question",
+            "description": "A Tinder match asks about orientation, then reveals she's looking for a threesome. The narrator declines the guy but starts reconsidering afterward."
+          },
+          {
+            "name": "Trans Disclosure",
+            "description": "\"I'm trans, though, is that OK to you?\" \"Sure.\" She asks for Snapchat anyway. A small, unexpected acceptance."
+          },
+          {
+            "name": "The Feminine Urge",
+            "description": "Self-aware reflection: the compulsion to post story after story hoping the crush will notice, knowing she won't."
+          }
+        ]
+      },
+      {
+        "name": "Declaration Moment",
+        "scenes": [
+          "The Declaration"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Declaration",
+            "description": "To a friend, marking the moment: \"I give up on Pepe le pew.\" The formal renunciation of a pursuit."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-28.yaml": {
+    "date": "2022-01-28",
+    "events": [
+      {
+        "name": "Messaging (2022-01-28)",
+        "scenes": [
+          "Deleting the Number",
+          "The Unanswered Questions",
+          "Morning Masturbation",
+          "New Match Responds"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Deleting the Number",
+            "description": "Going into contacts and deleting the number; still composing imaginary messages about \"the camping trip to Ontario\" but knowing any text would be path"
+          },
+          {
+            "name": "The Unanswered Questions",
+            "description": "Replaying the departure: why keep talking about future meetings? Why the second kiss? Why did her cheeks change color? The memory analyzed endlessly."
+          },
+          {
+            "name": "Morning Masturbation",
+            "description": "Woke near 8, stayed in bed fantasizing about the new girl, came in shorts that got wet. Noting to mention this to the psychiatrist."
+          },
+          {
+            "name": "New Match Responds",
+            "description": "A text arrives asking how she is. Considering the threesome again. The surprise of \"I'm still down for you\" despite lukewarm attraction to the picture"
+          }
+        ]
+      },
+      {
+        "name": "Meeting (2022-01-28)",
+        "scenes": [
+          "The Subletter's Painted Nails",
+          "The Self-Hatred Crystallizes",
+          "Recognizing the Pattern",
+          "Watching the Stories",
+          "The Deleted Reaction"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Subletter's Painted Nails",
+            "description": "New roommate arrives to see the apartment. Black nail polish. Pronoun mix-ups from him and his cousin. Queer possibility sensed."
+          },
+          {
+            "name": "The Self-Hatred Crystallizes",
+            "description": "\"I keep thinking about her and I hate it. I hate me because of it.\" The dismissal of \"it's normal\" as bullshit\u2014not normal after two meetings and one k"
+          },
+          {
+            "name": "Recognizing the Pattern",
+            "description": "The flirtatious texts weren't flirty but \"annoying, insistent, and needy.\" Anger at herself: why can't I be better? Why do I have to feel so lonely?"
+          },
+          {
+            "name": "Watching the Stories",
+            "description": "Several stories posted: roommate's meal, then impersonal promotions for \"places to meet queer women and NB people.\" Reacting with '100' because heart "
+          },
+          {
+            "name": "The Deleted Reaction",
+            "description": "Yesterday's message still unseen. Deleting the reaction, hoping she didn't notice. The possibility of hearing from her grows dimmer and dimmer."
+          }
+        ]
+      },
+      {
+        "name": "Weekend Moment",
+        "scenes": [
+          "Weekend Plans"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Weekend Plans",
+            "description": "Maybe going out to take pictures. Considering reaching out to others but hating how she told everyone after the kiss\u2014as if the more people knew, the m"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-29.yaml": {
+    "date": "2022-01-29",
+    "events": [
+      {
+        "name": "Shitty Behaviour",
+        "scenes": [
+          "The Dark Opening",
+          "The Dream Fragment",
+          "Confession of the Texts",
+          "The Three Dots",
+          "The Boundary Message",
+          "The Rambling Response"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Dark Opening",
+            "description": "Narrator reflects on another dark day, unable to determine what she hates more: the situations that bring her down or her own weaknesses."
+          },
+          {
+            "name": "The Dream Fragment",
+            "description": "In darkness in a childhood house, a laptop problem in the kitchen, unable to find the electricity breakers\u2014consciousness evading."
+          },
+          {
+            "name": "Confession of the Texts",
+            "description": "The admission: she deleted the number precisely so she couldn't contact her, then sent two enormous text messages anyway. A \"plead of help.\""
+          },
+          {
+            "name": "The Three Dots",
+            "description": "Watching the typing indicator appear, then disappear. Breathing deeply as if preparing for a blow to the chest. Closing eyes like before a needle."
+          },
+          {
+            "name": "The Boundary Message",
+            "description": "The carefully worded response arrives: \"I've been feeling pressured... I don't know if some of your stories about ghosting were about me.\""
+          },
+          {
+            "name": "The Rambling Response",
+            "description": "Barely reading the message once before over-explaining in an incomprehensible stream. Muting the conversation. Putting the phone away."
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-01-29)",
+        "scenes": [
+          "Afternoon Tears",
+          "The Question",
+          "Deleted Evidence",
+          "Hollow Hope"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Afternoon Tears",
+            "description": "Waking at 1 or 2 PM, crying when seeing a friend's Snapchat notification. Exchanging pictures\u2014hers tear-stained."
+          },
+          {
+            "name": "The Question",
+            "description": "\"Did I really have a hypomanic episode?\" Comparing to childhood: crying about surgery pain when reprimanded at Tae Kwon Do. Using medical framing as e"
+          },
+          {
+            "name": "Deleted Evidence",
+            "description": "The conversation deleted, evidence lost. The remembered messages: pathetic requests to be told when interest wanes. The final coherent line: \"You don'"
+          },
+          {
+            "name": "Hollow Hope",
+            "description": "Rereading the carefully worded message. Hating how nice she is. Considering blocking her preemptively\u2014so she can't reach out, so hope becomes impossib"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-01-30.yaml": {
+    "date": "2022-01-30",
+    "events": [
+      {
+        "name": "S Final Message Offers Hollow Hope",
+        "scenes": [
+          "Checking the View List",
+          "The Afterthought That Mattered",
+          "Rereading the Final Picture",
+          "The Confession"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Checking the View List",
+            "description": "Scrolling through Instagram story viewers, searching for Kate's name to satisfy an unreachable itch of being thought of."
+          },
+          {
+            "name": "The Afterthought That Mattered",
+            "description": "Reading Kate's message: \"I will not forget about you!\" An afterthought that makes the narrator smile more than anything else."
+          },
+          {
+            "name": "Rereading the Final Picture",
+            "description": "Returning obsessively to the screenshot of Kate's last message, searching for hope in pixels."
+          },
+          {
+            "name": "The Confession",
+            "description": "Alone with the thought: \"I am not normal.\" Not about trans embodiment\u2014about something deeper in how she attaches."
+          }
+        ]
+      },
+      {
+        "name": "Yet The Author Continues Seeking Kate",
+        "scenes": [
+          "Eyes Filling",
+          "Tracing the Origin"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Eyes Filling",
+            "description": "Tears gathering, unclear whether from sadness or shame. Unable to distinguish between the two."
+          },
+          {
+            "name": "Tracing the Origin",
+            "description": "Memory of the first date: Kate sent the first message, proposed meeting. The narrator wasn't even excited initially. When did intensity begin? The kis"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-02.yaml": {
+    "date": "2022-02-02",
+    "events": [
+      {
+        "name": "About The Way I Am Feeling About",
+        "scenes": [
+          "Crying in Therapy",
+          "The Compliment",
+          "Grandmother's Skirt",
+          "Twenty Replays"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Crying in Therapy",
+            "description": "Tears in session, ostensibly about unrequited feelings, but the real revelation: \"It's like my emotions are the ones in control of me.\" Emotional dysr"
+          },
+          {
+            "name": "The Compliment",
+            "description": "Therapist breaks clinical framing to say her hair looked fabulous. The narrator smiles, believes her, welcomes the thought\u2014a rare moment of accepting "
+          },
+          {
+            "name": "Grandmother's Skirt",
+            "description": "Wearing the brown handmade skirt in winter, feeling proud. The urge to share with the crush. A message sent: \"Wasn't sure if I should.\""
+          },
+          {
+            "name": "Twenty Replays",
+            "description": "A roommate's Instagram story: the crush in sweatpants and sandals, hair to her waist, running toward a cat. Watched \"easily 20 times,\" self-hatred com"
+          }
+        ]
+      },
+      {
+        "name": "Dignity Jar",
+        "scenes": [
+          "Damaged Bottom",
+          "The Screenshot Delete",
+          "The Dignity Jar"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Damaged Bottom",
+            "description": "A stolen meme posted as \"My Tinder Profile\"\u2014a taped box labeled \"Damaged Bottom.\" Friends laugh with her. Queer humor as social currency."
+          },
+          {
+            "name": "The Screenshot Delete",
+            "description": "Message sent, screenshot taken, conversation deleted before she can read it. No way to know if she's seen it without re-engaging. The trap is set by h"
+          },
+          {
+            "name": "The Dignity Jar",
+            "description": "An idea born from shared obsession: a swear jar for reaching out. Shopping for a piggy bank, coming home empty-handed. The intervention remains theore"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-03.yaml": {
+    "date": "2022-02-03",
+    "events": [
+      {
+        "name": "Would He Find Me Attractive",
+        "scenes": [
+          "The Mirror of Youth",
+          "The Deleted Question",
+          "The Fire Emoji",
+          "The Dignity Jar"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Mirror of Youth",
+            "description": "Narrator looks at pre-transition photographs. \"I would totally make out with young me. The real question is, though... Would he find me attractive?\" T"
+          },
+          {
+            "name": "The Deleted Question",
+            "description": "Sends friend \"do you ever think I'm pathetic?\" then deletes it less than a minute later. The vulnerability retracted before it can be witnessed."
+          },
+          {
+            "name": "The Fire Emoji",
+            "description": "Recognizes former lover's office building in Instagram stories. Reacts with fire emoji just to see if she'll see it. She does. Deletes the conversatio"
+          },
+          {
+            "name": "The Dignity Jar",
+            "description": "New system in living room: monetary penalties for boundary violations. Almost 10 dollars deposited by evening. Wants to post story about regret but is"
+          }
+        ]
+      },
+      {
+        "name": "At Portugal",
+        "scenes": [
+          "The Feminizing Filter",
+          "Portugal Remembered"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Feminizing Filter",
+            "description": "Feeling lonely and embarrassed, notices Snapchat filter making eyes rounder, cheeks fuller. Like the feminizing AI from years ago - the face almost th"
+          },
+          {
+            "name": "Portugal Remembered",
+            "description": "Old photographs trigger cascade of memories: exploring the country, walking city streets, dancing and kissing, then being taken outside the club to he"
+          }
+        ]
+      },
+      {
+        "name": "Urge Moment",
+        "scenes": [
+          "The Urge to Reach Out",
+          "The Disclosure Fantasy"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Urge to Reach Out",
+            "description": "She's married now, has a family. \"Why do I want to do this?\" Imagining a response fills with excitement despite knowing it would be stupid."
+          },
+          {
+            "name": "The Disclosure Fantasy",
+            "description": "Considering posting the old picture publicly. Everyone would know - no longer living stealthily. \"Imagining this makes me feel both lighter and free.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-04.yaml": {
+    "date": "2022-02-04",
+    "events": [
+      {
+        "name": "At High school",
+        "scenes": [
+          "Dignity Jar Progress Report",
+          "Morning Paralysis",
+          "La Banquita de la Soledad"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Dignity Jar Progress Report",
+            "description": "Coins easily available; the jar has slowed the compulsive checking but hasn't stopped it. Sending photo of jar and fines to friend who responds unexpe"
+          },
+          {
+            "name": "Morning Paralysis",
+            "description": "Not tired, but can't find a reason to start the day. The recognition: \"It's not healthy how I deposit unto other people my daily drive.\""
+          },
+          {
+            "name": "La Banquita de la Soledad",
+            "description": "Memory surfacing: high school bench where she'd play the odds to see her pass by. College: waiting in cars, chatting until early morning on phones."
+          }
+        ]
+      },
+      {
+        "name": "At Las Vegas",
+        "scenes": [
+          "The Complete Map",
+          "Video Call Silence",
+          "Three Levels of Interest"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Complete Map",
+            "description": "Tracing the pattern: childhood to Monica, overlap with Catherine, transition with Catherine still there, Las Vegas in July, six months single, Sonny. "
+          },
+          {
+            "name": "Video Call Silence",
+            "description": "Colleague notices her silence, asks about her life. Fantasy response unspoken: \"well, I used to be a dude, and now I am a depressed sexy woman.\""
+          },
+          {
+            "name": "Three Levels of Interest",
+            "description": "Three women blurring in her mind: one from a shared room, one sharing queerness, one from two dates. \"One kiss for each meeting.\""
+          }
+        ]
+      },
+      {
+        "name": "At Metro station",
+        "scenes": [
+          "The Last Words Spoken",
+          "Evening Walk with Camera"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Last Words Spoken",
+            "description": "Memory of final in-person moment: \"I'll give you another one before you go.\" The flustered mumble about texting. \"And now she doesn't.\""
+          },
+          {
+            "name": "Evening Walk with Camera",
+            "description": "Out for alcohol and chips, camera in hand. Two pictures posted, different focus points. The question underneath: \"Will Kate like them?\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-05.yaml": {
+    "date": "2022-02-05",
+    "events": [
+      {
+        "name": "M Literally Experiencing It Right Now",
+        "scenes": [
+          "Carousel Epigraph",
+          "Morning Failure",
+          "Manic Dependence Recognition",
+          "The Protagonist Question"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Carousel Epigraph",
+            "description": "Spanish quote frames the entry: \"You're on a carousel you don't know how to get off. But you're tired, fed up, hurting from yourself, so I think soon "
+          },
+          {
+            "name": "Morning Failure",
+            "description": "Waking with intention not to post anything, then posting two stories and pictures anyway; the gap between resolve and compulsion."
+          },
+          {
+            "name": "Manic Dependence Recognition",
+            "description": "\"It's not like I showed signs of it. I'm literally experiencing it right now.\" The painful awareness of pattern while trapped inside it."
+          },
+          {
+            "name": "The Protagonist Question",
+            "description": "Interrogating whether this desperation is masculine socialization\u2014the false belief of deserving whatever one wants, of being the protagonist."
+          }
+        ]
+      },
+      {
+        "name": "Let The Secret That",
+        "scenes": [
+          "Story Surveillance Arithmetic",
+          "Disclosure Fantasy",
+          "Draft Shared",
+          "Forfeiting the Option"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Story Surveillance Arithmetic",
+            "description": "Alone with calculations: follows fewer than 300, watches all of Kate's stories, Kate follows five times as many but has seen all of hers. The math of "
+          },
+          {
+            "name": "Disclosure Fantasy",
+            "description": "\"Let the secret that's been haunting me for so long in the open. Invite chaos to reign over me.\" The pre-transition photo as potential detonation."
+          },
+          {
+            "name": "Draft Shared",
+            "description": "Sending friend the short-haired photo, discussing the temptation to post it, imagining various reactions\u2014who would ask \"Who's that?\" and how to answer"
+          },
+          {
+            "name": "Forfeiting the Option",
+            "description": "The intuition that posting the pre-transition photo would mean \"forfeiting that option forever\" with Kate\u2014though uncertain the option even exists."
+          }
+        ]
+      },
+      {
+        "name": "Trans Moment",
+        "scenes": [
+          "Trans Flag Paradox"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Trans Flag Paradox",
+            "description": "The final irony: considering removing trans flag from dating profile while posting pre-transition photo on Instagram\u2014simultaneously hiding and reveali"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-06.yaml": {
+    "date": "2022-02-06",
+    "events": [
+      {
+        "name": "Messaging (2022-02-06)",
+        "scenes": [
+          "Checking the Viewers",
+          "Crush Confessions Arrive",
+          "The Brother Question",
+          "Jules' Therapy Quote"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Checking the Viewers",
+            "description": "Obsessively monitoring who sees the pre-transition photo story; Kate eventually appears in the list, then the checking stops."
+          },
+          {
+            "name": "Crush Confessions Arrive",
+            "description": "Text messages reveal past crushes: Carolina's confession prompts reflection on her own performative crush born from \"pathological need for a normal re"
+          },
+          {
+            "name": "The Brother Question",
+            "description": "Francisco, who knows she's trans, asks if the man in the photo is her brother. A strange form of validation\u2014the old self unrecognizable."
+          },
+          {
+            "name": "Jules' Therapy Quote",
+            "description": "The Euphoria line crystallizes everything: \"I fall in love so easily because half of the relationship is in my head.\""
+          }
+        ]
+      },
+      {
+        "name": "Confession Moment",
+        "scenes": [
+          "Confession to Alda",
+          "Message into the Void",
+          "Wanting Touch",
+          "Pizza and Surrender"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Confession to Alda",
+            "description": "Admitting the compulsion to post meaningless stories just to check if Kate sees them. \"I am not in her mind. Not even close to how she's in mine.\""
+          },
+          {
+            "name": "Message into the Void",
+            "description": "Sending a message to Helena knowing it will probably be ignored; questioning if she's even accepting of trans people."
+          },
+          {
+            "name": "Wanting Touch",
+            "description": "The desire for Kate isn't sight or sex alone\u2014it's touch, kissing. She turned down a hookup opportunity. The bridge is burnt by wanting too much."
+          },
+          {
+            "name": "Pizza and Surrender",
+            "description": "Ordering pizza because she doesn't feel like cooking or doing anything. The day ends in small defeat."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-07.yaml": {
+    "date": "2022-02-07",
+    "events": [
+      {
+        "name": "At Apartment living room",
+        "scenes": [
+          "The Fuckboi Countdown",
+          "Uppers and Downers",
+          "Nothing to Check"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Fuckboi Countdown",
+            "description": "Epigraph from roommate's joke about the one-month dignity challenge. Dark humor framing what follows."
+          },
+          {
+            "name": "Uppers and Downers",
+            "description": "Living room, two women at laptops. Adderall, relaxant, weed combined. \"Mixing our uppers with our downers.\" Overfocus, distraction, the ADHD question."
+          },
+          {
+            "name": "Nothing to Check",
+            "description": "Phone on table, no story posted. The weird emptiness of having nothing to refresh. Glancing compulsively anyway."
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-02-07)",
+        "scenes": [
+          "1 AM Surveillance"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "1 AM Surveillance",
+            "description": "She was online, posted a story. Painting her roommate's eyes. A comment sent. Seen in the morning, no reply."
+          }
+        ]
+      },
+      {
+        "name": "One Moment",
+        "scenes": [
+          "One of Those Guys",
+          "The Amputated Finger",
+          "Reverse Chronology of Shame",
+          "The Stench of Masculinity"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "One of Those Guys",
+            "description": "The recognition crystallizes: \"I feel like one of those guys that keep insisting on women.\" The question she hates herself for asking: \"Why doesn't sh"
+          },
+          {
+            "name": "The Amputated Finger",
+            "description": "The impulse to list every interaction. Knowing it's pathetic. Doing it anyway. The pain of looking."
+          },
+          {
+            "name": "Reverse Chronology of Shame",
+            "description": "The full catalogue: comments, reactions, the gay flag, the skirt mention, the manic texts, the over-explanations. Each one stinging more than the last"
+          },
+          {
+            "name": "The Stench of Masculinity",
+            "description": "The third-text as source of the stench. \"The masculine energy that has impregnated all this recounting.\""
+          }
+        ]
+      },
+      {
+        "name": "Fair Moment",
+        "scenes": [
+          "Fair Price",
+          "The Gift of the Old Photo"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Fair Price",
+            "description": "Considering removing her as follower. \"The shame of seeing her actively living her daily life without any interest of having me in it is a fair price "
+          },
+          {
+            "name": "The Gift of the Old Photo",
+            "description": "The pre-transition picture posted, fishing for reaction. Now reframed: an image to attribute to the masculine energy."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-08.yaml": {
+    "date": "2022-02-08",
+    "events": [
+      {
+        "name": "Writing (2022-02-08)",
+        "scenes": [
+          "The Non-Reply",
+          "The Living Room Session",
+          "The Adoption Email",
+          "Time Out of Joint",
+          "The Dissociation",
+          "The Dying Conversation",
+          "The Spain Memory",
+          "The Uncomfortable Recognition",
+          "The Memoir Fantasy"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Non-Reply",
+            "description": "Narrator reacts to a friend's close-friends story with a laughing emoji. No reply comes. The silence triggers a cascade: feeling dirty and repulsive, "
+          },
+          {
+            "name": "The Living Room Session",
+            "description": "Collaborative work proposed in the living room. Getting high too early in the morning. Still searching for the right weed/Adderall combination for pro"
+          },
+          {
+            "name": "The Adoption Email",
+            "description": "Reading an email describing how she's been \"adopted into their little group.\" Over a hundred dollars spent on magazines together. For once, no envy of"
+          },
+          {
+            "name": "Time Out of Joint",
+            "description": "Narrator wonders if she's moving at a different speed than the world. Yesterday feels like ages ago. Brief fantasy of a reply that won't come."
+          },
+          {
+            "name": "The Dissociation",
+            "description": "Standing up to refill water before physically doing it. Seeing her body still sitting, hands on keyboard, pathetic paragraph on bright screen. Waiting"
+          },
+          {
+            "name": "The Dying Conversation",
+            "description": "A Tinder conversation with a pre-K educator reaches its end. Last messages sent, no reply. The question surfaces: will she forget these names too?"
+          },
+          {
+            "name": "The Spain Memory",
+            "description": "Drinking to mute the urges, the need to be a woman. Keeping them to a whisper for months. What did she want to kill when drinking before class? What d"
+          },
+          {
+            "name": "The Uncomfortable Recognition",
+            "description": "A TV show about alcoholism makes her uncomfortable, like another did before. The question emerges plainly: \"Do I have an alcohol problem?\""
+          },
+          {
+            "name": "The Memoir Fantasy",
+            "description": "The vision crystallizes: backstory as vignettes in a network of notes. The book can take shape later. A present to the world not asked for, not wanted"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-09.yaml": {
+    "date": "2022-02-09",
+    "events": [
+      {
+        "name": "Is It Obvious That I Am Trans",
+        "scenes": [
+          "Phone in Hand",
+          "Loss of Agency",
+          "The TikTok Recognition",
+          "The Teacher's Pet",
+          "Morning Shame",
+          "The Effusive Match",
+          "Finding Defects",
+          "The Disclosure Question",
+          "The Makeup Package"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Phone in Hand",
+            "description": "Writing on phone after sending another message to Kate. Considering texting roommate about the absurdity. \"It stopped being funny at all, and it is ju"
+          },
+          {
+            "name": "Loss of Agency",
+            "description": "Processing the compulsion: \"I didn't want to do it... A strange pull moved me. It's like if a writer had decided beforehand how the plot would develop"
+          },
+          {
+            "name": "The TikTok Recognition",
+            "description": "Watching Kate's roommate's stories with kinder chocolate boxes. Recognizing Kate's outfits from different days\u2014the red Christmas dress, the orange swe"
+          },
+          {
+            "name": "The Teacher's Pet",
+            "description": "The irrational need to share the recognition with Kate. \"Look what I accomplished, notice how important to me is your approval.\" Sends another message"
+          },
+          {
+            "name": "Morning Shame",
+            "description": "Waking filled with shame. Kate saw the message almost immediately. The cycle completes."
+          },
+          {
+            "name": "The Effusive Match",
+            "description": "Fourteen notifications on HER. Holly: \"You have such beautiful hair. My god*** sorry so stunned lol.\" Exactly what the self-esteem needed."
+          },
+          {
+            "name": "Finding Defects",
+            "description": "Examining Holly's photos for reasons to lose interest. Brown eyes, dyed hair, body shape. \"Am I this shallow? Wasn't this what I wanted? Someone to pa"
+          },
+          {
+            "name": "The Disclosure Question",
+            "description": "Planning to study at Thomson House with roommate's friends. The need emerges to ask: \"Is it obvious that I am trans?\" Vulnerability after the moral ha"
+          },
+          {
+            "name": "The Makeup Package",
+            "description": "Going upstairs to check the mail. The makeup has arrived\u2014brush, eyeliner. Considering trying it before meeting the friends. \"I guess I can try it toda"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-10.yaml": {
+    "date": "2022-02-10",
+    "events": [
+      {
+        "name": "My Levels Must Be High",
+        "scenes": [
+          "10pm Kitchen",
+          "Morning Body Check",
+          "Story Fishing",
+          "The Quick View",
+          "Her Stories",
+          "Unvalued Compliments",
+          "Advisor Meeting",
+          "The Kaleidoscope",
+          "The Explanation Loop"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "10pm Kitchen",
+            "description": "High and drunk on a liter of white wine; considering walking to the depanneur for another; goes to kitchen for water."
+          },
+          {
+            "name": "Morning Body Check",
+            "description": "Masturbation reveals more than spots. \"My levels must be high.\" Monitoring hormonal changes through bodily evidence."
+          },
+          {
+            "name": "Story Fishing",
+            "description": "Brewing coffee in late morning; seeing a French magazine's like on her post; posting a story to fish for attention."
+          },
+          {
+            "name": "The Quick View",
+            "description": "Checking story viewers less than 15 minutes after posting; she's there. Feeling good \"as if it meant anything.\""
+          },
+          {
+            "name": "Her Stories",
+            "description": "Watching stories about PGWP medical needs; a picture in a medical gown showing a taped cotton ball where a needle pierced."
+          },
+          {
+            "name": "Unvalued Compliments",
+            "description": "Mind jumping to compliments about emails and stories; questioning why she doesn't care, looking for reasons to invalidate the appraisal."
+          },
+          {
+            "name": "Advisor Meeting",
+            "description": "Comprehensive exam discussion creates pressure that feels both huge and harmless. \"I'm a kid in a zoo admiring a tiger.\""
+          },
+          {
+            "name": "The Kaleidoscope",
+            "description": "\"Every time I read it again, I turn its wheel and see it change shape.\" Overanalyzing a message, knowing there's an obvious answer she's too committed"
+          },
+          {
+            "name": "The Explanation Loop",
+            "description": "Reciting the same understanding: not a priority, too many messages cause anxiety, she apologized though she did nothing wrong. \"What is the fucking th"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-11.yaml": {
+    "date": "2022-02-11",
+    "events": [
+      {
+        "name": "Writing (2022-02-11)",
+        "scenes": [
+          "Walking Under Snow",
+          "The Nakedness Fantasy",
+          "The Refusal"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Walking Under Snow",
+            "description": "The narrator walking home in the snow, thinking. The cold exterior triggering interior longing."
+          },
+          {
+            "name": "The Nakedness Fantasy",
+            "description": "An imagined scene: walking naked to a bed without worrying about underwear coverage or facial hair visibility. Someone waiting with open arms, eyes li"
+          },
+          {
+            "name": "The Refusal",
+            "description": "The briefest closing. \"I don't feel like writing these words tonight. I'll skip them.\" Exhaustion or resistance, the page left nearly blank."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-15.yaml": {
+    "date": "2022-02-15",
+    "events": [
+      {
+        "name": "Dreaming (2022-02-15)",
+        "scenes": [
+          "Vulnerability Epigraph",
+          "Writing Gap",
+          "Extreme High",
+          "Disappearing Matches",
+          "Friend's Observation"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Vulnerability Epigraph",
+            "description": "Internal monologue about wanting to give phone number but withholding it; knowing interest puts her at disadvantage. \"I honestly think I don't know th"
+          },
+          {
+            "name": "Writing Gap",
+            "description": "Narrator notes she doesn't remember last time she wrote here; mentioned stopping to therapist. Two nights ago couldn't sleep at all."
+          },
+          {
+            "name": "Extreme High",
+            "description": "Never been this high, not even past extremes. Overconsciousness of jaw movements, music intermixing with lights. Wondering if the weed was laced."
+          },
+          {
+            "name": "Disappearing Matches",
+            "description": "Two Tinder girls suddenly disappeared, bringing down mood. Made her delete all unreplied conversations. One reappeared but negative feelings remained."
+          },
+          {
+            "name": "Friend's Observation",
+            "description": "\"I am the one who keeps bringing her up\"\u2014the obsession persists because the narrator keeps invoking her."
+          }
+        ]
+      },
+      {
+        "name": "Letting Moment",
+        "scenes": [
+          "Letting Stories Die"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Letting Stories Die",
+            "description": "Last night at 1 AM, saw the video story; opened it but stopped finger, pushed away, ignored the following two. A small victory."
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-02-15)",
+        "scenes": [
+          "Valentine's Post",
+          "Deleted Draft",
+          "The Insecurity Question",
+          "New Number",
+          "Roommate's Boundary"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Valentine's Post",
+            "description": "Shared provocative tweet; the ex saw it and two other posts hours apart. Projecting familiar overthinking, then realizing she probably doesn't think o"
+          },
+          {
+            "name": "Deleted Draft",
+            "description": "Wrote three long messages explaining before asking what she wanted; removed roundabouts, left just questions; realized answers were obvious and useles"
+          },
+          {
+            "name": "The Insecurity Question",
+            "description": "Match asks \"How do you deal with negative feelings like insecurity?\" Narrator felt seen, \"as if she could read me.\" Talked deeply through the middle o"
+          },
+          {
+            "name": "New Number",
+            "description": "A match gave phone number, just ended 3-year relationship, could use friends. Mentioned coffee and babysitting dog."
+          },
+          {
+            "name": "Roommate's Boundary",
+            "description": "Roommate doesn't want guys in the apartment, doesn't want to let them into her life. Narrator asks why she's the complete opposite\u2014filling head and ch"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-16.yaml": {
+    "date": "2022-02-16",
+    "events": [
+      {
+        "name": "I Was Too Turned On To Remember",
+        "scenes": [
+          "The Come-Down",
+          "Cycling Through Apps",
+          "The Flirtation",
+          "The Disappearing Story",
+          "Escalation",
+          "Good-Girl Nerdy Vibes",
+          "Forgetting to Disclose"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Come-Down",
+            "description": "Extremely high from cannabis, bloodshot eyes, senses intermingled, thoughts shapeless. Sent the drafted email. Finally let unreplied stories die."
+          },
+          {
+            "name": "Cycling Through Apps",
+            "description": "Facebook Dating: two matches in an hour, one replies in French then goes silent. Tinder: mostly guys liking, swiped right but not interested. Messages"
+          },
+          {
+            "name": "The Flirtation",
+            "description": "Reconnecting over a card game: \"Does it have a strip version?\" \"If you play your cards right. Pun intended.\" The Snapchat added despite feeling stalke"
+          },
+          {
+            "name": "The Disappearing Story",
+            "description": "Watching her story: smoking after a shift, then under covers with breasts barely visible. Deleted shortly after\u2014was it for someone else, or specifical"
+          },
+          {
+            "name": "Escalation",
+            "description": "She reaches out: Scopa with red wine. \"With you, I'd play anything.\" Picture exchange begins\u2014she asks to see breasts, warns her snaps are more graphic"
+          },
+          {
+            "name": "Good-Girl Nerdy Vibes",
+            "description": "Pajama shorts complimented as schoolgirl-like. Halloween costume requested. \"Both cute and hot.\" And, surprisingly, believed."
+          },
+          {
+            "name": "Forgetting to Disclose",
+            "description": "Too turned on to remember trans status. A shower video asking to join. \"I'm soaking wet.\" The French reply: \"Prouve it.\" A video reaching under underw"
+          }
+        ]
+      },
+      {
+        "name": "Writing (2022-02-16)",
+        "scenes": [
+          "The Morning After"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Morning After",
+            "description": "She asks about weekend plans. Holding back to not appear over-eager. The pressure of needing to disclose, the anxiety of uncertainty. Came to write in"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-22.yaml": {
+    "date": "2022-02-22",
+    "events": [
+      {
+        "name": "I Did Tell The Catfisher I Was",
+        "scenes": [
+          "Epigraph: The Secret",
+          "The Friend's Rebuke",
+          "The Catfisher's Snap"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Epigraph: The Secret",
+            "description": "A disembodied confession about trans embodiment: \"I've been on hormones for years and I didn't know I could still get hard.\""
+          },
+          {
+            "name": "The Friend's Rebuke",
+            "description": "Sitting in the dining room with Alda. A friend on the phone delivers hard truth, calling out selfishness after another spiral over the same subject."
+          },
+          {
+            "name": "The Catfisher's Snap",
+            "description": "Watching the video alone: she bites the end of her shirt, lets it fall, reveals her chest. But the narrator watches her teeth\u2014\"a feline or a vampire.\""
+          }
+        ]
+      },
+      {
+        "name": "Despite Suspecting She Isn",
+        "scenes": [
+          "Validation Circuit",
+          "The Confession",
+          "The Dating List",
+          "The App Cycle"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Validation Circuit",
+            "description": "Sending the same videos to someone real that went to the catfisher, needing confirmation they're not humiliating, not phony. The calculus of exposure."
+          },
+          {
+            "name": "The Confession",
+            "description": "Internal monologue crystallizing: \"I'd rather be the target of stranger's lust than their jokes. If I am going to be dehumanized and seen as an object"
+          },
+          {
+            "name": "The Dating List",
+            "description": "Counting all the women being talked to, losing track. Planning pre-emptive disclosure to a potential date: \"Hey, I'm trans BTW.\""
+          },
+          {
+            "name": "The App Cycle",
+            "description": "Opening apps in rotation, hunting dopamine. Adding Bumble again. Then on HER: the ex's picture appears twice. \"Is she dating again?\" A red circle arou"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-24.yaml": {
+    "date": "2022-02-24",
+    "events": [
+      {
+        "name": "Almost Put Her Off",
+        "scenes": [
+          "Three Epigraphs",
+          "World on Fire",
+          "Begging for Attention",
+          "The Story Banner",
+          "Voice as Materialization",
+          "The Juggler's Anxiety",
+          "The Almost",
+          "The Exclusive List",
+          "The Carousel",
+          "Mirror Recognition",
+          "Muted Again"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Three Epigraphs",
+            "description": "Flirtatious messages float without attribution: strip Scopa with wine, punishment fantasies for brattiness, \"You're smoking, baby!\" The voices of digi"
+          },
+          {
+            "name": "World on Fire",
+            "description": "Texas categorizes gender-affirming care as child abuse; Russia attacks Ukraine's border; nuclear threats. Personal insomnia against geopolitical colla"
+          },
+          {
+            "name": "Begging for Attention",
+            "description": "Sends explicit picture to Sonny as \"begging for attention.\" Receives an emoticon. Feels empty inside."
+          },
+          {
+            "name": "The Story Banner",
+            "description": "Scrolling through the app, Kate's story appears first despite being 3 hours old. A video of her apartment. The push needed to open. \"I hate how much I"
+          },
+          {
+            "name": "Voice as Materialization",
+            "description": "The first time hearing Emily's voice: \"I realized she might be real; somehow hearing her speak brought her down to this material world into reality. B"
+          },
+          {
+            "name": "The Juggler's Anxiety",
+            "description": "Imagining Emily juggling her admirers like balls in the air. \"Is this is all I am now? A ball dancing in the air after being thrown over and over?\""
+          },
+          {
+            "name": "The Almost",
+            "description": "Heloise recounts dysphoric sex with a trans partner that \"almost put her off.\" Uncertainty whether the emphasis on \"almost\" was real or projected hope"
+          },
+          {
+            "name": "The Exclusive List",
+            "description": "\"Most AMAB people I connect with online... are trans girls.\" Asking if she's now part of that list. \"Definitely.\""
+          },
+          {
+            "name": "The Carousel",
+            "description": "Multiple conversations spinning: Selin recovering from COVID, Elise the ophthalmologist, Amanda's correct phone number, Salome looking for friends. Co"
+          },
+          {
+            "name": "Mirror Recognition",
+            "description": "\"Am I doing the same thing as Emily? Am I juggling all these women in the air? I'm distracting myself with the idea of them. I just need one ball to s"
+          },
+          {
+            "name": "Muted Again",
+            "description": "\"I muted Kate's stories again.\" The cycle continues."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-02-26.yaml": {
+    "date": "2022-02-26",
+    "events": [
+      {
+        "name": "Meeting (2022-02-26)",
+        "scenes": [
+          "Passing Confirmed",
+          "Pre-Date Routine",
+          "The Streak Continues"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Passing Confirmed",
+            "description": "Epigraph: a match's surprised reaction to disclosure. \"You said you're trans, and I was like oh that's news to me.\""
+          },
+          {
+            "name": "Pre-Date Routine",
+            "description": "Narrator at desk, showered, fed, killing time before evening meeting. Two hours to spare, work to avoid."
+          },
+          {
+            "name": "The Streak Continues",
+            "description": "Breaking her own promise. Sweater photo sent, nothing underneath. \"I like what's under.\" Then her red dress story: \"Not enough.\" Silence."
+          }
+        ]
+      },
+      {
+        "name": "Therapist's Moment",
+        "scenes": [
+          "Therapist's Exhaustion",
+          "The Palimpsest Lover"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Therapist's Exhaustion",
+            "description": "Email received: clear annoyance. \"I am too tired of talking about the same things over and over.\""
+          },
+          {
+            "name": "The Palimpsest Lover",
+            "description": "Chatting with girl who looks like younger version of therapist. Same self-deprecating body jokes: ribs visible, hipbones that cut."
+          }
+        ]
+      },
+      {
+        "name": "Fishing Moment",
+        "scenes": [
+          "Fishing on Snapchat",
+          "Serial Disclosures",
+          "Planning the In-Person Tell",
+          "BDSM Flirtation"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Fishing on Snapchat",
+            "description": "Story posted as bait. Scrolling suggestions reveals the ex-contact with paella emoji. The temptation to add her."
+          },
+          {
+            "name": "Serial Disclosures",
+            "description": "Two matches, two reveals. Neither knew before. \"Does it matter, really?\""
+          },
+          {
+            "name": "Planning the In-Person Tell",
+            "description": "Tonight's meeting: she doesn't know yet. \"This is not a date, really. There shouldn't be any problem.\""
+          },
+          {
+            "name": "BDSM Flirtation",
+            "description": "Kink talk from last night bleeds into today. Ending with: \"will you imagine again ways to punish me if I don't?\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-03.yaml": {
+    "date": "2022-03-03",
+    "events": [
+      {
+        "name": "Trans From Where",
+        "scenes": [
+          "The Diagnosis",
+          "Trans From Where",
+          "The French Disappearance",
+          "Surprise in the Car",
+          "Bruise Their Bodies",
+          "The Unseen Message",
+          "Everyone Far",
+          "Mood Stabilizers Story",
+          "The Rejected Kiss"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Diagnosis",
+            "description": "Interior. The narrator alone with new knowledge: \"I guess I am bipolar.\" First dose of antipsychotics taken. A psychiatric milestone, stated plainly."
+          },
+          {
+            "name": "Trans From Where",
+            "description": "Split screen: dating app chat. The narrator asks if he knows what the flags mean. \"Yes, that you are queer.\" The explicit correction. \"Trans from wher"
+          },
+          {
+            "name": "The French Disappearance",
+            "description": "App chat, all in French. Coffee invitation, the disclosure, the preemptive goodbye: \"This is the time when you disappear.\" Checking later. He's gone."
+          },
+          {
+            "name": "Surprise in the Car",
+            "description": "Night. A car pulls up. The narrator recognizes the pattern\u2014dying interest when someone messages too much. But seeing her, hearing her voice: surprised"
+          },
+          {
+            "name": "Bruise Their Bodies",
+            "description": "Text exchange. A BDSM meme about hurting during sex. The reply: \"I just like to bruise their bodies, not their souls.\""
+          },
+          {
+            "name": "The Unseen Message",
+            "description": "The narrator alone, typing. The confession: wanting degradation to match the internal voice, \"just so I don't have to.\" The message sent. The timestam"
+          },
+          {
+            "name": "Everyone Far",
+            "description": "Montage of distances. 600+ kilometers. Quebec City. New York. Up north. \"Everyone seems to be far these days.\" Geography as emotional weather."
+          },
+          {
+            "name": "Mood Stabilizers Story",
+            "description": "Phone screen. Instagram story about medication costs, a joke about nudes and stalking French girls. Someone sees it. Someone comments. The fuckboy mes"
+          },
+          {
+            "name": "The Rejected Kiss",
+            "description": "A car, parked. Breakfast finished, puzzles shown. The question: \"Do you want to kiss me before I leave?\" The blush arriving at the same moment as the "
+          }
+        ]
+      },
+      {
+        "name": "Do You Want To Kiss Me Before",
+        "scenes": [
+          "Shower Snap Unopened"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Shower Snap Unopened",
+            "description": "Bathroom, post-shower. A nude sent, encouragement received, reassurance given: \"You're so freaking hot.\" Then silence. The snap unopened. Like the one"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-06.yaml": {
+    "date": "2022-03-06",
+    "events": [
+      {
+        "name": "S Stories Generating Jealousy Emily Posts",
+        "scenes": [
+          "Opening Question",
+          "Lost Count",
+          "The Red Circle",
+          "Eleven Kilometers",
+          "Yes, I Am Real",
+          "The Birthday Loophole",
+          "Accumulating Silences",
+          "Void-Filling Confession",
+          "Hey Lonely"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Opening Question",
+            "description": "Fragment of conversation: \"BTW, when you got locked out from your other account, how did you find me? Why did you look for me in the first place?\""
+          },
+          {
+            "name": "Lost Count",
+            "description": "Narrator at dating apps, losing track of potential dates, considering rescheduling instead of refusing. The reversal: \"Was that how Kate felt about me"
+          },
+          {
+            "name": "The Red Circle",
+            "description": "Clicking on Kate's story despite knowing the regret that follows; the Mexican woman from months ago resurfaces, triggering jealousy."
+          },
+          {
+            "name": "Eleven Kilometers",
+            "description": "Insecurity from last night's house party. Dating apps open. Kate is 11 km away. Watching her friend's stories\u2014Place des Arts, the Ferris wheel\u2014the sam"
+          },
+          {
+            "name": "The Birthday Loophole",
+            "description": "Confronting the Capricorn/Aries discrepancy. January 1st placeholder birthday. Emily answers, but a blue icon waits unread: \"Do I really want it?\""
+          },
+          {
+            "name": "Accumulating Silences",
+            "description": "Messages unseen by multiple women. Katherine's breakup news arrives. \"I don't think she's attracted to me. Why would anyone be?\""
+          },
+          {
+            "name": "Void-Filling Confession",
+            "description": "Alone with the recognition: \"I am filling some void with these conversations. I am looking for something there, even though I am sure I won't find any"
+          },
+          {
+            "name": "Hey Lonely",
+            "description": "The closing exchange, loneliness explicitly named and shared: \"Everyone feels alone these days.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-11.yaml": {
+    "date": "2022-03-11",
+    "events": [
+      {
+        "name": "S Pretty Observing Specific Details",
+        "scenes": [
+          "Opening Quotations",
+          "The Caffeteria Rendezvous",
+          "The Walk",
+          "The Fancy Empty Restaurant",
+          "Being Told She's Pretty",
+          "Persistence Validated",
+          "The Blue Mask",
+          "The Sex",
+          "The Body's Betrayal",
+          "The Condom Attempt",
+          "Lying Together",
+          "The Departure"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Opening Quotations",
+            "description": "Voiceover fragments: \"I want to make out with you; I hope you will invite me to your place.\" And: \"This is the first time I have sex with someone with"
+          },
+          {
+            "name": "The Caffeteria Rendezvous",
+            "description": "Arriving at exactly 1430 to an Italian cafe. She's already in the booth before the text arrives. Ordering a latte, chatting, drinking water after the "
+          },
+          {
+            "name": "The Walk",
+            "description": "Nicer weather. The route winds unintentionally back to the dog park. At a sushi window, they discuss trips and favorite foods. She asks casually if th"
+          },
+          {
+            "name": "The Fancy Empty Restaurant",
+            "description": "An empty sushi place requiring a reservation. \"What is your money situation, like?\" They can afford it. Discussion of ethical non-monogamy, three-way "
+          },
+          {
+            "name": "Being Told She's Pretty",
+            "description": "She says it directly. When pressed for detail: \"the way I held my hand to my face and the small triangle formed above my eye with my loose lock of hai"
+          },
+          {
+            "name": "Persistence Validated",
+            "description": "\"How I reached out to her multiple times was one of the reasons she was attracted to me.\" The narrator recalls being asked if someone might read insis"
+          },
+          {
+            "name": "The Blue Mask",
+            "description": "Hanging the blue cloth mask on the door handle as a private signal. The next morning, a roommate texts a picture of it."
+          },
+          {
+            "name": "The Sex",
+            "description": "Eating each other out. \"So much wetness, it felt I was drinking her.\" Three fingers for the first time. No toys offered."
+          },
+          {
+            "name": "The Body's Betrayal",
+            "description": "She lowers the skin before warning. Fear when it's hard to get back up. \"I would not want to look for an ER with an inflamed glans as a woman.\""
+          },
+          {
+            "name": "The Condom Attempt",
+            "description": "Getting hard but not coming. Offering to try penetration. A hesitant question about condoms, a confident answer. It doesn't work. \"So it didn't happen"
+          },
+          {
+            "name": "Lying Together",
+            "description": "\"My favourite part of the night, even more than the sex, was the two of us just lying naked on the bed holding each other and, every once in a while, "
+          },
+          {
+            "name": "The Departure",
+            "description": "\"I think I'll leave before I fall asleep.\" Walking her to the door. \"Text me you arrived safe.\" \"I'm sorry, I'm really bad at doing that. Don't think "
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-13.yaml": {
+    "date": "2022-03-13",
+    "events": [
+      {
+        "name": "The Most Gay Thing I Can Think",
+        "scenes": [
+          "Sexting from the Void",
+          "4 AM Coat Delivery",
+          "The Bathroom Stall",
+          "The Signal",
+          "Eres Feo",
+          "The Guess"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Sexting from the Void",
+            "description": "Emily's messages on screen demanding nakedness. The narrator's confession: \"Why do you have this power over me?\" The dynamic of digital submission."
+          },
+          {
+            "name": "4 AM Coat Delivery",
+            "description": "Post-bar logistics cascade: Ubers cancelling, walking halfway to McGill in the cold. Meeting at 4 AM after the time change to deliver a coat."
+          },
+          {
+            "name": "The Bathroom Stall",
+            "description": "Watching Gabriela take Alda's hand for shots. The dangerous mixture: invisible, left-out, jealous. Retreating to a stall to hide from thoughts. Emily'"
+          },
+          {
+            "name": "The Signal",
+            "description": "Dancing with Gabriela when Nico signals a four. Arms grabbed. The attempted four-way kiss. Alda moving away at first. \"The most gay thing I can think "
+          },
+          {
+            "name": "The Guess",
+            "description": "Friends guess Gabriela's age as 20. The sting of discomfort. No excuse of horniness\u2014new medications, recent sex. \"Maybe it's just the shitty parts wit"
+          }
+        ]
+      },
+      {
+        "name": "I Wasn",
+        "scenes": [
+          "French Girl Detour",
+          "The Unfollow"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "French Girl Detour",
+            "description": "Hinge conversation with the evil-twin caption. A week-long delay. The discovery: South West France. \"Oh wait, are you French?\" \"Yes I am.\" Expecting s"
+          },
+          {
+            "name": "The Unfollow",
+            "description": "Kate removed from Instagram. A small act of severance in the stream of the night."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-15.yaml": {
+    "date": "2022-03-15",
+    "events": [
+      {
+        "name": "Undone Moment",
+        "scenes": [
+          "The Undone Homework",
+          "The Missing Form",
+          "The Unanswered Question"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Undone Homework",
+            "description": "Interior reflection on tomorrow's psychiatrist appointment. The homework was not completed\u2014only the books were downloaded, the list glanced at. A fami"
+          },
+          {
+            "name": "The Missing Form",
+            "description": "The OSD form was never sent back. A plan forms to ask about it, a small task deferred."
+          },
+          {
+            "name": "The Unanswered Question",
+            "description": "The entry trails off with \"How have I been feeling with the new medication?\" The silence after the question speaks louder than any answer."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-18.yaml": {
+    "date": "2022-03-18",
+    "events": [
+      {
+        "name": "Messaging (2022-03-18)",
+        "scenes": [
+          "The Proposition",
+          "Night Walk Home",
+          "The Empty Restaurant",
+          "The Greek Alphabet",
+          "Instant Investment",
+          "Time Lost"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Proposition",
+            "description": "Opening text message about empty app conversations going nowhere, the invitation to meet in person, the offer to pay."
+          },
+          {
+            "name": "Night Walk Home",
+            "description": "Coming home from the date, stopping at the d\u00e9panneur for beer and chips, the solitary ritual after romantic encounter."
+          },
+          {
+            "name": "The Empty Restaurant",
+            "description": "Passing the Indian restaurant, seeing a man alone through the window, the memory of a previous date surfacing, stepping back to look again."
+          },
+          {
+            "name": "The Greek Alphabet",
+            "description": "Mental cataloging of dates: Alfa (knew own feelings, not hers), Beta (mutual mystery), Gamma/tonight (no attraction, her feelings unknown)."
+          },
+          {
+            "name": "Instant Investment",
+            "description": "The moment of recognition at the caf\u00e9 table: something in the narrator gets invested regardless of actual desire. The pattern named."
+          },
+          {
+            "name": "Time Lost",
+            "description": "Mid-date discovery that two and a half hours have passed. The conversation flowing despite internal certainty it would die."
+          }
+        ]
+      },
+      {
+        "name": "Writing (2022-03-18)",
+        "scenes": [
+          "The Meta-Question",
+          "Bumble BFF",
+          "The Message Sent"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Meta-Question",
+            "description": "Writing in the journal about writing in the journal. The obsessive focus turned back on itself."
+          },
+          {
+            "name": "Bumble BFF",
+            "description": "Working on friendship profiles with a roommate, discussing the possibility of platonic connection. \"Since there's no possibility of having sex, what's"
+          },
+          {
+            "name": "The Message Sent",
+            "description": "Planning what to tell the roommate about ending the French fixation joke. Instead, typing the message previously resolved not to send. Compulsion wins"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-25.yaml": {
+    "date": "2022-03-25",
+    "events": [
+      {
+        "name": "Writing (2022-03-25)",
+        "scenes": [
+          "Reflection on Writing",
+          "Committee Meeting Afterglow"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Reflection on Writing",
+            "description": "Alone, the narrator observes the correlation between feeling better and writing less; confused about which day she told a friend about emails, noting "
+          },
+          {
+            "name": "Committee Meeting Afterglow",
+            "description": "Memory of Monday's positive meeting; they liked the project, gave good feedback. Her supervisor promoted her software, told her half-jokingly she wasn"
+          }
+        ]
+      },
+      {
+        "name": "At Caf\u00e9 Chat L'hereux",
+        "scenes": [
+          "Cat Cafe with Alex"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Cat Cafe with Alex",
+            "description": "Finally visiting the cat cafe she once almost visited in the rain with someone else. Cute cats but awkward silences when the whole place goes quiet an"
+          }
+        ]
+      },
+      {
+        "name": "At Place-des-Arts",
+        "scenes": [
+          "Digital Severance",
+          "Morning Message",
+          "Planning Tomorrow's Date"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Digital Severance",
+            "description": "Removing an ex as follower so she doesn't see stories or pictures. \"Do I regret it? No, it's better to don't fool myself into false hope.\""
+          },
+          {
+            "name": "Morning Message",
+            "description": "Waking to an unexpected WhatsApp message from a friend; just yesterday she'd been thinking about messaging her while walking from the metro, decided a"
+          },
+          {
+            "name": "Planning Tomorrow's Date",
+            "description": "Meeting a physicist named like her ex at Place-des-Arts; she's vegetarian. The narrator recalls nachos at the same restaurant with a friend."
+          }
+        ]
+      },
+      {
+        "name": "At Crescent Street",
+        "scenes": [
+          "Six Hours Unfolding",
+          "The Kiss Request",
+          "Synesthetic Touch",
+          "Safe Arrival"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Six Hours Unfolding",
+            "description": "Met at 3pm, walked toward campus at 9pm. The arc: cafe, Uber to Crescent Street, a bar down the block."
+          },
+          {
+            "name": "The Kiss Request",
+            "description": "Waiting for the shuttle; she mentions the skirt, says she looks cute but must be cold. Both still masked when she asks \"can I kiss you?\""
+          },
+          {
+            "name": "Synesthetic Touch",
+            "description": "\"I put my hand behind her neck instead of on her cheek. I played with two locks of curls, and it was as if I could feel their yellow in my fingertips."
+          },
+          {
+            "name": "Safe Arrival",
+            "description": "She asks her to text that she arrived well. She did."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-27.yaml": {
+    "date": "2022-03-27",
+    "events": [
+      {
+        "name": "At Lola Rosa",
+        "scenes": [
+          "The Epigraph",
+          "Dressing for the Date",
+          "The Laser Clinic",
+          "The Long Wait",
+          "The Flaw-Seeking",
+          "The Intoxicating Accent",
+          "Quantum Physics and Forgotten Hunger",
+          "The Expectations Talk",
+          "The Hug"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Epigraph",
+            "description": "Opening confession about hesitation to kiss after a past rejection: \"Haven't gotten over it, honestly.\""
+          },
+          {
+            "name": "Dressing for the Date",
+            "description": "Heeled boots, black skirt, 5 degrees outside. Rehearsing deflections in her head for why she dressed up when she couldn't wear makeup or shave."
+          },
+          {
+            "name": "The Laser Clinic",
+            "description": "Paying for treatment, so high she nearly tipped $150 to the doctor."
+          },
+          {
+            "name": "The Long Wait",
+            "description": "An hour late. Parking troubles. Growing cold. Ordering a latte alone while texts trickle in about reserved spots."
+          },
+          {
+            "name": "The Flaw-Seeking",
+            "description": "The mask comes off across the table. \"I was barely conscious of how my head was busy looking for flaws or manners that I would find unattractive.\""
+          },
+          {
+            "name": "The Intoxicating Accent",
+            "description": "French inflection triggers comparison, then fear: following the same fate of ghosting and fixation."
+          },
+          {
+            "name": "Quantum Physics and Forgotten Hunger",
+            "description": "She talks, the narrator listens. No food ordered because the conversation about qubits is too absorbing."
+          },
+          {
+            "name": "The Expectations Talk",
+            "description": "Walking outside, asking what she wants since she's leaving the country. Not the one-night-stand type."
+          },
+          {
+            "name": "The Hug",
+            "description": "End of the date. \"Can I give you a hug?\" Hesitation about COVID, then open arms."
+          }
+        ]
+      },
+      {
+        "name": "Walking (2022-03-27)",
+        "scenes": [
+          "Phone Facing Down"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Phone Facing Down",
+            "description": "Walking home, texting multiple women. The phone turned over: performing indifference to whether anyone responds."
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-28.yaml": {
+    "date": "2022-03-28",
+    "events": [
+      {
+        "name": "A Crucial Emotional Discovery Follows",
+        "scenes": [
+          "The Smile Erased",
+          "Pure Sadness, Discovered",
+          "The Accusation",
+          "Mother Echo"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Smile Erased",
+            "description": "Telling the roommate about the French girl's message; smiling at the notification with her name; reading the second half where she's rejected. The roo"
+          },
+          {
+            "name": "Pure Sadness, Discovered",
+            "description": "In Spanish conversation, confessing the hurt is real this time. \"No es por hormonas o depresion, o el vacio existencial de siempre. Es pura tristeza. "
+          },
+          {
+            "name": "The Accusation",
+            "description": "\"*Te gusta que te digan que no.*\" The friend names the pattern. The narrator half-agrees, half-resists."
+          },
+          {
+            "name": "Mother Echo",
+            "description": "Melissa's email about a patient's mother dying. The intrusive thought: \"My mother is dead, and everything is worse now.\""
+          }
+        ]
+      },
+      {
+        "name": "At Vieux Port",
+        "scenes": [
+          "Planning Alexandra",
+          "Salome Returns",
+          "The Deadline"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Planning Alexandra",
+            "description": "Texting to plan Friday. She chooses here over the theater\u2014cozy. The roommates will be gone. The unspoken expectation of sex."
+          },
+          {
+            "name": "Salome Returns",
+            "description": "A message after two weeks of silence. Despite needing to cut back on dates and expenses, she says yes. Wednesday in Vieux Port."
+          },
+          {
+            "name": "The Deadline",
+            "description": "Automatic email from IPN. Candidacy exam before April 30th or it's a Fail. Drafting emails to Louis and Boris, academic survival layered over emotiona"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-03-29.yaml": {
+    "date": "2022-03-29",
+    "events": [
+      {
+        "name": "At Mont Royal",
+        "scenes": [
+          "The Proposal Text",
+          "Doodle Poll Anxiety",
+          "The Pool and Sauna",
+          "The Contract Moment"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Proposal Text",
+            "description": "Epigraph: A date invitation to walk up the mountain at sunset, met with acceptance\u2014followed by eventual rejection. The bitter irony of \"That sounds ni"
+          },
+          {
+            "name": "Doodle Poll Anxiety",
+            "description": "At home, the narrator manages committee scheduling. Email sent, waiting for responses. Only one option works. Frustration building as people don't rep"
+          },
+          {
+            "name": "The Pool and Sauna",
+            "description": "Swimming before an appointment. Body in water, then in heat. Stomach troubles\u2014gassy but unable to relieve. The body's discomfort."
+          },
+          {
+            "name": "The Contract Moment",
+            "description": "At the laser hair removal clinic. They overcharge without accounting for the previous tip\u2014she says nothing. Then: turning over the contract, seeing \"M"
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-03-29)",
+        "scenes": [
+          "Dating Inventory",
+          "The Sensory Memory",
+          "The Disclosure Resolution",
+          "The Email Exchange"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Dating Inventory",
+            "description": "Narrator alone, cataloguing prospects. One texted and hopes won't reply. One has a reservation but \"I feel nothing.\" One is coming to visit\u2014the last w"
+          },
+          {
+            "name": "The Sensory Memory",
+            "description": "Memory surfaces: \"I liked her taste and how it hurt when she pressed hard on my back and bit my neck.\" Physical intimacy recalled with visceral precis"
+          },
+          {
+            "name": "The Disclosure Resolution",
+            "description": "Thinking through the pattern of rejection. \"Why did it have to be like Flore?\" The same vanishing act. Deciding to disclose trans status before meetin"
+          },
+          {
+            "name": "The Email Exchange",
+            "description": "Reading a mother's response about photography and potential second dates. The urge to reply about the rejection, about being broken. Choosing silence "
+          }
+        ]
+      }
+    ]
+  },
+  "2022-04-04.yaml": {
+    "date": "2022-04-04",
+    "events": [
+      {
+        "name": "I Forgot If It Was My Turn",
+        "scenes": [
+          "Next Week Proposal",
+          "The Return Kiss"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Next Week Proposal",
+            "description": "Opening quote: invitation to her place before roommates arrive. Future possibility."
+          },
+          {
+            "name": "The Return Kiss",
+            "description": "Bus station goodbye. She walks away, turns back: \"I'll kiss you again before leaving.\" The anxiety that it meant finality."
+          }
+        ]
+      },
+      {
+        "name": "She Lifted Her Face And I Met",
+        "scenes": [
+          "Candidacy Confirmed",
+          "Friday Postponed"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Candidacy Confirmed",
+            "description": "Email exchange with Louis. Sylvia says yes. May 17th locked in. The Learning Support guy question lingers."
+          },
+          {
+            "name": "Friday Postponed",
+            "description": "Text negotiation. Lab exhaustion. The choice between 9pm Friday or Sunday here. Chose Sunday."
+          }
+        ]
+      },
+      {
+        "name": "At balcony",
+        "scenes": [
+          "Saturday Nothing",
+          "Mamajuana Evening"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Saturday Nothing",
+            "description": "Single sentence fragment: \"Saturday I did nothing.\""
+          },
+          {
+            "name": "Mamajuana Evening",
+            "description": "Balcony with roommate, returning to laptops, two glasses of Dominican rum-infused drink. Writing interrupted: \"What was I writing about?\""
+          }
+        ]
+      },
+      {
+        "name": "At park",
+        "scenes": [
+          "Film Log in the Park",
+          "The Blanket Request",
+          "Breathing Confusion",
+          "First Kiss",
+          "After the Movie"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Film Log in the Park",
+            "description": "Waiting outside to bring her in. Distracted by a plant across the park. Trying to remember aperture and speed. Hearing her name."
+          },
+          {
+            "name": "The Blanket Request",
+            "description": "During The Worst Person in the World, she asks for a blanket. Ambiguity: cold or proximity-seeking?"
+          },
+          {
+            "name": "Breathing Confusion",
+            "description": "The House, second fragment. Her arm wrapped around. Head on shoulder. \"I, for a moment, forgot if it was my turn to inhale or exhale.\""
+          },
+          {
+            "name": "First Kiss",
+            "description": "Hair comment, small laughs of uncertain meaning. \"She lifted her face and I met her lips.\""
+          },
+          {
+            "name": "After the Movie",
+            "description": "Uncertainty whether she'll stay or leave. Kissing again. Neck. \"Felt each of the fingers in her hand wrapping my breast.\""
+          }
+        ]
+      },
+      {
+        "name": "Walking (2022-04-04)",
+        "scenes": [
+          "Amanda Message",
+          "Supervisor Disclosure",
+          "Garden Growth"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Amanda Message",
+            "description": "Text about sunset walk Wednesday. Conditional: \"If she doesn't answer back, then it won't.\""
+          },
+          {
+            "name": "Supervisor Disclosure",
+            "description": "Morning meeting with Eduardo. Telling him about bipolar, time management difficulties. He was understanding."
+          },
+          {
+            "name": "Garden Growth",
+            "description": "Balcony with roommate: \"it all started with one dying plant, and now we have our own full garden.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-04-08.yaml": {
+    "date": "2022-04-08",
+    "events": [
+      {
+        "name": "I Feel As If I",
+        "scenes": [
+          "Epigraph: Ghosting Prophecy",
+          "The Walk",
+          "Camera Trouble",
+          "The Compatibility Test",
+          "The Kiss"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Epigraph: Ghosting Prophecy",
+            "description": "\"Do you want to get coffee and at least put a face to the person we're gonna potentially end up ghosting anyway?\""
+          },
+          {
+            "name": "The Walk",
+            "description": "18km to Mont-Royal; thought it was cute and original; she'd done it with five others before. She grabs the narrator's arm at the belvedere. No kiss up"
+          },
+          {
+            "name": "Camera Trouble",
+            "description": "Shutter getting stuck; took roll out to fix; sat at a table listening to music, waiting."
+          },
+          {
+            "name": "The Compatibility Test",
+            "description": "\"I'll tell you some things and just tell me if you like them or not... trying to see what else we can do later.\""
+          },
+          {
+            "name": "The Kiss",
+            "description": "She buys the donut. When leaving, \"I asked her if I could kiss her.\""
+          }
+        ]
+      },
+      {
+        "name": "Remembering (2022-04-08)",
+        "scenes": [
+          "The Friend Request"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Friend Request",
+            "description": "Sent Facebook friend request and immediately regretted; Flore rejection memory surfaces."
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-04-08)",
+        "scenes": [
+          "The Departure",
+          "Unanswered Messages",
+          "Therapy Session",
+          "The Core Question"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Departure",
+            "description": "Phone dead, show cancelled, find her on Facebook. Won't see her until August\u2014if ever."
+          },
+          {
+            "name": "Unanswered Messages",
+            "description": "Two messages sent, both ignored. \"Is it the threat of abandonment that aches more than the rejection itself?\""
+          },
+          {
+            "name": "Therapy Session",
+            "description": "\"I feel as if I'm distracting myself with these women, but from what?\""
+          },
+          {
+            "name": "The Core Question",
+            "description": "Drinking alone. \"What is it with me that I am so easy to ignore?\""
+          }
+        ]
+      },
+      {
+        "name": "Famished Moment",
+        "scenes": [
+          "Famished for Attention"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Famished for Attention",
+            "description": "Posted on Instagram a picture without a bra. \"I guess I am famished for attention.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-06-12.yaml": {
+    "date": "2022-06-12",
+    "events": [
+      {
+        "name": "Am I Using These Girls As Practice",
+        "scenes": [
+          "Freedom Epigraph",
+          "The Missing Month",
+          "Therapy Mind-Reading",
+          "The Void After Alexandra",
+          "Rooftop Party"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Freedom Epigraph",
+            "description": "Opening quote dialogue: \"Your mother will let you go out alone. You will be free.\" \"Being free is being alone?\""
+          },
+          {
+            "name": "The Missing Month",
+            "description": "Acknowledging the gap in writing; sent emails to Monica and Melissa, regretted it on the walk home; imagining Monica rolling her eyes."
+          },
+          {
+            "name": "Therapy Mind-Reading",
+            "description": "Oren (second therapist, \"whom I was cheating Calli with\") would point out the mind-reading pattern."
+          },
+          {
+            "name": "The Void After Alexandra",
+            "description": "Her departure didn't break like others' silence. Trying to fill the void with meaningless encounters. Alda's sharp response about \"being slutty with j"
+          },
+          {
+            "name": "Rooftop Party",
+            "description": "Leaving for Ellelui's rooftop lesbian party; the stolen tripod noticed as they depart. Alda kissing a girl from the apps she didn't like."
+          }
+        ]
+      },
+      {
+        "name": "Waiting (2022-06-12)",
+        "scenes": [
+          "The Dating Calendar",
+          "Wine and No Food",
+          "The Reversal Insight",
+          "Chappelle on TV"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Dating Calendar",
+            "description": "Multiple dates stacked: Tuesday, tomorrow with a French woman from Paris, scheduling with Jessica for Petite maman. \"Why do I keep doing this to mysel"
+          },
+          {
+            "name": "Wine and No Food",
+            "description": "Haven't eaten all day; latte for breakfast, half a bottle of wine for dinner."
+          },
+          {
+            "name": "The Reversal Insight",
+            "description": "Alcohol not to control overwhelming feelings but to \"lose down the emotional block\"\u2014accessing emotions rather than numbing them."
+          },
+          {
+            "name": "Chappelle on TV",
+            "description": "Alda starts watching Dave Chappelle's show; the urge to comment instead of simply disclosing: \"Hey, do you know I am trans?\""
+          }
+        ]
+      },
+      {
+        "name": "Practice Moment",
+        "scenes": [
+          "Practice Dating"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "Practice Dating",
+            "description": "The question surfaces: \"Am I using these girls as practice?\" Oren's advice to focus on breath, but: \"I don't feel like doing even that.\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-07-19.yaml": {
+    "date": "2022-07-19",
+    "events": [
+      {
+        "name": "Estos Dias Soy Solo Piel Y Grasa",
+        "scenes": [
+          "The Hollow Body",
+          "The Stalled Calendar",
+          "The Therapy Lie",
+          "The Lost Email"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Hollow Body",
+            "description": "Spanish epigraph as interior monologue: a void swallowing from inside, the self reduced to tissue and bone."
+          },
+          {
+            "name": "The Stalled Calendar",
+            "description": "Narrator uncertain how long since last entry. Time slipping by, approaching 30, the verdict: failure."
+          },
+          {
+            "name": "The Therapy Lie",
+            "description": "Session with Oren ending; narrator admits lying about insurance email; the transaction of mental health care."
+          },
+          {
+            "name": "The Lost Email",
+            "description": "Writing to Monica: \"I am lost.\" Thoughts muted. An explosion in throat driving to tears."
+          }
+        ]
+      },
+      {
+        "name": "Razor's Moment",
+        "scenes": [
+          "The Razor's Edge"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Razor's Edge",
+            "description": "Bathroom moment: razor against thigh, a red streak appearing. The word \"unintentional\" recognized immediately as a lie. Half-intentions, empty promise"
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-07-19)",
+        "scenes": [
+          "The Vodka Dinner",
+          "The Final Deletion",
+          "The Overnight Guest",
+          "The Overstay",
+          "The Porcelain Speech",
+          "The Moot Question"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Vodka Dinner",
+            "description": "Groceries delayed again; vodka as joke-threat for dinner. The question: self-medication or liberation from judgment?"
+          },
+          {
+            "name": "The Final Deletion",
+            "description": "Dating apps removed again. No pretense this time of permanence\u2014\"I have just had enough.\""
+          },
+          {
+            "name": "The Overnight Guest",
+            "description": "H\u00e9lo\u00efse stays the night. Outside the d\u00e9panneur, Nico asks if one-night-stand. She cried on the bed, face contorted, snot dripping."
+          },
+          {
+            "name": "The Overstay",
+            "description": "Morning after: she wears narrator's clothes, speaks French to bank and employers. Texting Alda about kicking her out."
+          },
+          {
+            "name": "The Porcelain Speech",
+            "description": "Night before: she rejects the \"no intentions\" caveat for sharing the bed. \"If I wanted to have sex with her, I could just make my move.\" Her argument "
+          },
+          {
+            "name": "The Moot Question",
+            "description": "Considering asking if she was disappointed or relieved by lack of moves. The question driven by Jessica's soft rejection. Either answer confirms somet"
+          }
+        ]
+      }
+    ]
+  },
+  "2022-11-02.yaml": {
+    "date": "2022-11-02",
+    "events": [
+      {
+        "name": "What The Fuck Is It That I",
+        "scenes": [
+          "The Ominous Beginning",
+          "Wine That Tastes Like Vinegar",
+          "The Confession",
+          "The Shrooms Revelation"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Ominous Beginning",
+            "description": "Starting journal on day two of the month. The failure feels predetermined."
+          },
+          {
+            "name": "Wine That Tastes Like Vinegar",
+            "description": "Wine and salad, the irony of healthy eating and weight gain. The vinegar taste lingers like the shitty dressing."
+          },
+          {
+            "name": "The Confession",
+            "description": "Craving wine to mute feelings. The contradiction: wanting emotional connection in therapy while shutting down at the first signal."
+          },
+          {
+            "name": "The Shrooms Revelation",
+            "description": "Memory of psychedelic trip. The insight: dating is \"a desperate try to convince myself I am desirable. A non-awful non-unlovable person.\""
+          }
+        ]
+      },
+      {
+        "name": "Remembering (2022-11-02)",
+        "scenes": [
+          "The Therapist's Reprimand",
+          "Mother's Voice",
+          "The Insurance Email"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Therapist's Reprimand",
+            "description": "Flashback to sessions with Ren\u00e9. Missing the free-flowing talk, then the memory of being told she wasted time on inconsequential stuff."
+          },
+          {
+            "name": "Mother's Voice",
+            "description": "The echo surfaces. \"Very similar to how my mom would scold me about pretending to be an idiot.\" The question: unconscious defenses or actual idiocy?"
+          },
+          {
+            "name": "The Insurance Email",
+            "description": "Expected $150, received less than $50. Only hormones covered. The scheduled email that had to be sent manually by noon."
+          }
+        ]
+      },
+      {
+        "name": "At Thomson House",
+        "scenes": [
+          "The Lease Conversation"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Lease Conversation",
+            "description": "Yesterday at Thomson House. Planning to move with Alda, discussing how to tell Jose Luis. \"I did not care, even though, were I in his place, I would d"
+          }
+        ]
+      },
+      {
+        "name": "Messaging (2022-11-02)",
+        "scenes": [
+          "The Unanswered Texts",
+          "What the Fuck Do I Want"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Unanswered Texts",
+            "description": "The med student who said \"please text me again\" and never responded. The latest French girl texted."
+          },
+          {
+            "name": "What the Fuck Do I Want",
+            "description": "Final question. \"Do I even want to meet any of them? What the fuck is it that I want?\""
+          }
+        ]
+      }
+    ]
+  },
+  "2022-11-06.yaml": {
+    "date": "2022-11-06",
+    "events": [
+      {
+        "name": "S Brevity Embodies The Very Writer",
+        "scenes": [
+          "The Departed Urge",
+          "The Paradox"
+        ],
+        "scene_descriptions": [
+          {
+            "name": "The Departed Urge",
+            "description": "Interior reflection on a creative impulse that briefly visited and left."
+          },
+          {
+            "name": "The Paradox",
+            "description": "Interior moment facing the contradiction of writing compulsion and creative emptiness."
+          }
+        ]
+      }
+    ]
+  }
+}

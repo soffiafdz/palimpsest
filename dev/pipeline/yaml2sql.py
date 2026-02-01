@@ -97,7 +97,6 @@ from typing import List, Dict, Any, Optional
 from dev.dataclasses.md_entry import MdEntry
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
-from dev.database.sync_state_manager import SyncStateManager
 from dev.core.exceptions import Yaml2SqlError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
@@ -221,21 +220,7 @@ def process_entry_file(
         with db.session_scope() as session:
             existing = db.entries.get(entry_date=md_entry.date)
 
-            # Initialize sync state manager
-            sync_mgr = SyncStateManager(session, logger)
-
             if existing:
-                # Check for conflicts before updating
-                if sync_mgr.check_conflict("Entry", existing.id, file_hash):
-                    safe_logger(logger).log_warning(
-                        f"Conflict detected for entry {md_entry.date}",
-                        {
-                            "file": str(file_path),
-                            "action": "proceeding_with_update"
-                        }
-                    )
-                    # Continue with update - conflict logged for user review
-
                 if fs.should_skip_file(file_path, existing.file_hash, force_update):
                     safe_logger(logger).log_debug(f"Entry {md_entry.date} unchanged, skipping")
                     return "skipped"
@@ -247,16 +232,6 @@ def process_entry_file(
                         db_metadata,
                         sync_source="yaml",
                         removed_by="yaml2sql"
-                    )
-
-                    # Update sync state after successful update
-                    sync_mgr.update_or_create(
-                        entity_type="Entry",
-                        entity_id=existing.id,
-                        last_synced_at=datetime.now(timezone.utc),
-                        sync_source="yaml",
-                        sync_hash=file_hash,
-                        machine_id=machine_id
                     )
 
                     safe_logger(logger).log_operation(
@@ -276,16 +251,6 @@ def process_entry_file(
                         db_metadata,
                         sync_source="yaml",
                         removed_by="yaml2sql"
-                    )
-
-                    # Create initial sync state for new entry
-                    sync_mgr.update_or_create(
-                        entity_type="Entry",
-                        entity_id=entry.id,
-                        last_synced_at=datetime.now(timezone.utc),
-                        sync_source="yaml",
-                        sync_hash=file_hash,
-                        machine_id=machine_id
                     )
 
                     safe_logger(logger).log_operation(

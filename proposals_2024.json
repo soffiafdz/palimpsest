@@ -1,0 +1,4146 @@
+{
+  "summary": {
+    "screenplay_scenes": 7,
+    "colon_scenes": 16,
+    "at_location_events": 53,
+    "date_suffix_events": 55,
+    "truncated_events": 29,
+    "numbered_events": 2
+  },
+  "organized": {
+    "scenes_screenplay": [
+      {
+        "date": "2024-02-13",
+        "original": "INT. BEDROOM - 1-2 AM",
+        "proposed": "He turns on the night",
+        "description": "He turns on the night light and retrieves clean sheets unused during Sonny's month-long stay. Changing bedding without the anxiety that accompanied erasing Monica's scent."
+      },
+      {
+        "date": "2024-02-13",
+        "original": "INT. BEDROOM - EARLY MORNING",
+        "proposed": "Internal battle - stay home or meet Louis",
+        "description": "Internal battle - stay home or meet Louis. The weather app won't load. He traces the failure to a knocked-out plug - sheets thrown carelessly last night."
+      },
+      {
+        "date": "2024-02-13",
+        "original": "INT. KITCHEN/DESK - 10 AM",
+        "proposed": "Coffee, work, a 20-minute Teams call with Louis",
+        "description": "Coffee, work, a 20-minute Teams call with Louis."
+      },
+      {
+        "date": "2024-02-13",
+        "original": "INT. KITCHEN - NOON",
+        "proposed": "Eggs and ham",
+        "description": "Eggs and ham. A late breakfast cooked solo."
+      },
+      {
+        "date": "2024-02-13",
+        "original": "FLASHBACK: EXT. PARC LA FONTAINE - YEARS AGO",
+        "proposed": "Laura, the Colombian exchange student",
+        "description": "Laura, the Colombian exchange student. Film cameras. A roll left undeveloped for years. She posted about the card game on Instagram."
+      },
+      {
+        "date": "2024-02-13",
+        "original": "INT. APARTMENT - FRENCH CLASS",
+        "proposed": "Focus deteriorating",
+        "description": "Focus deteriorating. This time he waits until class ends to write."
+      },
+      {
+        "date": "2024-02-13",
+        "original": "INT. APARTMENT - EVENING",
+        "proposed": "The texting dilemma",
+        "description": "The texting dilemma. Sophie or Tirza? He always reaches out to Tirza when disillusioned with Sophie. \"I know what I should do, but I don't know if I can.\""
+      }
+    ],
+    "scenes_colon": [
+      {
+        "date": "2024-03-18",
+        "original": "Therapy: The Wound",
+        "proposed": "The Wound",
+        "description": "Mentioning yesterday's cut to the therapist; \"Did it remind you of cutting yourself in a different way?\""
+      },
+      {
+        "date": "2024-03-18",
+        "original": "Therapy: The Crystal Ball",
+        "proposed": "The Crystal Ball",
+        "description": "Imagine knowing this will continue for six months—occasional encounters, intermittent communication. How does that feel?"
+      },
+      {
+        "date": "2024-03-18",
+        "original": "Therapy: The Chase",
+        "proposed": "The Chase",
+        "description": "\"I hate the idea that I am chasing her. In order to chase something, it means it's running away from you.\" The therapist challenges: sometimes chasing is play."
+      },
+      {
+        "date": "2024-03-20",
+        "original": "Therapy Session: The Motherhood Wound",
+        "proposed": "The Motherhood Wound",
+        "description": "Dreams disclosed—the period dream, the pregnancy dream from years ago. The explicit articulation: before transitioning, never wanting to be a dad; now heartbroken watching toddlers in cafés."
+      },
+      {
+        "date": "2024-03-20",
+        "original": "Reception: The Unheard Voice",
+        "proposed": "The Unheard Voice",
+        "description": "Red wine. The familiar moments where she says something nobody hears. Speaking the least at the whole table."
+      },
+      {
+        "date": "2024-03-26",
+        "original": "After Session: Makeup, Movement",
+        "proposed": "Makeup, Movement",
+        "description": "Putting on makeup, heading out to work. Transition as continuous assembly."
+      },
+      {
+        "date": "2024-04-12",
+        "original": "Church Pub: The Breakup Circle",
+        "proposed": "The Breakup Circle",
+        "description": "Friends at happy hour cocktails. One friend shares about ending things with an ex she'd stayed friends with. The narrator relates."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Bar: First Date Confessions",
+        "proposed": "First Date Confessions",
+        "description": "Two women share their pre-date anxieties over pints. Conversation flows through careers, travels, aphantasia, religion. Three rounds ordered."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Sidewalk: The Ask",
+        "proposed": "The Ask",
+        "description": "Night has fallen. She shivers in her denim jacket while the other smokes. A shift of weight, eyes meeting. \"Can I kiss you?\" Hand on waist."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Walk: Five Minutes",
+        "proposed": "Five Minutes",
+        "description": "Glasses abandoned half-full. They don't hold hands this time. Cold night, silent anticipation. The apartment appears."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Bedroom: Disclosure",
+        "proposed": "Disclosure",
+        "description": "Kneeling over her on the bed, the narrator pauses. \"You do know I am trans, right?\" The smile. \"Don't worry about it—I like girls.\""
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Bedroom: The Broken Tooth",
+        "proposed": "The Broken Tooth",
+        "description": "Mid-kiss, teeth collide. A crack. A tiny pebble between lips. Mortified laughter. Memory of seven years ago. They continue anyway."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Bedroom: Bodies in Negotiation",
+        "proposed": "Bodies in Negotiation",
+        "description": "Questions about preference. Hesitation masked by nodding. Her mouth electric. Reciprocation attempted. The faked orgasm."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Bedroom: The Tattoos",
+        "proposed": "The Tattoos",
+        "description": "Tangled together, she describes the lighthouse for Virginia Woolf, the phrase \"we remain,\" her mother's islands. Voice against chest."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Bedroom: The Invitation",
+        "proposed": "The Invitation",
+        "description": "\"You should take me with you once.\" Photography discussed. The offer to be photographed. A future implied."
+      },
+      {
+        "date": "2024-04-26",
+        "original": "The Door: The Exchange",
+        "proposed": "The Exchange",
+        "description": "Time to leave acknowledged. \"Do you want to move outside the app?\" Doubt in grayish-blue eyes, but she accepts the phone. A closing kiss."
+      }
+    ],
+    "events_at_location": [
+      {
+        "date": "2024-01-28",
+        "original": "At Bon Délire",
+        "proposed": "Bon Délire",
+        "scenes": [
+          "The Promise Broken",
+          "The Match",
+          "The Brief First Date",
+          "The Goodbye Hug"
+        ]
+      },
+      {
+        "date": "2024-01-28",
+        "original": "At Baja California",
+        "proposed": "Baja California",
+        "scenes": [
+          "Holiday Silence",
+          "The First Cancellation"
+        ]
+      },
+      {
+        "date": "2024-01-28",
+        "original": "At Le toasteur",
+        "proposed": "Le toasteur",
+        "scenes": [
+          "The Cat Emergency",
+          "The Cafe Window"
+        ]
+      },
+      {
+        "date": "2024-01-29",
+        "original": "At McGill campus",
+        "proposed": "McGill campus",
+        "scenes": [
+          "Morning Departure",
+          "Coordinating Tomorrow",
+          "French Class Reflection",
+          "The Aunts Leaving"
+        ]
+      },
+      {
+        "date": "2024-01-29",
+        "original": "At Montreal airport",
+        "proposed": "Montreal airport",
+        "scenes": [
+          "The Friend's Visit (Flashback)"
+        ]
+      },
+      {
+        "date": "2024-01-30",
+        "original": "At Wellness Hub",
+        "proposed": "Wellness Hub",
+        "scenes": [
+          "Searching for Tears",
+          "Morning at the Lab",
+          "The Waiting Room",
+          "Therapy Session"
+        ]
+      },
+      {
+        "date": "2024-01-30",
+        "original": "At CaPS",
+        "proposed": "CaPS",
+        "scenes": [
+          "Waiting in the Lobby",
+          "Burgers and Dark Beer",
+          "The Archive Discovery",
+          "The Difference"
+        ]
+      },
+      {
+        "date": "2024-01-31",
+        "original": "At Dieu du ciel!",
+        "proposed": "Dieu du ciel!",
+        "scenes": [
+          "Podemos ser amigas?",
+          "The Springtime Date",
+          "The Last Message"
+        ]
+      },
+      {
+        "date": "2024-02-01",
+        "original": "At Salamanca",
+        "proposed": "Salamanca",
+        "scenes": [
+          "Watching Lovesick",
+          "The Clockwork Malaise"
+        ]
+      },
+      {
+        "date": "2024-02-03",
+        "original": "At Du College station",
+        "proposed": "Du College station",
+        "scenes": [
+          "The Marketplace Find (Flashback)",
+          "Coffee Before the Pickup",
+          "The Seller's Entrance",
+          "Wine Night with Friends"
+        ]
+      },
+      {
+        "date": "2024-02-03",
+        "original": "At la boulangerie",
+        "proposed": "la boulangerie",
+        "scenes": [
+          "The Dreaded Notification",
+          "Sonny Reads First",
+          "Would Love to See You",
+          "Two Pitchers at the Pub",
+          "Korean Chicken Before Departure"
+        ]
+      },
+      {
+        "date": "2024-02-04",
+        "original": "At Berri UQAM",
+        "proposed": "Berri UQAM",
+        "scenes": [
+          "Early Surrender",
+          "The Fading Check",
+          "The Door Closes",
+          "The Stains"
+        ]
+      },
+      {
+        "date": "2024-02-04",
+        "original": "At Ginkgo",
+        "proposed": "Ginkgo",
+        "scenes": [
+          "Waiting Alone",
+          "The Swing Seats",
+          "Bar Crawl",
+          "Kicked Out Gently",
+          "The Portuguese Counter"
+        ]
+      },
+      {
+        "date": "2024-02-04",
+        "original": "At Table (2024-02-04)",
+        "proposed": "Table (2024-02-04)",
+        "scenes": [
+          "Half-Eaten Surrender"
+        ]
+      },
+      {
+        "date": "2024-02-12",
+        "original": "At la fruiterie",
+        "proposed": "la fruiterie",
+        "scenes": [
+          "The Graphical Abstract",
+          "French Class Paradox",
+          "The Unsent Message",
+          "The Sophie Prediction"
+        ]
+      },
+      {
+        "date": "2024-02-18",
+        "original": "At Le Trèfle",
+        "proposed": "Le Trèfle",
+        "scenes": [
+          "Le Trefle, Window Table",
+          "The Relationship on the Rocks",
+          "Cocktails and Compromises"
+        ]
+      },
+      {
+        "date": "2024-03-04",
+        "original": "At Café Velours",
+        "proposed": "Café Velours",
+        "scenes": [
+          "Leaving Intoxicated",
+          "Composing Messages While Walking",
+          "Passing Haunted Cafes",
+          "The Chai and the Kindle",
+          "The Forgotten Tea Seller",
+          "The Unconscious Smile"
+        ]
+      },
+      {
+        "date": "2024-03-04",
+        "original": "At Parc Jarry",
+        "proposed": "Parc Jarry",
+        "scenes": [
+          "Tiring the Body",
+          "The Text to a Friend"
+        ]
+      },
+      {
+        "date": "2024-03-08",
+        "original": "At metro",
+        "proposed": "metro",
+        "scenes": [
+          "Metro Confession"
+        ]
+      },
+      {
+        "date": "2024-03-08",
+        "original": "At N sur Mackay",
+        "proposed": "N sur Mackay",
+        "scenes": [
+          "Morning Ritual",
+          "First at the Lab",
+          "Waiting at Home",
+          "Arriving Early",
+          "The Kentucky Mule",
+          "Sophie Arrives",
+          "Trauma and Childhood",
+          "Lesbian Movies",
+          "Attachment Styles",
+          "The Compliment Deflected",
+          "Two Hard Weeks",
+          "Noticing Her Pain",
+          "The Kiss Before the Mask",
+          "Metro Together",
+          "Silence"
+        ]
+      },
+      {
+        "date": "2024-03-10",
+        "original": "At Table (2024-03-10)",
+        "proposed": "Table (2024-03-10)",
+        "scenes": [
+          "Kitchen, Sunday afternoon"
+        ]
+      },
+      {
+        "date": "2024-03-10",
+        "original": "At Bar Ganadara",
+        "proposed": "Bar Ganadara",
+        "scenes": [
+          "Metro to the gathering",
+          "Memory surfaces",
+          "Restaurant table",
+          "Takoyaki"
+        ]
+      },
+      {
+        "date": "2024-03-12",
+        "original": "At narrator's apartment",
+        "proposed": "narrator's apartment",
+        "scenes": [
+          "Displacement Morning",
+          "The Peephole",
+          "The Tip Refusal",
+          "Café Work",
+          "The Invitation Misread"
+        ]
+      },
+      {
+        "date": "2024-03-13",
+        "original": "At Table (2024-03-13)",
+        "proposed": "Table (2024-03-13)",
+        "scenes": [
+          "Liminal Sleep",
+          "The Weigh-In",
+          "Croissant Amandes",
+          "The Empty Corridor"
+        ]
+      },
+      {
+        "date": "2024-03-13",
+        "original": "At Louis's office",
+        "proposed": "Louis's office",
+        "scenes": [
+          "The Meeting Snub",
+          "The Impressive Terminal",
+          "The Abacus Emoji"
+        ]
+      },
+      {
+        "date": "2024-03-13",
+        "original": "At Palco",
+        "proposed": "Palco",
+        "scenes": [
+          "The Ikea Cart Memory"
+        ]
+      },
+      {
+        "date": "2024-03-13",
+        "original": "At Coyoacán",
+        "proposed": "Coyoacán",
+        "scenes": [
+          "How Have I Been?",
+          "CIC Lecture",
+          "Gnocchi on the Bus",
+          "Enumerating Sophie"
+        ]
+      },
+      {
+        "date": "2024-03-26",
+        "original": "At Jarry station",
+        "proposed": "Jarry station",
+        "scenes": [
+          "The Old Man at the Metro",
+          "Walking Away Without Lying",
+          "The Stench Follows"
+        ]
+      },
+      {
+        "date": "2024-03-30",
+        "original": "At tapas bar",
+        "proposed": "tapas bar",
+        "scenes": [
+          "Tapas Bar Wait",
+          "Dancing to Rock",
+          "The Unread Message",
+          "The Central Contradiction"
+        ]
+      },
+      {
+        "date": "2024-04-04",
+        "original": "At Tinder",
+        "proposed": "Tinder",
+        "scenes": [
+          "Back on the Apps",
+          "The Disclosure Catalog",
+          "The Dog in the Snow"
+        ]
+      },
+      {
+        "date": "2024-04-04",
+        "original": "At Hinge",
+        "proposed": "Hinge",
+        "scenes": [
+          "Accent Negotiations"
+        ]
+      },
+      {
+        "date": "2024-04-04",
+        "original": "At Hochelaga",
+        "proposed": "Hochelaga",
+        "scenes": [
+          "The Voice Test",
+          "The Refusal",
+          "Marie-Anne's Grace"
+        ]
+      },
+      {
+        "date": "2024-04-06",
+        "original": "At office",
+        "proposed": "office",
+        "scenes": [
+          "The Lab Meeting",
+          "The Five-Minute Call"
+        ]
+      },
+      {
+        "date": "2024-04-06",
+        "original": "At Cafe Aunja",
+        "proposed": "Cafe Aunja",
+        "scenes": [
+          "Cafe Aunja",
+          "The Manuscript Email",
+          "The Failed Restaurant Plan",
+          "Pharmacy Counter"
+        ]
+      },
+      {
+        "date": "2024-04-07",
+        "original": "At Oui mais non cafe",
+        "proposed": "Oui mais non cafe",
+        "scenes": [
+          "Finding a Table",
+          "Marie-Anne Arrives",
+          "English in a French Room",
+          "The Language Offer",
+          "Walking to Parc Jarry",
+          "The Bench by the Fountain",
+          "The Child's Question",
+          "17h05",
+          "The Goodbye"
+        ]
+      },
+      {
+        "date": "2024-04-12",
+        "original": "At Mistral",
+        "proposed": "Mistral",
+        "scenes": [
+          "Rain Walk to the Café",
+          "Two Hours Without Food",
+          "Hug or Handshake",
+          "3h36 Spider"
+        ]
+      },
+      {
+        "date": "2024-04-25",
+        "original": "At Typhoon lounge",
+        "proposed": "Typhoon lounge",
+        "scenes": [
+          "The Almost-Empty Bar",
+          "Recognition"
+        ]
+      },
+      {
+        "date": "2024-04-27",
+        "original": "At Paris",
+        "proposed": "Paris",
+        "scenes": [
+          "Morning Notifications",
+          "Disclosure Before the Date"
+        ]
+      },
+      {
+        "date": "2024-04-30",
+        "original": "At María's bar",
+        "proposed": "María's bar",
+        "scenes": [
+          "Online French Class",
+          "The Argument",
+          "At the Bar",
+          "Walking to the Metro"
+        ]
+      },
+      {
+        "date": "2024-04-30",
+        "original": "At metro station",
+        "proposed": "metro station",
+        "scenes": [
+          "The Platform Bench",
+          "The Corridor",
+          "Hinge Exchange"
+        ]
+      },
+      {
+        "date": "2024-05-01",
+        "original": "At café",
+        "proposed": "café",
+        "scenes": [
+          "Cafe Escape",
+          "Texting Against Advice",
+          "The Pattern Recognition",
+          "The Grindr Temptation"
+        ]
+      },
+      {
+        "date": "2024-05-05",
+        "original": "At Berri-UQAM",
+        "proposed": "Berri-UQAM",
+        "scenes": [
+          "Confessing to Another Friend",
+          "Sunday Morning Struggle",
+          "Name Banter en Route",
+          "Brunch at the Cafe",
+          "The Umbrella Walk",
+          "The Unasked Kiss",
+          "The Follow-Up Text",
+          "Two Rejections"
+        ]
+      },
+      {
+        "date": "2024-05-10",
+        "original": "At La graine brûlée",
+        "proposed": "La graine brûlée",
+        "scenes": [
+          "The Knock",
+          "Getting Dressed",
+          "The Recognition",
+          "The Guilt",
+          "The Question"
+        ]
+      },
+      {
+        "date": "2024-05-13",
+        "original": "At Google HQ",
+        "proposed": "Google HQ",
+        "scenes": [
+          "The Cycle Begins",
+          "Solitary Coffee at Google",
+          "The Deflection",
+          "Walking Home Without Armor"
+        ]
+      },
+      {
+        "date": "2024-05-14",
+        "original": "At clinic",
+        "proposed": "clinic",
+        "scenes": [
+          "The Gatekeeping",
+          "The Pamphlet",
+          "The Blonde Girl",
+          "The Blood Draw",
+          "The Urine Test"
+        ]
+      },
+      {
+        "date": "2024-05-14",
+        "original": "At symposium",
+        "proposed": "symposium",
+        "scenes": [
+          "The Dysphoric Poster",
+          "The Failed Sample",
+          "The Insufferable Undergrad",
+          "The Lunch Table"
+        ]
+      },
+      {
+        "date": "2024-05-16",
+        "original": "At bar",
+        "proposed": "bar",
+        "scenes": [
+          "Bar Full",
+          "The Empty Table",
+          "Morning Paralysis",
+          "The Scale"
+        ]
+      },
+      {
+        "date": "2024-05-21",
+        "original": "At Table (2024-05-21)",
+        "proposed": "Table (2024-05-21)",
+        "scenes": [
+          "Wet Hair on Screen",
+          "The Fast Temptation",
+          "Waiting on Hold",
+          "Skipping French"
+        ]
+      },
+      {
+        "date": "2024-05-27",
+        "original": "At pharmacy",
+        "proposed": "pharmacy",
+        "scenes": [
+          "Pharmacy Counter",
+          "Two Clementines"
+        ]
+      },
+      {
+        "date": "2024-05-27",
+        "original": "At Terrasse Place d'armes",
+        "proposed": "Terrasse Place d'armes",
+        "scenes": [
+          "Terrace at Sunset",
+          "The Wrong Party"
+        ]
+      },
+      {
+        "date": "2024-05-30",
+        "original": "At Table (2024-05-30)",
+        "proposed": "Table (2024-05-30)",
+        "scenes": [
+          "The Weight Discovery",
+          "Bargaining with Sunlight",
+          "The Calm Office Morning",
+          "The Project's Dismissal"
+        ]
+      },
+      {
+        "date": "2024-07-01",
+        "original": "At Donceles",
+        "proposed": "Donceles",
+        "scenes": [
+          "Misgendered at the Camera Shops",
+          "The Therapy Confession"
+        ]
+      },
+      {
+        "date": "2024-07-01",
+        "original": "At Condesa",
+        "proposed": "Condesa",
+        "scenes": [
+          "The Hidden Fountain",
+          "The Intersection",
+          "The Fantasy of Missing the Flight",
+          "Security Gamble"
+        ]
+      }
+    ],
+    "events_date_suffix": [
+      {
+        "date": "2024-01-28",
+        "original": "Waiting (2024-01-28)",
+        "proposed": "Waiting",
+        "scenes": [
+          "The Unanswered Texts",
+          "Four Texts Too Many"
+        ]
+      },
+      {
+        "date": "2024-01-29",
+        "original": "Writing (2024-01-29)",
+        "proposed": "Writing",
+        "scenes": [
+          "The Archive at 1 AM",
+          "Late-Night Conversation"
+        ]
+      },
+      {
+        "date": "2024-01-29",
+        "original": "Messaging (2024-01-29)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Shower Arrangement",
+          "The Confession",
+          "The Fear Named"
+        ]
+      },
+      {
+        "date": "2024-02-01",
+        "original": "Messaging (2024-02-01)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Unsent Message"
+        ]
+      },
+      {
+        "date": "2024-02-01",
+        "original": "Meeting (2024-02-01)",
+        "proposed": "Meeting",
+        "scenes": [
+          "The Text Sent",
+          "The Unsaid Thing",
+          "31 Minutes and Counting"
+        ]
+      },
+      {
+        "date": "2024-02-04",
+        "original": "At Table (2024-02-04)",
+        "proposed": "Table (2024-02-04)",
+        "scenes": [
+          "Half-Eaten Surrender"
+        ]
+      },
+      {
+        "date": "2024-02-05",
+        "original": "Messaging (2024-02-05)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Screenshots of Rejection",
+          "French Class Breakdown",
+          "The Texting Paradox",
+          "The Instagram Incident",
+          "Crying After Class"
+        ]
+      },
+      {
+        "date": "2024-02-11",
+        "original": "Waiting (2024-02-11)",
+        "proposed": "Waiting",
+        "scenes": [
+          "The Notification",
+          "La vie revee",
+          "Kung Pao Chicken"
+        ]
+      },
+      {
+        "date": "2024-02-13",
+        "original": "Writing (2024-02-13)",
+        "proposed": "Writing",
+        "scenes": [
+          "The Redirected Game",
+          "INT. APARTMENT - FRENCH CLASS",
+          "INT. APARTMENT - EVENING"
+        ]
+      },
+      {
+        "date": "2024-02-14",
+        "original": "Messaging (2024-02-14)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Reluctant Text",
+          "Beans and Personal Scent"
+        ]
+      },
+      {
+        "date": "2024-02-14",
+        "original": "Meeting (2024-02-14)",
+        "proposed": "Meeting",
+        "scenes": [
+          "The Phone in the Dark",
+          "The Archived Conversation",
+          "Morning Arrangements",
+          "The Tirza Draft"
+        ]
+      },
+      {
+        "date": "2024-02-14",
+        "original": "Waiting (2024-02-14)",
+        "proposed": "Waiting",
+        "scenes": [
+          "Showing the Cuba Photos",
+          "The Placation Suspicion",
+          "Tirza's Reply",
+          "Sophie's Diplomacy Text",
+          "The Suppressed Cry"
+        ]
+      },
+      {
+        "date": "2024-02-16",
+        "original": "Writing (2024-02-16)",
+        "proposed": "Writing",
+        "scenes": [
+          "Calling in Sick",
+          "Drifting Through One Day",
+          "Beer and Memory",
+          "The Red Box Opens",
+          "Perception, Connection, Reflection",
+          "Calling Someone You Admire",
+          "The Note Set Aside",
+          "IGA Interlude",
+          "The Body's Reckoning",
+          "Drunk Drafting",
+          "No Hearts This Time"
+        ]
+      },
+      {
+        "date": "2024-02-18",
+        "original": "Walking (2024-02-18)",
+        "proposed": "Walking",
+        "scenes": [
+          "Planning the Week",
+          "The Grocery Run",
+          "The Archive Opens",
+          "Body Nostalgia Spiral",
+          "The Present Rejection",
+          "The Future Question"
+        ]
+      },
+      {
+        "date": "2024-03-01",
+        "original": "Walking (2024-03-01)",
+        "proposed": "Walking",
+        "scenes": [
+          "The Morning After",
+          "The Broken Promise",
+          "Coffee and Unfinished Films",
+          "First at the Restaurant",
+          "Shutdown at Lunch",
+          "The Silent Walk",
+          "Avoiding Colleagues"
+        ]
+      },
+      {
+        "date": "2024-03-01",
+        "original": "Waiting (2024-03-01)",
+        "proposed": "Waiting",
+        "scenes": [
+          "Before Sunset",
+          "Not Being Enough",
+          "Waiting for the Text",
+          "Date Drafts"
+        ]
+      },
+      {
+        "date": "2024-03-03",
+        "original": "Messaging (2024-03-03)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Contact Purge",
+          "Nine. Seven. Four.",
+          "Working with Aliza",
+          "The Toddlers",
+          "Dad's Message"
+        ]
+      },
+      {
+        "date": "2024-03-04",
+        "original": "Meeting (2024-03-04)",
+        "proposed": "Meeting",
+        "scenes": [
+          "Editing the Archive",
+          "21h28"
+        ]
+      },
+      {
+        "date": "2024-03-05",
+        "original": "Walking (2024-03-05)",
+        "proposed": "Walking",
+        "scenes": [
+          "The Message at 8h20",
+          "The Blue Heart",
+          "Morning Commute",
+          "Lab Chatter",
+          "The Prospective Student",
+          "The Small Lie"
+        ]
+      },
+      {
+        "date": "2024-03-05",
+        "original": "Waiting (2024-03-05)",
+        "proposed": "Waiting",
+        "scenes": [
+          "Before Sunrise",
+          "Before Sunset"
+        ]
+      },
+      {
+        "date": "2024-03-06",
+        "original": "Writing (2024-03-06)",
+        "proposed": "Writing",
+        "scenes": [
+          "Morning Paralysis",
+          "Scripts Running",
+          "Excavating 2022",
+          "The Question Without Answer",
+          "Rehearsing the Psychiatrist",
+          "Friends Discussing Dating"
+        ]
+      },
+      {
+        "date": "2024-03-06",
+        "original": "Messaging (2024-03-06)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Third Date Confirmed"
+        ]
+      },
+      {
+        "date": "2024-03-10",
+        "original": "At Table (2024-03-10)",
+        "proposed": "Table (2024-03-10)",
+        "scenes": [
+          "Kitchen, Sunday afternoon"
+        ]
+      },
+      {
+        "date": "2024-03-10",
+        "original": "Messaging (2024-03-10)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Saturday morning, apartment",
+          "Saturday, couch",
+          "Phone in hand",
+          "The text sent",
+          "Phone, later"
+        ]
+      },
+      {
+        "date": "2024-03-10",
+        "original": "Dreaming (2024-03-10)",
+        "proposed": "Dreaming",
+        "scenes": [
+          "3am waking",
+          "Sunday, still in pajamas"
+        ]
+      },
+      {
+        "date": "2024-03-12",
+        "original": "Writing (2024-03-12)",
+        "proposed": "Writing",
+        "scenes": [
+          "Reorganizing with Headphones",
+          "The Archive as Gift",
+          "Class Through a Screen",
+          "The Awful Idea"
+        ]
+      },
+      {
+        "date": "2024-03-13",
+        "original": "At Table (2024-03-13)",
+        "proposed": "Table (2024-03-13)",
+        "scenes": [
+          "Liminal Sleep",
+          "The Weigh-In",
+          "Croissant Amandes",
+          "The Empty Corridor"
+        ]
+      },
+      {
+        "date": "2024-03-14",
+        "original": "Waiting (2024-03-14)",
+        "proposed": "Waiting",
+        "scenes": [
+          "Staring is Rude",
+          "Two Pints In"
+        ]
+      },
+      {
+        "date": "2024-03-24",
+        "original": "Messaging (2024-03-24)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Morning at the Bakery",
+          "Back to Bed",
+          "The Flirty Thread Discovered",
+          "Executing the List",
+          "The Devastating Response",
+          "The Text Not Sent"
+        ]
+      },
+      {
+        "date": "2024-03-30",
+        "original": "Messaging (2024-03-30)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Noon Without Coffee",
+          "Jay's Good Times",
+          "The Disclosure",
+          "The Cat Notification"
+        ]
+      },
+      {
+        "date": "2024-04-04",
+        "original": "Messaging (2024-04-04)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Unopened Notification",
+          "Amaretto Sunday",
+          "The Verdict"
+        ]
+      },
+      {
+        "date": "2024-04-06",
+        "original": "Remembering (2024-04-06)",
+        "proposed": "Remembering",
+        "scenes": [
+          "The Needle Returns",
+          "Counting Pills"
+        ]
+      },
+      {
+        "date": "2024-04-07",
+        "original": "Messaging (2024-04-07)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Dressing Without Confidence",
+          "The Broken Glass",
+          "Wanting to Arrive Second",
+          "Walking to the Cafe"
+        ]
+      },
+      {
+        "date": "2024-04-13",
+        "original": "Writing (2024-04-13)",
+        "proposed": "Writing",
+        "scenes": [
+          "Paty's Origin Story (Memory)",
+          "Double-Texting Paty",
+          "Narvarte Shore Nights (Memory Flash)",
+          "The French Text to a Meaningless Match"
+        ]
+      },
+      {
+        "date": "2024-04-15",
+        "original": "Messaging (2024-04-15)",
+        "proposed": "Messaging",
+        "scenes": [
+          "What Am I Trying to Fill?",
+          "Tempted to Skip"
+        ]
+      },
+      {
+        "date": "2024-04-25",
+        "original": "Waiting (2024-04-25)",
+        "proposed": "Waiting",
+        "scenes": [
+          "Depression Inventory",
+          "Chloe at Cafe Velours",
+          "Bea's Midnight Text"
+        ]
+      },
+      {
+        "date": "2024-04-25",
+        "original": "Messaging (2024-04-25)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Sunday's Weight"
+        ]
+      },
+      {
+        "date": "2024-04-25",
+        "original": "Meeting (2024-04-25)",
+        "proposed": "Meeting",
+        "scenes": [
+          "Tuesday Therapy",
+          "Tabac Frustration",
+          "The Proposition"
+        ]
+      },
+      {
+        "date": "2024-04-28",
+        "original": "Walking (2024-04-28)",
+        "proposed": "Walking",
+        "scenes": [
+          "No Reason to Rise",
+          "The Tooth's Lightning",
+          "The Dépanneur Run",
+          "Drafting All Morning",
+          "The Catalog of Evidence",
+          "At Least Not Yet"
+        ]
+      },
+      {
+        "date": "2024-05-01",
+        "original": "Messaging (2024-05-01)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Water Dam",
+          "Bed Until Noon",
+          "The Unexpected Text",
+          "Therapy Session",
+          "A Little Girl"
+        ]
+      },
+      {
+        "date": "2024-05-03",
+        "original": "Writing (2024-05-03)",
+        "proposed": "Writing",
+        "scenes": [
+          "News from Home",
+          "The Bribe"
+        ]
+      },
+      {
+        "date": "2024-05-05",
+        "original": "Remembering (2024-05-05)",
+        "proposed": "Remembering",
+        "scenes": [
+          "Intrusive Thought Confession",
+          "Pregnancy Dysphoria"
+        ]
+      },
+      {
+        "date": "2024-05-05",
+        "original": "Writing (2024-05-05)",
+        "proposed": "Writing",
+        "scenes": [
+          "The Deleted Text"
+        ]
+      },
+      {
+        "date": "2024-05-07",
+        "original": "Writing (2024-05-07)",
+        "proposed": "Writing",
+        "scenes": [
+          "The Question",
+          "French Class as Endurance",
+          "Crying in Plain Sight",
+          "The Core Wound Articulated"
+        ]
+      },
+      {
+        "date": "2024-05-10",
+        "original": "Dreaming (2024-05-10)",
+        "proposed": "Dreaming",
+        "scenes": [
+          "The Video Call",
+          "The Return to Sleep"
+        ]
+      },
+      {
+        "date": "2024-05-13",
+        "original": "Messaging (2024-05-13)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Couch Ritual",
+          "Pre-Class Unmatching",
+          "The Confession"
+        ]
+      },
+      {
+        "date": "2024-05-21",
+        "original": "Waiting (2024-05-21)",
+        "proposed": "Waiting",
+        "scenes": [
+          "Couch, Not Watching",
+          "Venue Negotiation",
+          "Waiting at the Terrace",
+          "Two Hours Chatting"
+        ]
+      },
+      {
+        "date": "2024-05-21",
+        "original": "Messaging (2024-05-21)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Haven't Been Outside Since",
+          "Declining Beer",
+          "Monday Lost"
+        ]
+      },
+      {
+        "date": "2024-05-21",
+        "original": "At Table (2024-05-21)",
+        "proposed": "Table (2024-05-21)",
+        "scenes": [
+          "Wet Hair on Screen",
+          "The Fast Temptation",
+          "Waiting on Hold",
+          "Skipping French"
+        ]
+      },
+      {
+        "date": "2024-05-27",
+        "original": "Messaging (2024-05-27)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The Study Call",
+          "Reddit Dysphoria",
+          "New Match, Old Pattern",
+          "French Class Abandoned"
+        ]
+      },
+      {
+        "date": "2024-05-30",
+        "original": "Dreaming (2024-05-30)",
+        "proposed": "Dreaming",
+        "scenes": [
+          "The Sleepless Dawn"
+        ]
+      },
+      {
+        "date": "2024-05-30",
+        "original": "Walking (2024-05-30)",
+        "proposed": "Walking",
+        "scenes": [
+          "The Metro Announcement",
+          "The Dismissive Bus",
+          "The Flirtation Text"
+        ]
+      },
+      {
+        "date": "2024-05-30",
+        "original": "At Table (2024-05-30)",
+        "proposed": "Table (2024-05-30)",
+        "scenes": [
+          "The Weight Discovery",
+          "Bargaining with Sunlight",
+          "The Calm Office Morning",
+          "The Project's Dismissal"
+        ]
+      },
+      {
+        "date": "2024-06-02",
+        "original": "Messaging (2024-06-02)",
+        "proposed": "Messaging",
+        "scenes": [
+          "The First Thing",
+          "The Sleepless Night",
+          "Empty Sunday"
+        ]
+      },
+      {
+        "date": "2024-07-01",
+        "original": "Messaging (2024-07-01)",
+        "proposed": "Messaging",
+        "scenes": [
+          "Nymeria's Welcome"
+        ]
+      }
+    ],
+    "events_truncated": [
+      {
+        "date": "2024-02-11",
+        "original": "S Day To See The Cuba Photos",
+        "proposed": "[TRUNCATED: S Day To See The Cuba Photos]",
+        "scenes": [
+          "The Empty House"
+        ]
+      },
+      {
+        "date": "2024-02-11",
+        "original": "T Be Enough",
+        "proposed": "[TRUNCATED: T Be Enough]",
+        "scenes": [
+          "Pedro's Challenge",
+          "Outlet Shopping",
+          "Dinner and Drinks",
+          "Waiting for the Bus",
+          "The Locked Door"
+        ]
+      },
+      {
+        "date": "2024-02-12",
+        "original": "Ll Meet She",
+        "proposed": "[TRUNCATED: Ll Meet She]",
+        "scenes": [
+          "Side Effects at Dawn",
+          "Morning Commute",
+          "Room Full of Engineers",
+          "Three Minutes with the Supervisor"
+        ]
+      },
+      {
+        "date": "2024-02-13",
+        "original": "S Was Planning To Play We",
+        "proposed": "[TRUNCATED: S Was Planning To Play We]",
+        "scenes": [
+          "INT. BEDROOM - 1-2 AM",
+          "INT. BEDROOM - EARLY MORNING",
+          "INT. KITCHEN/DESK - 10 AM",
+          "INT. KITCHEN - NOON"
+        ]
+      },
+      {
+        "date": "2024-02-14",
+        "original": "T Let It Out",
+        "proposed": "[TRUNCATED: T Let It Out]",
+        "scenes": [
+          "Corner Table at Thomson House"
+        ]
+      },
+      {
+        "date": "2024-03-16",
+        "original": "I Won",
+        "proposed": "[TRUNCATED: I Won]",
+        "scenes": [
+          "Chugging Cider at Thomson's",
+          "The Convenience Store Detour",
+          "Queer Recognition",
+          "Love Lies Bleeding",
+          "I Won't Settle for Anything Less"
+        ]
+      },
+      {
+        "date": "2024-03-16",
+        "original": "S Confession Emerges",
+        "proposed": "[TRUNCATED: S Confession Emerges]",
+        "scenes": [
+          "Pizza Ordered"
+        ]
+      },
+      {
+        "date": "2024-03-17",
+        "original": "T Have",
+        "proposed": "[TRUNCATED: T Have]",
+        "scenes": [
+          "Morning in Bed",
+          "The Poutine T-Shirt",
+          "Deleting Without Opening",
+          "Grocery Run",
+          "79 Kilograms",
+          "Resisting the Bottle"
+        ]
+      },
+      {
+        "date": "2024-03-17",
+        "original": "S Therapy Appointment Looms",
+        "proposed": "[TRUNCATED: S Therapy Appointment Looms]",
+        "scenes": [
+          "The Laundromat",
+          "Reading Honey Girl",
+          "The Wrong Dryer",
+          "Exporting the Year",
+          "Dreading Tomorrow"
+        ]
+      },
+      {
+        "date": "2024-03-18",
+        "original": "S Therapeutic Probe",
+        "proposed": "[TRUNCATED: S Therapeutic Probe]",
+        "scenes": [
+          "The Walk Downhill",
+          "The Shopping Trip",
+          "Drinking Alone at 15h",
+          "This Should Be the Start of Your Book"
+        ]
+      },
+      {
+        "date": "2024-03-18",
+        "original": "S Running Away From You",
+        "proposed": "[TRUNCATED: S Running Away From You]",
+        "scenes": [
+          "French Class Overtime"
+        ]
+      },
+      {
+        "date": "2024-03-20",
+        "original": "S Anguished Response",
+        "proposed": "[TRUNCATED: S Anguished Response]",
+        "scenes": [
+          "The Period Dream",
+          "Therapy Session: The Motherhood Wound",
+          "Self-Harm History"
+        ]
+      },
+      {
+        "date": "2024-03-20",
+        "original": "T Have A Uterus I Don",
+        "proposed": "[TRUNCATED: T Have A Uterus I Don]",
+        "scenes": [
+          "Conference Registration, 7h30",
+          "The Elevator Mirror",
+          "Eating More Than Any Day This Year",
+          "Not Belonging"
+        ]
+      },
+      {
+        "date": "2024-03-20",
+        "original": "T Just Feel Fat I Felt Unattractive",
+        "proposed": "[TRUNCATED: T Just Feel Fat I Felt Unattractive]",
+        "scenes": [
+          "The Language Shift",
+          "Reception: The Unheard Voice",
+          "Pub with a Friend",
+          "Fast Food for Medication"
+        ]
+      },
+      {
+        "date": "2024-03-24",
+        "original": "S Perceived Coldness During A Past Visit",
+        "proposed": "[TRUNCATED: S Perceived Coldness During A Past Visit]",
+        "scenes": [
+          "The Blur of Days"
+        ]
+      },
+      {
+        "date": "2024-03-25",
+        "original": "S Cruel Aware That",
+        "proposed": "[TRUNCATED: S Cruel Aware That]",
+        "scenes": [
+          "The Night Before (Flashback)",
+          "Drinking Alone"
+        ]
+      },
+      {
+        "date": "2024-03-25",
+        "original": "Je Veux Qu",
+        "proposed": "[TRUNCATED: Je Veux Qu]",
+        "scenes": [
+          "4AM Kitchen",
+          "The Alarms",
+          "The Lab Meeting (Teams)",
+          "Manuscript Purgatory",
+          "Monica's Questions Appear",
+          "Composing the Explanation",
+          "The Disclosure",
+          "The Final Message",
+          "Vodka and Bed"
+        ]
+      },
+      {
+        "date": "2024-03-30",
+        "original": "S Notification Appears",
+        "proposed": "[TRUNCATED: S Notification Appears]",
+        "scenes": [
+          "Racing the Clock",
+          "Sleep Paralysis Theater",
+          "The Motherhood Dream",
+          "The Last to Say It"
+        ]
+      },
+      {
+        "date": "2024-04-08",
+        "original": "S Voice-Message Request",
+        "proposed": "[TRUNCATED: S Voice-Message Request]",
+        "scenes": [
+          "Medication Experiments",
+          "4am Wakefulness",
+          "Morning Preparation",
+          "Walk to the Session"
+        ]
+      },
+      {
+        "date": "2024-04-08",
+        "original": "You Don",
+        "proposed": "[TRUNCATED: You Don]",
+        "scenes": [
+          "Meeting at the Old Building",
+          "Eclipse Supplies",
+          "Waiting for Totality",
+          "The Eclipse"
+        ]
+      },
+      {
+        "date": "2024-04-09",
+        "original": "S A Deal-Breaker",
+        "proposed": "[TRUNCATED: S A Deal-Breaker]",
+        "scenes": [
+          "Logistics and Landing"
+        ]
+      },
+      {
+        "date": "2024-04-10",
+        "original": "S Sexting Match Is Explicitly Identified As",
+        "proposed": "[TRUNCATED: S Sexting Match Is Explicitly Identified As]",
+        "scenes": [
+          "Medication Uncertainty",
+          "The Catfisher Echo",
+          "Shit on the Door Handle",
+          "Empty Office at Noon",
+          "The Aunt's Delirium"
+        ]
+      },
+      {
+        "date": "2024-04-13",
+        "original": "S Messagelike Sophie",
+        "proposed": "[TRUNCATED: S Messagelike Sophie]",
+        "scenes": [
+          "Bed, All Day",
+          "Morning Text to Sy",
+          "Vero's Cancelled Wedding (Backstory)",
+          "Alda's Fall (Phone)"
+        ]
+      },
+      {
+        "date": "2024-04-26",
+        "original": "S Waist",
+        "proposed": "[TRUNCATED: S Waist]",
+        "scenes": [
+          "The Morning After"
+        ]
+      },
+      {
+        "date": "2024-04-27",
+        "original": "S Wine-Drunk Processing Via Text",
+        "proposed": "[TRUNCATED: S Wine-Drunk Processing Via Text]",
+        "scenes": [
+          "Laundry Finally Done"
+        ]
+      },
+      {
+        "date": "2024-04-28",
+        "original": "She Hasn",
+        "proposed": "[TRUNCATED: She Hasn]",
+        "scenes": [
+          "The Worst Night"
+        ]
+      },
+      {
+        "date": "2024-05-06",
+        "original": "S Text About Not Kissing In The",
+        "proposed": "[TRUNCATED: S Text About Not Kissing In The]",
+        "scenes": [
+          "The Breakout Room",
+          "The Compulsive Texting",
+          "Phone Turned Down",
+          "The Uncomfortable Response"
+        ]
+      },
+      {
+        "date": "2024-05-07",
+        "original": "S Rejection Arrives",
+        "proposed": "[TRUNCATED: S Rejection Arrives]",
+        "scenes": [
+          "The Notification",
+          "Reading the Rejection",
+          "The Night Compressed"
+        ]
+      },
+      {
+        "date": "2024-05-12",
+        "original": "S Apartment She Sees A Photo Of",
+        "proposed": "[TRUNCATED: S Apartment She Sees A Photo Of]",
+        "scenes": [
+          "Morning in Bed",
+          "Dressing for the Date",
+          "Walking to the Park",
+          "Finding Her Date",
+          "The Non-Event of Meeting",
+          "Poutine Restaurant",
+          "Blankets on Grass"
+        ]
+      }
+    ],
+    "events_numbered": [
+      {
+        "date": "2024-02-17",
+        "original": "Alone at Home (3)",
+        "proposed": "Alone at Home",
+        "scenes": [
+          "Sophie's Last Name"
+        ]
+      },
+      {
+        "date": "2024-04-25",
+        "original": "Alone at Home (4)",
+        "proposed": "Alone at Home",
+        "scenes": [
+          "Nicest Bra, No Makeup",
+          "Pharmacy Stop",
+          "Villa-Maria Limbo",
+          "Monkland Walk"
+        ]
+      }
+    ]
+  },
+  "by_date": [
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-01-28.yaml",
+      "date": "2024-01-28",
+      "summary": "The Sophie saga begins with a December meeting at Bar Pamplemousse, a brief 5 a 7 before her concert. The entry recounts the familiar pattern: initial connection, tentative planning, then cancellation when Sophie's cat vomits blood. Messages stay unread, triggering obsessive monitoring. The Alexandra memory surfaces - kissed goodbye twice, never seen again - connecting to the broader pattern of vanishing women. The regret crystallizes: \"I keep fighting the urge to tell her how I am starting to regret not asking to kiss her.\" The Kate echo is already visible beneath the Sophie surface.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Bon Délire",
+          "proposed": "Bon Délire",
+          "scenes": [
+            "The Promise Broken",
+            "The Match",
+            "The Brief First Date",
+            "The Goodbye Hug"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Baja California",
+          "proposed": "Baja California",
+          "scenes": [
+            "Holiday Silence",
+            "The First Cancellation"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Le toasteur",
+          "proposed": "Le toasteur",
+          "scenes": [
+            "The Cat Emergency",
+            "The Cafe Window"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Waiting (2024-01-28)",
+          "proposed": "Waiting",
+          "scenes": [
+            "The Unanswered Texts",
+            "Four Texts Too Many"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-01-29.yaml",
+      "date": "2024-01-29",
+      "summary": "Reading old journal entries reveals the pattern explicitly: the same dynamics repeating with different faces across years. French class struggles continue. A significant intimate arrangement emerges: masturbating while the other showers. Then the devastating confession: \"With Monica, I felt a similar unbearable urge that I could barely contain until the moment of her departure. Instead of touching myself, it was to cut my thighs.\" The parallel is stark—with one person the urge is sexual, with another it was self-harm. The body expressing different attachments differently.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Writing (2024-01-29)",
+          "proposed": "Writing",
+          "scenes": [
+            "The Archive at 1 AM",
+            "Late-Night Conversation"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At McGill campus",
+          "proposed": "McGill campus",
+          "scenes": [
+            "Morning Departure",
+            "Coordinating Tomorrow",
+            "French Class Reflection",
+            "The Aunts Leaving"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Montreal airport",
+          "proposed": "Montreal airport",
+          "scenes": [
+            "The Friend's Visit (Flashback)"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Messaging (2024-01-29)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Shower Arrangement",
+            "The Confession",
+            "The Fear Named"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-01-30.yaml",
+      "date": "2024-01-30",
+      "summary": "Therapy addresses the Sophie situation. Reading old journal entries uncovers the exact repetition: two years ago, the same kiss-regret text - \"Honestly, I am starting to regret not asking to kiss you\" - was sent to another woman, who proposed to kiss next time. The same words to different women, the pattern documented in the archive. ChatGPT is consulted for reassurance at 4 AM, its advice echoing friends and conscience. Burgers and dark beer with a friend provide grounding. The palimpsest becomes visible: one woman written over another written over earlier figures.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Wellness Hub",
+          "proposed": "Wellness Hub",
+          "scenes": [
+            "Searching for Tears",
+            "Morning at the Lab",
+            "The Waiting Room",
+            "Therapy Session"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At CaPS",
+          "proposed": "CaPS",
+          "scenes": [
+            "Waiting in the Lobby",
+            "Burgers and Dark Beer",
+            "The Archive Discovery",
+            "The Difference"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-01-31.yaml",
+      "date": "2024-01-31",
+      "summary": "French class irritability and heaviness in the chest accompany an unsent message. A prediction arrives in Spanish: \"pero no te va a responder.\" A friendship develops as one friend sheepishly asks another: \"podemos ser amigas?\" A memory surfaces - the 9-hour springtime date that led nowhere, another pattern in the series. The poetic observation about endings: \"One message, out of a sudden and without us noticing, was just the last.\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Dieu du ciel!",
+          "proposed": "Dieu du ciel!",
+          "scenes": [
+            "Podemos ser amigas?",
+            "The Springtime Date",
+            "The Last Message"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-01.yaml",
+      "date": "2024-02-01",
+      "summary": "The reaching-out text to Sophie is sent at 6:50am, ending the waiting game. The recognition follows: \"Now, I will never know if given enough time she had reached out.\" By reaching out first, the author forecloses knowing if Sophie would have initiated. The trans non-disclosure to Sophie is noted. Watching Lovesick with Sonny provides domestic texture. The entry marks the transition from waiting to having acted.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-02-01)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Unsent Message"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Salamanca",
+          "proposed": "Salamanca",
+          "scenes": [
+            "Watching Lovesick",
+            "The Clockwork Malaise"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Meeting (2024-02-01)",
+          "proposed": "Meeting",
+          "scenes": [
+            "The Text Sent",
+            "The Unsaid Thing",
+            "31 Minutes and Counting"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-03.yaml",
+      "date": "2024-02-03",
+      "summary": "A vintage camera purchase punctuates days of domestic routine. The long-awaited response finally arrives: \"would love to see you.\" The narrator avoids reading it, dreading rejection even as the phone buzzes. Sonny reads it first, then convinces her to look. Relief doesn't come—only new anxiety about what to say next, the pattern of wanting contact but fearing what it demands. Friends intervene: reply now, not tomorrow.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Du College station",
+          "proposed": "Du College station",
+          "scenes": [
+            "The Marketplace Find (Flashback)",
+            "Coffee Before the Pickup",
+            "The Seller's Entrance",
+            "Wine Night with Friends"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At la boulangerie",
+          "proposed": "la boulangerie",
+          "scenes": [
+            "The Dreaded Notification",
+            "Sonny Reads First",
+            "Would Love to See You",
+            "Two Pitchers at the Pub",
+            "Korean Chicken Before Departure"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-04.yaml",
+      "date": "2024-02-04",
+      "summary": "A Sunday of solitude punctuated by social obligation. Sister goes to Mass, leaving the narrator to masturbate under the covers, facing the wall. The stains discovered later bring disgust that fades quickly. The hope that a woman from Hinge will reach out diminishes each day. A brunch crawl through Montreal restaurants with friends provides distraction, but French still makes him feel stupid. By evening, half a poutine eaten, he gives up on the day.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Berri UQAM",
+          "proposed": "Berri UQAM",
+          "scenes": [
+            "Early Surrender",
+            "The Fading Check",
+            "The Door Closes",
+            "The Stains"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Ginkgo",
+          "proposed": "Ginkgo",
+          "scenes": [
+            "Waiting Alone",
+            "The Swing Seats",
+            "Bar Crawl",
+            "Kicked Out Gently",
+            "The Portuguese Counter"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Table (2024-02-04)",
+          "proposed": "Table (2024-02-04)",
+          "scenes": [
+            "Half-Eaten Surrender"
+          ],
+          "issues": [
+            "at_location",
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-05.yaml",
+      "date": "2024-02-05",
+      "summary": "Cuba photo scans arrive disappointing. Organizing old photos in Google becomes an archaeological experience: watching the body change through the years. \"Being thinner and thinner after breaking up with Catherine. Gaining weight after moving to DC... My hair would get longer and longer until it became short.\" The epigraph distills the loss: \"I miss my body.\" Reading old rejection texts triggers despair. French class is unbearable. The cyclical nature is recognized: \"I'm at the exact same spot I was two years ago.\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-02-05)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Screenshots of Rejection",
+            "French Class Breakdown",
+            "The Texting Paradox",
+            "The Instagram Incident",
+            "Crying After Class"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-11.yaml",
+      "date": "2024-02-11",
+      "summary": "Sonny departs and the house empties. Sophie proposes meeting on Valentine's Day to see the Cuba photos. A small victory: \"For the first time since I could remember, I stopped waiting for a notification.\" The final days compress: shopping, cinema, goodbyes, airport. Then the longest commute home. The weekend collapses into isolation and the core wound surfaces: \"I worry I will meet with her, but I won't be enough.\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Day To See The Cuba Photos",
+          "proposed": "[TRUNCATED: S Day To See The Cuba Photos]",
+          "scenes": [
+            "The Empty House"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "T Be Enough",
+          "proposed": "[TRUNCATED: T Be Enough]",
+          "scenes": [
+            "Pedro's Challenge",
+            "Outlet Shopping",
+            "Dinner and Drinks",
+            "Waiting for the Bus",
+            "The Locked Door"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Waiting (2024-02-11)",
+          "proposed": "Waiting",
+          "scenes": [
+            "The Notification",
+            "La vie revee",
+            "Kung Pao Chicken"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-12.yaml",
+      "date": "2024-02-12",
+      "summary": "Medication side effects manifest as anguish and uneasiness, prompting renewed consideration of stopping antipsychotics. Working on a graphical abstract provides academic grounding. French class frustration articulates a paradox: \"I feel so advanced compared to the rest of the people in the class, yet I feel like the stupidest person when I try to speak with someone.\" A self-aware prediction about an upcoming date: they'll meet, she'll enjoy it, she won't disclose being trans, and the woman will let her down gently.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Ll Meet She",
+          "proposed": "[TRUNCATED: Ll Meet She]",
+          "scenes": [
+            "Side Effects at Dawn",
+            "Morning Commute",
+            "Room Full of Engineers",
+            "Three Minutes with the Supervisor"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "At la fruiterie",
+          "proposed": "la fruiterie",
+          "scenes": [
+            "The Graphical Abstract",
+            "French Class Paradox",
+            "The Unsent Message",
+            "The Sophie Prediction"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-13.yaml",
+      "date": "2024-02-13",
+      "summary": "ChatGPT provides harsh advice about Sophie's behavior as epigraph. Changing sheets means losing Sonny's scent: \"This time I did not worry about losing the faint smell of the presence of Sonny like I did with Monica's.\" The comparison reveals different weights of attachment - Sonny's presence is less anxiously guarded than Monica's was. Planning to play We're Not Really Strangers with Alda. The confession: \"Lately, I have been craving intimacy.\"",
+      "scenes": [
+        {
+          "original": "INT. BEDROOM - 1-2 AM",
+          "proposed": "He turns on the night",
+          "description": "He turns on the night light and retrieves clean sheets unused during Sonny's month-long stay. Changing bedding without the anxiety that accompanied erasing Monica's scent.",
+          "date": "2024-02-13",
+          "people": [
+            "Sonny",
+            "Mónica"
+          ],
+          "locations": [],
+          "issues": [
+            "screenplay"
+          ]
+        },
+        {
+          "original": "INT. BEDROOM - EARLY MORNING",
+          "proposed": "Internal battle - stay home or meet Louis",
+          "description": "Internal battle - stay home or meet Louis. The weather app won't load. He traces the failure to a knocked-out plug - sheets thrown carelessly last night.",
+          "date": "2024-02-13",
+          "people": [
+            "Louis"
+          ],
+          "locations": [],
+          "issues": [
+            "screenplay"
+          ]
+        },
+        {
+          "original": "INT. KITCHEN/DESK - 10 AM",
+          "proposed": "Coffee, work, a 20-minute Teams call with Louis",
+          "description": "Coffee, work, a 20-minute Teams call with Louis.",
+          "date": "2024-02-13",
+          "people": [
+            "Louis"
+          ],
+          "locations": [],
+          "issues": [
+            "screenplay"
+          ]
+        },
+        {
+          "original": "INT. KITCHEN - NOON",
+          "proposed": "Eggs and ham",
+          "description": "Eggs and ham. A late breakfast cooked solo.",
+          "date": "2024-02-13",
+          "people": [],
+          "locations": [],
+          "issues": [
+            "screenplay"
+          ]
+        },
+        {
+          "original": "FLASHBACK: EXT. PARC LA FONTAINE - YEARS AGO",
+          "proposed": "Laura, the Colombian exchange student",
+          "description": "Laura, the Colombian exchange student. Film cameras. A roll left undeveloped for years. She posted about the card game on Instagram.",
+          "date": "2020-05-15",
+          "people": [
+            "Laura"
+          ],
+          "locations": [
+            "Parc la Fontaine",
+            "Université de Montréal"
+          ],
+          "issues": [
+            "screenplay"
+          ]
+        },
+        {
+          "original": "INT. APARTMENT - FRENCH CLASS",
+          "proposed": "Focus deteriorating",
+          "description": "Focus deteriorating. This time he waits until class ends to write.",
+          "date": "2024-02-13",
+          "people": [],
+          "locations": [],
+          "issues": [
+            "screenplay"
+          ]
+        },
+        {
+          "original": "INT. APARTMENT - EVENING",
+          "proposed": "The texting dilemma",
+          "description": "The texting dilemma. Sophie or Tirza? He always reaches out to Tirza when disillusioned with Sophie. \"I know what I should do, but I don't know if I can.\"",
+          "date": "2024-02-13",
+          "people": [
+            "Sophie",
+            "Tirza"
+          ],
+          "locations": [],
+          "issues": [
+            "screenplay"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "original": "S Was Planning To Play We",
+          "proposed": "[TRUNCATED: S Was Planning To Play We]",
+          "scenes": [
+            "INT. BEDROOM - 1-2 AM",
+            "INT. BEDROOM - EARLY MORNING",
+            "INT. KITCHEN/DESK - 10 AM",
+            "INT. KITCHEN - NOON"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Writing (2024-02-13)",
+          "proposed": "Writing",
+          "scenes": [
+            "The Redirected Game",
+            "INT. APARTMENT - FRENCH CLASS",
+            "INT. APARTMENT - EVENING"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-14.yaml",
+      "date": "2024-02-14",
+      "summary": "Valentine's Day date with Sophie at Thomson House. Cuba photos are shown but Sophie seems rushed. A promise to meet after her Ottawa trip. The suspicious reading: \"Part of me suspects this whole meeting was just an attempt to placate my insistence.\" The narrator wants to kiss her but cannot let it out. The parallel emerges: \"I am not sure why I feel this deep urge to start crying, but, like my request to kiss her, I just can't let it out.\" Both the desire and the grief are suppressed identically.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "T Let It Out",
+          "proposed": "[TRUNCATED: T Let It Out]",
+          "scenes": [
+            "Corner Table at Thomson House"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Messaging (2024-02-14)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Reluctant Text",
+            "Beans and Personal Scent"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Meeting (2024-02-14)",
+          "proposed": "Meeting",
+          "scenes": [
+            "The Phone in the Dark",
+            "The Archived Conversation",
+            "Morning Arrangements",
+            "The Tirza Draft"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Waiting (2024-02-14)",
+          "proposed": "Waiting",
+          "scenes": [
+            "Showing the Cuba Photos",
+            "The Placation Suspicion",
+            "Tirza's Reply",
+            "Sophie's Diplomacy Text",
+            "The Suppressed Cry"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-16.yaml",
+      "date": "2024-02-16",
+      "summary": "Playing We're Not Really Strangers with Alda deepens their friendship through three levels of increasingly personal questions. They call Sonny during the game, triangulating the support network. The night ends with puking twice from heavy drinking. In the morning, a spontaneous text to Sophie before her trip is gently declined, continuing the pattern of reaching out and being rebuffed.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Writing (2024-02-16)",
+          "proposed": "Writing",
+          "scenes": [
+            "Calling in Sick",
+            "Drifting Through One Day",
+            "Beer and Memory",
+            "The Red Box Opens",
+            "Perception, Connection, Reflection",
+            "Calling Someone You Admire",
+            "The Note Set Aside",
+            "IGA Interlude",
+            "The Body's Reckoning",
+            "Drunk Drafting",
+            "No Hearts This Time"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-17.yaml",
+      "date": "2024-02-17",
+      "summary": "An obsession catalog emerges through masturbation. Memory distilled to gestures: arm through hers walking down the boulevard, her hand on a thigh, looking up before silently asking to kiss. The fear surfaces: does she think of the narrator as \"the trans girl she once fucked\"? The pattern is exposed and named—five obsessions catalogued, each with its own surveillance method. \"Yesterday I found out Sophie's last name.\" The self-assessment is brutal: these traits are \"not cute nor romantic... creepy and toxic.\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Alone at Home (3)",
+          "proposed": "Alone at Home",
+          "scenes": [
+            "Sophie's Last Name"
+          ],
+          "issues": [
+            "numbered"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-02-18.yaml",
+      "date": "2024-02-18",
+      "summary": "Irish pub with a friend provides space for her relationship troubles. Reading old journal entries (the Kate era, the Amanda date) triggers body nostalgia: \"I weighted 70 kg when I went to Puerto Vallarta... I like the way I looked. I was quite attractive. I had no reason to be this insecure.\" Current body hatred follows: \"My face contorts in weird ways. My mouth moves strangely. My neck is too thick.\" The future projection is self-aware: \"Do I have a reason to feel unattractive now, or will I look back to these pictures with nostalgia?\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Le Trèfle",
+          "proposed": "Le Trèfle",
+          "scenes": [
+            "Le Trefle, Window Table",
+            "The Relationship on the Rocks",
+            "Cocktails and Compromises"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Walking (2024-02-18)",
+          "proposed": "Walking",
+          "scenes": [
+            "Planning the Week",
+            "The Grocery Run",
+            "The Archive Opens",
+            "Body Nostalgia Spiral",
+            "The Present Rejection",
+            "The Future Question"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-01.yaml",
+      "date": "2024-03-01",
+      "summary": "Hungover and nauseous, the narrator breaks her promise by texting Sophie, then deletes the conversation again. \"Life is the stuff that happens while I wait for a stupid text.\" She moves through a lab lunch in silence, wanting to sleep right there, then isolates herself at home watching Before Midnight and La La Land. Mia's speech about not being enough makes her cry. She drafts imaginary dates—trauma bonding drinking games, the brunch that never happened—manufacturing connection in her head while waiting for a reply that may never come.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Walking (2024-03-01)",
+          "proposed": "Walking",
+          "scenes": [
+            "The Morning After",
+            "The Broken Promise",
+            "Coffee and Unfinished Films",
+            "First at the Restaurant",
+            "Shutdown at Lunch",
+            "The Silent Walk",
+            "Avoiding Colleagues"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Waiting (2024-03-01)",
+          "proposed": "Waiting",
+          "scenes": [
+            "Before Sunset",
+            "Not Being Enough",
+            "Waiting for the Text",
+            "Date Drafts"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-03.yaml",
+      "date": "2024-03-03",
+      "summary": "Nuit blanche with Aliza at Lili & Oli cafe in Verdun. Most contacts are deleted from the phone, including Sophie, but the number stays memorized: \"Nine. Seven. Four.\" The deletion is symbolic while the connection persists. Looking at toddlers in the cafe triggers motherhood grief: \"I looked at them and it hurt. I thought about children and motherhood. I felt the hole in my future that would never be filled.\" The trans-specific loss of biological motherhood crystallizes in a coffee shop.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-03-03)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Contact Purge",
+            "Nine. Seven. Four.",
+            "Working with Aliza",
+            "The Toddlers",
+            "Dad's Message"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-04.yaml",
+      "date": "2024-03-04",
+      "summary": "Restless wandering through Villeray, unable to stay inside. At a cafe, the narrator recognizes a past date whose name she'd forgotten—a ghost among many. Meanwhile, editing old journal entries from two years prior reveals the same obsessive pattern repeating. The archive confronts her with her own loops.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Café Velours",
+          "proposed": "Café Velours",
+          "scenes": [
+            "Leaving Intoxicated",
+            "Composing Messages While Walking",
+            "Passing Haunted Cafes",
+            "The Chai and the Kindle",
+            "The Forgotten Tea Seller",
+            "The Unconscious Smile"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Parc Jarry",
+          "proposed": "Parc Jarry",
+          "scenes": [
+            "Tiring the Body",
+            "The Text to a Friend"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Meeting (2024-03-04)",
+          "proposed": "Meeting",
+          "scenes": [
+            "Editing the Archive",
+            "21h28"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-05.yaml",
+      "date": "2024-03-05",
+      "summary": "The text is sent, the blue heart comes back. A vulnerable reach-out from bed at 8h20, the phone pushed away, the refusal to check until after showering. She accepts. The day unfolds in lab routine and small talk, but the real drama is internal: the anticipatory tension before meeting her, the disclosure anxiety. Evening spent watching Before Sunrise and Before Sunset—romantic films about fleeting connection and time running out.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Walking (2024-03-05)",
+          "proposed": "Walking",
+          "scenes": [
+            "The Message at 8h20",
+            "The Blue Heart",
+            "Morning Commute",
+            "Lab Chatter",
+            "The Prospective Student",
+            "The Small Lie"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Waiting (2024-03-05)",
+          "proposed": "Waiting",
+          "scenes": [
+            "Before Sunrise",
+            "Before Sunset"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-06.yaml",
+      "date": "2024-03-06",
+      "summary": "The Euphoria quote resurfaces: \"I fall in love so easily because half of the relationship is in my head.\" Revisiting 2022 journal entries during French class, the narrator recognizes the pattern continuing two years later. The upcoming third date brings disclosure anxiety—nervous about saying \"I am trans\" and watching her reaction. A psychiatrist appointment looms with its own fears: the temptation to lie, to quit medication, to question the diagnosis itself.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Writing (2024-03-06)",
+          "proposed": "Writing",
+          "scenes": [
+            "Morning Paralysis",
+            "Scripts Running",
+            "Excavating 2022",
+            "The Question Without Answer",
+            "Rehearsing the Psychiatrist",
+            "Friends Discussing Dating"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Messaging (2024-03-06)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Third Date Confirmed"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-08.yaml",
+      "date": "2024-03-08",
+      "summary": "The Sophie date at N sur Mackay. Conversation flows through Mormon childhood, lesbian movies, Portrait de la jeune fille en feu. Attachment styles are discussed. Sophie says she's had a nice time. At the metro station, before she puts on her mask: \"Can I kiss you?\" The kiss is short and hurried. They ride together until her stop. The narrator doesn't disclose being trans during the date. The secret survives another encounter.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At metro",
+          "proposed": "metro",
+          "scenes": [
+            "Metro Confession"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At N sur Mackay",
+          "proposed": "N sur Mackay",
+          "scenes": [
+            "Morning Ritual",
+            "First at the Lab",
+            "Waiting at Home",
+            "Arriving Early",
+            "The Kentucky Mule",
+            "Sophie Arrives",
+            "Trauma and Childhood",
+            "Lesbian Movies",
+            "Attachment Styles",
+            "The Compliment Deflected",
+            "Two Hard Weeks",
+            "Noticing Her Pain",
+            "The Kiss Before the Mask",
+            "Metro Together",
+            "Silence"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-10.yaml",
+      "date": "2024-03-10",
+      "summary": "Post-date processing begins. She texts after a lovely night, no response arrives. A social gathering provides distraction but the outsider feeling persists. The sleeping pill fails at 3am. A past rejection surfaces: counting dates to the end like a formula.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Table (2024-03-10)",
+          "proposed": "Table (2024-03-10)",
+          "scenes": [
+            "Kitchen, Sunday afternoon"
+          ],
+          "issues": [
+            "at_location",
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Messaging (2024-03-10)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Saturday morning, apartment",
+            "Saturday, couch",
+            "Phone in hand",
+            "The text sent",
+            "Phone, later"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Bar Ganadara",
+          "proposed": "Bar Ganadara",
+          "scenes": [
+            "Metro to the gathering",
+            "Memory surfaces",
+            "Restaurant table",
+            "Takoyaki"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Dreaming (2024-03-10)",
+          "proposed": "Dreaming",
+          "scenes": [
+            "3am waking",
+            "Sunday, still in pajamas"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-12.yaml",
+      "date": "2024-03-12",
+      "summary": "Fumigation displaces the narrator into the city. At the café, working through 2015 journals triggers depression—the weight of September that year, the deadname restored to the text. A friend's appreciation for shared entries leads to offering more: past romantic encounters becoming gifts. Evening brings medication and fantasizing about texting someone she shouldn't. The epigraph cuts: loving how easily you can cut something off and feel nothing.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At narrator's apartment",
+          "proposed": "narrator's apartment",
+          "scenes": [
+            "Displacement Morning",
+            "The Peephole",
+            "The Tip Refusal",
+            "Café Work",
+            "The Invitation Misread"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Writing (2024-03-12)",
+          "proposed": "Writing",
+          "scenes": [
+            "Reorganizing with Headphones",
+            "The Archive as Gift",
+            "Class Through a Screen",
+            "The Awful Idea"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-13.yaml",
+      "date": "2024-03-13",
+      "summary": "An unexpected text arrives from someone thought lost. The narrator moves through a day of meetings where her research goes unpraised, terminal code flashing impressively for colleagues while she downplays it. The entry ends falling asleep before French class, \"enumerating to myself the reasons why I do and don't expect Sophie to reach out ever again\" - the obsessive cataloging of hope and despair.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Table (2024-03-13)",
+          "proposed": "Table (2024-03-13)",
+          "scenes": [
+            "Liminal Sleep",
+            "The Weigh-In",
+            "Croissant Amandes",
+            "The Empty Corridor"
+          ],
+          "issues": [
+            "at_location",
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Louis's office",
+          "proposed": "Louis's office",
+          "scenes": [
+            "The Meeting Snub",
+            "The Impressive Terminal",
+            "The Abacus Emoji"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Palco",
+          "proposed": "Palco",
+          "scenes": [
+            "The Ikea Cart Memory"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Coyoacán",
+          "proposed": "Coyoacán",
+          "scenes": [
+            "How Have I Been?",
+            "CIC Lecture",
+            "Gnocchi on the Bus",
+            "Enumerating Sophie"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-14.yaml",
+      "date": "2024-03-14",
+      "summary": "Thomson House journaling session after Aliza leaves, watching strangers and describing them in intimate detail—the blonde girl with red eyeglasses, hands playing with the table edge. The narrator questions why she describes strangers, connecting it to street photography and observation. First session with new therapist goes well; trans identity mentioned in passing with no notable reaction from either party. The pivotal line emerges: \"I've transitioned for almost 8 years now. I've been a woman for almost a third of my life.\" The narrator dreads ending things with previous therapist to avoid repeating the two-therapists situation from years before. The epigraph reveals a meta-insight about ADHD and alcohol: the paradoxical effects of stimulants mirrored by repressive nature and disinhibition.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Waiting (2024-03-14)",
+          "proposed": "Waiting",
+          "scenes": [
+            "Staring is Rude",
+            "Two Pints In"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-16.yaml",
+      "date": "2024-03-16",
+      "summary": "Love Lies Bleeding at the cinema—the theater full of queer women prompting the essential question: \"How did I know they were queer? What was it that gave me the idea these women are like me?\" The friend loves the violent lesbian romance more than the narrator, who gets annoyed by the characters' impulsive decisions. Her comment at film's end: \"I won't settle for anything less.\" The Saint Patrick's bar crawl unfolds—multiple rounds of Jameson, the superstition about eye contact during toasts bringing seven years of bad sex. The narrator's confession emerges: \"I think I prefer bad sex over no sex.\" The first time wearing the dark denim jacket since Cuba; makeup applied but feeling fake despite the better-matched foundation.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "I Won",
+          "proposed": "[TRUNCATED: I Won]",
+          "scenes": [
+            "Chugging Cider at Thomson's",
+            "The Convenience Store Detour",
+            "Queer Recognition",
+            "Love Lies Bleeding",
+            "I Won't Settle for Anything Less"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "S Confession Emerges",
+          "proposed": "[TRUNCATED: S Confession Emerges]",
+          "scenes": [
+            "Pizza Ordered"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-17.yaml",
+      "date": "2024-03-17",
+      "summary": "A day of domestic stasis and dread. The narrator stays in bed until morning ends, watch vibrating with messages—Cuba photos, father's portrait, an abacus instead of the expected cat. The poutine t-shirt purchased at a souvenir shop triggers sudden memory: \"Just now am I realizing that I bought this shirt with Monica.\" Reading Honey Girl at the laundromat—the astronomer marrying a stranger—provokes the melancholic observation: \"It makes me think of what I don't have.\" Weight over 79kg but still three eggs cooked. The urge to buy vodka resisted, the craving for alcohol documented. Tomorrow's therapy appointment looms: \"I dread last sessions. I hate closures.\" The pattern of avoiding therapeutic endings traced back years before.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "T Have",
+          "proposed": "[TRUNCATED: T Have]",
+          "scenes": [
+            "Morning in Bed",
+            "The Poutine T-Shirt",
+            "Deleting Without Opening",
+            "Grocery Run",
+            "79 Kilograms",
+            "Resisting the Bottle"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "S Therapy Appointment Looms",
+          "proposed": "[TRUNCATED: S Therapy Appointment Looms]",
+          "scenes": [
+            "The Laundromat",
+            "Reading Honey Girl",
+            "The Wrong Dryer",
+            "Exporting the Year",
+            "Dreading Tomorrow"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-18.yaml",
+      "date": "2024-03-18",
+      "summary": "Session with Calli that was not supposed to be the last—the narrator never mentions starting with another counselor. The accidental dish-cut on the wrist stings \"in a familiar way,\" prompting Calli's therapeutic probe: \"Did it remind you of cutting yourself in a different way?\" The thin scarlet line becomes object of obsessive glancing in the waiting room. Calli introduces the crystal ball exercise: imagine knowing Sophie will continue with occasional encounters and intermittent communication for six months. The narrator articulates the central anxiety: \"I hate the idea that I am chasing her. In order to chase something, it means it's running away from you.\" Vodka purchased and consumed starting at 15h despite previous resistance. Alda receives a journal entry and responds with the meta-prophecy: \"This should be the start of your book.\"",
+      "scenes": [
+        {
+          "original": "Therapy: The Wound",
+          "proposed": "The Wound",
+          "description": "Mentioning yesterday's cut to the therapist; \"Did it remind you of cutting yourself in a different way?\"",
+          "date": "2024-03-18",
+          "people": [
+            "Calli"
+          ],
+          "locations": [
+            "Wellness Hub"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "Therapy: The Crystal Ball",
+          "proposed": "The Crystal Ball",
+          "description": "Imagine knowing this will continue for six months—occasional encounters, intermittent communication. How does that feel?",
+          "date": "2024-03-18",
+          "people": [
+            "Calli",
+            "Sophie"
+          ],
+          "locations": [
+            "Wellness Hub"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "Therapy: The Chase",
+          "proposed": "The Chase",
+          "description": "\"I hate the idea that I am chasing her. In order to chase something, it means it's running away from you.\" The therapist challenges: sometimes chasing is play.",
+          "date": "2024-03-18",
+          "people": [
+            "Calli",
+            "Sophie"
+          ],
+          "locations": [
+            "Wellness Hub"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "original": "S Therapeutic Probe",
+          "proposed": "[TRUNCATED: S Therapeutic Probe]",
+          "scenes": [
+            "The Walk Downhill",
+            "The Shopping Trip",
+            "Drinking Alone at 15h",
+            "This Should Be the Start of Your Book"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "S Running Away From You",
+          "proposed": "[TRUNCATED: S Running Away From You]",
+          "scenes": [
+            "French Class Overtime"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-20.yaml",
+      "date": "2024-03-20",
+      "summary": "The BODY entry. A vivid period dream: blood transpiring through underwear and shorts to the sheets, mother asking \"Sofía, are you getting your period?\" The dreamer's anguished response: \"How would I be getting a period? I don't have a uterus... I don't even have a vagina!\" Therapy session explores the motherhood wound explicitly connected to transition: \"Before transitioning, I never imagined myself as a parent. I realized later that it had to do with me not ever wanting to be a dad. Now, more than a decade later, I feel heartbroken with the news of people I know having kids.\" Self-harm history disclosed—the first cut years ago in Madrid, the recent one triggered by French class homework requiring childhood photos to compare with current appearance. At the academic conference, the narrator sees herself in the elevator mirror. \"I hated what I saw. I hated my clothes and the way my body looked in them... I didn't just feel fat. I felt unattractive.\"",
+      "scenes": [
+        {
+          "original": "Therapy Session: The Motherhood Wound",
+          "proposed": "The Motherhood Wound",
+          "description": "Dreams disclosed—the period dream, the pregnancy dream from years ago. The explicit articulation: before transitioning, never wanting to be a dad; now heartbroken watching toddlers in cafés.",
+          "date": "2024-03-19",
+          "people": [
+            "Fabiola"
+          ],
+          "locations": [
+            "Apartment - Jarry"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "Reception: The Unheard Voice",
+          "proposed": "The Unheard Voice",
+          "description": "Red wine. The familiar moments where she says something nobody hears. Speaking the least at the whole table.",
+          "date": "2024-03-20",
+          "people": [
+            "Aliza",
+            "Amelie",
+            "Mahsa",
+            "Yashar",
+            "Walter"
+          ],
+          "locations": [
+            "hotel reception"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "original": "S Anguished Response",
+          "proposed": "[TRUNCATED: S Anguished Response]",
+          "scenes": [
+            "The Period Dream",
+            "Therapy Session: The Motherhood Wound",
+            "Self-Harm History"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "T Have A Uterus I Don",
+          "proposed": "[TRUNCATED: T Have A Uterus I Don]",
+          "scenes": [
+            "Conference Registration, 7h30",
+            "The Elevator Mirror",
+            "Eating More Than Any Day This Year",
+            "Not Belonging"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "T Just Feel Fat I Felt Unattractive",
+          "proposed": "[TRUNCATED: T Just Feel Fat I Felt Unattractive]",
+          "scenes": [
+            "The Language Shift",
+            "Reception: The Unheard Voice",
+            "Pub with a Friend",
+            "Fast Food for Medication"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-24.yaml",
+      "date": "2024-03-24",
+      "summary": "The DISTRACTION LIST entry. The narrator compiles a list of people to text instead of the current fixation: \"Kath, Valerie, Max, Monica, Heloise. Now, Sophie.\" The strategy is explicit—earn the right to text her by first reaching out to the ghosts. One responds with flirtation; another with news of burnout leave. The most devastating response catalogs the narrator's perceived coldness during a past visit: \"I felt unwelcome and yet I missed you very very much these months and it still hurts.\" A friend breaks up with her girlfriend in the background. The narrator drafts but doesn't send the meta-text revealing the whole strategy. A confidant offers hope: \"I think she likes you.\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Perceived Coldness During A Past Visit",
+          "proposed": "[TRUNCATED: S Perceived Coldness During A Past Visit]",
+          "scenes": [
+            "The Blur of Days"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Messaging (2024-03-24)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Morning at the Bakery",
+            "Back to Bed",
+            "The Flirty Thread Discovered",
+            "Executing the List",
+            "The Devastating Response",
+            "The Text Not Sent"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-25.yaml",
+      "date": "2024-03-25",
+      "summary": "The Monica SELF-HARM DISCLOSURE entry. The narrator responds to Monica's message cataloging hurt, explaining how Monica brings out the worst in her: \"I hate myself more when I'm around you, sometimes even after we talk.\" The crucial disclosure emerges: \"I told her... the day she left was the last time I cut myself.\" The narrator hesitates to make the connection explicit, knowing it's cruel, aware that \"the rest of the times I did it before, it had nothing to do with her.\" Monica's questions arrive—why only with her? how has she hurt the narrator?—and the narrator develops the idea of how Monica brings out the worst: the interrupting, talking over, all happening only with her. The Barbara Pravi epigraph frames the entry: \"Je veux qu'on m'aime, parce que moi, je sais pas bien aimer mes contours.\" The narrator finishes her vodka and heads to bed.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Cruel Aware That",
+          "proposed": "[TRUNCATED: S Cruel Aware That]",
+          "scenes": [
+            "The Night Before (Flashback)",
+            "Drinking Alone"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Je Veux Qu",
+          "proposed": "[TRUNCATED: Je Veux Qu]",
+          "scenes": [
+            "4AM Kitchen",
+            "The Alarms",
+            "The Lab Meeting (Teams)",
+            "Manuscript Purgatory",
+            "Monica's Questions Appear",
+            "Composing the Explanation",
+            "The Disclosure",
+            "The Final Message",
+            "Vodka and Bed"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-26.yaml",
+      "date": "2024-03-26",
+      "summary": "The FIRST KISS / PRE-TRANSITION entry. Therapy session bridges two subjects: ending the connection with one crush, dreading no connection will start with another. When asked to describe her old friend, the narrator blanks completely: \"She felt so far away and untouchable that for a minute I might have even forgotten her face.\" The crying comes in waves, emptying. The crucial revelation: the old friend was the first kiss, their relationship not always Platonic. The therapist notices: \"Ese es un detalle importante.\" The deeper insight emerges: \"Other than my family, I don't have any other connection to my life as a man.\" The narrator catalogs disappeared friendships from high school and college—none of whose names came up as potential people to reach out to. The stench of an old man at the metro station follows her across the city: \"Maybe I deserve it.\"",
+      "scenes": [
+        {
+          "original": "After Session: Makeup, Movement",
+          "proposed": "Makeup, Movement",
+          "description": "Putting on makeup, heading out to work. Transition as continuous assembly.",
+          "date": "2024-03-26",
+          "people": [],
+          "locations": [
+            "Apartment - Jarry",
+            "Thomson House"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "original": "At Jarry station",
+          "proposed": "Jarry station",
+          "scenes": [
+            "The Old Man at the Metro",
+            "Walking Away Without Lying",
+            "The Stench Follows"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-03-30.yaml",
+      "date": "2024-03-30",
+      "summary": "The DEADNAME DREAM entry. Sleep paralysis with DC characters and psychological trauma, followed by the motherhood/deadname dream: \"It had something to do with having my kids—me not being able to—and my mother somehow being unsupportive of my transition. She used my deadname in the dream.\" Monica as the last person to say it aloud, unfamiliar with the faux pas. Jay match on Tinder—casual sex in mind—prompts the trans disclosure and her question about what that means sexually. Mid-conversation, Sophie's notification appears: \"Hey! I did not—to be honest I have not been doing super well physically since—\" The narrator screenshots the cat avatar immediately but cannot bring herself to open the full message. Dancing at the rock bar with Aliza and Liana. The entry ends with the central contradiction: \"Why am I so scared of reading her rejection if I was more than ready to drink tomorrow for the occasion of letting her go?\"",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Notification Appears",
+          "proposed": "[TRUNCATED: S Notification Appears]",
+          "scenes": [
+            "Racing the Clock",
+            "Sleep Paralysis Theater",
+            "The Motherhood Dream",
+            "The Last to Say It"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Messaging (2024-03-30)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Noon Without Coffee",
+            "Jay's Good Times",
+            "The Disclosure",
+            "The Cat Notification"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At tapas bar",
+          "proposed": "tapas bar",
+          "scenes": [
+            "Tapas Bar Wait",
+            "Dancing to Rock",
+            "The Unread Message",
+            "The Central Contradiction"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-04.yaml",
+      "date": "2024-04-04",
+      "summary": "The DISCLOSURE CATALOG entry. After Sophie's rejection, the narrator systematically comes out to dating app matches—Jay, Kayla, Marie-Anne, Eva, Gabrielle, Sy, Typhaine—each response varying from acceptance to ghosting. The Gabrielle exchange becomes psychologically pivotal: she asks to hear the narrator's voice to judge if she can be attracted to a trans woman. The narrator refuses: \"I didn't want to put myself through feeling inspected or risking not being woman enough.\" This refusal articulates a boundary against the femininity-inspection ritual that trans women face. The entry documents the exhausting labor of repeated disclosure—each time explaining, each time risking rejection, each time hoping the answer comes quickly rather than in the agonizing hours of waiting.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-04-04)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Unopened Notification",
+            "Amaretto Sunday",
+            "The Verdict"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Tinder",
+          "proposed": "Tinder",
+          "scenes": [
+            "Back on the Apps",
+            "The Disclosure Catalog",
+            "The Dog in the Snow"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Hinge",
+          "proposed": "Hinge",
+          "scenes": [
+            "Accent Negotiations"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Hochelaga",
+          "proposed": "Hochelaga",
+          "scenes": [
+            "The Voice Test",
+            "The Refusal",
+            "Marie-Anne's Grace"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-06.yaml",
+      "date": "2024-04-06",
+      "summary": "The SELF-INJECTION entry. The pharmacy gave the narrator half her estrogen prescription—a clerical error she cannot bring herself to correct. She faces the choice: ration the pills or revive the practice of self-injection from three years ago. Choosing the needle: \"I gave myself a shot today... There is this strange feeling in my thigh right now that somehow feels nostalgic.\" The body remembering the old ritual, muscle memory of transition's earlier phase. Between medical appointments and lab meetings, she processes the previous day's voice-message rejection with a friend, then secures a date for tomorrow. The HRT anxiety—counting pills, calculating doses, the inability to advocate at the pharmacy counter—prefigures the medication precarity that will intensify.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Remembering (2024-04-06)",
+          "proposed": "Remembering",
+          "scenes": [
+            "The Needle Returns",
+            "Counting Pills"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At office",
+          "proposed": "office",
+          "scenes": [
+            "The Lab Meeting",
+            "The Five-Minute Call"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Cafe Aunja",
+          "proposed": "Cafe Aunja",
+          "scenes": [
+            "Cafe Aunja",
+            "The Manuscript Email",
+            "The Failed Restaurant Plan",
+            "Pharmacy Counter"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-07.yaml",
+      "date": "2024-04-07",
+      "summary": "First date with Marie-Anne at a cafe and Parc Jarry. The conversation flows mostly in English; the narrator offers to switch to French whenever she struggles—an echo of the linguistic dynamic with a past lover. A child approaches mid-conversation and asks if the narrator is American; the mother explains it's the accent. Being perceived as foreign: the layers of identity stacking visibly. The date ends with a hug and Instagram exchange, pleasant but without spark. She leaves for three weeks. The anticipation of waiting returns.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-04-07)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Dressing Without Confidence",
+            "The Broken Glass",
+            "Wanting to Arrive Second",
+            "Walking to the Cafe"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Oui mais non cafe",
+          "proposed": "Oui mais non cafe",
+          "scenes": [
+            "Finding a Table",
+            "Marie-Anne Arrives",
+            "English in a French Room",
+            "The Language Offer",
+            "Walking to Parc Jarry",
+            "The Bench by the Fountain",
+            "The Child's Question",
+            "17h05",
+            "The Goodbye"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-08.yaml",
+      "date": "2024-04-08",
+      "summary": "The WOMAN ENOUGH entry. Final session with therapist after three years. The narrator speaks about a potential date's voice-message request: \"I don't wanna put myself through having to prove I am woman enough for anybody.\" The closing intervention brings tears: \"When you say how I am enough, the first thought that crosses my mind is 'I know.' But, honestly—\" \"You don't fully believe it.\" \"No.\" The core wound articulated: knowing intellectually while not believing emotionally. Afterwards, the narrator watches the solar eclipse with a friend at the mountain lake—the sky darkening, the world briefly paused. A flirtation intensifies; summer trip to Mexico City takes shape. The transition from one therapist to another marks a threshold.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Voice-Message Request",
+          "proposed": "[TRUNCATED: S Voice-Message Request]",
+          "scenes": [
+            "Medication Experiments",
+            "4am Wakefulness",
+            "Morning Preparation",
+            "Walk to the Session"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "You Don",
+          "proposed": "[TRUNCATED: You Don]",
+          "scenes": [
+            "Meeting at the Old Building",
+            "Eclipse Supplies",
+            "Waiting for Totality",
+            "The Eclipse"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-09.yaml",
+      "date": "2024-04-09",
+      "summary": "Flirty Tinder banter with Marie about scary movies and making out on couches. The narrator discloses being trans mid-flirtation, the language calibrated for casual delivery: \"Talking about what we aren't, unless we get to third base it wouldn't make much of a difference, but I'm trans FYI—no need to get awkward if it's a deal-breaker.\" Marie responds warmly: \"It's absolutely not a deal breaker, don't worry bb.\" The relief of acceptance, quickly absorbed, the pattern continuing. Therapy session explores insomnia and the lingering ghost of a recently ended situation—persisting even as new matches accumulate.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S A Deal-Breaker",
+          "proposed": "[TRUNCATED: S A Deal-Breaker]",
+          "scenes": [
+            "Logistics and Landing"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-10.yaml",
+      "date": "2024-04-10",
+      "summary": "The CATFISHER ECHO entry. The narrator's sexting match is explicitly identified as \"the Québécoise version of the catfisher\"—the pattern from years earlier repeating. Old Snapchat photos resurface, triggering body grief: \"That led me to look at old pictures of me and how my body used to look. I miss it. I miss being OK with it and feeling attractive.\" She is called gorgeous but doesn't believe it. The disconnection between external validation and internal experience persists. Another prospect reaches out; they plan to meet Friday. The lab passes unremarkably with colleagues discussing funding, video games, and a visitor's aunt's hospital delirium.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Sexting Match Is Explicitly Identified As",
+          "proposed": "[TRUNCATED: S Sexting Match Is Explicitly Identified As]",
+          "scenes": [
+            "Medication Uncertainty",
+            "The Catfisher Echo",
+            "Shit on the Door Handle",
+            "Empty Office at Noon",
+            "The Aunt's Delirium"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-12.yaml",
+      "date": "2024-04-12",
+      "summary": "Daily drinking escalates—vodka and grapefruit the first thing after returning from a date. Coffee date with Jay: two hours of conversation, no food ordered, ends with a hug and an ambiguous farewell at the metro. The aftermath spiral: \"I feel unattractive and disgusting. Unwanted.\" The logic of desire inverted—the problem isn't hookups but the unbearable ordinariness of connection that doesn't ignite. At Church pub with friends, the narrator mentions a half-decade crush who calls her \"princess\"—the backstory for the summer Mexico arc accumulating. Throughout: glancing at the phone, waiting for the rejection text, bargaining with herself to write 1500 words before checking.",
+      "scenes": [
+        {
+          "original": "Church Pub: The Breakup Circle",
+          "proposed": "The Breakup Circle",
+          "description": "Friends at happy hour cocktails. One friend shares about ending things with an ex she'd stayed friends with. The narrator relates.",
+          "date": "2024-04-11",
+          "people": [
+            "Alda",
+            "Aliza",
+            "Mohammadali",
+            "Daniela"
+          ],
+          "locations": [
+            "Church St Pub"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "original": "At Mistral",
+          "proposed": "Mistral",
+          "scenes": [
+            "Rain Walk to the Café",
+            "Two Hours Without Food",
+            "Hug or Handshake",
+            "3h36 Spider"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-13.yaml",
+      "date": "2024-04-13",
+      "summary": "A day of waiting for messages that don't come—from Jay, from Sy, from Paty. Depression and drinking fill the void. Paty's origin story surfaces: meeting at a Yaaj event where she confessed liking both Paola and the narrator, but chose another before anything could happen. The Sophie comparison resurfaces: Sy's message—like Sophie's—remains unseen. The waiting pattern documented across multiple threads simultaneously. Cancelled plans (Vero's wedding, gathering with friends) leave space for paralysis—no laundry, no reading, no manuscript work, just the scroll and the wait.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Messagelike Sophie",
+          "proposed": "[TRUNCATED: S Messagelike Sophie]",
+          "scenes": [
+            "Bed, All Day",
+            "Morning Text to Sy",
+            "Vero's Cancelled Wedding (Backstory)",
+            "Alda's Fall (Phone)"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Writing (2024-04-13)",
+          "proposed": "Writing",
+          "scenes": [
+            "Paty's Origin Story (Memory)",
+            "Double-Texting Paty",
+            "Narvarte Shore Nights (Memory Flash)",
+            "The French Text to a Meaningless Match"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-15.yaml",
+      "date": "2024-04-15",
+      "summary": "Depression weekend unmoved, but Bea arrives. A girl with a Virginia Woolf quote in her bio, \"just looking for some fun.\" The disclosure follows: \"Before getting to the plans, I'm trans, in case that gets in the way of fun for you.\" Then an hour of waiting—the familiar anxiety, feeling unwanted, disgust rising. Finally: \"No, that doesn't get in the way!\" Relief, but they don't settle on plans yet. The Virginia Woolf detail plants a seed that will bloom later—the lighthouse tattoo, the literary intimacy that will characterize their encounter. The couple from last year reappears; Sy's texts remain vapid. Bea's entrance marks a shift in the dating landscape.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-04-15)",
+          "proposed": "Messaging",
+          "scenes": [
+            "What Am I Trying to Fill?",
+            "Tempted to Skip"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-25.yaml",
+      "date": "2024-04-25",
+      "summary": "The preamble to the Bea night. Two weeks of deep depression. French class insufferable. Chloe date unremarkable. Bea cancels their first scheduled date (dog-sitting emergency). Rescheduling attempts fail around French class schedule. Then Bea offers Thursday. The narrator skips Wednesday's class to meet her. She chooses the same bar—close to Bea's house, the implication clear. \"Since we started talking, the conversation flowed with the implication that we were going to hook up.\" She puts on her nicest bra but no makeup—the calibration of effort for casual sex versus romance. At the pharmacy: \"I looked through the edge of the label trying to estimate how many they were\"—HRT anxiety persists in the background of all other concerns.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Waiting (2024-04-25)",
+          "proposed": "Waiting",
+          "scenes": [
+            "Depression Inventory",
+            "Chloe at Cafe Velours",
+            "Bea's Midnight Text"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Messaging (2024-04-25)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Sunday's Weight"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Meeting (2024-04-25)",
+          "proposed": "Meeting",
+          "scenes": [
+            "Tuesday Therapy",
+            "Tabac Frustration",
+            "The Proposition"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Alone at Home (4)",
+          "proposed": "Alone at Home",
+          "scenes": [
+            "Nicest Bra, No Makeup",
+            "Pharmacy Stop",
+            "Villa-Maria Limbo",
+            "Monkland Walk"
+          ],
+          "issues": [
+            "numbered"
+          ]
+        },
+        {
+          "original": "At Typhoon lounge",
+          "proposed": "Typhoon lounge",
+          "scenes": [
+            "The Almost-Empty Bar",
+            "Recognition"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-26.yaml",
+      "date": "2024-04-26",
+      "summary": "THE BEA NIGHT. A vivid, fully dramatized intimate encounter—the first complete sex scene in the journal. The date flows: aphantasia, religion, nausea. Outside for a smoke. *\"Can I kiss you?\"* She places one hand on Bea's waist. *\"We kissed a thousand times like no one were watching. Her mouth tasted like tobacco and honey.\"* Bea invites her home. On the bed, the narrator confirms: *\"You do know I am trans, right?\"* Bea smiles: *\"Don't worry about it—I like girls.\"* During kissing, their teeth collide and the narrator's front tooth chips. Nervous laughter, memories of a similar incident seven years ago. They continue. Bea goes down on her. *\"Her mouth was electric.\"* The narrator reciprocates but worries she didn't make Bea cum. She fakes her own orgasm. Afterward, cuddling: Bea describes her tattoos—a lighthouse for Virginia Woolf's novel, her mother's islands. *\"She suggested joining me in what I confessed was an intimate and personal thing for me.\"*—an invitation to take her photograph. A number exchange at the door.",
+      "scenes": [
+        {
+          "original": "The Bar: First Date Confessions",
+          "proposed": "First Date Confessions",
+          "description": "Two women share their pre-date anxieties over pints. Conversation flows through careers, travels, aphantasia, religion. Three rounds ordered.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Typhoon Lounge"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Sidewalk: The Ask",
+          "proposed": "The Ask",
+          "description": "Night has fallen. She shivers in her denim jacket while the other smokes. A shift of weight, eyes meeting. \"Can I kiss you?\" Hand on waist.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Typhoon lounge exterior"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Walk: Five Minutes",
+          "proposed": "Five Minutes",
+          "description": "Glasses abandoned half-full. They don't hold hands this time. Cold night, silent anticipation. The apartment appears.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "NDG"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Bedroom: Disclosure",
+          "proposed": "Disclosure",
+          "description": "Kneeling over her on the bed, the narrator pauses. \"You do know I am trans, right?\" The smile. \"Don't worry about it—I like girls.\"",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Bea's apartment"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Bedroom: The Broken Tooth",
+          "proposed": "The Broken Tooth",
+          "description": "Mid-kiss, teeth collide. A crack. A tiny pebble between lips. Mortified laughter. Memory of seven years ago. They continue anyway.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Bea's apartment"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Bedroom: Bodies in Negotiation",
+          "proposed": "Bodies in Negotiation",
+          "description": "Questions about preference. Hesitation masked by nodding. Her mouth electric. Reciprocation attempted. The faked orgasm.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea",
+            "Jay",
+            "Amanda"
+          ],
+          "locations": [
+            "Bea's apartment"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Bedroom: The Tattoos",
+          "proposed": "The Tattoos",
+          "description": "Tangled together, she describes the lighthouse for Virginia Woolf, the phrase \"we remain,\" her mother's islands. Voice against chest.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Bea's apartment"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Bedroom: The Invitation",
+          "proposed": "The Invitation",
+          "description": "\"You should take me with you once.\" Photography discussed. The offer to be photographed. A future implied.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Bea's apartment"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        },
+        {
+          "original": "The Door: The Exchange",
+          "proposed": "The Exchange",
+          "description": "Time to leave acknowledged. \"Do you want to move outside the app?\" Doubt in grayish-blue eyes, but she accepts the phone. A closing kiss.",
+          "date": "2024-04-24",
+          "people": [
+            "Bea"
+          ],
+          "locations": [
+            "Bea's apartment"
+          ],
+          "issues": [
+            "colon_prefix"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "original": "S Waist",
+          "proposed": "[TRUNCATED: S Waist]",
+          "scenes": [
+            "The Morning After"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-27.yaml",
+      "date": "2024-04-27",
+      "summary": "The morning after the connection that worked too well. The narrator repairs the body—dental clinic, Hispanic dentist, Spanish inside and French outside, the broken tooth finally fixed. Then a party at a friend's, wine-drunk processing via text: \"I was thinking how, now that I was starting to feel limerence for a new person, it'd be the perfect time for her to come back.\" The paradox articulated: \"She ruined it by being too good for me.\" A friend pushes back: \"You met her once.\" The narrator clarifies the impossible bind: \"I enjoyed talking to her too much to have had sex with her.\" Good connection makes casual sex feel like a mistake. The next morning, a new match, and the narrator discloses her trans status before another date can form.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Wine-Drunk Processing Via Text",
+          "proposed": "[TRUNCATED: S Wine-Drunk Processing Via Text]",
+          "scenes": [
+            "Laundry Finally Done"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "At Paris",
+          "proposed": "Paris",
+          "scenes": [
+            "Morning Notifications",
+            "Disclosure Before the Date"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-28.yaml",
+      "date": "2024-04-28",
+      "summary": "Obsessive thoughts spiral in the aftermath of a new connection. The narrator drafts texts all morning but nothing feels right. The familiar anxiety articulated: \"Having sex with someone is the perfect circumstance for an unhealthy fixation to blossom.\" She catalogs evidence against her fear: the woman asked to kiss first, invited her home, shared tattoo stories, suggested the photo session, asked her to text when she arrived home, replied. \"She hasn't disappeared. At least not yet.\" A pattern from an old fixation mapped onto new territory—the same cataloging, the same anticipation of abandonment. Wisdom tooth pain flares, prefiguring the summer surgery. Insomnia after skipping antipsychotics compounds the mental spiral.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "She Hasn",
+          "proposed": "[TRUNCATED: She Hasn]",
+          "scenes": [
+            "The Worst Night"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Walking (2024-04-28)",
+          "proposed": "Walking",
+          "scenes": [
+            "No Reason to Rise",
+            "The Tooth's Lightning",
+            "The Dépanneur Run",
+            "Drafting All Morning",
+            "The Catalog of Evidence",
+            "At Least Not Yet"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-04-30.yaml",
+      "date": "2024-04-30",
+      "summary": "French class irritability reaches breaking point—emotions waking from weeks of numbness. The narrator quotes Before Sunset on connection's scarcity, framing the romantic stakes. On the metro platform, the ghost appears unbidden: she catches herself calculating whether the ex might be on this train, embarrassed by her own unconscious surveillance. Tears come on their own. A Hinge match discusses books that made her cry, then goes silent—another thread beginning and ending in the same breath.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At María's bar",
+          "proposed": "María's bar",
+          "scenes": [
+            "Online French Class",
+            "The Argument",
+            "At the Bar",
+            "Walking to the Metro"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At metro station",
+          "proposed": "metro station",
+          "scenes": [
+            "The Platform Bench",
+            "The Corridor",
+            "Hinge Exchange"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-01.yaml",
+      "date": "2024-05-01",
+      "summary": "The obsessive spiral entry. After disappointing silence from a recent match, the narrator cycles through dating apps—deleting, texting impulsively, against therapeutic advice to take a break. A moment of self-awareness emerges: the urge to text comes from anger, not desire. The therapist offers a striking image: \"hearing my narrations I reminded her of a little girl; someone scared and hidden, unable to handle the world's expectations.\" The entry catalogs compulsive texting—a transphobic match confronted point-blank, a brief temptation toward Grindr and chasers. The pattern of disclosure-wait-rejection-repeat documented in its exhausting totality.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-05-01)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Water Dam",
+            "Bed Until Noon",
+            "The Unexpected Text",
+            "Therapy Session",
+            "A Little Girl"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At café",
+          "proposed": "café",
+          "scenes": [
+            "Cafe Escape",
+            "Texting Against Advice",
+            "The Pattern Recognition",
+            "The Grindr Temptation"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-03.yaml",
+      "date": "2024-05-03",
+      "summary": "A day of restless hypomanic energy after waking at 3h. The narrator feels \"energetic and jumpy, a bit impulsive\" at work, meets a friend at a cafe for coffee and beers. The phone full of notifications feels like it's \"burning\"—the narrator fantasizes about throwing it onto the metro tracks, then turns it off instead. The digital device as source of compulsion, the fantasy of destruction versus the reality of simply powering down. Mother texts with worry about the cat, who has been \"kind of sad.\" The entry ends with meta-awareness: \"I feel the urge to offer it to her as a bribe to see her again\"—the journal itself becoming currency for connection.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Writing (2024-05-03)",
+          "proposed": "Writing",
+          "scenes": [
+            "News from Home",
+            "The Bribe"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-05.yaml",
+      "date": "2024-05-05",
+      "summary": "A first date at a brunch spot—coffee, French language banter, walking together under her umbrella in the rain. The narrator thinks about asking to kiss her but doesn't: \"Instead, we just walked.\" The almost-kiss pattern that will recur. The entry contains two disturbing confessions: telling a friend about intrusive thoughts of pushing people onto metro tracks (met with silence, the fear of being seen as monstrous), and a joke about pregnancy that leaves the narrator feeling \"soiled\"—\"I felt crawling ants tickling my spine.\" The body's dysphoric response to maternal impossibility.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Remembering (2024-05-05)",
+          "proposed": "Remembering",
+          "scenes": [
+            "Intrusive Thought Confession",
+            "Pregnancy Dysphoria"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Writing (2024-05-05)",
+          "proposed": "Writing",
+          "scenes": [
+            "The Deleted Text"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Berri-UQAM",
+          "proposed": "Berri-UQAM",
+          "scenes": [
+            "Confessing to Another Friend",
+            "Sunday Morning Struggle",
+            "Name Banter en Route",
+            "Brunch at the Cafe",
+            "The Umbrella Walk",
+            "The Unasked Kiss",
+            "The Follow-Up Text",
+            "Two Rejections"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-06.yaml",
+      "date": "2024-05-06",
+      "summary": "Aftermath of a date. She responded to the narrator's text about not kissing in the rain: she was \"flustered,\" needs time, feels \"a little bit broken.\" The narrator apologizes, then avoids reading her follow-up French text all day—the familiar pattern of dreading rejection. Meanwhile, during French class, the narrator compulsively texts an ex—\"the one-sentence over-thought text... That is the only one that I wish goes unanswered.\" The paradox articulated: texting someone while hoping they won't respond, the compulsion overriding desire. Conference registration, therapy appointment scheduling, work meetings fill the rest.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Text About Not Kissing In The",
+          "proposed": "[TRUNCATED: S Text About Not Kissing In The]",
+          "scenes": [
+            "The Breakout Room",
+            "The Compulsive Texting",
+            "Phone Turned Down",
+            "The Uncomfortable Response"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-07.yaml",
+      "date": "2024-05-07",
+      "summary": "The CORE WOUND entry. Bea's rejection arrives: \"I've found someone who I want to explore a relationship with so I can't meet up with you again.\" The narrator processes the loss through a compressed memory of their night: \"Four hours; two liters of alcohol... A series of smoke-flavoured kisses; a chilly walk to her apartment. One night of caresses, of childhood memories and secrets shared in soft touches and even softer voices.\" The core wound articulated with devastating clarity: \"my deep belief that I am not worthy of love... they can kiss me and take me to their place to have sex, but I am not enough to be the one to have a relationship with.\" The narrator cries through French class, hoping the camera resolution isn't high enough for anyone to notice—grief hidden in plain sight.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Rejection Arrives",
+          "proposed": "[TRUNCATED: S Rejection Arrives]",
+          "scenes": [
+            "The Notification",
+            "Reading the Rejection",
+            "The Night Compressed"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        },
+        {
+          "original": "Writing (2024-05-07)",
+          "proposed": "Writing",
+          "scenes": [
+            "The Question",
+            "French Class as Endurance",
+            "Crying in Plain Sight",
+            "The Core Wound Articulated"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-10.yaml",
+      "date": "2024-05-10",
+      "summary": "Dr. Franck lowers the medication dose to 20mg, adjusting the chemical balance. The narrator goes on a date with Camille despite knowing there's no attraction—feeling guilty about her own lack of interest, the ethics of continuing when the spark is absent. The core wound continues its articulation: \"Why is it so easy for me to believe that most women I've dated were disappointed by my looks as soon as they saw me?\" The projection of rejection onto every encounter. Mentions of past women (Amanda, Valerie, Alexandra) provide background but remain undeveloped.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Dreaming (2024-05-10)",
+          "proposed": "Dreaming",
+          "scenes": [
+            "The Video Call",
+            "The Return to Sleep"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At La graine brûlée",
+          "proposed": "La graine brûlée",
+          "scenes": [
+            "The Knock",
+            "Getting Dressed",
+            "The Recognition",
+            "The Guilt",
+            "The Question"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-12.yaml",
+      "date": "2024-05-12",
+      "summary": "A picnic date in the park that proceeds without spark. The narrator reflects on what differentiates meaningful dates from forgettable ones, mentally cataloging past encounters that mattered—a palimpsest of romantic history against which this afternoon pales. Later at a friend's apartment, she sees a photo of herself and is \"repulsed by it,\" imagining her date's disgust upon first seeing her. The pillow at home smells like \"dying flowers\"—\"If depression had a smell, I imagine it would be that withering sweetness.\" The sensory metaphor capturing slow decay.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "S Apartment She Sees A Photo Of",
+          "proposed": "[TRUNCATED: S Apartment She Sees A Photo Of]",
+          "scenes": [
+            "Morning in Bed",
+            "Dressing for the Date",
+            "Walking to the Park",
+            "Finding Her Date",
+            "The Non-Event of Meeting",
+            "Poutine Restaurant",
+            "Blankets on Grass"
+          ],
+          "issues": [
+            "truncated"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-13.yaml",
+      "date": "2024-05-13",
+      "summary": "A day at a Google workshop, lunch at McGill with colleagues. The narrator resists impulses to buy alcohol on the walk home, then cycles through deleting and redownloading dating apps—preemptive rejection before being rejected. The entry ends with a confession to a friend: the first kiss may have been sexual assault. A disclosure dropped casually, undeveloped.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Google HQ",
+          "proposed": "Google HQ",
+          "scenes": [
+            "The Cycle Begins",
+            "Solitary Coffee at Google",
+            "The Deflection",
+            "Walking Home Without Armor"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Messaging (2024-05-13)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Couch Ritual",
+            "Pre-Class Unmatching",
+            "The Confession"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-14.yaml",
+      "date": "2024-05-14",
+      "summary": "Blood work at the clinic for HRT monitoring. In the bathroom, gendered urine sample instructions trigger dysphoria: \"I was halfway through it when I felt too dysphoric to continue.\" The medical encounter with gendered bodies. The epigraph articulates core gender anxiety: \"I feel that, like womanhood, I am appropriating something that doesn't belong to me.\" The imposter syndrome extends from gender to other aspects of life.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At clinic",
+          "proposed": "clinic",
+          "scenes": [
+            "The Gatekeeping",
+            "The Pamphlet",
+            "The Blonde Girl",
+            "The Blood Draw",
+            "The Urine Test"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At symposium",
+          "proposed": "symposium",
+          "scenes": [
+            "The Dysphoric Poster",
+            "The Failed Sample",
+            "The Insufferable Undergrad",
+            "The Lunch Table"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-16.yaml",
+      "date": "2024-05-16",
+      "summary": "Dragging herself to the office despite exhaustion, then to a bar where she last sat with a friend—the space holding memory, the table a couple seats to the left. Weight anxiety returns (a kilogram heavier, blamed on sodium). Supervisor meeting about paper resubmission. The day bracketed by guilt: cancelling a meeting, missing a call from the wellness center. For the first time in a while, more sounds outside than inside her head.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At bar",
+          "proposed": "bar",
+          "scenes": [
+            "Bar Full",
+            "The Empty Table",
+            "Morning Paralysis",
+            "The Scale"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-21.yaml",
+      "date": "2024-05-21",
+      "summary": "Lost weekend to depression. Brief beer with friend at terrace—social maintenance rather than connection. Fasting continues: \"I haven't eaten anything all day and I feel tempted to continue the fast indefinitely.\" The desire to disappear through not-eating. The epigraph is a formal excuse in French explaining the depressive episode—the narrator performing functionality while falling apart, composing polite bureaucratic French from bed.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Waiting (2024-05-21)",
+          "proposed": "Waiting",
+          "scenes": [
+            "Couch, Not Watching",
+            "Venue Negotiation",
+            "Waiting at the Terrace",
+            "Two Hours Chatting"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Messaging (2024-05-21)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Haven't Been Outside Since",
+            "Declining Beer",
+            "Monday Lost"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Table (2024-05-21)",
+          "proposed": "Table (2024-05-21)",
+          "scenes": [
+            "Wet Hair on Screen",
+            "The Fast Temptation",
+            "Waiting on Hold",
+            "Skipping French"
+          ],
+          "issues": [
+            "at_location",
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-27.yaml",
+      "date": "2024-05-27",
+      "summary": "A 36-hour fast documented across a weekend of social obligations. Friday: two clementines, nothing else. Saturday: terrace cocktails with friends, then an awkward party where they're underdressed outsiders drinking only water—the narrator refuses food despite nausea. Sunday: taxes at a friend's apartment, finally eating pizza. Monday: a bipolar study call where she fears disclosure but stays silent; dating apps redownloaded despite swearing them off; a Reddit thread on genital preferences triggers dysphoria. The body punishes the will, but the will keeps punishing back.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At pharmacy",
+          "proposed": "pharmacy",
+          "scenes": [
+            "Pharmacy Counter",
+            "Two Clementines"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Terrasse Place d'armes",
+          "proposed": "Terrasse Place d'armes",
+          "scenes": [
+            "Terrace at Sunset",
+            "The Wrong Party"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Messaging (2024-05-27)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The Study Call",
+            "Reddit Dysphoria",
+            "New Match, Old Pattern",
+            "French Class Abandoned"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-05-30.yaml",
+      "date": "2024-05-30",
+      "summary": "A fragmented entry dominated by insomnia and the logistics of a deteriorating life. The narrator hasn't slept properly in days, misses buses and metros due to service interruptions, loses weight from fasting. A brief flirtation (head rubs, lunch invitation) goes unanswered. The doctor notes high estrogen levels during an HRT check-up. The entry's emotional center is a spontaneous breakdown on the metro platform: sitting at the end, head falling forward, tears rolling down as she watches the train leave without boarding. The first dose of Seroquel marks a medicalization threshold.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Dreaming (2024-05-30)",
+          "proposed": "Dreaming",
+          "scenes": [
+            "The Sleepless Dawn"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "Walking (2024-05-30)",
+          "proposed": "Walking",
+          "scenes": [
+            "The Metro Announcement",
+            "The Dismissive Bus",
+            "The Flirtation Text"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        },
+        {
+          "original": "At Table (2024-05-30)",
+          "proposed": "Table (2024-05-30)",
+          "scenes": [
+            "The Weight Discovery",
+            "Bargaining with Sunlight",
+            "The Calm Office Morning",
+            "The Project's Dismissal"
+          ],
+          "issues": [
+            "at_location",
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-06-02.yaml",
+      "date": "2024-06-02",
+      "summary": "The first meeting with the friend who will become the narrator's closest confidante through the entire romantic obsession arc before their eventual rupture. The epigraph records their first significant exchange: \"Have you ever been in a toxic relationship?\" The narrator confesses, *\"In my relationships, I've been the toxic one.\"* This prescient admission foreshadows everything that follows. The meeting happens casually at a pizza place after a coffee expo the narrator missed due to medication-induced oversleeping. Plans to watch TV dissolve into hours of gossip about past relationships—the first of many nights this new friend will spend absorbing the narrator's romantic dramas.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "Messaging (2024-06-02)",
+          "proposed": "Messaging",
+          "scenes": [
+            "The First Thing",
+            "The Sleepless Night",
+            "Empty Sunday"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "/home/soffiafdz/Documents/palimpsest/data/metadata/journal/2024/2024-07-01.yaml",
+      "date": "2024-07-01",
+      "summary": "A sprawling 7000-word entry covering a full week in Mexico City (June 21-30, 2024) before flying to Tijuana. The narrator stays with a friend, navigates constant misgendering while presenting femininely but in \"masculine\" clothes, and has three charged encounters with a woman from their LGBTQ+ group days. The central tension: an almost-romance that never consummates in a kiss. They hold hands, sit intimately at a hidden fountain, gaze into each other's eyes at an intersection—but neither initiates. The entry opens with the devastating epigraph: *\"¿Me vas a dejar irme otra vez sin besarme?\"* (Are you going to let me leave again without kissing me?). Other events include: getting two tattoos (a phoenix and a plant branch), an in-person therapy session where the narrator confesses thoughts of detransitioning, a bar night where they almost kiss another woman, and a final reunion with Nymeria at home.",
+      "scenes": [],
+      "events": [
+        {
+          "original": "At Donceles",
+          "proposed": "Donceles",
+          "scenes": [
+            "Misgendered at the Camera Shops",
+            "The Therapy Confession"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "At Condesa",
+          "proposed": "Condesa",
+          "scenes": [
+            "The Hidden Fountain",
+            "The Intersection",
+            "The Fantasy of Missing the Flight",
+            "Security Gamble"
+          ],
+          "issues": [
+            "at_location"
+          ]
+        },
+        {
+          "original": "Messaging (2024-07-01)",
+          "proposed": "Messaging",
+          "scenes": [
+            "Nymeria's Welcome"
+          ],
+          "issues": [
+            "date_suffix"
+          ]
+        }
+      ]
+    }
+  ]
+}

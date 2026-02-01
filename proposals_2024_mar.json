@@ -1,0 +1,345 @@
+{
+  "scenes": {
+    "2024-03-18": [
+      {
+        "current": "Therapy: The Wound",
+        "proposed": "The Wound Question",
+        "reason": "Remove colon from scene name"
+      },
+      {
+        "current": "Therapy: The Crystal Ball",
+        "proposed": "The Crystal Ball Exercise",
+        "reason": "Remove colon from scene name"
+      },
+      {
+        "current": "Therapy: The Chase",
+        "proposed": "The Chase Metaphor",
+        "reason": "Remove colon from scene name"
+      }
+    ],
+    "2024-03-20": [
+      {
+        "current": "Therapy Session: The Motherhood Wound",
+        "proposed": "The Motherhood Wound Articulated",
+        "reason": "Remove 'Therapy Session:' prefix"
+      },
+      {
+        "current": "Reception: The Unheard Voice",
+        "proposed": "The Unheard Voice",
+        "reason": "Remove 'Reception:' prefix (location already in location field)"
+      }
+    ],
+    "2024-03-26": [
+      {
+        "current": "After Session: Makeup, Movement",
+        "proposed": "Makeup and Movement",
+        "reason": "Remove 'After Session:' prefix"
+      }
+    ]
+  },
+  "events": {
+    "2024-03-01": [
+      {
+        "current": "Walking (2024-03-01)",
+        "proposed": "Hungover Autopilot",
+        "reason": "Remove date parentheses; evocative name for hangover day routine"
+      },
+      {
+        "current": "Waiting (2024-03-01)",
+        "proposed": "The Films and the Fantasy",
+        "reason": "Remove date parentheses; capture romantic films + imaginary date drafts"
+      }
+    ],
+    "2024-03-03": [
+      {
+        "current": "Messaging (2024-03-03)",
+        "proposed": "The Symbolic Deletion",
+        "reason": "Remove date parentheses; capture contact purge while number stays memorized"
+      }
+    ],
+    "2024-03-04": [
+      {
+        "current": "At Café Velours",
+        "proposed": "Velours and Ghosts",
+        "reason": "Remove 'At' prefix; capture café encounter with forgotten dates"
+      },
+      {
+        "current": "At Parc Jarry",
+        "proposed": "Tiring Body and Mind",
+        "reason": "Remove 'At' prefix; capture the walking to exhaustion"
+      },
+      {
+        "current": "Meeting (2024-03-04)",
+        "proposed": "Archive and Deadline",
+        "reason": "Remove date parentheses; capture editing 2022 journals + 21h28 Sophie deadline"
+      }
+    ],
+    "2024-03-05": [
+      {
+        "current": "Walking (2024-03-05)",
+        "proposed": "The Blue Heart Reply",
+        "reason": "Remove date parentheses; capture the message sent + heart received"
+      },
+      {
+        "current": "Waiting (2024-03-05)",
+        "proposed": "Before Sunrise, Before Sunset",
+        "reason": "Remove date parentheses; capture the romantic film anticipation"
+      }
+    ],
+    "2024-03-06": [
+      {
+        "current": "Writing (2024-03-06)",
+        "proposed": "Rehearsing Disclosure",
+        "reason": "Remove date parentheses; capture trans disclosure anxiety before date"
+      },
+      {
+        "current": "Messaging (2024-03-06)",
+        "proposed": "The Third Date Confirmed",
+        "reason": "Remove date parentheses; already has one scene with this name"
+      },
+      {
+        "current": "Rehearsing Moment",
+        "proposed": "Imagining Her Rejection",
+        "reason": "More specific; captures the disclosure anxiety rehearsal"
+      }
+    ],
+    "2024-03-08": [
+      {
+        "current": "At metro",
+        "proposed": "Metro Confession to Sonny",
+        "reason": "Remove 'At' prefix; more specific about the confession scene"
+      },
+      {
+        "current": "New Moment",
+        "proposed": "New Medication Fatigue",
+        "reason": "Already has scene with this name; make event match"
+      },
+      {
+        "current": "At N sur Mackay",
+        "proposed": "The Kiss Before the Mask",
+        "reason": "Remove 'At' prefix; use the pivotal scene name as event name"
+      }
+    ],
+    "2024-03-10": [
+      {
+        "current": "At Table (2024-03-10)",
+        "proposed": "Sunday Afternoon Cooking",
+        "reason": "Remove 'At Table' + date; more descriptive"
+      },
+      {
+        "current": "Messaging (2024-03-10)",
+        "proposed": "The Unread Text",
+        "reason": "Remove date parentheses; capture the post-date silence"
+      },
+      {
+        "current": "At Bar Ganadara",
+        "proposed": "The Outsider Table",
+        "reason": "Remove 'At' prefix; capture the outsider feeling at gathering"
+      },
+      {
+        "current": "21h, Moment",
+        "proposed": "The Medication Fog",
+        "reason": "More descriptive than '21h, Moment'"
+      },
+      {
+        "current": "Dreaming (2024-03-10)",
+        "proposed": "Failed Sleep, DST",
+        "reason": "Remove date parentheses; capture the 3am waking + time change"
+      }
+    ],
+    "2024-03-11": [
+      {
+        "current": "Did They Notice How I Suddenly Got",
+        "proposed": "The X Marker Panic",
+        "reason": "Truncated event name; capture the gender marker conversation anxiety"
+      }
+    ],
+    "2024-03-12": [
+      {
+        "current": "At narrator's apartment",
+        "proposed": "Fumigation Displacement",
+        "reason": "Remove 'At narrator's apartment' (too generic); capture the day's disruption"
+      },
+      {
+        "current": "Writing (2024-03-12)",
+        "proposed": "Archive as Gift",
+        "reason": "Remove date parentheses; capture sharing journal entries with Alda"
+      }
+    ],
+    "2024-03-13": [
+      {
+        "current": "At Table (2024-03-13)",
+        "proposed": "Morning Routine and Weigh-In",
+        "reason": "Remove 'At Table' + date; more descriptive"
+      },
+      {
+        "current": "At Louis's office",
+        "proposed": "The Meeting Snub",
+        "reason": "Remove 'At' prefix; capture the research unpraised"
+      },
+      {
+        "current": "At Palco",
+        "proposed": "The Ikea Cart Memory",
+        "reason": "Remove 'At' prefix; already has scene with this name"
+      },
+      {
+        "current": "At Coyoacán",
+        "proposed": "Lecture and Exhaustion",
+        "reason": "Remove 'At' prefix; capture CIC lecture + exhaustion before class"
+      }
+    ],
+    "2024-03-14": [
+      {
+        "current": "Ve Been A Woman For Almost A",
+        "proposed": "Eight Years, A Third of Life",
+        "reason": "Truncated event name; capture the transition milestone"
+      },
+      {
+        "current": "Waiting (2024-03-14)",
+        "proposed": "Two Pints at Thomson",
+        "reason": "Remove date parentheses; capture drinking while watching strangers"
+      }
+    ],
+    "2024-03-16": [
+      {
+        "current": "Impulsive Decisions Her Comment At Film",
+        "proposed": "Laundry Postponement",
+        "reason": "Truncated/confusing; already has scene with this name"
+      },
+      {
+        "current": "I Won",
+        "proposed": "Queer Recognition at Cinema",
+        "reason": "Truncated event name; capture the 'women like me' moment"
+      },
+      {
+        "current": "The Saint Patrick",
+        "proposed": "The Saint Patrick's Crawl",
+        "reason": "Complete the name; capture the bar crawl"
+      },
+      {
+        "current": "S Confession Emerges",
+        "proposed": "Bad Sex Over No Sex",
+        "reason": "Truncated event name; use the actual confession"
+      }
+    ],
+    "2024-03-17": [
+      {
+        "current": "T Have",
+        "proposed": "What I Don't Have",
+        "reason": "Truncated event name; capture Honey Girl reading + thinking of lacks"
+      },
+      {
+        "current": "S Therapy Appointment Looms",
+        "proposed": "Dreading Closure",
+        "reason": "Truncated event name; capture the therapy ending dread"
+      }
+    ],
+    "2024-03-18": [
+      {
+        "current": "In A Familiar Way",
+        "proposed": "The Familiar Sting",
+        "reason": "More evocative; capture the self-harm echo"
+      },
+      {
+        "current": "S Therapeutic Probe",
+        "proposed": "Start of Your Book",
+        "reason": "Truncated event name; capture the meta-prophecy from Alda"
+      },
+      {
+        "current": "S Running Away From You",
+        "proposed": "The Chase Dynamic",
+        "reason": "Truncated event name; capture the therapy insight"
+      }
+    ],
+    "2024-03-20": [
+      {
+        "current": "Sofía Are You Getting Your Period",
+        "proposed": "The Period Dream",
+        "reason": "Shorten; capture the impossible biology dream"
+      },
+      {
+        "current": "S Anguished Response",
+        "proposed": "No Uterus, No Vagina",
+        "reason": "Truncated event name; use the dream's response"
+      },
+      {
+        "current": "T Have A Uterus I Don",
+        "proposed": "The Elevator Mirror",
+        "reason": "Truncated event name; capture the conference dysphoria"
+      },
+      {
+        "current": "T Just Feel Fat I Felt Unattractive",
+        "proposed": "Not Just Fat, Unattractive",
+        "reason": "Truncated event name; use the actual quote"
+      }
+    ],
+    "2024-03-24": [
+      {
+        "current": "Kath Valerie Max Monica Heloise Now Sophie",
+        "proposed": "The Distraction List",
+        "reason": "Shorten the names list; capture the strategy"
+      },
+      {
+        "current": "S Perceived Coldness During A Past Visit",
+        "proposed": "The Devastating Response",
+        "reason": "Truncated event name; already has scene with this name"
+      },
+      {
+        "current": "I Think She Likes You",
+        "proposed": "Drafting and Delaying",
+        "reason": "Already used as quote; capture the risky texts drafted but not sent"
+      },
+      {
+        "current": "Messaging (2024-03-24)",
+        "proposed": "Executing the List",
+        "reason": "Remove date parentheses; capture the distraction list execution"
+      }
+    ],
+    "2024-03-25": [
+      {
+        "current": "M Around You Sometimes Even After We",
+        "proposed": "I Hate Myself More",
+        "reason": "Truncated event name; use the confession to Monica"
+      },
+      {
+        "current": "S Cruel Aware That",
+        "proposed": "The Night Before Disclosure",
+        "reason": "Truncated event name; capture the drinking before Monica disclosure"
+      },
+      {
+        "current": "Je Veux Qu",
+        "proposed": "The Self-Harm Disclosure",
+        "reason": "Truncated event name; capture the cutting disclosure to Monica"
+      }
+    ],
+    "2024-03-26": [
+      {
+        "current": "Ese Es Un Detalle Importante",
+        "proposed": "The Important Detail",
+        "reason": "Translate; capture therapist's response to first kiss revelation"
+      },
+      {
+        "current": "Other Than My Family I Don",
+        "proposed": "No Pre-Transition Connections",
+        "reason": "Truncated event name; capture the severing insight"
+      },
+      {
+        "current": "At Jarry station",
+        "proposed": "The Stench That Follows",
+        "reason": "Remove 'At' prefix; capture the metro encounter + deserving it"
+      }
+    ],
+    "2024-03-27": [
+      {
+        "current": "The Pool Game Loss Brings Unexpected Relief",
+        "proposed": "Relief in Losing",
+        "reason": "Shorten; capture the inverse expectations"
+      },
+      {
+        "current": "Roya",
+        "proposed": "The Text Finally Sent",
+        "reason": "Just 'Roya' is too vague; capture sending the Sophie text"
+      }
+    ]
+  }
+}

@@ -34,7 +34,6 @@ from sqlalchemy import select, func
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Character, Chapter, Entry, Event, Person, Tag, Theme
-from dev.database.sync_state_manager import SyncStateManager
 
 from dev.wiki.parser import (
     parse_entry_file,
@@ -131,22 +130,12 @@ def import_entries(
                     stats.records_skipped += 1
                     continue
 
-                sync_mgr = SyncStateManager(session, logger)
-
                 updated = False
                 if data["notes"] and data["notes"] != entry.notes:
                     entry.notes = data["notes"]
                     updated = True
 
                 if updated:
-                    sync_mgr.update_or_create(
-                        entity_type="Entry",
-                        entity_id=entry.id,
-                        last_synced_at=datetime.now(timezone.utc),
-                        sync_source="wiki",
-                        sync_hash=file_hash,
-                        machine_id=machine_id,
-                    )
                     session.commit()
                     stats.records_updated += 1
                 else:
@@ -184,22 +173,12 @@ def import_events(
                 stats.records_skipped += 1
                 continue
 
-            sync_mgr = SyncStateManager(session, logger)
-
             updated = False
             if data["notes"] and data["notes"] != event.notes:
                 event.notes = data["notes"]
                 updated = True
 
             if updated:
-                sync_mgr.update_or_create(
-                    entity_type="Event",
-                    entity_id=event.id,
-                    last_synced_at=datetime.now(timezone.utc),
-                    sync_source="wiki",
-                    sync_hash=file_hash,
-                    machine_id=machine_id,
-                )
                 session.commit()
                 stats.records_updated += 1
             else:

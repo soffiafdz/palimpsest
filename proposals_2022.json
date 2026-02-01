@@ -1,0 +1,420 @@
+{
+  "rename_proposals": [
+    {
+      "file": "2022-01-13.yaml",
+      "current_name": "Waiting (2022-01-13)",
+      "proposed_name": "The Haircut Post",
+      "scenes": ["The Instagram Dance", "The Haircut"],
+      "rationale": "Event centers on posting haircut photo and fishing for Kate's reaction via Instagram; more specific than generic 'Waiting'"
+    },
+    {
+      "file": "2022-01-13.yaml",
+      "current_name": "Writing (2022-01-13)",
+      "proposed_name": "The Pharmacy Run",
+      "scenes": ["The Pharmacy", "Composing the Message"],
+      "rationale": "Event focused on purchasing condoms (triggering dysphoria) and drafting unsent message to Kate"
+    },
+    {
+      "file": "2022-01-14.yaml",
+      "current_name": "Writing (2022-01-14)",
+      "proposed_name": "Unsent Longing",
+      "scenes": ["Unsent Sensual Message", "Sleepless Dawn", "Trans Healthcare Debate", "Seeking Molly"],
+      "rationale": "Event opens with drafted romantic texts that won't be sent; captures the longing without action"
+    },
+    {
+      "file": "2022-01-14.yaml",
+      "current_name": "Walking (2022-01-14)",
+      "proposed_name": "The Condom Walk",
+      "scenes": ["Masturbation and Fertility Fears", "Condom Calculus", "Self-Doubt Spiral"],
+      "rationale": "Centers on walking from pharmacy mentally rehearsing condom justification amid fertility dysphoria"
+    },
+    {
+      "file": "2022-01-15.yaml",
+      "current_name": "S Romantic Psychology The Question",
+      "proposed_name": "Am I Being Obsessive?",
+      "scenes": ["The Invitation", "Am I Being Obsessive?", "The Letter Never Sent", "The Dream", "The Pattern", "The Reversed Dynamic", "The Surveillance", "Something Missing"],
+      "rationale": "Entry's central question explicitly asked in scene title; examines attachment patterns with self-aware psychological analysis"
+    },
+    {
+      "file": "2022-01-16.yaml",
+      "current_name": "Messaging (2022-01-16)",
+      "proposed_name": "The Third Message",
+      "scenes": ["The Bed Prison", "The Negative Result", "The Third Message"],
+      "rationale": "Event culminates in sending Kate another message despite no response to previous two; emphasizes the compulsive persistence"
+    },
+    {
+      "file": "2022-01-17.yaml",
+      "current_name": "Waiting (2022-01-17)",
+      "proposed_name": "The Red Pill Confession",
+      "scenes": ["Typing, Typing", "Morning Inertia", "The Lab Meeting", "Therapy Session", "The Passing Inventory", "The Red Pill Tweet", "The Deletion"],
+      "rationale": "Event's centerpiece is the profound tweet about wanting girlhood over any amount of money, posted then deleted; defining moment of trans grief"
+    },
+    {
+      "file": "2022-01-19.yaml",
+      "current_name": "Messaging (2022-01-19)",
+      "proposed_name": "Mental Real Estate",
+      "scenes": ["The Unread Reply", "Mental Real Estate", "Tomorrow's Errands"],
+      "rationale": "Uses key phrase from scene about Kate occupying disproportionate mental space; captures the asymmetric obsession"
+    },
+    {
+      "file": "2022-01-19.yaml",
+      "current_name": "Shouldn",
+      "proposed_name": "It Shouldn't Be This Way",
+      "scenes": ["Profile Haunting", "The Disappointing Date Remembered"],
+      "rationale": "Completes truncated original; captures the self-aware recognition that the imbalance is wrong"
+    },
+    {
+      "file": "2022-01-20.yaml",
+      "current_name": "Writing (2022-01-20)",
+      "proposed_name": "Five Women's Words",
+      "scenes": ["Breathless Fantasy", "The Non-Jealousy Puzzle", "Reading Alex's Email", "Enumeration of Waiting", "Third Vaccine Dose", "Pharmacy Run", "The Vaccine Selfie"],
+      "rationale": "Uses the striking enumeration from the entry: 'Monica, Sonny, Aliza, Melissa, Kate. I am waiting for all these women's words.'"
+    },
+    {
+      "file": "2022-01-21.yaml",
+      "current_name": "Messaging (2022-01-21)",
+      "proposed_name": "The Palimpsest Chain",
+      "scenes": ["Flash-Forward Hook", "The Regretted Message", "The Unanswered Inbox", "The Wrong Productivity"],
+      "rationale": "References the genealogy revelation later in entry: Kate reminds of Flore reminds of Monica; captures the layered substitution pattern"
+    },
+    {
+      "file": "2022-01-21.yaml",
+      "current_name": "Writing (2022-01-21)",
+      "proposed_name": "Kate, Flore, Monica",
+      "scenes": ["The Dead Conversation", "The Genealogy Revelation", "Waiting for Disclosure's Echo", "Evening Fragments"],
+      "rationale": "Names the explicit chain of substitution revealed in The Genealogy Revelation scene; essential insight about romantic patterns"
+    },
+    {
+      "file": "2022-01-23.yaml",
+      "current_name": "Writing (2022-01-23)",
+      "proposed_name": "The Dreaming Fantasy",
+      "scenes": ["The Loneliness Question", "Rehearsing Disclosure", "The Dreaming Fantasy", "The Photos"],
+      "rationale": "Highlights the non-sexual intimacy desire: holding Monica, sharing the intimacy of dreaming together; companionate longing"
+    },
+    {
+      "file": "2022-01-24.yaml",
+      "current_name": "Writing (2022-01-24)",
+      "proposed_name": "The App Deletion",
+      "scenes": ["Writing Without Mentioning Her", "The Reckoning", "The Deletion", "Monica's Parallel Story", "The Pattern Surfaces", "Self-Compassion", "Taking Stock"],
+      "rationale": "Event's pivotal action: deleting all dating apps with recognition 'I am clearly not ready to be dating, be it casually or not'"
+    },
+    {
+      "file": "2022-01-24.yaml",
+      "current_name": "Messaging (2022-01-24)",
+      "proposed_name": "Checking for Kate",
+      "scenes": ["The Community Thread", "The Screenshot to No One", "The Final Check"],
+      "rationale": "Captures the compulsive final check to see if deleted conversation somehow returned; epitome of obsessive hope"
+    },
+    {
+      "file": "2022-01-25.yaml",
+      "current_name": "If I Didn",
+      "proposed_name": "If I Didn't Know It Was Me",
+      "scenes": ["The Anxiety Pendulum", "The Therapy Omission", "The Photoshoot", "The Conditional Beauty", "The Inbox Vigil"],
+      "rationale": "Completes truncated title with the profound dissociative self-perception line: only by forgetting it's herself can she see a pretty woman"
+    },
+    {
+      "file": "2022-01-25.yaml",
+      "current_name": "Remembering (2022-01-25)",
+      "proposed_name": "The Neediness Question",
+      "scenes": ["The Self-Interrogation", "The Depression Question"],
+      "rationale": "Centers on the self-interrogation: 'Why am I so needy? What am I looking for? When did I become this way?'"
+    },
+    {
+      "file": "2022-01-26.yaml",
+      "current_name": "At Table (2022-01-26)",
+      "proposed_name": "First Love as Normalcy",
+      "scenes": ["First Love as Normalcy", "The Transformation"],
+      "rationale": "Uses key phrase from scene about Monica being normalcy during adolescent gender confusion; origin memory of identity formation"
+    },
+    {
+      "file": "2022-01-26.yaml",
+      "current_name": "Remembering (2022-01-26)",
+      "proposed_name": "The Obsession Time",
+      "scenes": ["Deleting the Story", "Crying Without Cause", "The Unanswerable Question"],
+      "rationale": "Uses the narrator's own frame: knowing this period will be remembered as 'the obsession time'; self-aware naming"
+    },
+    {
+      "file": "2022-01-27.yaml",
+      "current_name": "At Medical clinic",
+      "proposed_name": "The Vanishing Stories",
+      "scenes": ["Quadruple-Texting Calculus", "The Sledding Stories", "The Vanishing", "Blood Draw at Dawn"],
+      "rationale": "Focuses on the Kate Instagram story that suddenly disappeared (meant for her mother), leading to brief contact before silence returns"
+    },
+    {
+      "file": "2022-01-28.yaml",
+      "current_name": "Messaging (2022-01-28)",
+      "proposed_name": "Deleting the Number",
+      "scenes": ["Deleting the Number", "The Unanswered Questions", "Morning Masturbation", "New Match Responds"],
+      "rationale": "Event opens with deleting Kate's contact info yet still composing imaginary messages anyway; digital erasure as failed exorcism"
+    },
+    {
+      "file": "2022-01-28.yaml",
+      "current_name": "Meeting (2022-01-28)",
+      "proposed_name": "The Deleted Reaction",
+      "scenes": ["The Subletter's Painted Nails", "The Self-Hatred Crystallizes", "Recognizing the Pattern", "Watching the Stories", "The Deleted Reaction"],
+      "rationale": "Culminates in deleting Instagram reaction hoping Kate didn't notice; epitome of digital obsession and self-consciousness"
+    },
+    {
+      "file": "2022-01-29.yaml",
+      "current_name": "Messaging (2022-01-29)",
+      "proposed_name": "Hypomania or Character?",
+      "scenes": ["Afternoon Tears", "The Question", "Deleted Evidence", "Hollow Hope"],
+      "rationale": "Centers on the psychiatric question: 'Did I really have a hypomanic episode?' vs. 'shitty behaviour'; foreshadows bipolar diagnosis"
+    },
+    {
+      "file": "2022-02-03.yaml",
+      "current_name": "At Portugal",
+      "proposed_name": "The Nice Guy Label",
+      "scenes": ["The Feminizing Filter", "Portugal Remembered"],
+      "rationale": "Focuses on the pre-transition rejection: 'even though I was a nice guy, she just wanted to dance'; the male ghost in memory"
+    },
+    {
+      "file": "2022-02-04.yaml",
+      "current_name": "At High school",
+      "proposed_name": "La Banquita de la Soledad",
+      "scenes": ["Dignity Jar Progress Report", "Morning Paralysis", "La Banquita de la Soledad"],
+      "rationale": "Uses evocative Spanish name from the scene: the bench of solitude where she'd wait to see Monica pass by"
+    },
+    {
+      "file": "2022-02-04.yaml",
+      "current_name": "At Las Vegas",
+      "proposed_name": "Never Really Alone",
+      "scenes": ["The Complete Map", "Video Call Silence", "Three Levels of Interest"],
+      "rationale": "Uses key phrase from entry's revelation: 'I've never been really alone' - only one year single in entire adult life"
+    },
+    {
+      "file": "2022-02-04.yaml",
+      "current_name": "At Metro station",
+      "proposed_name": "And Now She Doesn't",
+      "scenes": ["The Last Words Spoken", "Evening Walk with Camera"],
+      "rationale": "Uses the closing line about Kate's promised texts that stopped coming: 'I'll text you... And now she doesn't.'"
+    },
+    {
+      "file": "2022-02-06.yaml",
+      "current_name": "Messaging (2022-02-06)",
+      "proposed_name": "Half the Relationship",
+      "scenes": ["Checking the Viewers", "Crush Confessions Arrive", "The Brother Question", "Jules' Therapy Quote"],
+      "rationale": "References the Euphoria quote: 'I fall in love so easily because half of the relationship is in my head'; crystalline articulation of fantasy pattern"
+    },
+    {
+      "file": "2022-02-07.yaml",
+      "current_name": "Messaging (2022-02-07)",
+      "proposed_name": "1 AM Surveillance",
+      "scenes": ["1 AM Surveillance"],
+      "rationale": "More evocative than generic messaging; emphasizes the late-night digital compulsion and checking behavior"
+    },
+    {
+      "file": "2022-02-07.yaml",
+      "current_name": "At Apartment living room",
+      "proposed_name": "Uppers and Downers",
+      "scenes": ["The Fuckboi Countdown", "Uppers and Downers", "Nothing to Check"],
+      "rationale": "References medication mixing scene; more memoir-like than literal location"
+    },
+    {
+      "file": "2022-02-08.yaml",
+      "current_name": "Writing (2022-02-08)",
+      "proposed_name": "The Memoir Fantasy",
+      "scenes": ["The Non-Reply", "The Living Room Session", "The Adoption Email", "Time Out of Joint", "The Dissociation", "The Dying Conversation", "The Spain Memory", "The Uncomfortable Recognition", "The Memoir Fantasy"],
+      "rationale": "Event concludes with fantasy about writing memoir; meta moment about turning life into narrative"
+    },
+    {
+      "file": "2022-02-11.yaml",
+      "current_name": "Writing (2022-02-11)",
+      "proposed_name": "The Refusal",
+      "scenes": ["Walking Under Snow", "The Nakedness Fantasy", "The Refusal"],
+      "rationale": "Event culminates in Emily's refusal; more specific than generic 'Writing'"
+    },
+    {
+      "file": "2022-02-15.yaml",
+      "current_name": "Dreaming (2022-02-15)",
+      "proposed_name": "Extreme High",
+      "scenes": ["Vulnerability Epigraph", "Writing Gap", "Extreme High", "Disappearing Matches", "Friend's Observation"],
+      "rationale": "References the manic state described; more specific than generic 'Dreaming'"
+    },
+    {
+      "file": "2022-02-15.yaml",
+      "current_name": "Messaging (2022-02-15)",
+      "proposed_name": "The Deleted Draft",
+      "scenes": ["Valentine's Post", "Deleted Draft", "The Insecurity Question", "New Number", "Roommate's Boundary"],
+      "rationale": "Highlights the pattern of composing then deleting; captures the self-censorship cycle"
+    },
+    {
+      "file": "2022-02-16.yaml",
+      "current_name": "Writing (2022-02-16)",
+      "proposed_name": "The Morning After",
+      "scenes": ["The Morning After"],
+      "rationale": "Single scene event; uses scene name as event name for specificity"
+    },
+    {
+      "file": "2022-02-26.yaml",
+      "current_name": "Meeting (2022-02-26)",
+      "proposed_name": "Passing Confirmed",
+      "scenes": ["Passing Confirmed", "Pre-Date Routine", "The Streak Continues"],
+      "rationale": "Event opens with validation about passing; significant affirmation moment"
+    },
+    {
+      "file": "2022-03-13.yaml",
+      "current_name": "I Wasn",
+      "proposed_name": "I Wasn't Much Different",
+      "scenes": ["French Girl Detour", "The Unfollow"],
+      "rationale": "Completes truncated title with the guilt phrase about desiring like 'those strange men'; trans-specific shame about masculine sexuality"
+    },
+    {
+      "file": "2022-03-18.yaml",
+      "current_name": "Messaging (2022-03-18)",
+      "proposed_name": "Instant Investment",
+      "scenes": ["The Proposition", "Night Walk Home", "The Empty Restaurant", "The Greek Alphabet", "Instant Investment", "Time Lost"],
+      "rationale": "References the pattern of immediate emotional investment; captures the intensity dynamic"
+    },
+    {
+      "file": "2022-03-18.yaml",
+      "current_name": "Writing (2022-03-18)",
+      "proposed_name": "The Meta-Question",
+      "scenes": ["The Meta-Question", "Bumble BFF", "The Message Sent"],
+      "rationale": "Event opens with meta-reflection on writing; more specific than generic 'Writing'"
+    },
+    {
+      "file": "2022-03-25.yaml",
+      "current_name": "Writing (2022-03-25)",
+      "proposed_name": "Better Means Less",
+      "scenes": ["Reflection on Writing", "Committee Meeting Afterglow"],
+      "rationale": "References the observation that feeling better correlates with writing less; insight about journaling as pathology processing"
+    },
+    {
+      "file": "2022-03-25.yaml",
+      "current_name": "At Café Chat L'hereux",
+      "proposed_name": "The Cat Cafe Date",
+      "scenes": ["Cat Cafe with Alex"],
+      "rationale": "More evocative than literal location; emphasizes the awkward silences amid cute cats"
+    },
+    {
+      "file": "2022-03-25.yaml",
+      "current_name": "At Place-des-Arts",
+      "proposed_name": "Tomorrow's Physicist",
+      "scenes": ["Digital Severance", "Morning Message", "Planning Tomorrow's Date"],
+      "rationale": "More evocative than location; references planning date with physicist named like an ex (Catherine)"
+    },
+    {
+      "file": "2022-03-25.yaml",
+      "current_name": "At Crescent Street",
+      "proposed_name": "Feeling Yellow",
+      "scenes": ["Six Hours Unfolding", "The Kiss Request", "Synesthetic Touch", "Safe Arrival"],
+      "rationale": "References the stunning synesthetic line: 'it was as if I could feel their yellow in my fingertips'; most vividly written intimacy moment"
+    },
+    {
+      "file": "2022-03-27.yaml",
+      "current_name": "At Lola Rosa",
+      "proposed_name": "The Intoxicating Accent",
+      "scenes": ["The Epigraph", "Dressing for the Date", "The Laser Clinic", "The Long Wait", "The Flaw-Seeking", "The Intoxicating Accent", "Quantum Physics and Forgotten Hunger", "The Expectations Talk", "The Hug"],
+      "rationale": "Highlights the attraction to Catherine's accent; more memoir-like than location name"
+    },
+    {
+      "file": "2022-03-27.yaml",
+      "current_name": "Walking (2022-03-27)",
+      "proposed_name": "Phone Facing Down",
+      "scenes": ["Phone Facing Down"],
+      "rationale": "Single scene event; captures the deliberate disconnection gesture"
+    },
+    {
+      "file": "2022-03-28.yaml",
+      "current_name": "At Vieux Port",
+      "proposed_name": "Salome Returns",
+      "scenes": ["Planning Alexandra", "Salome Returns", "The Deadline"],
+      "rationale": "More evocative than location; focuses on significant character return"
+    },
+    {
+      "file": "2022-03-29.yaml",
+      "current_name": "At Mont Royal",
+      "proposed_name": "The Contract Moment",
+      "scenes": ["The Proposal Text", "Doodle Poll Anxiety", "The Pool and Sauna", "The Contract Moment"],
+      "rationale": "Culminates in lease contract signing; more evocative than generic location"
+    },
+    {
+      "file": "2022-03-29.yaml",
+      "current_name": "Messaging (2022-03-29)",
+      "proposed_name": "The Disclosure Resolution",
+      "scenes": ["Dating Inventory", "The Sensory Memory", "The Disclosure Resolution", "The Email Exchange"],
+      "rationale": "Highlights decision about trans disclosure approach; more specific than generic messaging"
+    },
+    {
+      "file": "2022-04-04.yaml",
+      "current_name": "Walking (2022-04-04)",
+      "proposed_name": "Supervisor Disclosure",
+      "scenes": ["Amanda Message", "Supervisor Disclosure", "Garden Growth"],
+      "rationale": "Centers on significant act of coming out to academic supervisor; more specific than generic walking"
+    },
+    {
+      "file": "2022-04-08.yaml",
+      "current_name": "Remembering (2022-04-08)",
+      "proposed_name": "The Friend Request",
+      "scenes": ["The Friend Request"],
+      "rationale": "Single scene event; uses specific action as name"
+    },
+    {
+      "file": "2022-04-08.yaml",
+      "current_name": "Messaging (2022-04-08)",
+      "proposed_name": "The Core Question",
+      "scenes": ["The Departure", "Unanswered Messages", "Therapy Session", "The Core Question"],
+      "rationale": "Event culminates in fundamental therapeutic question; more evocative than generic messaging"
+    },
+    {
+      "file": "2022-06-12.yaml",
+      "current_name": "Waiting (2022-06-12)",
+      "proposed_name": "The Reversal Insight",
+      "scenes": ["The Dating Calendar", "Wine and No Food", "The Reversal Insight", "Chappelle on TV"],
+      "rationale": "Highlights key psychological insight; more specific than generic waiting"
+    },
+    {
+      "file": "2022-07-19.yaml",
+      "current_name": "Messaging (2022-07-19)",
+      "proposed_name": "The Porcelain Speech",
+      "scenes": ["The Vodka Dinner", "The Final Deletion", "The Overnight Guest", "The Overstay", "The Porcelain Speech", "The Moot Question"],
+      "rationale": "References memorable scene detail; more evocative than generic messaging"
+    },
+    {
+      "file": "2022-11-02.yaml",
+      "current_name": "Remembering (2022-11-02)",
+      "proposed_name": "The Therapist's Reprimand",
+      "scenes": ["The Therapist's Reprimand", "Mother's Voice", "The Insurance Email"],
+      "rationale": "Event opens with therapist calling out behavior; more specific than generic remembering"
+    },
+    {
+      "file": "2022-11-02.yaml",
+      "current_name": "At Thomson House",
+      "proposed_name": "The Lease Conversation",
+      "scenes": ["The Lease Conversation"],
+      "rationale": "Single scene event; more evocative than location name"
+    },
+    {
+      "file": "2022-11-02.yaml",
+      "current_name": "Messaging (2022-11-02)",
+      "proposed_name": "What the Fuck Do I Want",
+      "scenes": ["The Unanswered Texts", "What the Fuck Do I Want"],
+      "rationale": "Uses raw question from scene; captures existential frustration more than generic messaging"
+    }
+  ],
+  "summary": {
+    "total_proposals": 61,
+    "categories": {
+      "dates_in_parentheses": 38,
+      "truncated_names": 4,
+      "generic_at_location": 19
+    },
+    "patterns_addressed": {
+      "messaging_events": "Converted to specific emotional dynamics, disclosure moments, or key phrases from scenes",
+      "writing_events": "Converted to capture what's being processed, drafted, or the insight gained",
+      "waiting_events": "Converted to name what's being anticipated or the emotional weight of suspension",
+      "remembering_events": "Converted to name what's being remembered or the significance of the memory",
+      "at_location_events": "Converted to evocative activities, encounters, or emotional moments at those places",
+      "truncated_names": "Restored with full emotional weight and completing the thought"
+    },
+    "naming_principles": {
+      "evocative_over_literal": "Memoir-like names that capture emotional essence over factual description",
+      "unique_identifiers": "Each event name is distinctive across the entire 2022 year",
+      "scene_informed": "Names drawn from key scenes, phrases, or emotional climaxes within the event",
+      "no_dates": "All parenthetical dates removed - names stand independently",
+      "narrative_significance": "Names hint at why this moment matters to the larger story",
+      "completion": "Truncated names restored to full phrases with their psychological weight"
+    }
+  }
+}

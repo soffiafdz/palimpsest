@@ -1,0 +1,288 @@
+{
+  "2021-08-03": {
+    "scenes": [
+      {
+        "old": "Party Flashback: Hermosa",
+        "new": "Te Ves Hermosa",
+        "description": "Memory of a party: the love interest looking her in the eyes and saying 'te ves hermosa' while someone applies a temporary tattoo."
+      }
+    ],
+    "events": []
+  },
+  "2021-08-07": {
+    "scenes": [
+      {
+        "old": "Memory: The Question",
+        "new": "The Other Direction",
+        "description": "Francisco once wondered if she was trans, transitioning 'in the other direction'; his girlfriend told him not to ask."
+      },
+      {
+        "old": "Memory: Contradictions",
+        "new": "Fine Features, Obvious Truth",
+        "description": "An ex says she always thought the narrator had 'fine features,' contradicting her earlier statement that her transness was 'obvious.'"
+      }
+    ],
+    "events": [
+      {
+        "old": "Why Didn",
+        "new": "Why Didn't You Come Yesterday",
+        "description": "The question that punctures avoidance: everyone knows about Molly's birthday and the exclusion."
+      },
+      {
+        "old": "S Birthday",
+        "new": "Molly's Birthday",
+        "description": "The intentional exclusion from the birthday celebration becomes social knowledge."
+      }
+    ]
+  },
+  "2021-08-14": {
+    "events": [
+      {
+        "old": "Why Didn",
+        "new": "Why Didn't You Come",
+        "description": "Vix's question reveals the social exposure: the rejection has become public knowledge."
+      },
+      {
+        "old": "S Birthday",
+        "new": "Molly's Birthday Party",
+        "description": "The birthday the narrator wasn't invited to, marking the rejection."
+      }
+    ]
+  },
+  "2021-08-21": {
+    "events": [
+      {
+        "old": "I Am Such A Shitty Excuse Of",
+        "new": "A Shitty Excuse of a Person",
+        "description": "Self-loathing spiral counting unreplied messages across multiple platforms."
+      },
+      {
+        "old": "S With Her Ex As A Man",
+        "new": "The Guilty Dream",
+        "description": "Sex dream where she appears as a man produces disgust and shame—the unconscious betraying with unwanted identity."
+      }
+    ]
+  },
+  "2021-08-23": {
+    "events": [
+      {
+        "old": "T Do What Flore Did To Me",
+        "new": "I Hope I Won't Do What Flore Did",
+        "description": "Self-awareness about repeating the exact pattern done to her—planning a date with someone she's not attracted to."
+      },
+      {
+        "old": "S Number Easily But Flore",
+        "new": "Deleting the Names",
+        "description": "Ritual of deleting contacts: Molly's number goes easily, but Flore's is harder to erase."
+      }
+    ]
+  },
+  "2021-09-04": {
+    "scenes": [],
+    "events": [
+      {
+        "old": "Consciously I Knew I Wasn",
+        "new": "Consciously I Knew I Wasn't Going to See Her",
+        "description": "Deliberate detour toward Little Italy where Flore lives, self-aware stalking behavior."
+      },
+      {
+        "old": "I Didn",
+        "new": "I Didn't Recognize Myself",
+        "description": "Catching glimpses in store windows, not recognizing her own reflection."
+      }
+    ]
+  },
+  "2021-09-07": {
+    "events": [
+      {
+        "old": "At lab",
+        "new": "Two Hours of Static",
+        "description": "Unable to focus at the lab, depression pervading the day—a failure to function."
+      },
+      {
+        "old": "At street",
+        "new": "Crying on the Street",
+        "description": "Less than a minute of public breakdown walking home from first therapy session."
+      }
+    ]
+  },
+  "2021-09-09": {
+    "events": [
+      {
+        "old": "My Name Will Be Recorded In The",
+        "new": "Wall of Shame",
+        "description": "Missing the 750words challenge exactly when feeling most like a failure."
+      },
+      {
+        "old": "I Looked At Flore",
+        "new": "The Red Circle",
+        "description": "Viewing Instagram story despite knowing her name will appear in viewers list—meta-awareness of obsessive surveillance."
+      },
+      {
+        "old": "At apartment",
+        "new": "Real Hangover",
+        "description": "Full hangover morning after drunk wandering: sickness, shame, four trips to the bathroom."
+      },
+      {
+        "old": "At elevator",
+        "new": "She Can Go Out",
+        "description": "Correct gendering in elevator still catches her off-guard after five years of transition."
+      }
+    ]
+  },
+  "2021-09-14": {
+    "scenes": [
+      {
+        "old": "Y: The Last Man",
+        "new": "I'd Have Died With the Men",
+        "description": "Watching the TV series alone, struck by dysphoric recognition: she would have died with 'the other men.'"
+      }
+    ],
+    "events": [
+      {
+        "old": "If I Were In That World I",
+        "new": "If I Were In That World I'd Have Died",
+        "description": "Dysphoric ideation triggered by Y: The Last Man—imagining death with men despite being a trans woman."
+      }
+    ]
+  },
+  "2021-10-07": {
+    "scenes": [
+      {
+        "old": "Therapy: Naming the Worst Case",
+        "new": "The Worst Case Scenario",
+        "description": "Calli asks about impending doom. The answer comes clearly: bottle, drunk, cutting again. The scenario articulated to a professional."
+      }
+    ],
+    "events": [
+      {
+        "old": "What",
+        "new": "What's the Worst Thing",
+        "description": "Naming the self-harm risk aloud to therapist—the pull toward destruction articulated."
+      }
+    ]
+  },
+  "2021-10-20": {
+    "events": [
+      {
+        "old": "S Starting To",
+        "new": "Should I Go Tomorrow",
+        "description": "Phone checking loop, considering whether to attend, the familiar avoidance pattern."
+      }
+    ]
+  },
+  "2021-10-27": {
+    "events": [
+      {
+        "old": "2 And A Half Hours Of My",
+        "new": "Two and a Half Hours of Conference",
+        "description": "The conference dismissal, feeling irrelevant in academic spaces."
+      }
+    ]
+  },
+  "2021-10-28": {
+    "events": [
+      {
+        "old": "I Am Thinner It",
+        "new": "I Am Thinner, It's Working",
+        "description": "The thinness photo, body inventory, the pattern of control through restriction."
+      }
+    ]
+  },
+  "2021-11-10": {
+    "events": [
+      {
+        "old": "I Feel Absolutely Nothing I Wasn",
+        "new": "I Feel Absolutely Nothing",
+        "description": "Emotional numbness, last sleeping pill, failed attempts at connection."
+      },
+      {
+        "old": "S Not Even A Slight Relief I",
+        "new": "Not Even a Slight Relief",
+        "description": "The empty notification, waiting for validation that never arrives."
+      }
+    ]
+  },
+  "2021-11-17": {
+    "events": [
+      {
+        "old": "S Busy This Weekend Ottawa Trip -",
+        "new": "She's Busy This Weekend",
+        "description": "The disappointment of postponed plans, recognizing the third girl pattern."
+      }
+    ]
+  },
+  "2021-11-21": {
+    "events": [
+      {
+        "old": "S Wedding Surfaces On Instagram Roommate",
+        "new": "The Wedding on Instagram",
+        "description": "Friend's wedding surfaces on Instagram—another event she wasn't invited to."
+      }
+    ]
+  },
+  "2021-11-23": {
+    "events": [
+      {
+        "old": "The Girl On The Phone Wasn",
+        "new": "The Girl on the Phone Wasn't There",
+        "description": "Therapy session revelation about misgendering, the period question memory surfaces."
+      }
+    ]
+  },
+  "2021-11-24": {
+    "events": [
+      {
+        "old": "S Whatsapp Activity Antidepressants",
+        "new": "WhatsApp Activity",
+        "description": "Midnight work session, watching for WhatsApp status changes, medication questions surfacing."
+      },
+      {
+        "old": "After Two Weeks Didn",
+        "new": "After Two Weeks Didn't Reply",
+        "description": "The revelation about timing, Kate's pattern of silence becoming clear."
+      }
+    ]
+  },
+  "2021-11-28": {
+    "events": [
+      {
+        "old": "If She Were Interested She Didn",
+        "new": "If She Were Interested She Didn't Show It",
+        "description": "Analyzing the blonde's smiles, wondering which kind were hers."
+      }
+    ]
+  },
+  "2021-12-04": {
+    "events": [
+      {
+        "old": "S Conversation Messaging Alix While She",
+        "new": "Messaging Alix While She Sings",
+        "description": "Karaoke flirtation, Kate's return, Saturday stillness with digital connections."
+      },
+      {
+        "old": "S Compassionate Response To The Narrator",
+        "new": "Eliseo's Compassionate Response",
+        "description": "Video call confession about Sonny's new person, receiving understanding."
+      }
+    ]
+  },
+  "2021-12-05": {
+    "events": [
+      {
+        "old": "S Harsh Critique",
+        "new": "Monica's Harsh Critique",
+        "description": "Monica's diagnosis of the narrator's behavior: fuckboi pattern recognized."
+      }
+    ]
+  },
+  "2021-12-06": {
+    "events": [
+      {
+        "old": "S Going On",
+        "new": "What's Going On",
+        "description": "Empty apartment, three messages sent, therapy eve planning, the longer history unfolding."
+      }
+    ]
+  }
+}

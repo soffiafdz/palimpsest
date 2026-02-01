@@ -20,7 +20,7 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 - **Multi-stage processing pipeline**: Raw exports → Formatted text → Markdown → Database → Wiki → PDFs
 - **Rich metadata extraction**: Track people, locations, events, themes, dates, and references
 - **Database-backed queries**: SQLAlchemy ORM with relationship mapping and analytics
-- **Wiki system**: Bidirectional sync between database and Markdown wiki for editing and curation
+- **Wiki system**: Primary editable workspace with database sync and YAML exports for git
 - **Full-text search**: SQLite FTS5 with advanced filtering (people, dates, themes, word count, etc.)
 - **Manuscript subwiki**: Dedicated wiki for curating journal entries into literary material
 - **PDF generation**: Create clean reading copies and annotated review versions
@@ -81,19 +81,27 @@ inbox/ (raw exports) → src2txt → txt/     (formatted text)
                                    ↓
                                  txt2md
                                    ↓
-                                 md/      (markdown + YAML)
-                                   ↓            ↑
-                                yaml2sql   sql2yaml
-                                   ↓            ↑
-                                database (SQLite + metadata + FTS5)
+                                 md/      (markdown prose + minimal frontmatter)
+                                   +
+                          metadata YAML/   (narrative analysis - human-authored)
+                                   ↓
+                                yaml2sql  (initial import)
+                                   ↓
+                                database  (LOCAL ONLY - not in git)
                                    ↓            ↑
                                 sql2wiki   wiki2sql
                                    ↓            ↑
-                                 wiki/    (editable wiki pages)
+                                 wiki/    (PRIMARY EDITABLE WORKSPACE)
                                    ├── entries/
                                    ├── people/
                                    ├── events/
                                    └── manuscript/
+
+                                database
+                                   ↓
+                              export-yaml
+                                   ↓
+                          canonical YAML/  (git-tracked for version control)
 
                                  md2pdf
                                    ↓
@@ -126,11 +134,13 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 
 ### Data Flow Paths
 
-1. **Journal → Database**: `inbox → txt → md → database` (via YAML frontmatter)
-2. **Database → Wiki**: `database → wiki` (for editing and curation)
-3. **Wiki → Database**: `wiki → database` (import edits back)
+1. **Initial Import**: `inbox → txt → md + metadata YAML → database` (one-time)
+2. **Ongoing Editing**: `wiki ↔ database` (wiki is primary editable workspace)
+3. **Version Control**: `database → canonical YAML` (exported for git)
 4. **Search & Analysis**: Query database with FTS5
 5. **Export**: `database → pdf` (annotated reading copies)
+
+**Note**: Database is LOCAL ONLY (not version controlled). Canonical YAML exports provide git tracking.
 
 ---
 
@@ -278,7 +288,7 @@ jsearch index --status
 
 ## Wiki System
 
-The wiki provides an editable interface for curating and annotating your journal:
+The wiki is the primary editable workspace for all journal and manuscript metadata:
 
 ### Export Database to Wiki
 
@@ -330,19 +340,20 @@ wiki/
         └── alexandra.md        # Character page (voice, arc, description)
 ```
 
-### Editable Fields
+### Editable Content
 
-**Main Wiki** (only `notes` fields are editable):
+**All wiki pages are fully editable:**
 
-- Person pages: Add biographical notes, relationship context
-- Entry pages: Add editorial notes, manuscript potential
-- Event/City pages: Add context notes
+- Entry pages: Scenes, events, threads, arcs, tags, themes, motifs
+- Person pages: Biographical info, relationships, aliases
+- Location/City pages: Context and connections
+- Event pages: Linked scenes and participants
+- Manuscript pages: Chapters, characters, arcs, themes
 
-**Manuscript Wiki** (detailed curation fields):
-
-- Manuscript entries: Entry type, narrative arc, character notes, adaptation notes
-- Characters: Character description, arc, voice notes, appearance notes
-- Themes, arcs, and other manuscript-specific metadata
+**Workflow:**
+1. Edit wiki pages directly
+2. Sync to database: `plm import-wiki`
+3. Export for git: `plm export-yaml`
 
 See [Synchronization Guide](docs/guides/synchronization.md) for complete documentation.
 

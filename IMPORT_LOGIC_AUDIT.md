@@ -451,3 +451,132 @@ After fixes:
 - ✅ Scene people/locations/dates are validated as subsets
 - ✅ Import works without curation files (self-contained)
 - ✅ Export succeeds for all 320 people (not just 230)
+
+## Curation Usage Analysis - All Files
+
+### Files Using Curation (To Be Updated/Removed)
+
+#### Active Import/Validation Code
+
+1. **dev/pipeline/entity_resolver.py** (548 lines)
+   - EntityResolver class - loads curation files
+   - Used by: metadata_importer.py, validators/metadata.py
+   - **Action**: Make optional, deprecated for imports
+
+2. **dev/pipeline/metadata_importer.py** (1053 lines)
+   - Lines 119, 267-271: Uses EntityResolver
+   - **Action**: Remove dependency, use metadata YAML directly
+
+3. **dev/pipeline/cli/database.py** (346 lines)
+   - Lines 244-254: Loads EntityResolver for import_metadata command
+   - **Action**: Remove EntityResolver loading
+
+4. **dev/validators/metadata.py**
+   - Lines 30-31, 100, 111, 161, etc.: EntityResolver for validation
+   - **Action**: Update to validate against database, not curation files
+
+#### Legacy/Deprecated Code (Can Be Deleted)
+
+5. **dev/bin/consolidate_curation.py**
+   - Consolidates per-year curation files
+   - **Action**: DELETE (jumpstart-only tool)
+
+6. **dev/bin/curation.py**
+   - Curation utilities
+   - **Action**: DELETE (jumpstart-only)
+
+7. **dev/bin/entity_summary.py**
+   - Summary of curation entities
+   - **Action**: DELETE (jumpstart-only)
+
+8. **dev/bin/extract_entities.py**
+   - Extracts entities for curation
+   - **Action**: DELETE (jumpstart-only)
+
+9. **dev/bin/jumpstart.py**
+   - Jumpstart migration script
+   - **Action**: DELETE (migration complete)
+
+10. **dev/bin/validate_curation.py**
+    - Validates curation files
+    - **Action**: DELETE (jumpstart-only)
+
+#### Other References
+
+11. **dev/core/paths.py**
+    - CURATION_DIR path constant
+    - **Action**: KEEP for backward compatibility, mark deprecated
+
+12. **dev/core/exceptions.py**
+    - May have curation-related exceptions
+    - **Action**: Review and clean up
+
+13. **dev/pipeline/cli/narrative_structure.py**
+    - References `_curation/` directory for PDFs
+    - **Action**: Update to use different output directory
+
+14. **dev/dataclasses/metadata_entry.py**
+    - May have curation-related validation
+    - **Action**: Review and update
+
+### Curation Files in data/ (To Be Deleted After Migration)
+
+```
+data/curation/
+├── *_people_curation.yaml (per-year)
+├── *_locations_curation.yaml (per-year)
+├── consolidated_people.yaml
+└── consolidated_locations.yaml
+```
+
+**Action**: DELETE entire directory after import fixes complete
+
+### Updated Migration Path
+
+#### Phase 0: Expand Audit ✓
+
+Document all curation usage
+
+#### Phase 1: Fix Import Logic
+
+1. Update `metadata_importer.py`:
+   - Change `_link_entry_people()` to use metadata YAML
+   - Add `_get_or_create_person()` method
+   - Add `_validate_scene_subsets()` method
+   - Make EntityResolver optional with deprecation warning
+
+2. Update `cli/database.py`:
+   - Make EntityResolver optional in import_metadata
+   - Add deprecation warning if curation files present
+
+#### Phase 2: Update Validators
+
+1. Update `validators/metadata.py`:
+   - Change validation to query database instead of curation
+   - Provide migration period support (check both)
+   - Add deprecation warnings
+
+#### Phase 3: Clean Database
+
+1. Identify duplicate people (NULL lastname who shouldn't exist)
+2. Delete duplicates
+3. Re-import all entries with fixed logic
+
+#### Phase 4: Delete Deprecated Code
+
+1. Delete `dev/bin/` curation scripts
+2. Delete `data/curation/` directory
+3. Update documentation to remove curation references
+4. Mark EntityResolver as deprecated with warnings
+
+### Validation Strategy
+
+**During migration**:
+- Import works WITH or WITHOUT curation files
+- Curation files trigger deprecation warnings
+- Metadata YAML is always ground truth
+
+**After migration**:
+- Import only uses metadata YAML
+- No curation file dependency
+- EntityResolver removed from import path

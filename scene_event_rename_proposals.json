@@ -1,0 +1,2050 @@
+{
+  "files": [
+    {
+      "path": "data/metadata/journal/2021/2021-08-03.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Party Flashback: Hermosa",
+          "new_name": "\"te ves hermosa\"",
+          "reason": "contains colon",
+          "description": "Memory of a party: the love interest looking her in the eyes and saying \"te ves hermosa\" while someone applies a temporary tattoo."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-08-07.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Memory: The Question",
+          "new_name": "\"in the other direction\"",
+          "reason": "contains colon",
+          "description": "Francisco once wondered if she was trans, transitioning \"in the other direction\"; his girlfriend told him not to ask."
+        },
+        {
+          "type": "scene",
+          "old_name": "Memory: Contradictions",
+          "new_name": "\"fine features,\"",
+          "reason": "contains colon",
+          "description": "An ex says she always thought the narrator had \"fine features,\" contradicting her earlier statement that her transness was \"obvious.\""
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-08-14.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Why Didn",
+          "new_name": "Why Didn't You Come Yesterday? It Was Molly's Birthday!",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 2 scene(s); summary: A day of layered revelations. Armando leaves for Ottawa; Flore still hasn't replied from the chalet."
+        },
+        {
+          "type": "event",
+          "old_name": "S Birthday",
+          "new_name": "Why Didn't You Come Yesterday? It Was Molly's Birthday!",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: A day of layered revelations. Armando leaves for Ottawa; Flore still hasn't replied from the chalet."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-08-21.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S With Her Ex As A Man",
+          "new_name": "I Am Such a Shitty Excuse of a Person.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Tinder conversations dying one after another. Messages to multiple women go unreplied. \"I am such a "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-08-23.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Do What Flore Did To Me",
+          "new_name": "I Need the Distraction.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: The narrator can't get out of bed, hiding under her pillow from the sunlight. A date with M is plann"
+        },
+        {
+          "type": "event",
+          "old_name": "S Number Easily But Flore",
+          "new_name": "I Need the Distraction.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: The narrator can't get out of bed, hiding under her pillow from the sunlight. A date with M is plann"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-08-30.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Pregnant In Photos They",
+          "new_name": "I Was a Really Nice Guy, but She Just Wanted to Dance.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 6 scene(s); summary: A memory surfaces: the Estonian girl from study abroad in Portugal, seven years ago. They kissed on "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-04.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Consciously I Knew I Wasn",
+          "new_name": "Senora",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 2 scene(s); summary: The narrator wanders through Little Italy deliberately searching for a woman who ghosted her: \"Consc"
+        },
+        {
+          "type": "event",
+          "old_name": "I Didn",
+          "new_name": "Senora",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 5 scene(s); summary: The narrator wanders through Little Italy deliberately searching for a woman who ghosted her: \"Consc"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-12.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Party Memory (Playas de Tijuana, years ago)",
+          "new_name": "Party Memory",
+          "reason": "contains parentheses",
+          "description": "Recalls being drunk after a post-Spain party, unable to stop talking in the car while friends told her to shut up. Later slept at Eusebio's place."
+        },
+        {
+          "type": "scene",
+          "old_name": "Night in Underwear (Montreal apartment)",
+          "new_name": "Night in Underwear",
+          "reason": "contains parentheses",
+          "description": "Reads about photography, hears midnight party outside, removes hoodie and sleeps only in underwear for the first time."
+        },
+        {
+          "type": "scene",
+          "old_name": "10 Kilometer Walk (Montreal streets)",
+          "new_name": "10 Kilometer Walk",
+          "reason": "contains parentheses",
+          "description": "Walks for hours attempting street photography, struggles to point camera at strangers, returns with only a handful of shots she deems worthless."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-14.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Y: The Last Man",
+          "new_name": "\"the other men.\"",
+          "reason": "contains colon",
+          "description": "Watching the TV series alone, struck by dysphoric recognition: she would have died with \"the other men.\""
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-20.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "It Wasn",
+          "new_name": "It Wasn't Because She's Trans. It Was Because She's Trans *like Me*.",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 9 scene(s); summary: Preparing for therapy, she rehearses what to say about the closet: \"I could tell how the next girl a"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-21.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Journal-Writing On The Beach",
+          "new_name": "I Started Crying, Listening to Music and Crying.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 5 scene(s); summary: All-night drunk reading of old journal entries: \"I started crying, listening to music and crying.\" A"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-22.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S All Blurry",
+          "new_name": "Why Did I Keep Talking to Them?",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 3 scene(s); summary: Memory gap from the previous night: \"I don't remember most of last night. I know I slept in the afte"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-23.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S All Bullshit",
+          "new_name": "Creeps From Louis' Lab",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Looking at early transition photos: \"I looked hideous. I remember how the first two years I'd go bac"
+        },
+        {
+          "type": "event",
+          "old_name": "S Not In My Facebook Though",
+          "new_name": "Creeps From Louis' Lab",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 3 scene(s); summary: Looking at early transition photos: \"I looked hideous. I remember how the first two years I'd go bac"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-09-29.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "I Can",
+          "new_name": "I Can't Focus. Is This Anxiety Still?",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Extreme distraction: \"I can't focus. Is this anxiety still?\" The archive reading has reached present"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-10-07.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Therapy: Naming the Worst Case",
+          "new_name": "Naming the Worst Case",
+          "reason": "contains colon",
+          "description": "Calli asks about impending doom. The answer comes clearly: bottle, drunk, cutting again. The scenario articulated to a professional."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-10-20.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Starting To",
+          "new_name": "Meditation Is Preparation for Death.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: The entry opens with a striking line: \"Meditation is preparation for death.\" Unexplored but haunting"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Instagram While Insisting She Doesn",
+          "new_name": "This Time You Were You, Not a Male Version of You.",
+          "reason": "starts with single letter T/S (truncated); ends with incomplete contraction (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Dream about a woman where \"this time you were you, not a male version of you.\" Deletes all dating ap"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-08.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "The Confession (Spanish monologue)",
+          "new_name": "The Confession",
+          "reason": "contains parentheses",
+          "description": "Extended coming-out narrative to parents, voice shifting between present explanation and childhood memory."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-10.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "I Feel Absolutely Nothing I Wasn",
+          "new_name": "That Small and Insignificant Moment Can Mess Up with My Whole Day.",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Misgendered at pharmacy picking up antidepressants - \"that small and insignificant moment can mess u"
+        },
+        {
+          "type": "event",
+          "old_name": "S Not Even A Slight Relief I",
+          "new_name": "That Small and Insignificant Moment Can Mess Up with My Whole Day.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Misgendered at pharmacy picking up antidepressants - \"that small and insignificant moment can mess u"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-13.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Dance Floor Panic (Memory)",
+          "new_name": "Dance Floor Panic",
+          "reason": "contains parentheses",
+          "description": "Previous night resurfaces: erection forming while grinding with a girl at the club."
+        },
+        {
+          "type": "scene",
+          "old_name": "Passing Guilt (Reflection)",
+          "new_name": "\"I didn't lie... Why does it still feel like I betrayed her?\"",
+          "reason": "contains parentheses",
+          "description": "Alone with the realization: friend doesn't know she's trans. \"I didn't lie... Why does it still feel like I betrayed her?\""
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-17.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Busy This Weekend Ottawa Trip -",
+          "new_name": "This Would Be the Third Girl That Disappears After a Weekend Trip.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: COVID negative. She's busy this weekend (Ottawa trip) - \"This would be the third girl that disappear"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-21.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Wedding Surfaces On Instagram Roommate",
+          "new_name": "Didn't Really Want an Answer.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Hangover morning, half-empty vodka bottle. An ex's wedding surfaces on Instagram. Roommate's enthusi"
+        },
+        {
+          "type": "event",
+          "old_name": "T Really Want An Answer",
+          "new_name": "Didn't Really Want an Answer.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 2 scene(s); summary: Hangover morning, half-empty vodka bottle. An ex's wedding surfaces on Instagram. Roommate's enthusi"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-23.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "The Girl On The Phone Wasn",
+          "new_name": "En Vez De Sentirma Contenta, Me Sentí *sola*.",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Vodka finished in just over a weekend. Therapy session about Kate/Flore comparison, struggling with "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-24.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Whatsapp Activity Antidepressants",
+          "new_name": "Messing with Me",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Work prep undone, obsessing over a woman's Whatsapp activity. Antidepressants \"messing with me\" afte"
+        },
+        {
+          "type": "event",
+          "old_name": "After Two Weeks Didn",
+          "new_name": "Messing with Me",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 5 scene(s); summary: Work prep undone, obsessing over a woman's Whatsapp activity. Antidepressants \"messing with me\" afte"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-28.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Tell Which Kind Blonde",
+          "new_name": "Complicit, Like Getting Into This Secret Joke",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Queer bar with friend - blonde girl smiles multiple times. Extended reflection on smiles: early tran"
+        },
+        {
+          "type": "event",
+          "old_name": "If She Were Interested She Didn",
+          "new_name": "Complicit, Like Getting Into This Secret Joke",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Queer bar with friend - blonde girl smiles multiple times. Extended reflection on smiles: early tran"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-11-29.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Notify - Brief Hope She Messaged",
+          "new_name": "Idk Why I Thought Whatsapp Would Automatically Tell My Contacts",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Sends Kate message pretending changed numbers (\"idk why I thought Whatsapp would automatically tell "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-12-04.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Conversation Messaging Alix While She",
+          "new_name": "Too Pushy and Needy",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: A weekend of compulsive digital management: deleting and re-engaging Kate's conversation, messaging "
+        },
+        {
+          "type": "event",
+          "old_name": "S Compassionate Response To The Narrator",
+          "new_name": "Too Pushy and Needy",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 2 scene(s); summary: A weekend of compulsive digital management: deleting and re-engaging Kate's conversation, messaging "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2021/2021-12-05.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Harsh Critique",
+          "new_name": "Fuckboi",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Drunk and high with roommates, sends \"fuckboi\" message expecting to be blocked; friend's harsh criti"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-13.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2022-01-13)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: The entry opens a pivotal period in Montreal life, returning from Mexico with a romantic obsession a"
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2022-01-13)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: The entry opens a pivotal period in Montreal life, returning from Mexico with a romantic obsession a"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-14.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-01-14)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A sleepless night yields profound trans-specific dysphoria around sexuality and reproduction. The ma"
+        },
+        {
+          "type": "event",
+          "old_name": "Walking (2022-01-14)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A sleepless night yields profound trans-specific dysphoria around sexuality and reproduction. The ma"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-15.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Romantic Psychology The Question",
+          "new_name": "Am I Being Obsessive?",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 8 scene(s); summary: A key entry for understanding the narrator's romantic psychology. The question \"Am I being obsessive"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-16.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-01-16)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: Depression descends with familiar symptoms: inability to get out of bed, zero motivation, numbness. "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-17.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2022-01-17)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 7 scene(s); summary: A pivotal articulation of trans grief emerges in the form of a tweet that was posted then deleted: \""
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-19.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Shouldn",
+          "new_name": "Only I Have You,",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 2 scene(s); summary: The entry captures a defining psychological pattern: \"I want to be the first one to stop caring, to "
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-01-19)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The entry captures a defining psychological pattern: \"I want to be the first one to stop caring, to "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-20.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-01-20)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 7 scene(s); summary: The entry captures the texture of obsessive waiting, enumerating five women whose words are anticipa"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-21.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-01-21)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A crucial genealogy of romantic fixation is traced: \"I liked Kate because her accent reminded me of "
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2022-01-21)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A crucial genealogy of romantic fixation is traced: \"I liked Kate because her accent reminded me of "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-23.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-01-23)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: Memories of Spain surface: vodka-lemon in Granada, dancing, a guide defending her. These fragments e"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-24.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-01-24)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 7 scene(s); summary: A moment of clarity arrives: \"I am clearly not ready to be dating, be it casually or not.\" Dating ap"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-01-24)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A moment of clarity arrives: \"I am clearly not ready to be dating, be it casually or not.\" Dating ap"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-25.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "If I Didn",
+          "new_name": "Is This What Depression Feels Like?",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 5 scene(s); summary: A rare moment of positive self-perception: \"If I didn't know it was me, I'd think the picture is of "
+        },
+        {
+          "type": "event",
+          "old_name": "Remembering (2022-01-25)",
+          "new_name": "Remembering",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: A rare moment of positive self-perception: \"If I didn't know it was me, I'd think the picture is of "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-26.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "At Table (2022-01-26)",
+          "new_name": "At Table",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: A crucial childhood memory surfaces: exploring the mother's closet and drawers when alone, trying on"
+        },
+        {
+          "type": "event",
+          "old_name": "Remembering (2022-01-26)",
+          "new_name": "Remembering",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A crucial childhood memory surfaces: exploring the mother's closet and drawers when alone, trying on"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-28.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-01-28)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: The cycle of obsession continues: deleting the number from contacts, yet still composing messages th"
+        },
+        {
+          "type": "event",
+          "old_name": "Meeting (2022-01-28)",
+          "new_name": "Meeting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: The cycle of obsession continues: deleting the number from contacts, yet still composing messages th"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-29.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-01-29)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A boundary-setting message arrives in response to desperate text pleas: \"I've been feeling pressured"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-01-30.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Final Message Offers Hollow Hope",
+          "new_name": "I Will Not Forget About You!",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Kate's final message offers hollow hope: \"I will not forget about you!\" Yet the author continues see"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-02-06)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: The pre-transition photo is posted, and responses arrive: Carolina had a crush on him, Yomar too. Fr"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-07.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-02-07)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: The masculine shame crystallizes with painful clarity: \"I feel like one of those guys that keep insi"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-08.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-02-08)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 9 scene(s); summary: A non-reply to a social media reaction triggers the core trans fear: \"She saw my own maleness and wa"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-11.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-02-11)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A short entry that declines to fill the daily word count. The epigraph in Spanish captures the trans"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-15.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Dreaming (2022-02-15)",
+          "new_name": "Dreaming",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: Extremely high, beyond even past experiences. A potential turning point: the obsessive story-watchin"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-02-15)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: Extremely high, beyond even past experiences. A potential turning point: the obsessive story-watchin"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-16.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-02-16)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A sexual picture exchange on Snapchat occurs before trans disclosure: \"I was too turned on to rememb"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-22.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Epigraph: The Secret",
+          "new_name": "The Secret",
+          "reason": "contains colon",
+          "description": "A disembodied confession about trans embodiment: \"I've been on hormones for years and I didn't know I could still get hard.\""
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-02-26.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Meeting (2022-02-26)",
+          "new_name": "Meeting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: Trans disclosure becomes a serial activity: multiple women receive the news, all accepting. The patt"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Stories Generating Jealousy Emily Posts",
+          "new_name": "Yes, I Am Real",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 9 scene(s); summary: Kate-stalking persists through her friend's stories, generating jealousy. Emily posts \"Yes, I am rea"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-11.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Pretty Observing Specific Details",
+          "new_name": "A Date Unfolds as a Three-act Drama Across a Single Day, Culminating in Sex",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 12 scene(s); summary: A date unfolds as a three-act drama across a single day, culminating in sex. She tells her to her fa"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-13.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "I Wasn",
+          "new_name": "The Most Gay Thing I Can Think Of.",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 2 scene(s); summary: A bar night generates jealousy when Gabriela (20) hits on Alda. Sending nudes to Emily from a bathro"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-18.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-03-18)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: A date with a French woman (no attraction) prompts pattern recognition: \"There is something in me th"
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2022-03-18)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A date with a French woman (no attraction) prompts pattern recognition: \"There is something in me th"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-25.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2022-03-25)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: The Alex date spans six hours from cafe to campus, culminating in a kiss scene rendered with strikin"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-27.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Walking (2022-03-27)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A date prompts self-aware observation: \"I was barely conscious of how my head was busy looking for f"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-03-29.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-03-29)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A laser treatment contract forces confrontation with official misgendering: \"Reading it hurt even mo"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-04-04.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Walking (2022-04-04)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: Intimacy with Alexandra unfolds while watching The Worst Person in the World, the breathing synchron"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-04-08.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Epigraph: Ghosting Prophecy",
+          "new_name": "Ghosting Prophecy",
+          "reason": "contains colon",
+          "description": "\"Do you want to get coffee and at least put a face to the person we're gonna potentially end up ghosting anyway?\""
+        },
+        {
+          "type": "event",
+          "old_name": "Remembering (2022-04-08)",
+          "new_name": "Remembering",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: An 18km walk to Mont-Royal provides physical intimacy: arm-grabbing at the belvedere, a kiss at the "
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-04-08)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: An 18km walk to Mont-Royal provides physical intimacy: arm-grabbing at the belvedere, a kiss at the "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-06-12.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2022-06-12)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A month without writing, then a scattered return: PhD candidacy achieved, Scotland trip imminent. Th"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-07-19.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-07-19)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: Depression reduces the body to components: \"Estos dias soy solo piel y grasa y hueso.\" (These days I"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-11-02.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Remembering (2022-11-02)",
+          "new_name": "Remembering",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A shrooms experience yields insight about dating patterns: \"A desperate try to convince myself I am "
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2022-11-02)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: A shrooms experience yields insight about dating patterns: \"A desperate try to convince myself I am "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2022/2022-11-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Brevity Embodies The Very Writer",
+          "new_name": "[TRUNCATED] S Brevity Embodies The Very Writer",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 2 scene(s); summary: A brief meta-note about the writing practice itself: the tension between compulsion to write and abs"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2023/2023-06-20.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "The Failed Date (Flashback)",
+          "new_name": "The Failed Date",
+          "reason": "contains parentheses",
+          "description": "Yesterday with someone else. Walking the mountain. A condescending remark triggers a switch. Nothing will come of this one. They separate in the park and never reach out again."
+        },
+        {
+          "type": "event",
+          "old_name": "The Narrator Didn",
+          "new_name": "The Same Bench Where Last Year Alda Asked Me About My Periods",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 3 scene(s); summary: The Alexia night unfolds in exquisite detail. Meeting at Station Mont-Royal, walking to Le Darling f"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2023/2023-06-27.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2023-06-27)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A weekend with trans women friends from San Diego prompts direct confrontation with surgical possibi"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2023/2023-06-29.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Visit Is Planned For The Narrator",
+          "new_name": "[TRUNCATED] S Visit Is Planned For The Narrator",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: A queer happy hour proves disappointing—clique dynamics mirror conference anxieties. The narrator wa"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-01-28.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-01-28)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: The Sophie saga begins with a December meeting at Bar Pamplemousse, a brief 5 a 7 before her concert"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-01-29.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "The Friend's Visit (Flashback)",
+          "new_name": "The Friend's Visit",
+          "reason": "contains parentheses",
+          "description": "Airport pickup, groceries, movies on the couch, restaurants, lying in the same bed chatting—all with an un-trespassable barrier."
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2024-01-29)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Reading old journal entries reveals the pattern explicitly: the same dynamics repeating with differe"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-01-29)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: Reading old journal entries reveals the pattern explicitly: the same dynamics repeating with differe"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-01.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-02-01)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: The reaching-out text to Sophie is sent at 6:50am, ending the waiting game. The recognition follows:"
+        },
+        {
+          "type": "event",
+          "old_name": "Meeting (2024-02-01)",
+          "new_name": "Meeting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The reaching-out text to Sophie is sent at 6:50am, ending the waiting game. The recognition follows:"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-03.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "The Marketplace Find (Flashback)",
+          "new_name": "The Marketplace Find",
+          "reason": "contains parentheses",
+          "description": "At the lab, the vintage camera ad appears for $35. Screenshots to Sonny, negotiations with the seller between meetings with prospective students."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-04.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "At Table (2024-02-04)",
+          "new_name": "At Table",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A Sunday of solitude punctuated by social obligation. Sister goes to Mass, leaving the narrator to m"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-05.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-02-05)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: Cuba photo scans arrive disappointing. Organizing old photos in Google becomes an archaeological exp"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-11.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Day To See The Cuba Photos",
+          "new_name": "I Worry I Will Meet with Her, but I Won't Be Enough.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Sonny departs and the house empties. Sophie proposes meeting on Valentine's Day to see the Cuba phot"
+        },
+        {
+          "type": "event",
+          "old_name": "T Be Enough",
+          "new_name": "I Worry I Will Meet with Her, but I Won't Be Enough.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 5 scene(s); summary: Sonny departs and the house empties. Sophie proposes meeting on Valentine's Day to see the Cuba phot"
+        },
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-02-11)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: Sonny departs and the house empties. Sophie proposes meeting on Valentine's Day to see the Cuba phot"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-13.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "FLASHBACK: EXT. PARC LA FONTAINE - YEARS AGO",
+          "new_name": "Memory - EXT. PARC LA FONTAINE - YEARS AGO",
+          "reason": "contains colon; flashback prefix with colon",
+          "description": "Laura, the Colombian exchange student. Film cameras. A roll left undeveloped for years. She posted about the card game on Instagram."
+        },
+        {
+          "type": "scene",
+          "old_name": "INT. APARTMENT - EVENING",
+          "new_name": "\"I know what I should do, but I don't know if I can.\"",
+          "reason": "screenwriting format (INT./EXT.)",
+          "description": "The texting dilemma. Sophie or Tirza? He always reaches out to Tirza when disillusioned with Sophie. \"I know what I should do, but I don't know if I can.\""
+        },
+        {
+          "type": "event",
+          "old_name": "S Was Planning To Play We",
+          "new_name": "Lately, I Have Been Craving Intimacy.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: ChatGPT provides harsh advice about Sophie's behavior as epigraph. Changing sheets means losing Sonn"
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2024-02-13)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: ChatGPT provides harsh advice about Sophie's behavior as epigraph. Changing sheets means losing Sonn"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-14.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Let It Out",
+          "new_name": "Valentine's Day Date with Sophie at Thomson House",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Valentine's Day date with Sophie at Thomson House. Cuba photos are shown but Sophie seems rushed. A "
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-02-14)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Valentine's Day date with Sophie at Thomson House. Cuba photos are shown but Sophie seems rushed. A "
+        },
+        {
+          "type": "event",
+          "old_name": "Meeting (2024-02-14)",
+          "new_name": "Meeting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: Valentine's Day date with Sophie at Thomson House. Cuba photos are shown but Sophie seems rushed. A "
+        },
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-02-14)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: Valentine's Day date with Sophie at Thomson House. Cuba photos are shown but Sophie seems rushed. A "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-16.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2024-02-16)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 11 scene(s); summary: Playing We're Not Really Strangers with Alda deepens their friendship through three levels of increa"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-02-18.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Walking (2024-02-18)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: Irish pub with a friend provides space for her relationship troubles. Reading old journal entries (t"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-01.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Walking (2024-03-01)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 7 scene(s); summary: Hungover and nauseous, the narrator breaks her promise by texting Sophie, then deletes the conversat"
+        },
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-03-01)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: Hungover and nauseous, the narrator breaks her promise by texting Sophie, then deletes the conversat"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-03.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-03-03)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: Nuit blanche with Aliza at Lili & Oli cafe in Verdun. Most contacts are deleted from the phone, incl"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-04.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Meeting (2024-03-04)",
+          "new_name": "Meeting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Restless wandering through Villeray, unable to stay inside. At a cafe, the narrator recognizes a pas"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-05.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Walking (2024-03-05)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: The text is sent, the blue heart comes back. A vulnerable reach-out from bed at 8h20, the phone push"
+        },
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-03-05)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: The text is sent, the blue heart comes back. A vulnerable reach-out from bed at 8h20, the phone push"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2024-03-06)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: The Euphoria quote resurfaces: \"I fall in love so easily because half of the relationship is in my h"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-03-06)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: The Euphoria quote resurfaces: \"I fall in love so easily because half of the relationship is in my h"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-10.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "At Table (2024-03-10)",
+          "new_name": "At Table",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: Post-date processing begins. She texts after a lovely night, no response arrives. A social gathering"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-03-10)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: Post-date processing begins. She texts after a lovely night, no response arrives. A social gathering"
+        },
+        {
+          "type": "event",
+          "old_name": "Dreaming (2024-03-10)",
+          "new_name": "Dreaming",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Post-date processing begins. She texts after a lovely night, no response arrives. A social gathering"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-12.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2024-03-12)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: Fumigation displaces the narrator into the city. At the café, working through 2015 journals triggers"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-13.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "At Table (2024-03-13)",
+          "new_name": "At Table",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: An unexpected text arrives from someone thought lost. The narrator moves through a day of meetings w"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-14.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-03-14)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Thomson House journaling session after Aliza leaves, watching strangers and describing them in intim"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-16.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "I Won",
+          "new_name": "I Won't Settle for Anything Less.",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 5 scene(s); summary: Love Lies Bleeding at the cinema—the theater full of queer women prompting the essential question: \""
+        },
+        {
+          "type": "event",
+          "old_name": "S Confession Emerges",
+          "new_name": "I Won't Settle for Anything Less.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Love Lies Bleeding at the cinema—the theater full of queer women prompting the essential question: \""
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-17.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Have",
+          "new_name": "Just Now Am I Realizing That I Bought This Shirt with Monica.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 6 scene(s); summary: A day of domestic stasis and dread. The narrator stays in bed until morning ends, watch vibrating wi"
+        },
+        {
+          "type": "event",
+          "old_name": "S Therapy Appointment Looms",
+          "new_name": "Just Now Am I Realizing That I Bought This Shirt with Monica.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 5 scene(s); summary: A day of domestic stasis and dread. The narrator stays in bed until morning ends, watch vibrating wi"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-18.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Therapy: The Wound",
+          "new_name": "\"Did it remind you of cutting yourself in a different way?\"",
+          "reason": "contains colon",
+          "description": "Mentioning yesterday's cut to the therapist; \"Did it remind you of cutting yourself in a different way?\""
+        },
+        {
+          "type": "scene",
+          "old_name": "Therapy: The Crystal Ball",
+          "new_name": "The Crystal Ball",
+          "reason": "contains colon",
+          "description": "Imagine knowing this will continue for six months—occasional encounters, intermittent communication. How does that feel?"
+        },
+        {
+          "type": "scene",
+          "old_name": "Therapy: The Chase",
+          "new_name": "The Chase",
+          "reason": "contains colon",
+          "description": "\"I hate the idea that I am chasing her. In order to chase something, it means it's running away from you.\" The therapist challenges: sometimes chasing is play."
+        },
+        {
+          "type": "event",
+          "old_name": "S Therapeutic Probe",
+          "new_name": "In a Familiar Way,",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Session with Calli that was not supposed to be the last—the narrator never mentions starting with an"
+        },
+        {
+          "type": "event",
+          "old_name": "S Running Away From You",
+          "new_name": "In a Familiar Way,",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Session with Calli that was not supposed to be the last—the narrator never mentions starting with an"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-20.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Therapy Session: The Motherhood Wound",
+          "new_name": "The Motherhood Wound",
+          "reason": "contains colon",
+          "description": "Dreams disclosed—the period dream, the pregnancy dream from years ago. The explicit articulation: before transitioning, never wanting to be a dad; now heartbroken watching toddlers in cafés."
+        },
+        {
+          "type": "scene",
+          "old_name": "Reception: The Unheard Voice",
+          "new_name": "The Unheard Voice",
+          "reason": "contains colon",
+          "description": "Red wine. The familiar moments where she says something nobody hears. Speaking the least at the whole table."
+        },
+        {
+          "type": "event",
+          "old_name": "S Anguished Response",
+          "new_name": "Sofía, Are You Getting Your Period?",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 3 scene(s); summary: The BODY entry. A vivid period dream: blood transpiring through underwear and shorts to the sheets, "
+        },
+        {
+          "type": "event",
+          "old_name": "T Have A Uterus I Don",
+          "new_name": "Sofía, Are You Getting Your Period?",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: The BODY entry. A vivid period dream: blood transpiring through underwear and shorts to the sheets, "
+        },
+        {
+          "type": "event",
+          "old_name": "T Just Feel Fat I Felt Unattractive",
+          "new_name": "Sofía, Are You Getting Your Period?",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: The BODY entry. A vivid period dream: blood transpiring through underwear and shorts to the sheets, "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-24.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Perceived Coldness During A Past Visit",
+          "new_name": "Kath, Valerie, Max, Monica, Heloise. Now, Sophie.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: The DISTRACTION LIST entry. The narrator compiles a list of people to text instead of the current fi"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-03-24)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: The DISTRACTION LIST entry. The narrator compiles a list of people to text instead of the current fi"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-25.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "The Night Before (Flashback)",
+          "new_name": "The Night Before",
+          "reason": "contains parentheses",
+          "description": "Composing the message to Monica. Explaining how she brings out the worst. Suggesting ending the friendship. Archiving the conversation to avoid seeing the response."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Lab Meeting (Teams)",
+          "new_name": "The Lab Meeting",
+          "reason": "contains parentheses",
+          "description": "Webcam off. The narrator the only one not physically at MNI. Alfonso presenting on CSF biomarkers, his accent thickening with nerves. The narrator noticing everything except the science. Wondering if "
+        },
+        {
+          "type": "event",
+          "old_name": "S Cruel Aware That",
+          "new_name": "I Hate Myself More When I'm Around You, Sometimes Even After We Talk.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 2 scene(s); summary: The Monica SELF-HARM DISCLOSURE entry. The narrator responds to Monica's message cataloging hurt, ex"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-26.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "After Session: Makeup, Movement",
+          "new_name": "Makeup, Movement",
+          "reason": "contains colon",
+          "description": "Putting on makeup, heading out to work. Transition as continuous assembly."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-03-30.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Notification Appears",
+          "new_name": "The DEADNAME DREAM Entry",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: The DEADNAME DREAM entry. Sleep paralysis with DC characters and psychological trauma, followed by t"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-03-30)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: The DEADNAME DREAM entry. Sleep paralysis with DC characters and psychological trauma, followed by t"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-04.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-04-04)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The DISCLOSURE CATALOG entry. After Sophie's rejection, the narrator systematically comes out to dat"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Remembering (2024-04-06)",
+          "new_name": "Remembering",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: The SELF-INJECTION entry. The pharmacy gave the narrator half her estrogen prescription—a clerical e"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-07.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-04-07)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: First date with Marie-Anne at a cafe and Parc Jarry. The conversation flows mostly in English; the n"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-08.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Voice-Message Request",
+          "new_name": "You Don't Fully Believe It.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: The WOMAN ENOUGH entry. Final session with therapist after three years. The narrator speaks about a "
+        },
+        {
+          "type": "event",
+          "old_name": "The How (2024-04-08-3)",
+          "new_name": "The How",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The WOMAN ENOUGH entry. Final session with therapist after three years. The narrator speaks about a "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-09.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Make Much Of A Difference But",
+          "new_name": "It's Absolutely Not a Deal Breaker, Don't Worry Bb.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Flirty Tinder banter with Marie about scary movies and making out on couches. The narrator discloses"
+        },
+        {
+          "type": "event",
+          "old_name": "S A Deal-Breaker",
+          "new_name": "It's Absolutely Not a Deal Breaker, Don't Worry Bb.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Flirty Tinder banter with Marie about scary movies and making out on couches. The narrator discloses"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-10.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Sexting Match Is Explicitly Identified As",
+          "new_name": "The Québécoise Version of the Catfisher",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 5 scene(s); summary: The CATFISHER ECHO entry. The narrator's sexting match is explicitly identified as \"the Québécoise v"
+        },
+        {
+          "type": "event",
+          "old_name": "She Is Called Gorgeous But Doesn",
+          "new_name": "The Québécoise Version of the Catfisher",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 3 scene(s); summary: The CATFISHER ECHO entry. The narrator's sexting match is explicitly identified as \"the Québécoise v"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-12.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Church Pub: The Breakup Circle",
+          "new_name": "The Breakup Circle",
+          "reason": "contains colon",
+          "description": "Friends at happy hour cocktails. One friend shares about ending things with an ex she'd stayed friends with. The narrator relates."
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-13.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "Vero's Cancelled Wedding (Backstory)",
+          "new_name": "Vero's Cancelled Wedding",
+          "reason": "contains parentheses",
+          "description": "Was supposed to be witness for the work permit marriage. He asked for 10-12k dollars. They broke up."
+        },
+        {
+          "type": "scene",
+          "old_name": "Alda's Fall (Phone)",
+          "new_name": "Alda's Fall",
+          "reason": "contains parentheses",
+          "description": "She hurt her forehead and ankle on the stairs, wants to cancel. The narrator accepts gratefully."
+        },
+        {
+          "type": "scene",
+          "old_name": "Paty's Origin Story (Memory)",
+          "new_name": "Paty's Origin Story",
+          "reason": "contains parentheses",
+          "description": "Yaaj event where Paty confessed liking Paola first, then admitted in a voice message she'd liked the narrator too—but chose someone else."
+        },
+        {
+          "type": "scene",
+          "old_name": "Narvarte Shore Nights (Memory Flash)",
+          "new_name": "Narvarte Shore Nights",
+          "reason": "contains parentheses",
+          "description": "Movie of the party at Ivan's house interrupts the writing. Considers stopping."
+        },
+        {
+          "type": "event",
+          "old_name": "S Messagelike Sophie",
+          "new_name": "A Day of Waiting for Messages That Don't Come—from Jay, From Sy, From Paty",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: A day of waiting for messages that don't come—from Jay, from Sy, from Paty. Depression and drinking "
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2024-04-13)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A day of waiting for messages that don't come—from Jay, from Sy, from Paty. Depression and drinking "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-15.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "T Get In The Way",
+          "new_name": "Just Looking for Some Fun.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Depression weekend unmoved, but Bea arrives. A girl with a Virginia Woolf quote in her bio, \"just lo"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-04-15)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Depression weekend unmoved, but Bea arrives. A girl with a Virginia Woolf quote in her bio, \"just lo"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-25.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-04-25)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The preamble to the Bea night. Two weeks of deep depression. French class insufferable. Chloe date u"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-04-25)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: The preamble to the Bea night. Two weeks of deep depression. French class insufferable. Chloe date u"
+        },
+        {
+          "type": "event",
+          "old_name": "Meeting (2024-04-25)",
+          "new_name": "Meeting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The preamble to the Bea night. Two weeks of deep depression. French class insufferable. Chloe date u"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-26.yaml",
+      "changes": [
+        {
+          "type": "scene",
+          "old_name": "The Bar: First Date Confessions",
+          "new_name": "First Date Confessions",
+          "reason": "contains colon",
+          "description": "Two women share their pre-date anxieties over pints. Conversation flows through careers, travels, aphantasia, religion. Three rounds ordered."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Sidewalk: The Ask",
+          "new_name": "\"Can I kiss you?\"",
+          "reason": "contains colon",
+          "description": "Night has fallen. She shivers in her denim jacket while the other smokes. A shift of weight, eyes meeting. \"Can I kiss you?\" Hand on waist."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Walk: Five Minutes",
+          "new_name": "Five Minutes",
+          "reason": "contains colon",
+          "description": "Glasses abandoned half-full. They don't hold hands this time. Cold night, silent anticipation. The apartment appears."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Bedroom: Disclosure",
+          "new_name": "\"You do know I am trans, right?\"",
+          "reason": "contains colon",
+          "description": "Kneeling over her on the bed, the narrator pauses. \"You do know I am trans, right?\" The smile. \"Don't worry about it—I like girls.\""
+        },
+        {
+          "type": "scene",
+          "old_name": "The Bedroom: The Broken Tooth",
+          "new_name": "The Broken Tooth",
+          "reason": "contains colon",
+          "description": "Mid-kiss, teeth collide. A crack. A tiny pebble between lips. Mortified laughter. Memory of seven years ago. They continue anyway."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Bedroom: Bodies in Negotiation",
+          "new_name": "Bodies in Negotiation",
+          "reason": "contains colon",
+          "description": "Questions about preference. Hesitation masked by nodding. Her mouth electric. Reciprocation attempted. The faked orgasm."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Bedroom: The Tattoos",
+          "new_name": "\"we remain,\"",
+          "reason": "contains colon",
+          "description": "Tangled together, she describes the lighthouse for Virginia Woolf, the phrase \"we remain,\" her mother's islands. Voice against chest."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Bedroom: The Invitation",
+          "new_name": "\"You should take me with you once.\"",
+          "reason": "contains colon",
+          "description": "\"You should take me with you once.\" Photography discussed. The offer to be photographed. A future implied."
+        },
+        {
+          "type": "scene",
+          "old_name": "The Door: The Exchange",
+          "new_name": "\"Do you want to move outside the app?\"",
+          "reason": "contains colon",
+          "description": "Time to leave acknowledged. \"Do you want to move outside the app?\" Doubt in grayish-blue eyes, but she accepts the phone. A closing kiss."
+        },
+        {
+          "type": "event",
+          "old_name": "S Waist",
+          "new_name": "Can I Kiss You?",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: THE BEA NIGHT. A vivid, fully dramatized intimate encounter—the first complete sex scene in the jour"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-27.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Wine-Drunk Processing Via Text",
+          "new_name": "She Ruined It by Being Too Good for Me.",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 1 scene(s); summary: The morning after the connection that worked too well. The narrator repairs the body—dental clinic, "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-04-28.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "She Hasn",
+          "new_name": "She Hasn't Disappeared. at Least Not Yet.",
+          "reason": "ends with incomplete contraction (truncated)",
+          "description": "Event grouping 1 scene(s); summary: Obsessive thoughts spiral in the aftermath of a new connection. The narrator drafts texts all mornin"
+        },
+        {
+          "type": "event",
+          "old_name": "Walking (2024-04-28)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 6 scene(s); summary: Obsessive thoughts spiral in the aftermath of a new connection. The narrator drafts texts all mornin"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-01.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-05-01)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 5 scene(s); summary: The obsessive spiral entry. After disappointing silence from a recent match, the narrator cycles thr"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-03.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Writing (2024-05-03)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: A day of restless hypomanic energy after waking at 3h. The narrator feels \"energetic and jumpy, a bi"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-05.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Remembering (2024-05-05)",
+          "new_name": "Remembering",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: A first date at a brunch spot—coffee, French language banter, walking together under her umbrella in"
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2024-05-05)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A first date at a brunch spot—coffee, French language banter, walking together under her umbrella in"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-06.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Text About Not Kissing In The",
+          "new_name": "Flustered,",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 4 scene(s); summary: Aftermath of a date. She responded to the narrator's text about not kissing in the rain: she was \"fl"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-07.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Rejection Arrives",
+          "new_name": "The CORE WOUND Entry",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 3 scene(s); summary: The CORE WOUND entry. Bea's rejection arrives: \"I've found someone who I want to explore a relations"
+        },
+        {
+          "type": "event",
+          "old_name": "Writing (2024-05-07)",
+          "new_name": "Writing",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: The CORE WOUND entry. Bea's rejection arrives: \"I've found someone who I want to explore a relations"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-10.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Dreaming (2024-05-10)",
+          "new_name": "Dreaming",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 2 scene(s); summary: Dr. Franck lowers the medication dose to 20mg, adjusting the chemical balance. The narrator goes on "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-12.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "S Apartment She Sees A Photo Of",
+          "new_name": "Repulsed by It,",
+          "reason": "starts with single letter T/S (truncated)",
+          "description": "Event grouping 7 scene(s); summary: A picnic date in the park that proceeds without spark. The narrator reflects on what differentiates "
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-13.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-05-13)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A day at a Google workshop, lunch at McGill with colleagues. The narrator resists impulses to buy al"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-21.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Waiting (2024-05-21)",
+          "new_name": "Waiting",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: Lost weekend to depression. Brief beer with friend at terrace—social maintenance rather than connect"
+        },
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-05-21)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: Lost weekend to depression. Brief beer with friend at terrace—social maintenance rather than connect"
+        },
+        {
+          "type": "event",
+          "old_name": "At Table (2024-05-21)",
+          "new_name": "At Table",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: Lost weekend to depression. Brief beer with friend at terrace—social maintenance rather than connect"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-27.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-05-27)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A 36-hour fast documented across a weekend of social obligations. Friday: two clementines, nothing e"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-05-30.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Dreaming (2024-05-30)",
+          "new_name": "Dreaming",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A fragmented entry dominated by insomnia and the logistics of a deteriorating life. The narrator has"
+        },
+        {
+          "type": "event",
+          "old_name": "Walking (2024-05-30)",
+          "new_name": "Walking",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: A fragmented entry dominated by insomnia and the logistics of a deteriorating life. The narrator has"
+        },
+        {
+          "type": "event",
+          "old_name": "At Table (2024-05-30)",
+          "new_name": "At Table",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 4 scene(s); summary: A fragmented entry dominated by insomnia and the logistics of a deteriorating life. The narrator has"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-06-02.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-06-02)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 3 scene(s); summary: The first meeting with the friend who will become the narrator's closest confidante through the enti"
+        }
+      ]
+    },
+    {
+      "path": "data/metadata/journal/2024/2024-07-01.yaml",
+      "changes": [
+        {
+          "type": "event",
+          "old_name": "Messaging (2024-07-01)",
+          "new_name": "Messaging",
+          "reason": "contains date in parentheses",
+          "description": "Event grouping 1 scene(s); summary: A sprawling 7000-word entry covering a full week in Mexico City (June 21-30, 2024) before flying to "
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_files_analyzed": 243,
+    "files_with_changes": 121,
+    "total_scene_renames": 40,
+    "total_event_renames": 165
+  }
+}
