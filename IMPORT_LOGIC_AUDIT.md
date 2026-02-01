@@ -236,23 +236,14 @@ def _get_or_create_person(
     """
     Get or create a person using metadata YAML data.
 
-    Matching priority:
-    1. By alias (if provided)
-    2. By name + lastname
-    3. By name + disambiguator
-    4. Fail if ambiguous (multiple people with same name)
-    """
-    # Try alias first
-    for alias in aliases:
-        person = (
-            self.session.query(Person)
-            .join(PersonAlias)
-            .filter(PersonAlias.alias == alias)
-            .first()
-        )
-        if person:
-            return person
+    Matching priority (aliases NOT used - not unique):
+    1. By name + lastname
+    2. By name + disambiguator
+    3. Fail if ambiguous (multiple people with same name)
 
+    Note: Aliases are NOT used for matching since they're not unique.
+    Multiple people can have the same alias (e.g., "Therapist").
+    """
     # Try name + lastname
     if lastname:
         person = (
@@ -412,17 +403,18 @@ resolver = None  # Not needed - metadata YAML is self-contained
 
 ## Migration Path
 
-### Phase 1: Fix Person Source
+### Phase 1: Fix Person Source ✓ COMPLETE
 
-1. Update `_link_entry_people()` to use metadata YAML
-2. Add `_get_or_create_person()` method
-3. Test with 2021 entries
+1. ✓ Update `_link_entry_people()` to use metadata YAML
+2. ✓ Add `_get_or_create_person()` method
+3. ✓ Remove alias-based matching (aliases not unique)
+4. Pending: Test with 2021 entries
 
-### Phase 2: Add Subset Validation
+### Phase 2: Add Subset Validation ✓ COMPLETE
 
-1. Add `_validate_scene_subsets()` method
-2. Call before creating scenes
-3. Test with entries that have scenes
+1. ✓ Add `_validate_scene_subsets()` method
+2. ✓ Call before creating scenes (in `_import_file()`)
+3. Pending: Test with entries that have scenes
 
 ### Phase 3: Remove Curation Dependency
 

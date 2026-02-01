@@ -289,8 +289,13 @@ class MetadataImporter:
         # Create NarratedDates from MD frontmatter
         self._create_narrated_dates_from_frontmatter(entry, md_frontmatter)
 
+        # Validate scene subsets before creating scenes
+        scenes_data = data.get("scenes", [])
+        for scene_data in scenes_data:
+            self._validate_scene_subsets(entry, scene_data, scene_data.get("name", "Unnamed Scene"))
+
         # Create scene-level entities (subsets of entry-level)
-        self._create_scenes(entry, data.get("scenes", []))
+        self._create_scenes(entry, scenes_data)
         self._create_events(entry, data.get("events", []))
         self._create_threads(entry, data.get("threads", []))
 
@@ -414,17 +419,19 @@ class MetadataImporter:
         """
         Get or create a person using metadata YAML data (no curation dependency).
 
-        Matching priority:
-        1. By alias (if provided)
-        2. By name + lastname
-        3. By name + disambiguator
-        4. Fail if ambiguous (multiple people with same name, no lastname/disambiguator)
+        Matching priority (aliases NOT used for matching - not unique):
+        1. By name + lastname
+        2. By name + disambiguator
+        3. Error if ambiguous (multiple people with same name, no lastname/disambiguator)
+
+        Aliases are stored but NOT used for matching since they're not unique
+        (e.g., multiple people can have alias "Therapist").
 
         Args:
             name: Person's name
             lastname: Person's lastname (optional if disambiguator provided)
             disambiguator: Disambiguator (optional if lastname provided)
-            aliases: List of aliases for this person
+            aliases: List of aliases for this person (NOT used for matching)
 
         Returns:
             Person entity (existing or newly created), or None on error
@@ -432,17 +439,6 @@ class MetadataImporter:
         Raises:
             ValueError: If person name is ambiguous and no lastname/disambiguator provided
         """
-        # Try alias first
-        for alias in aliases:
-            person = (
-                self.session.query(Person)
-                .join(PersonAlias)
-                .filter(PersonAlias.alias == alias)
-                .first()
-            )
-            if person:
-                return person
-
         # Try name + lastname
         if lastname:
             person = (
@@ -613,6 +609,71 @@ class MetadataImporter:
                     self.session.add(nd)
                 except ValueError:
                     pass
+
+    def _validate_scene_subsets(
+        self,
+        entry: Entry,
+        scene_data: Dict[str, Any],
+        scene_name: str
+    ) -> None:
+        """
+        Validate that scene people/locations/dates are subsets of entry-level.
+
+        Scenes must reference only entities that exist in the entry's full set.
+        This ensures data consistency and prevents orphaned references.
+
+        Args:
+            entry: Entry entity with entry-level people/locations/dates
+            scene_data: Scene dict from YAML
+            scene_name: Scene name for error messages
+
+        Raises:
+            ValueError: If scene references entities not in entry-level data
+        """
+        # Validate scene people
+        scene_people = scene_data.get("people", [])
+        entry_people_names = {p.name for p in entry.people}
+
+        for person_name in scene_people:
+            if person_name not in entry_people_names:
+                raise ValueError(
+                    f"Scene '{scene_name}' references person '{person_name}' "
+                    f"not in entry people list"
+                )
+
+        # Validate scene locations
+        scene_locations = scene_data.get("locations", [])
+        entry_location_names = {loc.name for loc in entry.locations}
+
+        for loc_name in scene_locations:
+            if loc_name not in entry_location_names:
+                raise ValueError(
+                    f"Scene '{scene_name}' references location '{loc_name}' "
+                    f"not in entry locations list"
+                )
+
+        # Validate scene dates
+        scene_dates = scene_data.get("date")
+        if scene_dates:
+            if not isinstance(scene_dates, list):
+                scene_dates = [scene_dates]
+
+            entry_dates = {nd.date for nd in entry.narrated_dates}
+
+            for scene_date in scene_dates:
+                # Convert to date object if string
+                if isinstance(scene_date, str):
+                    try:
+                        scene_date = date.fromisoformat(scene_date)
+                    except ValueError:
+                        # Skip validation for approximate dates (~2021, etc.)
+                        continue
+
+                if isinstance(scene_date, date) and scene_date not in entry_dates:
+                    raise ValueError(
+                        f"Scene '{scene_name}' references date {scene_date} "
+                        f"not in entry narrated_dates"
+                    )
 
     def _create_entry(
         self, entry_date: date, md_path: Path, data: Dict, metadata_hash: str
