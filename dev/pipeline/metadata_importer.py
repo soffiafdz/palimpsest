@@ -534,6 +534,13 @@ class MetadataImporter:
                 disambiguator = person_data.get("disambiguator")
                 alias = person_data.get("alias")
 
+                # Data quality check: person must have lastname OR disambiguator
+                if not lastname and not disambiguator:
+                    self.logger.log_warning(
+                        f"Person '{name}' missing both lastname and disambiguator",
+                        {"entry": entry.date.isoformat() if entry.date else "unknown"}
+                    )
+
                 # Validate person is in MD frontmatter
                 if name not in md_people_names and alias not in md_people_names:
                     self.logger.log_warning(

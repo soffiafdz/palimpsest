@@ -636,6 +636,7 @@ class MetadataEntry:
         Ensures bidirectional equality:
         - Every person in metadata YAML has a match in MD frontmatter
         - Every person in MD frontmatter has a match in metadata YAML
+        - Every person has lastname OR disambiguator (data quality check)
 
         MD frontmatter can use: name only, full name (name lastname), or alias.
         Metadata YAML has full person definitions with name/lastname/disambiguator/alias.
@@ -655,6 +656,20 @@ class MetadataEntry:
 
         if not yaml_people and not md_people:
             return result  # Both empty, valid
+
+        # Check data quality: each person must have lastname OR disambiguator
+        for person_data in yaml_people:
+            if isinstance(person_data, dict):
+                name = person_data.get("name")
+                lastname = person_data.get("lastname")
+                disambiguator = person_data.get("disambiguator")
+
+                if not lastname and not disambiguator:
+                    entry_date = self.date.isoformat() if self.date else "unknown"
+                    result.add_error(
+                        f"Person '{name}' missing both lastname and disambiguator "
+                        f"(entry: {entry_date})"
+                    )
 
         # Build sets of possible names from YAML people
         yaml_names = set()
