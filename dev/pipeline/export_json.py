@@ -308,8 +308,8 @@ class JSONExporter:
         total = len(scenes)
 
         for i, scene in enumerate(scenes, 1):
-            # Get scene dates
-            dates = [sd.date.isoformat() for sd in scene.dates]
+            # Get scene dates (already strings in flexible format)
+            dates = [sd.date for sd in scene.dates]
 
             result[scene.id] = {
                 "id": scene.id,
@@ -358,7 +358,7 @@ class JSONExporter:
             result[thread.id] = {
                 "id": thread.id,
                 "name": thread.name,
-                "from_date": thread.from_date.isoformat(),
+                "from_date": thread.from_date,  # Already a string (supports ~YYYY, ~YYYY-MM, YYYY-MM-DD)
                 "to_date": thread.to_date,  # Already a string (YYYY, YYYY-MM, or YYYY-MM-DD)
                 "referenced_entry_date": (
                     thread.referenced_entry_date.isoformat()
