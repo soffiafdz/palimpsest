@@ -35,7 +35,7 @@ from sqlalchemy.orm import sessionmaker
 
 # --- Local imports ---
 from dev.core.cli import setup_logger
-from dev.core.paths import CURATION_DIR, DB_PATH, LOG_DIR, NARRATIVE_ANALYSIS_DIR
+from dev.core.paths import CURATION_DIR, DB_PATH, JOURNAL_YAML_DIR, LOG_DIR
 
 
 # =============================================================================
@@ -262,18 +262,30 @@ def consolidate_cmd(
 @click.option("--dry-run", is_flag=True, help="Don't commit changes")
 @click.option("--failed-only", is_flag=True, help="Only retry failed imports")
 @click.option("--skip-validation", is_flag=True, help="Skip pre-import validation")
+@click.option("--year", "-y", type=str, help="Import only specific year (e.g., 2024)")
+@click.option(
+    "--years",
+    type=str,
+    help="Import year range (e.g., 2021-2025)",
+)
 @click.pass_context
 def import_cmd(
     ctx: click.Context,
     dry_run: bool,
     failed_only: bool,
     skip_validation: bool,
+    year: Optional[str],
+    years: Optional[str],
 ) -> None:
     """
-    Import narrative_analysis YAMLs to database.
+    Import metadata YAMLs to database.
 
     Uses curated entity files for consistent person/location resolution.
     Each YAML file is imported in a single transaction.
+
+    Data sources:
+    - MD Frontmatter: entry-level people, locations, narrated_dates
+    - Metadata YAML: summary, rating, scenes, events, threads, etc.
 
     The import will stop if:
     - 5 consecutive failures occur
@@ -281,22 +293,66 @@ def import_cmd(
     """
     from dev.curation.importer import CurationImporter
     from dev.curation.resolve import EntityResolver
-    from dev.curation.validate import validate_all
+    from dev.curation.validate import validate_all as validate_curation
+    from dev.validators.metadata_yaml import validate_for_import
 
     logger = ctx.obj.get("logger")
 
-    # Pre-validation
+    # Pre-validation: curation files
     if not skip_validation:
         click.echo("Running pre-import validation...")
-        results = validate_all(logger=logger)
-        if any(not r.is_valid for r in results):
-            click.echo("Pre-import validation failed. Fix errors first.")
-            raise SystemExit(1)
-        click.echo("✓ Validation passed\n")
 
-    # Get YAML files
-    yaml_files = sorted(NARRATIVE_ANALYSIS_DIR.glob("**/*.yaml"))
+        # 1. Validate curation files
+        click.echo("  Checking curation files...")
+        curation_results = validate_curation(logger=logger)
+        if any(not r.is_valid for r in curation_results):
+            click.echo("  ✗ Curation validation failed. Fix errors first.")
+            raise SystemExit(1)
+        click.echo("  ✓ Curation files OK")
+
+        # 2. Validate metadata YAML files
+        click.echo("  Checking metadata YAML files...")
+        # Determine year filter
+        year_filter = year if year else None
+        if years and "-" in years:
+            # For ranges, validate all (we'll filter later)
+            year_filter = None
+
+        passed, summary = validate_for_import(year=year_filter)
+        if not passed:
+            click.echo("  ✗ Metadata validation failed:")
+            for line in summary.split("\n"):
+                click.echo(f"    {line}")
+            click.echo("\n  Run: python -c \"from dev.validators.metadata_yaml import print_validation_report; print_validation_report()\"")
+            click.echo("  Or check: validation_errors.txt")
+            raise SystemExit(1)
+        click.echo("  ✓ Metadata YAML files OK")
+        click.echo("✓ All validations passed\n")
+
+    # Determine which years to import
+    years_to_import: Optional[set] = None
+    if year:
+        years_to_import = {year}
+    elif years:
+        # Parse year range like "2021-2025"
+        if "-" in years:
+            start_year, end_year = years.split("-")
+            years_to_import = {
+                str(y) for y in range(int(start_year), int(end_year) + 1)
+            }
+        else:
+            years_to_import = {years}
+
+    # Get YAML files from metadata/journal
+    yaml_files = sorted(JOURNAL_YAML_DIR.glob("**/*.yaml"))
     yaml_files = [f for f in yaml_files if not f.name.startswith("_")]
+
+    # Filter by year if specified
+    if years_to_import:
+        yaml_files = [
+            f for f in yaml_files if f.parent.name in years_to_import
+        ]
+
     click.echo(f"Found {len(yaml_files)} YAML files to import")
 
     # Load entity resolver

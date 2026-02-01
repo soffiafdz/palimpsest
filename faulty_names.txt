@@ -1,0 +1,111 @@
+# Entries with Faulty Scene/Event Names
+# Generated from database import
+
+## FAULTY SCENES (colons, INT., EXT.)
+
+2022-02-22:
+  - Epigraph: The Secret
+2022-04-08:
+  - Epigraph: Ghosting Prophecy
+2024-04-12:
+  - Church Pub: The Breakup Circle
+2024-04-26:
+  - The Bar: First Date Confessions
+  - The Sidewalk: The Ask
+  - The Walk: Five Minutes
+  - The Bedroom: Disclosure
+  - The Bedroom: The Broken Tooth
+  - The Bedroom: Bodies in Negotiation
+  - The Bedroom: The Tattoos
+  - The Bedroom: The Invitation
+  - The Door: The Exchange
+2025-02-16:
+  - 4:44 AM
+2025-02-28:
+  - 4:54 AM
+2025-03-06:
+  - Midnight: Clara Did Not Appear
+2025-03-11:
+  - Therapy: A mi me parece bastante claro
+2025-06-24:
+  - Border Crossing: Vouvoiement
+2025-06-25:
+  - Morning Mirror: Gender Duality Videos
+  - The Flight: Tu me fais mal
+  - Epiphany: Vous me manquez aussi
+2025-07-01:
+  - Therapy: The Parallel
+2025-09-19:
+  - Therapy Flashback: The Valid Reason
+  - Second Date: The Bench in Shadow
+
+## FAULTY EVENTS (parentheses)
+
+2022-01-23:
+  - Writing (2022-01-23)
+2022-01-24:
+  - Writing (2022-01-24)
+  - Messaging (2022-01-24)
+2022-02-06:
+  - Messaging (2022-02-06)
+2022-02-08:
+  - Writing (2022-02-08)
+2022-02-11:
+  - Writing (2022-02-11)
+2022-02-15:
+  - Dreaming (2022-02-15)
+  - Messaging (2022-02-15)
+2022-02-16:
+  - Writing (2022-02-16)
+2022-03-25:
+  - Writing (2022-03-25)
+2023-06-27:
+  - Messaging (2023-06-27)
+2024-03-30:
+  - Messaging (2024-03-30)
+2024-04-04:
+  - Messaging (2024-04-04)
+2024-04-06:
+  - Remembering (2024-04-06)
+2024-04-07:
+  - Messaging (2024-04-07)
+2024-04-13:
+  - Writing (2024-04-13)
+2024-04-15:
+  - Messaging (2024-04-15)
+2024-04-25:
+  - Waiting (2024-04-25)
+  - Messaging (2024-04-25)
+  - Meeting (2024-04-25)
+  - Alone at Home (4)
+2024-05-01:
+  - Messaging (2024-05-01)
+2024-05-03:
+  - Writing (2024-05-03)
+2024-05-05:
+  - Remembering (2024-05-05)
+  - Writing (2024-05-05)
+2024-05-07:
+  - Writing (2024-05-07)
+2024-05-10:
+  - Dreaming (2024-05-10)
+2024-05-13:
+  - Messaging (2024-05-13)
+2024-05-21:
+  - Waiting (2024-05-21)
+  - Messaging (2024-05-21)
+  - At Table (2024-05-21)
+2024-05-27:
+  - Messaging (2024-05-27)
+2024-05-30:
+  - Dreaming (2024-05-30)
+  - Walking (2024-05-30)
+  - At Table (2024-05-30)
+2024-06-02:
+  - Messaging (2024-06-02)
+2024-07-01:
+  - Messaging (2024-07-01)
+2025-04-23:
+  - Pausing Clara (Therapy)
+2025-12-05:
+  - The Bea Fragments (Manuscript)
