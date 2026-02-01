@@ -801,17 +801,43 @@ def person_matches_frontmatter(person: Any, frontmatter_keys: Set[str]) -> bool:
     return bool(person_keys & frontmatter_keys)
 
 
+def extract_metadata_people_keys(data: Dict[str, Any]) -> Set[str]:
+    """
+    Extract all lookup keys from metadata YAML's people section.
+
+    The metadata YAML people section has full person dicts with name, lastname,
+    and alias fields. This extracts ALL possible lookup keys for matching.
+
+    Args:
+        data: Parsed metadata YAML data
+
+    Returns:
+        Set of all normalized lookup keys for all people
+    """
+    people = data.get("people", []) or []
+    all_keys: Set[str] = set()
+
+    for person in people:
+        all_keys.update(get_all_person_keys(person))
+
+    return all_keys
+
+
 def validate_entity_subsets(
     yaml_path: Path,
     data: Dict[str, Any],
     report: ValidationReport,
 ) -> None:
     """
-    Validate that scene people are subsets of MD frontmatter.
+    Validate that scene people are subsets of entry-level people.
+
+    Uses two sources for entry-level people (in priority order):
+    1. Metadata YAML's own `people` section (has full dicts with aliases)
+    2. MD frontmatter `people` field (fallback, simpler format)
 
     Uses flexible matching: scene person matches if ANY form (name, full name,
-    alias) matches ANY form of an entry-level person. This allows metadata YAML
-    to use partial entries (e.g., first name only) as long as they're unambiguous.
+    alias) matches ANY form of an entry-level person. This allows scenes to use
+    any valid name form (e.g., "María José" matches entry with alias "Majo").
 
     Note: Location subset checking is done as warnings only since
     MD frontmatter often lacks location data.
@@ -821,27 +847,35 @@ def validate_entity_subsets(
         data: Parsed YAML data
         report: Report to add errors to
     """
-    # Get corresponding MD file
-    md_path = get_md_path_for_yaml(yaml_path)
-    if not md_path.exists():
-        report.add_warning(
-            category="entity",
-            field="file",
-            message="No corresponding MD file found",
-            value=str(md_path),
-        )
+    # Priority 1: Use metadata YAML's own people section (has full dicts)
+    entry_people_keys: Set[str] = set()
+
+    if data.get("people"):
+        entry_people_keys = extract_metadata_people_keys(data)
+    else:
+        # Priority 2: Fall back to MD frontmatter
+        md_path = get_md_path_for_yaml(yaml_path)
+        if not md_path.exists():
+            report.add_warning(
+                category="entity",
+                field="file",
+                message="No corresponding MD file found",
+                value=str(md_path),
+            )
+            return
+
+        frontmatter = parse_md_frontmatter(md_path)
+        if not frontmatter.get("people"):
+            return  # Can't validate subset if no people data
+        entry_people_keys = extract_frontmatter_people_keys(frontmatter)
+
+    # Skip validation if no entry-level people found
+    if not entry_people_keys:
         return
 
-    # Parse MD frontmatter
-    frontmatter = parse_md_frontmatter(md_path)
-
-    # Skip if frontmatter has no people field
-    if not frontmatter.get("people"):
-        return  # Can't validate subset if no frontmatter data
-
-    # Get entry-level entities from frontmatter
-    # Use the new flexible matching: get ALL possible keys for each person
-    entry_people_keys = extract_frontmatter_people_keys(frontmatter)
+    # Get locations from MD frontmatter (metadata YAML doesn't have entry-level locations)
+    md_path = get_md_path_for_yaml(yaml_path)
+    frontmatter = parse_md_frontmatter(md_path) if md_path.exists() else {}
     entry_locations = extract_frontmatter_locations(frontmatter)
 
     # Check each scene
@@ -867,9 +901,9 @@ def validate_entity_subsets(
             report.add_error(
                 category="entity_subset",
                 field=f"scenes[{i}].people",
-                message="Scene contains people not in MD frontmatter",
+                message="Scene contains people not in entry-level people section",
                 value=", ".join(sorted(unmatched_people)),
-                suggestion="Add missing people to MD frontmatter or check spelling/alias",
+                suggestion="Add missing people to metadata YAML people section",
             )
 
         # Check locations subset (WARNING - MD frontmatter often lacks locations)
