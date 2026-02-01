@@ -44,6 +44,7 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
+import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
@@ -597,6 +598,36 @@ def get_md_path_for_yaml(yaml_path: Path) -> Path:
     return MD_DIR / year / f"{date_str}.md"
 
 
+def normalize_for_matching(text: str) -> str:
+    """
+    Normalize text for fuzzy matching.
+
+    Handles:
+    - Case: lowercase
+    - Accents/diacritics: María → maria, Raphaël → raphael, brûlée → brulee
+    - Whitespace: strip and normalize
+
+    Args:
+        text: Text to normalize
+
+    Returns:
+        Normalized string for comparison
+    """
+    if not text:
+        return ""
+
+    # Lowercase
+    text = text.lower().strip()
+
+    # Remove accents via NFD decomposition
+    # NFD splits "é" into "e" + combining accent, then we filter out the accents
+    normalized = unicodedata.normalize("NFD", text)
+    # Keep only non-combining characters (category starting with M = Mark)
+    without_accents = "".join(c for c in normalized if unicodedata.category(c)[0] != "M")
+
+    return without_accents
+
+
 def get_all_person_keys(name: Any) -> Set[str]:
     """
     Get all possible lookup keys for a person.
@@ -606,6 +637,9 @@ def get_all_person_keys(name: Any) -> Set[str]:
     - First name only
     - Full name (name + lastname)
     - Alias
+
+    All keys are normalized: lowercase, accents stripped.
+    This means María matches maria, Raphaël matches raphael, etc.
 
     Args:
         name: Person name (string or dict)
@@ -622,15 +656,15 @@ def get_all_person_keys(name: Any) -> Set[str]:
         alias = name.get("alias", "")
 
         if first_name:
-            keys.add(str(first_name).lower().strip())
+            keys.add(normalize_for_matching(str(first_name)))
             if lastname:
-                keys.add(f"{first_name} {lastname}".lower().strip())
+                keys.add(normalize_for_matching(f"{first_name} {lastname}"))
         if alias:
-            keys.add(str(alias).lower().strip())
+            keys.add(normalize_for_matching(str(alias)))
     else:
         # Simple string - could be first name, full name, or alias
         # Just add the normalized string
-        normalized = str(name).lower().strip()
+        normalized = normalize_for_matching(str(name))
         if normalized:
             keys.add(normalized)
 
