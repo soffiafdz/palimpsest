@@ -48,6 +48,7 @@ from .associations import (
     entry_people,
     entry_tags,
     entry_themes,
+    event_entries,
 )
 from .base import Base, SoftDeleteMixin
 
@@ -187,7 +188,7 @@ class Entry(Base, SoftDeleteMixin):
         "Scene", back_populates="entry", cascade="all, delete-orphan"
     )
     events: Mapped[List["Event"]] = relationship(
-        "Event", back_populates="entry", cascade="all, delete-orphan"
+        "Event", secondary=event_entries, back_populates="entries"
     )
     threads: Mapped[List["Thread"]] = relationship(
         "Thread", back_populates="entry", cascade="all, delete-orphan"

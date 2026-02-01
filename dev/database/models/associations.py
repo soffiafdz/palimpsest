@@ -17,6 +17,7 @@ Journal Domain - Analysis:
     - scene_people: Scenes ↔ People
     - scene_locations: Scenes ↔ Locations
     - event_scenes: Events ↔ Scenes
+    - event_entries: Events ↔ Entries
     - arc_entries: Arcs ↔ Entries
     - thread_people: Threads ↔ People
     - thread_locations: Threads ↔ Locations
@@ -158,6 +159,23 @@ arc_entries = Table(
         "arc_id",
         Integer,
         ForeignKey("arcs.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+event_entries = Table(
+    "event_entries",
+    Base.metadata,
+    Column(
+        "event_id",
+        Integer,
+        ForeignKey("events.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(

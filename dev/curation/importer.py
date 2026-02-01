@@ -2,15 +2,22 @@
 """
 importer.py
 -----------
-Database import from narrative_analysis YAMLs.
+Database import from metadata YAML files (Phase 14b-2 workflow).
 
 This module provides the CurationImporter class which handles importing
-narrative analysis YAML files into the database, using curated entity
-mappings for consistent resolution.
+metadata YAML files into the database, combining them with MD frontmatter
+data for a complete Entry import.
+
+Data Sources:
+    - MD Frontmatter: people, locations, narrated_dates (entry-level, full set)
+    - Metadata YAML: summary, rating, scenes, events, threads, etc. (analysis)
 
 Key Features:
     - Per-file transactions (each YAML = one commit)
     - Uses EntityResolver for person/location resolution
+    - Entry-level people/locations from MD frontmatter
+    - Scene-level people/locations are subsets of entry-level
+    - NarratedDate records from MD frontmatter
     - Fatal vs recoverable error handling with thresholds
     - --failed-only retry capability
     - Detailed statistics and failure tracking
@@ -121,11 +128,26 @@ class CurationImporter:
 
         # In-memory caches for deduplication
         self._arcs: Dict[str, Arc] = {}
+        self._events: Dict[str, Event] = {}
         self._tags: Dict[str, Tag] = {}
         self._themes: Dict[str, Theme] = {}
         self._motifs: Dict[str, Motif] = {}
         self._reference_sources: Dict[str, ReferenceSource] = {}
         self._poems: Dict[str, Poem] = {}
+
+    def _clear_importer_caches(self) -> None:
+        """
+        Clear importer caches after a rollback.
+
+        This ensures we don't try to reuse stale/detached objects.
+        """
+        self._arcs.clear()
+        self._events.clear()
+        self._tags.clear()
+        self._themes.clear()
+        self._motifs.clear()
+        self._reference_sources.clear()
+        self._poems.clear()
 
     def import_all(
         self, yaml_files: List[Path], failed_only: bool = False
@@ -170,6 +192,10 @@ class CurationImporter:
                 self.stats.succeeded += 1
                 self.stats.consecutive_failures = 0
             except Exception as e:
+                # Rollback partial changes from failed file and clear stale caches
+                self.session.rollback()
+                self.resolver.clear_caches()
+                self._clear_importer_caches()
                 self.stats.failed += 1
                 self.stats.consecutive_failures += 1
                 self._record_failure(yaml_path, e)
@@ -181,21 +207,30 @@ class CurationImporter:
         if self.failed_imports:
             self._save_failed_imports()
 
+        # In dry-run mode, rollback all changes at the end
+        if self.dry_run:
+            self.session.rollback()
+            self.logger.log_info("Dry-run complete, all changes rolled back")
+
         return self.stats
 
     def _import_file(self, yaml_path: Path) -> None:
         """
         Import a single YAML file.
 
+        Data Sources:
+            - MD Frontmatter: entry-level people, locations (by city), narrated_dates
+            - Metadata YAML: summary, rating, scenes, events, threads, arcs, etc.
+
         Args:
-            yaml_path: Path to the narrative_analysis YAML file
+            yaml_path: Path to the metadata YAML file
 
         Raises:
             Various exceptions on failure (caught by import_all)
         """
         self.logger.log_info(f"Importing {yaml_path.name}...")
 
-        # Load YAML
+        # Load metadata YAML
         with open(yaml_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
@@ -210,35 +245,47 @@ class CurationImporter:
         if not md_path:
             raise FileNotFoundError(f"No MD file for date {entry_date}")
 
+        # Parse MD frontmatter for entry-level people/locations/narrated_dates
+        md_frontmatter = self._parse_md_frontmatter(md_path)
+
         # Check if entry already exists
         existing = self.session.query(Entry).filter_by(date=entry_date).first()
         if existing:
-            self.logger.log_info(f"  SKIPPED (exists)")
+            self.logger.log_info("  SKIPPED (exists)")
             self.stats.skipped += 1
             return
 
-        # Create entry
+        # Create entry (from metadata YAML)
         entry = self._create_entry(entry_date, md_path, data)
 
-        # Create related entities
+        # Link entry-level people/locations from MD frontmatter (full sets)
+        self._link_entry_people(entry, md_frontmatter)
+        self._link_entry_locations(entry, md_frontmatter)
+
+        # Create NarratedDates from MD frontmatter
+        self._create_narrated_dates_from_frontmatter(entry, md_frontmatter)
+
+        # Create scene-level entities (subsets of entry-level)
         self._create_scenes(entry, data.get("scenes", []))
         self._create_events(entry, data.get("events", []))
         self._create_threads(entry, data.get("threads", []))
+
+        # Link analysis metadata
         self._link_arcs(entry, data.get("arcs", []))
         self._link_tags(entry, data.get("tags", []))
         self._link_themes(entry, data.get("themes", []))
         self._create_motif_instances(entry, data.get("motifs", []))
         self._create_references(entry, data.get("references", []))
         self._create_poems(entry, data.get("poems", []))
-        self._create_narrated_dates(entry, data)
 
-        # Commit or rollback
+        # Commit or flush (dry-run keeps in session without committing)
         if self.dry_run:
-            self.session.rollback()
-            self.logger.log_info(f"  OK (dry-run)")
+            self.session.flush()
+            self.logger.log_info("  OK (dry-run)")
+            self.stats.entries_created += 1
         else:
             self.session.commit()
-            self.logger.log_info(f"  OK")
+            self.logger.log_info("  OK")
             self.stats.entries_created += 1
 
     def _parse_date(self, date_value: Any, yaml_path: Path) -> date:
@@ -257,9 +304,9 @@ class CurationImporter:
         if isinstance(date_value, str):
             return date.fromisoformat(date_value)
 
-        # Extract from filename: YYYY-MM-DD_analysis.yaml
+        # Extract from filename: YYYY-MM-DD.yaml or YYYY-MM-DD_analysis.yaml
         stem = yaml_path.stem
-        date_str = stem.replace("_analysis", "")
+        date_str = stem.replace("_analysis", "")  # Handle both formats
         return date.fromisoformat(date_str)
 
     def _find_md_file(self, entry_date: date) -> Optional[Path]:
@@ -310,6 +357,112 @@ class CurationImporter:
                 content = parts[2]
 
         return len(content.split())
+
+    def _parse_md_frontmatter(self, md_path: Path) -> Dict[str, Any]:
+        """
+        Parse YAML frontmatter from an MD file.
+
+        Args:
+            md_path: Path to the MD file
+
+        Returns:
+            Dictionary of frontmatter fields
+        """
+        content = md_path.read_text(encoding="utf-8")
+
+        if not content.startswith("---"):
+            return {}
+
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return {}
+
+        frontmatter_text = parts[1]
+        return yaml.safe_load(frontmatter_text) or {}
+
+    def _link_entry_people(self, entry: Entry, md_frontmatter: Dict[str, Any]) -> None:
+        """
+        Link entry-level people from MD frontmatter.
+
+        The MD frontmatter contains the full set of people mentioned in the entry.
+        Scene-level people should be a subset of this.
+
+        Args:
+            entry: Entry entity to link people to
+            md_frontmatter: Parsed MD frontmatter dict
+        """
+        people_list = md_frontmatter.get("people", [])
+        if not people_list:
+            return
+
+        for person_name in people_list:
+            for person in self.resolver.resolve_people(str(person_name), self.session):
+                if person not in entry.people:
+                    entry.people.append(person)
+
+    def _link_entry_locations(
+        self, entry: Entry, md_frontmatter: Dict[str, Any]
+    ) -> None:
+        """
+        Link entry-level locations from MD frontmatter.
+
+        The MD frontmatter contains locations nested by city:
+        locations:
+          Montréal: [The Neuro, Home]
+          Toronto: [Pearson Airport]
+
+        Args:
+            entry: Entry entity to link locations/cities to
+            md_frontmatter: Parsed MD frontmatter dict
+        """
+        locations_data = md_frontmatter.get("locations", {})
+        if not locations_data or not isinstance(locations_data, dict):
+            return
+
+        for city_name, loc_names in locations_data.items():
+            # Resolve and link city
+            city = self.resolver.resolve_city(city_name, self.session)
+            if city and city not in entry.cities:
+                entry.cities.append(city)
+
+            # Resolve and link locations
+            if isinstance(loc_names, list):
+                for loc_name in loc_names:
+                    location = self.resolver.resolve_location(
+                        str(loc_name), self.session
+                    )
+                    if location and location not in entry.locations:
+                        entry.locations.append(location)
+
+    def _create_narrated_dates_from_frontmatter(
+        self, entry: Entry, md_frontmatter: Dict[str, Any]
+    ) -> None:
+        """
+        Create NarratedDate records from MD frontmatter.
+
+        The MD frontmatter contains the full set of narrated dates:
+        narrated_dates: [2024-01-28, 2024-01-27, ...]
+
+        Args:
+            entry: Entry entity to create NarratedDates for
+            md_frontmatter: Parsed MD frontmatter dict
+        """
+        narrated_list = md_frontmatter.get("narrated_dates", [])
+        if not narrated_list:
+            return
+
+        for date_val in narrated_list:
+            if isinstance(date_val, date):
+                nd = NarratedDate(date=date_val, entry_id=entry.id)
+                self.session.add(nd)
+            elif isinstance(date_val, str):
+                try:
+                    nd = NarratedDate(
+                        date=date.fromisoformat(date_val), entry_id=entry.id
+                    )
+                    self.session.add(nd)
+                except ValueError:
+                    pass
 
     def _create_entry(
         self, entry_date: date, md_path: Path, data: Dict
@@ -399,44 +552,81 @@ class CurationImporter:
         """
         Add a date to a scene.
 
+        Stores dates as strings to support flexible formats:
+        - Full date: 2021-11-15
+        - Partial date: 2021-11
+        - Approximate date: ~2021-11, ~2021
+        - Year only: 2021
+
         Args:
             scene: Scene entity
             date_value: Date value (date or str)
         """
         if isinstance(date_value, date):
-            scene_date = date_value
+            # Convert date object to ISO string
+            date_str = date_value.isoformat()
         elif isinstance(date_value, str):
-            scene_date = date.fromisoformat(date_value)
+            # Store string as-is (supports ~YYYY, YYYY-MM, etc.)
+            date_str = date_value.strip()
         else:
             return
 
-        sd = SceneDate(date=scene_date, scene_id=scene.id)
+        sd = SceneDate(date=date_str, scene_id=scene.id)
         self.session.add(sd)
 
     def _create_events(self, entry: Entry, events_data: List[Dict]) -> None:
         """
-        Create events for an entry.
+        Create or link events for an entry.
+
+        Events are shared across entries (M2M relationship). If an event with
+        the same name already exists, link it to this entry. Otherwise, create
+        a new event.
 
         Args:
-            entry: Parent Entry entity
+            entry: Entry entity to link events to
             events_data: List of event dicts from YAML
         """
         scene_map = getattr(entry, "_scene_map", {})
 
         for event_data in events_data or []:
-            event = Event(
-                name=event_data.get("name", "Unnamed Event"),
-                entry_id=entry.id,
-            )
-            self.session.add(event)
-            self.session.flush()
-            self.stats.events_created += 1
+            event_name = event_data.get("name", "Unnamed Event")
+            event = self._get_or_create_event(event_name)
 
-            # Link scenes by name
+            # Link entry to event (M2M)
+            if entry not in event.entries:
+                event.entries.append(entry)
+
+            # Link scenes by name (M2M)
             for scene_name in event_data.get("scenes", []) or []:
                 scene = scene_map.get(scene_name)
                 if scene and scene not in event.scenes:
                     event.scenes.append(scene)
+
+    def _get_or_create_event(self, name: str) -> Event:
+        """
+        Get or create an event by name.
+
+        Events are unique by name and shared across entries.
+
+        Args:
+            name: Event name
+
+        Returns:
+            Event entity
+        """
+        key = name.lower()
+        if key in self._events:
+            return self._events[key]
+
+        event = self.session.query(Event).filter_by(name=name).first()
+        if not event:
+            event = Event(name=name)
+            self.session.add(event)
+            self.session.flush()
+            self.stats.events_created += 1
+
+        self._events[key] = event
+        return event
 
     def _create_threads(self, entry: Entry, threads_data: List[Dict]) -> None:
         """
@@ -447,16 +637,16 @@ class CurationImporter:
             threads_data: List of thread dicts from YAML
         """
         for thread_data in threads_data or []:
-            # Parse from_date
+            # Parse from_date (stored as string to support ~YYYY, YYYY-MM, etc.)
             from_date_val = thread_data.get("from")
             if isinstance(from_date_val, date):
-                from_date = from_date_val
+                from_date_str = from_date_val.isoformat()
             elif isinstance(from_date_val, str):
-                from_date = date.fromisoformat(from_date_val)
+                from_date_str = from_date_val
             else:
                 continue
 
-            # Parse to_date (stored as string)
+            # Parse to_date (stored as string to support ~YYYY, YYYY-MM, etc.)
             to_date_val = thread_data.get("to", "")
             if isinstance(to_date_val, date):
                 to_date_str = to_date_val.isoformat()
@@ -476,7 +666,7 @@ class CurationImporter:
 
             thread = Thread(
                 name=thread_data.get("name", "Unnamed Thread"),
-                from_date=from_date,
+                from_date=from_date_str,
                 to_date=to_date_str,
                 referenced_entry_date=ref_entry_date,
                 content=thread_data.get("content", ""),
@@ -788,40 +978,6 @@ class CurationImporter:
 
         self._poems[key] = poem
         return poem
-
-    def _create_narrated_dates(self, entry: Entry, data: Dict) -> None:
-        """
-        Create narrated dates from scene dates.
-
-        Args:
-            entry: Entry entity
-            data: Full YAML data dict
-        """
-        narrated: Set[date] = set()
-
-        for scene_data in data.get("scenes", []) or []:
-            scene_date = scene_data.get("date")
-            if scene_date:
-                if isinstance(scene_date, list):
-                    for d in scene_date:
-                        if isinstance(d, date):
-                            narrated.add(d)
-                        elif isinstance(d, str):
-                            try:
-                                narrated.add(date.fromisoformat(d))
-                            except ValueError:
-                                pass
-                elif isinstance(scene_date, date):
-                    narrated.add(scene_date)
-                elif isinstance(scene_date, str):
-                    try:
-                        narrated.add(date.fromisoformat(scene_date))
-                    except ValueError:
-                        pass
-
-        for d in sorted(narrated):
-            nd = NarratedDate(date=d, entry_id=entry.id)
-            self.session.add(nd)
 
     def _record_failure(self, yaml_path: Path, error: Exception) -> None:
         """

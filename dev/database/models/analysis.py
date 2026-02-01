@@ -44,6 +44,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 # --- Local imports ---
 from .associations import (
     arc_entries,
+    event_entries,
     event_scenes,
     scene_locations,
     scene_people,
@@ -114,24 +115,40 @@ class Scene(Base):
 
     # --- Computed properties ---
     @property
-    def primary_date(self) -> Optional[date]:
-        """Get the primary (first) date of this scene."""
+    def primary_date(self) -> Optional[str]:
+        """Get the primary (first) date of this scene as string."""
         if not self.dates:
             return None
-        return min(sd.date for sd in self.dates)
+        # Sort by parsed date tuple for comparison
+        return min(self.dates, key=lambda sd: sd.date_parsed[:3]).date
 
     @property
-    def date_range(self) -> tuple[Optional[date], Optional[date]]:
-        """Get the date range (start, end) of this scene."""
+    def primary_date_as_date(self) -> Optional[date]:
+        """Get the primary (first) date of this scene as date object."""
+        if not self.dates:
+            return None
+        return min(sd.as_date for sd in self.dates)
+
+    @property
+    def date_range(self) -> tuple[Optional[str], Optional[str]]:
+        """Get the date range (start, end) of this scene as strings."""
         if not self.dates:
             return (None, None)
-        dates = [sd.date for sd in self.dates]
+        sorted_dates = sorted(self.dates, key=lambda sd: sd.date_parsed[:3])
+        return (sorted_dates[0].date, sorted_dates[-1].date)
+
+    @property
+    def date_range_as_dates(self) -> tuple[Optional[date], Optional[date]]:
+        """Get the date range (start, end) of this scene as date objects."""
+        if not self.dates:
+            return (None, None)
+        dates = [sd.as_date for sd in self.dates]
         return (min(dates), max(dates))
 
     @property
     def is_multiday(self) -> bool:
         """Check if this scene spans multiple days."""
-        start, end = self.date_range
+        start, end = self.date_range_as_dates
         return start is not None and end is not None and start != end
 
     @property
@@ -160,14 +177,21 @@ class SceneDate(Base):
 
     Attributes:
         id: Primary key
-        date: The date of this scene
+        date: The date of this scene (supports flexible formats)
         scene_id: Foreign key to parent Scene
+
+    Notes:
+        - date is stored as string to support flexible formats:
+          - Exact dates: YYYY-MM-DD
+          - Month precision: YYYY-MM
+          - Year precision: YYYY
+          - Approximate dates: ~YYYY, ~YYYY-MM, ~YYYY-MM-DD
     """
 
     __tablename__ = "scene_dates"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    date: Mapped[str] = mapped_column(String(11), nullable=False, index=True)
     scene_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("scenes.id", ondelete="CASCADE"), nullable=False
     )
@@ -175,46 +199,89 @@ class SceneDate(Base):
     # --- Relationship ---
     scene: Mapped["Scene"] = relationship("Scene", back_populates="dates")
 
+    # --- Static helpers ---
+    @staticmethod
+    def parse_flexible_date(date_str: str) -> tuple[int, int, int, bool]:
+        """
+        Parse a flexible date string into sortable components.
+
+        Supports formats:
+        - YYYY-MM-DD (exact day)
+        - YYYY-MM (month precision, uses day=1)
+        - YYYY (year precision, uses month=1, day=1)
+        - ~YYYY-MM-DD, ~YYYY-MM, ~YYYY (approximate, same parsing)
+
+        Args:
+            date_str: Date string to parse
+
+        Returns:
+            Tuple of (year, month, day, is_approximate)
+            Month and day default to 1 if not specified.
+        """
+        is_approximate = date_str.startswith("~")
+        clean_date = date_str.lstrip("~")
+
+        parts = clean_date.split("-")
+        year = int(parts[0]) if len(parts) >= 1 else 1
+        month = int(parts[1]) if len(parts) >= 2 else 1
+        day = int(parts[2]) if len(parts) >= 3 else 1
+
+        return (year, month, day, is_approximate)
+
+    @property
+    def date_parsed(self) -> tuple[int, int, int, bool]:
+        """Parse date into (year, month, day, is_approximate)."""
+        return self.parse_flexible_date(self.date)
+
+    @property
+    def is_approximate(self) -> bool:
+        """Check if this date is approximate (~)."""
+        return self.date.startswith("~")
+
+    @property
+    def as_date(self) -> date:
+        """Convert to Python date object (for sorting/comparison)."""
+        year, month, day, _ = self.date_parsed
+        return date(year, month, day)
+
     def __repr__(self) -> str:
         return f"<SceneDate(date={self.date}, scene_id={self.scene_id})>"
 
 
 class Event(Base):
     """
-    Groups related scenes within an entry.
+    Groups related scenes across one or more entries.
 
     Events provide a middle layer of organization between scenes
     and entries. They group related scenes that form a coherent
-    narrative unit.
+    narrative unit. An event can span multiple entries (e.g., a party
+    narrated across two journal entries).
 
     Attributes:
         id: Primary key
-        name: Event name (unique within entry)
-        entry_id: Foreign key to parent Entry
+        name: Event name (globally unique)
 
     Relationships:
-        entry: Many-to-one with Entry (parent entry)
+        entries: M2M with Entry (entries containing this event)
         scenes: M2M with Scene (scenes in this event)
 
     Notes:
-        - Unique constraint on (name, entry_id)
-        - Events only contain 'name' and 'scenes' fields
+        - Unique constraint on name (events are shared across entries)
+        - Same-named events across entries point to the same Event record
     """
 
     __tablename__ = "events"
     __table_args__ = (
         CheckConstraint("name != ''", name="ck_event_non_empty_name"),
-        UniqueConstraint("name", "entry_id", name="uq_event_name_entry"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    entry_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("entries.id", ondelete="CASCADE"), nullable=False
-    )
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
 
     # --- Relationships ---
-    entry: Mapped["Entry"] = relationship("Entry", back_populates="events")
+    entries: Mapped[List["Entry"]] = relationship(
+        "Entry", secondary=event_entries, back_populates="events"
+    )
     scenes: Mapped[List["Scene"]] = relationship(
         "Scene", secondary=event_scenes, back_populates="events"
     )
@@ -224,6 +291,11 @@ class Event(Base):
     def scene_count(self) -> int:
         """Number of scenes in this event."""
         return len(self.scenes)
+
+    @property
+    def entry_count(self) -> int:
+        """Number of entries containing this event."""
+        return len(self.entries)
 
     @property
     def scene_names(self) -> List[str]:
@@ -247,10 +319,10 @@ class Event(Base):
         return list(locations_set)
 
     def __repr__(self) -> str:
-        return f"<Event(id={self.id}, name='{self.name}', entry_id={self.entry_id})>"
+        return f"<Event(id={self.id}, name='{self.name}')>"
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.scene_count} scenes)"
+        return f"{self.name} ({self.scene_count} scenes, {self.entry_count} entries)"
 
 
 class Arc(Base):
@@ -328,8 +400,8 @@ class Thread(Base):
     Attributes:
         id: Primary key
         name: Thread name (unique identifier)
-        from_date: Proximate moment date (YYYY-MM-DD)
-        to_date: Distant moment date (YYYY, YYYY-MM, or YYYY-MM-DD)
+        from_date: Proximate moment date (supports ~YYYY, ~YYYY-MM, YYYY-MM-DD)
+        to_date: Distant moment date (supports ~YYYY, ~YYYY-MM, YYYY-MM-DD)
         referenced_entry_date: Optional date of entry narrating distant moment
         content: Description of the CONNECTION between moments
         entry_id: Foreign key to parent Entry
@@ -340,7 +412,11 @@ class Thread(Base):
         locations: M2M with Location (locations in this thread)
 
     Notes:
-        - to_date is stored as string to allow approximate dates
+        - Both from_date and to_date are strings to support:
+          - Exact dates: YYYY-MM-DD
+          - Month precision: YYYY-MM
+          - Year precision: YYYY
+          - Approximate dates: ~YYYY, ~YYYY-MM, ~YYYY-MM-DD
         - content describes the connection, not the individual moments
     """
 
@@ -349,8 +425,8 @@ class Thread(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    from_date: Mapped[date] = mapped_column(Date, nullable=False)
-    to_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY, YYYY-MM, or YYYY-MM-DD
+    from_date: Mapped[str] = mapped_column(String(11), nullable=False)  # ~YYYY-MM-DD max
+    to_date: Mapped[str] = mapped_column(String(11), nullable=False)  # ~YYYY-MM-DD max
     referenced_entry_date: Mapped[Optional[date]] = mapped_column(Date)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     entry_id: Mapped[int] = mapped_column(
@@ -366,22 +442,63 @@ class Thread(Base):
         "Location", secondary=thread_locations, back_populates="threads"
     )
 
+    # --- Static helpers ---
+    @staticmethod
+    def parse_flexible_date(date_str: str) -> tuple[int, int, int, bool]:
+        """
+        Parse a flexible date string into sortable components.
+
+        Supports formats:
+        - YYYY-MM-DD (exact day)
+        - YYYY-MM (month precision, uses day=1)
+        - YYYY (year precision, uses month=1, day=1)
+        - ~YYYY-MM-DD, ~YYYY-MM, ~YYYY (approximate, same parsing)
+
+        Args:
+            date_str: Date string to parse
+
+        Returns:
+            Tuple of (year, month, day, is_approximate)
+            Month and day default to 1 if not specified.
+        """
+        is_approximate = date_str.startswith("~")
+        clean_date = date_str.lstrip("~")
+
+        parts = clean_date.split("-")
+        year = int(parts[0]) if len(parts) >= 1 else 1
+        month = int(parts[1]) if len(parts) >= 2 else 1
+        day = int(parts[2]) if len(parts) >= 3 else 1
+
+        return (year, month, day, is_approximate)
+
     # --- Computed properties ---
+    @property
+    def from_date_parsed(self) -> tuple[int, int, int, bool]:
+        """Parse from_date into (year, month, day, is_approximate)."""
+        return self.parse_flexible_date(self.from_date)
+
+    @property
+    def to_date_parsed(self) -> tuple[int, int, int, bool]:
+        """Parse to_date into (year, month, day, is_approximate)."""
+        return self.parse_flexible_date(self.to_date)
+
+    @property
+    def from_date_approximate(self) -> bool:
+        """Check if from_date is approximate (~)."""
+        return self.from_date.startswith("~")
+
+    @property
+    def to_date_approximate(self) -> bool:
+        """Check if to_date is approximate (~)."""
+        return self.to_date.startswith("~")
+
     @property
     def is_past_thread(self) -> bool:
         """Check if this thread references a past moment."""
-        # Simple heuristic: if to_date string is before from_date, it's past
         try:
-            if len(self.to_date) == 4:  # YYYY
-                return int(self.to_date) < self.from_date.year
-            elif len(self.to_date) == 7:  # YYYY-MM
-                year, month = self.to_date.split("-")
-                return (int(year), int(month)) < (self.from_date.year, self.from_date.month)
-            else:  # YYYY-MM-DD
-                to_parts = self.to_date.split("-")
-                to_tuple = (int(to_parts[0]), int(to_parts[1]), int(to_parts[2]))
-                from_tuple = (self.from_date.year, self.from_date.month, self.from_date.day)
-                return to_tuple < from_tuple
+            from_tuple = self.from_date_parsed[:3]  # (year, month, day)
+            to_tuple = self.to_date_parsed[:3]
+            return to_tuple < from_tuple
         except (ValueError, IndexError):
             return False
 
