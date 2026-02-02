@@ -23,6 +23,7 @@ Design:
 from __future__ import annotations
 
 # --- Standard library imports ---
+import unicodedata
 from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 
@@ -60,6 +61,7 @@ class Person(Base, SoftDeleteMixin):
         name: First/given name
         lastname: Last/family name (optional)
         disambiguator: Context tag for same-name people with unknown lastnames
+        slug: Unique identifier for exports (name_lastname or name_disambiguator)
         relation_type: Type of relationship (family, friend, romantic, etc.)
 
     Relationships:
@@ -70,8 +72,9 @@ class Person(Base, SoftDeleteMixin):
         character_mappings: O2M with PersonCharacterMap (manuscript)
 
     Notes:
-        - name is indexed for search
-        - Aliases are stored in separate table with unique constraint
+        - slug is unique and used for wiki filenames, YAML keys, URLs
+        - Format: words separated by `-`, fields separated by `_`
+        - Examples: `louis_collins`, `sophie_the-accountant`, `maria-jose_castro`
     """
 
     __tablename__ = "people"
@@ -85,10 +88,52 @@ class Person(Base, SoftDeleteMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     lastname: Mapped[Optional[str]] = mapped_column(String(100))
     disambiguator: Mapped[Optional[str]] = mapped_column(String(100))
+    slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
     relation_type: Mapped[Optional[RelationType]] = mapped_column(
         SQLEnum(RelationType, values_callable=lambda x: [e.value for e in x]),
         nullable=True,
     )
+
+    # --- Static methods ---
+    @staticmethod
+    def generate_slug(
+        name: str,
+        lastname: Optional[str] = None,
+        disambiguator: Optional[str] = None,
+    ) -> str:
+        """
+        Generate a unique slug from name components.
+
+        Format: words separated by `-`, fields separated by `_`
+        Priority: lastname over disambiguator (lastname wins if both present)
+
+        Args:
+            name: First/given name (required)
+            lastname: Last/family name (optional)
+            disambiguator: Context tag (optional, used if no lastname)
+
+        Returns:
+            Slug string, e.g., 'maria-jose_castro', 'sophie_the-accountant'
+        """
+        def slugify(text: str) -> str:
+            """Convert text to slug format (lowercase, accents removed, spaces to hyphens)."""
+            text = text.lower().strip()
+            # Normalize accents/diacritics
+            normalized = unicodedata.normalize("NFD", text)
+            without_accents = "".join(
+                c for c in normalized if unicodedata.category(c)[0] != "M"
+            )
+            # Replace spaces with hyphens
+            return without_accents.replace(" ", "-")
+
+        name_slug = slugify(name)
+
+        if lastname:
+            return f"{name_slug}_{slugify(lastname)}"
+        elif disambiguator:
+            return f"{name_slug}_{slugify(disambiguator)}"
+        else:
+            return name_slug
 
     # --- Relationships ---
     aliases: Mapped[List["PersonAlias"]] = relationship(
@@ -122,8 +167,8 @@ class Person(Base, SoftDeleteMixin):
 
     @property
     def lookup_key(self) -> str:
-        """Get the key used for lookups (primary alias or name-based slug)."""
-        return self.primary_alias or self.name.lower().replace(" ", "-")
+        """Get the key used for lookups (the slug)."""
+        return self.slug
 
     @property
     def entry_count(self) -> int:
@@ -198,12 +243,13 @@ class PersonAlias(Base):
     An alias for a person.
 
     Stores alternative names/nicknames for a person, enabling lookup
-    by any known name.
+    by any known name. Aliases are NOT globally unique - multiple people
+    can share the same alias (e.g., "Therapist" for different therapists).
 
     Attributes:
         id: Primary key
         person_id: Foreign key to Person
-        alias: The alias string (unique across all people)
+        alias: The alias string
 
     Relationships:
         person: The Person this alias belongs to
@@ -216,7 +262,7 @@ class PersonAlias(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     person_id: Mapped[int] = mapped_column(ForeignKey("people.id"), nullable=False)
-    alias: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    alias: Mapped[str] = mapped_column(String(100), nullable=False)
 
     # --- Relationships ---
     person: Mapped["Person"] = relationship("Person", back_populates="aliases")

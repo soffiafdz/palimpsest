@@ -28,7 +28,6 @@ from dev.database.manager import PalimpsestDB
 from dev.pipeline.yaml2sql import process_directory
 from dev.pipeline.sql2yaml import export_entry_to_markdown
 from dev.pipeline.metadata_importer import MetadataImporter
-from dev.pipeline.entity_resolver import EntityResolver
 
 
 @click.command("sync-db")
@@ -240,25 +239,6 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
 
     click.echo(f"Found {len(yaml_files)} metadata YAML files to import")
 
-    # EntityResolver is DEPRECATED - metadata YAML is now ground truth for people
-    # Keeping for backward compatibility during migration
-    resolver = None
-    try:
-        resolver = EntityResolver.load()
-        click.echo(
-            f"⚠️  WARNING: Using deprecated curation files "
-            f"({len(resolver.people_map)} people, {len(resolver.locations_map)} locations)"
-        )
-        click.echo(
-            "    Curation files are deprecated. Metadata YAML is now the ground truth."
-        )
-        click.echo(
-            "    Person definitions from metadata YAML will be used instead."
-        )
-    except FileNotFoundError:
-        # No curation files - this is correct for new workflow
-        click.echo("Using metadata YAML for person definitions (no curation files needed)")
-
     # Create database session
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
@@ -271,7 +251,6 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
         # Run import
         importer = MetadataImporter(
             session=session,
-            resolver=resolver,
             dry_run=dry_run,
             logger=logger,
         )

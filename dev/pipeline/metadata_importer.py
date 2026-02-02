@@ -46,6 +46,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 import hashlib
 import json
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -57,12 +58,13 @@ from sqlalchemy.orm import Session
 # --- Local imports ---
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import LOG_DIR, MD_DIR
-from dev.pipeline.entity_resolver import EntityResolver
 from dev.pipeline.models import FailedImport, ImportStats
 from dev.database.models import (
     Arc,
+    City,
     Entry,
     Event,
+    Location,
     Motif,
     MotifInstance,
     NarratedDate,
@@ -104,7 +106,6 @@ class MetadataImporter:
     def __init__(
         self,
         session: Session,
-        resolver: EntityResolver,
         dry_run: bool = False,
         logger: Optional[PalimpsestLogger] = None,
     ):
@@ -113,12 +114,10 @@ class MetadataImporter:
 
         Args:
             session: Database session
-            resolver: Entity resolver with curated mappings
             dry_run: If True, don't commit changes
             logger: Optional logger for operation tracking
         """
         self.session = session
-        self.resolver = resolver
         self.dry_run = dry_run
         self.stats = ImportStats()
         self.failed_imports: List[FailedImport] = []
@@ -138,6 +137,8 @@ class MetadataImporter:
         self._motifs: Dict[str, Motif] = {}
         self._reference_sources: Dict[str, ReferenceSource] = {}
         self._poems: Dict[str, Poem] = {}
+        self._cities: Dict[str, City] = {}
+        self._locations: Dict[str, Location] = {}
 
     def _clear_importer_caches(self) -> None:
         """
@@ -152,6 +153,8 @@ class MetadataImporter:
         self._motifs.clear()
         self._reference_sources.clear()
         self._poems.clear()
+        self._cities.clear()
+        self._locations.clear()
 
     def import_all(
         self, yaml_files: List[Path], failed_only: bool = False
@@ -198,7 +201,6 @@ class MetadataImporter:
             except Exception as e:
                 # Rollback partial changes from failed file and clear stale caches
                 self.session.rollback()
-                self.resolver.clear_caches()
                 self._clear_importer_caches()
                 self.stats.failed += 1
                 self.stats.consecutive_failures += 1
@@ -413,6 +415,28 @@ class MetadataImporter:
         frontmatter_text = parts[1]
         return yaml.safe_load(frontmatter_text) or {}
 
+    def _normalize_name(self, name: str) -> str:
+        """
+        Normalize a person name for comparison.
+
+        Handles:
+        - Accent/diacritic differences (Mónica vs Monica, Sofía vs Sofia)
+        - Hyphen/space differences (María-José vs María José)
+
+        Args:
+            name: Name to normalize
+
+        Returns:
+            Lowercase name with accents stripped and hyphens converted to spaces
+        """
+        text = name.lower().strip()
+        # Normalize hyphens to spaces
+        text = text.replace("-", " ")
+        # Normalize accents/diacritics
+        normalized = unicodedata.normalize("NFD", text)
+        without_accents = "".join(c for c in normalized if unicodedata.category(c)[0] != "M")
+        return without_accents
+
     def _get_or_create_person(
         self,
         name: str,
@@ -421,15 +445,10 @@ class MetadataImporter:
         aliases: List[str]
     ) -> Optional["Person"]:
         """
-        Get or create a person using metadata YAML data (no curation dependency).
+        Get or create a person using slug as unique identifier.
 
-        Matching priority (aliases NOT used for matching - not unique):
-        1. By name + lastname
-        2. By name + disambiguator
-        3. Error if ambiguous (multiple people with same name, no lastname/disambiguator)
-
-        Aliases are stored but NOT used for matching since they're not unique
-        (e.g., multiple people can have alias "Therapist").
+        The slug is generated from name + lastname (preferred) or name + disambiguator.
+        Aliases are stored but NOT used for matching (not globally unique).
 
         Args:
             name: Person's name
@@ -439,46 +458,21 @@ class MetadataImporter:
 
         Returns:
             Person entity (existing or newly created), or None on error
-
-        Raises:
-            ValueError: If person name is ambiguous and no lastname/disambiguator provided
         """
-        # Try name + lastname
-        if lastname:
-            person = (
-                self.session.query(Person)
-                .filter_by(name=name, lastname=lastname)
-                .first()
-            )
-            if person:
-                return person
+        # Generate slug for this person
+        slug = Person.generate_slug(name, lastname, disambiguator)
 
-        # Try name + disambiguator
-        if disambiguator:
-            person = (
-                self.session.query(Person)
-                .filter_by(name=name, disambiguator=disambiguator)
-                .first()
-            )
-            if person:
-                return person
+        # Try to find existing person by slug
+        person = self.session.query(Person).filter_by(slug=slug).first()
+        if person:
+            return person
 
-        # Check if name is ambiguous
-        existing = self.session.query(Person).filter_by(name=name).all()
-        if len(existing) > 1 and not (lastname or disambiguator):
-            raise ValueError(
-                f"Ambiguous person '{name}': {len(existing)} people with this name exist. "
-                f"Must provide lastname or disambiguator in metadata YAML."
-            )
-        elif len(existing) == 1 and not (lastname or disambiguator):
-            # Single match, use it
-            return existing[0]
-
-        # Create new person
+        # Create new person with slug
         person = Person(
             name=name,
             lastname=lastname,
             disambiguator=disambiguator,
+            slug=slug,
         )
         self.session.add(person)
         self.session.flush()
@@ -490,6 +484,107 @@ class MetadataImporter:
 
         self.session.flush()
         return person
+
+    def _get_or_create_city(self, city_name: str) -> City:
+        """
+        Get or create a city by name.
+
+        Args:
+            city_name: City name
+
+        Returns:
+            City entity (existing or newly created)
+        """
+        cache_key = city_name.lower()
+
+        if cache_key in self._cities:
+            return self._cities[cache_key]
+
+        city = self.session.query(City).filter_by(name=city_name).first()
+        if city:
+            self._cities[cache_key] = city
+            return city
+
+        city = City(name=city_name)
+        self.session.add(city)
+        self.session.flush()
+        self._cities[cache_key] = city
+        return city
+
+    def _get_or_create_location(self, loc_name: str, city: City) -> Location:
+        """
+        Get or create a location by name and city.
+
+        Args:
+            loc_name: Location name
+            city: City entity
+
+        Returns:
+            Location entity (existing or newly created)
+        """
+        cache_key = f"{loc_name}|{city.name}".lower()
+
+        if cache_key in self._locations:
+            return self._locations[cache_key]
+
+        location = (
+            self.session.query(Location)
+            .filter_by(name=loc_name, city_id=city.id)
+            .first()
+        )
+        if location:
+            self._locations[cache_key] = location
+            return location
+
+        location = Location(name=loc_name, city_id=city.id)
+        self.session.add(location)
+        self.session.flush()
+        self._locations[cache_key] = location
+        return location
+
+    def _find_person_in_entry(self, name: str, entry: Entry) -> Optional[Person]:
+        """
+        Find a person in the entry's already-resolved people list.
+
+        Scene/thread people should be subsets of entry-level people.
+        This looks up a person by name from the entry's people list.
+
+        Args:
+            name: Person name to find
+            entry: Entry with already-resolved people
+
+        Returns:
+            Person entity if found, None otherwise
+        """
+        name_lower = name.lower()
+        for person in entry.people:
+            if person.name.lower() == name_lower:
+                return person
+            # Also check aliases
+            for alias in person.aliases:
+                if alias.alias.lower() == name_lower:
+                    return person
+        return None
+
+    def _find_location_in_entry(self, name: str, entry: Entry) -> Optional[Location]:
+        """
+        Find a location in the entry's already-resolved locations list.
+
+        Scene/thread locations should be subsets of entry-level locations.
+        This looks up a location by name from the entry's locations list.
+
+        Args:
+            name: Location name to find
+            entry: Entry with already-resolved locations
+
+        Returns:
+            Location entity if found, None otherwise
+        """
+        name_lower = name.lower()
+        for location in entry.locations:
+            if location.name.lower() == name_lower:
+                return location
+        return None
 
     def _link_entry_people(
         self,
@@ -542,16 +637,26 @@ class MetadataImporter:
                     )
 
                 # Validate person is in MD frontmatter
-                if name not in md_people_names and alias not in md_people_names:
+                # Handle alias as string or list
+                alias_match = False
+                if alias:
+                    aliases = alias if isinstance(alias, list) else [alias]
+                    alias_match = any(a in md_people_names for a in aliases)
+                if name not in md_people_names and not alias_match:
                     self.logger.log_warning(
                         f"Person '{name}' in metadata YAML but not in MD frontmatter"
                     )
 
+                # Handle alias as string or list
+                if alias:
+                    aliases = alias if isinstance(alias, list) else [alias]
+                else:
+                    aliases = []
                 person = self._get_or_create_person(
                     name,
                     lastname,
                     disambiguator,
-                    [alias] if alias else []
+                    aliases
                 )
 
             if person and person not in entry.people:
@@ -587,64 +692,77 @@ class MetadataImporter:
         if not yaml_people and not md_people:
             return  # Both empty, valid
 
-        # Build sets of possible names from YAML people
-        yaml_names = set()
+        # Build sets of normalized names from YAML people
+        yaml_names_normalized: Dict[str, str] = {}  # normalized -> original
         for person_data in yaml_people:
             if isinstance(person_data, str):
-                yaml_names.add(person_data)
+                yaml_names_normalized[self._normalize_name(person_data)] = person_data
             else:
                 name = person_data.get("name")
                 lastname = person_data.get("lastname")
                 alias = person_data.get("alias")
 
                 if name:
-                    yaml_names.add(name)
+                    yaml_names_normalized[self._normalize_name(name)] = name
                     if lastname:
-                        # Full name format
-                        yaml_names.add(f"{name} {lastname}")
+                        full_name = f"{name} {lastname}"
+                        yaml_names_normalized[self._normalize_name(full_name)] = full_name
+                # Handle alias as string or list
                 if alias:
-                    yaml_names.add(alias)
+                    if isinstance(alias, list):
+                        for a in alias:
+                            yaml_names_normalized[self._normalize_name(a)] = a
+                    else:
+                        yaml_names_normalized[self._normalize_name(alias)] = alias
 
-        # Check 1: Every MD person must match a YAML person
-        md_people_set = set(md_people)
-        unmatched_md = md_people_set - yaml_names
+        # Check 1: Every MD person must match a YAML person (normalized)
+        unmatched_md = []
+        for md_person in md_people:
+            if self._normalize_name(md_person) not in yaml_names_normalized:
+                unmatched_md.append(md_person)
 
         if unmatched_md:
             raise ValueError(
                 f"MD frontmatter has people not in metadata YAML: {sorted(unmatched_md)}"
             )
 
-        # Check 2: Every YAML person must match an MD person
-        # Build list of YAML person identifiers (name or alias)
-        yaml_person_ids = []
+        # Check 2: Every YAML person must match an MD person (normalized)
+        md_people_normalized = {self._normalize_name(p): p for p in md_people}
         for person_data in yaml_people:
             if isinstance(person_data, str):
-                yaml_person_ids.append(person_data)
+                if self._normalize_name(person_data) in md_people_normalized:
+                    continue
+                raise ValueError(
+                    f"Metadata YAML has person '{person_data}' not in MD frontmatter"
+                )
             else:
                 name = person_data.get("name")
                 lastname = person_data.get("lastname")
                 alias = person_data.get("alias")
 
-                # Try to find match in MD frontmatter
+                # Try to find match in MD frontmatter (normalized)
                 matched = False
-                if name and name in md_people_set:
+                if name and self._normalize_name(name) in md_people_normalized:
                     matched = True
-                elif lastname and f"{name} {lastname}" in md_people_set:
+                elif lastname and self._normalize_name(f"{name} {lastname}") in md_people_normalized:
                     matched = True
-                elif alias and alias in md_people_set:
-                    matched = True
+                elif alias:
+                    # Handle alias as string or list
+                    aliases = alias if isinstance(alias, list) else [alias]
+                    for a in aliases:
+                        if self._normalize_name(a) in md_people_normalized:
+                            matched = True
+                            break
 
                 if not matched:
-                    # Build a readable identifier for error message
                     if alias:
                         identifier = f"{name} (alias: {alias})"
                     elif lastname:
                         identifier = f"{name} {lastname}"
                     else:
                         identifier = name
-
                     raise ValueError(
-                        f"Metadata YAML has person '{identifier}' not in MD frontmatter people list"
+                        f"Metadata YAML has person '{identifier}' not in MD frontmatter"
                     )
 
     def _link_entry_locations(
@@ -667,18 +785,16 @@ class MetadataImporter:
             return
 
         for city_name, loc_names in locations_data.items():
-            # Resolve and link city
-            city = self.resolver.resolve_city(city_name, self.session)
-            if city and city not in entry.cities:
+            # Get or create city
+            city = self._get_or_create_city(city_name)
+            if city not in entry.cities:
                 entry.cities.append(city)
 
-            # Resolve and link locations
+            # Get or create locations
             if isinstance(loc_names, list):
                 for loc_name in loc_names:
-                    location = self.resolver.resolve_location(
-                        str(loc_name), self.session
-                    )
-                    if location and location not in entry.locations:
+                    location = self._get_or_create_location(str(loc_name), city)
+                    if location not in entry.locations:
                         entry.locations.append(location)
 
     def _create_narrated_dates_from_frontmatter(
@@ -841,23 +957,25 @@ class MetadataImporter:
                 else:
                     self._add_scene_date(scene, scene_date)
 
-            # Link people
+            # Link people (from entry's already-resolved people - subset)
             for person_name in scene_data.get("people", []) or []:
-                for person in self.resolver.resolve_people(
-                    str(person_name), self.session
-                ):
-                    if person not in scene.people:
-                        scene.people.append(person)
-                        self.stats.people_created += 1
+                person = self._find_person_in_entry(str(person_name), entry)
+                if person and person not in scene.people:
+                    scene.people.append(person)
+                elif not person:
+                    self.logger.log_warning(
+                        f"Scene person '{person_name}' not found in entry people"
+                    )
 
-            # Link locations
+            # Link locations (from entry's already-resolved locations - subset)
             for loc_name in scene_data.get("locations", []) or []:
-                location = self.resolver.resolve_location(
-                    str(loc_name), self.session
-                )
+                location = self._find_location_in_entry(str(loc_name), entry)
                 if location and location not in scene.locations:
                     scene.locations.append(location)
-                    self.stats.locations_created += 1
+                elif not location:
+                    self.logger.log_warning(
+                        f"Scene location '{loc_name}' not found in entry locations"
+                    )
 
         # Store scene map on entry for event creation
         entry._scene_map = scene_map  # type: ignore
@@ -990,21 +1108,25 @@ class MetadataImporter:
             self.session.flush()
             self.stats.threads_created += 1
 
-            # Link people
+            # Link people (from entry's already-resolved people - subset)
             for person_name in thread_data.get("people", []) or []:
-                for person in self.resolver.resolve_people(
-                    str(person_name), self.session
-                ):
-                    if person not in thread.people:
-                        thread.people.append(person)
+                person = self._find_person_in_entry(str(person_name), entry)
+                if person and person not in thread.people:
+                    thread.people.append(person)
+                elif not person:
+                    self.logger.log_warning(
+                        f"Thread person '{person_name}' not found in entry people"
+                    )
 
-            # Link locations
+            # Link locations (from entry's already-resolved locations - subset)
             for loc_name in thread_data.get("locations", []) or []:
-                location = self.resolver.resolve_location(
-                    str(loc_name), self.session
-                )
+                location = self._find_location_in_entry(str(loc_name), entry)
                 if location and location not in thread.locations:
                     thread.locations.append(location)
+                elif not location:
+                    self.logger.log_warning(
+                        f"Thread location '{loc_name}' not found in entry locations"
+                    )
 
     def _link_arcs(self, entry: Entry, arcs_data: List[str]) -> None:
         """

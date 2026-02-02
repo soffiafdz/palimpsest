@@ -40,10 +40,11 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, TypedDict, Union
 
 # --- Third-party imports ---
 import yaml
@@ -517,6 +518,96 @@ class MetadataEntry:
         return references
 
     # =========================================================================
+    # Name Matching Helpers
+    # =========================================================================
+
+    @staticmethod
+    def _normalize_name(name: str) -> str:
+        """
+        Normalize name for comparison: lowercase, remove accents, normalize separators.
+
+        Args:
+            name: Name to normalize
+
+        Returns:
+            Normalized name string
+        """
+        text = name.lower().strip()
+        text = text.replace("-", " ").replace(".", " ")
+        text = " ".join(text.split())  # Collapse multiple spaces
+        normalized = unicodedata.normalize("NFD", text)
+        return "".join(c for c in normalized if unicodedata.category(c)[0] != "M")
+
+    def _build_yaml_people_set(self) -> tuple[Set[str], Set[str]]:
+        """
+        Build sets of valid people names from YAML people section.
+
+        Returns:
+            Tuple of (original_names, normalized_names) sets
+        """
+        yaml_people = self.raw_data.get("people", [])
+        original_names: Set[str] = set()
+        normalized_names: Set[str] = set()
+
+        def add_name(name: str) -> None:
+            original_names.add(name)
+            norm = self._normalize_name(name)
+            normalized_names.add(norm)
+            # Also add version without spaces (for "DrFranck" vs "Dr Franck")
+            normalized_names.add(norm.replace(" ", ""))
+            # Multi-word names: add each word
+            parts = name.split()
+            if len(parts) > 1:
+                for part in parts:
+                    original_names.add(part)
+                    normalized_names.add(self._normalize_name(part))
+
+        for person_data in yaml_people:
+            if isinstance(person_data, str):
+                add_name(person_data)
+            elif isinstance(person_data, dict):
+                name = person_data.get("name", "")
+                lastname = person_data.get("lastname", "")
+                alias = person_data.get("alias")
+
+                if name:
+                    add_name(name)
+                    if lastname:
+                        add_name(f"{name} {lastname}")
+
+                if alias:
+                    if isinstance(alias, list):
+                        for a in alias:
+                            add_name(a)
+                    else:
+                        add_name(alias)
+
+        return original_names, normalized_names
+
+    def _person_matches(
+        self, person: str, original_names: Set[str], normalized_names: Set[str]
+    ) -> bool:
+        """
+        Check if a person name matches the valid people set.
+
+        Args:
+            person: Person name to check
+            original_names: Set of original (non-normalized) valid names
+            normalized_names: Set of normalized valid names
+
+        Returns:
+            True if person matches, False otherwise
+        """
+        if person in original_names:
+            return True
+        norm = self._normalize_name(person)
+        if norm in normalized_names:
+            return True
+        if norm.replace(" ", "") in normalized_names:
+            return True
+        return False
+
+    # =========================================================================
     # Validation Methods
     # =========================================================================
 
@@ -633,13 +724,13 @@ class MetadataEntry:
         """
         Validate people consistency between MD frontmatter and metadata YAML.
 
-        Ensures bidirectional equality:
+        Ensures bidirectional equality with normalization:
         - Every person in metadata YAML has a match in MD frontmatter
         - Every person in MD frontmatter has a match in metadata YAML
         - Every person has lastname OR disambiguator (data quality check)
 
-        MD frontmatter can use: name only, full name (name lastname), or alias.
-        Metadata YAML has full person definitions with name/lastname/disambiguator/alias.
+        Matching uses accent normalization, hyphen/space handling, and multi-word
+        name expansion. MD frontmatter can use: name, full name, alias, or name parts.
 
         Args:
             md_frontmatter: Parsed MD frontmatter dict
@@ -651,8 +742,8 @@ class MetadataEntry:
             file_path=str(self.file_path) if self.file_path else ""
         )
 
-        md_people = md_frontmatter.get("people", [])
-        yaml_people = self.raw_data.get("people", [])
+        md_people = md_frontmatter.get("people", []) or []
+        yaml_people = self.raw_data.get("people", []) or []
 
         if not yaml_people and not md_people:
             return result  # Both empty, valid
@@ -671,62 +762,91 @@ class MetadataEntry:
                         f"(entry: {entry_date})"
                     )
 
-        # Build sets of possible names from YAML people
-        yaml_names = set()
-        for person_data in yaml_people:
-            if isinstance(person_data, str):
-                yaml_names.add(person_data)
-            else:
-                name = person_data.get("name")
-                lastname = person_data.get("lastname")
-                alias = person_data.get("alias")
+        # Build sets from YAML people (with normalization)
+        yaml_original, yaml_normalized = self._build_yaml_people_set()
 
-                if name:
-                    yaml_names.add(name)
-                    if lastname:
-                        yaml_names.add(f"{name} {lastname}")
-                if alias:
-                    yaml_names.add(alias)
+        # Build sets from MD frontmatter (with normalization)
+        md_original: Set[str] = set()
+        md_normalized: Set[str] = set()
+        for person in md_people:
+            md_original.add(person)
+            norm = self._normalize_name(person)
+            md_normalized.add(norm)
+            md_normalized.add(norm.replace(" ", ""))
+            # Multi-word: add parts
+            parts = person.split()
+            if len(parts) > 1:
+                for part in parts:
+                    md_original.add(part)
+                    md_normalized.add(self._normalize_name(part))
 
         # Check 1: Every MD person must match a YAML person
-        md_people_set = set(md_people)
-        unmatched_md = md_people_set - yaml_names
-
-        if unmatched_md:
-            result.add_error(
-                f"MD frontmatter has people not in metadata YAML: {sorted(unmatched_md)}"
-            )
+        for person in md_people:
+            if not self._person_matches(person, yaml_original, yaml_normalized):
+                result.add_error(
+                    f"MD frontmatter has person '{person}' not in metadata YAML"
+                )
 
         # Check 2: Every YAML person must match an MD person
+        # Match if any of: name, lastname, name parts, full name, or alias matches
         for person_data in yaml_people:
             if isinstance(person_data, str):
-                if person_data not in md_people_set:
+                # Check full string and its parts
+                matched = self._person_matches(person_data, md_original, md_normalized)
+                if not matched:
+                    for part in person_data.split():
+                        if self._person_matches(part, md_original, md_normalized):
+                            matched = True
+                            break
+                if not matched:
                     result.add_error(
                         f"Metadata YAML has person '{person_data}' not in MD frontmatter"
                     )
-            else:
-                name = person_data.get("name")
-                lastname = person_data.get("lastname")
+            elif isinstance(person_data, dict):
+                name = person_data.get("name", "")
+                lastname = person_data.get("lastname", "")
                 alias = person_data.get("alias")
 
-                # Try to find match in MD frontmatter
+                # Check if any form matches
                 matched = False
-                if name and name in md_people_set:
-                    matched = True
-                elif lastname and f"{name} {lastname}" in md_people_set:
-                    matched = True
-                elif alias and alias in md_people_set:
+
+                # Check full name
+                if name and self._person_matches(name, md_original, md_normalized):
                     matched = True
 
+                # Check individual name parts (for multi-word first names)
+                if not matched and name:
+                    for part in name.split():
+                        if self._person_matches(part, md_original, md_normalized):
+                            matched = True
+                            break
+
+                # Check lastname alone
+                if not matched and lastname:
+                    if self._person_matches(lastname, md_original, md_normalized):
+                        matched = True
+
+                # Check full name with lastname
+                if not matched and lastname:
+                    full = f"{name} {lastname}"
+                    if self._person_matches(full, md_original, md_normalized):
+                        matched = True
+
+                # Check aliases
+                if not matched and alias:
+                    aliases = [alias] if isinstance(alias, str) else alias
+                    for a in aliases:
+                        if self._person_matches(a, md_original, md_normalized):
+                            matched = True
+                            break
+
                 if not matched:
-                    # Build readable identifier for error message
                     if alias:
                         identifier = f"{name} (alias: {alias})"
                     elif lastname:
                         identifier = f"{name} {lastname}"
                     else:
                         identifier = name
-
                     result.add_error(
                         f"Metadata YAML has person '{identifier}' not in MD frontmatter"
                     )
@@ -739,8 +859,9 @@ class MetadataEntry:
         """
         Validate that scene people/locations/dates are subsets of entry-level.
 
-        Scenes must reference only entities that exist in the entry's full set.
-        This ensures data consistency and prevents orphaned references.
+        - Scene people must be subset of YAML people section (with normalization)
+        - Scene locations must be subset of MD frontmatter locations
+        - Scene dates must be subset of MD frontmatter narrated_dates
 
         Args:
             md_frontmatter: Parsed MD frontmatter dict
@@ -752,17 +873,19 @@ class MetadataEntry:
             file_path=str(self.file_path) if self.file_path else ""
         )
 
-        # Build entry-level sets from MD frontmatter
-        entry_people = set(md_frontmatter.get("people", []))
+        # Build valid people set from YAML people section (with normalization)
+        yaml_people_original, yaml_people_normalized = self._build_yaml_people_set()
 
-        entry_locations = set()
+        # Build entry-level locations from MD frontmatter
+        entry_locations: Set[str] = set()
         locations_data = md_frontmatter.get("locations", {})
         if isinstance(locations_data, dict):
             for loc_list in locations_data.values():
                 if isinstance(loc_list, list):
                     entry_locations.update(loc_list)
 
-        entry_dates = set()
+        # Build entry-level dates from MD frontmatter
+        entry_dates: Set[date] = set()
         narrated_dates = md_frontmatter.get("narrated_dates", [])
         for date_val in narrated_dates:
             if isinstance(date_val, date):
@@ -777,15 +900,17 @@ class MetadataEntry:
         for scene_data in self.scenes:
             scene_name = scene_data.get("name", "Unnamed Scene")
 
-            # Validate scene people
+            # Validate scene people against YAML people section
             for person_name in scene_data.get("people", []):
-                if person_name not in entry_people:
+                if not self._person_matches(
+                    person_name, yaml_people_original, yaml_people_normalized
+                ):
                     result.add_error(
                         f"Scene '{scene_name}' references person '{person_name}' "
-                        f"not in entry people list"
+                        f"not in YAML people section"
                     )
 
-            # Validate scene locations
+            # Validate scene locations against MD frontmatter
             for loc_name in scene_data.get("locations", []):
                 if loc_name not in entry_locations:
                     result.add_error(
@@ -793,7 +918,7 @@ class MetadataEntry:
                         f"not in entry locations list"
                     )
 
-            # Validate scene dates
+            # Validate scene dates against MD frontmatter narrated_dates
             scene_dates = scene_data.get("date")
             if scene_dates:
                 if not isinstance(scene_dates, list):
