@@ -60,7 +60,7 @@ class TestTagManagerGet:
 
         result = tag_manager.get("python")
         assert result is not None
-        assert result.tag == "python"
+        assert result.name == "python"
 
     def test_get_normalizes_input(self, tag_manager, db_session):
         """Test get normalizes whitespace."""
@@ -70,7 +70,7 @@ class TestTagManagerGet:
 
         result = tag_manager.get("  python  ")
         assert result is not None
-        assert result.tag == "python"
+        assert result.name == "python"
 
     def test_get_by_id(self, tag_manager, db_session):
         """Test get_by_id returns tag."""
@@ -100,7 +100,7 @@ class TestTagManagerGetAll:
 
         result = tag_manager.get_all()
         assert len(result) == 3
-        tag_names = {t.tag for t in result}
+        tag_names = {t.name for t in result}
         assert tag_names == {"python", "testing", "database"}
 
     def test_get_all_ordered_by_tag_name(self, tag_manager, db_session):
@@ -110,8 +110,8 @@ class TestTagManagerGetAll:
             db_session.add(tag)
         db_session.commit()
 
-        result = tag_manager.get_all(order_by="tag")
-        tag_names = [t.tag for t in result]
+        result = tag_manager.get_all(order_by="name")
+        tag_names = [t.name for t in result]
         assert tag_names == ["apple", "banana", "zebra"]
 
 
@@ -133,14 +133,14 @@ class TestTagManagerGetOrCreate:
         result = tag_manager.get_or_create("newtag")
 
         assert result is not None
-        assert result.tag == "newtag"
+        assert result.name == "newtag"
         assert result.id is not None
 
     def test_get_or_create_normalizes_tag_name(self, tag_manager, db_session):
         """Test get_or_create normalizes whitespace."""
         result = tag_manager.get_or_create("  python  ")
 
-        assert result.tag == "python"
+        assert result.name == "python"
 
 
 class TestTagManagerDelete:
@@ -180,7 +180,7 @@ class TestTagManagerLinkToEntry:
         db_session.refresh(entry)
 
         assert len(entry.tags) >= 1
-        tag_names = {t.tag for t in entry.tags}
+        tag_names = {t.name for t in entry.tags}
         assert "python" in tag_names
 
     def test_link_creates_tag_if_not_exists(self, tag_manager, entry_manager, tmp_dir, db_session):
@@ -216,7 +216,7 @@ class TestTagManagerLinkToEntry:
         db_session.refresh(entry)
 
         # Should only have one "python" tag
-        python_tags = [t for t in entry.tags if t.tag == "python"]
+        python_tags = [t for t in entry.tags if t.name == "python"]
         assert len(python_tags) == 1
 
 
@@ -240,7 +240,7 @@ class TestTagManagerUnlinkFromEntry:
         db_session.commit()
         db_session.refresh(entry)
 
-        python_tags = [t for t in entry.tags if t.tag == "python"]
+        python_tags = [t for t in entry.tags if t.name == "python"]
         assert len(python_tags) == 0
 
     def test_unlink_nonexistent_tag_is_safe(self, tag_manager, entry_manager, tmp_dir, db_session):
@@ -281,7 +281,7 @@ class TestTagManagerUpdateEntryTags:
         db_session.commit()
         db_session.refresh(entry)
 
-        tag_names = {t.tag for t in entry.tags}
+        tag_names = {t.name for t in entry.tags}
         assert len(tag_names) >= 3
         assert "python" in tag_names
         assert "testing" in tag_names
@@ -307,7 +307,7 @@ class TestTagManagerUpdateEntryTags:
         db_session.commit()
         db_session.refresh(entry)
 
-        tag_names = {t.tag for t in entry.tags}
+        tag_names = {t.name for t in entry.tags}
         assert tag_names == {"newtag"}
 
 
@@ -317,17 +317,17 @@ class TestTagManagerEdgeCases:
     def test_tag_with_whitespace_normalized(self, tag_manager, db_session):
         """Test tag with whitespace is normalized."""
         tag = tag_manager.get_or_create("  python  ")
-        assert tag.tag == "python"
+        assert tag.name == "python"
 
     def test_tag_with_unicode(self, tag_manager, db_session):
         """Test tag with unicode characters."""
         tag = tag_manager.get_or_create("café")
-        assert tag.tag == "café"
+        assert tag.name == "café"
 
     def test_tag_with_hyphen(self, tag_manager, db_session):
         """Test tag with hyphen."""
         tag = tag_manager.get_or_create("machine-learning")
-        assert tag.tag == "machine-learning"
+        assert tag.name == "machine-learning"
 
     def test_get_all_with_usage_count_ordering(self, tag_manager, entry_manager, tmp_dir, db_session):
         """Test get_all can order by usage count."""
@@ -351,4 +351,4 @@ class TestTagManagerEdgeCases:
 
         result = tag_manager.get_all(order_by="usage_count")
         # "popular" should be first (used 2 times)
-        assert result[0].tag == "popular"
+        assert result[0].name == "popular"
