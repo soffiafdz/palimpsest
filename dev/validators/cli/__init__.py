@@ -47,11 +47,11 @@ Note: Simple validators remain in their respective CLIs:
 import click
 
 # Import command groups from submodules
-from .wiki import wiki
-from .database import db
-from .markdown import md
-from .frontmatter import frontmatter
 from .consistency import consistency
+from .database import db
+from .frontmatter import frontmatter
+from .markdown import md
+from .wiki import wiki
 
 
 @click.group()
@@ -66,11 +66,11 @@ def cli():
 
 
 # Register all command groups
-cli.add_command(wiki)
-cli.add_command(db)
-cli.add_command(md)
-cli.add_command(frontmatter)
 cli.add_command(consistency)
+cli.add_command(db)
+cli.add_command(frontmatter)
+cli.add_command(md)
+cli.add_command(wiki)
 
 
 if __name__ == "__main__":

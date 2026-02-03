@@ -34,7 +34,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 # --- Local imports ---
-from dev.core.paths import DB_PATH
+from dev.core.paths import BACKUP_DIR, DB_PATH
 from dev.database.models import Base
 from dev.database.models.metadata import CONTROLLED_MOTIFS, Motif
 
@@ -52,8 +52,12 @@ def backup_existing_db(db_path: Path) -> Path | None:
     if not db_path.exists():
         return None
 
+    # Ensure backup directory exists
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = db_path.with_suffix(f".bak.{timestamp}")
+    backup_name = f"{db_path.stem}_pre_init_{timestamp}.db"
+    backup_path = BACKUP_DIR / backup_name
     shutil.copy2(db_path, backup_path)
     print(f"Backed up existing database to: {backup_path}")
     return backup_path

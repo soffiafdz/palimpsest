@@ -56,6 +56,7 @@ import yaml
 from sqlalchemy.orm import Session
 
 # --- Local imports ---
+from dev.core.exceptions import ValidationError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import LOG_DIR, MD_DIR
 from dev.pipeline.models import FailedImport, ImportStats
@@ -298,7 +299,7 @@ class MetadataImporter:
         # Validate scene subsets before creating scenes
         scenes_data = data.get("scenes", [])
         for scene_data in scenes_data:
-            self._validate_scene_subsets(entry, scene_data, scene_data.get("name", "Unnamed Scene"))
+            self._validate_scene_subsets(entry, data, scene_data, scene_data.get("name", "Unnamed Scene"))
 
         # Create scene-level entities (subsets of entry-level)
         self._create_scenes(entry, scenes_data)
@@ -548,6 +549,7 @@ class MetadataImporter:
 
         Scene/thread people should be subsets of entry-level people.
         This looks up a person by name from the entry's people list.
+        Uses accent-normalized matching for flexibility.
 
         Args:
             name: Person name to find
@@ -556,13 +558,13 @@ class MetadataImporter:
         Returns:
             Person entity if found, None otherwise
         """
-        name_lower = name.lower()
+        name_normalized = self._normalize_name(name)
         for person in entry.people:
-            if person.name.lower() == name_lower:
+            if self._normalize_name(person.name) == name_normalized:
                 return person
             # Also check aliases
             for alias in person.aliases:
-                if alias.alias.lower() == name_lower:
+                if self._normalize_name(alias.alias) == name_normalized:
                     return person
         return None
 
@@ -572,6 +574,7 @@ class MetadataImporter:
 
         Scene/thread locations should be subsets of entry-level locations.
         This looks up a location by name from the entry's locations list.
+        Uses accent-normalized matching for flexibility.
 
         Args:
             name: Location name to find
@@ -580,9 +583,9 @@ class MetadataImporter:
         Returns:
             Location entity if found, None otherwise
         """
-        name_lower = name.lower()
+        name_normalized = self._normalize_name(name)
         for location in entry.locations:
-            if location.name.lower() == name_lower:
+            if self._normalize_name(location.name) == name_normalized:
                 return location
         return None
 
@@ -610,8 +613,14 @@ class MetadataImporter:
         if not people_list:
             return
 
-        # Get MD frontmatter people for validation
-        md_people_names = set(md_frontmatter.get("people", []))
+        # Get MD frontmatter people for validation (normalized, including name parts)
+        md_people_normalized: Set[str] = set()
+        for p in md_frontmatter.get("people", []):
+            normalized = self._normalize_name(p)
+            md_people_normalized.add(normalized)
+            # Add individual parts for multi-word names (e.g., "Paola Aguirre" -> "paola", "aguirre")
+            for part in normalized.split():
+                md_people_normalized.add(part)
 
         for person_data in people_list:
             # Handle both old format (string) and new format (dict)
@@ -631,19 +640,23 @@ class MetadataImporter:
 
                 # Data quality check: person must have lastname OR disambiguator
                 if not lastname and not disambiguator:
-                    self.logger.log_warning(
-                        f"Person '{name}' missing both lastname and disambiguator",
-                        {"entry": entry.date.isoformat() if entry.date else "unknown"}
+                    raise ValidationError(
+                        f"Person '{name}' missing both lastname and disambiguator "
+                        f"(entry: {entry.date.isoformat() if entry.date else 'unknown'})"
                     )
 
-                # Validate person is in MD frontmatter
-                # Handle alias as string or list
+                # Validate person is in MD frontmatter (using normalized matching with parts)
+                name_normalized = self._normalize_name(name)
                 alias_match = False
                 if alias:
                     aliases = alias if isinstance(alias, list) else [alias]
-                    alias_match = any(a in md_people_names for a in aliases)
-                if name not in md_people_names and not alias_match:
-                    self.logger.log_warning(
+                    alias_match = any(self._normalize_name(a) in md_people_normalized for a in aliases)
+                # Check full name or any part matches
+                name_match = name_normalized in md_people_normalized or any(
+                    part in md_people_normalized for part in name_normalized.split()
+                )
+                if not name_match and not alias_match:
+                    raise ValidationError(
                         f"Person '{name}' in metadata YAML but not in MD frontmatter"
                     )
 
@@ -693,20 +706,33 @@ class MetadataImporter:
             return  # Both empty, valid
 
         # Build sets of normalized names from YAML people
+        # Include individual name parts for multi-word names (e.g., "Miguel Ángel" -> "miguel", "angel", "miguel angel")
         yaml_names_normalized: Dict[str, str] = {}  # normalized -> original
         for person_data in yaml_people:
             if isinstance(person_data, str):
-                yaml_names_normalized[self._normalize_name(person_data)] = person_data
+                normalized = self._normalize_name(person_data)
+                yaml_names_normalized[normalized] = person_data
+                # Add individual parts for multi-word names
+                for part in normalized.split():
+                    yaml_names_normalized[part] = person_data
             else:
                 name = person_data.get("name")
                 lastname = person_data.get("lastname")
                 alias = person_data.get("alias")
 
                 if name:
-                    yaml_names_normalized[self._normalize_name(name)] = name
+                    normalized_name = self._normalize_name(name)
+                    yaml_names_normalized[normalized_name] = name
+                    # Add individual parts
+                    for part in normalized_name.split():
+                        yaml_names_normalized[part] = name
                     if lastname:
                         full_name = f"{name} {lastname}"
-                        yaml_names_normalized[self._normalize_name(full_name)] = full_name
+                        normalized_full = self._normalize_name(full_name)
+                        yaml_names_normalized[normalized_full] = full_name
+                        # Add individual parts of full name
+                        for part in normalized_full.split():
+                            yaml_names_normalized[part] = full_name
                 # Handle alias as string or list
                 if alias:
                     if isinstance(alias, list):
@@ -726,11 +752,23 @@ class MetadataImporter:
                 f"MD frontmatter has people not in metadata YAML: {sorted(unmatched_md)}"
             )
 
-        # Check 2: Every YAML person must match an MD person (normalized)
-        md_people_normalized = {self._normalize_name(p): p for p in md_people}
+        # Check 2: Every YAML person must match an MD person (normalized, with name parts)
+        # Build MD people set with individual name parts for flexible matching
+        md_people_normalized: Set[str] = set()
+        for p in md_people:
+            normalized = self._normalize_name(p)
+            md_people_normalized.add(normalized)
+            # Add individual parts for multi-word names
+            for part in normalized.split():
+                md_people_normalized.add(part)
+
         for person_data in yaml_people:
             if isinstance(person_data, str):
-                if self._normalize_name(person_data) in md_people_normalized:
+                normalized = self._normalize_name(person_data)
+                # Check full name or any part
+                if normalized in md_people_normalized:
+                    continue
+                if any(part in md_people_normalized for part in normalized.split()):
                     continue
                 raise ValueError(
                     f"Metadata YAML has person '{person_data}' not in MD frontmatter"
@@ -740,13 +778,22 @@ class MetadataImporter:
                 lastname = person_data.get("lastname")
                 alias = person_data.get("alias")
 
-                # Try to find match in MD frontmatter (normalized)
+                # Try to find match in MD frontmatter (normalized, including parts)
                 matched = False
-                if name and self._normalize_name(name) in md_people_normalized:
-                    matched = True
-                elif lastname and self._normalize_name(f"{name} {lastname}") in md_people_normalized:
-                    matched = True
-                elif alias:
+                if name:
+                    normalized_name = self._normalize_name(name)
+                    if normalized_name in md_people_normalized:
+                        matched = True
+                    elif any(part in md_people_normalized for part in normalized_name.split()):
+                        matched = True
+                if not matched and lastname:
+                    full_name = f"{name} {lastname}"
+                    normalized_full = self._normalize_name(full_name)
+                    if normalized_full in md_people_normalized:
+                        matched = True
+                    elif any(part in md_people_normalized for part in normalized_full.split()):
+                        matched = True
+                if not matched and alias:
                     # Handle alias as string or list
                     aliases = alias if isinstance(alias, list) else [alias]
                     for a in aliases:
@@ -830,40 +877,78 @@ class MetadataImporter:
     def _validate_scene_subsets(
         self,
         entry: Entry,
+        metadata: Dict[str, Any],
         scene_data: Dict[str, Any],
         scene_name: str
     ) -> None:
         """
         Validate that scene people/locations/dates are subsets of entry-level.
 
-        Scenes must reference only entities that exist in the entry's full set.
-        This ensures data consistency and prevents orphaned references.
+        Scenes must reference only entities that exist in the metadata YAML
+        people section (which is the source of truth for person data).
 
         Args:
-            entry: Entry entity with entry-level people/locations/dates
+            entry: Entry entity with entry-level locations/dates
+            metadata: Parsed metadata YAML dict (has people section with aliases)
             scene_data: Scene dict from YAML
             scene_name: Scene name for error messages
 
         Raises:
             ValueError: If scene references entities not in entry-level data
         """
-        # Validate scene people
+        # Validate scene people against metadata YAML people (with aliases)
         scene_people = scene_data.get("people", [])
-        entry_people_names = {p.name for p in entry.people}
+        yaml_people = metadata.get("people", [])
+
+        # Build normalized set from metadata YAML people including aliases and name parts
+        metadata_people_normalized: Set[str] = set()
+        for person_data in yaml_people:
+            if isinstance(person_data, str):
+                normalized = self._normalize_name(person_data)
+                metadata_people_normalized.add(normalized)
+                for part in normalized.split():
+                    metadata_people_normalized.add(part)
+            else:
+                name = person_data.get("name")
+                lastname = person_data.get("lastname")
+                alias = person_data.get("alias")
+
+                if name:
+                    normalized_name = self._normalize_name(name)
+                    metadata_people_normalized.add(normalized_name)
+                    for part in normalized_name.split():
+                        metadata_people_normalized.add(part)
+                if lastname:
+                    full_name = f"{name} {lastname}"
+                    normalized_full = self._normalize_name(full_name)
+                    metadata_people_normalized.add(normalized_full)
+                    for part in normalized_full.split():
+                        metadata_people_normalized.add(part)
+                if alias:
+                    aliases = alias if isinstance(alias, list) else [alias]
+                    for a in aliases:
+                        normalized_alias = self._normalize_name(a)
+                        metadata_people_normalized.add(normalized_alias)
+                        for part in normalized_alias.split():
+                            metadata_people_normalized.add(part)
 
         for person_name in scene_people:
-            if person_name not in entry_people_names:
-                raise ValueError(
-                    f"Scene '{scene_name}' references person '{person_name}' "
-                    f"not in entry people list"
-                )
+            normalized_scene_person = self._normalize_name(person_name)
+            if normalized_scene_person not in metadata_people_normalized:
+                # Also check individual parts
+                parts_match = any(part in metadata_people_normalized for part in normalized_scene_person.split())
+                if not parts_match:
+                    raise ValueError(
+                        f"Scene '{scene_name}' references person '{person_name}' "
+                        f"not in metadata YAML people list"
+                    )
 
-        # Validate scene locations
+        # Validate scene locations (normalized for flexible matching)
         scene_locations = scene_data.get("locations", [])
-        entry_location_names = {loc.name for loc in entry.locations}
+        entry_location_names_normalized = {self._normalize_name(loc.name) for loc in entry.locations}
 
         for loc_name in scene_locations:
-            if loc_name not in entry_location_names:
+            if self._normalize_name(loc_name) not in entry_location_names_normalized:
                 raise ValueError(
                     f"Scene '{scene_name}' references location '{loc_name}' "
                     f"not in entry locations list"
@@ -963,8 +1048,8 @@ class MetadataImporter:
                 if person and person not in scene.people:
                     scene.people.append(person)
                 elif not person:
-                    self.logger.log_warning(
-                        f"Scene person '{person_name}' not found in entry people"
+                    raise ValidationError(
+                        f"Scene '{scene.name}' person '{person_name}' not found in entry people"
                     )
 
             # Link locations (from entry's already-resolved locations - subset)
@@ -973,8 +1058,8 @@ class MetadataImporter:
                 if location and location not in scene.locations:
                     scene.locations.append(location)
                 elif not location:
-                    self.logger.log_warning(
-                        f"Scene location '{loc_name}' not found in entry locations"
+                    raise ValidationError(
+                        f"Scene '{scene.name}' location '{loc_name}' not found in entry locations"
                     )
 
         # Store scene map on entry for event creation
@@ -1114,8 +1199,8 @@ class MetadataImporter:
                 if person and person not in thread.people:
                     thread.people.append(person)
                 elif not person:
-                    self.logger.log_warning(
-                        f"Thread person '{person_name}' not found in entry people"
+                    raise ValidationError(
+                        f"Thread '{thread.name}' person '{person_name}' not found in entry people"
                     )
 
             # Link locations (from entry's already-resolved locations - subset)
@@ -1124,8 +1209,8 @@ class MetadataImporter:
                 if location and location not in thread.locations:
                     thread.locations.append(location)
                 elif not location:
-                    self.logger.log_warning(
-                        f"Thread location '{loc_name}' not found in entry locations"
+                    raise ValidationError(
+                        f"Thread '{thread.name}' location '{loc_name}' not found in entry locations"
                     )
 
     def _link_arcs(self, entry: Entry, arcs_data: List[str]) -> None:
