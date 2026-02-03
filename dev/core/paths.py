@@ -14,14 +14,12 @@ Project Structure:
     ├── data/
     │   ├── metadata/
     │   │   ├── palimpsest.db         # SQLite database
-    │   │   ├── journal/{YYYY}/       # Journal YAML exports
-    │   │   └── manuscript/           # Manuscript YAML exports
+    │   │   └── journal/{YYYY}/       # Journal metadata YAML
     │   ├── journal/
     │   │   └── content/md/           # Journal entries (ground truth prose)
-    │   ├── wiki/                     # VimWiki output (source of truth for metadata)
+    │   ├── wiki/                     # VimWiki output
     │   ├── manuscript/drafts/        # Prose drafts for longer chapters
-    │   ├── legacy/                   # Archived data (extracted notes, etc.)
-    │   └── narrative_analysis/       # DEPRECATED: delete after jumpstart
+    │   └── legacy/                   # Archived data (extracted notes, etc.)
     ├── logs/                         # Application logs
     ├── backups/                      # Database backups
     └── tmp/                          # Temporary files
@@ -95,14 +93,6 @@ ARCHIVE_DIR = JOURNAL_DIR / "sources" / "archive"
 TXT_DIR = JOURNAL_DIR / "sources" / "txt"
 MD_DIR = JOURNAL_DIR / "content" / "md"
 PDF_DIR = JOURNAL_DIR / "content" / "pdf"
-
-# ---- Narrative Analysis (DEPRECATED: delete after jumpstart) ----
-NARRATIVE_ANALYSIS_DIR = DATA_DIR / "narrative_analysis"
-
-# ---- Entity Curation ----
-CURATION_DIR = DATA_DIR / "curation"
-CURATION_PEOPLE_DIR = CURATION_DIR / "people"
-CURATION_LOCATIONS_DIR = CURATION_DIR / "locations"
 
 # ---- Metadata YAML Exports ----
 # Machine-generated exports for git version control

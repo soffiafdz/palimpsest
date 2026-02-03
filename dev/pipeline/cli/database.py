@@ -295,7 +295,6 @@ def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run
     """Remove orphaned entities from database."""
     from dev.database.cli.prune import _prune_entity_type
 
-    logger: PalimpsestLogger = ctx.obj["logger"]
     db = PalimpsestDB(
         db_path=DB_PATH,
         alembic_dir=ALEMBIC_DIR,

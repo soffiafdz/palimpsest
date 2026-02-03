@@ -26,10 +26,8 @@ Usage:
     # Directory validation
     results = validate_metadata_directory(Path("metadata/journal/2024"))
 
-    # With entity validation
-    from dev.curation.resolve import EntityResolver
-    resolver = EntityResolver.load()
-    result = validate_metadata_file(path, resolver=resolver)
+    # With MD frontmatter consistency check
+    result = validate_metadata_file(path, check_consistency=True)
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -170,11 +168,11 @@ def validate_metadata_file(
         entry = MetadataEntry.from_file(file_path)
     except FileNotFoundError:
         result.add_error(f"File not found: {file_path}")
-        log.log_warning(f"Validation failed: file not found", {"file": str(file_path)})
+        log.log_warning("Validation failed: file not found", {"file": str(file_path)})
         return result
     except Exception as e:
         result.add_error(f"Failed to parse: {e}")
-        log.log_warning(f"Validation failed: parse error", {"file": str(file_path), "error": str(e)})
+        log.log_warning("Validation failed: parse error", {"file": str(file_path), "error": str(e)})
         return result
 
     # Structural validation
@@ -208,16 +206,16 @@ def validate_metadata_file(
 
     if result.has_errors:
         log.log_warning(
-            f"Validation errors",
+            "Validation errors",
             {"file": str(file_path), "errors": len(result.errors)},
         )
     elif result.warnings:
         log.log_debug(
-            f"Validation warnings",
+            "Validation warnings",
             {"file": str(file_path), "warnings": len(result.warnings)},
         )
     else:
-        log.log_debug(f"Validation passed", {"file": str(file_path)})
+        log.log_debug("Validation passed", {"file": str(file_path)})
 
     return result
 

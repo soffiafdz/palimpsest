@@ -98,16 +98,12 @@ from dev.core.paths import ROOT
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from .models import (
     Base,
-    Entry,
     Location,
     Reference,
     PoemVersion,
     Tag,
     Theme,
     Scene,
-    Event,
-    Arc,
-    Thread,
 )
 
 from .decorators import DatabaseOperation

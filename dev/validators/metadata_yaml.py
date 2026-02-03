@@ -442,7 +442,7 @@ def validate_event_structure(
                 report.add_error(
                     category="structure",
                     field=f"events[{event_index}].scenes[{i}]",
-                    message=f"References non-existent scene",
+                    message="References non-existent scene",
                     value=scene_ref,
                 )
 
@@ -1042,7 +1042,6 @@ def validate_people_exist(
 
         for person in scene.get("people", []) or []:
             if isinstance(person, dict):
-                name = person.get("name", "")
                 if person.get("new"):
                     new_people.add(normalize_person_name(person))
                 else:

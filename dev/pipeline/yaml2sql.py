@@ -90,7 +90,6 @@ Notes:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -101,7 +100,6 @@ from dev.core.exceptions import Yaml2SqlError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.utils import fs
-import socket
 
 
 def process_entry_file(
@@ -210,14 +208,8 @@ def process_entry_file(
         # Convert to database format
         db_metadata: Dict[str, Any] = md_entry.to_database_metadata()
 
-        # Compute file hash for conflict detection
-        file_hash = fs.get_file_hash(file_path)
-
-        # Get machine ID for sync state tracking
-        machine_id = socket.gethostname()
-
         # Check if entry exists
-        with db.session_scope() as session:
+        with db.session_scope():
             existing = db.entries.get(entry_date=md_entry.date)
 
             if existing:
@@ -247,7 +239,7 @@ def process_entry_file(
             else:
                 # Create new entry
                 try:
-                    entry = db.entries.create(
+                    db.entries.create(
                         db_metadata,
                         sync_source="yaml",
                         removed_by="yaml2sql"

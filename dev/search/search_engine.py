@@ -36,7 +36,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, joinedload
 
 # --- Local imports ---
-from dev.database.models import Chapter, ChapterStatus, Entry, Person, Tag, Event, City, Theme
+from dev.database.models import Entry, Person, Tag, Event, City, Theme
 from dev.search.search_index import SearchIndexManager
 
 

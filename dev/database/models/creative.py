@@ -22,7 +22,7 @@ from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

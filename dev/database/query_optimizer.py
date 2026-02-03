@@ -170,11 +170,9 @@ from sqlalchemy.orm import Session, selectinload
 
 from .models import (
     Entry,
-    Person,
     Location,
     Event,
     Scene,
-    Arc,
     Thread,
     Reference,
     PoemVersion,

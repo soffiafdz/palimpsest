@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Sequence
+from typing import Any, Dict, List, Optional, Union
 
 from sqlalchemy.orm import Session
 from sqlalchemy import insert
@@ -33,16 +33,11 @@ from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.utils import fs
 from dev.database.models import (
-    Arc,
     City,
     Entry,
     Event,
-    NarratedDate,
     Person,
-    Scene,
     Tag,
-    Theme,
-    Thread,
 )
 from dev.database.decorators import DatabaseOperation
 # from dev.database.tombstone_manager import TombstoneManager

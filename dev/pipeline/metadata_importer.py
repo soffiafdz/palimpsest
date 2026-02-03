@@ -14,7 +14,6 @@ Data Sources:
 
 Key Features:
     - Per-file transactions (each YAML = one commit)
-    - Uses EntityResolver for person/location resolution
     - Entry-level people/locations from MD frontmatter
     - Scene-level people/locations are subsets of entry-level
     - NarratedDate records from MD frontmatter
@@ -34,10 +33,8 @@ Validation:
 
 Usage:
     from dev.pipeline.metadata_importer import MetadataImporter
-    from dev.pipeline.entity_resolver import EntityResolver
 
-    resolver = EntityResolver.load()
-    importer = MetadataImporter(session, resolver)
+    importer = MetadataImporter(session)
     stats = importer.import_all(yaml_files)
 """
 # --- Annotations ---
@@ -97,7 +94,6 @@ class MetadataImporter:
 
     Attributes:
         session: Database session
-        resolver: EntityResolver with curated mappings
         dry_run: If True, don't commit changes
         stats: ImportStats tracking progress
         failed_imports: List of FailedImport records

@@ -24,14 +24,12 @@ Data Flow:
 
 Usage:
     from dev.dataclasses.metadata_entry import MetadataEntry
-    from dev.curation.resolve import EntityResolver
 
     # Load and parse
     entry = MetadataEntry.from_file(Path("2024-12-03.yaml"))
 
-    # Validate entities against curation
-    resolver = EntityResolver.load()
-    result = entry.validate_entities(resolver)
+    # Validate structure
+    result = entry.validate_structure()
     if result.has_errors:
         for error in result.errors:
             print(error)
@@ -54,7 +52,7 @@ from dev.core.exceptions import MetadataValidationError
 from dev.core.validators import DataValidator
 
 if TYPE_CHECKING:
-    from dev.curation.resolve import EntityResolver
+    pass
 
 
 # =============================================================================

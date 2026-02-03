@@ -35,7 +35,7 @@ Manuscript Domain:
 These are pure association tables with no additional metadata (except where noted).
 """
 # --- Third party imports ---
-from sqlalchemy import Column, ForeignKey, Integer, Table, Text
+from sqlalchemy import Column, ForeignKey, Integer, Table
 
 # --- Local imports ---
 from .base import Base

@@ -23,8 +23,6 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
-import socket
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -33,7 +31,7 @@ from sqlalchemy import select, func
 
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
-from dev.database.models import Character, Chapter, Entry, Event, Person, Tag, Theme
+from dev.database.models import Entry, Event, Person, Tag, Theme
 
 from dev.wiki.parser import (
     parse_entry_file,
@@ -44,7 +42,6 @@ from dev.wiki.parser import (
 )
 
 from dev.core.logging_manager import PalimpsestLogger
-from dev.utils import fs
 
 
 class ImportStats:
@@ -118,9 +115,6 @@ def import_entries(
                 stats.records_skipped += 1
                 continue
 
-            file_hash = fs.get_file_hash(wiki_file)
-            machine_id = socket.gethostname()
-
             with db.session_scope() as session:
                 entry = session.execute(
                     select(Entry).where(Entry.date == data["date"])
@@ -160,9 +154,6 @@ def import_events(
         if not data:
             stats.records_skipped += 1
             continue
-
-        file_hash = fs.get_file_hash(wiki_file)
-        machine_id = socket.gethostname()
 
         with db.session_scope() as session:
             event = session.execute(

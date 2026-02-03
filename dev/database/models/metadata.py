@@ -24,7 +24,7 @@ Controlled Vocabulary (26 Motifs):
 from __future__ import annotations
 
 # --- Standard library imports ---
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 # --- Third party imports ---
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text

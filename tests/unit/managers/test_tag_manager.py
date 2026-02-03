@@ -21,7 +21,7 @@ class TestTagManagerExists:
     def test_exists_returns_true_when_found(self, tag_manager, db_session):
         """Test exists returns True when tag exists."""
         # Create tag directly via SQLAlchemy (avoiding decorator issue)
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
 
@@ -29,7 +29,7 @@ class TestTagManagerExists:
 
     def test_exists_normalizes_input(self, tag_manager, db_session):
         """Test exists normalizes whitespace."""
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
 
@@ -54,7 +54,7 @@ class TestTagManagerGet:
 
     def test_get_returns_tag_when_found(self, tag_manager, db_session):
         """Test get returns tag when it exists."""
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
 
@@ -64,7 +64,7 @@ class TestTagManagerGet:
 
     def test_get_normalizes_input(self, tag_manager, db_session):
         """Test get normalizes whitespace."""
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
 
@@ -74,7 +74,7 @@ class TestTagManagerGet:
 
     def test_get_by_id(self, tag_manager, db_session):
         """Test get_by_id returns tag."""
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
 
@@ -93,7 +93,7 @@ class TestTagManagerGetAll:
 
     def test_get_all_returns_all_tags(self, tag_manager, db_session):
         """Test get_all returns all tags."""
-        tags = [Tag(tag="python"), Tag(tag="testing"), Tag(tag="database")]
+        tags = [Tag(name="python"), Tag(name="testing"), Tag(name="database")]
         for tag in tags:
             db_session.add(tag)
         db_session.commit()
@@ -105,7 +105,7 @@ class TestTagManagerGetAll:
 
     def test_get_all_ordered_by_tag_name(self, tag_manager, db_session):
         """Test get_all returns tags ordered alphabetically."""
-        tags = [Tag(tag="zebra"), Tag(tag="apple"), Tag(tag="banana")]
+        tags = [Tag(name="zebra"), Tag(name="apple"), Tag(name="banana")]
         for tag in tags:
             db_session.add(tag)
         db_session.commit()
@@ -120,7 +120,7 @@ class TestTagManagerGetOrCreate:
 
     def test_get_or_create_returns_existing_tag(self, tag_manager, db_session):
         """Test get_or_create returns existing tag."""
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
         original_id = tag.id
@@ -148,7 +148,7 @@ class TestTagManagerDelete:
 
     def test_delete_tag(self, tag_manager, db_session):
         """Test deleting a tag."""
-        tag = Tag(tag="python")
+        tag = Tag(name="python")
         db_session.add(tag)
         db_session.commit()
         tag_id = tag.id

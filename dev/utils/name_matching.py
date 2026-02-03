@@ -116,7 +116,6 @@ def get_person_keys(person: Union[str, Dict[str, Any]]) -> Set[str]:
     # Dict format
     name = person.get("name", "")
     lastname = person.get("lastname", "")
-    disambiguator = person.get("disambiguator", "")
     alias = person.get("alias")
 
     # Add normalized name
