@@ -5,7 +5,6 @@ This package provides commonly-used utilities organized by domain:
 - md: Markdown manipulation (sections, links, YAML, frontmatter)
 - fs: Filesystem operations and date parsing
 - parsers: Name, location, and context extraction
-- wiki: Wiki file parsing for database import
 - txt: Text formatting and metrics
 - narrative: Scene matching, event parsing, arc formatting
 
@@ -13,7 +12,7 @@ Import commonly-used utilities directly from this package:
     from dev.utils import split_frontmatter, get_file_hash, extract_context_refs
 
 Or import specific modules:
-    from dev.utils import md, fs, parsers, wiki, txt, narrative
+    from dev.utils import md, fs, parsers, txt, narrative
 """
 
 # Markdown and YAML utilities
@@ -55,14 +54,6 @@ from .parsers import (
     spaces_to_hyphenated,
 )
 
-# Wiki parsing utilities (for wiki→database import)
-# Note: Section extraction functions moved to md.py
-from .wiki import (
-    slugify,
-    entity_filename,
-    entity_path,
-)
-
 # Text processing utilities
 from .txt import (
     ordinal,
@@ -99,6 +90,14 @@ __all__ = [
     "get_text_hash",
     "read_entry_body",
     "generate_placeholder_body",
+    "extract_section",
+    "get_all_headers",
+    "parse_bullets",
+    "extract_yaml_front_matter",
+    "relative_link",
+    "resolve_relative_link",
+    "find_section_line_indexes",
+    "update_section",
     # Filesystem
     "find_markdown_files",
     "should_skip_file",
@@ -113,18 +112,6 @@ __all__ = [
     "parse_date_context",
     "split_hyphenated_to_spaces",
     "spaces_to_hyphenated",
-    # Wiki
-    "extract_section",
-    "get_all_headers",
-    "parse_bullets",
-    "extract_yaml_front_matter",
-    "relative_link",
-    "resolve_relative_link",
-    "find_section_line_indexes",
-    "update_section",
-    "slugify",
-    "entity_filename",
-    "entity_path",
     # Text
     "ordinal",
     "format_body",

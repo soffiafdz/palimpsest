@@ -9,23 +9,18 @@ the Palimpsest system. Each validator checks a specific aspect of data
 integrity or quality.
 
 Available validators:
-    - wiki: Wiki link integrity, orphan detection, broken links
     - db: Database referential integrity, constraint violations
     - md: Markdown file validation, broken links, malformed frontmatter
     - frontmatter: YAML frontmatter structure and parser compatibility
-    - consistency: Cross-system consistency (wiki ↔ db, md ↔ db)
+    - consistency: Cross-system consistency (md ↔ db)
 
 Note: The 'metadata' command has been renamed to 'frontmatter' for clarity.
 
 Architecture:
-    This CLI aggregates validators from individual modules (wiki.py, db.py, etc.)
+    This CLI aggregates validators from individual modules (db.py, etc.)
     Each validator module has its own command group and subcommands.
 
 Usage:
-    validate wiki check         # Check all wiki links
-    validate wiki orphans       # Find orphaned wiki pages
-    validate wiki stats         # Show wiki statistics
-
     validate db schema          # Check database schema
     validate db migrations      # Check migration status
     validate db all             # Run all database checks
@@ -51,7 +46,6 @@ from .consistency import consistency
 from .database import db
 from .frontmatter import frontmatter
 from .markdown import md
-from .wiki import wiki
 
 
 @click.group()
@@ -59,7 +53,7 @@ def cli():
     """
     Palimpsest Validation Suite.
 
-    Run comprehensive validation checks on wiki links, database integrity,
+    Run comprehensive validation checks on database integrity,
     markdown files, and YAML frontmatter.
     """
     pass
@@ -70,7 +64,6 @@ cli.add_command(consistency)
 cli.add_command(db)
 cli.add_command(frontmatter)
 cli.add_command(md)
-cli.add_command(wiki)
 
 
 if __name__ == "__main__":

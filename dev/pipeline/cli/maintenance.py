@@ -148,8 +148,10 @@ def run_all(
     Orchestrates the entire journal processing pipeline in the correct order,
     ensuring data flows correctly from raw exports to final PDFs.
     """
-    from .yaml2sql import inbox, convert, sync_db
-    from .sql2wiki import build_pdf
+    from .sources import inbox
+    from .text import convert
+    from .database import sync_db
+    from .pdf import build_pdf
 
     click.echo("🚀 Starting complete pipeline...\n")
 
