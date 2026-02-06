@@ -10,7 +10,6 @@ Welcome to the Palimpsest development documentation. This section contains techn
 - [Architecture](architecture.md) - System design and modular organization
 - [Database Managers](database-managers.md) - Entity manager patterns
 - [Validators](validators.md) - Validation system architecture
-- [Tombstones](tombstones.md) - Deletion tracking implementation
 - [Type Checking](type-checking.md) - Pyright configuration and patterns
 - [Testing](testing.md) - Comprehensive testing guide
 - [Neovim Plugin Development](neovim-plugin-dev.md) - Extending the Neovim integration
@@ -252,7 +251,6 @@ Contributions are welcome! Please:
 - [Architecture](architecture.md) - System design
 - [Database Managers](database-managers.md) - Entity patterns
 - [Validators](validators.md) - Validation system
-- [Tombstones](tombstones.md) - Deletion tracking
 - [Type Checking](type-checking.md) - Type safety
 - [Testing](testing.md) - Testing guide
 - [Neovim Plugin Development](neovim-plugin-dev.md) - Plugin extension

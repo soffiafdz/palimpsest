@@ -468,7 +468,6 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Architecture](docs/development/architecture.md)** - System design and modular organization
 - **[Database Managers](docs/development/database-managers.md)** - Entity manager patterns
 - **[Validators](docs/development/validators.md)** - Validation system architecture
-- **[Tombstones](docs/development/tombstones.md)** - Deletion tracking implementation
 - **[Type Checking](docs/development/type-checking.md)** - Pyright configuration and patterns
 - **[Testing](docs/development/testing.md)** - Comprehensive testing guide
 - **[Neovim Plugin Development](docs/development/neovim-plugin-dev.md)** - Extending the Neovim integration

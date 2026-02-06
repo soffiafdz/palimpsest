@@ -630,8 +630,6 @@ class EntryManager(BaseManager):
         This function handles relationships only. No I/O or Markdown parsing.
         Prevents duplicates and ensures lookup tables are updated.
 
-        Creates tombstones for removed associations to enable proper multi-machine
-        synchronization.
 
         Args:
             entry (Entry): Entry ORM object to update relationships for.
@@ -656,8 +654,8 @@ class EntryManager(BaseManager):
                     - remove_locations (List[Location|int])
             incremental (bool): If True, add/remove specified items.
                                 If False, replace all relationships.
-            sync_source (str): Source of sync ('yaml', 'manual') for tombstones
-            removed_by (str): Who/what is making changes ('import-metadata', etc.)
+            sync_source (str): Source of sync (unused, kept for compatibility)
+            removed_by (str): Who/what is making changes (unused, kept for compatibility)
 
         Behavior:
             - Incremental mode:
