@@ -316,12 +316,10 @@ class MdEntry:
         }
 
         # Optional simple fields
-        if entry.epigraph:
-            metadata["epigraph"] = entry.epigraph
-        if entry.epigraph_attribution:
-            metadata["epigraph_attribution"] = entry.epigraph_attribution
-        if entry.notes:
-            metadata["notes"] = entry.notes
+        # Note: Entry model doesn't have epigraph, epigraph_attribution, or notes fields
+        # These were removed from the schema. Summary is the main text field now.
+        if entry.summary:
+            metadata["summary"] = entry.summary
 
         # Complex metadata - use DbToYamlExporter
         exporter = DbToYamlExporter()
@@ -338,21 +336,17 @@ class MdEntry:
         if people is not None:
             metadata["people"] = people
 
-        dates = exporter.build_dates_metadata(entry)
-        if dates is not None:
-            metadata["dates"] = dates
+        # Note: build_dates_metadata not implemented in DbToYamlExporter
+        # Narrated dates can be accessed via entry.narrated_dates
 
         # Simple list fields
         if entry.events:
-            metadata["events"] = [evt.event for evt in entry.events]
+            metadata["events"] = [evt.name for evt in entry.events]
 
         if entry.tags:
-            metadata["tags"] = [tag.tag for tag in entry.tags]
+            metadata["tags"] = [tag.name for tag in entry.tags]
 
-        if entry.related_entries:
-            metadata["related_entries"] = [
-                r_e.date.isoformat() for r_e in entry.related_entries
-            ]
+        # Note: Entry.related_entries relationship not implemented
 
         # Complex nested metadata
         references = exporter.build_references_metadata(entry)
@@ -363,9 +357,8 @@ class MdEntry:
         if poems is not None:
             metadata["poems"] = poems
 
-        manuscript = exporter.build_manuscript_metadata(entry)
-        if manuscript is not None:
-            metadata["manuscript"] = manuscript
+        # Note: build_manuscript_metadata not implemented in DbToYamlExporter
+        # Manuscript metadata is accessed via separate Chapter/Part models
 
         return cls(
             date=entry.date,

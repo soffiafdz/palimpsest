@@ -50,9 +50,9 @@ def _serialize_person(person: Person) -> Dict[str, Any]:
     """Serialize Person entity."""
     return {
         "id": person.id,
-        "alias": person.alias,
         "name": person.name,
         "lastname": person.lastname,
+        "slug": person.slug,
         "relation_type": person.relation_type.value if person.relation_type else None,
         "entry_count": len(person.entries),
     }
@@ -86,8 +86,8 @@ def _serialize_event(event: Event) -> Dict[str, Any]:
     return {
         "id": event.id,
         "name": event.name,
-        "entry_id": event.entry_id,
         "scene_count": len(event.scenes),
+        "entry_count": len(event.entries),
     }
 
 
@@ -106,7 +106,7 @@ def _serialize_thread(thread: Thread) -> Dict[str, Any]:
     return {
         "id": thread.id,
         "name": thread.name,
-        "from_date": thread.from_date.isoformat() if thread.from_date else None,
+        "from_date": thread.from_date,
         "to_date": thread.to_date,
         "referenced_entry_date": (
             thread.referenced_entry_date.isoformat()

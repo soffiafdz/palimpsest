@@ -130,9 +130,11 @@ class ReferenceManager(EntityManager):
         author = DataValidator.normalize_string(metadata.get("author"))
 
         # Warn if author missing for types that require it
-        if cast(ReferenceType, ref_type).requires_author and not author:
+        # ref_type is validated by normalize_enum, so cast is safe
+        checked_ref_type = cast(ReferenceType, ref_type)
+        if checked_ref_type.requires_author and not author:
             safe_logger(self.logger).log_warning(
-                f"Source type '{ref_type.value}' typically requires an author",
+                f"Source type '{checked_ref_type.value}' typically requires an author",
                 {"title": name},
             )
 
@@ -251,7 +253,6 @@ class ReferenceManager(EntityManager):
                 - entry: Entry object or entry ID
                 Optional:
                 - mode: ReferenceMode enum or string (default: "direct")
-                - speaker: Who said/wrote this
                 - source: ReferenceSource object or source ID
 
         Returns:
@@ -308,11 +309,10 @@ class ReferenceManager(EntityManager):
                 elif isinstance(source_spec, dict):
                     source = self.create_source(source_spec)
 
-            # Create reference
+            # Create reference (speaker attribute removed from schema)
             reference = Reference(
                 content=content,
                 description=description,
-                speaker=DataValidator.normalize_string(metadata.get("speaker")),
                 mode=mode,
                 entry=entry,
                 source=source,
@@ -342,7 +342,6 @@ class ReferenceManager(EntityManager):
             metadata: Dictionary with optional keys:
                 - content: Updated content
                 - description: Updated description
-                - speaker: Updated speaker
                 - mode: Updated ReferenceMode
                 - entry: Updated Entry object or ID
                 - source: Updated ReferenceSource object or ID
@@ -357,14 +356,13 @@ class ReferenceManager(EntityManager):
 
             reference = self.session.merge(db_ref)
 
-            # Update scalar fields
+            # Update scalar fields (speaker removed from schema)
             self._update_scalar_fields(
                 reference,
                 metadata,
                 [
                     ("content", DataValidator.normalize_string, True),
                     ("description", DataValidator.normalize_string, True),
-                    ("speaker", DataValidator.normalize_string, True),
                 ],
             )
 
@@ -392,20 +390,17 @@ class ReferenceManager(EntityManager):
                 if entry:
                     reference.entry = entry
 
-            # Update source (allows None to clear)
-            if "source" in metadata:
-                if metadata["source"] is None:
-                    reference.source = None
-                else:
-                    source = self._resolve_parent(
-                        metadata["source"],
-                        ReferenceSource,
-                        lambda **kw: self.get_source(source_id=kw.get("id")),
-                        None,
-                        "id",
-                    )
-                    if source:
-                        reference.source = source
+            # Update source (source_id is NOT NULL, so source cannot be cleared)
+            if "source" in metadata and metadata["source"] is not None:
+                source = self._resolve_parent(
+                    metadata["source"],
+                    ReferenceSource,
+                    lambda **kw: self.get_source(source_id=kw.get("id")),
+                    None,
+                    "id",
+                )
+                if source:
+                    reference.source = source
 
             self.session.flush()
             return reference

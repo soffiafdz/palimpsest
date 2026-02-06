@@ -601,9 +601,10 @@ def validate_entry(entry_date: str) -> ValidationResult:
         md_result = validate_md_frontmatter(md_path, md_frontmatter)
         result.merge(md_result)
 
-    # Validate metadata YAML
-    yaml_result = validate_metadata_yaml(yaml_path, metadata)
-    result.merge(yaml_result)
+    # Validate metadata YAML (metadata guaranteed non-None if no yaml_error)
+    if metadata is not None:
+        yaml_result = validate_metadata_yaml(yaml_path, metadata)
+        result.merge(yaml_result)
 
     # Validate consistency
     if md_frontmatter and metadata:
@@ -646,24 +647,26 @@ def validate_file(file_path: Path) -> ValidationResult:
             result.add_error(error)
             return result
 
-        md_result = validate_md_frontmatter(file_path, frontmatter)
-        result.merge(md_result)
+        if frontmatter is not None:
+            md_result = validate_md_frontmatter(file_path, frontmatter)
+            result.merge(md_result)
 
-        # Also check consistency if YAML exists
-        yaml_path = JOURNAL_YAML_DIR / file_path.parent.name / f"{stem}.yaml"
-        if yaml_path.exists():
-            metadata, yaml_error = parse_metadata_yaml(yaml_path)
-            if not yaml_error and metadata:
-                consistency_result = validate_consistency(
-                    file_path, yaml_path, frontmatter, metadata
-                )
-                result.merge(consistency_result)
+            # Also check consistency if YAML exists
+            yaml_path = JOURNAL_YAML_DIR / file_path.parent.name / f"{stem}.yaml"
+            if yaml_path.exists():
+                metadata, yaml_error = parse_metadata_yaml(yaml_path)
+                if not yaml_error and metadata:
+                    consistency_result = validate_consistency(
+                        file_path, yaml_path, frontmatter, metadata
+                    )
+                    result.merge(consistency_result)
 
     elif suffix in (".yaml", ".yml"):
         # Validate YAML structure
         metadata, error = parse_metadata_yaml(file_path)
-        if error:
-            result.add_error(error)
+        if error or metadata is None:
+            if error:
+                result.add_error(error)
             return result
 
         yaml_result = validate_metadata_yaml(file_path, metadata)

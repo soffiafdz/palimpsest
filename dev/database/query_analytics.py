@@ -240,8 +240,8 @@ class QueryAnalytics:
                     "locations_count": len(entry.locations),
                     "locations": [loc.name for loc in entry.locations],
                     "events_count": len(entry.events),
-                    "events": [evt.display_name for evt in entry.events],
-                    "tags": [tag.tag for tag in entry.tags],
+                    "events": [evt.name for evt in entry.events],
+                    "tags": [tag.name for tag in entry.tags],
                 }
 
             return summary
@@ -288,9 +288,7 @@ class QueryAnalytics:
             List of matching Entry instances
         """
         with DatabaseOperation(self.logger, "search_entries"):
-            search_filter = or_(
-                Entry.notes.ilike(f"%{query}%"), Entry.epigraph.ilike(f"%{query}%")
-            )
+            search_filter = Entry.summary.ilike(f"%{query}%")
 
             query_obj = (
                 session.query(Entry).filter(search_filter).order_by(Entry.date.desc())
@@ -309,7 +307,8 @@ class QueryAnalytics:
                 .filter(
                     or_(
                         Person.name.ilike(f"%{person_name}%"),
-                        Person.full_name.ilike(f"%{person_name}%"),
+                        Person.lastname.ilike(f"%{person_name}%"),
+                        Person.slug.ilike(f"%{person_name}%"),
                     )
                 )
                 .first()
@@ -342,7 +341,7 @@ class QueryAnalytics:
     def get_entries_by_tag(self, session: Session, tag_name: str) -> List[Entry]:
         """Get all entries with a specific tag."""
         with DatabaseOperation(self.logger, "get_entries_by_tag"):
-            tag = session.query(Tag).filter(Tag.tag.ilike(f"%{tag_name}%")).first()
+            tag = session.query(Tag).filter(Tag.name.ilike(f"%{tag_name}%")).first()
 
             return tag.entries if tag else []
 

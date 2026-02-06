@@ -11,7 +11,6 @@ duplication in health_monitor.py's _check_*_integrity methods.
 from dataclasses import dataclass
 from typing import Callable, List
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..models import (
@@ -109,17 +108,6 @@ def _count_poems_no_versions(session: Session) -> int:
     )
 
 
-def _count_duplicate_hashes(session: Session) -> int:
-    """Count duplicate poem version hashes."""
-    return (
-        session.query(PoemVersion.version_hash, func.count(PoemVersion.id))
-        .filter(PoemVersion.version_hash.isnot(None))
-        .group_by(PoemVersion.version_hash)
-        .having(func.count(PoemVersion.id) > 1)
-        .count()
-    )
-
-
 def _count_versions_no_content(session: Session) -> int:
     """Count poem versions without content."""
     return (
@@ -145,11 +133,6 @@ POEM_INTEGRITY_CHECKS = IntegrityCheckGroup(
             "poems_without_versions",
             _count_poems_no_versions,
             "Poems with no versions stored"
-        ),
-        IntegrityCheck(
-            "duplicate_poem_versions",
-            _count_duplicate_hashes,
-            "Poem versions with duplicate content hashes"
         ),
         IntegrityCheck(
             "poem_versions_without_content",

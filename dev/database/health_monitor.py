@@ -388,8 +388,8 @@ class HealthMonitor:
         Returns:
             Dictionary with mentioned date integrity results
         """
-        from .configs.integrity_check_configs import MENTIONED_DATE_INTEGRITY_CHECKS
-        return self._run_integrity_check_group(session, MENTIONED_DATE_INTEGRITY_CHECKS)
+        from .configs.integrity_check_configs import NARRATED_DATE_INTEGRITY_CHECKS
+        return self._run_integrity_check_group(session, NARRATED_DATE_INTEGRITY_CHECKS)
 
     def _check_file_references(self, session: Session) -> Dict[str, Any]:
         """

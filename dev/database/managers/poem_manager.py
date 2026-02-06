@@ -281,18 +281,15 @@ class PoemManager(EntityManager):
             metadata: Dictionary with required keys:
                 - title: Poem title (required)
                 - content: Poem content (required)
+                - entry: Entry object or ID to link to (required)
                 Optional keys:
-                - revision_date: Date of this version (defaults to today)
-                - notes: Notes about this version
-                - entry: Entry object or ID to link to
                 - poem: Poem object or ID (creates new if not provided)
-                - version_hash: MD5 hash (auto-generated if not provided)
 
         Returns:
             Created PoemVersion object, or existing version if duplicate detected
 
         Raises:
-            ValidationError: If title/content missing or invalid
+            ValidationError: If title/content/entry missing or invalid
         """
         with DatabaseOperation(self.logger, "create_version"):
             # Validate required fields
@@ -303,6 +300,20 @@ class PoemManager(EntityManager):
             content = DataValidator.normalize_string(metadata.get("content"))
             if not content:
                 raise ValidationError("Poem content cannot be empty")
+
+            # Resolve entry (required - entry_id is NOT NULL)
+            entry_spec = metadata.get("entry")
+            if entry_spec is None:
+                raise ValidationError("Entry is required for poem version")
+
+            if isinstance(entry_spec, Entry):
+                entry = entry_spec
+            elif isinstance(entry_spec, int):
+                entry = self.session.get(Entry, entry_spec)
+                if not entry:
+                    raise ValidationError(f"Entry not found with id: {entry_spec}")
+            else:
+                raise ValidationError(f"Invalid entry specification: {entry_spec}")
 
             # Resolve or create parent poem
             poem_spec = metadata.get("poem")
@@ -317,15 +328,10 @@ class PoemManager(EntityManager):
             else:
                 raise ValidationError(f"Invalid poem specification: {poem_spec}")
 
-            # Generate version hash
-            version_hash = metadata.get("version_hash")
-            if not version_hash:
-                version_hash = md.get_text_hash(content)
-
-            # Check for duplicate version (deduplication)
+            # Check for duplicate version by content
             existing_version = (
                 self.session.query(PoemVersion)
-                .filter_by(poem_id=poem.id, version_hash=version_hash)
+                .filter_by(poem_id=poem.id, content=content)
                 .first()
             )
 
@@ -335,53 +341,14 @@ class PoemManager(EntityManager):
                     {
                         "poem": poem.title,
                         "version_id": existing_version.id,
-                        "version_hash": version_hash,
                     },
                 )
                 return existing_version
-
-            # Resolve revision date
-            revision_date = metadata.get("revision_date")
-            if revision_date:
-                if isinstance(revision_date, str):
-                    try:
-                        revision_date = date.fromisoformat(revision_date)
-                    except ValueError as e:
-                        raise ValidationError(
-                            f"Invalid revision date: {revision_date}"
-                        ) from e
-            else:
-                # Try to get from entry, otherwise use today
-                entry_spec = metadata.get("entry")
-                if isinstance(entry_spec, Entry):
-                    revision_date = entry_spec.date
-                elif isinstance(entry_spec, int):
-                    entry = self.session.get(Entry, entry_spec)
-                    revision_date = entry.date if entry else date.today()
-                else:
-                    revision_date = date.today()
-
-            # Resolve entry (optional)
-            entry = None
-            entry_spec = metadata.get("entry")
-            if entry_spec is not None:
-                if isinstance(entry_spec, Entry):
-                    entry = entry_spec
-                elif isinstance(entry_spec, int):
-                    entry = self.session.get(Entry, entry_spec)
-                    if not entry:
-                        safe_logger(self.logger).log_warning(
-                            f"Entry not found with id: {entry_spec}",
-                            {"poem": poem.title},
-                        )
 
             # Create version
             version = PoemVersion(
                 poem=poem,
                 content=content,
-                revision_date=revision_date,
-                version_hash=version_hash,
-                notes=DataValidator.normalize_string(metadata.get("notes")),
                 entry=entry,
             )
             self.session.add(version)
@@ -392,7 +359,7 @@ class PoemManager(EntityManager):
                 {
                     "version_id": version.id,
                     "poem_id": poem.id,
-                    "revision_date": revision_date.isoformat(),
+                    "entry_date": entry.date.isoformat(),
                 },
             )
 
@@ -420,30 +387,11 @@ class PoemManager(EntityManager):
 
             version = self.session.merge(db_version)
 
-            # Update content (special: auto-regenerate hash)
+            # Update content
             if "content" in metadata:
                 content = DataValidator.normalize_string(metadata["content"])
                 if content:
                     version.content = content
-                    version.version_hash = md.get_text_hash(content)
-
-            # Update revision date
-            if "revision_date" in metadata:
-                rev_date = metadata["revision_date"]
-                if isinstance(rev_date, str):
-                    try:
-                        rev_date = date.fromisoformat(rev_date)
-                    except ValueError:
-                        pass
-                if isinstance(rev_date, date):
-                    version.revision_date = rev_date
-
-            # Update notes
-            self._update_scalar_fields(
-                version,
-                metadata,
-                [("notes", DataValidator.normalize_string, True)],
-            )
 
             # Update poem
             if "poem" in metadata:
@@ -457,20 +405,17 @@ class PoemManager(EntityManager):
                 if poem:
                     version.poem = poem
 
-            # Update entry (allows None to clear)
-            if "entry" in metadata:
-                if metadata["entry"] is None:
-                    version.entry = None
-                else:
-                    entry = self._resolve_parent(
-                        metadata["entry"],
-                        Entry,
-                        lambda **kw: self.session.get(Entry, kw.get("id")),
-                        None,
-                        "id",
-                    )
-                    if entry:
-                        version.entry = entry
+            # Update entry (entry_id is required, cannot be cleared)
+            if "entry" in metadata and metadata["entry"] is not None:
+                entry = self._resolve_parent(
+                    metadata["entry"],
+                    Entry,
+                    lambda **kw: self.session.get(Entry, kw.get("id")),
+                    None,
+                    "id",
+                )
+                if entry:
+                    version.entry = entry
 
             self.session.flush()
             return version
@@ -501,11 +446,11 @@ class PoemManager(EntityManager):
     # =========================================================================
 
     def get_versions_for_poem(self, poem: Poem) -> List[PoemVersion]:
-        """Get all versions of a poem, ordered chronologically."""
+        """Get all versions of a poem, ordered by entry date."""
         with DatabaseOperation(self.logger, "get_versions_for_poem"):
             return sorted(
-                poem.versions, key=lambda v: v.revision_date or date.min
-            )  # type: ignore[arg-type]
+                poem.versions, key=lambda v: v.entry.date if v.entry else date.min
+            )
 
     def get_versions_for_entry(self, entry: Entry) -> List[PoemVersion]:
         """Get all poem versions linked to an entry."""

@@ -75,23 +75,20 @@ class EntryRelationshipHelper:
 
     def get_person(
         self,
-        person_name: Optional[str] = None,
-        person_full_name: Optional[str] = None,
+        slug: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> Optional[Person]:
         """
-        Get a person by name or full name.
+        Get a person by slug or name.
 
         Args:
-            person_name: The person's name (alias)
-            person_full_name: The person's full name
+            slug: The person's slug (unique identifier)
+            name: The person's first name
 
         Returns:
             Person object if found, None otherwise
         """
-        return self.person_manager.get(
-            person_name=person_name,
-            person_full_name=person_full_name
-        )
+        return self.person_manager.get(slug=slug, name=name)
 
     def update_entry_locations(
         self,
@@ -133,8 +130,7 @@ class EntryRelationshipHelper:
                     continue
 
                 # Get or create location via manager
-                city = self.location_manager.get_or_create_city(city_name)
-                location = self.location_manager.get_or_create_location(location_name, city)
+                location = self.location_manager.get_or_create_location(location_name, city_name)
 
             elif isinstance(loc_spec, str):
                 # Just a location name - need city context
@@ -191,11 +187,12 @@ class EntryRelationshipHelper:
                 source_data = ref_data["source"]
                 if isinstance(source_data, dict):
                     title = DataValidator.normalize_string(source_data.get("title"))
-                    if title:
+                    source_type = source_data.get("type", "book")  # Default to book
+                    if title and source_type:
                         # Get or create source via manager
                         source = self.reference_manager.get_or_create_source(
                             title=title,
-                            source_type=source_data.get("type"),
+                            source_type=source_type,
                             author=source_data.get("author"),
                         )
 

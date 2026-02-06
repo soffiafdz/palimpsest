@@ -40,7 +40,7 @@ def export_csv(ctx, output_dir):
         click.echo(f"📤 Exporting to CSV: {output_dir}")
 
         with db.session_scope() as session:
-            exported = ExportManager.export_to_csv(session, output_dir)
+            exported = db.export_manager.export_to_csv(session, output_dir)
 
         click.echo(f"\n✅ Export Complete ({len(exported)} tables):")
         for table, path in exported.items():

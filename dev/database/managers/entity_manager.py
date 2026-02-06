@@ -254,7 +254,7 @@ class EntityManager(BaseManager):
 
             safe_logger(self.logger).log_debug(
                 f"Created {self.config.display_name}: {name}",
-                {f"{self.config.display_name}_id": entity.id},
+                {f"{self.config.display_name}_id": entity.id},  # type: ignore[attr-defined]
             )
 
             # Post-creation (relationships, etc.)
@@ -278,10 +278,10 @@ class EntityManager(BaseManager):
             self._validate_update(entity, metadata)
 
             # Get fresh from session
-            db_entity = self.session.get(self.config.model_class, entity.id)
+            db_entity = self.session.get(self.config.model_class, entity.id)  # type: ignore[attr-defined]
             if db_entity is None:
                 raise DatabaseError(
-                    f"{self.config.display_name} with id={entity.id} does not exist"
+                    f"{self.config.display_name} with id={entity.id} does not exist"  # type: ignore[attr-defined]
                 )
             entity = self.session.merge(db_entity)
 
@@ -329,13 +329,13 @@ class EntityManager(BaseManager):
 
             # Soft delete if supported and not forced hard
             if self.config.supports_soft_delete and not hard:
-                entity.deleted_at = datetime.now(timezone.utc)
-                entity.deleted_by = deleted_by
-                entity.deletion_reason = reason
+                entity.deleted_at = datetime.now(timezone.utc)  # type: ignore[attr-defined]
+                entity.deleted_by = deleted_by  # type: ignore[attr-defined]
+                entity.deletion_reason = reason  # type: ignore[attr-defined]
                 safe_logger(self.logger).log_debug(
                     f"Soft deleted {self.config.display_name}",
                     {
-                        f"{self.config.display_name}_id": entity.id,
+                        f"{self.config.display_name}_id": entity.id,  # type: ignore[attr-defined]
                         "deleted_by": deleted_by,
                     },
                 )
@@ -344,7 +344,7 @@ class EntityManager(BaseManager):
                 self.session.delete(entity)
                 safe_logger(self.logger).log_debug(
                     f"Deleted {self.config.display_name}",
-                    {f"{self.config.display_name}_id": entity.id},
+                    {f"{self.config.display_name}_id": entity.id},  # type: ignore[attr-defined]
                 )
 
             self.session.flush()
@@ -374,14 +374,14 @@ class EntityManager(BaseManager):
                     f"got {type(entity).__name__}"
                 )
 
-            entity.deleted_at = None
-            entity.deleted_by = None
-            entity.deletion_reason = None
+            entity.deleted_at = None  # type: ignore[attr-defined]
+            entity.deleted_by = None  # type: ignore[attr-defined]
+            entity.deletion_reason = None  # type: ignore[attr-defined]
             self.session.flush()
 
             safe_logger(self.logger).log_debug(
                 f"Restored {self.config.display_name}",
-                {f"{self.config.display_name}_id": entity.id},
+                {f"{self.config.display_name}_id": entity.id},  # type: ignore[attr-defined]
             )
 
             return entity

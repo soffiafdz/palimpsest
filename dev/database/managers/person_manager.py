@@ -83,7 +83,7 @@ class PersonManager(BaseManager):
 
     def exists(
         self,
-        alias: Optional[str] = None,
+        slug: Optional[str] = None,
         name: Optional[str] = None,
         include_deleted: bool = False,
     ) -> bool:
@@ -91,7 +91,7 @@ class PersonManager(BaseManager):
         Check if a person exists.
 
         Args:
-            alias: The person's alias (unique identifier)
+            slug: The person's slug (unique identifier)
             name: The person's name
             include_deleted: Whether to include soft-deleted persons
 
@@ -99,13 +99,13 @@ class PersonManager(BaseManager):
             True if person exists, False otherwise
 
         Notes:
-            - Alias lookup is preferred (unique)
+            - Slug lookup is preferred (unique)
             - Name alone may match multiple people
         """
         with DatabaseOperation(self.logger, "person_exists"):
-            if alias:
+            if slug:
                 return self._exists(
-                    Person, "alias", alias, include_deleted=include_deleted
+                    Person, "slug", slug, include_deleted=include_deleted
                 )
             if name:
                 return self._exists(
@@ -115,16 +115,16 @@ class PersonManager(BaseManager):
 
     def get(
         self,
-        alias: Optional[str] = None,
+        slug: Optional[str] = None,
         name: Optional[str] = None,
         person_id: Optional[int] = None,
         include_deleted: bool = False,
     ) -> Optional[Person]:
         """
-        Retrieve a person by alias, name, or ID.
+        Retrieve a person by slug, name, or ID.
 
         Args:
-            alias: The person's alias (unique)
+            slug: The person's slug (unique identifier)
             name: The person's name
             person_id: The person ID
             include_deleted: Whether to include soft-deleted persons
@@ -133,8 +133,8 @@ class PersonManager(BaseManager):
             Person object if found, None otherwise
 
         Notes:
-            - Lookup priority: ID > alias > name
-            - Alias is unique, so always returns single match
+            - Lookup priority: ID > slug > name
+            - Slug is unique, so always returns single match
             - Name may match multiple people; returns first match
         """
         with DatabaseOperation(self.logger, "get_person"):
@@ -142,13 +142,13 @@ class PersonManager(BaseManager):
             if person_id is not None:
                 return self._get_by_id(Person, person_id, include_deleted=include_deleted)
 
-            # Alias lookup (unique)
-            if alias is not None:
-                normalized = DataValidator.normalize_string(alias)
+            # Slug lookup (unique)
+            if slug is not None:
+                normalized = DataValidator.normalize_string(slug)
                 if not normalized:
                     return None
                 return self._get_by_field(
-                    Person, "alias", normalized, include_deleted=include_deleted
+                    Person, "slug", normalized, include_deleted=include_deleted
                 )
 
             # Name lookup
@@ -183,11 +183,10 @@ class PersonManager(BaseManager):
         Create a new person.
 
         Args:
-            metadata: Dictionary with required key:
-                - name: Primary name (required)
+            metadata: Dictionary with required keys:
+                - name: First/given name (required)
+                - lastname OR disambiguator: At least one required for identification
                 Optional keys:
-                - alias: Unique alias for lookup
-                - lastname: Last/family name
                 - relation_type: RelationType enum or string
                 - entries: List of Entry objects or IDs
                 - scenes: List of Scene objects or IDs
@@ -197,8 +196,8 @@ class PersonManager(BaseManager):
             Created Person object
 
         Raises:
-            ValidationError: If name is invalid or empty
-            DatabaseError: If alias already exists
+            ValidationError: If name is missing or neither lastname/disambiguator provided
+            DatabaseError: If slug already exists
         """
         DataValidator.validate_required_fields(metadata, ["name"])
         with DatabaseOperation(self.logger, "create_person"):
@@ -208,14 +207,22 @@ class PersonManager(BaseManager):
                 raise ValidationError(f"Invalid person name: {metadata.get('name')}")
 
             # Normalize optional fields
-            p_alias = DataValidator.normalize_string(metadata.get("alias"))
             p_lastname = DataValidator.normalize_string(metadata.get("lastname"))
+            p_disambiguator = DataValidator.normalize_string(metadata.get("disambiguator"))
 
-            # Check alias uniqueness
-            if p_alias:
-                existing = self.get(alias=p_alias, include_deleted=True)
-                if existing:
-                    raise DatabaseError(f"Person already exists with alias '{p_alias}'")
+            # Validate: must have either lastname or disambiguator
+            if not p_lastname and not p_disambiguator:
+                raise ValidationError(
+                    f"Person '{p_name}' must have either lastname or disambiguator"
+                )
+
+            # Generate slug
+            slug = Person.generate_slug(p_name, p_lastname, p_disambiguator)
+
+            # Check slug uniqueness
+            existing = self.get(slug=slug, include_deleted=True)
+            if existing:
+                raise DatabaseError(f"Person already exists with slug '{slug}'")
 
             # Normalize relation_type
             relation_type = DataValidator.normalize_enum(
@@ -225,8 +232,9 @@ class PersonManager(BaseManager):
             # Create person
             person = Person(
                 name=p_name,
-                alias=p_alias,
                 lastname=p_lastname,
+                disambiguator=p_disambiguator,
+                slug=slug,
                 relation_type=relation_type,
             )
             self.session.add(person)
@@ -236,8 +244,9 @@ class PersonManager(BaseManager):
                 f"Created person: {p_name}",
                 {
                     "person_id": person.id,
-                    "alias": p_alias,
+                    "slug": slug,
                     "lastname": p_lastname,
+                    "disambiguator": p_disambiguator,
                 },
             )
 
@@ -249,45 +258,49 @@ class PersonManager(BaseManager):
     def get_or_create(
         self,
         name: str,
-        alias: Optional[str] = None,
+        lastname: Optional[str] = None,
+        disambiguator: Optional[str] = None,
         **extra_fields,
     ) -> Person:
         """
-        Get existing person or create new one if not found.
-
-        Lookup priority: alias > name
+        Get existing person by slug or create new one if not found.
 
         Args:
-            name: Primary name to search for or create
-            alias: Optional alias for lookup or creation
-            **extra_fields: Additional fields for creation
+            name: First/given name (required)
+            lastname: Last/family name (optional, but one of lastname/disambiguator required)
+            disambiguator: Context tag (optional, but one of lastname/disambiguator required)
+            **extra_fields: Additional fields for creation (relation_type, etc.)
 
         Returns:
             Existing or newly created Person object
 
         Raises:
-            ValidationError: If name is empty
+            ValidationError: If name is empty or neither lastname/disambiguator provided
         """
         with DatabaseOperation(self.logger, "get_or_create_person"):
             normalized_name = DataValidator.normalize_string(name)
             if not normalized_name:
                 raise ValidationError("Person name cannot be empty")
 
-            # Try to get by alias first if provided
-            if alias:
-                person = self.get(alias=alias)
-                if person:
-                    return person
+            normalized_lastname = DataValidator.normalize_string(lastname)
+            normalized_disambiguator = DataValidator.normalize_string(disambiguator)
 
-            # Try to get by name
-            person = self.get(name=normalized_name)
+            # Generate slug for lookup
+            slug = Person.generate_slug(
+                normalized_name, normalized_lastname, normalized_disambiguator
+            )
+
+            # Try to get by slug
+            person = self.get(slug=slug)
             if person:
                 return person
 
             # Person doesn't exist - create it
-            metadata: Dict[str, Any] = {"name": normalized_name}
-            if alias:
-                metadata["alias"] = alias
+            metadata: Dict[str, Any] = {
+                "name": normalized_name,
+                "lastname": normalized_lastname,
+                "disambiguator": normalized_disambiguator,
+            }
             metadata.update(extra_fields)
 
             return self.create(metadata)
@@ -332,19 +345,17 @@ class PersonManager(BaseManager):
                 if new_name:
                     person.name = new_name
 
-            # Update alias
-            if "alias" in metadata:
-                new_alias = DataValidator.normalize_string(metadata["alias"])
-                if new_alias and new_alias != person.alias:
+            # Update slug
+            if "slug" in metadata:
+                new_slug = DataValidator.normalize_string(metadata["slug"])
+                if new_slug and new_slug != person.slug:
                     # Check uniqueness
-                    existing = self.get(alias=new_alias, include_deleted=True)
+                    existing = self.get(slug=new_slug, include_deleted=True)
                     if existing and existing.id != person.id:
                         raise DatabaseError(
-                            f"Alias '{new_alias}' already used by another person"
+                            f"Slug '{new_slug}' already used by another person"
                         )
-                    person.alias = new_alias
-                elif metadata["alias"] is None:
-                    person.alias = None
+                    person.slug = new_slug
 
             # Update lastname
             if "lastname" in metadata:
@@ -356,7 +367,7 @@ class PersonManager(BaseManager):
                     metadata["relation_type"], RelationType, "relation_type"
                 )
                 if relation_type:
-                    person.relation_type = relation_type
+                    person.relation_type = relation_type  # type: ignore[assignment]
 
             # Update relationships
             self._update_person_relationships(person, metadata, incremental=True)
@@ -498,30 +509,30 @@ class PersonManager(BaseManager):
     # QUERY METHODS
     # =========================================================================
 
-    def find_by_alias_or_name(
+    def find_by_slug_or_name(
         self,
         identifier: str,
         include_deleted: bool = False,
     ) -> Optional[Person]:
         """
-        Find a person by alias or name.
+        Find a person by slug or name.
 
-        Tries alias first, then name.
+        Tries slug first, then name.
 
         Args:
-            identifier: Alias or name to search for
+            identifier: Slug or name to search for
             include_deleted: Whether to include soft-deleted persons
 
         Returns:
             Person object if found, None otherwise
         """
-        with DatabaseOperation(self.logger, "find_person_by_alias_or_name"):
+        with DatabaseOperation(self.logger, "find_person_by_slug_or_name"):
             normalized = DataValidator.normalize_string(identifier)
             if not normalized:
                 return None
 
-            # Try alias first
-            person = self.get(alias=normalized, include_deleted=include_deleted)
+            # Try slug first
+            person = self.get(slug=normalized, include_deleted=include_deleted)
             if person:
                 return person
 
@@ -586,7 +597,7 @@ class PersonManager(BaseManager):
             query = self.session.query(Person).filter(
                 (Person.name.ilike(pattern)) |
                 (Person.lastname.ilike(pattern)) |
-                (Person.alias.ilike(pattern))
+                (Person.slug.ilike(pattern))
             )
 
             if not include_deleted:

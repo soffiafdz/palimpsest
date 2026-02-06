@@ -564,8 +564,10 @@ class EntryManager(BaseManager):
             name = DataValidator.normalize_string(item.get("name"))
             full_name = DataValidator.normalize_string(item.get("full_name"))
 
-            if name or full_name:
-                return self._person_mgr.get_or_create(name or full_name, full_name)
+            if name:
+                return self._person_mgr.get_or_create(name, full_name)
+            elif full_name:
+                return self._person_mgr.get_or_create(full_name)
             return None
 
         # Handle ORM instances and IDs using base method (after string check to narrow type)
@@ -705,8 +707,9 @@ class EntryManager(BaseManager):
             #     self._process_aliases(entry, metadata["alias"])
 
             # --- Locations ---
-            if "locations" in metadata:
-                self._process_locations(entry, metadata["locations"], incremental)
+            # TODO: Requires EntryRelationshipHelper rebuild
+            # if "locations" in metadata:
+            #     self._process_locations(entry, metadata["locations"], incremental)
 
             # --- Narrated Dates ---
             # TODO: Rebuild for new NarratedDate model (replaces Moment)
@@ -714,18 +717,19 @@ class EntryManager(BaseManager):
             #     self._process_narrated_dates(entry, metadata["narrated_dates"])
 
             # --- References ---
-            # References need special handling because they involve ReferenceSource creation
-            if "references" in metadata:
-                self._process_references(entry, metadata["references"])
+            # TODO: Requires EntryRelationshipHelper rebuild
+            # if "references" in metadata:
+            #     self._process_references(entry, metadata["references"])
 
             # --- Poems ---
-            if "poems" in metadata:
-                self._process_poems(entry, metadata["poems"])
+            # TODO: Requires EntryRelationshipHelper rebuild
+            # if "poems" in metadata:
+            #     self._process_poems(entry, metadata["poems"])
 
             # --- Related entries ---
-            # Handle related entries (uni-directional relationships)
-            if "related_entries" in metadata:
-                self._process_related_entries(entry, metadata["related_entries"])
+            # TODO: Entry.related_entries relationship not implemented
+            # if "related_entries" in metadata:
+            #     self._process_related_entries(entry, metadata["related_entries"])
 
             # --- Tags ---
             # They're strings, not objects
@@ -804,72 +808,25 @@ class EntryManager(BaseManager):
         if norm_tags - existing_tags:
             self.session.flush()
 
-    def _process_related_entries(self, entry: Entry, related_dates: List[str]) -> None:
-        """Process related entry connections (uni-directional)."""
-        for date_str in related_dates:
-            try:
-                related_date = date.fromisoformat(date_str)
-                related_entry = (
-                    self.session.query(Entry).filter_by(date=related_date).first()
-                )
-                if related_entry and related_entry.id != entry.id:
-                    entry.related_entries.append(related_entry)
-            except ValueError:
-                # Invalid date format, skip
-                continue
+    # TODO: These methods require EntryRelationshipHelper which needs rebuild
+    # for new model structure. Commenting out until helper is fixed.
 
-    def _process_locations(
-        self,
-        entry: Entry,
-        locations_data: List[Dict[str, Any]],
-        incremental: bool = True,
-    ) -> None:
-        """
-        Process locations with city context for entry.
+    # def _process_related_entries(self, entry: Entry, related_dates: List[str]) -> None:
+    #     """Process related entry connections (uni-directional)."""
+    #     # Entry.related_entries relationship not implemented
+    #     pass
 
-        Delegates to LocationManager for location resolution.
+    # def _process_locations(self, entry, locations_data, incremental=True) -> None:
+    #     """Process locations with city context for entry."""
+    #     self.helpers.update_entry_locations(entry, locations_data, incremental)
 
-        Args:
-            entry: Entry to update
-            locations_data: List of location dicts with "name" and "city" keys
-            incremental: Whether to add (True) or replace (False) locations
-        """
-        # Use helper for location processing
-        self.helpers.update_entry_locations(entry, locations_data, incremental)
+    # def _process_references(self, entry, references_data) -> None:
+    #     """Process references with source creation."""
+    #     self.helpers.process_references(entry, references_data)
 
-    def _process_references(
-        self,
-        entry: Entry,
-        references_data: List[Dict[str, Any]],
-    ) -> None:
-        """
-        Process references with source creation.
-
-        Delegates to ReferenceManager via helper.
-
-        Args:
-            entry: Entry to attach references to
-            references_data: List of reference dicts
-        """
-        # Use helper for reference processing
-        self.helpers.process_references(entry, references_data)
-
-    def _process_poems(
-        self,
-        entry: Entry,
-        poems_data: List[Dict[str, Any]],
-    ) -> None:
-        """
-        Process poem versions with parent poem creation.
-
-        Delegates to PoemManager via helper.
-
-        Args:
-            entry: Entry to attach poems to
-            poems_data: List of poem version dicts
-        """
-        # Use helper for poem processing
-        self.helpers.process_poems(entry, poems_data)
+    # def _process_poems(self, entry, poems_data) -> None:
+    #     """Process poem versions with parent poem creation."""
+    #     self.helpers.process_poems(entry, poems_data)
 
     # -------------------------------------------------------------------------
     # DEPRECATED: Manuscript processing removed - use Chapter model directly

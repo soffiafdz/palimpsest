@@ -364,7 +364,7 @@ class SimpleManager(BaseManager):
             )
 
             # Update relationships
-            self._update_relationships(entity, metadata, incremental=False)
+            self._update_entity_relationships(entity, metadata, incremental=False)
 
             return entity
 
@@ -453,7 +453,7 @@ class SimpleManager(BaseManager):
                     setattr(entity, field_name, value)
 
             # Update relationships
-            self._update_relationships(entity, metadata, incremental=True)
+            self._update_entity_relationships(entity, metadata, incremental=True)
 
             return entity
 
@@ -478,31 +478,36 @@ class SimpleManager(BaseManager):
             - Cascade deletes remove all relationships
         """
         with DatabaseOperation(self.logger, "delete"):
+            # Resolve entity ID to object if needed
+            resolved_entity: Any
             if isinstance(entity, int):
-                entity = self.get(entity_id=entity, include_deleted=True)
-                if not entity:
+                found = self.get(entity_id=entity, include_deleted=True)
+                if not found:
                     raise DatabaseError(
                         f"{self.config.display_name.capitalize()} not found with id: {entity}"
                     )
+                resolved_entity = found
+            else:
+                resolved_entity = entity
 
-            entity_name = getattr(entity, self.config.name_field)
+            entity_name = getattr(resolved_entity, self.config.name_field)
 
             if self.config.supports_soft_delete and not hard_delete:
                 # Soft delete
                 safe_logger(self.logger).log_debug(
                     f"Soft deleting {self.config.display_name}: {entity_name}",
-                    {"id": entity.id, "deleted_by": deleted_by, "reason": reason},
+                    {"id": resolved_entity.id, "deleted_by": deleted_by, "reason": reason},
                 )
-                entity.deleted_at = datetime.now(timezone.utc)
-                entity.deleted_by = deleted_by
-                entity.deletion_reason = reason
+                resolved_entity.deleted_at = datetime.now(timezone.utc)
+                resolved_entity.deleted_by = deleted_by
+                resolved_entity.deletion_reason = reason
             else:
                 # Hard delete
                 safe_logger(self.logger).log_debug(
                     f"Hard deleting {self.config.display_name}: {entity_name}",
-                    {"id": entity.id},
+                    {"id": resolved_entity.id},
                 )
-                self.session.delete(entity)
+                self.session.delete(resolved_entity)
 
             self.session.flush()
 
@@ -525,38 +530,43 @@ class SimpleManager(BaseManager):
                     f"{self.config.display_name.capitalize()} does not support soft delete"
                 )
 
+            # Resolve entity ID to object if needed
+            resolved_entity: Any
             if isinstance(entity, int):
-                entity = self.get(entity_id=entity, include_deleted=True)
-                if not entity:
+                found = self.get(entity_id=entity, include_deleted=True)
+                if not found:
                     raise DatabaseError(
                         f"{self.config.display_name.capitalize()} not found with id: {entity}"
                     )
+                resolved_entity = found
+            else:
+                resolved_entity = entity
 
-            if not entity.deleted_at:
-                entity_name = getattr(entity, self.config.name_field)
+            if not resolved_entity.deleted_at:
+                entity_name = getattr(resolved_entity, self.config.name_field)
                 raise DatabaseError(
                     f"{self.config.display_name.capitalize()} is not deleted: {entity_name}"
                 )
 
-            entity.deleted_at = None
-            entity.deleted_by = None
-            entity.deletion_reason = None
+            resolved_entity.deleted_at = None
+            resolved_entity.deleted_by = None
+            resolved_entity.deletion_reason = None
 
             self.session.flush()
 
-            entity_name = getattr(entity, self.config.name_field)
+            entity_name = getattr(resolved_entity, self.config.name_field)
             safe_logger(self.logger).log_debug(
                 f"Restored {self.config.display_name}: {entity_name}",
-                {"id": entity.id},
+                {"id": resolved_entity.id},
             )
 
-            return entity
+            return resolved_entity
 
     # -------------------------------------------------------------------------
     # Relationship Management
     # -------------------------------------------------------------------------
 
-    def _update_relationships(
+    def _update_entity_relationships(
         self,
         entity: Any,
         metadata: Dict[str, Any],

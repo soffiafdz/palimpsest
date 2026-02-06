@@ -509,7 +509,7 @@ class ConsistencyValidator:
         md_tags = set(entry_md.metadata.get("tags", []))
 
         # Get DB tags
-        db_tags = {tag.tag for tag in entry_db.tags}
+        db_tags = {tag.name for tag in entry_db.tags}
 
         # Check for missing tags
         missing_in_db = md_tags - db_tags

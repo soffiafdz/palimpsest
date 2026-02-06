@@ -59,6 +59,15 @@ class HasId(Protocol):
     id: Mapped[int]
 
 
+class SoftDeletable(Protocol):
+    """Protocol for objects that support soft delete."""
+
+    id: Mapped[int]
+    deleted_at: Any  # Use Any to avoid complex datetime typing
+    deleted_by: Any
+    deletion_reason: Any
+
+
 T = TypeVar("T", bound=HasId)
 
 
@@ -261,7 +270,7 @@ class BaseManager(ABC):
 
         # Handle soft delete if model supports it
         if not include_deleted and hasattr(model_class, "deleted_at"):
-            query = query.filter(model_class.deleted_at.is_(None))
+            query = query.filter(model_class.deleted_at.is_(None))  # type: ignore[attr-defined]
 
         return query.first() is not None
 
@@ -287,7 +296,7 @@ class BaseManager(ABC):
             return None
 
         if not include_deleted and hasattr(entity, "deleted_at"):
-            if entity.deleted_at is not None:
+            if entity.deleted_at is not None:  # type: ignore[attr-defined]
                 return None
 
         return entity
@@ -326,7 +335,7 @@ class BaseManager(ABC):
 
         # Handle soft delete if model supports it
         if not include_deleted and hasattr(model_class, "deleted_at"):
-            query = query.filter(model_class.deleted_at.is_(None))
+            query = query.filter(model_class.deleted_at.is_(None))  # type: ignore[attr-defined]
 
         return query.first()
 
@@ -357,7 +366,7 @@ class BaseManager(ABC):
 
         # Handle soft delete if model supports it
         if not include_deleted and hasattr(model_class, "deleted_at"):
-            query = query.filter(model_class.deleted_at.is_(None))
+            query = query.filter(model_class.deleted_at.is_(None))  # type: ignore[attr-defined]
 
         # Apply ordering
         if order_by and hasattr(model_class, order_by):
@@ -391,7 +400,7 @@ class BaseManager(ABC):
             query = query.filter_by(**filters)
 
         if not include_deleted and hasattr(model_class, "deleted_at"):
-            query = query.filter(model_class.deleted_at.is_(None))
+            query = query.filter(model_class.deleted_at.is_(None))  # type: ignore[attr-defined]
 
         return query.count()
 

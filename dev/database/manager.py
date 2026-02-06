@@ -113,6 +113,7 @@ from .query_analytics import QueryAnalytics
 
 # Modular entity managers
 from .managers import (
+    SimpleManager,
     TagManager,
     PersonManager,
     LocationManager,
@@ -262,7 +263,8 @@ class PalimpsestDB:
         self.query_analytics = QueryAnalytics(self.logger)
 
         # Initialize modular entity managers (lazy-loaded in session_scope)
-        self._tag_manager: Optional[TagManager] = None
+        # Note: TagManager is a factory that returns SimpleManager
+        self._tag_manager: Optional[SimpleManager] = None
         self._person_manager: Optional[PersonManager] = None
         self._event_manager: Optional[EventManager] = None
         self._location_manager: Optional[LocationManager] = None

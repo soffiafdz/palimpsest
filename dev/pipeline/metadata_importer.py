@@ -202,7 +202,7 @@ class MetadataImporter:
                 self.stats.failed += 1
                 self.stats.consecutive_failures += 1
                 self._record_failure(yaml_path, e)
-                self.logger.log_error(f"FAILED {yaml_path.name}: {e}")
+                self.logger.log_error(e, {"file": yaml_path.name})
 
             self.stats.processed += 1
 

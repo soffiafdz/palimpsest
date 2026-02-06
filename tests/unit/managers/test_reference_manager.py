@@ -366,23 +366,8 @@ class TestReferenceManagerCreateReference:
 
         assert reference.mode == ReferenceMode.PARAPHRASE
 
-    def test_create_reference_with_speaker(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test creating reference with speaker."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "A quote",
-            "speaker": "John Doe",
-            "entry": entry
-        })
-
-        assert reference.speaker == "John Doe"
+    # Note: test_create_reference_with_speaker removed - speaker attribute
+    # no longer exists on Reference model
 
     def test_create_reference_missing_content_and_description_raises_error(self, reference_manager, entry_manager, tmp_dir, db_session):
         """Test creating reference without content or description raises error."""

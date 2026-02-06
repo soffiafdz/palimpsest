@@ -408,9 +408,9 @@ def extract_thematic_arcs(content: str) -> List[str]:
     Returns:
         List of arc names (e.g., ["THE_BODY", "WRITING_AS_SURVIVAL"])
     """
-    from dev.utils.md import extract_section
+    from dev.utils.md import extract_section_text
 
-    arcs_section = extract_section(content, "Thematic Arcs")
+    arcs_section = extract_section_text(content, "Thematic Arcs")
     if not arcs_section:
         return []
     return [a.strip() for a in arcs_section.split(",") if a.strip()]

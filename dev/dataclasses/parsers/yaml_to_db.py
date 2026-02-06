@@ -458,9 +458,9 @@ class YamlToDbParser:
                 if all_locations:
                     from dev.utils.parsers import split_hyphenated_to_spaces
                     date_dict["locations"] = [
-                        split_hyphenated_to_spaces(DataValidator.normalize_string(loc))
+                        split_hyphenated_to_spaces(normalized_loc)
                         for loc in all_locations
-                        if DataValidator.normalize_string(loc)
+                        if (normalized_loc := DataValidator.normalize_string(loc))
                     ]
 
                 # --- People - LOOKUP IN people_parsed ---
@@ -501,9 +501,9 @@ class YamlToDbParser:
                         # Normalize event names (hyphen to space, strip)
                         from dev.utils.parsers import split_hyphenated_to_spaces
                         events_list = [
-                            split_hyphenated_to_spaces(DataValidator.normalize_string(ev))
+                            split_hyphenated_to_spaces(normalized_ev)
                             for ev in events_field
-                            if DataValidator.normalize_string(ev)
+                            if (normalized_ev := DataValidator.normalize_string(ev))
                         ]
                         if events_list:
                             date_dict["events"] = events_list

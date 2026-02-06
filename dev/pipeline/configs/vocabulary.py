@@ -15,7 +15,7 @@ These definitions are used by:
 """
 from __future__ import annotations
 
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 
 # =============================================================================
@@ -47,7 +47,7 @@ MOTIFS: Dict[str, str] = {
 }
 
 # Mapping from raw "Thematic Arc" values to consolidated motifs
-THEMATIC_ARC_TO_MOTIF: Dict[str, str] = {
+THEMATIC_ARC_TO_MOTIF: Dict[str, Optional[str]] = {
     # Direct mappings
     "THE BODY": "The Body",
     "VALIDATION & REJECTION": "Validation & Rejection",
@@ -127,7 +127,7 @@ TAGS: Dict[str, str] = {
 }
 
 # Mapping from raw "Tag Category" values to consolidated tags
-TAG_CATEGORY_TO_TAG: Dict[str, str] = {
+TAG_CATEGORY_TO_TAG: Dict[str, Optional[str]] = {
     "Transition": "transition",
     "Identity": "identity",
     "Anxiety/Panic": "anxiety",
@@ -201,7 +201,7 @@ PEOPLE_ALIASES: Dict[str, str] = {
 # LOCATIONS NORMALIZATION
 # =============================================================================
 
-LOCATION_ALIASES: Dict[str, str] = {
+LOCATION_ALIASES: Dict[str, Optional[str]] = {
     "home": "Home",
     "Ciudad de Mexico": "Mexico City",
     "None": None,  # Drop

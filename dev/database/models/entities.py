@@ -155,15 +155,18 @@ class Person(Base, SoftDeleteMixin):
     # --- Computed properties ---
     @property
     def display_name(self) -> str:
-        """Get display name (full name or just first name)."""
+        """Get display name for human readability.
+
+        Returns:
+            - "Name Lastname" if lastname exists
+            - "Name (disambiguator)" if no lastname but disambiguator exists
+            - "Name" otherwise
+        """
         if self.lastname:
             return f"{self.name} {self.lastname}"
+        if self.disambiguator:
+            return f"{self.name} ({self.disambiguator})"
         return self.name
-
-    @property
-    def primary_alias(self) -> Optional[str]:
-        """Get the first alias if any exist."""
-        return self.aliases[0].alias if self.aliases else None
 
     @property
     def lookup_key(self) -> str:
@@ -231,8 +234,7 @@ class Person(Base, SoftDeleteMixin):
         return search_name in known_names
 
     def __repr__(self) -> str:
-        alias_str = self.primary_alias or "none"
-        return f"<Person(id={self.id}, name='{self.display_name}', alias={alias_str})>"
+        return f"<Person(id={self.id}, name='{self.display_name}', slug='{self.slug}')>"
 
     def __str__(self) -> str:
         return self.display_name

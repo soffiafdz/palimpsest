@@ -626,7 +626,7 @@ class ExportManager:
                 {
                     "name": scene.name,
                     "description": scene.description,
-                    "dates": [sd.date.isoformat() for sd in scene.dates],
+                    "dates": [sd.date for sd in scene.dates],
                     "people": [p.display_name for p in scene.people],
                     "locations": [loc.name for loc in scene.locations],
                 }
@@ -636,7 +636,7 @@ class ExportManager:
             "threads": [
                 {
                     "name": thread.name,
-                    "from_date": thread.from_date.isoformat(),
+                    "from_date": thread.from_date,
                     "to_date": thread.to_date,
                     "content": thread.content,
                     "people": [p.display_name for p in thread.people],
@@ -657,7 +657,7 @@ class ExportManager:
         """
         return {
             "id": person.id,
-            "alias": person.alias,
+            "slug": person.slug,
             "name": person.name,
             "lastname": person.lastname,
             "display_name": person.display_name,

@@ -126,65 +126,26 @@ class DbToYamlExporter:
         Examples:
             >>> build_people_metadata(entry)
             [
-                {"full_name": "John Smith"},
+                {"name": "John", "lastname": "Smith"},
                 {"name": "Jane"},
-                {"alias": ["Johnny"], "name": "John", "full_name": "John Smith"}
             ]
         """
-        if not entry.people and not entry.aliases_used:
+        if not entry.people:
             return None
 
         people_list: List[Dict[str, Any]] = []
-        aliases_by_person: Dict[int, Dict[str, Any]] = {}
 
-        # Import hyphenation utility
-        from dev.utils.parsers import spaces_to_hyphenated
+        for person in entry.people:
+            person_data: Dict[str, Any] = {"name": person.name}
+            if person.lastname:
+                person_data["lastname"] = person.lastname
+            if person.disambiguator:
+                person_data["disambiguator"] = person.disambiguator
+            # Include aliases if any
+            if person.aliases:
+                person_data["aliases"] = [a.alias for a in person.aliases]
+            people_list.append(person_data)
 
-        # Helper function to re-hyphenate names for export
-        def rehyphenate_name(name: str) -> str:
-            """Re-hyphenate first name portion if it contains spaces."""
-            if not name or " " not in name:
-                return name
-            # Hyphenate spaces in name
-            return spaces_to_hyphenated(name)
-
-        def rehyphenate_full_name(full_name: str) -> str:
-            """Re-hyphenate only the first name portion of a full name."""
-            if not full_name or " " not in full_name:
-                return full_name
-            # For now, just hyphenate ALL spaces - this matches the input format
-            return spaces_to_hyphenated(full_name)
-
-        # Process aliases first - group by person
-        if entry.aliases_used:
-            for alias in entry.aliases_used:
-                person_id = alias.person_id
-                if person_id not in aliases_by_person:
-                    # Re-hyphenate the name for export
-                    name_hyphenated = rehyphenate_name(alias.person.name) if alias.person.name else None
-                    aliases_by_person[person_id] = {
-                        "alias": [],
-                        "name": name_hyphenated,
-                    }
-                    # Add full_name if name_fellow
-                    if alias.person.name_fellow and alias.person.full_name:
-                        fname_hyphenated = rehyphenate_full_name(alias.person.full_name)
-                        aliases_by_person[person_id]["full_name"] = fname_hyphenated
-                aliases_by_person[person_id]["alias"].append(alias.alias)
-
-        # Process regular people (skip those already in aliases)
-        for p in entry.people:
-            if aliases_by_person and p.id in aliases_by_person:
-                continue
-            if p.name_fellow:
-                full_name_hyphenated = rehyphenate_full_name(p.full_name)
-                people_list.append({"full_name": full_name_hyphenated})
-            else:
-                name_hyphenated = rehyphenate_name(p.name)
-                people_list.append({"name": name_hyphenated})
-
-        # Add alias entries
-        people_list.extend(aliases_by_person.values())
         return people_list
 
     @staticmethod
@@ -255,8 +216,7 @@ class DbToYamlExporter:
             if ref.mode and ref.mode.value != "direct":
                 ref_dict["mode"] = ref.mode.value
 
-            if ref.speaker:
-                ref_dict["speaker"] = ref.speaker
+            # Note: Reference.speaker attribute was removed from schema
 
             if ref.source:
                 ref_dict["source"] = {
@@ -275,7 +235,7 @@ class DbToYamlExporter:
         """
         Extract poems metadata from database Entry.
 
-        Includes title, content, revision_date, and notes.
+        Includes title and content. PoemVersion is linked to Entry via entry_id.
 
         Args:
             entry: Database Entry ORM object
@@ -288,9 +248,7 @@ class DbToYamlExporter:
             [
                 {
                     "title": "Ode to Joy",
-                    "content": "Beautiful spark...",
-                    "revision_date": "2024-01-15",
-                    "notes": "First draft"
+                    "content": "Beautiful spark..."
                 }
             ]
         """
@@ -303,10 +261,7 @@ class DbToYamlExporter:
                 "title": pv.poem.title if pv.poem else "Untitled",
                 "content": pv.content,
             }
-            if pv.revision_date:
-                poem_dict["revision_date"] = pv.revision_date.isoformat()
-            if pv.notes:
-                poem_dict["notes"] = pv.notes
+            # Note: PoemVersion.revision_date and PoemVersion.notes were removed from schema
             poems_list.append(poem_dict)
 
         return poems_list
