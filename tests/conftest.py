@@ -334,8 +334,8 @@ def reference_manager(db_session):
 @pytest.fixture
 def event_manager(db_session):
     """Create EventManager instance for testing."""
-    from dev.database.managers import EventManager
-    return EventManager(db_session)
+    from dev.database.managers import SimpleManager
+    return SimpleManager.for_events(db_session)
 
 
 # Note: moment_manager and manuscript_manager fixtures removed

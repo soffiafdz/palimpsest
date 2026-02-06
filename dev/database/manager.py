@@ -115,6 +115,7 @@ from .query_analytics import QueryAnalytics
 from .managers import (
     SimpleManager,
     TagManager,
+    EventManager,
     PersonManager,
     LocationManager,
     ReferenceManager,
@@ -205,6 +206,7 @@ class PalimpsestDB:
 
     # Manager descriptors - automatically validate session context
     tags = ManagerProperty("_tag_manager", "TagManager")
+    events = ManagerProperty("_event_manager", "EventManager")
     people = ManagerProperty("_person_manager", "PersonManager")
     locations = ManagerProperty("_location_manager", "LocationManager")
     references = ManagerProperty("_reference_manager", "ReferenceManager")
@@ -261,12 +263,14 @@ class PalimpsestDB:
         self.query_analytics = QueryAnalytics(self.logger)
 
         # Initialize modular entity managers (lazy-loaded in session_scope)
-        # Note: TagManager is a factory that returns SimpleManager
+        # Note: TagManager/EventManager are factories that return SimpleManager
         self._tag_manager: Optional[SimpleManager] = None
+        self._event_manager: Optional[SimpleManager] = None
         self._person_manager: Optional[PersonManager] = None
         self._location_manager: Optional[LocationManager] = None
         self._reference_manager: Optional[ReferenceManager] = None
         self._poem_manager: Optional[PoemManager] = None
+        self._entry_manager: Optional[EntryManager] = None
 
         # Initialize database
         self._setup_engine()
@@ -336,6 +340,7 @@ class PalimpsestDB:
 
         # Initialize modular managers for this session
         self._tag_manager = TagManager(session, self.logger)
+        self._event_manager = EventManager(session, self.logger)
         self._person_manager = PersonManager(session, self.logger)
         self._location_manager = LocationManager(session, self.logger)
         self._reference_manager = ReferenceManager(session, self.logger)
@@ -358,10 +363,12 @@ class PalimpsestDB:
         finally:
             # Clean up managers
             self._tag_manager = None
+            self._event_manager = None
             self._person_manager = None
             self._location_manager = None
             self._reference_manager = None
             self._poem_manager = None
+            self._entry_manager = None
 
             session.close()
             safe_logger(self.logger).log_debug("session_close", {"session_id": session_id})

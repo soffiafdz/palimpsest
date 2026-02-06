@@ -2,7 +2,7 @@
 """
 simple_manager.py
 -----------------
-Config-driven manager for simple entities: Tag, Theme, Arc.
+Config-driven manager for simple entities: Tag, Theme, Arc, Event.
 
 This module provides a generic manager for simple lookup entities
 that share common patterns: get_or_create, link to entries, etc.
@@ -18,11 +18,13 @@ Usage:
     tag_mgr = SimpleManager.for_tags(session, logger)
     theme_mgr = SimpleManager.for_themes(session, logger)
     arc_mgr = SimpleManager.for_arcs(session, logger)
+    event_mgr = SimpleManager.for_events(session, logger)
 
     # Common operations
     tag = tag_mgr.get_or_create("python")
     theme = theme_mgr.get_or_create("identity")
     arc = arc_mgr.get_or_create("The Long Wanting")
+    event = event_mgr.get_or_create("Birthday Party")
 
     # Relationships
     tag_mgr.link_to_entry(tag, entry)
@@ -39,7 +41,7 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
-from dev.database.models import Arc, Entry, Tag, Theme
+from dev.database.models import Arc, Entry, Event, Scene, Tag, Theme
 from .base_manager import BaseManager
 
 
@@ -111,6 +113,19 @@ ARC_CONFIG = SimpleManagerConfig(
     relationships=[RelationshipConfig("entries", Entry)],
 )
 
+EVENT_CONFIG = SimpleManagerConfig(
+    model_class=Event,
+    name_field="name",
+    display_name="event",
+    normalizer=_normalize_string,
+    supports_soft_delete=False,
+    extra_fields=[],
+    relationships=[
+        RelationshipConfig("entries", Entry),
+        RelationshipConfig("scenes", Scene),
+    ],
+)
+
 
 class SimpleManager(BaseManager):
     """
@@ -161,6 +176,13 @@ class SimpleManager(BaseManager):
     ) -> "SimpleManager":
         """Create a manager for Arc entities."""
         return cls(session, logger, ARC_CONFIG)
+
+    @classmethod
+    def for_events(
+        cls, session: Session, logger: Optional[PalimpsestLogger] = None
+    ) -> "SimpleManager":
+        """Create a manager for Event entities."""
+        return cls(session, logger, EVENT_CONFIG)
 
     # -------------------------------------------------------------------------
     # Core CRUD Operations
@@ -850,3 +872,4 @@ class SimpleManager(BaseManager):
 TagManager = SimpleManager.for_tags
 ThemeManager = SimpleManager.for_themes
 ArcManager = SimpleManager.for_arcs
+EventManager = SimpleManager.for_events

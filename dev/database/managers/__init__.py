@@ -9,10 +9,11 @@ following the Single Responsibility Principle and inheriting from BaseManager.
 
 Available Managers:
     BaseManager: Abstract base class with common utilities
-    SimpleManager: Config-driven manager for Tag, Theme, Arc
+    SimpleManager: Config-driven manager for Tag, Theme, Arc, Event
     TagManager: Factory for Tag SimpleManager
     ThemeManager: Factory for Theme SimpleManager
     ArcManager: Factory for Arc SimpleManager
+    EventManager: Factory for Event SimpleManager
     LocationManager: Manages City and Location entities
     ReferenceManager: Manages ReferenceSource and Reference entities
     PoemManager: Manages Poem and PoemVersion entities
@@ -27,13 +28,12 @@ Usage:
     theme_mgr = ThemeManager(session, logger)  # Returns SimpleManager
 """
 from .base_manager import BaseManager
-from .simple_manager import SimpleManager, TagManager, ThemeManager, ArcManager
+from .simple_manager import SimpleManager, TagManager, ThemeManager, ArcManager, EventManager
 from .location_manager import LocationManager
 from .reference_manager import ReferenceManager
 from .poem_manager import PoemManager
 from .person_manager import PersonManager
 from .entry_manager import EntryManager
-from .event_manager import EventManager
 
 __all__ = [
     "BaseManager",

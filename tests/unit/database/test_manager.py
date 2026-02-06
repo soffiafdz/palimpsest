@@ -7,19 +7,8 @@ Tests for dev/database/manager.py - PalimpsestDB main database manager.
 Tests cover:
 - Transaction management (session_scope, transaction context manager)
 - Manager initialization and cleanup within session scope
-- Database cleanup operations with new Scene model
+- Database cleanup operations with Scene model
 - Error handling and rollback behavior
-
-Following Phase 13 schema changes:
-- No MomentManager (replaced by Scene/NarratedDate)
-- No ManuscriptManager (replaced by manuscript models)
-- No EventManager (Events are children of Entry, managed via EntryManager)
-
-Known Issue:
-- manager.py currently references EventManager which doesn't exist
-- This causes NameError when session_scope() is called
-- EventManager references should be removed from manager.py
-- Tests are written to validate correct behavior once bug is fixed
 """
 import pytest
 from datetime import date
@@ -142,13 +131,7 @@ class TestPalimpsestDBTransactions:
 
 
 class TestPalimpsestDBManagerInitialization:
-    """
-    Tests for manager initialization and cleanup in session_scope.
-
-    Note: These tests currently fail due to EventManager bug in manager.py.
-    They validate the CORRECT behavior (no EventManager) that should exist
-    once the bug is fixed.
-    """
+    """Tests for manager initialization and cleanup in session_scope."""
 
     @pytest.fixture
     def test_db(self, test_db_path, test_alembic_dir):
@@ -184,8 +167,12 @@ class TestPalimpsestDBManagerInitialization:
             assert test_db._entry_manager is not None
             assert isinstance(test_db._entry_manager, EntryManager)
 
+            assert test_db._event_manager is not None
+            assert isinstance(test_db._event_manager, SimpleManager)
+
         # After exiting context, managers should be cleaned up
         assert test_db._tag_manager is None
+        assert test_db._event_manager is None
         assert test_db._person_manager is None
         assert test_db._location_manager is None
         assert test_db._reference_manager is None
@@ -204,26 +191,18 @@ class TestPalimpsestDBManagerInitialization:
             # Phase 13: ManuscriptManager no longer exists
             assert not hasattr(test_db, "_manuscript_manager")
 
-    def test_session_scope_no_event_manager(self, test_db):
-        """Verify session_scope does NOT initialize EventManager (events managed via Entry)."""
-        with test_db.session_scope() as _:
-            # Phase 13: Events are children of Entry, not standalone entities
-            # EventManager should not be initialized
-            # Note: If _event_manager exists in manager.py, it's a bug that should be fixed
-            pass
-
     def test_manager_properties_accessible_in_session(self, test_db):
         """Verify manager properties are accessible within session_scope."""
         with test_db.session_scope() as _:
             # All manager properties should work
             assert test_db.tags is not None
+            assert test_db.events is not None
             assert test_db.people is not None
             assert test_db.locations is not None
             assert test_db.references is not None
             assert test_db.poems is not None
             assert test_db.entries is not None
 
-    @pytest.mark.skip(reason="Cannot test outside-session behavior until EventManager bug is fixed")
     def test_manager_properties_raise_outside_session(self, test_db):
         """Verify manager properties raise errors outside session_scope."""
         from dev.core.exceptions import DatabaseError
@@ -243,6 +222,7 @@ class TestPalimpsestDBManagerInitialization:
         with test_db.session_scope() as session:
             # All managers should share the same session
             assert test_db._tag_manager.session is session
+            assert test_db._event_manager.session is session
             assert test_db._person_manager.session is session
             assert test_db._location_manager.session is session
             assert test_db._reference_manager.session is session
@@ -251,13 +231,7 @@ class TestPalimpsestDBManagerInitialization:
 
 
 class TestPalimpsestDBCleanup:
-    """
-    Tests for cleanup_all_metadata with Scene model.
-
-    Note: These tests currently fail due to EventManager bug in manager.py.
-    They validate the CORRECT cleanup behavior that should work once
-    the bug is fixed.
-    """
+    """Tests for cleanup_all_metadata with Scene model."""
 
     @pytest.fixture
     def test_db(self, test_db_path, test_alembic_dir):
