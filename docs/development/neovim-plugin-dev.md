@@ -170,7 +170,7 @@ Template system for VimWiki diary entries only:
 
 - `M.populate_log()` - Creates diary/log entries (triggered by VimWiki autocmd on `BufNewFile` for log files)
 
-**Important:** Entity wiki pages (people, locations, events, themes) are **NOT** generated from templates. They are fully constructed by Python builders via `WikiEntity.to_wiki()` methods when `plm export-wiki` is run.
+**Note:** Wiki features are not currently implemented.
 
 ### autocmds.lua
 
@@ -308,27 +308,7 @@ The validator should output structured messages that Lua can parse:
 
 ### Wiki Page Generation
 
-Wiki pages are **NOT** generated from templates. They are fully constructed by Python builders.
-
-**How SQL→Wiki Export Works:**
-
-1. User runs `plm export-wiki [entity_type]`
-2. Python `GenericEntityExporter.export_all()` queries database
-3. For each database entity, calls `WikiEntity.from_database(db_entity, wiki_dir, journal_dir)`
-4. WikiEntity dataclass constructs complete page via `to_wiki()` method
-5. `to_wiki()` generates all sections including "Appearances", "Related Entries", etc.
-6. Complete markdown content written to wiki file
-
-**Example flow for Person entity:**
-
-```python
-# In GenericEntityExporter.export_single()
-wiki_entity = Person.from_database(db_person, wiki_dir, journal_dir)
-content = "\n".join(wiki_entity.to_wiki())  # Generates entire page
-write_if_changed(wiki_entity.path, content, force)
-```
-
-The `to_wiki()` method in each WikiEntity dataclass (Person, Location, Event, Theme, etc.) contains all the logic for generating the complete wiki page including database queries for related entries, appearances, etc.
+**Note:** Wiki features are not currently implemented.
 
 ---
 
@@ -415,11 +395,9 @@ end
 To add a new wiki entity type to the export system:
 
 1. **Create database model** in `dev/database/models.py`
-2. **Create WikiEntity dataclass** in `dev/dataclasses/wiki_*.py`:
-   - Implement `from_database(db_entity, wiki_dir, journal_dir)` classmethod
-   - Implement `to_wiki()` method that generates complete markdown
-3. **Register entity** in SQL→Wiki pipeline with `EntityConfig`
-4. **Add to fzf-lua** browse/search (see "Adding New Entity Types" above)
+2. **Add to fzf-lua** browse/search (see "Adding New Entity Types" above)
+
+**Note:** Wiki features are not currently implemented.
 
 ---
 

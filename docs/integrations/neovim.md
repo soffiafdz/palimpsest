@@ -280,7 +280,7 @@ The package includes a template for diary/log entries located in `templates/wiki
 
 - `log.template` - Diary/log entry template (auto-populated on `VimwikiMakeDiaryNote`)
 
-**Note:** Entity pages (people, locations, events, themes) are **not** generated from templates. They are fully constructed by the Python builders from database queries using the `to_wiki()` methods in each WikiEntity dataclass. The complete wiki page including all sections (Appearances, Related Entries, etc.) is generated directly from the database when you run `plm export-wiki`.
+**Note:** Wiki features are not currently implemented.
 
 ---
 
@@ -402,7 +402,7 @@ The Neovim package acts as a frontend to the Python backend:
 - **Validation** - Calls Python validators asynchronously
 - **Templates** - Only for diary entries (VimWiki integration)
 
-**Wiki page generation is handled entirely by Python:** When you run `plm export-wiki`, the Python builders query the database and generate complete wiki pages using the `WikiEntity.to_wiki()` methods. No templates are involved in this process.
+**Note:** Wiki features are not currently implemented.
 
 ---
 

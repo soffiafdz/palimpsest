@@ -420,7 +420,6 @@ validate db integrity
 
 ```bash
 # Export everything
-plm export-wiki all
 
 # Verify structure
 ls -R data/wiki/
@@ -478,7 +477,6 @@ Edit a **read-only field** in wiki (like entry count) and verify it's regenerate
 # Change "Entries: 1" to "Entries: 999" in wiki/events/thesis-writing.md
 
 # Export again (should regenerate)
-plm export-wiki events --force
 
 # Check if it was overwritten back to 1
 cat data/wiki/events/thesis-writing.md | grep "Entries:"
@@ -584,7 +582,6 @@ plm import-metadata
 metadb query show 2024-11-25
 
 # Export wiki to see poem page
-plm export-wiki poems
 
 # Check poem wiki
 cat data/wiki/poems/winter-in-montreal.md
@@ -596,7 +593,6 @@ cat data/wiki/poems/winter-in-montreal.md
 
 ```bash
 # Export manuscript wiki
-plm export-wiki all  # Includes manuscript
 
 # Check manuscript structure
 ls -la data/wiki/manuscript/
@@ -979,7 +975,6 @@ metadb query months 2024
 
 ```bash
 # Export all to wiki
-plm export-wiki all
 
 # Rebuild search index
 jsearch index rebuild
@@ -1112,7 +1107,6 @@ jsearch index create
 ```bash
 validate wiki check
 # Fix the reported links
-plm export-wiki all  # Regenerate if needed
 ```
 
 ### "Metadata out of sync"
