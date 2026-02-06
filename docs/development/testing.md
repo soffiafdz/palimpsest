@@ -78,8 +78,6 @@ Use this checklist to track your progress:
 
 ### Wiki System
 
-- [ ] sql2wiki export
-- [ ] wiki2sql import
 - [ ] Editable field sync
 - [ ] Read-only field protection
 - [ ] Link validation
@@ -460,7 +458,7 @@ vim data/wiki/events/thesis-writing.md
 # intellectual journey and struggle with identity.
 
 # Save and import
-plm # import-wiki (not implemented) all
+# (wiki features not implemented) all
 
 # Verify notes were imported
 metadb query "SELECT notes FROM events WHERE name='thesis-writing'"
@@ -621,7 +619,7 @@ vim data/wiki/manuscript/entries/2024/2024-11-25.md
 # Ana Sofía: wisdom figure, catalyst for realization
 
 # Import manuscript edits
-plm # import-wiki (not implemented) manuscript-all
+# (wiki features not implemented) manuscript-all
 
 # Verify
 metadb query show 2024-11-25 | grep -A5 "manuscript"
@@ -849,7 +847,7 @@ vim data/wiki/entries/2024/2024-11-25.md        # Edit notes field differently
 
 # Sync both
 plm import-metadata
-plm # import-wiki (not implemented) entries
+# (wiki features not implemented) entries
 
 # Check conflicts
 metadb sync conflicts
