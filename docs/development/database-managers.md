@@ -21,7 +21,6 @@ dev/database/managers/
 ├── base_manager.py           # Common utilities and patterns
 ├── tag_manager.py            # Tag operations
 ├── event_manager.py          # Event operations with soft delete
-├── date_manager.py           # MentionedDate operations
 ├── location_manager.py       # City + Location (parent-child)
 ├── reference_manager.py      # ReferenceSource + Reference (parent-child)
 ├── poem_manager.py           # Poem + PoemVersion (versioning)
@@ -81,26 +80,6 @@ events.delete(event, deleted_by="admin", reason="Duplicate")
 events.restore(event)
 ```
 
-### DateManager
-
-Manages MentionedDate entities with context tracking.
-
-**Key Features:**
-- Full CRUD for date mentions in entries
-- M2M relationships with entries, locations, and people
-- Context field for why a date was mentioned
-- Temporal analysis queries
-
-**Example:**
-```python
-dates = DateManager(session, logger)
-mentioned_date = dates.get_or_create(
-    date(2023, 6, 15),
-    context="Birthday"
-)
-dates.link_to_location(mentioned_date, location)
-```
-
 ### LocationManager
 
 Manages City and Location entities (parent-child relationship).
@@ -153,9 +132,7 @@ Manages Poem and PoemVersion entities with content versioning.
 
 **Key Features:**
 - Poem: title (not unique - multiple poems can share a title)
-- PoemVersion: content with MD5 hash for deduplication
-- Auto-generates version_hash from content
-- Prevents duplicate versions (same poem_id + version_hash)
+- PoemVersion: content tracking with revision dates
 - Version timeline queries
 
 **Example:**

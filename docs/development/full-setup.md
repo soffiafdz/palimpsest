@@ -1,5 +1,8 @@
 # Full Setup Guide
 
+> **Note:** Wiki-related steps (`export-wiki`, `WikiExporter`) are not yet implemented.
+> Use `plm import-metadata` for database import and `plm export-db` for exports.
+
 Complete instructions for setting up Palimpsest from scratch on a new machine.
 
 ---

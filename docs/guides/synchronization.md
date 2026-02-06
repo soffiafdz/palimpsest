@@ -1,5 +1,8 @@
 # Synchronization Guide
 
+> **Note:** The wiki synchronization system described here is not yet implemented.
+> The current workflow uses metadata YAML files imported via `plm import-metadata`.
+
 Complete guide to Palimpsest's bidirectional synchronization system and multi-machine workflows.
 
 ---

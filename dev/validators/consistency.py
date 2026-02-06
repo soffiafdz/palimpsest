@@ -6,11 +6,11 @@ Cross-system consistency validation for Palimpsest.
 
 Validates consistency between:
 - Markdown files (MD)
+- Metadata YAML files
 - Database (DB)
-- Wiki pages (Wiki)
 
 Checks for:
-- Entry existence across systems (MD ↔ DB ↔ Wiki)
+- Entry existence across systems (MD ↔ DB)
 - Metadata synchronization
 - Referential integrity
 - File hash consistency
@@ -45,7 +45,7 @@ class ConsistencyIssue:
 
     check_type: str  # existence, metadata, references, integrity
     severity: str  # error, warning
-    system: str  # md, db, wiki, md-db, db-wiki, md-db-wiki
+    system: str  # md, db, md-db
     entity_type: str  # entry, person, location, etc.
     entity_id: str  # name, etc.
     message: str
@@ -86,13 +86,12 @@ class ConsistencyValidationReport:
 
 
 class ConsistencyValidator:
-    """Validates consistency across MD, DB, and Wiki systems."""
+    """Validates consistency across MD and DB systems."""
 
     def __init__(
         self,
         db: PalimpsestDB,
         md_dir: Path,
-        wiki_dir: Path,
         logger: Optional[PalimpsestLogger] = None,
     ):
         """
@@ -101,12 +100,10 @@ class ConsistencyValidator:
         Args:
             db: Database manager instance
             md_dir: Directory containing markdown files
-            wiki_dir: Directory containing wiki files
             logger: Optional logger instance
         """
         self.db = db
         self.md_dir = md_dir
-        self.wiki_dir = wiki_dir
         self.logger = logger
         self.report = ConsistencyValidationReport()
 
@@ -129,7 +126,7 @@ class ConsistencyValidator:
 
     def check_entry_existence(self) -> List[ConsistencyIssue]:
         """
-        Check entry existence across MD ↔ DB ↔ Wiki.
+        Check entry existence across MD ↔ DB.
 
         Returns:
             List of existence issues
@@ -142,7 +139,6 @@ class ConsistencyValidator:
         # Get entry dates from each system
         md_dates = self._get_md_dates()
         db_dates = self._get_db_dates()
-        wiki_dates = self._get_wiki_dates()
 
         # MD but not DB (parsing failed or sync not run)
         md_only = md_dates - db_dates
@@ -154,7 +150,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=date_str,
                 message="Entry exists in markdown but not in database",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)
@@ -176,36 +172,6 @@ class ConsistencyValidator:
                         )
                         issues.append(issue)
                         self.report.add_issue(issue)
-
-        # DB but not Wiki (export not run)
-        db_not_wiki = db_dates - wiki_dates
-        for date_str in db_not_wiki:
-            issue = ConsistencyIssue(
-                check_type="existence",
-                severity="warning",
-                system="db-wiki",
-                entity_type="entry",
-                entity_id=date_str,
-                message="Entry in database but not exported to wiki",
-                suggestion="Run: python -m dev.pipeline.cli sql2wiki",
-            )
-            issues.append(issue)
-            self.report.add_issue(issue)
-
-        # Wiki but not DB (orphaned wiki file)
-        wiki_only = wiki_dates - db_dates
-        for date_str in wiki_only:
-            issue = ConsistencyIssue(
-                check_type="existence",
-                severity="error",
-                system="wiki-db",
-                entity_type="entry",
-                entity_id=date_str,
-                message="Entry in wiki but not in database",
-                suggestion="Import entry or remove wiki file",
-            )
-            issues.append(issue)
-            self.report.add_issue(issue)
 
         safe_logger(self.logger).log_info(f"Found {len(issues)} entry existence issues")
 
@@ -254,7 +220,7 @@ class ConsistencyValidator:
                             entity_type="entry",
                             entity_id=entry_db.date.isoformat(),
                             message=f"Word count mismatch: MD={md_word_count}, DB={entry_db.word_count}",
-                            suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                            suggestion="Run: python -m dev.pipeline.cli import-metadata",
                         )
                         issues.append(issue)
                         self.report.add_issue(issue)
@@ -383,7 +349,7 @@ class ConsistencyValidator:
                                 entity_type="entry",
                                 entity_id=entry.date.isoformat(),
                                 message="File hash mismatch (file modified since last sync)",
-                                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                                suggestion="Run: python -m dev.pipeline.cli import-metadata",
                             )
                             issues.append(issue)
                             self.report.add_issue(issue)
@@ -422,20 +388,6 @@ class ConsistencyValidator:
         with self.db.session_scope() as session:
             return {e.date.isoformat() for e in session.query(Entry).all()}
 
-    def _get_wiki_dates(self) -> Set[str]:
-        """Get all date strings from wiki entries."""
-        dates = set()
-        entries_dir = self.wiki_dir / "entries"
-        if entries_dir.exists():
-            for wiki_file in entries_dir.glob("**/*.md"):
-                try:
-                    date_str = wiki_file.stem
-                    if DataValidator.validate_date_string(date_str):
-                        dates.add(date_str)
-                except Exception:
-                    pass
-        return dates
-
     def _check_people_consistency(
         self, entry_md: MdEntry, entry_db: Entry, session
     ) -> List[ConsistencyIssue]:
@@ -458,7 +410,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=entry_db.date.isoformat(),
                 message=f"People in MD ({md_people_count}) but none in DB",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)
@@ -492,7 +444,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=entry_db.date.isoformat(),
                 message=f"Locations in MD ({md_loc_count}) but none in DB",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)
@@ -521,7 +473,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=entry_db.date.isoformat(),
                 message=f"Tags in MD but not DB: {', '.join(missing_in_db)}",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)

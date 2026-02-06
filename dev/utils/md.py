@@ -26,7 +26,7 @@ This module provides comprehensive markdown manipulation functions including:
 - Compute relative links between files
 - Resolve relative links back to absolute paths
 
-Intended for use across txt2md, md2wiki, sql2wiki workflows and dataclasses.
+Intended for use across txt2md, metadata import workflows, and dataclasses.
 """
 from __future__ import annotations
 

@@ -1,5 +1,9 @@
 # Getting Started with Palimpsest
 
+> **Note:** This guide references wiki features (`export-wiki`, `import-wiki`) that are not
+> yet implemented. The current workflow uses metadata YAML files as the editable source,
+> imported via `plm import-metadata`. Database exports use `plm export-db` (JSON/CSV format).
+
 Welcome to Palimpsest! This guide will help you understand what Palimpsest is, how it works, and get you started with your first workflow.
 
 ## What is Palimpsest?

@@ -22,7 +22,7 @@ python -m dev.bin.extract_entities
 ```
 
 **What it does:**
-- Scans `data/narrative_analysis/**/*.yaml` for all people and location mentions
+- Scans `data/metadata/journal/**/*.yaml` for all people and location mentions
 - Parses using existing heuristics (see below)
 - Groups similar names automatically
 - Generates draft curation files with context for review
@@ -640,8 +640,6 @@ Once curation is validated, the bulk import script:
 ## Next Steps After Curation
 
 1. Validate curation files
-2. Run bulk import import
+2. Run bulk import (`plm import-metadata`)
 3. Verify database populated correctly (count checks)
-4. Export to new YAML format for git backup
-5. Delete `data/narrative_analysis/` and `data/legacy/` (no longer needed)
-6. Begin using wiki interface for ongoing curation
+4. Export to JSON/CSV for analysis (`plm export-db`)

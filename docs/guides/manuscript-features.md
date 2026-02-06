@@ -1,5 +1,8 @@
 # Manuscript Subwiki Design Document
 
+> **Note:** The manuscript subwiki described here is not yet implemented.
+> This documents the planned wiki system for manuscript features.
+
 ## Overview
 
 The Palimpsest project will have **two separate wiki systems**:

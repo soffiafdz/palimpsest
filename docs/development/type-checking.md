@@ -204,9 +204,9 @@ entry = session.query(Entry).first()
 
 ```python
 # YAML parsing with defensive checks
-def parse_date_field(data: Any) -> list[MentionedDate]:
+def parse_date_field(data: Any) -> list[NarratedDate]:
     if isinstance(data, str):
-        return [MentionedDate(date=data)]
+        return [NarratedDate(date=data)]
     elif isinstance(data, list):
         return [parse_date_item(item) for item in data]
     else:

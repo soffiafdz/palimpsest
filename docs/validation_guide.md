@@ -1,5 +1,9 @@
 # Manual Validation Guide
 
+> **Note:** This guide references the deprecated MentionedDate/Moment classification system.
+> The current schema uses Scene, Thread, and NarratedDate models instead.
+> Validation is now performed via `plm import-metadata` and consistency checks.
+
 This guide covers two validation tasks for the Palimpsest project:
 1. **Moments/References Validation** - Classifying `dates:` entries in YAML frontmatter
 2. **Narrative Structure Validation** - Events and arcs in manifest files

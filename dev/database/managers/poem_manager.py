@@ -60,7 +60,6 @@ from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
 from dev.database.models import Entry, Poem, PoemVersion
-from dev.utils import md
 
 from .entity_manager import EntityManager, EntityManagerConfig
 

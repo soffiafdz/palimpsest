@@ -40,10 +40,7 @@ from dev.database.models import (
     Tag,
 )
 from dev.database.decorators import DatabaseOperation
-# from dev.database.tombstone_manager import TombstoneManager
 from .base_manager import BaseManager
-# TODO: EntryRelationshipHelper needs rebuild for new model structure
-# from .entry_helpers import EntryRelationshipHelper
 
 
 class EntryManager(BaseManager):
@@ -71,8 +68,6 @@ class EntryManager(BaseManager):
             logger: Optional logger for operation tracking
         """
         super().__init__(session, logger)
-        # self.tombstones = TombstoneManager(session, logger)
-        # self.helpers = EntryRelationshipHelper(session, logger)
 
         # Cache manager instances to avoid repeated instantiation
         from dev.database.managers import PersonManager, LocationManager, EventManager
@@ -620,8 +615,8 @@ class EntryManager(BaseManager):
                     - remove_locations (List[Location|int])
             incremental (bool): If True, add/remove specified items.
                                 If False, replace all relationships.
-            sync_source (str): Source of sync ('yaml', 'wiki', 'manual') for tombstones
-            removed_by (str): Who/what is making changes ('yaml2sql', 'wiki2sql', etc.)
+            sync_source (str): Source of sync ('yaml', 'manual') for tombstones
+            removed_by (str): Who/what is making changes ('import-metadata', etc.)
 
         Behavior:
             - Incremental mode:

@@ -63,15 +63,17 @@ metadb tombstone list          # List tombstones
 **Structure**:
 ```
 dev/database/models/
-├── __init__.py          # Re-exports all models (backward compatibility)
+├── __init__.py          # Re-exports all models
 ├── base.py              # Base class, SoftDeleteMixin
 ├── associations.py      # Many-to-many relationship tables
 ├── enums.py             # Enumeration types
 ├── core.py              # SchemaInfo, Entry (central model)
-├── geography.py         # MentionedDate, City, Location
-├── entities.py          # Person, Alias, Tag
-├── creative.py          # Reference, ReferenceSource, Event, Poem
-└── sync.py              # AssociationTombstone, SyncState, EntitySnapshot
+├── geography.py         # City, Location
+├── entities.py          # Person, PersonAlias, Tag, Theme
+├── creative.py          # Reference, ReferenceSource, Poem, PoemVersion
+├── analysis.py          # Scene, SceneDate, Event, Arc, Thread
+├── manuscript.py        # Chapter, PersonCharacterMap, etc.
+└── metadata.py          # NarratedDate, Motif
 ```
 
 **Key Patterns**:

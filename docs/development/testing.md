@@ -1,5 +1,8 @@
 # Palimpsest Complete Feature Testing Plan
 
+> **Note:** Wiki system tests (Section 6) reference features not yet implemented.
+> Skip wiki-related test steps until the wiki module is built.
+
 **Last Updated:** 2025-11-29
 **Purpose:** Comprehensive testing guide for all Palimpsest features from beginning to end
 

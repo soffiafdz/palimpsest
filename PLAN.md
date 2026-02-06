@@ -4,12 +4,18 @@
 
 This document captures ALL conclusions from the CS/Novelist dialogue sessions that designed the Phase 14 data architecture. It serves as the authoritative reference for all agents working on this phase. This is a temporary planning document—not permanent documentation.
 
-**Status:** Planning complete. Implementation in progress (Phase 14b).
+**Status:** Core pipeline (YAML → DB) operational. Wiki workflow deferred.
 
-**Previous phases completed:**
+**Completed phases:**
 - Phase 13a: Legacy code cleanup (complete)
 - Arc sync script (complete, 133 files updated)
 - Phase 14a: DB Schema + Source Files (complete)
+- Phase 14b: Jumpstart — metadata YAMLs created (complete)
+- Phase 14b-2: DB Import — `plm import-metadata` operational (complete)
+
+**Current architecture:**
+Metadata YAML (human-authored) → DB (derived) → JSON/CSV exports.
+Wiki-first workflow (14c/14d) is deferred until the YAML → DB pipeline is stable.
 
 ---
 
@@ -1861,7 +1867,7 @@ M.vimwiki = {
 
 **Status:** Complete
 
-### Phase 14b: Jumpstart ← CURRENT
+### Phase 14b: Jumpstart ✓ COMPLETE
 
 **Goal:** Clean up messy current files into consistent format matching the future MD→DB pipeline.
 
@@ -1920,37 +1926,36 @@ M.vimwiki = {
 
 ---
 
-### Phase 14b-2: DB Import (after jumpstart)
+### Phase 14b-2: DB Import ✓ COMPLETE
 
 **Goal:** Import clean files into database.
 
+**Status:** Complete. `metadata_importer.py` works; CLI command `plm import-metadata` exists.
+
 **Tasks:**
-1. Build DB import script
-2. Import clean MD frontmatter + clean narrative analysis YAMLs → DB
-3. Validate import (entry counts, relationship integrity)
+1. ✓ Build DB import script (`dev/pipeline/metadata_importer.py`)
+2. ✓ Import clean MD frontmatter + clean metadata YAMLs → DB
+3. ✓ Validate import (entry counts, relationship integrity)
 
 ---
 
-### Phase 14b-3: Export Canonical YAMLs (after DB import)
+### Phase 14b-3: Export Canonical YAMLs — SUPERSEDED
 
-**Goal:** Export from DB to canonical YAML files with all relationships.
+**Original goal:** Export from DB to canonical YAML files with all relationships.
 
-**Tasks:**
-1. Build `dev/pipeline/export_yaml.py` - DB → canonical YAML export
-2. Export to:
-   - `metadata/people/{name}.yaml` - person with all relationships (entries, scenes, threads, characters)
-   - `metadata/locations/{city}/{location}.yaml` - location with relationships
-   - `metadata/journal/{YYYY}/{YYYY-MM-DD}.yaml` - entry with all analysis data
-3. Generate wiki pages from DB
-4. **After validation:** Delete `narrative_analysis/`
-
-**Canonical YAMLs are DB exports** — They include all relationships from the database.
+**Status:** Superseded by the existing JSON/CSV export pipeline (`plm export-db`).
+The current pipeline exports to JSON and CSV formats, which serve the same purpose.
+A dedicated YAML export may be added later if needed.
 
 ---
 
-### Phase 14c: Wiki Parsing + Sync + NVim Integration
+### Phase 14c: Wiki Parsing + Sync + NVim Integration — DEFERRED
 
 **Goal:** Enable wiki → DB → YAML workflow. Wiki edits update DB and export to YAML.
+
+**Status:** Deferred. The `dev/wiki/` module was deleted (broken/deprecated). Wiki rebuild
+will happen after the YAML → DB → JSON pipeline is stable. Wiki-related exceptions
+(`Wiki2SqlError`, `Sql2WikiError`) are preserved for future use.
 
 **Tasks:**
 
@@ -1995,9 +2000,11 @@ M.vimwiki = {
 
 ---
 
-### Phase 14d: Vimwiki Templates
+### Phase 14d: Vimwiki Templates — DEFERRED
 
 **Goal:** Update wiki templates for the new workflow (editable metadata sections).
+
+**Status:** Deferred until Phase 14c is implemented.
 
 **Tasks:**
 

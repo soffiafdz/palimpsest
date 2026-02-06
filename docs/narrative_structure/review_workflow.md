@@ -1,10 +1,11 @@
 # Narrative Analysis Curation Workflow
 
+> **Note:** The curation workflow described below references the legacy `narrative_analysis/`
+> directory structure. Narrative analysis data now lives in `data/metadata/journal/` as
+> per-entry YAML files. The vocabulary definitions (motifs and tags) remain current and are
+> defined in `dev/pipeline/configs/vocabulary.py`.
+
 This document describes the workflow for reviewing and curating the narrative analysis.
-
-## Curation Status
-
-The scene/events/arcs data is currently **under active curation**. After review is complete, this section will be updated to reflect that the data represents validated ground-truth.
 
 ---
 

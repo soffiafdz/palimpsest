@@ -9,9 +9,8 @@ journal source files:
 
 All builders follow a common interface defined by the base classes.
 
-Note: Wiki export functionality has been migrated to dev/wiki/exporter.py
-using Jinja2 templates for all entity pages, indexes, and special pages
-(stats, timeline, analysis).
+Note: Wiki export functionality is planned for future implementation.
+Current export options include PDF, text, and JSON/CSV via the pipeline.
 """
 
 from dev.builders.base import BaseBuilder, BuilderStats

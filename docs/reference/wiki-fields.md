@@ -1,5 +1,8 @@
 # SQL ↔ Vimwiki Metadata Guide
 
+> **Note:** The wiki module is not yet implemented. This documents the planned wiki system.
+> The current workflow uses metadata YAML files as the human-editable source of truth.
+
 Complete guide for using Palimpsest's bidirectional SQL database and Vimwiki export/import system.
 
 ---

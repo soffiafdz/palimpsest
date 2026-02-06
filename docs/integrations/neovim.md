@@ -1,5 +1,9 @@
 # Neovim Integration Guide
 
+> **Note:** Wiki-related features (wiki browse, wiki search, entity page generation)
+> are not yet implemented. The Lua package and path configuration exist but wiki
+> commands will be functional when the wiki module is rebuilt.
+
 Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides editor integration for working with the wiki system and journal entries.
 
 ## Features

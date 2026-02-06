@@ -72,7 +72,7 @@ class Person(Base, SoftDeleteMixin):
         character_mappings: O2M with PersonCharacterMap (manuscript)
 
     Notes:
-        - slug is unique and used for wiki filenames, YAML keys, URLs
+        - slug is a URL-safe unique identifier for filenames and lookups
         - Format: words separated by `-`, fields separated by `_`
         - Examples: `louis_collins`, `sophie_the-accountant`, `maria-jose_castro`
     """

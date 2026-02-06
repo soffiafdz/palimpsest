@@ -155,7 +155,10 @@ plm export-db [--year YYYY] [--output-dir PATH]
 
 ### Wiki Operations
 
-#### `plm export-wiki`
+> **Note:** Wiki commands are planned but not yet implemented.
+> The wiki module will be built after the YAML → DB pipeline is stable.
+
+#### `plm export-wiki` *(planned)*
 Export database entities to vimwiki pages.
 
 ```bash
@@ -194,7 +197,7 @@ plm export-wiki people
 plm export-wiki all --force --wiki-dir ~/my-wiki
 ```
 
-#### `plm import-wiki`
+#### `plm import-wiki` *(planned)*
 Import wiki edits back to database (bidirectional sync).
 
 ```bash

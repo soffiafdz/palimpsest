@@ -11,7 +11,7 @@ This module defines:
 
 These definitions are used by:
 - dev/pipeline/curation.py for auto-assignment
-- dev/wiki/ for rendering wiki pages
+- dev/pipeline/metadata_importer.py for database import
 """
 from __future__ import annotations
 

@@ -4,11 +4,11 @@ Consistency Validation Commands
 
 Commands for validating cross-system consistency.
 
-Check consistency between markdown files, database, and wiki pages.
+Check consistency between markdown files and the database.
 Detects orphaned entries, metadata mismatches, and referential integrity issues.
 
 Commands:
-    - existence: Check entry existence across MD ↔ DB ↔ Wiki
+    - existence: Check entry existence across MD ↔ DB
     - metadata: Check metadata synchronization between MD and DB
     - references: Check referential integrity constraints
     - integrity: Check file hash integrity
@@ -17,7 +17,7 @@ Commands:
 import click
 from pathlib import Path
 
-from dev.core.paths import MD_DIR, WIKI_DIR, DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
+from dev.core.paths import MD_DIR, DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 
 
 @click.group()
@@ -26,12 +26,6 @@ from dev.core.paths import MD_DIR, WIKI_DIR, DB_PATH, ALEMBIC_DIR, LOG_DIR, BACK
     type=click.Path(exists=True),
     default=str(MD_DIR),
     help="Markdown directory",
-)
-@click.option(
-    "--wiki-dir",
-    type=click.Path(exists=True),
-    default=str(WIKI_DIR),
-    help="Wiki directory",
 )
 @click.option(
     "--db-path", type=click.Path(), default=str(DB_PATH), help="Path to database file"
@@ -49,7 +43,6 @@ from dev.core.paths import MD_DIR, WIKI_DIR, DB_PATH, ALEMBIC_DIR, LOG_DIR, BACK
 def consistency(
     ctx: click.Context,
     md_dir: str,
-    wiki_dir: str,
     db_path: str,
     alembic_dir: str,
     log_dir: str,
@@ -57,7 +50,7 @@ def consistency(
     """
     Validate cross-system consistency.
 
-    Check consistency between markdown files, database, and wiki pages.
+    Check consistency between markdown files and the database.
     Detects orphaned entries, metadata mismatches, and referential integrity issues.
     """
     from dev.core.cli import setup_logger
@@ -65,7 +58,6 @@ def consistency(
 
     ctx.ensure_object(dict)
     ctx.obj["md_dir"] = Path(md_dir)
-    ctx.obj["wiki_dir"] = Path(wiki_dir)
     ctx.obj["db_path"] = Path(db_path)
     ctx.obj["alembic_dir"] = Path(alembic_dir)
     ctx.obj["log_dir"] = Path(log_dir)
@@ -85,21 +77,20 @@ def consistency(
 @click.pass_context
 def existence(ctx: click.Context) -> None:
     """
-    Check entry existence across MD ↔ DB ↔ Wiki.
+    Check entry existence across MD ↔ DB.
 
-    Validates that entries exist consistently across all three systems.
+    Validates that entries exist consistently across both systems.
     Detects orphaned entries and missing files.
     """
     from dev.validators.consistency import ConsistencyValidator
 
     db = ctx.obj["db"]
     md_dir = ctx.obj["md_dir"]
-    wiki_dir = ctx.obj["wiki_dir"]
     logger = ctx.obj["logger"]
 
     click.echo("🔍 Checking entry existence across systems...\n")
 
-    validator = ConsistencyValidator(db, md_dir, wiki_dir, logger)
+    validator = ConsistencyValidator(db, md_dir, logger)
     issues = validator.check_entry_existence()
 
     if issues:
@@ -130,12 +121,11 @@ def metadata(ctx: click.Context) -> None:
 
     db = ctx.obj["db"]
     md_dir = ctx.obj["md_dir"]
-    wiki_dir = ctx.obj["wiki_dir"]
     logger = ctx.obj["logger"]
 
     click.echo("🔍 Checking metadata consistency...\n")
 
-    validator = ConsistencyValidator(db, md_dir, wiki_dir, logger)
+    validator = ConsistencyValidator(db, md_dir, logger)
     issues = validator.check_entry_metadata()
 
     if issues:
@@ -166,12 +156,11 @@ def references(ctx: click.Context) -> None:
 
     db = ctx.obj["db"]
     md_dir = ctx.obj["md_dir"]
-    wiki_dir = ctx.obj["wiki_dir"]
     logger = ctx.obj["logger"]
 
     click.echo("🔍 Checking referential integrity...\n")
 
-    validator = ConsistencyValidator(db, md_dir, wiki_dir, logger)
+    validator = ConsistencyValidator(db, md_dir, logger)
     issues = validator.check_referential_integrity()
 
     if issues:
@@ -204,12 +193,11 @@ def integrity(ctx: click.Context) -> None:
 
     db = ctx.obj["db"]
     md_dir = ctx.obj["md_dir"]
-    wiki_dir = ctx.obj["wiki_dir"]
     logger = ctx.obj["logger"]
 
     click.echo("🔍 Checking file integrity...\n")
 
-    validator = ConsistencyValidator(db, md_dir, wiki_dir, logger)
+    validator = ConsistencyValidator(db, md_dir, logger)
     issues = validator.check_file_integrity()
 
     if issues:
@@ -240,12 +228,11 @@ def all(ctx: click.Context) -> None:
 
     db = ctx.obj["db"]
     md_dir = ctx.obj["md_dir"]
-    wiki_dir = ctx.obj["wiki_dir"]
     logger = ctx.obj["logger"]
 
     click.echo("🔍 Running comprehensive consistency validation...\n")
 
-    validator = ConsistencyValidator(db, md_dir, wiki_dir, logger)
+    validator = ConsistencyValidator(db, md_dir, logger)
     report = validator.validate_all()
 
     # Print formatted report

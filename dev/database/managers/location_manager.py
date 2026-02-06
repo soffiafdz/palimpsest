@@ -20,7 +20,7 @@ Usage:
 
     # Create city
     city = loc_mgr.create_city({
-        "city": "Seattle",
+        "name": "Seattle",
         "state_province": "Washington",
         "country": "USA"
     })
@@ -159,7 +159,7 @@ class LocationManager(EntityManager):
 
         Args:
             metadata: Dictionary with required key:
-                - city: City name (required, unique)
+                - name: City name (required, unique)
                 Optional keys:
                 - state_province: State or province
                 - country: Country
@@ -173,7 +173,7 @@ class LocationManager(EntityManager):
             ValidationError: If city name is missing or invalid
             DatabaseError: If city already exists
         """
-        DataValidator.validate_required_fields(metadata, ["city"])
+        DataValidator.validate_required_fields(metadata, ["name"])
         with DatabaseOperation(self.logger, "create_city"):
             return self.create(metadata)
 

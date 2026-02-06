@@ -90,7 +90,6 @@ tags:
   - research
 references:
   - content: "The unexamined life is not worth living."
-    speaker: Socrates
     source:
       title: "Apology"
       type: book
@@ -788,7 +787,6 @@ references:
   - content: "The quoted text"         # Optional (need content OR description)
     description: "My interpretation"    # Optional (need content OR description)
     mode: direct                        # Optional: direct, indirect, paraphrase, visual
-    speaker: "Character Name"           # Optional
     source:                             # Optional but recommended
       title: "Book Title"
       type: book                        # Required if source present
@@ -813,7 +811,6 @@ references:
 references:
   - content: "To be or not to be, that is the question"
     mode: direct
-    speaker: Hamlet
     source:
       title: "Hamlet"
       type: play
@@ -836,7 +833,6 @@ references:
 references:
   - content: "The unexamined life is not worth living"
     description: "Socrates argues self-reflection is essential"
-    speaker: Socrates
     source:
       title: "Apology"
       type: book
