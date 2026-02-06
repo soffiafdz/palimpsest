@@ -689,47 +689,23 @@ class EntryManager(BaseManager):
 
                     # Replacement mode: clear and add all
                     if not incremental:
-                        # for existing_item in list(collection):
-                        #     self.tombstones.create(
-                        #         table_name=table_name,
-                        #         left_id=entry.id,
-                        #         right_id=existing_item.id,
-                        #         removed_by=removed_by,
-                        #         sync_source=sync_source,
-                        #         reason="replacement_mode",
-                        #     )
-
                         collection.clear()
 
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
-                                # self.tombstones.remove_tombstone(
-                                #     table_name, entry.id, resolved_item.id
-                                # )
                                 collection.append(resolved_item)
                     else:
                         # Incremental mode: add new items
                         for item in items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item not in collection:
-                                # self.tombstones.remove_tombstone(
-                                #     table_name, entry.id, resolved_item.id
-                                # )
                                 collection.append(resolved_item)
 
                         # Remove specified items
                         for item in remove_items:
                             resolved_item = self._resolve_or_create(item, model_class)
                             if resolved_item and resolved_item in collection:
-                                # self.tombstones.create(
-                                #     table_name=table_name,
-                                #     left_id=entry.id,
-                                #     right_id=resolved_item.id,
-                                #     removed_by=removed_by,
-                                #     sync_source=sync_source,
-                                #     reason="removed_from_source",
-                                # )
                                 collection.remove(resolved_item)
 
                     self.session.flush()
