@@ -14,11 +14,10 @@ from __future__ import annotations
 # --- Standard library imports ---
 import pytest
 from datetime import date
-from pathlib import Path
 
 # --- Local imports ---
 from dev.core.exceptions import DatabaseError, ValidationError
-from dev.database.models import City, Entry, Event, Person, Tag
+from dev.database.models import City, Entry
 
 
 class TestEntryManagerExists:
@@ -944,7 +943,7 @@ class TestEntryManagerEdgeCases:
 
         # Should fail on entry creation due to check constraint
         with pytest.raises(DatabaseError) as exc_info:
-            entry = entry_manager.create(
+            entry_manager.create(
                 {"date": "2024-01-15", "file_path": str(file_path), "word_count": -1}
             )
             db_session.commit()

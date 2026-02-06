@@ -9,7 +9,7 @@ and parent-child relationship between Poem and PoemVersion entities.
 Target Coverage: 90%+
 """
 import pytest
-from datetime import date
+
 from dev.database.models import Poem, PoemVersion
 from dev.core.exceptions import ValidationError, DatabaseError
 

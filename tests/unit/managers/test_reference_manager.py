@@ -9,7 +9,8 @@ relationship between ReferenceSource and Reference entities.
 Target Coverage: 90%+
 """
 import pytest
-from dev.database.models import ReferenceSource, Reference, ReferenceType, ReferenceMode
+
+from dev.database.models import ReferenceSource, Reference, ReferenceType
 from dev.core.exceptions import ValidationError, DatabaseError
 
 

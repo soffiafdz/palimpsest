@@ -13,14 +13,12 @@ Key areas tested:
     - Edge cases and error conditions
 """
 # --- Standard library imports ---
-from datetime import date, datetime
-from pathlib import Path
-from tempfile import TemporaryDirectory
+from datetime import date
 
 # --- Third party imports ---
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 # --- Local imports ---
 from dev.database.export_manager import ExportManager
@@ -32,24 +30,16 @@ from dev.database.models import (
     Event,
     Location,
     NarratedDate,
-    Person,
-    Poem,
-    PoemVersion,
     Reference,
     ReferenceSource,
     Scene,
-    SceneDate,
     Tag,
     Theme,
     Thread,
-    Character,
-    PersonCharacterMap,
 )
 from dev.database.models.enums import (
     ReferenceMode,
     ReferenceType,
-    RelationType,
-    ContributionType,
 )
 
 
