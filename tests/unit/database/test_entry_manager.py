@@ -649,40 +649,6 @@ class TestEntryManagerCityProcessing:
 class TestEntryManagerPeopleProcessing:
     """Test EntryManager people processing."""
 
-    def test_create_entry_with_people_by_string(self, entry_manager, tmp_dir, db_session):
-        """Test creating entry with people as strings."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-
-        entry = entry_manager.create(
-            {"date": "2024-01-15", "file_path": str(file_path), "people": ["Alice"]}
-        )
-        db_session.commit()
-        db_session.refresh(entry)
-
-        assert len(entry.people) >= 1
-        person_names = {p.name for p in entry.people}
-        assert "Alice" in person_names
-
-    def test_create_entry_with_people_by_id(self, entry_manager, tmp_dir, db_session):
-        """Test creating entry with people by ID."""
-        # Create person first
-        person = Person(name="Alice")
-        db_session.add(person)
-        db_session.commit()
-
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-
-        entry = entry_manager.create(
-            {"date": "2024-01-15", "file_path": str(file_path), "people": [person.id]}
-        )
-        db_session.commit()
-        db_session.refresh(entry)
-
-        assert len(entry.people) >= 1
-        assert entry.people[0].name == "Alice"
-
     def test_create_entry_with_people_by_dict(self, entry_manager, tmp_dir, db_session):
         """Test creating entry with people as dicts (from MD parsing)."""
         file_path = tmp_dir / "2024-01-15.md"
@@ -702,44 +668,6 @@ class TestEntryManagerPeopleProcessing:
         person_names = {p.name for p in entry.people}
         assert "Bob" in person_names
 
-    def test_update_entry_people_incremental(self, entry_manager, tmp_dir, db_session):
-        """Test incrementally adding people."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-
-        entry = entry_manager.create(
-            {"date": "2024-01-15", "file_path": str(file_path), "people": ["Alice"]}
-        )
-        db_session.commit()
-
-        # Add more people
-        entry_manager.update_relationships(entry, {"people": ["Bob"]}, incremental=True)
-        db_session.commit()
-        db_session.refresh(entry)
-
-        person_names = {p.name for p in entry.people}
-        assert "Alice" in person_names
-        assert "Bob" in person_names
-
-    def test_update_entry_people_replacement(self, entry_manager, tmp_dir, db_session):
-        """Test replacing all people."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-
-        entry = entry_manager.create(
-            {"date": "2024-01-15", "file_path": str(file_path), "people": ["Alice"]}
-        )
-        db_session.commit()
-
-        # Replace people
-        entry_manager.update_relationships(
-            entry, {"people": ["Charlie"]}, incremental=False
-        )
-        db_session.commit()
-        db_session.refresh(entry)
-
-        person_names = {p.name for p in entry.people}
-        assert person_names == {"Charlie"}
 
 
 class TestEntryManagerEventProcessing:

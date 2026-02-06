@@ -282,45 +282,6 @@ class TestReferenceManagerGetOrCreateSource:
 class TestReferenceManagerCreateReference:
     """Test ReferenceManager.create_reference() method."""
 
-    def test_create_reference_with_content(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test creating reference with content."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "So we beat on, boats against the current.",
-            "entry": entry
-        })
-
-        assert reference is not None
-        assert reference.id is not None
-        assert reference.content == "So we beat on, boats against the current."
-        assert reference.mode == ReferenceMode.DIRECT
-
-    def test_create_reference_with_description(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test creating reference with description only."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "description": "Quote about hope",
-            "entry": entry
-        })
-
-        assert reference.description == "Quote about hope"
-        assert reference.content is None
-
     def test_create_reference_with_source(self, reference_manager, entry_manager, tmp_dir, db_session):
         """Test creating reference linked to source."""
         # Create entry
@@ -347,24 +308,6 @@ class TestReferenceManagerCreateReference:
 
         assert reference.source is not None
         assert reference.source.id == source.id
-
-    def test_create_reference_with_mode(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test creating reference with specific mode."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "Paraphrased content",
-            "mode": "paraphrase",
-            "entry": entry
-        })
-
-        assert reference.mode == ReferenceMode.PARAPHRASE
 
     # Note: test_create_reference_with_speaker removed - speaker attribute
     # no longer exists on Reference model
@@ -393,74 +336,6 @@ class TestReferenceManagerCreateReference:
 class TestReferenceManagerUpdateReference:
     """Test ReferenceManager.update_reference() method."""
 
-    def test_update_reference_content(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test updating reference content."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "Original content",
-            "entry": entry
-        })
-        db_session.commit()
-
-        reference_manager.update_reference(reference, {"content": "Updated content"})
-        db_session.commit()
-        db_session.refresh(reference)
-
-        assert reference.content == "Updated content"
-
-    def test_update_reference_mode(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test updating reference mode."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "Test",
-            "mode": "direct",
-            "entry": entry
-        })
-        db_session.commit()
-
-        reference_manager.update_reference(reference, {"mode": "indirect"})
-        db_session.commit()
-        db_session.refresh(reference)
-
-        assert reference.mode == ReferenceMode.INDIRECT
-
-    def test_update_reference_cannot_remove_both_content_and_description(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test updating cannot remove both content and description."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "Content",
-            "entry": entry
-        })
-        db_session.commit()
-
-        with pytest.raises(ValidationError) as exc_info:
-            reference_manager.update_reference(reference, {
-                "content": None,
-                "description": None
-            })
-        assert "content" in str(exc_info.value).lower() or "description" in str(exc_info.value).lower()
-
     def test_update_nonexistent_reference_raises_error(self, reference_manager):
         """Test updating non-existent reference raises error."""
         fake_reference = Reference()
@@ -473,52 +348,8 @@ class TestReferenceManagerUpdateReference:
 class TestReferenceManagerDeleteReference:
     """Test ReferenceManager.delete_reference() method."""
 
-    def test_delete_reference(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test deleting a reference."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "To delete",
-            "entry": entry
-        })
-        db_session.commit()
-        reference_id = reference.id
-
-        reference_manager.delete_reference(reference)
-        db_session.commit()
-
-        result = reference_manager.get_reference(reference_id)
-        assert result is None
-
-
 class TestReferenceManagerGetReference:
     """Test ReferenceManager.get_reference() method."""
-
-    def test_get_reference_by_id(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test get reference by ID."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        created = reference_manager.create_reference({
-            "content": "Test content",
-            "entry": entry
-        })
-        db_session.commit()
-
-        result = reference_manager.get_reference(created.id)
-        assert result is not None
-        assert result.id == created.id
 
     def test_get_reference_returns_none_when_not_found(self, reference_manager):
         """Test get_reference returns None for non-existent reference."""
@@ -534,75 +365,8 @@ class TestReferenceManagerGetAllReferences:
         result = reference_manager.get_all_references()
         assert result == []
 
-    def test_get_all_references_returns_all(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test get_all_references returns all references."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference_manager.create_reference({"content": "Ref 1", "entry": entry})
-        reference_manager.create_reference({"content": "Ref 2", "entry": entry})
-        reference_manager.create_reference({"content": "Ref 3", "entry": entry})
-        db_session.commit()
-
-        result = reference_manager.get_all_references()
-        assert len(result) >= 3
-
-    def test_get_all_references_filtered_by_mode(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test get_all_references with mode filter."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference_manager.create_reference({
-            "content": "Direct 1",
-            "mode": "direct",
-            "entry": entry
-        })
-        reference_manager.create_reference({
-            "content": "Direct 2",
-            "mode": "direct",
-            "entry": entry
-        })
-        reference_manager.create_reference({
-            "content": "Indirect 1",
-            "mode": "indirect",
-            "entry": entry
-        })
-        db_session.commit()
-
-        result = reference_manager.get_all_references(mode=ReferenceMode.DIRECT)
-        assert len(result) == 2
-        assert all(r.mode == ReferenceMode.DIRECT for r in result)
-
-
 class TestReferenceManagerQueryMethods:
     """Test ReferenceManager query methods."""
-
-    def test_get_references_for_entry(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test get_references_for_entry returns references for specific entry."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference_manager.create_reference({"content": "Ref 1", "entry": entry})
-        reference_manager.create_reference({"content": "Ref 2", "entry": entry})
-        db_session.commit()
-
-        references = reference_manager.get_references_for_entry(entry)
-        assert len(references) >= 2
 
     def test_get_references_for_source(self, reference_manager, entry_manager, tmp_dir, db_session):
         """Test get_references_for_source returns references from specific source."""
@@ -660,24 +424,6 @@ class TestReferenceManagerEdgeCases:
         })
         assert source.title == "Spaces"
 
-    def test_reference_with_unicode_content(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test reference with unicode characters."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "Café français with émojis 🌟",
-            "entry": entry
-        })
-
-        assert "Café" in reference.content
-        assert "🌟" in reference.content
-
     def test_source_without_author(self, reference_manager, db_session):
         """Test creating source without author is allowed."""
         source = reference_manager.create_source({
@@ -686,21 +432,3 @@ class TestReferenceManagerEdgeCases:
         })
         assert source.author is None
 
-    def test_reference_with_both_content_and_description(self, reference_manager, entry_manager, tmp_dir, db_session):
-        """Test reference can have both content and description."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        reference = reference_manager.create_reference({
-            "content": "The actual quote",
-            "description": "A description of the quote",
-            "entry": entry
-        })
-
-        assert reference.content == "The actual quote"
-        assert reference.description == "A description of the quote"

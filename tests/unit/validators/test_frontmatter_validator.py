@@ -220,7 +220,7 @@ class TestFrontmatterValidator:
         file_path = tmp_path / "valid_manuscript.md"
         frontmatter = {
             "manuscript": {
-                "status": "quote",
+                "status": "draft",
                 "edited": True,
                 "themes": ["Theme1"]
             }

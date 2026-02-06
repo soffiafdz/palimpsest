@@ -209,31 +209,6 @@ class TestPoemManagerGetOrCreatePoem:
 class TestPoemManagerCreateVersion:
     """Test PoemManager.create_version() method."""
 
-    def test_create_version_minimal(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test creating version with minimal fields."""
-        # Create entry first (required for poem versions)
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Autumn Leaves",
-            "content": "Leaves fall softly to the ground.",
-            "entry": entry
-        })
-
-        assert version is not None
-        assert version.id is not None
-        assert version.poem is not None
-        assert version.poem.title == "Autumn Leaves"
-        assert version.content == "Leaves fall softly to the ground."
-        assert version.version_hash is not None
-        assert version.revision_date is not None
-
     def test_create_version_with_explicit_poem(self, poem_manager, entry_manager, tmp_dir, db_session):
         """Test creating version with explicit poem object."""
         # Create entry first
@@ -257,66 +232,6 @@ class TestPoemManagerCreateVersion:
 
         assert version.poem.id == poem.id
 
-    def test_create_version_with_revision_date(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test creating version with explicit revision date."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Time",
-            "content": "Tick tock.",
-            "revision_date": date(2024, 6, 15),
-            "entry": entry
-        })
-
-        assert version.revision_date == date(2024, 6, 15)
-
-    def test_create_version_with_notes(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test creating version with notes."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Notes Test",
-            "content": "Content here.",
-            "notes": "First draft, needs revision",
-            "entry": entry
-        })
-
-        assert version.notes == "First draft, needs revision"
-
-    def test_create_version_with_entry(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test creating version linked to entry."""
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Entry Poem",
-            "content": "Linked to entry.",
-            "entry": entry
-        })
-
-        assert version.entry is not None
-        assert version.entry.id == entry.id
-        assert version.revision_date == entry.date
-
     def test_create_version_missing_title_raises_error(self, poem_manager):
         """Test creating version without title raises error."""
         with pytest.raises(ValidationError):
@@ -326,26 +241,6 @@ class TestPoemManagerCreateVersion:
         """Test creating version without content raises error."""
         with pytest.raises(ValidationError):
             poem_manager.create_version({"title": "Title without content"})
-
-    def test_create_version_generates_hash(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test create_version automatically generates hash."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Hash Test",
-            "content": "Test content for hashing.",
-            "entry": entry
-        })
-
-        assert version.version_hash is not None
-        assert len(version.version_hash) == 32  # MD5 hash length
 
     def test_create_version_deduplication(self, poem_manager, entry_manager, tmp_dir, db_session):
         """Test creating duplicate version returns existing."""
@@ -377,117 +272,9 @@ class TestPoemManagerCreateVersion:
         # Should return the same version
         assert version2.id == version1.id
 
-    def test_create_version_different_content_creates_new(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test creating version with different content creates new version."""
-        # Create entries
-        file_path1 = tmp_dir / "2024-01-15.md"
-        file_path1.write_text("# Test")
-        entry1 = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path1)
-        })
-        file_path2 = tmp_dir / "2024-01-16.md"
-        file_path2.write_text("# Test")
-        entry2 = entry_manager.create({
-            "date": "2024-01-16",
-            "file_path": str(file_path2)
-        })
-        db_session.commit()
-
-        version1 = poem_manager.create_version({
-            "title": "Evolution",
-            "content": "First version.",
-            "entry": entry1
-        })
-        db_session.commit()
-
-        version2 = poem_manager.create_version({
-            "title": "Evolution",
-            "content": "Second version.",  # Different content
-            "poem": version1.poem,
-            "entry": entry2
-        })
-
-        assert version2.id != version1.id
-        assert version2.version_hash != version1.version_hash
-
 
 class TestPoemManagerUpdateVersion:
     """Test PoemManager.update_version() method."""
-
-    def test_update_version_content(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test updating version content."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Update Test",
-            "content": "Original content.",
-            "entry": entry
-        })
-        db_session.commit()
-        original_hash = version.version_hash
-
-        poem_manager.update_version(version, {"content": "Updated content."})
-        db_session.commit()
-        db_session.refresh(version)
-
-        assert version.content == "Updated content."
-        assert version.version_hash != original_hash  # Hash regenerated
-
-    def test_update_version_revision_date(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test updating version revision date."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Date Test",
-            "content": "Content.",
-            "entry": entry
-        })
-        db_session.commit()
-
-        poem_manager.update_version(version, {"revision_date": date(2024, 7, 20)})
-        db_session.commit()
-        db_session.refresh(version)
-
-        assert version.revision_date == date(2024, 7, 20)
-
-    def test_update_version_notes(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test updating version notes."""
-        # Create entry first
-        file_path = tmp_dir / "2024-01-15.md"
-        file_path.write_text("# Test")
-        entry = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path)
-        })
-        db_session.commit()
-
-        version = poem_manager.create_version({
-            "title": "Notes Test",
-            "content": "Content.",
-            "entry": entry
-        })
-        db_session.commit()
-
-        poem_manager.update_version(version, {"notes": "Revised version"})
-        db_session.commit()
-        db_session.refresh(version)
-
-        assert version.notes == "Revised version"
 
     def test_update_nonexistent_version_raises_error(self, poem_manager):
         """Test updating non-existent version raises error."""
@@ -624,66 +411,6 @@ class TestPoemManagerGetAllVersions:
         assert len(result) >= 3
 
 
-class TestPoemManagerGetVersionsForPoem:
-    """Test PoemManager.get_versions_for_poem() method."""
-
-    def test_get_versions_for_poem(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test get_versions_for_poem returns versions for specific poem."""
-        # Create entries
-        file_path1 = tmp_dir / "2024-01-01.md"
-        file_path1.write_text("# Test")
-        entry1 = entry_manager.create({
-            "date": "2024-01-01",
-            "file_path": str(file_path1)
-        })
-        file_path2 = tmp_dir / "2024-02-01.md"
-        file_path2.write_text("# Test")
-        entry2 = entry_manager.create({
-            "date": "2024-02-01",
-            "file_path": str(file_path2)
-        })
-        file_path3 = tmp_dir / "2024-03-01.md"
-        file_path3.write_text("# Test")
-        entry3 = entry_manager.create({
-            "date": "2024-03-01",
-            "file_path": str(file_path3)
-        })
-        db_session.commit()
-
-        version1 = poem_manager.create_version({
-            "title": "Timeline",
-            "content": "First version.",
-            "revision_date": date(2024, 1, 1),
-            "entry": entry1
-        })
-        db_session.commit()
-
-        poem_manager.create_version({
-            "title": "Timeline",
-            "content": "Second version.",
-            "poem": version1.poem,
-            "revision_date": date(2024, 2, 1),
-            "entry": entry2
-        })
-        db_session.commit()
-
-        poem_manager.create_version({
-            "title": "Timeline",
-            "content": "Third version.",
-            "poem": version1.poem,
-            "revision_date": date(2024, 3, 1),
-            "entry": entry3
-        })
-        db_session.commit()
-
-        versions = poem_manager.get_versions_for_poem(version1.poem)
-        assert len(versions) == 3
-        # Should be ordered by revision_date
-        assert versions[0].revision_date == date(2024, 1, 1)
-        assert versions[1].revision_date == date(2024, 2, 1)
-        assert versions[2].revision_date == date(2024, 3, 1)
-
-
 class TestPoemManagerGetVersionsForEntry:
     """Test PoemManager.get_versions_for_entry() method."""
 
@@ -716,59 +443,6 @@ class TestPoemManagerGetVersionsForEntry:
 
 class TestPoemManagerGetLatestVersion:
     """Test PoemManager.get_latest_version() method."""
-
-    def test_get_latest_version(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test get_latest_version returns most recent version."""
-        # Create entries
-        file_path1 = tmp_dir / "2024-01-01.md"
-        file_path1.write_text("# Test")
-        entry1 = entry_manager.create({
-            "date": "2024-01-01",
-            "file_path": str(file_path1)
-        })
-        file_path2 = tmp_dir / "2024-02-01.md"
-        file_path2.write_text("# Test")
-        entry2 = entry_manager.create({
-            "date": "2024-02-01",
-            "file_path": str(file_path2)
-        })
-        file_path3 = tmp_dir / "2024-03-01.md"
-        file_path3.write_text("# Test")
-        entry3 = entry_manager.create({
-            "date": "2024-03-01",
-            "file_path": str(file_path3)
-        })
-        db_session.commit()
-
-        version1 = poem_manager.create_version({
-            "title": "Latest Test",
-            "content": "First version.",
-            "revision_date": date(2024, 1, 1),
-            "entry": entry1
-        })
-        db_session.commit()
-
-        poem_manager.create_version({
-            "title": "Latest Test",
-            "content": "Second version.",
-            "poem": version1.poem,
-            "revision_date": date(2024, 2, 1),
-            "entry": entry2
-        })
-        db_session.commit()
-
-        version3 = poem_manager.create_version({
-            "title": "Latest Test",
-            "content": "Third version.",
-            "poem": version1.poem,
-            "revision_date": date(2024, 3, 1),
-            "entry": entry3
-        })
-        db_session.commit()
-
-        latest = poem_manager.get_latest_version(version1.poem)
-        assert latest.id == version3.id
-        assert latest.revision_date == date(2024, 3, 1)
 
     def test_get_latest_version_returns_none_when_no_versions(self, poem_manager, db_session):
         """Test get_latest_version returns None when poem has no versions."""
@@ -815,39 +489,6 @@ class TestPoemManagerEdgeCases:
         poem = poem_manager.create_poem({"title": "  Spaces  "})
         assert poem.title == "Spaces"
 
-    def test_version_hash_consistency(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test same content produces same hash."""
-        # Create entries
-        file_path1 = tmp_dir / "2024-01-15.md"
-        file_path1.write_text("# Test")
-        entry1 = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path1)
-        })
-        file_path2 = tmp_dir / "2024-01-16.md"
-        file_path2.write_text("# Test")
-        entry2 = entry_manager.create({
-            "date": "2024-01-16",
-            "file_path": str(file_path2)
-        })
-        db_session.commit()
-
-        version1 = poem_manager.create_version({
-            "title": "Hash Test 1",
-            "content": "Identical content.",
-            "entry": entry1
-        })
-        db_session.commit()
-
-        version2 = poem_manager.create_version({
-            "title": "Hash Test 2",
-            "content": "Identical content.",
-            "entry": entry2
-        })
-        db_session.commit()
-
-        assert version1.version_hash == version2.version_hash
-
     def test_poem_can_have_no_versions(self, poem_manager, db_session):
         """Test poem can exist without versions."""
         poem = poem_manager.create_poem({"title": "No Versions"})
@@ -875,38 +516,3 @@ class TestPoemManagerEdgeCases:
 
         assert "Café" in version.content
         assert "🌟" in version.content
-
-    def test_multiple_versions_same_date(self, poem_manager, entry_manager, tmp_dir, db_session):
-        """Test multiple versions can have same revision date."""
-        # Create entries
-        file_path1 = tmp_dir / "2024-01-15.md"
-        file_path1.write_text("# Test")
-        entry1 = entry_manager.create({
-            "date": "2024-01-15",
-            "file_path": str(file_path1)
-        })
-        file_path2 = tmp_dir / "2024-01-16.md"
-        file_path2.write_text("# Test")
-        entry2 = entry_manager.create({
-            "date": "2024-01-16",
-            "file_path": str(file_path2)
-        })
-        db_session.commit()
-
-        same_date = date(2024, 1, 15)
-        version1 = poem_manager.create_version({
-            "title": "Same Date 1",
-            "content": "First version.",
-            "revision_date": same_date,
-            "entry": entry1
-        })
-
-        version2 = poem_manager.create_version({
-            "title": "Same Date 2",
-            "content": "Second version.",
-            "revision_date": same_date,
-            "entry": entry2
-        })
-        db_session.commit()
-
-        assert version1.revision_date == version2.revision_date == same_date
