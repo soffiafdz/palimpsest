@@ -461,7 +461,7 @@ vim data/wiki/events/thesis-writing.md
 # intellectual journey and struggle with identity.
 
 # Save and import
-plm import-wiki all
+plm # import-wiki (not implemented) all
 
 # Verify notes were imported
 metadb query "SELECT notes FROM events WHERE name='thesis-writing'"
@@ -625,7 +625,7 @@ vim data/wiki/manuscript/entries/2024/2024-11-25.md
 # Ana Sofía: wisdom figure, catalyst for realization
 
 # Import manuscript edits
-plm import-wiki manuscript-all
+plm # import-wiki (not implemented) manuscript-all
 
 # Verify
 metadb query show 2024-11-25 | grep -A5 "manuscript"
@@ -853,7 +853,7 @@ vim data/wiki/entries/2024/2024-11-25.md        # Edit notes field differently
 
 # Sync both
 plm import-metadata
-plm import-wiki entries
+plm # import-wiki (not implemented) entries
 
 # Check conflicts
 metadb sync conflicts

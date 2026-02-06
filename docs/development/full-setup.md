@@ -1,7 +1,6 @@
 # Full Setup Guide
 
-> **Note:** Wiki-related steps (`export-wiki`, `WikiExporter`) are not yet implemented.
-> Use `plm import-metadata` for database import and `plm export-db` for exports.
+> Use `plm import-metadata` for database import and `plm export-json` for exports.
 
 Complete instructions for setting up Palimpsest from scratch on a new machine.
 
@@ -112,7 +111,6 @@ python -m dev.pipeline.cli status
 python -m dev.pipeline.cli run-all 2024
 ```
 
-This runs: inbox → convert → sync-db → export-wiki → build-pdf for the specified year.
 
 ### Option B: Step by Step
 
@@ -123,13 +121,10 @@ python -m dev.pipeline.cli inbox
 # 2. Convert to markdown (txt → md with YAML frontmatter)
 python -m dev.pipeline.cli convert
 
-# 3. Sync database (md YAML → SQLite)
-python -m dev.pipeline.cli sync-db
+# 3. Import metadata (YAML → SQLite)
+python -m dev.pipeline.cli import-metadata
 
-# 4. Export wiki (database → wiki pages)
-python -m dev.pipeline.cli export-wiki
-
-# 5. Build PDFs for a year
+# 4. Build PDFs for a year
 python -m dev.pipeline.cli build-pdf 2024
 ```
 
@@ -192,25 +187,13 @@ git submodule update --recursive
 alembic upgrade head
 
 # Regenerate wiki if needed
-python -m dev.pipeline.cli export-wiki
 ```
 
-### Regenerate Wiki
+### Export Database
 
 ```bash
-# Full wiki regeneration
-python -m dev.pipeline.cli export-wiki --force
-
-# Narrative pages only (arcs, events, scenes)
-python -c "
-from dev.wiki.exporter import WikiExporter
-from dev.database.manager import PalimpsestDB
-from dev.core.paths import DB_PATH, WIKI_DIR
-
-db = PalimpsestDB(DB_PATH)
-exporter = WikiExporter(db, WIKI_DIR)
-exporter.export_narrative(force=True)
-"
+# Export to JSON for version control
+python -m dev.pipeline.cli export-json
 ```
 
 ### Rebuild PDFs
@@ -233,11 +216,8 @@ python -m dev.pipeline.cli inbox
 # 3. Convert to markdown
 python -m dev.pipeline.cli convert
 
-# 4. Sync to database
-python -m dev.pipeline.cli sync-db
-
-# 5. Update wiki
-python -m dev.pipeline.cli export-wiki
+# 4. Import metadata to database
+python -m dev.pipeline.cli import-metadata
 ```
 
 ---
@@ -307,8 +287,7 @@ sudo apt install texlive-latex-base texlive-latex-extra
 # Pipeline
 plm inbox              # Process inbox
 plm convert            # txt → md
-plm sync-db            # md → database
-plm export-wiki        # database → wiki
+plm import-metadata            # md → database
 plm build-pdf YEAR     # md → pdf
 plm run-all YEAR       # Full pipeline
 plm status             # Show status

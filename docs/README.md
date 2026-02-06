@@ -1,6 +1,6 @@
 # Palimpsest Documentation
 
-Welcome to the Palimpsest documentation. This guide will help you understand and use Palimpsest, a system for managing structured journal entries with YAML frontmatter, SQL database synchronization, and vimwiki integration.
+Welcome to the Palimpsest documentation. This guide will help you understand and use Palimpsest, a system for managing structured journal entries with YAML frontmatter and SQL database integration.
 
 ## Quick Navigation
 
@@ -12,14 +12,6 @@ Complete references for quick lookup:
 - [Command Reference](reference/commands.md) - All CLI commands (plm, metadb, validate, jsearch)
 - [Metadata Field Reference](reference/metadata-field-reference.md) - Comprehensive YAML field documentation
 - [Metadata Examples](reference/metadata-examples.md) - Example YAML frontmatter with all fields
-- [Wiki Field Reference](reference/wiki-fields.md) - SQL↔Wiki system and entity types
-
-### Guides
-Task-oriented guides for common workflows:
-- [Synchronization Guide](guides/synchronization.md) - Multi-machine sync, conflict resolution, daily workflows
-- [Conflict Resolution](guides/conflict-resolution.md) - Understanding and resolving sync conflicts
-- [Wiki System](reference/wiki-fields.md) - Working with the bidirectional wiki system
-- [Manuscript Features](guides/manuscript-features.md) - Manuscript-specific wiki and metadata
 
 ### Integrations
 Editor and tool integrations:
@@ -31,7 +23,6 @@ For contributors and developers:
 - [Architecture](development/architecture.md) - Modular architecture and design patterns
 - [Database Managers](development/database-managers.md) - Entity manager patterns
 - [Validators](development/validators.md) - Validation system architecture
-- [Tombstones](development/tombstones.md) - Deletion tracking implementation
 - [Type Checking](development/type-checking.md) - Pyright configuration and patterns
 - [Testing](development/testing.md) - Comprehensive testing guide
 - [Neovim Plugin Development](development/neovim-plugin-dev.md) - Extending the Neovim integration
@@ -57,8 +48,7 @@ This documentation is organized by topic and purpose:
 If you can't find what you're looking for:
 1. Check the [Command Reference](reference/commands.md) for CLI usage
 2. Check the [Metadata Field Reference](reference/metadata-field-reference.md) for YAML fields
-3. Review the [Synchronization Guide](guides/synchronization.md) for multi-machine workflows
-4. Check the [Troubleshooting](#troubleshooting) sections in relevant guides
+3. Check the [Troubleshooting](#troubleshooting) sections in relevant guides
 
 ## Contributing to Documentation
 

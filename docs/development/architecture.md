@@ -1,6 +1,6 @@
 # Palimpsest Modular Architecture
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2026-02-06
 
 ---
 
@@ -632,18 +632,9 @@ The Palimpsest refactoring created a clean, modular architecture:
 ✅ **Easy to extend** and maintain
 ✅ **Consistent patterns** across codebase
 
-**Recent Improvements**:
-- **2025-12-20**: Wiki system migrated to Jinja2 templates
-  - Replaced `dev/builders/wiki_pages/` with `dev/wiki/`
-  - Templates receive ORM objects directly
-  - Custom Jinja2 filters for wiki formatting
-- **2025-11-29**: MdEntry dataclass refactored (50% size reduction)
-  - Extracted parsers: `YamlToDbParser`, `DbToYamlExporter`
-  - Separated validation: `MdEntryValidator`
-
 **Key Takeaway**: Modular architecture improves maintainability without sacrificing compatibility.
 
 ---
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2026-02-06
 **Maintained By**: Palimpsest Development Team

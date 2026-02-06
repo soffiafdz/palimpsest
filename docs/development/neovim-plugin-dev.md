@@ -1,7 +1,7 @@
 # Neovim Package Development Guide
 
-> **Note:** Wiki-related functionality (entity page generation via `plm export-wiki`)
-> is not yet implemented. The Lua package structure is in place for future wiki integration.
+> **Note:** This plugin provides journal file browsing and search capabilities.
+> Wiki features are not currently implemented.
 
 Technical documentation for developing and extending the Palimpsest Neovim integration package.
 

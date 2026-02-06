@@ -642,4 +642,4 @@ Once curation is validated, the bulk import script:
 1. Validate curation files
 2. Run bulk import (`plm import-metadata`)
 3. Verify database populated correctly (count checks)
-4. Export to JSON/CSV for analysis (`plm export-db`)
+4. Export to JSON/CSV for analysis (`plm export-json`)
