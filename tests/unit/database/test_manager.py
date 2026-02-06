@@ -87,17 +87,7 @@ class TestPalimpsestDBTransactions:
 
     @pytest.fixture
     def db_instance(self, mock_db_path, mock_alembic_dir):
-        """
-        Create PalimpsestDB instance with mocked SQLAlchemy components.
-
-        This fixture patches out EventManager to work around the bug in manager.py.
-        Once EventManager references are removed from manager.py, this workaround
-        can be removed.
-        """
-        # Inject EventManager into the manager module to work around the bug
-        import dev.database.manager as manager_module
-        manager_module.EventManager = MagicMock()
-
+        """Create PalimpsestDB instance with mocked SQLAlchemy components."""
         with patch("sqlalchemy.create_engine"), \
              patch.object(PalimpsestDB, "_setup_alembic", autospec=True), \
              patch.object(PalimpsestDB, "initialize_schema", autospec=True), \
@@ -111,8 +101,6 @@ class TestPalimpsestDBTransactions:
                 enable_auto_backup=False,
             )
             yield db
-            # Cleanup: remove EventManager from module
-            del manager_module.EventManager
 
     def test_session_scope_commit_on_success(self, db_instance):
         """Verify session commits on successful execution within session_scope."""
@@ -174,7 +162,6 @@ class TestPalimpsestDBManagerInitialization:
         if test_db_path.exists():
             test_db_path.unlink()
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_session_scope_initializes_all_managers(self, test_db):
         """Verify session_scope initializes all required managers."""
         with test_db.session_scope() as _:
@@ -205,21 +192,18 @@ class TestPalimpsestDBManagerInitialization:
         assert test_db._poem_manager is None
         assert test_db._entry_manager is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_session_scope_no_moment_manager(self, test_db):
         """Verify session_scope does NOT initialize MomentManager (deprecated)."""
         with test_db.session_scope() as _:
             # Phase 13: MomentManager no longer exists
             assert not hasattr(test_db, "_moment_manager")
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_session_scope_no_manuscript_manager(self, test_db):
         """Verify session_scope does NOT initialize ManuscriptManager (deprecated)."""
         with test_db.session_scope() as _:
             # Phase 13: ManuscriptManager no longer exists
             assert not hasattr(test_db, "_manuscript_manager")
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_session_scope_no_event_manager(self, test_db):
         """Verify session_scope does NOT initialize EventManager (events managed via Entry)."""
         with test_db.session_scope() as _:
@@ -228,7 +212,6 @@ class TestPalimpsestDBManagerInitialization:
             # Note: If _event_manager exists in manager.py, it's a bug that should be fixed
             pass
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_manager_properties_accessible_in_session(self, test_db):
         """Verify manager properties are accessible within session_scope."""
         with test_db.session_scope() as _:
@@ -255,7 +238,6 @@ class TestPalimpsestDBManagerInitialization:
         with pytest.raises(DatabaseError, match="requires active session"):
             _ = test_db.entries
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_managers_share_session(self, test_db):
         """Verify all managers share the same session instance."""
         with test_db.session_scope() as session:
@@ -289,7 +271,6 @@ class TestPalimpsestDBCleanup:
         if test_db_path.exists():
             test_db_path.unlink()
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_removes_orphaned_tags(self, test_db):
         """Verify cleanup removes tags not linked to any entries."""
         with test_db.session_scope() as session:
@@ -308,7 +289,6 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Tag).filter_by(name="orphan").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_removes_orphaned_locations(self, test_db):
         """Verify cleanup removes locations not linked to any entries."""
         with test_db.session_scope() as session:
@@ -327,7 +307,6 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Location).filter_by(name="Nowhere Cafe").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_removes_orphaned_scenes(self, test_db):
         """Verify cleanup removes scenes not linked to any entry."""
         with test_db.session_scope() as session:
@@ -350,7 +329,6 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Scene).filter_by(name="Orphan Scene").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_preserves_linked_entities(self, test_db):
         """Verify cleanup preserves entities linked to entries."""
         with test_db.session_scope() as session:
@@ -389,7 +367,6 @@ class TestPalimpsestDBCleanup:
             assert session.query(Location).filter_by(name="Preserved Cafe").first() is not None
             assert session.query(Scene).filter_by(name="Preserved Scene").first() is not None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_removes_orphaned_themes(self, test_db):
         """Verify cleanup removes themes not linked to any entries."""
         with test_db.session_scope() as session:
@@ -404,7 +381,6 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Theme).filter_by(name="orphan-theme").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_removes_orphaned_references(self, test_db):
         """Verify cleanup removes references not linked to any entry."""
         with test_db.session_scope() as session:
@@ -422,7 +398,6 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Reference).filter_by(content="Orphan quote").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_removes_orphaned_poem_versions(self, test_db):
         """Verify cleanup removes poem versions not linked to any entry."""
         with test_db.session_scope() as session:
@@ -442,7 +417,6 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(PoemVersion).filter_by(title="Orphan Poem").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_combined(self, test_db):
         """Verify cleanup handles multiple entity types simultaneously."""
         with test_db.session_scope() as session:
@@ -492,7 +466,6 @@ class TestPalimpsestDBCleanup:
             assert session.query(Scene).filter_by(name="Linked Scene").first() is not None
             assert session.query(Scene).filter_by(name="Orphan Scene").first() is None
 
-    @pytest.mark.xfail(reason="Bug: manager.py references undefined EventManager", strict=True)
     def test_cleanup_all_metadata_no_orphans(self, test_db):
         """Verify cleanup returns zero counts when no orphans exist."""
         with test_db.session_scope() as session:
