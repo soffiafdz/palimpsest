@@ -107,9 +107,9 @@ class AssociationTombstone(Base):
 | `left_id` | Integer | Entry ID (left side) | 456 (entry) |
 | `right_id` | Integer | Associated entity ID | 789 (person) |
 | `removed_at` | DateTime (UTC) | When removed | 2024-11-23T14:30:00+00:00 |
-| `removed_by` | String(255) | Who removed it | "yaml2sql" |
+| `removed_by` | String(255) | Who removed it | "import-metadata" |
 | `removal_reason` | Text | Why removed | "removed_from_source" |
-| `sync_source` | String(50) | Source of sync | "yaml" or "wiki" |
+| `sync_source` | String(50) | Source of sync | "metadata" |
 | `expires_at` | DateTime (UTC) | When tombstone expires | 2025-02-21T14:30:00+00:00 |
 
 ### Indexes
@@ -432,8 +432,7 @@ Tombstones track which sync source created them to handle parallel sync paths.
 
 | Source | Meaning | Created By |
 |--------|---------|------------|
-| `yaml` | YAML frontmatter | `yaml2sql` pipeline |
-| `wiki` | Wiki markdown | `wiki2sql` pipeline |
+| `metadata` | Metadata YAML | `import-metadata` pipeline |
 | `manual` | Direct database edit | User via CLI |
 
 ### Why Track Sync Source?
@@ -543,9 +542,9 @@ Table: entry_people
   Left ID: 123
   Right ID: 456
   Removed: 2024-11-23T14:30:00+00:00
-  Removed by: yaml2sql
+  Removed by: import-metadata
   Reason: removed_from_source
-  Sync source: yaml
+  Sync source: metadata
   Expires: 2025-02-21T14:30:00+00:00
 
 Table: entry_tags
@@ -577,8 +576,8 @@ By sync source:
   wiki: 5
 
 By removed_by:
-  yaml2sql: 42
-  wiki2sql: 3
+  import-metadata: 42
+  manual: 3
 ```
 
 #### Cleanup Expired
@@ -837,7 +836,7 @@ sync_mgr.update_or_create("Entry", entry_id, ...)
 tombstone_mgr.create("entry_people", entry_id, person_id, ...)
 ```
 
-**Used together**: Both used during yaml2sql sync:
+**Used together**: Both used during metadata import:
 1. Check sync state for conflicts
 2. Update relationships (may create tombstones)
 3. Update sync state with new hash

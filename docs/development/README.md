@@ -60,11 +60,13 @@ dev/
 │   ├── managers/      # CRUD operations
 │   └── cli/           # Database CLI commands
 ├── dataclasses/       # Intermediary data structures
-│   ├── md_entry.py   # YAML ↔ Database conversion
-│   └── parsers/      # YAML/DB parsing logic
+│   ├── txt_entry.py  # TXT file conversion
+│   └── metadata_entry.py # Metadata YAML structures
 ├── pipeline/          # Data pipeline scripts
-│   ├── yaml2sql.py   # YAML → SQL import
-│   └── sql2yaml.py   # SQL → YAML export
+│   ├── src2txt.py    # Raw exports → formatted text
+│   ├── txt2md.py     # TXT → Markdown conversion
+│   ├── metadata_importer.py # Metadata → Database import
+│   └── export_json.py # Database → JSON export
 ├── wiki/              # Wiki generation system
 │   ├── exporter.py   # Wiki page exporter
 │   ├── renderer.py   # Jinja2 template renderer
@@ -76,8 +78,8 @@ dev/
 ```
 
 **Core Principles**:
-1. **Separation of Concerns**: Database, pipeline, and presentation layers are independent
-2. **Bidirectional Sync**: Three-layer synchronization (YAML ↔ SQL ↔ Wiki)
+1. **Separation of Concerns**: Database, pipeline, and wiki layers are independent
+2. **Unidirectional Import**: Metadata YAML → Database (one-time import)
 3. **Type Safety**: Pyright type checking with defensive coding patterns
 4. **Modular Design**: Easy to extend with new entity types
 
@@ -89,24 +91,21 @@ dev/
 
 ### Entity Managers
 
-Palimpsest uses a manager pattern for database operations:
+Palimpsest uses a manager pattern for database operations. Managers are initialized per session inside `PalimpsestDB.session_scope()`:
 
 ```python
-from dev.database import PalimpsestDB
+from dev.database.manager import PalimpsestDB
 
-db = PalimpsestDB("data/palimpsest.db")
+db = PalimpsestDB("data/palimpsest.db", alembic_dir="alembic")
 
-# Get manager
-entry_manager = db.get_manager("entry")
-
-# CRUD operations
-entry = entry_manager.create(metadata)
-entry = entry_manager.get_by_date("2024-01-15")
-entry_manager.update(entry, new_metadata)
-entry_manager.delete(entry)
+with db.session_scope() as session:
+    entry = db._entry_manager.create(metadata)
+    entry = db._entry_manager.get(entry_date="2024-01-15")
+    db._entry_manager.update(entry, new_metadata)
+    db._entry_manager.delete(entry)
 ```
 
-Each entity type (Entry, Person, Event, etc.) has a dedicated manager with specialized methods.
+Each entity type (Entry, Person, Location, etc.) has a dedicated manager with specialized methods.
 
 → Learn more: [Database Managers](database-managers.md)
 

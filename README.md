@@ -62,8 +62,8 @@ plm inbox
 # Convert to markdown
 plm convert
 
-# Sync database
-plm sync-db
+# Import metadata to database
+plm import-metadata
 
 # Build PDFs for a year
 plm build-pdf 2024
@@ -85,30 +85,22 @@ inbox/ (raw exports) → src2txt → txt/     (formatted text)
                                    +
                           metadata YAML/   (narrative analysis - human-authored)
                                    ↓
-                                yaml2sql  (initial import)
+                            import-metadata (one-time import)
                                    ↓
                                 database  (LOCAL ONLY - not in git)
-                                   ↓            ↑
-                                sql2wiki   wiki2sql
-                                   ↓            ↑
-                                 wiki/    (PRIMARY EDITABLE WORKSPACE)
-                                   ├── entries/
-                                   ├── people/
-                                   ├── events/
-                                   └── manuscript/
-
-                                database
                                    ↓
-                              export-yaml
+                              export-json
                                    ↓
-                          canonical YAML/  (git-tracked for version control)
+                              JSON export  (git-tracked for version control)
 
+                                  md/
+                                   ↓
                                  md2pdf
                                    ↓
                                  pdf/     (annotated PDFs)
 ```
 
-### Pipeline Scripts (X2Y Pattern)
+### Pipeline Scripts
 
 Each pipeline step is implemented as a standalone script with both CLI and programmatic API:
 
@@ -119,28 +111,24 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 - **`txt2md.py`**: Convert formatted text → Markdown with YAML frontmatter
   - Parses entries, computes metadata (word count, reading time)
 
-- **`yaml2sql.py`**: Sync Markdown YAML → Database
+- **`metadata_importer.py`**: Import metadata YAML → Database
   - Parses complex metadata, manages relationships
+  - One-time import for narrative analysis
 
-- **`sql2yaml.py`**: Export Database → Markdown YAML
-  - Regenerates frontmatter while preserving body content
+- **`export_json.py`**: Export Database → JSON
+  - Exports entities for version control
 
 - **`md2pdf.py`**: Build Markdown → PDFs (clean & notes versions)
   - Uses Pandoc + LaTeX for professional typography
 
-- **Wiki scripts**: Bidirectional sync between database and wiki
-  - `sql2wiki.py`: Database → Wiki pages
-  - `wiki2sql.py`: Wiki edits → Database
-
 ### Data Flow Paths
 
 1. **Initial Import**: `inbox → txt → md + metadata YAML → database` (one-time)
-2. **Ongoing Editing**: `wiki ↔ database` (wiki is primary editable workspace)
-3. **Version Control**: `database → canonical YAML` (exported for git)
-4. **Search & Analysis**: Query database with FTS5
-5. **Export**: `database → pdf` (annotated reading copies)
+2. **Version Control**: `database → JSON export` (git-tracked)
+3. **Search & Analysis**: Query database with FTS5
+4. **Export**: `md → pdf` (annotated reading copies)
 
-**Note**: Database is LOCAL ONLY (not version controlled). Canonical YAML exports provide git tracking.
+**Note**: Database is LOCAL ONLY (not version controlled). JSON exports provide git tracking.
 
 ---
 
@@ -157,35 +145,25 @@ palimpsest/
 │   │   ├── search.py          # Search query engine
 │   │   └── search_index.py    # FTS5 index manager
 │   ├── dataclasses/            # Entry data structures
-│   │   ├── md_entry.py        # YAML frontmatter
-│   │   ├── wiki_*.py          # Wiki page classes
-│   │   └── manuscript_*.py    # Manuscript wiki classes
+│   │   ├── txt_entry.py       # TXT file conversion
+│   │   └── metadata_entry.py  # Metadata YAML structures
 │   ├── pipeline/               # Processing scripts
-│   │   ├── yaml2sql.py        # YAML → Database
-│   │   ├── sql2yaml.py        # Database → YAML
-│   │   ├── sql2wiki.py        # Database → Wiki
-│   │   ├── wiki2sql.py        # Wiki → Database
+│   │   ├── src2txt.py         # Raw → TXT
+│   │   ├── txt2md.py          # TXT → Markdown
+│   │   ├── metadata_importer.py # Metadata → Database
+│   │   ├── export_json.py     # Database → JSON
 │   │   ├── search.py          # Search CLI
 │   └── utils/                  # Utilities (fs, md, parsers)
 ├── templates/                  # LaTeX preambles, wiki templates
 ├── tests/                      # Integration tests
 │   └── integration/
-│       ├── test_search.py     # Search tests
-│       ├── test_sql_to_wiki.py # Wiki export tests
-│       └── test_wiki_to_sql.py # Wiki import tests
+│       └── test_search.py     # Search tests
 ├── data/                       # Personal content (git submodule)
 │   ├── journal/
 │   │   ├── inbox/
 │   │   ├── sources/txt/
 │   │   ├── content/md/
 │   │   └── annotations/
-│   ├── manuscript/
-│   ├── wiki/                   # Generated wiki
-│   │   ├── entries/
-│   │   ├── people/
-│   │   ├── events/
-│   │   ├── cities/
-│   │   └── manuscript/
 │   └── metadata/
 │       └── palimpsest.db
 ├── docs/                       # Documentation
@@ -207,26 +185,27 @@ palimpsest/
 
 ```bash
 # Process inbox (raw exports → formatted text)
-plm inbox [-i INBOX] [-o OUTPUT]
+plm inbox
 
 # Convert text to markdown
-plm convert [-i INPUT] [-o OUTPUT] [-f]
+plm convert
 
-# Sync database from markdown
-plm sync-db [-i INPUT] [-f]
+# Import metadata to database
+plm import-metadata
 
-# Export database to markdown
-plm export-db [-o OUTPUT] [-f]
+# Export database to JSON
+plm export-json
 
 # Build PDFs
-plm build-pdf YEAR [-i INPUT] [-o OUTPUT] [-f]
+plm build-pdf YEAR
 
 # Complete pipeline
-plm run-all [--year YEAR] [--skip-inbox] [--skip-pdf]
+plm run-all --year YEAR
 
-# Status
+# Status and validation
 plm status
-plm validate
+plm validate pipeline
+plm validate entry
 ```
 
 ### Database Commands
@@ -283,79 +262,6 @@ jsearch index --status
 # has:manuscript, status:STATUS
 # sort:relevance|date|word_count, limit:N
 ```
-
----
-
-## Wiki System
-
-The wiki is the primary editable workspace for all journal and manuscript metadata:
-
-### Export Database to Wiki
-
-```bash
-# Export everything
-plm export-wiki all
-
-# Export specific entity types
-plm export-wiki people
-plm export-wiki entries
-plm export-wiki manuscript
-
-# Force overwrite existing files
-plm export-wiki all --force
-```
-
-### Import Wiki Edits to Database
-
-```bash
-# Import all wiki edits
-plm import-wiki all
-
-# Import specific entity type
-plm import-wiki people
-plm import-wiki entries
-plm import-wiki manuscript
-```
-
-### Wiki Structure
-
-```
-wiki/
-├── index.md                    # Main index
-├── people/
-│   ├── index.md               # People index
-│   └── alice.md               # Person page (editable notes)
-├── entries/
-│   ├── index.md               # Entries index
-│   └── 2024-11-01.md          # Entry page (editable notes)
-├── events/
-│   └── therapy-session.md     # Event page
-├── cities/
-│   └── montreal.md            # City page
-└── manuscript/
-    ├── index.md               # Manuscript index
-    ├── entries/
-    │   └── 2024-11-01.md      # Manuscript entry (adaptation notes)
-    └── characters/
-        └── alexandra.md        # Character page (voice, arc, description)
-```
-
-### Editable Content
-
-**All wiki pages are fully editable:**
-
-- Entry pages: Scenes, events, threads, arcs, tags, themes, motifs
-- Person pages: Biographical info, relationships, aliases
-- Location/City pages: Context and connections
-- Event pages: Linked scenes and participants
-- Manuscript pages: Chapters, characters, arcs, themes
-
-**Workflow:**
-1. Edit wiki pages directly
-2. Sync to database: `plm import-wiki`
-3. Export for git: `plm export-yaml`
-
-See [Synchronization Guide](docs/guides/synchronization.md) for complete documentation.
 
 ---
 
@@ -547,19 +453,15 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Getting Started Guide](docs/getting-started.md)** - New user onboarding with core concepts and first workflow
 
 ### Reference
-- **[Command Reference](docs/reference/commands.md)** - Complete CLI command documentation (70+ commands)
+- **[Command Reference](docs/reference/commands.md)** - Complete CLI command documentation
 - **[Metadata Field Reference](docs/reference/metadata-field-reference.md)** - All YAML frontmatter fields with examples
 - **[Metadata Examples](docs/reference/metadata-examples.md)** - Template entries and patterns
-- **[Wiki Field Reference](docs/reference/wiki-fields.md)** - Wiki page structure and editable fields
 
 ### Guides
-- **[Synchronization Guide](docs/guides/synchronization.md)** - Multi-machine workflows and bidirectional sync
-- **[Conflict Resolution](docs/guides/conflict-resolution.md)** - Handling concurrent edits across machines
-- **[Manuscript Features](docs/guides/manuscript-features.md)** - Manuscript wiki and curation features
 - **[Migration Guide](docs/guides/migration.md)** - Upgrading between versions
 
 ### Integrations
-- **[Neovim Integration](docs/integrations/neovim.md)** - Editor integration and vimwiki features
+- **[Neovim Integration](docs/integrations/neovim.md)** - Editor integration features
 
 ### Development
 - **[Development Overview](docs/development/README.md)** - Contributing and architecture

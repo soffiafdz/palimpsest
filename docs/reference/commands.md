@@ -1,38 +1,21 @@
-# Palimpsest Complete Command Reference
+# Palimpsest Command Reference
 
-**Last Updated:** 2025-12-20
-**Coverage:** 100% of all CLI commands (60+ commands documented)
-
----
-
-## Table of Contents
-
-1. [Installation & Setup](#installation--setup)
-2. [Quick Reference](#quick-reference)
-3. [PLM - Pipeline Commands](#plm---pipeline-commands)
-4. [METADB - Database Management](#metadb---database-management)
-5. [VALIDATE - Validation Tools](#validate---validation-tools)
-6. [JSEARCH - Full-Text Search](#jsearch---full-text-search)
-7. [Neovim Integration](#neovim-integration)
+Complete reference for all Palimpsest CLI commands.
 
 ---
 
-## Installation & Setup
-
-### Install Package
+## Installation
 
 ```bash
-# Local installation (from repository)
+# Install from repository
 pip install -e .
 ```
 
-This installs 4 CLI entry points in `~/.local/bin/`:
-- `plm` - Main pipeline
+This installs four CLI entry points:
+- `plm` - Pipeline management
 - `metadb` - Database management
-- `validate` - Validation tools
+- `validate` - Validation suite
 - `jsearch` - Full-text search
-
-Ensure `~/.local/bin` is in your PATH.
 
 ---
 
@@ -42,10 +25,7 @@ Ensure `~/.local/bin` is in your PATH.
 
 ```bash
 # Process new journal entries
-plm inbox && plm convert && plm sync-db
-
-# Export to wiki for browsing in Neovim
-plm export-wiki all
+plm inbox && plm convert && plm import-metadata
 
 # Search your journal
 jsearch query "therapy" person:alice in:2024
@@ -54,7 +34,7 @@ jsearch query "therapy" person:alice in:2024
 ### Database Operations
 
 ```bash
-# Create backup (CRITICAL - do this regularly!)
+# Create backup (do this regularly!)
 metadb backup
 
 # Check database health
@@ -67,35 +47,23 @@ metadb stats --verbose
 ### Validation
 
 ```bash
-# Validate everything
-validate wiki check
+# Validate database
 validate db all
+
+# Validate consistency
 validate consistency all
 ```
-
-### Common Tasks
-
-| Task | Command |
-|------|---------|
-| Process inbox | `plm inbox && plm convert && plm sync-db` |
-| Export to wiki | `plm export-wiki all` |
-| Import wiki edits | `plm import-wiki all` |
-| Backup database | `metadb backup` |
-| List backups | `metadb backups` |
-| Search entries | `jsearch query "text" in:2024` |
-| Build PDFs | `plm build-pdf 2024` |
-| Full pipeline | `plm run-all --year 2024` |
-| Check status | `plm status` or `metadb health` |
 
 ---
 
 ## PLM - Pipeline Commands
 
-Main entry point for processing journal entries through the complete pipeline.
+Pipeline processing for journal entries.
 
-### Core Pipeline
+### Data Pipeline
 
 #### `plm inbox`
+
 Process inbox text files.
 
 ```bash
@@ -103,9 +71,9 @@ plm inbox [--inbox-dir PATH] [--batch-dir PATH]
 ```
 
 **What it does:**
-- Scans `data/inbox/` for `.txt` files
+- Scans inbox directory for `.txt` files
 - Groups entries by date
-- Creates batch directories in `data/batches/`
+- Creates batch directories
 - Prepares entries for conversion
 
 **Options:**
@@ -113,7 +81,8 @@ plm inbox [--inbox-dir PATH] [--batch-dir PATH]
 - `--batch-dir PATH` - Custom batch output directory
 
 #### `plm convert`
-Convert batched text entries to markdown with YAML frontmatter.
+
+Convert formatted text to Markdown entries.
 
 ```bash
 plm convert [--batch-dir PATH] [--md-dir PATH]
@@ -122,157 +91,117 @@ plm convert [--batch-dir PATH] [--md-dir PATH]
 **What it does:**
 - Processes batch directories
 - Converts text to markdown format
-- Extracts YAML frontmatter
-- Outputs to `data/md/YYYY/YYYY-MM-DD.md`
+- Extracts basic metadata (word count, reading time)
+- Outputs to `data/journal/content/md/YYYY/YYYY-MM-DD.md`
 
-#### `plm sync-db`
-Synchronize markdown entries to SQL database.
+**Options:**
+- `--batch-dir PATH` - Custom batch directory
+- `--md-dir PATH` - Custom markdown output directory
+
+#### `plm import-metadata`
+
+Import metadata YAML files into database.
 
 ```bash
-plm sync-db [--md-dir PATH] [--skip-validation]
+plm import-metadata [--metadata-dir PATH] [--skip-validation]
 ```
 
 **What it does:**
-- Parses markdown frontmatter
-- Updates database with entry content
+- Parses metadata YAML files
+- Updates database with entry metadata
 - Extracts people, locations, events, themes, etc.
 - Handles tombstone tracking for deletions
 
 **Options:**
+- `--metadata-dir PATH` - Custom metadata directory
 - `--skip-validation` - Skip YAML validation (faster, use with caution)
 
-#### `plm export-db`
-Export database entries back to markdown (reverse of sync-db).
+**Note:** This is a one-time import command for human-authored narrative analysis.
+
+#### `plm export-json`
+
+Export database entities to JSON files.
 
 ```bash
-plm export-db [--year YYYY] [--output-dir PATH]
+plm export-json [--output-dir PATH]
 ```
+
+**What it does:**
+- Exports all database entities to JSON format
+- Creates structured export for version control
+- Outputs to `data/exports/`
 
 **Use cases:**
-- Regenerate markdown from database
-- Create clean export of entries
-- Backup entries in human-readable format
+- Version control of database state
+- Backup in human-readable format
+- Data migration
 
-### Wiki Operations
+#### `plm prune-orphans`
 
-> **Note:** Wiki commands are planned but not yet implemented.
-> The wiki module will be built after the YAML → DB pipeline is stable.
-
-#### `plm export-wiki` *(planned)*
-Export database entities to vimwiki pages.
+Remove orphaned entities from database.
 
 ```bash
-plm export-wiki [ENTITY_TYPE] [--force] [--wiki-dir PATH]
+plm prune-orphans [--dry-run]
 ```
 
-**Entity types:**
-- `all` - Export everything (default)
-- `entries` - Journal entry wiki pages
-- `people` - People entity pages
-- `locations` - Location pages
-- `cities` - City summary pages
-- `events` - Event pages
-- `themes` - Theme pages
-- `tags` - Tag pages
-- `poems` - Poem pages
-- `references` - Reference source pages
-- `timeline` - Timeline visualization
-- `index` - Wiki homepage
-- `stats` - Statistics dashboard
-- `analysis` - Analysis report
+**What it does:**
+- Finds entities with no associations
+- Removes orphaned records
+- Cleans up unused data
 
 **Options:**
-- `--force` - Regenerate all files (even if unchanged)
-- `--wiki-dir PATH` - Custom wiki directory
+- `--dry-run` - Show what would be deleted without deleting
 
-**Examples:**
-```bash
-# Export everything
-plm export-wiki all
-
-# Export only people pages
-plm export-wiki people
-
-# Force regenerate with custom directory
-plm export-wiki all --force --wiki-dir ~/my-wiki
-```
-
-#### `plm import-wiki` *(planned)*
-Import wiki edits back to database (bidirectional sync).
-
-```bash
-plm import-wiki [ENTITY_TYPE] [--wiki-dir PATH]
-```
-
-**Entity types:**
-- `all` - Import all entity types
-- `people` - People notes/vignettes
-- `themes` - Theme descriptions
-- `tags` - Tag descriptions
-- `entries` - Entry notes
-- `events` - Event notes
-- `manuscript-all` - All manuscript entities
-- `manuscript-entries` - Manuscript entry metadata
-- `manuscript-characters` - Character analysis
-- `manuscript-events` - Narrative events
-
-**What gets imported:**
-- User-editable notes sections
-- Vignettes (for people)
-- Descriptions (for themes/tags)
-- Manuscript metadata
-
-**What is read-only:**
-- Generated statistics
-- Entry lists
-- Dates and timestamps
-- Link structures
-
-**Examples:**
-```bash
-# Import all edits
-plm import-wiki all
-
-# Import only people vignettes
-plm import-wiki people
-
-# Import manuscript edits
-plm import-wiki manuscript-all
-```
-
-### Batch Operations
-
-#### `plm run-all`
-Run the complete pipeline for a year.
-
-```bash
-plm run-all --year YYYY [--skip-inbox] [--skip-pdf]
-```
-
-**What it runs:**
-1. `plm inbox` (unless --skip-inbox)
-2. `plm convert`
-3. `plm sync-db`
-4. `plm export-db`
-5. `plm build-pdf` (unless --skip-pdf)
-6. `plm export-wiki all`
-
-**Options:**
-- `--year YYYY` - Year to process (required)
-- `--skip-inbox` - Skip inbox processing
-- `--skip-pdf` - Skip PDF generation
+### Build Commands
 
 #### `plm build-pdf`
-Generate PDF for a year's entries.
+
+Build PDFs for a year's entries.
 
 ```bash
 plm build-pdf YEAR [--output-dir PATH]
 ```
 
+**Arguments:**
+- `YEAR` - Year to build (required)
+
+**What it does:**
+- Generates clean and annotated PDF versions
+- Uses Pandoc + LaTeX for typography
+- Outputs to `data/journal/content/pdf/`
+
+**Requirements:**
+- Pandoc 2.19+
+- XeLaTeX or Tectonic
+- Cormorant Garamond font
+
+### Batch Operations
+
+#### `plm run-all`
+
+Run the complete pipeline end-to-end.
+
+```bash
+plm run-all --year YEAR [--skip-inbox] [--skip-pdf]
+```
+
+**Options:**
+- `--year YEAR` - Year to process (required)
+- `--skip-inbox` - Skip inbox processing
+- `--skip-pdf` - Skip PDF generation
+
+**What it runs:**
+1. `plm inbox` (unless `--skip-inbox`)
+2. `plm convert`
+3. `plm import-metadata`
+4. `plm export-json`
+5. `plm build-pdf` (unless `--skip-pdf`)
+
 ### Backup Operations
 
 #### `plm backup-full`
-Create complete system backup (database + markdown + wiki).
+
+Create complete system backup.
 
 ```bash
 plm backup-full [--output-dir PATH]
@@ -281,19 +210,28 @@ plm backup-full [--output-dir PATH]
 **What it backs up:**
 - SQLite database
 - All markdown files
-- Wiki pages
 - Configuration files
 
+**Output:**
+- Timestamped compressed archive in `data/backups/`
+
 #### `plm backup-list-full`
-List all full backups.
+
+List all available full backups.
 
 ```bash
 plm backup-list-full
 ```
 
+**Output:**
+- Backup filename
+- Timestamp
+- File size
+
 ### Status & Validation
 
 #### `plm status`
+
 Show pipeline status and statistics.
 
 ```bash
@@ -307,21 +245,27 @@ plm status
 - Last export timestamp
 
 #### `plm validate`
-Run basic validation checks.
+
+Run validation checks.
 
 ```bash
-plm validate
+plm validate COMMAND
 ```
+
+**Commands:**
+- `pipeline` - Validate pipeline directory structure
+- `entry` - Validate journal entries (MD + YAML)
 
 ---
 
 ## METADB - Database Management
 
-Complete database administration and maintenance toolkit.
+Database administration and maintenance.
 
 ### Setup & Initialization
 
 #### `metadb init`
+
 Initialize database and Alembic migrations.
 
 ```bash
@@ -344,7 +288,8 @@ metadb init [--alembic-only] [--db-only]
 - Fresh installation
 
 #### `metadb reset`
-**DANGEROUS:** Delete and reinitialize database.
+
+Delete and reinitialize database.
 
 ```bash
 metadb reset [--yes] [--keep-backups]
@@ -365,6 +310,7 @@ metadb reset [--yes] [--keep-backups]
 ### Backup & Restore
 
 #### `metadb backup`
+
 Create timestamped backup.
 
 ```bash
@@ -391,6 +337,7 @@ data/backups/palimpsest_YYYYMMDD_HHMMSS_TYPE.db
 - Keep multiple backup generations
 
 #### `metadb backups`
+
 List all available backups.
 
 ```bash
@@ -404,6 +351,7 @@ metadb backups
 - Backup type
 
 #### `metadb restore`
+
 Restore from a backup file.
 
 ```bash
@@ -419,14 +367,10 @@ metadb restore BACKUP_PATH [--yes]
 **Options:**
 - `--yes` - Skip confirmation prompt
 
-**Example:**
-```bash
-metadb restore data/backups/palimpsest_20251126_120000_manual.db
-```
-
 ### Health & Statistics
 
 #### `metadb stats`
+
 Display database statistics.
 
 ```bash
@@ -447,6 +391,7 @@ metadb stats [--verbose]
 - Theme distribution
 
 #### `metadb health`
+
 Run comprehensive health check.
 
 ```bash
@@ -469,6 +414,7 @@ metadb health [--fix]
 - `1` - Issues found (see output)
 
 #### `metadb optimize`
+
 Optimize database performance.
 
 ```bash
@@ -491,9 +437,36 @@ metadb optimize [--yes]
 
 ⚠️ **Note:** Can take several minutes on large databases.
 
+#### `metadb prune-orphans`
+
+Detect and remove orphaned entities.
+
+```bash
+metadb prune-orphans [--dry-run]
+```
+
+**What it does:**
+- Finds entities with no associations
+- Reports orphaned records
+- Optionally removes them
+
+**Options:**
+- `--dry-run` - Show what would be deleted without deleting
+
 ### Migration Management
 
-#### `metadb migration status`
+#### `metadb migration`
+
+Manage database migrations.
+
+```bash
+metadb migration COMMAND
+```
+
+**Commands:**
+
+##### `status`
+
 Show current migration status.
 
 ```bash
@@ -505,7 +478,8 @@ metadb migration status
 - Head revision
 - Pending migrations (if any)
 
-#### `metadb migration upgrade`
+##### `upgrade`
+
 Upgrade database to specified revision.
 
 ```bash
@@ -527,7 +501,8 @@ metadb migration upgrade abc123
 metadb migration upgrade +1
 ```
 
-#### `metadb migration downgrade`
+##### `downgrade`
+
 Downgrade database to specified revision.
 
 ```bash
@@ -543,7 +518,8 @@ metadb migration downgrade -1
 metadb migration downgrade abc123
 ```
 
-#### `metadb migration history`
+##### `history`
+
 Show migration history.
 
 ```bash
@@ -555,7 +531,8 @@ metadb migration history
 - Current revision marked
 - Migration descriptions
 
-#### `metadb migration create`
+##### `create`
+
 Create a new Alembic migration.
 
 ```bash
@@ -566,7 +543,18 @@ metadb migration create "Description of changes"
 
 ### Query Commands
 
-#### `metadb query years`
+#### `metadb query`
+
+Browse and query database content.
+
+```bash
+metadb query COMMAND
+```
+
+**Commands:**
+
+##### `years`
+
 List all years with entry counts.
 
 ```bash
@@ -581,7 +569,8 @@ Year    Entries
 2022    289
 ```
 
-#### `metadb query months`
+##### `months`
+
 List all months in a year with entry counts.
 
 ```bash
@@ -601,7 +590,8 @@ Month      Entries
 ...
 ```
 
-#### `metadb query show`
+##### `show`
+
 Display a single entry with all metadata.
 
 ```bash
@@ -614,14 +604,14 @@ metadb query show YYYY-MM-DD
 - Locations and cities
 - Events and themes
 - Tags and references
-- Manuscript metadata (if any)
 
 **Example:**
 ```bash
 metadb query show 2024-11-26
 ```
 
-#### `metadb query batches`
+##### `batches`
+
 Show how entries would be batched for export.
 
 ```bash
@@ -635,7 +625,18 @@ metadb query batches [--year YYYY]
 
 ### Maintenance Commands
 
-#### `metadb maintenance validate`
+#### `metadb maintenance`
+
+Database maintenance and optimization.
+
+```bash
+metadb maintenance COMMAND
+```
+
+**Commands:**
+
+##### `validate`
+
 Validate database integrity.
 
 ```bash
@@ -648,7 +649,8 @@ metadb maintenance validate
 - Referential integrity
 - Orphaned records
 
-#### `metadb maintenance cleanup`
+##### `cleanup`
+
 Clean up orphaned records.
 
 ```bash
@@ -663,7 +665,8 @@ metadb maintenance cleanup [--dry-run]
 **Options:**
 - `--dry-run` - Show what would be deleted without deleting
 
-#### `metadb maintenance analyze`
+##### `analyze`
+
 Generate detailed analytics report.
 
 ```bash
@@ -678,7 +681,18 @@ metadb maintenance analyze [--output PATH]
 
 ### Export Commands
 
-#### `metadb export csv`
+#### `metadb export`
+
+Export database to various formats.
+
+```bash
+metadb export COMMAND
+```
+
+**Commands:**
+
+##### `csv`
+
 Export all tables to CSV files.
 
 ```bash
@@ -699,7 +713,8 @@ exports/
 - Backup in human-readable format
 - Migration to other systems
 
-#### `metadb export json`
+##### `json`
+
 Export complete database to JSON.
 
 ```bash
@@ -721,170 +736,26 @@ metadb export json [--output PATH]
 - System migration
 - API integration
 
-### Tombstone Management
-
-Tombstones track deletions for bidirectional wiki sync.
-
-#### `metadb tombstone list`
-List association tombstones.
-
-```bash
-metadb tombstone list [--entity-type TYPE]
-```
-
-**Shows:**
-- Entity type (person, location, etc.)
-- Entity ID
-- Associated entry
-- Deletion timestamp
-
-#### `metadb tombstone stats`
-Show tombstone statistics.
-
-```bash
-metadb tombstone stats
-```
-
-**Output:**
-- Total tombstones
-- Tombstones by entity type
-- Expired tombstones (>30 days)
-
-#### `metadb tombstone cleanup`
-Remove expired tombstones.
-
-```bash
-metadb tombstone cleanup [--days N]
-```
-
-**Options:**
-- `--days N` - Remove tombstones older than N days (default: 30)
-
-**When to run:**
-- Monthly maintenance
-- Before backups
-- To reclaim space
-
-#### `metadb tombstone remove`
-Manually remove a specific tombstone.
-
-```bash
-metadb tombstone remove TOMBSTONE_ID
-```
-
-### Sync Management
-
-Tracks synchronization state between wiki and database.
-
-#### `metadb sync status`
-Show sync status for entities.
-
-```bash
-metadb sync status [--entity-type TYPE] [--entity-id ID]
-```
-
-**Shows:**
-- Last sync timestamp
-- Sync state (synced, modified, conflict)
-- Checksum
-- Conflict count
-
-#### `metadb sync stats`
-Show synchronization statistics.
-
-```bash
-metadb sync stats
-```
-
-**Output:**
-- Total synced entities
-- Entities by sync state
-- Total conflicts
-- Last sync time
-
-#### `metadb sync conflicts`
-List conflicts (unresolved by default).
-
-```bash
-metadb sync conflicts [--all] [--resolved]
-```
-
-**Options:**
-- `--all` - Show all conflicts (including resolved)
-- `--resolved` - Show only resolved conflicts
-
-**Output:**
-- Entity type and ID
-- Conflict type
-- Last modified timestamp
-- Resolution state
-
-#### `metadb sync resolve`
-Mark a conflict as resolved.
-
-```bash
-metadb sync resolve ENTITY_TYPE ENTITY_ID
-```
-
-**Example:**
-```bash
-metadb sync resolve person 42
-```
-
 ---
 
-## VALIDATE - Validation Tools
+## VALIDATE - Validation Suite
 
-Comprehensive validation for wiki, database, markdown, and cross-system consistency.
-
-### Wiki Validation
-
-#### `validate wiki check`
-Check all wiki links for broken references.
-
-```bash
-validate wiki check [--wiki-dir PATH]
-```
-
-**What it checks:**
-- Internal wiki links (`[[page]]`)
-- Cross-references between entities
-- Existence of linked files
-
-**Output:**
-- List of broken links
-- Source file and line number
-- Target that doesn't exist
-
-#### `validate wiki orphans`
-Find orphaned wiki pages with no incoming links.
-
-```bash
-validate wiki orphans [--wiki-dir PATH]
-```
-
-**Use cases:**
-- Find unused pages
-- Clean up wiki structure
-- Identify isolated content
-
-#### `validate wiki stats`
-Show wiki link statistics.
-
-```bash
-validate wiki stats [--wiki-dir PATH]
-```
-
-**Output:**
-- Total wiki pages
-- Total links
-- Average links per page
-- Most linked pages
-- Orphan count
+Comprehensive validation for database, markdown, and consistency.
 
 ### Database Validation
 
-#### `validate db schema`
+#### `validate db`
+
+Validate database integrity and constraints.
+
+```bash
+validate db COMMAND
+```
+
+**Commands:**
+
+##### `schema`
+
 Check for schema drift between models and database.
 
 ```bash
@@ -902,7 +773,8 @@ validate db schema [--db-path PATH]
 - Before/after migrations
 - Troubleshooting issues
 
-#### `validate db migrations`
+##### `migrations`
+
 Check if all migrations have been applied.
 
 ```bash
@@ -914,7 +786,8 @@ validate db migrations [--db-path PATH] [--alembic-dir PATH]
 - Pending migrations
 - Migration history consistency
 
-#### `validate db integrity`
+##### `integrity`
+
 Check for orphaned records and foreign key violations.
 
 ```bash
@@ -927,7 +800,8 @@ validate db integrity [--db-path PATH]
 - Circular references
 - Null constraint violations
 
-#### `validate db constraints`
+##### `constraints`
+
 Check for unique constraint violations.
 
 ```bash
@@ -939,7 +813,8 @@ validate db constraints [--db-path PATH]
 - Primary key violations
 - Unique index violations
 
-#### `validate db all`
+##### `all`
+
 Run all database validation checks.
 
 ```bash
@@ -954,7 +829,18 @@ validate db all [--db-path PATH]
 
 ### Markdown Validation
 
-#### `validate md frontmatter`
+#### `validate md`
+
+Validate markdown journal entry files.
+
+```bash
+validate md COMMAND
+```
+
+**Commands:**
+
+##### `frontmatter`
+
 Validate YAML frontmatter in markdown files.
 
 ```bash
@@ -973,7 +859,8 @@ validate md frontmatter [--md-dir PATH]
 - Incorrect indentation
 - Invalid date formats
 
-#### `validate md links`
+##### `links`
+
 Check for broken internal markdown links.
 
 ```bash
@@ -985,22 +872,32 @@ validate md links [--md-dir PATH]
 - Anchor links within files
 - Image references
 
-#### `validate md all`
+##### `all`
+
 Run all markdown validation checks.
 
 ```bash
 validate md all [--md-dir PATH]
 ```
 
-### Metadata Validation
+### Frontmatter Validation
 
-Validates that frontmatter structures match parser expectations.
+#### `validate frontmatter`
 
-#### `validate metadata people`
+Validate frontmatter structures for parser compatibility.
+
+```bash
+validate frontmatter COMMAND
+```
+
+**Commands:**
+
+##### `people`
+
 Validate people field structures.
 
 ```bash
-validate metadata people [--md-dir PATH]
+validate frontmatter people [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1009,11 +906,12 @@ validate metadata people [--md-dir PATH]
 - Category validity
 - Alias structures
 
-#### `validate metadata locations`
+##### `locations`
+
 Validate locations-city dependency.
 
 ```bash
-validate metadata locations [--md-dir PATH]
+validate frontmatter locations [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1021,11 +919,12 @@ validate metadata locations [--md-dir PATH]
 - City associations exist
 - City references consistent
 
-#### `validate metadata dates`
+##### `dates`
+
 Validate dates field structures.
 
 ```bash
-validate metadata dates [--md-dir PATH]
+validate frontmatter dates [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1033,11 +932,12 @@ validate metadata dates [--md-dir PATH]
 - Date ranges valid
 - Context field format
 
-#### `validate metadata poems`
+##### `poems`
+
 Validate poems field structures.
 
 ```bash
-validate metadata poems [--md-dir PATH]
+validate frontmatter poems [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1045,11 +945,12 @@ validate metadata poems [--md-dir PATH]
 - Version structures
 - Content validity
 
-#### `validate metadata references`
+##### `references`
+
 Validate references field structures.
 
 ```bash
-validate metadata references [--md-dir PATH]
+validate frontmatter references [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1057,35 +958,44 @@ validate metadata references [--md-dir PATH]
 - Citation structures
 - Speaker/mode fields
 
-#### `validate metadata all`
-Run all metadata validation checks.
+##### `all`
+
+Run all frontmatter validation checks.
 
 ```bash
-validate metadata all [--md-dir PATH]
+validate frontmatter all [--md-dir PATH]
 ```
 
 ### Cross-System Consistency
 
-Validate consistency between markdown files, database, and wiki pages.
+#### `validate consistency`
 
-#### `validate consistency existence`
-Check entry existence across MD ↔ DB ↔ Wiki.
+Validate consistency across systems.
 
 ```bash
-validate consistency existence [--md-dir PATH] [--wiki-dir PATH] [--db-path PATH]
+validate consistency COMMAND
+```
+
+**Commands:**
+
+##### `existence`
+
+Check entry existence across MD ↔ DB.
+
+```bash
+validate consistency existence [--md-dir PATH] [--db-path PATH]
 ```
 
 **Checks:**
 - Entries in MD exist in DB
 - Entries in DB have MD files
-- Wiki entries have DB records
 
 **Finds:**
 - Orphaned markdown files
 - Database entries without files
-- Wiki pages without sources
 
-#### `validate consistency metadata`
+##### `metadata`
+
 Check metadata synchronization between MD and DB.
 
 ```bash
@@ -1103,7 +1013,8 @@ validate consistency metadata [--md-dir PATH] [--db-path PATH]
 - Unsaved markdown changes
 - Sync drift
 
-#### `validate consistency references`
+##### `references`
+
 Check referential integrity constraints.
 
 ```bash
@@ -1115,7 +1026,8 @@ validate consistency references [--md-dir PATH] [--db-path PATH]
 - Location references valid
 - Event associations correct
 
-#### `validate consistency integrity`
+##### `integrity`
+
 Check file hash integrity.
 
 ```bash
@@ -1127,22 +1039,34 @@ validate consistency integrity [--md-dir PATH]
 - Checksums match stored values
 - No unexpected modifications
 
-#### `validate consistency all`
+##### `all`
+
 Run all consistency validation checks.
 
 ```bash
-validate consistency all [--md-dir PATH] [--wiki-dir PATH] [--db-path PATH]
+validate consistency all [--md-dir PATH] [--db-path PATH]
 ```
 
 ---
 
 ## JSEARCH - Full-Text Search
 
-Powerful full-text search using SQLite FTS5 with advanced filtering.
+Full-text search using SQLite FTS5 with advanced filtering.
 
 ### Search Index Management
 
-#### `jsearch index create`
+#### `jsearch index`
+
+Manage full-text search index.
+
+```bash
+jsearch index COMMAND
+```
+
+**Commands:**
+
+##### `create`
+
 Create full-text search index.
 
 ```bash
@@ -1158,7 +1082,8 @@ jsearch index create
 - First time setup
 - After database reset
 
-#### `jsearch index rebuild`
+##### `rebuild`
+
 Rebuild full-text search index.
 
 ```bash
@@ -1170,7 +1095,8 @@ jsearch index rebuild
 - If search results seem outdated
 - Monthly maintenance
 
-#### `jsearch index status`
+##### `status`
+
 Check full-text search index status.
 
 ```bash
@@ -1185,6 +1111,7 @@ jsearch index status
 ### Query Interface
 
 #### `jsearch query`
+
 Search journal entries with filters.
 
 ```bash
@@ -1226,11 +1153,6 @@ jsearch query "short note" words:-200
 jsearch query "medium length" words:500-1000
 ```
 
-**Filter by manuscript status:**
-```bash
-jsearch query "scene" has:manuscript
-```
-
 **Filter by tag:**
 ```bash
 jsearch query "creative" tag:writing
@@ -1239,7 +1161,7 @@ jsearch query "creative" tag:writing
 **Complex queries (combine multiple filters):**
 ```bash
 jsearch query "therapy session" person:alice city:montreal in:2024 words:500-1000
-jsearch query "reflection" tag:introspection has:manuscript in:2024-11
+jsearch query "reflection" tag:introspection in:2024-11
 ```
 
 **Options:**
@@ -1283,127 +1205,16 @@ therapy session with alice discussing...
 
 ---
 
-## Neovim Integration
-
-Palimpsest includes a Neovim plugin for browsing and searching your wiki directly in your editor.
-
-### Installation
-
-Add to your LazyVim config:
-
-```lua
-{
-  dir = "~/Documents/palimpsest/dev/lua/palimpsest",
-  name = "palimpsest",
-  dependencies = {
-    "vimwiki/vimwiki",
-    "ibhagwan/fzf-lua", -- LazyVim 14+ includes this by default
-  },
-  config = function()
-    require("palimpsest").setup()
-  end,
-}
-```
-
-### Commands
-
-**Export & Validation:**
-```vim
-:PalimpsestExport [entity_type]     " Export to wiki
-:PalimpsestValidate [mode]          " Validate wiki
-:PalimpsestStats                    " Open stats dashboard
-:PalimpsestIndex                    " Open wiki homepage
-:PalimpsestAnalysis                 " Open analysis report
-```
-
-**Browse & Search:**
-```vim
-:PalimpsestBrowse [entity_type]     " Browse files with fzf-lua
-:PalimpsestSearch [entity_type]     " Search content with fzf-lua
-:PalimpsestQuickAccess              " Quick picker for index pages
-```
-
-**Entity types:**
-- `all` - All wiki content
-- `journal` - Journal markdown entries
-- `people` - People pages
-- `entries` - Wiki entry pages
-- `locations` - Location pages
-- `cities` - City pages
-- `events` - Event pages
-- `themes` - Theme pages
-- `tags` - Tag pages
-- `poems` - Poem pages
-- `references` - Reference pages
-
-**Manuscript:**
-```vim
-:PalimpsestManuscriptExport [type]  " Export manuscript entities
-:PalimpsestManuscriptImport [type]  " Import manuscript edits
-:PalimpsestManuscriptIndex          " Open manuscript homepage
-```
-
-### Keybindings
-
-**Default prefix:** `<leader>p` (if multiple vimwikis) or `<leader>v` (if single vimwiki)
-
-**Core Operations:**
-```vim
-<leader>pe                          " Export all to wiki
-<leader>pE                          " Export specific entity (with completion)
-<leader>pv                          " Validate wiki links
-<leader>ps                          " Statistics dashboard
-<leader>ph                          " Wiki homepage
-```
-
-**Browse & Search:**
-```vim
-<leader>pf                          " Quick access to index pages
-<leader>pFa                         " Browse all wiki files
-<leader>pFj                         " Browse journal entries
-<leader>pFp                         " Browse people
-<leader>pFe                         " Browse entries
-<leader>pFl                         " Browse locations
-<leader>pFc                         " Browse cities
-<leader>pFv                         " Browse events
-<leader>pFt                         " Browse themes
-<leader>pFT                         " Browse tags
-<leader>pFP                         " Browse poems
-<leader>pFr                         " Browse references
-<leader>p/                          " Search all content
-```
-
-**Manuscript:**
-```vim
-<leader>pme                         " Export manuscript
-<leader>pmi                         " Import manuscript edits
-<leader>pmh                         " Manuscript homepage
-```
-
-### Requirements
-
-**fzf-lua** is required for browse and search features. It ships with LazyVim 14+ by default.
-
-For non-LazyVim users:
-```lua
-{ 'ibhagwan/fzf-lua', dependencies = { 'nvim-tree/nvim-web-devicons' } }
-```
-
----
-
-## Tips & Best Practices
+## Common Workflows
 
 ### Daily Workflow
 
 ```bash
 # Morning: process new entries
-plm inbox && plm convert && plm sync-db
+plm inbox && plm convert && plm import-metadata
 
-# Export to wiki for browsing
-plm export-wiki all
-
-# Work in Neovim with live wiki
-# <leader>pf to browse, <leader>p/ to search
+# Search your journal
+jsearch query "therapy" person:alice in:2024
 
 # Evening: backup
 metadb backup
@@ -1413,7 +1224,6 @@ metadb backup
 
 ```bash
 # Validate everything
-validate wiki check
 validate db all
 validate consistency all
 
@@ -1427,20 +1237,17 @@ metadb stats --verbose
 ### Monthly Tasks
 
 ```bash
-# Clean up old tombstones
-metadb tombstone cleanup
-
 # Rebuild search index
 jsearch index rebuild
 
 # Full system backup
 plm backup-full
 
-# Review and clean orphaned pages
-validate wiki orphans
+# Check database health
+metadb health
 ```
 
-### Before Sofir Changes
+### Before Major Changes
 
 ```bash
 # Create backup
@@ -1472,18 +1279,11 @@ metadb init
 jsearch index create
 ```
 
-### "Broken wiki links"
-```bash
-validate wiki check
-# Fix the reported links
-plm export-wiki all  # Regenerate if needed
-```
-
 ### "Metadata out of sync"
 ```bash
 validate consistency metadata
 # If drift detected:
-plm sync-db  # Re-sync from markdown
+plm import-metadata  # Re-import from metadata
 ```
 
 ### "Slow database queries"
@@ -1505,7 +1305,7 @@ jsearch --help
 
 # Subcommand help
 metadb backup --help
-validate wiki check --help
+validate db check --help
 jsearch query --help
 ```
 
@@ -1515,13 +1315,6 @@ plm status
 metadb health
 ```
 
-**Documentation:**
-- User guides: `docs/user-guides/`
-- Technical docs: `docs/dev-guides/`
-- Architecture: `docs/dev-guides/architecture/`
-
 ---
 
-**Last Updated:** 2025-12-20
-**Documentation Coverage:** 100% (60+ commands)
-**Maintained by:** Palimpsest Project
+**Last Updated:** 2026-02-06

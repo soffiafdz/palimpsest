@@ -60,8 +60,8 @@ Use this checklist to track your progress:
 - [x] Database initialization
 - [x] src2txt conversion
 - [x] txt2md conversion
-- [ ] yaml2sql database sync
-- [ ] sql2yaml export
+- [x] import-metadata database import
+- [x] export-json database export
 
 ### Metadata & Entities
 
@@ -297,11 +297,11 @@ cat data/journal/content/md/2025/2024-11-25.md
 - Computed fields: `date`, `word_count`, `reading_time`
 - Body content preserved
 
-### 2.4 Test yaml2sql Database Sync
+### 2.4 Test Metadata Import
 
 ```bash
-# Sync to database
-plm sync-db
+# Import metadata to database
+plm import-metadata
 
 # Verify
 metadb query show 2024-11-25
@@ -309,14 +309,14 @@ metadb query show 2024-11-25
 
 **Expected:** Entry appears in database with correct metadata
 
-### 2.5 Test sql2yaml Export
+### 2.5 Test JSON Export
 
 ```bash
-# Export back to markdown
-plm export-db --year 2024
+# Export database to JSON
+plm export-json
 
-# Compare exported with original
-diff data/journal/content/md/2024/2024-11-25.md [exported file]
+# Verify JSON output exists
+ls data/exports/
 ```
 
 **Expected:** Exported file matches database state
@@ -378,7 +378,7 @@ manuscript:
 
 ```bash
 # Sync updated entry
-plm sync-db
+plm import-metadata
 
 # Verify all relationships
 metadb query show 2024-11-25
@@ -578,7 +578,7 @@ poems:
 
 ```bash
 # Sync
-plm sync-db
+plm import-metadata
 
 # Verify poem created
 metadb query show 2024-11-25
@@ -740,7 +740,7 @@ Word count: 20
 EOF
 
 # Run pipeline
-plm inbox && plm convert && plm sync-db
+plm inbox && plm convert && plm import-metadata
 
 # Verify only new entry processed
 metadb query show 2024-11-26
@@ -852,7 +852,7 @@ vim data/journal/content/md/2024/2024-11-25.md  # Edit notes field
 vim data/wiki/entries/2024/2024-11-25.md        # Edit notes field differently
 
 # Sync both
-plm sync-db
+plm import-metadata
 plm import-wiki entries
 
 # Check conflicts
@@ -967,7 +967,7 @@ done
 
 ```bash
 # Process all
-plm inbox && plm convert && plm sync-db
+plm inbox && plm convert && plm import-metadata
 
 # Verify
 metadb query months 2024
@@ -1012,7 +1012,7 @@ Test invalid YAML
 EOF
 
 # Try to sync
-plm sync-db
+plm import-metadata
 ```
 
 **Expected:** Clear error message, other entries still processed
@@ -1120,7 +1120,7 @@ plm export-wiki all  # Regenerate if needed
 ```bash
 validate consistency metadata
 # If drift detected:
-plm sync-db  # Re-sync from markdown
+plm import-metadata  # Re-sync from markdown
 ```
 
 ### "Text analysis not working"

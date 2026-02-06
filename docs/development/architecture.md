@@ -115,17 +115,18 @@ from dev.database.models.enums import ReferenceMode
 ```
 dev/pipeline/cli/
 ├── __init__.py          # Main pipeline CLI group
-├── yaml2sql.py          # Metadata YAML → SQL (import journal metadata)
-├── sql2wiki.py          # SQL → Wiki (generate wiki from DB)
-├── wiki2sql.py          # Wiki → SQL (import manuscript edits)
-├── export_yaml.py       # SQL → Canonical YAML (export for git)
+├── inbox.py             # Process 750words exports
+├── convert.py           # TXT → Markdown conversion
+├── import_metadata.py   # Metadata YAML → SQL (import journal metadata)
+├── export_json.py       # SQL → JSON export
+├── build_pdf.py         # PDF generation
 └── maintenance.py       # Backup, status, validation
 ```
 
 **Key Pattern**: Data flow organization
-- Initial import: Metadata YAML → DB → Wiki
-- Ongoing editing: Wiki ↔ DB (wiki is primary editable workspace)
-- Version control: DB → Canonical YAML (git-tracked)
+- Initial conversion: Raw exports → TXT → Markdown
+- Metadata import: Metadata YAML → Database (one-time)
+- Export: Database → JSON (for version control)
 - Database is LOCAL ONLY (not version controlled)
 
 **Entry Point**: `plm` → `dev.pipeline.cli:cli`
@@ -133,11 +134,10 @@ dev/pipeline/cli/
 **Example Usage**:
 ```bash
 plm inbox                      # Process 750words inbox
-plm convert                    # txt → md + skeleton metadata YAML
-plm sync-db                    # Initial import: metadata YAML → Database
-plm export-wiki                # Generate wiki from database
-plm import-wiki                # Sync wiki edits → Database
-plm export-yaml                # Export canonical YAML for git
+plm convert                    # TXT → Markdown + skeleton metadata YAML
+plm import-metadata            # Metadata YAML → Database
+plm export-json                # Database → JSON export
+plm build-pdf 2024             # Generate PDFs for a year
 ```
 
 ---
@@ -233,74 +233,38 @@ validate consistency all       # Cross-system consistency
 
 ---
 
-### 6. MdEntry Dataclass Parsers (`dev/dataclasses/`)
+### 6. Pipeline Dataclasses (`dev/dataclasses/`)
 
-**Purpose**: Separated parsing, export, and validation logic for journal entries
+**Purpose**: Data structures for pipeline stages
 
 **Structure**:
 ```
 dev/dataclasses/
-├── md_entry.py              # Core dataclass (787 lines, down from 1,581)
-├── md_entry_validator.py    # Validation logic
-└── parsers/
-    ├── __init__.py          # Parser exports
-    ├── yaml_to_db.py        # YAML frontmatter → Database format
-    └── db_to_yaml.py        # Database → YAML frontmatter export
+├── txt_entry.py         # TXT file conversion dataclass
+└── metadata_entry.py    # Metadata YAML structures
 ```
 
 **Key Components**:
 
-1. **YamlToDbParser** (`yaml_to_db.py`):
-   - Parses YAML frontmatter to database-compatible format
-   - Handles complex field parsing (people, locations, dates, references, poems)
-   - Supports alias resolution, name parsing, date context extraction
-   - Methods: `parse_city_field()`, `parse_people_field()`, `parse_dates_field()`, etc.
+1. **TxtEntry** (`txt_entry.py`):
+   - Parses formatted text files
+   - Extracts word count, reading time
+   - Handles text-to-markdown conversion
 
-2. **DbToYamlExporter** (`db_to_yaml.py`):
-   - Exports database Entry ORM objects to YAML frontmatter format
-   - Builds human-readable metadata from normalized database structures
-   - Methods: `build_people_metadata()`, `build_dates_metadata()`, `build_references_metadata()`, etc.
-
-3. **MdEntryValidator** (`md_entry_validator.py`):
-   - Validates MdEntry structure and metadata
-   - Checks required fields, date formats, word counts
-   - Independent validation logic for testability
-
-**Key Patterns**:
-- **Parser Delegation**: `MdEntry` delegates to `YamlToDbParser` for YAML→DB conversion
-- **Exporter Delegation**: `MdEntry.from_database()` uses `DbToYamlExporter`
-- **Stateless Validators**: Validation logic separated from dataclass
-- **Entry Date Context**: Parsers receive entry date for defaulting revision dates
+2. **MetadataEntry** (`metadata_entry.py`):
+   - Represents metadata YAML structure
+   - Validates metadata fields
+   - Prepares data for database import
 
 **Import Examples**:
 ```python
-# Core dataclass
-from dev.dataclasses.md_entry import MdEntry
+# Core dataclasses
+from dev.dataclasses.txt_entry import TxtEntry
+from dev.dataclasses.metadata_entry import MetadataEntry
 
-# Use parsers directly (advanced usage)
-from dev.dataclasses.parsers import YamlToDbParser, DbToYamlExporter
-from dev.dataclasses.md_entry_validator import MdEntryValidator
-
-# Normal usage - parsers called internally
-entry = MdEntry.from_file(Path("2024-01-15.md"))
-db_meta = entry.to_database_metadata()  # Uses YamlToDbParser internally
-```
-
-**Benefits**:
-- Reduced complexity in core dataclass
-- Easier to test parsing logic independently
-- Clear separation between YAML and database concerns
-- Simplified validation testing
-- Better code organization and navigation
-
-**Module Structure**:
-```
-dev/dataclasses/
-├── md_entry.py              # Core dataclass
-├── md_entry_validator.py    # Validation logic
-└── parsers/
-    ├── yaml_to_db.py        # YAML→DB parsing logic
-    └── db_to_yaml.py        # DB→YAML export logic
+# Normal usage
+txt_entry = TxtEntry.from_file(Path("2024-01-15.txt"))
+metadata = MetadataEntry.from_yaml(Path("metadata/2024/2024-01-15.yaml"))
 ```
 
 ---
