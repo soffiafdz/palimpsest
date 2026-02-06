@@ -150,7 +150,6 @@ def run_all(
     """
     from .sources import inbox
     from .text import convert
-    from .database import sync_db
     from .pdf import build_pdf
 
     click.echo("🚀 Starting complete pipeline...\n")
@@ -169,18 +168,13 @@ def run_all(
         ctx.invoke(convert, force=False)
         click.echo()
 
-        # Step 3: Sync database
-        click.echo("=" * 60)
-        ctx.invoke(sync_db, input=str(MD_DIR), force=False)
-        click.echo()
-
-        # Step 4: Build PDFs (if year specified)
+        # Step 3: Build PDFs (if year specified)
         if not skip_pdf and year:
             click.echo("=" * 60)
             ctx.invoke(build_pdf, year=year, input=str(MD_DIR), output=str(PDF_DIR), force=False, debug=False)
             click.echo()
 
-        # Step 5: Full backup (if requested)
+        # Step 4: Full backup (if requested)
         if backup:
             click.echo("=" * 60)
             ctx.invoke(backup_full, suffix="pipeline")

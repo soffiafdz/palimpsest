@@ -50,7 +50,7 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
-from dev.database.models import Entry, Person, RelationType, Scene, Thread
+from dev.database.models import Entry, Person, PersonAlias, RelationType, Scene, Thread
 
 from .base_manager import BaseManager
 
@@ -457,6 +457,36 @@ class PersonManager(BaseManager):
             )
 
             return person
+
+    def add_aliases(self, person: Person, aliases: List[str]) -> None:
+        """
+        Add aliases to a person, skipping duplicates.
+
+        Normalizes each alias and creates PersonAlias records for any
+        that don't already exist on the person.
+
+        Args:
+            person: Person entity to add aliases to
+            aliases: List of alias strings to add
+
+        Notes:
+            - Duplicate detection is case-insensitive
+            - Whitespace is normalized before comparison
+        """
+        with DatabaseOperation(self.logger, "add_aliases"):
+            existing = {a.alias.lower() for a in person.aliases}
+
+            for alias in aliases:
+                normalized = DataValidator.normalize_string(alias)
+                if not normalized:
+                    continue
+                if normalized.lower() in existing:
+                    continue
+
+                person.aliases.append(PersonAlias(alias=normalized))
+                existing.add(normalized.lower())
+
+            self.session.flush()
 
     def _update_person_relationships(
         self,

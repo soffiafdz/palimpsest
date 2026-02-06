@@ -28,12 +28,14 @@ from __future__ import annotations
 # --- Standard library imports ---
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Set, Optional
+from typing import Any, Dict, List, Set, Optional
 from collections import defaultdict
+
+# --- Third-party imports ---
+import yaml
 
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
-from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
@@ -195,23 +197,31 @@ class ConsistencyValidator:
                     continue
 
                 try:
-                    entry_md = MdEntry.from_file(Path(entry_db.file_path))
+                    # Parse frontmatter directly from MD file
+                    content = Path(entry_db.file_path).read_text(encoding="utf-8")
+                    if not content.startswith("---"):
+                        continue
+                    parts = content.split("---", 2)
+                    if len(parts) < 3:
+                        continue
+                    frontmatter = yaml.safe_load(parts[1]) or {}
 
                     # Check core fields
-                    if entry_md.date != entry_db.date:
+                    md_date = DataValidator.normalize_date(frontmatter.get("date"))
+                    if md_date and md_date != entry_db.date:
                         issue = ConsistencyIssue(
                             check_type="metadata",
                             severity="error",
                             system="md-db",
                             entity_type="entry",
                             entity_id=entry_db.date.isoformat(),
-                            message=f"Date mismatch: MD={entry_md.date}, DB={entry_db.date}",
+                            message=f"Date mismatch: MD={md_date}, DB={entry_db.date}",
                         )
                         issues.append(issue)
                         self.report.add_issue(issue)
 
                     # Check word count
-                    md_word_count = entry_md.metadata.get("word_count", 0)
+                    md_word_count = frontmatter.get("word_count", 0)
                     if md_word_count and int(md_word_count) != entry_db.word_count:
                         issue = ConsistencyIssue(
                             check_type="metadata",
@@ -227,13 +237,13 @@ class ConsistencyValidator:
 
                     # Check relationship counts
                     issues.extend(
-                        self._check_people_consistency(entry_md, entry_db, session)
+                        self._check_people_consistency(frontmatter, entry_db, session)
                     )
                     issues.extend(
-                        self._check_locations_consistency(entry_md, entry_db, session)
+                        self._check_locations_consistency(frontmatter, entry_db, session)
                     )
                     issues.extend(
-                        self._check_tags_consistency(entry_md, entry_db, session)
+                        self._check_tags_consistency(frontmatter, entry_db, session)
                     )
 
                 except Exception as e:
@@ -389,13 +399,13 @@ class ConsistencyValidator:
             return {e.date.isoformat() for e in session.query(Entry).all()}
 
     def _check_people_consistency(
-        self, entry_md: MdEntry, entry_db: Entry, session
+        self, frontmatter: Dict[str, Any], entry_db: Entry, session: Any
     ) -> List[ConsistencyIssue]:
         """Check people field consistency between MD and DB."""
         issues = []
 
         # Get MD people count
-        md_people = entry_md.metadata.get("people", [])
+        md_people = frontmatter.get("people", [])
         md_people_count = len(md_people) if isinstance(md_people, list) else 0
 
         # Get DB people count
@@ -418,13 +428,13 @@ class ConsistencyValidator:
         return issues
 
     def _check_locations_consistency(
-        self, entry_md: MdEntry, entry_db: Entry, session
+        self, frontmatter: Dict[str, Any], entry_db: Entry, session: Any
     ) -> List[ConsistencyIssue]:
         """Check locations field consistency between MD and DB."""
         issues = []
 
         # Get MD locations count
-        md_locations = entry_md.metadata.get("locations", [])
+        md_locations = frontmatter.get("locations", [])
         if isinstance(md_locations, list):
             md_loc_count = len(md_locations)
         elif isinstance(md_locations, dict):
@@ -452,13 +462,13 @@ class ConsistencyValidator:
         return issues
 
     def _check_tags_consistency(
-        self, entry_md: MdEntry, entry_db: Entry, session
+        self, frontmatter: Dict[str, Any], entry_db: Entry, session: Any
     ) -> List[ConsistencyIssue]:
         """Check tags field consistency between MD and DB."""
         issues = []
 
         # Get MD tags
-        md_tags = set(entry_md.metadata.get("tags", []))
+        md_tags = set(frontmatter.get("tags", []))
 
         # Get DB tags
         db_tags = {tag.name for tag in entry_db.tags}

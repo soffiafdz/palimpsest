@@ -668,20 +668,82 @@ class TestEntryManagerPeopleProcessing:
         person_names = {p.name for p in entry.people}
         assert "Bob" in person_names
 
+    def test_create_entry_with_people_full_format(self, entry_manager, tmp_dir, db_session):
+        """Test creating entry with people as {name, lastname, disambiguator} dicts."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "people": [
+                    {"name": "Maria", "lastname": "Garcia", "disambiguator": "therapist"},
+                ],
+            }
+        )
+        db_session.commit()
+        db_session.refresh(entry)
+
+        assert len(entry.people) == 1
+        person = entry.people[0]
+        assert person.name == "Maria"
+        assert person.lastname == "Garcia"
+        assert person.disambiguator == "therapist"
+
+    def test_create_entry_with_people_and_aliases(self, entry_manager, tmp_dir, db_session):
+        """Test creating entry with people dicts that include alias field."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "people": [
+                    {
+                        "name": "Bob",
+                        "lastname": "Smith",
+                        "alias": ["Bobby", "Rob"],
+                    },
+                ],
+            }
+        )
+        db_session.commit()
+        db_session.refresh(entry)
+
+        assert len(entry.people) == 1
+        person = entry.people[0]
+        alias_values = {a.alias for a in person.aliases}
+        assert alias_values == {"Bobby", "Rob"}
+
+    def test_create_entry_with_people_backward_compat(self, entry_manager, tmp_dir, db_session):
+        """Test creating entry with old {name, full_name} format still works."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "people": [{"name": "Alice", "full_name": "Wonderland"}],
+            }
+        )
+        db_session.commit()
+        db_session.refresh(entry)
+
+        assert len(entry.people) == 1
+        person = entry.people[0]
+        assert person.name == "Alice"
+        assert person.lastname == "Wonderland"
+
 
 
 class TestEntryManagerEventProcessing:
-    """
-    Test EntryManager event processing with Event.name field.
+    """Test EntryManager event processing (M2M with scene linking)."""
 
-    Note: Event processing is currently broken in EntryManager as it treats
-    Event as M2M when it's actually one-to-many. These tests are skipped until
-    the implementation is fixed.
-    """
-
-    @pytest.mark.skip(reason="Event processing broken - Event is one-to-many, not M2M")
     def test_create_entry_with_events_by_string(self, entry_manager, tmp_dir, db_session):
-        """Test creating entry with events as strings (uses Event.name field)."""
+        """Test creating entry with events as string names."""
         file_path = tmp_dir / "2024-01-15.md"
         file_path.write_text("# Test")
 
@@ -691,32 +753,54 @@ class TestEntryManagerEventProcessing:
         db_session.commit()
         db_session.refresh(entry)
 
-        assert len(entry.events) >= 1
-        event_names = {e.name for e in entry.events}
-        assert "conference" in event_names
+        assert len(entry.events) == 1
+        assert entry.events[0].name == "conference"
 
-    @pytest.mark.skip(reason="Event processing broken - Event is one-to-many, not M2M")
-    def test_create_entry_with_events_by_id(self, entry_manager, tmp_dir, db_session):
-        """Test creating entry with events by ID."""
-        # Create event first
-        event = Event(name="conference", entry_id=1)
-        db_session.add(event)
-        db_session.commit()
-
+    def test_create_entry_with_events_as_dicts(self, entry_manager, tmp_dir, db_session):
+        """Test creating entry with events as dicts (name + scenes)."""
         file_path = tmp_dir / "2024-01-15.md"
         file_path.write_text("# Test")
 
         entry = entry_manager.create(
-            {"date": "2024-01-15", "file_path": str(file_path), "events": [event.id]}
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "events": [{"name": "conference", "scenes": []}],
+            }
         )
         db_session.commit()
         db_session.refresh(entry)
 
-        # Note: Event relationship is one-to-many from Entry, not M2M
-        # So events should be accessible via entry.events
-        assert len(entry.events) >= 1
+        assert len(entry.events) == 1
+        assert entry.events[0].name == "conference"
 
-    @pytest.mark.skip(reason="Event processing broken - Event is one-to-many, not M2M")
+    def test_events_with_scene_linking(self, entry_manager, tmp_dir, db_session):
+        """Test events link to scenes by name."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "scenes": [
+                    {"name": "Opening Talk", "description": "Keynote"},
+                    {"name": "Panel Discussion", "description": "Q&A"},
+                ],
+                "events": [
+                    {"name": "Day One", "scenes": ["Opening Talk", "Panel Discussion"]},
+                ],
+            }
+        )
+        db_session.commit()
+        db_session.refresh(entry)
+
+        assert len(entry.events) == 1
+        event = entry.events[0]
+        assert len(event.scenes) == 2
+        scene_names = {s.name for s in event.scenes}
+        assert scene_names == {"Opening Talk", "Panel Discussion"}
+
     def test_update_entry_events_incremental(self, entry_manager, tmp_dir, db_session):
         """Test incrementally adding events."""
         file_path = tmp_dir / "2024-01-15.md"
@@ -727,7 +811,6 @@ class TestEntryManagerEventProcessing:
         )
         db_session.commit()
 
-        # Add more events
         entry_manager.update_relationships(
             entry, {"events": ["workshop"]}, incremental=True
         )
@@ -735,10 +818,8 @@ class TestEntryManagerEventProcessing:
         db_session.refresh(entry)
 
         event_names = {e.name for e in entry.events}
-        assert "conference" in event_names
-        assert "workshop" in event_names
+        assert event_names == {"conference", "workshop"}
 
-    @pytest.mark.skip(reason="Event processing broken - Event is one-to-many, not M2M")
     def test_update_entry_events_replacement(self, entry_manager, tmp_dir, db_session):
         """Test replacing all events."""
         file_path = tmp_dir / "2024-01-15.md"
@@ -749,7 +830,6 @@ class TestEntryManagerEventProcessing:
         )
         db_session.commit()
 
-        # Replace events
         entry_manager.update_relationships(
             entry, {"events": ["meeting"]}, incremental=False
         )
@@ -758,6 +838,26 @@ class TestEntryManagerEventProcessing:
 
         event_names = {e.name for e in entry.events}
         assert event_names == {"meeting"}
+
+    def test_events_shared_across_entries(self, entry_manager, tmp_dir, db_session):
+        """Test same-named events are shared across entries."""
+        file1 = tmp_dir / "2024-01-15.md"
+        file1.write_text("# Test 1")
+        file2 = tmp_dir / "2024-01-16.md"
+        file2.write_text("# Test 2")
+
+        entry1 = entry_manager.create(
+            {"date": "2024-01-15", "file_path": str(file1), "events": ["conference"]}
+        )
+        entry2 = entry_manager.create(
+            {"date": "2024-01-16", "file_path": str(file2), "events": ["conference"]}
+        )
+        db_session.commit()
+        db_session.refresh(entry1)
+        db_session.refresh(entry2)
+
+        # Both entries should reference the same Event object
+        assert entry1.events[0].id == entry2.events[0].id
 
 
 class TestEntryManagerBulkCreate:
@@ -904,3 +1004,55 @@ class TestEntryManagerEdgeCases:
         for i in range(1, 4):
             entry = entry_manager.get(entry_date=f"2024-01-{i:02d}")
             assert entry is not None
+
+
+class TestEntryManagerMetadataHash:
+    """Test EntryManager metadata_hash support in create and update."""
+
+    def test_create_entry_with_metadata_hash(self, entry_manager, tmp_dir, db_session):
+        """Test that metadata_hash is set on Entry during create."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "metadata_hash": "abc123def456",
+            }
+        )
+        db_session.commit()
+
+        assert entry.metadata_hash == "abc123def456"
+
+    def test_create_entry_without_metadata_hash(self, entry_manager, tmp_dir, db_session):
+        """Test that metadata_hash defaults to None when not provided."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {"date": "2024-01-15", "file_path": str(file_path)}
+        )
+        db_session.commit()
+
+        assert entry.metadata_hash is None
+
+    def test_update_entry_metadata_hash(self, entry_manager, tmp_dir, db_session):
+        """Test that metadata_hash can be updated on an existing entry."""
+        file_path = tmp_dir / "2024-01-15.md"
+        file_path.write_text("# Test")
+
+        entry = entry_manager.create(
+            {
+                "date": "2024-01-15",
+                "file_path": str(file_path),
+                "metadata_hash": "old_hash",
+            }
+        )
+        db_session.commit()
+
+        entry_manager.update(entry, {"metadata_hash": "new_hash"})
+        db_session.commit()
+        db_session.refresh(entry)
+
+        assert entry.metadata_hash == "new_hash"

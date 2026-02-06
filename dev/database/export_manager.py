@@ -16,10 +16,6 @@ Export Formats:
     2. **JSON**: Structured data exports
        - Full entry metadata with nested relationships
        - Suitable for programmatic processing
-    3. **Markdown**: Human-readable entry exports
-       - YAML frontmatter with metadata
-       - Original body content preserved
-       - Suitable for sql2yaml pipeline step
 
 Export Strategies:
     1. **Optimized Loading**: Uses QueryOptimizer.for_export()
@@ -112,7 +108,6 @@ Notes:
 See Also:
     - query_optimizer.py: Efficient database queries
     - query_analytics.py: Analytics and reporting
-    - sql2yaml.py: Markdown export callback implementation
     - decorators.py: DatabaseOperation context manager
 """
 # --- Standard library imports ---
