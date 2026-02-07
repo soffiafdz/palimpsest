@@ -185,12 +185,6 @@ class TestPalimpsestDBManagerInitialization:
             # Phase 13: MomentManager no longer exists
             assert not hasattr(test_db, "_moment_manager")
 
-    def test_session_scope_no_manuscript_manager(self, test_db):
-        """Verify session_scope does NOT initialize ManuscriptManager (deprecated)."""
-        with test_db.session_scope() as _:
-            # Phase 13: ManuscriptManager no longer exists
-            assert not hasattr(test_db, "_manuscript_manager")
-
     def test_manager_properties_accessible_in_session(self, test_db):
         """Verify manager properties are accessible within session_scope."""
         with test_db.session_scope() as _:

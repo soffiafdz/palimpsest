@@ -11,7 +11,7 @@ Query Syntax Examples:
     "alice AND therapy"                # Boolean AND
     "person:alice tag:reflection"      # With filters
     "therapy in:2024 words:100-500"    # Year and word count
-    "alice city:montreal has:manuscript"  # Complex filters
+    "alice city:montreal"                 # Complex filters
 
 Usage:
     # Parse query
@@ -66,10 +66,6 @@ class SearchQuery:
     min_reading_time: Optional[float] = None
     max_reading_time: Optional[float] = None
 
-    # Manuscript filters
-    manuscript_status: Optional[str] = None
-    has_manuscript: Optional[bool] = None
-
     # Sorting
     sort_by: str = "relevance"  # relevance, date, word_count
     sort_order: str = "desc"
@@ -92,7 +88,7 @@ class SearchQueryParser:
             "person:alice tag:reflection" → filters
             "alice in:2024 words:100-500" → mixed
             "therapy year:2024 month:11" → date filters
-            "alice city:montreal has:manuscript" → complex
+            "alice city:montreal" → complex
 
         Returns:
             SearchQuery object
@@ -187,15 +183,6 @@ class SearchQueryParser:
                         query.min_reading_time = float(value)
                     except ValueError:
                         pass
-
-            # Manuscript status filter
-            elif key == 'status':
-                query.manuscript_status = value
-
-            # Has manuscript filter
-            elif key == 'has':
-                if value == 'manuscript':
-                    query.has_manuscript = True
 
             # Sort filter
             elif key == 'sort':
@@ -320,13 +307,6 @@ class SearchEngine:
 
         if query.max_reading_time:
             conditions.append(Entry.reading_time <= query.max_reading_time)
-
-        # Manuscript filters (currently not supported - entries don't have manuscript extensions)
-        # Chapter-based search would need different implementation
-        # if query.has_manuscript:
-        #     pass  # Not applicable in new architecture
-        # if query.manuscript_status:
-        #     pass  # Not applicable in new architecture
 
         # Apply basic conditions
         if conditions:
