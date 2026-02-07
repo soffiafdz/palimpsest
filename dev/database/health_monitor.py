@@ -664,9 +664,19 @@ class HealthMonitor:
 
             for table_name, (model_class, relationship_attr) in cleanup_config.items():
                 # Use bulk delete for better performance
+                rel = getattr(model_class, relationship_attr)
+
+                # Use .has() for scalar relationships, .any() for collections
+                if rel.property.uselist:
+                    # Collection relationship (M2M) - use .any()
+                    filter_expr = ~rel.any()
+                else:
+                    # Scalar relationship (FK) - use .has()
+                    filter_expr = ~rel.has()
+
                 subquery = (
                     session.query(model_class.id)
-                    .filter(~getattr(model_class, relationship_attr).any())
+                    .filter(filter_expr)
                     .subquery()
                 )
 

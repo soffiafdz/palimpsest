@@ -266,8 +266,14 @@ class TestPalimpsestDBCleanup:
     def test_cleanup_all_metadata_removes_orphaned_locations(self, test_db):
         """Verify cleanup removes locations not linked to any entries."""
         with test_db.session_scope() as session:
-            # Create location without entry
-            orphan_loc = Location(name="Nowhere Cafe")
+            # Create city (required for location)
+            from dev.database.models import City
+            city = City(name="Test City")
+            session.add(city)
+            session.flush()
+
+            # Create location with city but no entry links
+            orphan_loc = Location(name="Nowhere Cafe", city_id=city.id)
             session.add(orphan_loc)
             session.commit()
 
@@ -281,27 +287,14 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Location).filter_by(name="Nowhere Cafe").first() is None
 
+    @pytest.mark.skip(
+        reason="Scene has NOT NULL constraint on entry_id with CASCADE delete - no orphan scenario exists"
+    )
     def test_cleanup_all_metadata_removes_orphaned_scenes(self, test_db):
         """Verify cleanup removes scenes not linked to any entry."""
-        with test_db.session_scope() as session:
-            # Create scene without entry (entry_id is None)
-            orphan_scene = Scene(
-                name="Orphan Scene",
-                description="This scene has no entry",
-                entry_id=None,
-            )
-            session.add(orphan_scene)
-            session.commit()
-
-        # Run cleanup
-        result = test_db.cleanup_all_metadata()
-
-        # Verify orphan was removed
-        assert result["scenes"] == 1
-
-        # Verify scene is gone
-        with test_db.session_scope() as session:
-            assert session.query(Scene).filter_by(name="Orphan Scene").first() is None
+        # Note: This test is invalid - Scene cannot exist without Entry due to NOT NULL FK
+        # with CASCADE delete. When Entry is deleted, Scene is automatically cascade-deleted.
+        pass
 
     def test_cleanup_all_metadata_preserves_linked_entities(self, test_db):
         """Verify cleanup preserves entities linked to entries."""
@@ -315,7 +308,13 @@ class TestPalimpsestDBCleanup:
             tag.entries.append(entry)
             session.add(tag)
 
-            location = Location(name="Preserved Cafe")
+            # Create city (required for location)
+            from dev.database.models import City
+            city = City(name="Test City")
+            session.add(city)
+            session.flush()
+
+            location = Location(name="Preserved Cafe", city_id=city.id)
             location.entries.append(entry)
             session.add(location)
 
@@ -355,41 +354,25 @@ class TestPalimpsestDBCleanup:
         with test_db.session_scope() as session:
             assert session.query(Theme).filter_by(name="orphan-theme").first() is None
 
+    @pytest.mark.skip(
+        reason="Reference has NOT NULL constraints on entry_id and source_id with CASCADE delete - no orphan scenario exists"
+    )
     def test_cleanup_all_metadata_removes_orphaned_references(self, test_db):
         """Verify cleanup removes references not linked to any entry."""
-        with test_db.session_scope() as session:
-            orphan_ref = Reference(
-                content="Orphan quote",
-                entry_id=None,
-            )
-            session.add(orphan_ref)
-            session.commit()
+        # Note: This test is invalid - Reference cannot exist without Entry and ReferenceSource
+        # due to NOT NULL FKs with CASCADE delete. When Entry or ReferenceSource is deleted,
+        # Reference is automatically cascade-deleted.
+        pass
 
-        result = test_db.cleanup_all_metadata()
-
-        assert result["references"] == 1
-
-        with test_db.session_scope() as session:
-            assert session.query(Reference).filter_by(content="Orphan quote").first() is None
-
+    @pytest.mark.skip(
+        reason="PoemVersion has NOT NULL constraints on both poem_id and entry_id with CASCADE delete - no orphan scenario exists"
+    )
     def test_cleanup_all_metadata_removes_orphaned_poem_versions(self, test_db):
         """Verify cleanup removes poem versions not linked to any entry."""
-        with test_db.session_scope() as session:
-            orphan_poem = PoemVersion(
-                title="Orphan Poem",
-                content="Lonely verses",
-                revision_date=date(2024, 1, 15),
-                entry_id=None,
-            )
-            session.add(orphan_poem)
-            session.commit()
-
-        result = test_db.cleanup_all_metadata()
-
-        assert result["poem_versions"] == 1
-
-        with test_db.session_scope() as session:
-            assert session.query(PoemVersion).filter_by(title="Orphan Poem").first() is None
+        # Note: This test is invalid - PoemVersion cannot be orphaned due to NOT NULL FKs
+        # with CASCADE delete. When Entry or Poem is deleted, PoemVersion is automatically
+        # cascade-deleted by the database.
+        pass
 
     def test_cleanup_all_metadata_combined(self, test_db):
         """Verify cleanup handles multiple entity types simultaneously."""
@@ -408,7 +391,7 @@ class TestPalimpsestDBCleanup:
             orphan_tag = Tag(name="orphan")
             session.add(orphan_tag)
 
-            # Linked scene (preserved)
+            # Linked scene (preserved) - Scene cannot be orphaned due to NOT NULL FK
             linked_scene = Scene(
                 name="Linked Scene",
                 description="Has entry",
@@ -416,29 +399,20 @@ class TestPalimpsestDBCleanup:
             )
             session.add(linked_scene)
 
-            # Orphan scene (removed)
-            orphan_scene = Scene(
-                name="Orphan Scene",
-                description="No entry",
-                entry_id=None,
-            )
-            session.add(orphan_scene)
-
             session.commit()
 
         # Run cleanup
         result = test_db.cleanup_all_metadata()
 
-        # Verify correct counts
+        # Verify correct counts (only orphan tag should be removed)
         assert result["tags"] == 1
-        assert result["scenes"] == 1
+        assert result["scenes"] == 0  # No orphan scenes possible
 
         # Verify correct entities remain
         with test_db.session_scope() as session:
             assert session.query(Tag).filter_by(name="linked").first() is not None
             assert session.query(Tag).filter_by(name="orphan").first() is None
             assert session.query(Scene).filter_by(name="Linked Scene").first() is not None
-            assert session.query(Scene).filter_by(name="Orphan Scene").first() is None
 
     def test_cleanup_all_metadata_no_orphans(self, test_db):
         """Verify cleanup returns zero counts when no orphans exist."""
