@@ -8,6 +8,8 @@ many-to-many relationships to both Entry and Scene.
 
 Target Coverage: 90%+
 """
+import pytest
+from contextlib import contextmanager
 from datetime import date
 
 from dev.core.exceptions import DatabaseError, ValidationError
@@ -331,7 +333,6 @@ class TestEventManagerSceneRelationship:
         db_session.add(entry)
         db_session.flush()
 
-        import pytest
         with pytest.raises(ValueError, match="does not have"):
             event_manager._link(event, entry, "nonexistent")
 
@@ -356,9 +357,6 @@ class TestEventManagerEdgeCases:
 
 
 # --- Helper context managers ---
-
-import pytest
-from contextlib import contextmanager
 
 
 @contextmanager
