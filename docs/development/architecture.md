@@ -102,6 +102,7 @@ from dev.database.models.enums import ReferenceMode
 - **geography.py**: Location-related models with temporal tracking
 - **entities.py**: People and tags with soft delete support
 - **creative.py**: References, events, poems with versioning
+- **manuscript.py**: Chapters, characters, scenes, sources, references for manuscript
 - **sync.py**: Multi-machine synchronization support
 
 ---

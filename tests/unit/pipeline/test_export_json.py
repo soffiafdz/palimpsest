@@ -28,13 +28,20 @@ from sqlalchemy.orm import Session
 # --- Local imports ---
 from dev.database.models import (
     Arc,
+    Chapter,
+    Character,
     City,
     Entry,
     Event,
     Location,
+    ManuscriptReference,
+    ManuscriptScene,
+    ManuscriptSource,
     Motif,
     MotifInstance,
+    Part,
     Person,
+    PersonCharacterMap,
     Reference,
     ReferenceSource,
     Scene,
@@ -43,7 +50,17 @@ from dev.database.models import (
     Theme,
     Thread,
 )
-from dev.database.models.enums import ReferenceMode, ReferenceType, RelationType
+from dev.database.models.enums import (
+    ChapterStatus,
+    ChapterType,
+    ContributionType,
+    ReferenceMode,
+    ReferenceType,
+    RelationType,
+    SceneOrigin,
+    SceneStatus,
+    SourceType,
+)
 from dev.pipeline.export_json import JSONExporter
 
 
@@ -890,3 +907,386 @@ class TestDescribeFieldChanges:
         result = exporter._describe_field_changes(old, new)
         # Should have at most 5 comma-separated parts
         assert result.count(",") <= 4
+
+
+# =========================================================================
+# Manuscript Export Tests
+# =========================================================================
+
+
+class TestExportParts:
+    """Test part serialization."""
+
+    def test_export_part_fields(self, db_session, test_db, tmp_dir):
+        """Part export includes number and title."""
+        part = Part(number=1, title="Arrival")
+        db_session.add(part)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_parts(db_session)
+
+        data = result[part.id]
+        assert data["number"] == 1
+        assert data["title"] == "Arrival"
+
+    def test_export_part_null_fields(self, db_session, test_db, tmp_dir):
+        """Part with null number/title exports None."""
+        part = Part()
+        db_session.add(part)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_parts(db_session)
+
+        data = result[part.id]
+        assert data["number"] is None
+        assert data["title"] is None
+
+    def test_export_parts_stats(self, db_session, test_db, tmp_dir):
+        """Export tracks part count in stats."""
+        db_session.add(Part(number=1, title="Part One"))
+        db_session.add(Part(number=2, title="Part Two"))
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._export_parts(db_session)
+
+        assert exporter.stats["parts"] == 2
+
+
+class TestExportChapters:
+    """Test chapter serialization with enums and relationship IDs."""
+
+    def test_export_chapter_fields(self, db_session, test_db, tmp_dir):
+        """Chapter export includes all scalar fields and enum values."""
+        chapter = Chapter(
+            title="The Gray Fence",
+            number=1,
+            type=ChapterType.PROSE,
+            status=ChapterStatus.DRAFT,
+            content="A brief moment.",
+        )
+        db_session.add(chapter)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_chapters(db_session)
+
+        data = result[chapter.id]
+        assert data["title"] == "The Gray Fence"
+        assert data["number"] == 1
+        assert data["type"] == "prose"
+        assert data["status"] == "draft"
+        assert data["content"] == "A brief moment."
+        assert data["part_id"] is None
+
+    def test_export_chapter_with_part(self, db_session, test_db, tmp_dir):
+        """Chapter export includes part_id when assigned."""
+        part = Part(number=1, title="Arrival")
+        db_session.add(part)
+        db_session.flush()
+        chapter = Chapter(title="First Chapter", part_id=part.id)
+        db_session.add(chapter)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_chapters(db_session)
+
+        assert result[chapter.id]["part_id"] == part.id
+
+    def test_export_chapter_relationship_ids(self, db_session, test_db, tmp_dir):
+        """Chapter export includes character_ids and arc_ids."""
+        chapter = Chapter(title="Test Chapter")
+        char = Character(name="Sofia", is_narrator=True)
+        arc = Arc(name="The Long Wanting")
+        db_session.add_all([chapter, char, arc])
+        db_session.flush()
+        chapter.characters.append(char)
+        chapter.arcs.append(arc)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_chapters(db_session)
+
+        data = result[chapter.id]
+        assert char.id in data["character_ids"]
+        assert arc.id in data["arc_ids"]
+
+    def test_export_chapter_empty_relationships(self, db_session, test_db, tmp_dir):
+        """Chapter with no relationships exports empty ID lists."""
+        chapter = Chapter(title="Empty Chapter")
+        db_session.add(chapter)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_chapters(db_session)
+
+        data = result[chapter.id]
+        assert data["poem_ids"] == []
+        assert data["character_ids"] == []
+        assert data["arc_ids"] == []
+
+
+class TestExportCharacters:
+    """Test character serialization."""
+
+    def test_export_character_fields(self, db_session, test_db, tmp_dir):
+        """Character export includes all fields."""
+        char = Character(
+            name="Sofia",
+            description="The narrator",
+            role="protagonist",
+            is_narrator=True,
+        )
+        db_session.add(char)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_characters(db_session)
+
+        data = result[char.id]
+        assert data["name"] == "Sofia"
+        assert data["description"] == "The narrator"
+        assert data["role"] == "protagonist"
+        assert data["is_narrator"] is True
+
+    def test_export_character_minimal(self, db_session, test_db, tmp_dir):
+        """Character with only name exports nulls for optional fields."""
+        char = Character(name="Minor")
+        db_session.add(char)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_characters(db_session)
+
+        data = result[char.id]
+        assert data["name"] == "Minor"
+        assert data["description"] is None
+        assert data["role"] is None
+        assert data["is_narrator"] is False
+
+
+class TestExportPersonCharacterMaps:
+    """Test person-character mapping serialization with contribution enum."""
+
+    def test_export_mapping_fields(self, db_session, test_db, tmp_dir):
+        """PersonCharacterMap export includes all fields with enum value."""
+        person = _create_person(db_session, "Maria", "Garcia")
+        char = Character(name="Sofia")
+        db_session.add(char)
+        db_session.flush()
+        mapping = PersonCharacterMap(
+            person_id=person.id,
+            character_id=char.id,
+            contribution=ContributionType.PRIMARY,
+            notes="Main inspiration",
+        )
+        db_session.add(mapping)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_person_character_maps(db_session)
+
+        data = result[mapping.id]
+        assert data["person_id"] == person.id
+        assert data["character_id"] == char.id
+        assert data["contribution"] == "primary"
+        assert data["notes"] == "Main inspiration"
+
+    def test_export_mapping_null_notes(self, db_session, test_db, tmp_dir):
+        """Mapping without notes exports None."""
+        person = _create_person(db_session, "Ana", "Lopez")
+        char = Character(name="Clara")
+        db_session.add(char)
+        db_session.flush()
+        mapping = PersonCharacterMap(
+            person_id=person.id,
+            character_id=char.id,
+            contribution=ContributionType.INSPIRATION,
+        )
+        db_session.add(mapping)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_person_character_maps(db_session)
+
+        data = result[mapping.id]
+        assert data["contribution"] == "inspiration"
+        assert data["notes"] is None
+
+
+class TestExportManuscriptScenes:
+    """Test manuscript scene serialization with origin/status enums."""
+
+    def test_export_scene_fields(self, db_session, test_db, tmp_dir):
+        """ManuscriptScene export includes all fields with enum values."""
+        chapter = Chapter(title="Test Chapter")
+        db_session.add(chapter)
+        db_session.flush()
+        scene = ManuscriptScene(
+            name="Morning at the Fence",
+            description="A quiet scene",
+            chapter_id=chapter.id,
+            origin=SceneOrigin.JOURNALED,
+            status=SceneStatus.INCLUDED,
+            notes="Key scene",
+        )
+        db_session.add(scene)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_manuscript_scenes(db_session)
+
+        data = result[scene.id]
+        assert data["name"] == "Morning at the Fence"
+        assert data["description"] == "A quiet scene"
+        assert data["chapter_id"] == chapter.id
+        assert data["origin"] == "journaled"
+        assert data["status"] == "included"
+        assert data["notes"] == "Key scene"
+
+    def test_export_scene_minimal(self, db_session, test_db, tmp_dir):
+        """ManuscriptScene with only required fields exports nulls."""
+        chapter = Chapter(title="Test Chapter")
+        db_session.add(chapter)
+        db_session.flush()
+        scene = ManuscriptScene(
+            name="Fragment",
+            chapter_id=chapter.id,
+            origin=SceneOrigin.INVENTED,
+            status=SceneStatus.FRAGMENT,
+        )
+        db_session.add(scene)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_manuscript_scenes(db_session)
+
+        data = result[scene.id]
+        assert data["description"] is None
+        assert data["notes"] is None
+        assert data["origin"] == "invented"
+        assert data["status"] == "fragment"
+
+
+class TestExportManuscriptSources:
+    """Test manuscript source serialization with source_type polymorphism."""
+
+    def test_export_entry_source(self, db_session, test_db, tmp_dir):
+        """ManuscriptSource with entry source_type exports entry_id."""
+        chapter = Chapter(title="Test Chapter")
+        db_session.add(chapter)
+        db_session.flush()
+        ms_scene = ManuscriptScene(
+            name="Test Scene",
+            chapter_id=chapter.id,
+            origin=SceneOrigin.JOURNALED,
+            status=SceneStatus.FRAGMENT,
+        )
+        db_session.add(ms_scene)
+        db_session.flush()
+        source = ManuscriptSource(
+            manuscript_scene_id=ms_scene.id,
+            source_type=SourceType.ENTRY,
+            entry_id=1,
+        )
+        db_session.add(source)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_manuscript_sources(db_session)
+
+        data = result[source.id]
+        assert data["source_type"] == "entry"
+        assert data["entry_id"] == 1
+        assert data["scene_id"] is None
+        assert data["thread_id"] is None
+
+    def test_export_external_source(self, db_session, test_db, tmp_dir):
+        """ManuscriptSource with external type exports external_note."""
+        chapter = Chapter(title="Test Chapter")
+        db_session.add(chapter)
+        db_session.flush()
+        ms_scene = ManuscriptScene(
+            name="Test Scene",
+            chapter_id=chapter.id,
+            origin=SceneOrigin.INVENTED,
+            status=SceneStatus.FRAGMENT,
+        )
+        db_session.add(ms_scene)
+        db_session.flush()
+        source = ManuscriptSource(
+            manuscript_scene_id=ms_scene.id,
+            source_type=SourceType.EXTERNAL,
+            external_note="Family story told by mother",
+        )
+        db_session.add(source)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_manuscript_sources(db_session)
+
+        data = result[source.id]
+        assert data["source_type"] == "external"
+        assert data["external_note"] == "Family story told by mother"
+
+
+class TestExportManuscriptReferences:
+    """Test manuscript reference serialization with mode enum."""
+
+    def test_export_reference_fields(self, db_session, test_db, tmp_dir):
+        """ManuscriptReference export includes all fields with enum value."""
+        chapter = Chapter(title="Test Chapter")
+        ref_source = ReferenceSource(
+            title="Important Book",
+            author="Author",
+            type=ReferenceType.BOOK,
+        )
+        db_session.add_all([chapter, ref_source])
+        db_session.flush()
+        ref = ManuscriptReference(
+            chapter_id=chapter.id,
+            source_id=ref_source.id,
+            mode=ReferenceMode.DIRECT,
+            content="A notable quote",
+            notes="Use in opening",
+        )
+        db_session.add(ref)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_manuscript_references(db_session)
+
+        data = result[ref.id]
+        assert data["chapter_id"] == chapter.id
+        assert data["source_id"] == ref_source.id
+        assert data["mode"] == "direct"
+        assert data["content"] == "A notable quote"
+        assert data["notes"] == "Use in opening"
+
+    def test_export_reference_thematic(self, db_session, test_db, tmp_dir):
+        """ManuscriptReference with thematic mode and no content."""
+        chapter = Chapter(title="Test Chapter")
+        ref_source = ReferenceSource(
+            title="Film",
+            author="Director",
+            type=ReferenceType.FILM,
+        )
+        db_session.add_all([chapter, ref_source])
+        db_session.flush()
+        ref = ManuscriptReference(
+            chapter_id=chapter.id,
+            source_id=ref_source.id,
+            mode=ReferenceMode.THEMATIC,
+        )
+        db_session.add(ref)
+        db_session.commit()
+
+        exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        result = exporter._export_manuscript_references(db_session)
+
+        data = result[ref.id]
+        assert data["mode"] == "thematic"
+        assert data["content"] is None
+        assert data["notes"] is None

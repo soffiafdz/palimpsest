@@ -338,5 +338,15 @@ def event_manager(db_session):
     return SimpleManager.for_events(db_session)
 
 
-# Note: moment_manager and manuscript_manager fixtures removed
-# These managers no longer exist in the current architecture
+@pytest.fixture
+def chapter_manager(db_session):
+    """Create ChapterManager instance for testing."""
+    from dev.database.managers.chapter_manager import ChapterManager
+    return ChapterManager(db_session)
+
+
+@pytest.fixture
+def character_manager(db_session):
+    """Create CharacterManager instance for testing."""
+    from dev.database.managers.character_manager import CharacterManager
+    return CharacterManager(db_session)

@@ -55,9 +55,9 @@ Palimpsest is organized into modular components:
 ```
 dev/
 ├── database/           # Database layer (SQLAlchemy ORM)
-│   ├── models/        # Entity models
-│   ├── managers/      # CRUD operations
-│   └── cli/           # Database CLI commands
+│   ├── models/        # Entity models (journal + manuscript)
+│   ├── managers/      # CRUD operations (entry, person, chapter, character, etc.)
+│   └── cli/           # Database CLI commands (query, manuscript, maintenance)
 ├── dataclasses/       # Intermediary data structures
 │   ├── txt_entry.py  # TXT file conversion
 │   └── metadata_entry.py # Metadata YAML structures
@@ -100,7 +100,7 @@ with db.session_scope() as session:
     db._entry_manager.delete(entry)
 ```
 
-Each entity type (Entry, Person, Location, etc.) has a dedicated manager with specialized methods.
+Each entity type (Entry, Person, Location, Chapter, Character, etc.) has a dedicated manager with specialized methods.
 
 → Learn more: [Database Managers](database-managers.md)
 
