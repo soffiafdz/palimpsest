@@ -118,6 +118,8 @@ from .managers import (
     ReferenceManager,
     PoemManager,
     EntryManager,
+    ChapterManager,
+    CharacterManager,
 )
 
 
@@ -209,6 +211,8 @@ class PalimpsestDB:
     references = ManagerProperty("_reference_manager", "ReferenceManager")
     poems = ManagerProperty("_poem_manager", "PoemManager")
     entries = ManagerProperty("_entry_manager", "EntryManager")
+    chapters = ManagerProperty("_chapter_manager", "ChapterManager")
+    characters = ManagerProperty("_character_manager", "CharacterManager")
 
     # --- Initialization ---
     def __init__(
@@ -267,6 +271,8 @@ class PalimpsestDB:
         self._reference_manager: Optional[ReferenceManager] = None
         self._poem_manager: Optional[PoemManager] = None
         self._entry_manager: Optional[EntryManager] = None
+        self._chapter_manager: Optional[ChapterManager] = None
+        self._character_manager: Optional[CharacterManager] = None
 
         # Initialize database
         self._setup_engine()
@@ -342,6 +348,8 @@ class PalimpsestDB:
         self._reference_manager = ReferenceManager(session, self.logger)
         self._poem_manager = PoemManager(session, self.logger)
         self._entry_manager = EntryManager(session, self.logger)
+        self._chapter_manager = ChapterManager(session, self.logger)
+        self._character_manager = CharacterManager(session, self.logger)
 
         safe_logger(self.logger).log_debug("session_start", {"session_id": session_id})
 
@@ -365,6 +373,8 @@ class PalimpsestDB:
             self._reference_manager = None
             self._poem_manager = None
             self._entry_manager = None
+            self._chapter_manager = None
+            self._character_manager = None
 
             session.close()
             safe_logger(self.logger).log_debug("session_close", {"session_id": session_id})

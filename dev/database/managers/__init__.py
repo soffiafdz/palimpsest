@@ -34,6 +34,8 @@ from .reference_manager import ReferenceManager
 from .poem_manager import PoemManager
 from .person_manager import PersonManager
 from .entry_manager import EntryManager
+from .chapter_manager import ChapterManager
+from .character_manager import CharacterManager
 
 __all__ = [
     "BaseManager",
@@ -47,4 +49,6 @@ __all__ = [
     "PersonManager",
     "EntryManager",
     "EventManager",
+    "ChapterManager",
+    "CharacterManager",
 ]
