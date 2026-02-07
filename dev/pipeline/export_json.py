@@ -61,13 +61,20 @@ from dev.core.paths import ROOT
 from dev.database.manager import PalimpsestDB
 from dev.database.models import (
     Arc,
+    Chapter,
+    Character,
     City,
     Entry,
     Event,
     Location,
+    ManuscriptReference,
+    ManuscriptScene,
+    ManuscriptSource,
     Motif,
     MotifInstance,
+    Part,
     Person,
+    PersonCharacterMap,
     PoemVersion,
     Reference,
     ReferenceSource,
@@ -197,6 +204,15 @@ class JSONExporter:
             exports["themes"] = self._export_themes(session)
             exports["motifs"] = self._export_motifs(session)
             exports["motif_instances"] = self._export_motif_instances(session)
+
+            # Manuscript entities
+            exports["parts"] = self._export_parts(session)
+            exports["chapters"] = self._export_chapters(session)
+            exports["characters"] = self._export_characters(session)
+            exports["person_character_maps"] = self._export_person_character_maps(session)
+            exports["manuscript_scenes"] = self._export_manuscript_scenes(session)
+            exports["manuscript_sources"] = self._export_manuscript_sources(session)
+            exports["manuscript_references"] = self._export_manuscript_references(session)
 
         return exports
 
@@ -518,6 +534,139 @@ class JSONExporter:
         return result
 
     # =========================================================================
+    # MANUSCRIPT ENTITY EXPORT METHODS
+    # =========================================================================
+
+    def _export_parts(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all parts."""
+        parts = session.query(Part).all()
+        result = {}
+
+        for part in parts:
+            result[part.id] = {
+                "id": part.id,
+                "number": part.number,
+                "title": part.title,
+            }
+
+        self.stats["parts"] = len(result)
+        return result
+
+    def _export_chapters(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all chapters with type/status enums and relationship IDs."""
+        chapters = session.query(Chapter).all()
+        result = {}
+
+        for chapter in chapters:
+            result[chapter.id] = {
+                "id": chapter.id,
+                "title": chapter.title,
+                "number": chapter.number,
+                "part_id": chapter.part_id,
+                "type": chapter.type.value if chapter.type else None,
+                "status": chapter.status.value if chapter.status else None,
+                "content": chapter.content,
+                "draft_path": chapter.draft_path,
+                "poem_ids": [p.id for p in chapter.poems],
+                "character_ids": [c.id for c in chapter.characters],
+                "arc_ids": [a.id for a in chapter.arcs],
+            }
+
+        self.stats["chapters"] = len(result)
+        return result
+
+    def _export_characters(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all characters."""
+        characters = session.query(Character).all()
+        result = {}
+
+        for char in characters:
+            result[char.id] = {
+                "id": char.id,
+                "name": char.name,
+                "description": char.description,
+                "role": char.role,
+                "is_narrator": char.is_narrator,
+            }
+
+        self.stats["characters"] = len(result)
+        return result
+
+    def _export_person_character_maps(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all person-character mappings."""
+        mappings = session.query(PersonCharacterMap).all()
+        result = {}
+
+        for mapping in mappings:
+            result[mapping.id] = {
+                "id": mapping.id,
+                "person_id": mapping.person_id,
+                "character_id": mapping.character_id,
+                "contribution": mapping.contribution.value if mapping.contribution else None,
+                "notes": mapping.notes,
+            }
+
+        self.stats["person_character_maps"] = len(result)
+        return result
+
+    def _export_manuscript_scenes(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all manuscript scenes with origin/status enums."""
+        scenes = session.query(ManuscriptScene).all()
+        result = {}
+
+        for scene in scenes:
+            result[scene.id] = {
+                "id": scene.id,
+                "name": scene.name,
+                "description": scene.description,
+                "chapter_id": scene.chapter_id,
+                "origin": scene.origin.value if scene.origin else None,
+                "status": scene.status.value if scene.status else None,
+                "notes": scene.notes,
+            }
+
+        self.stats["manuscript_scenes"] = len(result)
+        return result
+
+    def _export_manuscript_sources(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all manuscript sources with source_type polymorphism."""
+        sources = session.query(ManuscriptSource).all()
+        result = {}
+
+        for source in sources:
+            result[source.id] = {
+                "id": source.id,
+                "manuscript_scene_id": source.manuscript_scene_id,
+                "source_type": source.source_type.value if source.source_type else None,
+                "scene_id": source.scene_id,
+                "entry_id": source.entry_id,
+                "thread_id": source.thread_id,
+                "external_note": source.external_note,
+                "notes": source.notes,
+            }
+
+        self.stats["manuscript_sources"] = len(result)
+        return result
+
+    def _export_manuscript_references(self, session: Session) -> Dict[int, Dict[str, Any]]:
+        """Export all manuscript references with mode enum."""
+        refs = session.query(ManuscriptReference).all()
+        result = {}
+
+        for ref in refs:
+            result[ref.id] = {
+                "id": ref.id,
+                "chapter_id": ref.chapter_id,
+                "source_id": ref.source_id,
+                "mode": ref.mode.value if ref.mode else None,
+                "content": ref.content,
+                "notes": ref.notes,
+            }
+
+        self.stats["manuscript_references"] = len(result)
+        return result
+
+    # =========================================================================
     # FILE OPERATIONS
     # =========================================================================
 
@@ -542,7 +691,9 @@ class JSONExporter:
         # Initialize all entity type dicts
         for entity_type in ["entries", "people", "locations", "cities", "scenes",
                            "events", "threads", "arcs", "poems", "references",
-                           "reference_sources", "tags", "themes", "motifs", "motif_instances"]:
+                           "reference_sources", "tags", "themes", "motifs", "motif_instances",
+                           "parts", "chapters", "characters", "person_character_maps",
+                           "manuscript_scenes", "manuscript_sources", "manuscript_references"]:
             old_exports[entity_type] = {}
 
         # Scan all JSON files in journal directory
@@ -745,6 +896,15 @@ class JSONExporter:
         self._write_simple_entities("motif_instances", exports.get("motif_instances", {}))
         self._write_simple_entities("cities", exports.get("cities", {}))
 
+        # Manuscript entities
+        self._write_simple_entities("parts", exports.get("parts", {}))
+        self._write_simple_entities("chapters", exports.get("chapters", {}))
+        self._write_simple_entities("characters", exports.get("characters", {}))
+        self._write_simple_entities("person_character_maps", exports.get("person_character_maps", {}))
+        self._write_simple_entities("manuscript_scenes", exports.get("manuscript_scenes", {}))
+        self._write_simple_entities("manuscript_sources", exports.get("manuscript_sources", {}))
+        self._write_simple_entities("manuscript_references", exports.get("manuscript_references", {}))
+
     def _write_entries(self, entries: Dict[int, Dict[str, Any]]) -> None:
         """Write entries to entries/YYYY/YYYY-MM-DD.json"""
         entries_dir = self.journal_dir / "entries"
@@ -905,6 +1065,9 @@ class JSONExporter:
 - **Tags:** {self.stats.get('tags', 0)}
 - **Themes:** {self.stats.get('themes', 0)}
 - **Motifs:** {self.stats.get('motifs', 0)}
+- **Parts:** {self.stats.get('parts', 0)}
+- **Chapters:** {self.stats.get('chapters', 0)}
+- **Characters:** {self.stats.get('characters', 0)}
 
 ## Latest Changes
 

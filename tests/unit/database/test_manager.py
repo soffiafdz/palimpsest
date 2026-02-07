@@ -22,6 +22,8 @@ from dev.database.managers import (
     PoemManager,
     EntryManager,
     SimpleManager,
+    ChapterManager,
+    CharacterManager,
 )
 from dev.database.models import Tag, Location, Scene, Theme, Entry
 from dev.core.logging_manager import PalimpsestLogger
@@ -170,6 +172,12 @@ class TestPalimpsestDBManagerInitialization:
             assert test_db._event_manager is not None
             assert isinstance(test_db._event_manager, SimpleManager)
 
+            assert test_db._chapter_manager is not None
+            assert isinstance(test_db._chapter_manager, ChapterManager)
+
+            assert test_db._character_manager is not None
+            assert isinstance(test_db._character_manager, CharacterManager)
+
         # After exiting context, managers should be cleaned up
         assert test_db._tag_manager is None
         assert test_db._event_manager is None
@@ -178,6 +186,8 @@ class TestPalimpsestDBManagerInitialization:
         assert test_db._reference_manager is None
         assert test_db._poem_manager is None
         assert test_db._entry_manager is None
+        assert test_db._chapter_manager is None
+        assert test_db._character_manager is None
 
     def test_session_scope_no_moment_manager(self, test_db):
         """Verify session_scope does NOT initialize MomentManager (deprecated)."""
@@ -196,6 +206,8 @@ class TestPalimpsestDBManagerInitialization:
             assert test_db.references is not None
             assert test_db.poems is not None
             assert test_db.entries is not None
+            assert test_db.chapters is not None
+            assert test_db.characters is not None
 
     def test_manager_properties_raise_outside_session(self, test_db):
         """Verify manager properties raise errors outside session_scope."""
