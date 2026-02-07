@@ -433,19 +433,7 @@ ls -R data/wiki/
 - `wiki/events/thesis-writing.md`
 - Etc.
 
-### 4.2 Verify Wiki Links
-
-```bash
-# Check for broken links
-validate wiki check
-
-# View wiki stats
-validate wiki stats
-```
-
-**Expected:** No broken links, stats show all entities
-
-### 4.3 Test Wiki Editing → Database Import
+### 4.2 Test Wiki Editing → Database Import
 
 Open a wiki page and edit the **notes** section:
 
@@ -746,7 +734,6 @@ metadb query show 2024-11-26
 
 ```bash
 # Run all validators
-validate wiki check
 validate db all
 validate md all
 validate consistency all
@@ -819,56 +806,6 @@ metadb stats
 ```
 
 **Expected:** Database restored to backup state
-
----
-
-## Conflict Resolution & Sync Testing
-
-**Goal:** Test sync state management and conflict handling
-
-### 11.1 Check Sync Status
-
-```bash
-# View sync state
-metadb sync status
-
-# View stats
-metadb sync stats
-```
-
-**Expected:** Shows sync timestamps and states
-
-### 11.2 Create Sync Conflict (Advanced)
-
-```bash
-# Edit same field in markdown and wiki
-vim data/journal/content/md/2024/2024-11-25.md  # Edit notes field
-vim data/wiki/entries/2024/2024-11-25.md        # Edit notes field differently
-
-# Sync both
-plm import-metadata
-# (wiki features not implemented) entries
-
-# Check conflicts
-metadb sync conflicts
-```
-
-**Expected:** Conflict detected, resolution workflow presented
-
-### 11.3 Test Tombstone Management
-
-```bash
-# List tombstones
-metadb tombstone list
-
-# View stats
-metadb tombstone stats
-
-# Cleanup old tombstones (if any)
-metadb tombstone cleanup --days 30
-```
-
-**Expected:** Tombstone tracking working
 
 ---
 
@@ -1098,13 +1035,6 @@ metadb init
 
 ```bash
 jsearch index create
-```
-
-### "Broken wiki links"
-
-```bash
-validate wiki check
-# Fix the reported links
 ```
 
 ### "Metadata out of sync"

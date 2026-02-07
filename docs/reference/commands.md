@@ -241,7 +241,6 @@ plm status
 **Displays:**
 - Total entries by year
 - Batch processing status
-- Database sync status
 - Last export timestamp
 
 #### `plm validate`

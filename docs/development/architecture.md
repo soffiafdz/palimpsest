@@ -51,7 +51,6 @@ metadb init                    # Initialize database
 metadb migration upgrade       # Run migrations
 metadb backup                  # Create backup
 metadb query show 2024-01-15   # Query entry
-metadb tombstone list          # List tombstones
 ```
 
 ---
@@ -222,8 +221,6 @@ dev/validators/cli/
 
 **Example Usage**:
 ```bash
-validate wiki check            # Check wiki links
-validate wiki orphans          # Find orphaned pages
 validate db schema             # Check database schema
 validate db all                # All database checks
 validate md frontmatter        # Validate YAML frontmatter
@@ -599,7 +596,6 @@ from dev.builders.wiki_pages import export_stats  # Loaded immediately
 
 **Current Behavior**:
 - Only loaded modules are imported
-- `validate wiki` doesn't load database validator
 - Entry point overhead: ~50-100ms
 
 ---
