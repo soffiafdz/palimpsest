@@ -14,7 +14,6 @@ Handles:
     - Comprehensive logging system with rotation
     - Automated backup and recovery system
     - Database health monitoring and maintenance
-    - Data export functionality
     - Migration management via Alembic
 
 Key Features:
@@ -62,7 +61,6 @@ Core Operations:
     Database Maintenance:
         - cleanup_all_metadata: Remove orphaned records
         - health_monitor: Check database integrity
-        - export_manager: Export data to various formats
         - query_analytics: Generate statistics and reports
 
 Notes
@@ -108,7 +106,6 @@ from .models import (
 
 from .decorators import DatabaseOperation
 from .health_monitor import HealthMonitor
-from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
 
 # Modular entity managers
@@ -259,7 +256,6 @@ class PalimpsestDB:
 
         # Initialize service components
         self.health_monitor = HealthMonitor(self.logger)
-        self.export_manager = ExportManager(self.logger)
         self.query_analytics = QueryAnalytics(self.logger)
 
         # Initialize modular entity managers (lazy-loaded in session_scope)

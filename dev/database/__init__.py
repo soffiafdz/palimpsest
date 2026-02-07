@@ -20,11 +20,9 @@ from dev.core.exceptions import (
     ValidationError,
     BackupError,
     HealthCheckError,
-    ExportError,
 )
 from .manager import PalimpsestDB
 from .health_monitor import HealthMonitor
-from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
 from .decorators import DatabaseOperation
 
@@ -39,10 +37,8 @@ __all__ = [
     "ValidationError",
     "BackupError",
     "HealthCheckError",
-    "ExportError",
     # Core modules
     "HealthMonitor",
-    "ExportManager",
     "QueryAnalytics",
     # Context managers
     "DatabaseOperation",

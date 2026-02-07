@@ -14,7 +14,6 @@ Command Structure:
     - Backup & Restore (backup, backups, restore)
     - Query & Browse (query)
     - Maintenance (maintenance)
-    - Export (export)
     - Stats & Health (stats, health, optimize)
 
 Usage:
@@ -100,7 +99,6 @@ from .migration import migration  # noqa: E402
 from .backup import backup, backups, restore  # noqa: E402
 from .query import query  # noqa: E402
 from .maintenance import maintenance, stats, health, optimize  # noqa: E402
-from .export import export  # noqa: E402
 from .prune import prune_orphans  # noqa: E402
 
 # Register top-level commands
@@ -118,7 +116,6 @@ cli.add_command(prune_orphans)
 cli.add_command(migration)
 cli.add_command(query)
 cli.add_command(maintenance)
-cli.add_command(export)
 
 
 if __name__ == "__main__":
