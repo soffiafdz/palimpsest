@@ -1,72 +1,261 @@
 # Vimwiki Generation System
 
-Generate navigable vimwiki pages from the Palimpsest database for
-browsing and editing journal metadata within Neovim.
+Generate navigable wiki pages from the Palimpsest database for
+browsing journal metadata and editing manuscript structure within Neovim.
 
 ## Purpose
 
-The wiki system provides a structured, hyperlinked view of the journal
-database as vimwiki pages. Journal wiki pages are read-only (regenerated
-from DB on demand). Manuscript wiki pages support bidirectional editing.
+The wiki system provides a structured, hyperlinked view of the database
+as clean markdown pages, suitable for browser rendering (Quartz or similar).
+
+- **Journal pages**: Read-only, regenerated from DB on demand
+- **Manuscript pages**: Bidirectional — user edits wiki, syncs back to DB
+
+## Architecture Overview
+
+### Data Flow
+
+```
+                    ┌─────────────┐
+                    │   Database   │
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            │            ▼
+     ┌────────────┐        │   ┌────────────────┐
+     │  Journal    │        │   │  Manuscript     │
+     │  Wiki Pages │        │   │  Wiki Pages     │
+     │  (read-only)│        │   │  (editable)     │
+     └────────────┘        │   └───────┬────────┘
+                           │           │
+                           │     ┌─────▼─────┐
+                           │     │  Validate  │
+                           │     │  (linter)  │
+                           │     └─────┬─────┘
+                           │           │
+                           │     ┌─────▼─────┐
+                           │     │   Sync     │
+                           │     │  (ingest)  │
+                           │     └─────┬─────┘
+                           │           │
+                           └───────────┘
+```
+
+- **Journal**: DB → Wiki (one-way generation)
+- **Manuscript**: DB → Wiki → User edits → Validate → Sync → DB → Regenerate
+
+### Round-Trip Cycle
+
+The manuscript workflow follows a read-edit-sync-regenerate loop:
+
+1. **Generate**: DB renders wiki pages via Jinja2 templates
+2. **Edit**: User modifies wiki pages freely in Neovim
+3. **Validate**: Linter checks edits on save (async, advisory)
+4. **Sync**: On explicit user command, validated pages are ingested into DB
+5. **Regenerate**: DB re-renders pages, normalizing content and adding
+   computed data (backlinks, cross-references, status badges)
+
+Every piece of user-written content on a wiki page maps to a DB field.
+Nothing is lost in the round-trip — the user's text passes through
+ingest before generation overwrites the file.
+
+### Regeneration Safety
+
+Sync only writes pages where DB state diverges from what is on disk:
+
+1. Parse edited wiki pages, update DB
+2. Render all pages from DB into memory
+3. Compare rendered output against existing files
+4. Only overwrite pages that actually differ
+
+This prevents clobbering in-progress work on pages the user hasn't synced.
+
+## Three-Layer Validation Architecture
+
+### 1. Linter (Neovim, async on save)
+
+Advisory diagnostics with line-level feedback. Runs asynchronously on
+`BufWritePost` (or debounced on `TextChanged` for real-time feedback).
+Outputs structured diagnostics rendered as:
+
+- Inline virtual text
+- Gutter signs
+- Quickfix list population
+
+Backed by `plm lint <filepath>`, which outputs JSON diagnostics
+(file, line, column, severity, message).
+
+Example diagnostics:
+- "Character `[[Claara]]` not found — did you mean `[[Clara]]`?"
+- "Invalid status value `Draft` — expected `draft`"
+- "Scene link `[[Morning Walk]]` does not exist"
+
+### 2. Validator (CLI, pre-sync gate)
+
+Strict pass/fail check that blocks DB ingestion. Called internally
+by the sync command. Shares validation logic with the linter —
+same rules, different output format (pass/fail vs. diagnostics).
+
+### 3. Sync (CLI, on demand)
+
+Parses validated wiki pages into DB, then regenerates. Never runs
+silently or automatically — always triggered explicitly by the user.
+
+```bash
+plm sync manuscript              # Full: ingest + regenerate
+plm sync manuscript --ingest     # Wiki → DB only
+plm sync manuscript --generate   # DB → Wiki only
+```
+
+### Unified Validation Entry Point
+
+The linter routes to the appropriate validator based on file type:
+
+| File location | Validator | Direction |
+|---------------|-----------|-----------|
+| `data/journal/content/md/` | Frontmatter + markdown validators | Read-only |
+| `data/narrative_analysis/` | Metadata YAML validator | YAML → DB |
+| `data/wiki/manuscript/` | Manuscript wiki validator | Wiki ↔ DB |
+
+All validators are accessible through a single CLI entry point:
+`plm lint <filepath>`. The Neovim plugin calls this and renders
+the output as native diagnostics.
+
+## Wiki Page Design
+
+Wiki pages are clean markdown — no YAML frontmatter, no hidden metadata.
+Structure is conveyed through consistent heading conventions and
+wiki-style links (`[[Entity Name]]`).
+
+### Manuscript Chapter Page Example
+
+```markdown
+# The Gray Fence
+
+**Part:** I — Arrival
+**Type:** prose | **Status:** draft
+
+## Synopsis
+User writes a brief summary here.
+
+## Scenes
+- [[Morning at the Fence]] (journaled, included)
+- [[The Dog Walker]] (invented, fragment)
+
+## Characters
+- [[Sofia]] — protagonist, narrator
+- [[Clara]] — mentioned
+
+## Arcs
+- [[The Long Wanting]]
+
+## Sources
+Journal entries that feed this chapter.
+- [[2024-11-08]] — Scene 3 (the fence encounter)
+- [[2025-01-15]] — Whole entry
+
+## Notes
+Free-form user notes about this chapter.
+
+## References
+- *Important Book* by Author (thematic)
+```
+
+Parsing relies on heading conventions (`## Scenes`, `## Characters`, etc.)
+and link patterns (`[[...]]`) rather than frontmatter or special syntax.
 
 ## Template Engine
 
-Jinja2 templates render SQLAlchemy ORM objects directly into vimwiki
-markup. Custom filters handle wiki link formatting (`[[Entity Name]]`),
-date formatting, and list rendering.
+Jinja2 templates render SQLAlchemy ORM objects into clean markdown.
+Custom filters handle wiki link formatting, date formatting, and
+list rendering.
 
 ```
 dev/wiki/
 ├── __init__.py          # Public API (WikiRenderer, WikiExporter)
 ├── renderer.py          # Jinja2 template rendering engine
 ├── exporter.py          # Database -> wiki generation orchestrator
+├── parser.py            # Wiki -> database ingestion (manuscript)
+├── validator.py         # Wiki page validation / linting
 ├── configs.py           # Entity export configurations
 ├── filters.py           # Custom Jinja2 filters
 └── templates/
-    ├── entry.jinja2     # Entry wiki page
-    ├── person.jinja2    # Person page
-    ├── city.jinja2      # City page
-    ├── location.jinja2  # Location page
-    ├── event.jinja2     # Event page
-    ├── tag.jinja2       # Tag page
-    ├── theme.jinja2     # Theme page
-    ├── poem.jinja2      # Poem page
-    ├── reference.jinja2 # Reference page
-    └── indexes/         # Index page templates
+    ├── journal/
+    │   ├── entry.jinja2
+    │   ├── person.jinja2
+    │   ├── location.jinja2
+    │   ├── event.jinja2
+    │   ├── tag.jinja2
+    │   ├── theme.jinja2
+    │   ├── poem.jinja2
+    │   └── reference.jinja2
+    ├── manuscript/
+    │   ├── chapter.jinja2
+    │   ├── character.jinja2
+    │   ├── scene.jinja2
+    │   └── part.jinja2
+    └── indexes/
+        ├── main.jinja2
+        ├── people.jinja2
+        ├── locations.jinja2
+        └── entries.jinja2
 ```
 
-## Entity Types for Wiki Pages
+## Entity Types
 
-Each entity type gets its own wiki page template:
+### Journal (read-only)
 
 - **Entry**: Date-based pages with people, locations, scenes, events,
   threads, tags, themes, references
-- **Person**: Name, relation type, entries mentioned in, character
-  mappings
+- **Person**: Name, relation type, entries mentioned in, character mappings
 - **Location**: Name, city, entries mentioned in
 - **Event**: Name, linked scenes and entries
 - **Tag/Theme/Arc**: Name, linked entries
 - **Poem**: Content, versions, linked entries
 - **Reference**: Content, source, mode, linked entry
 
+### Manuscript (editable)
+
+- **Chapter**: Title, part, type, status, synopsis, scenes, characters,
+  arcs, sources, notes, references
+- **Character**: Name, role, narrator flag, chapters, person mappings
+- **ManuscriptScene**: Name, origin, status, sources, chapter
+- **Part**: Number, title, chapters
+
 ## Directory Structure
 
 ```
 data/wiki/
-├── index.wiki           # Main index with links to all sections
-├── entries/
-│   └── YYYY/
-│       └── YYYY-MM-DD.wiki
-├── people/
-│   └── {slug}.wiki
-├── locations/
-│   └── {city}/
-│       └── {location}.wiki
-├── events/
-│   └── {slug}.wiki
-├── inventory/           # Tags, themes, arcs index pages
-├── snippets/            # Poem and reference pages
-└── manuscript/          # Manuscript chapter/character pages
+├── index.md                 # Main index with links to all sections
+├── journal/
+│   ├── entries/
+│   │   └── YYYY/
+│   │       └── YYYY-MM-DD.md
+│   ├── people/
+│   │   └── {slug}.md
+│   ├── locations/
+│   │   └── {city}/
+│   │       └── {location}.md
+│   ├── events/
+│   │   └── {slug}.md
+│   ├── tags/
+│   │   └── {name}.md
+│   ├── themes/
+│   │   └── {name}.md
+│   ├── poems/
+│   │   └── {slug}.md
+│   └── references/
+│       └── {slug}.md
+└── manuscript/
+    ├── chapters/
+    │   └── {slug}.md
+    ├── characters/
+    │   └── {slug}.md
+    ├── scenes/
+    │   └── {slug}.md
+    └── parts/
+        └── {number}-{slug}.md
 ```
 
 ## Index Pages
@@ -77,6 +266,7 @@ data/wiki/
 - **Entry index**: Grouped by year/month
 - **Event index**: Chronological list
 - **Tag/Theme cloud**: Frequency-sorted
+- **Manuscript index**: Parts → chapters → scenes hierarchy
 
 ## CLI Integration
 
@@ -84,27 +274,57 @@ data/wiki/
 # Generate all wiki pages
 plm wiki generate
 
+# Generate specific section
+plm wiki generate --section journal
+plm wiki generate --section manuscript
+
 # Generate specific entity type
 plm wiki generate --type people
 
-# Generate single entry
-plm wiki generate --entry 2024-01-15
+# Lint a wiki page (structured diagnostics)
+plm lint <filepath>
+
+# Sync manuscript (ingest + regenerate)
+plm sync manuscript
+
+# Validate before sync (dry run)
+plm validate manuscript
 ```
-
-## Data Flow
-
-- **Journal**: DB -> Wiki (one-way, regenerated on demand)
-- **Manuscript**: Wiki <-> DB (bidirectional, wiki edits sync back)
-
-The wiki is a presentation layer. The database is the source of truth
-for journal metadata. Manuscript wiki pages support manual editing,
-with a sync mechanism to push changes back to the database.
 
 ## Neovim Plugin Integration
 
-The `dev/lua/palimpsest/` plugin provides:
+The Neovim plugin (`palimpsest.nvim` or similar) provides:
 
-- `:PalimpsestWiki` - Generate/regenerate wiki pages
-- `:PalimpsestSync` - Sync manuscript wiki edits back to DB
-- Navigation keybindings for jumping between wiki pages
-- Automatic wiki regeneration on database changes
+### Commands
+
+- `:PalimpsestSync` — Sync manuscript wiki edits back to DB, regenerate
+- `:PalimpsestGenerate` — Regenerate wiki pages from DB
+- `:PalimpsestStatus` — Show dirty files, lint errors, last sync time
+- `:PalimpsestLint` — Run linter on current buffer
+
+### Linter Integration
+
+Hooks into Neovim's diagnostic system (via `nvim-lint`, ALE, or custom
+`vim.diagnostic` provider). Runs `plm lint` asynchronously on `BufWritePost`.
+Diagnostics appear as inline virtual text and gutter signs.
+
+File type routing:
+- Journal markdown → frontmatter/markdown validators
+- Narrative analysis YAML → metadata YAML validator
+- Manuscript wiki pages → manuscript wiki validator
+
+### Save/Quit Behavior
+
+- **`BufWritePost`**: Triggers async lint, tracks file as "dirty" (edited
+  since last sync)
+- **`VimLeavePre`**: Checks dirty set. If validated files haven't been
+  synced, prompts: "N manuscript pages changed since last sync.
+  Sync now? [y/n/q]". Files with lint errors get a warning only.
+
+### Safety
+
+- Sync is always explicit — never runs silently or automatically
+- Sync refuses to ingest pages with validation errors
+- Sync warns/blocks if any manuscript buffers have unsaved changes
+  (`BufModified` check)
+- Status line indicator shows dirty page count and lint error count
