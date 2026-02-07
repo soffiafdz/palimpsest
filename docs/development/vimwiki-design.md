@@ -1,13 +1,20 @@
 # Vimwiki Generation System
 
 Generate navigable wiki pages from the Palimpsest database for
-browsing journal metadata and editing manuscript structure within Neovim.
+browsing journal metadata and editing manuscript structure within Neovim,
+with static site rendering via Quartz for browser access.
 
 ## Purpose
 
 The wiki system provides a structured, hyperlinked view of the database
-as clean markdown pages, suitable for browser rendering (Quartz or similar).
+as clean markdown pages. Pages are designed for dual consumption:
 
+- **Neovim**: Primary editing environment with `[[wikilinks]]`, linting,
+  and sync commands
+- **Quartz**: Static site generator for browser rendering with graph
+  visualization, backlinks, and full-text search
+
+Content types:
 - **Journal pages**: Read-only, regenerated from DB on demand
 - **Manuscript pages**: Bidirectional — user edits wiki, syncs back to DB
 
@@ -27,23 +34,32 @@ as clean markdown pages, suitable for browser rendering (Quartz or similar).
      │  Journal    │        │   │  Manuscript     │
      │  Wiki Pages │        │   │  Wiki Pages     │
      │  (read-only)│        │   │  (editable)     │
-     └────────────┘        │   └───────┬────────┘
-                           │           │
-                           │     ┌─────▼─────┐
-                           │     │  Validate  │
-                           │     │  (linter)  │
-                           │     └─────┬─────┘
-                           │           │
-                           │     ┌─────▼─────┐
-                           │     │   Sync     │
-                           │     │  (ingest)  │
-                           │     └─────┬─────┘
-                           │           │
-                           └───────────┘
+     └─────┬──────┘        │   └───────┬────────┘
+           │               │           │
+           │               │     ┌─────▼─────┐
+           │               │     │  Validate  │
+           │               │     │  (linter)  │
+           │               │     └─────┬─────┘
+           │               │           │
+           │               │     ┌─────▼─────┐
+           │               │     │   Sync     │
+           │               │     │  (ingest)  │
+           │               │     └─────┬─────┘
+           │               │           │
+           │               └───────────┘
+           │                           │
+           └──────────┬────────────────┘
+                      ▼
+              ┌──────────────┐
+              │    Quartz    │
+              │  (static     │
+              │   site gen)  │
+              └──────────────┘
 ```
 
 - **Journal**: DB → Wiki (one-way generation)
 - **Manuscript**: DB → Wiki → User edits → Validate → Sync → DB → Regenerate
+- **Browser**: Wiki → Quartz build → static site
 
 ### Round-Trip Cycle
 
@@ -138,9 +154,13 @@ severity, message) rather than just pass/fail results.
 
 ## Wiki Page Design
 
-Wiki pages are clean markdown — no YAML frontmatter, no hidden metadata.
+Wiki pages are clean markdown with no user-facing YAML frontmatter.
 Structure is conveyed through consistent heading conventions and
 wiki-style links (`[[Entity Name]]`).
+
+The Jinja2 generator may inject YAML frontmatter for Quartz metadata
+(title, tags, aliases for link resolution), but this is invisible to
+the user's editing workflow — it is regenerated on every sync cycle.
 
 ### Manuscript Chapter Page Example
 
@@ -178,6 +198,42 @@ Free-form user notes about this chapter.
 
 Parsing relies on heading conventions (`## Scenes`, `## Characters`, etc.)
 and link patterns (`[[...]]`) rather than frontmatter or special syntax.
+
+## Static Site Generation (Quartz)
+
+[Quartz](https://quartz.jzhao.xyz/) is the static site generator for
+browser-based wiki access. It was chosen because:
+
+- **Native `[[wikilink]]` support**: Resolves wiki-style links to HTML
+  links without plugins or transformation
+- **Backlinks**: Automatically generates backlink sections on each page
+- **Graph visualization**: Interactive graph view of page connections
+- **Full-text search**: Built-in client-side search
+- **Clean markdown input**: Expects the same markdown format we generate
+- **Obsidian compatibility**: Handles the same link conventions
+
+### Quartz Integration
+
+The wiki directory (`data/wiki/`) serves as the Quartz content directory.
+The build step is a simple `npx quartz build` after wiki generation.
+
+```bash
+# Generate wiki, then build static site
+plm wiki generate
+cd data/wiki && npx quartz build
+
+# Or as a combined command
+plm wiki publish
+```
+
+### Design Constraints for Quartz Compatibility
+
+- `[[wikilinks]]` must resolve to actual file paths in the directory tree
+- Generator-injected YAML frontmatter provides Quartz metadata (title,
+  tags, aliases) without the user needing to maintain it
+- Directory structure must be flat enough for wikilink resolution
+  (Quartz resolves `[[Page Name]]` by searching all directories)
+- File names must be URL-safe slugs matching the page title
 
 ## Template Engine
 
@@ -303,6 +359,9 @@ plm sync manuscript
 
 # Validate before sync (dry run)
 plm validate manuscript
+
+# Build static site (Quartz)
+plm wiki publish
 ```
 
 ## Neovim Plugin Integration
@@ -342,3 +401,19 @@ File type routing:
 - Sync warns/blocks if any manuscript buffers have unsaved changes
   (`BufModified` check)
 - Status line indicator shows dirty page count and lint error count
+
+## Open Design Questions
+
+Topics requiring further discussion before implementation:
+
+- **Wiki page schema**: Exact heading conventions and parsing rules per
+  entity type (chapter, character, scene, part)
+- **Template design**: Jinja2 template structure, custom filters, and
+  generated-vs-user content boundaries
+- **Parser implementation**: How wiki → DB ingestion works concretely
+  (regex, markdown AST, or structured parsing)
+- **Neovim plugin architecture**: Lua module structure, diagnostic
+  provider implementation details
+- **`plm lint` output format**: JSON diagnostic schema specification
+- **Quartz configuration**: Theme, layout customization, navigation
+  structure, graph view settings
