@@ -23,7 +23,7 @@ from dev.database.managers import (
     EntryManager,
     SimpleManager,
 )
-from dev.database.models import Tag, Location, Scene, Theme, Reference, PoemVersion, Entry
+from dev.database.models import Tag, Location, Scene, Theme, Entry
 from dev.core.logging_manager import PalimpsestLogger
 
 
