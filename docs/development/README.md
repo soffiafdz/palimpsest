@@ -66,10 +66,6 @@ dev/
 │   ├── txt2md.py     # TXT → Markdown conversion
 │   ├── metadata_importer.py # Metadata → Database import
 │   └── export_json.py # Database → JSON export
-├── wiki/              # Wiki generation system
-│   ├── exporter.py   # Wiki page exporter
-│   ├── renderer.py   # Jinja2 template renderer
-│   └── templates/    # Wiki page templates
 ├── search/            # Full-text search (FTS5)
 ├── validators/        # Validation tools
 ├── builders/          # PDF/TXT builders

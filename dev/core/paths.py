@@ -118,13 +118,6 @@ BACKUP_DIR = ROOT / "backups"
 # ---- Vignettes ----
 VIGNETTES_DIR = DATA_DIR / "vignettes"
 
-# ---- Vimwiki ----
-WIKI_DIR = DATA_DIR / "wiki"
-INVENTORY_DIR = WIKI_DIR / "inventory"
-PEOPLE_DIR = WIKI_DIR / "people"
-SNIPPETS_DIR = WIKI_DIR / "snippets"
-EVENTS_DIR = WIKI_DIR / "events"
-
 
 # ----- Path Validation -----
 def _validate_critical_paths() -> None:

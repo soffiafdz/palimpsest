@@ -33,8 +33,6 @@ Exception Hierarchy:
     ├── Txt2MdError - Text to Markdown conversion errors
     ├── Yaml2SqlError - Metadata YAML to database import errors
     ├── Sql2YamlError - Database to canonical YAML export errors
-    ├── Wiki2SqlError - Wiki to database sync errors
-    ├── Sql2WikiError - Database to wiki export errors
     └── PdfBuildError - PDF generation errors
 
 Usage:
@@ -309,50 +307,6 @@ class Yaml2SqlError(Exception):
         >>> raise Yaml2SqlError("Invalid metadata YAML: malformed syntax")
         >>> raise Yaml2SqlError("Cannot resolve person: 'Unknown Person'")
         >>> raise Yaml2SqlError("Database integrity error: duplicate entry")
-    """
-
-    pass
-
-
-class Sql2WikiError(Exception):
-    """
-    Exception for database to vimwiki export errors.
-
-    Raised when exporting database entities (people, locations, entries,
-    etc.) to vimwiki pages fails:
-    - Database query failures
-    - Wiki page generation errors
-    - File writing issues
-    - Entity serialization problems
-
-    Pipeline: DB → Wiki (page generation)
-
-    Examples:
-        >>> raise Sql2WikiError("Cannot generate wiki page for person: 'Alice'")
-        >>> raise Sql2WikiError("Failed to build people index")
-        >>> raise Sql2WikiError("Database connection lost during export")
-    """
-
-    pass
-
-
-class Wiki2SqlError(Exception):
-    """
-    Exception for vimwiki to database sync errors.
-
-    Raised when parsing manually edited vimwiki pages and syncing
-    changes back to database fails:
-    - Wiki page parsing errors
-    - Database update conflicts
-    - Invalid wiki structure
-    - Entity resolution failures
-
-    Pipeline: Wiki (edit) → DB (source of truth for metadata)
-
-    Examples:
-        >>> raise Wiki2SqlError("Cannot parse person wiki page: malformed structure")
-        >>> raise Wiki2SqlError("Conflict: wiki edited computed field 'mentions'")
-        >>> raise Wiki2SqlError("Person not found in database: 'Unknown'")
     """
 
     pass

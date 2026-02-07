@@ -141,63 +141,7 @@ plm build-pdf 2024             # Generate PDFs for a year
 
 ---
 
-### 4. Wiki Export System (`dev/wiki/`)
-
-**Purpose**: Jinja2 template-based wiki page generation from database
-
-**Structure**:
-```
-dev/wiki/
-├── __init__.py          # Public API (WikiRenderer, WikiExporter)
-├── renderer.py          # Jinja2 template rendering engine
-├── exporter.py          # Database → wiki generation
-├── configs.py           # Entity export configurations
-├── filters.py           # Custom Jinja2 filters
-└── templates/
-    ├── entry.jinja2     # Entry wiki page template
-    ├── person.jinja2    # Person page template
-    ├── city.jinja2      # City page template
-    ├── location.jinja2  # Location page template
-    ├── event.jinja2     # Event page template
-    ├── tag.jinja2       # Tag page template
-    ├── theme.jinja2     # Theme page template
-    ├── poem.jinja2      # Poem page template
-    ├── reference.jinja2 # Reference page template
-    └── indexes/         # Index page templates
-```
-
-**Key Patterns**:
-- **Template-Based**: Jinja2 templates for wiki generation
-- **ORM Direct**: SQLAlchemy models passed directly to templates
-- **Config-Driven**: Entity configs define queries and output paths
-- **Custom Filters**: Jinja2 filters for wiki link formatting
-- **One-Way for Journal**: Journal wiki is generated from DB (read-only)
-- **Two-Way for Manuscript**: Manuscript wiki is editable workspace
-
-**Import Examples**:
-```python
-# Public API
-from dev.wiki import WikiRenderer, WikiExporter
-
-# Create exporter with database session
-exporter = WikiExporter(session, wiki_dir, logger)
-
-# Export all entities
-exporter.export_all()
-
-# Export specific entity type
-exporter.export_entity_type("people")
-```
-
-**Template System**:
-- Templates receive SQLAlchemy ORM objects directly
-- Custom Jinja2 filters format wiki links (`[[Entity Name]]`)
-- Journal wiki regenerated from database
-- Manuscript wiki supports bidirectional editing
-
----
-
-### 5. Validators CLI (`dev/validators/cli/`)
+### 4. Validators CLI (`dev/validators/cli/`)
 
 **Purpose**: Validation commands organized by validation domain
 
@@ -230,7 +174,7 @@ validate consistency all       # Cross-system consistency
 
 ---
 
-### 6. Pipeline Dataclasses (`dev/dataclasses/`)
+### 5. Pipeline Dataclasses (`dev/dataclasses/`)
 
 **Purpose**: Data structures for pipeline stages
 
