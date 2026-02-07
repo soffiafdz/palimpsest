@@ -110,17 +110,31 @@ plm sync manuscript --generate   # DB → Wiki only
 
 ### Unified Validation Entry Point
 
+The three-layer validation architecture is not manuscript-specific.
+It extends to **all** Palimpsest file types. Existing validators
+(`dev/validators/`) for frontmatter, markdown, metadata YAML, and
+schema already perform the validation logic — what's new is wiring
+them into a single CLI entry point with structured, line-level
+diagnostic output suitable for Neovim's diagnostic system.
+
+This means journal markdown and narrative analysis YAML files get
+the same inline linting experience as manuscript wiki pages: save
+a file, see errors as gutter signs and virtual text, fix at your
+own pace.
+
 The linter routes to the appropriate validator based on file type:
 
-| File location | Validator | Direction |
-|---------------|-----------|-----------|
-| `data/journal/content/md/` | Frontmatter + markdown validators | Read-only |
-| `data/narrative_analysis/` | Metadata YAML validator | YAML → DB |
-| `data/wiki/manuscript/` | Manuscript wiki validator | Wiki ↔ DB |
+| File location | Validator | Existing code |
+|---------------|-----------|---------------|
+| `data/journal/content/md/` | Frontmatter + markdown validators | `dev/validators/frontmatter.py`, `dev/validators/md.py` |
+| `data/narrative_analysis/` | Metadata YAML validator | `dev/validators/metadata_yaml.py` |
+| `data/wiki/manuscript/` | Manuscript wiki validator | New — `dev/wiki/validator.py` |
 
 All validators are accessible through a single CLI entry point:
 `plm lint <filepath>`. The Neovim plugin calls this and renders
-the output as native diagnostics.
+the output as native diagnostics. The existing validators need
+adaptation to emit structured diagnostics (file, line, column,
+severity, message) rather than just pass/fail results.
 
 ## Wiki Page Design
 
