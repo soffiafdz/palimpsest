@@ -14,6 +14,7 @@ Command Structure:
     - Backup & Restore (backup, backups, restore)
     - Query & Browse (query)
     - Maintenance (maintenance)
+    - Manuscript (manuscript)
     - Stats & Health (stats, health, optimize)
 
 Usage:
@@ -100,6 +101,7 @@ from .backup import backup, backups, restore  # noqa: E402
 from .query import query  # noqa: E402
 from .maintenance import maintenance, stats, health, optimize  # noqa: E402
 from .prune import prune_orphans  # noqa: E402
+from .manuscript import manuscript  # noqa: E402
 
 # Register top-level commands
 cli.add_command(init)
@@ -116,6 +118,7 @@ cli.add_command(prune_orphans)
 cli.add_command(migration)
 cli.add_command(query)
 cli.add_command(maintenance)
+cli.add_command(manuscript)
 
 
 if __name__ == "__main__":
