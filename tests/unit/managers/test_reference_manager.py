@@ -386,16 +386,18 @@ class TestReferenceManagerQueryMethods:
         })
         db_session.commit()
 
-        # Create references with source
+        # Create references with source (different modes for uniqueness)
         reference_manager.create_reference({
             "content": "Quote 1",
             "entry": entry,
-            "source": source
+            "source": source,
+            "mode": "direct"
         })
         reference_manager.create_reference({
             "content": "Quote 2",
             "entry": entry,
-            "source": source
+            "source": source,
+            "mode": "indirect"
         })
         db_session.commit()
 

@@ -5,7 +5,7 @@ test_export_json.py
 Tests for JSONExporter — the sole database export system.
 
 Tests cover:
-    - Entity serialization for all entity types
+    - Entity serialization for all entity types (using natural keys)
     - Change detection (added/modified/deleted)
     - File writing with proper directory structure
     - Loading existing exports for comparison
@@ -22,7 +22,6 @@ import json
 from datetime import date
 
 # --- Third-party imports ---
-import pytest
 from sqlalchemy.orm import Session
 
 # --- Local imports ---
@@ -139,27 +138,27 @@ def _create_tag(session: Session, name: str = "writing") -> Tag:
 
 
 class TestExportEntries:
-    """Test entry serialization with all relationship IDs."""
+    """Test entry serialization with natural key relationships."""
 
     def test_export_entry_basic_fields(self, db_session, test_db, tmp_dir):
         """Entry export includes all scalar fields."""
-        entry = _create_entry(db_session, "2024-01-15")
+        _create_entry(db_session, "2024-01-15")
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_entries(db_session)
 
-        assert entry.id in result
-        data = result[entry.id]
-        assert data["id"] == entry.id
+        assert "2024-01-15" in result
+        data = result["2024-01-15"]
         assert data["date"] == "2024-01-15"
         assert data["file_path"] == "content/md/2024/2024-01-15.md"
         assert data["file_hash"] == "abc123"
         assert data["word_count"] == 500
         assert data["summary"] == "Test entry"
 
-    def test_export_entry_relationship_ids(self, db_session, test_db, tmp_dir):
-        """Entry export includes ID lists for all M2M relationships."""
+    def test_export_entry_relationship_natural_keys(self, db_session, test_db, tmp_dir):
+        """Entry export includes natural keys for all M2M relationships."""
         entry = _create_entry(db_session, "2024-01-15")
         person = _create_person(db_session)
         tag = _create_tag(db_session)
@@ -168,24 +167,26 @@ class TestExportEntries:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_entries(db_session)
 
-        data = result[entry.id]
-        assert person.id in data["people_ids"]
-        assert tag.id in data["tag_ids"]
+        data = result["2024-01-15"]
+        assert person.slug in data["people"]
+        assert tag.name in data["tags"]
 
     def test_export_entry_empty_relationships(self, db_session, test_db, tmp_dir):
-        """Entry with no relationships exports empty ID lists."""
+        """Entry with no relationships exports empty lists."""
         entry = _create_entry(db_session)
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_entries(db_session)
 
-        data = result[entry.id]
-        assert data["people_ids"] == []
-        assert data["tag_ids"] == []
-        assert data["scene_ids"] == []
+        data = result[entry.date.isoformat()]
+        assert data["people"] == []
+        assert data["tags"] == []
+        assert data["scenes"] == []
 
     def test_export_entry_rating(self, db_session, test_db, tmp_dir):
         """Entry rating is exported as float."""
@@ -194,9 +195,10 @@ class TestExportEntries:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_entries(db_session)
 
-        assert result[entry.id]["rating"] == 4.5
+        assert result[entry.date.isoformat()]["rating"] == 4.5
 
     def test_export_entry_null_rating(self, db_session, test_db, tmp_dir):
         """Entry with no rating exports None."""
@@ -204,9 +206,10 @@ class TestExportEntries:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_entries(db_session)
 
-        assert result[entry.id]["rating"] is None
+        assert result[entry.date.isoformat()]["rating"] is None
 
     def test_export_updates_stats(self, db_session, test_db, tmp_dir):
         """Export method tracks entity counts in stats."""
@@ -215,23 +218,26 @@ class TestExportEntries:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         exporter._export_entries(db_session)
 
         assert exporter.stats["entries"] == 2
 
 
 class TestExportPeople:
-    """Test person serialization."""
+    """Test person serialization with slug."""
 
     def test_export_person_fields(self, db_session, test_db, tmp_dir):
-        """Person export includes all fields."""
+        """Person export includes all fields including slug."""
         person = _create_person(db_session, "Alice", "Smith", RelationType.FRIEND)
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_people(db_session)
 
-        data = result[person.id]
+        data = result[person.slug]
+        assert data["slug"] == person.slug
         assert data["name"] == "Alice"
         assert data["lastname"] == "Smith"
         assert data["relation_type"] == "friend"
@@ -245,9 +251,10 @@ class TestExportPeople:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_people(db_session)
 
-        assert result[person.id]["relation_type"] is None
+        assert result[person.slug]["relation_type"] is None
 
     def test_export_person_with_disambiguator(self, db_session, test_db, tmp_dir):
         """Person with disambiguator exports it."""
@@ -258,27 +265,30 @@ class TestExportPeople:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_people(db_session)
 
-        assert result[person.id]["disambiguator"] == "tall"
+        assert result[person.slug]["disambiguator"] == "tall"
 
 
 class TestExportScenes:
-    """Test scene serialization with dates, people, locations."""
+    """Test scene serialization with natural keys."""
 
     def test_export_scene_fields(self, db_session, test_db, tmp_dir):
         """Scene export includes all fields."""
         entry = _create_entry(db_session)
-        scene = _create_scene(db_session, "Morning Coffee", entry.id)
+        _create_scene(db_session, "Morning Coffee", entry.id)
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_scenes(db_session)
 
-        data = result[scene.id]
+        key = f"Morning Coffee::{entry.date.isoformat()}"
+        data = result[key]
         assert data["name"] == "Morning Coffee"
         assert data["description"] == "Test scene"
-        assert data["entry_id"] == entry.id
+        assert data["entry_date"] == entry.date.isoformat()
 
     def test_export_scene_with_dates(self, db_session, test_db, tmp_dir):
         """Scene with dates exports date strings."""
@@ -289,12 +299,14 @@ class TestExportScenes:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_scenes(db_session)
 
-        assert "2024-01-15" in result[scene.id]["dates"]
+        key = f"Morning Coffee::{entry.date.isoformat()}"
+        assert "2024-01-15" in result[key]["dates"]
 
     def test_export_scene_with_people(self, db_session, test_db, tmp_dir):
-        """Scene with people exports people_ids."""
+        """Scene with people exports people slugs."""
         entry = _create_entry(db_session)
         scene = _create_scene(db_session, "Morning Coffee", entry.id)
         person = _create_person(db_session)
@@ -302,12 +314,14 @@ class TestExportScenes:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_scenes(db_session)
 
-        assert person.id in result[scene.id]["people_ids"]
+        key = f"Morning Coffee::{entry.date.isoformat()}"
+        assert person.slug in result[key]["people"]
 
     def test_export_scene_with_locations(self, db_session, test_db, tmp_dir):
-        """Scene with locations exports location_ids."""
+        """Scene with locations exports location natural keys."""
         entry = _create_entry(db_session)
         city = _create_city(db_session)
         loc = _create_location(db_session, "Cafe X", city.id)
@@ -316,16 +330,18 @@ class TestExportScenes:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_scenes(db_session)
 
-        assert loc.id in result[scene.id]["location_ids"]
+        key = f"Morning Coffee::{entry.date.isoformat()}"
+        assert "Cafe X::Montreal" in result[key]["locations"]
 
 
 class TestExportEvents:
     """Test event serialization."""
 
     def test_export_event_with_scenes(self, db_session, test_db, tmp_dir):
-        """Event export includes scene_ids."""
+        """Event export includes scene natural keys."""
         entry = _create_entry(db_session)
         scene = _create_scene(db_session, "Morning Coffee", entry.id)
         event = Event(name="Daily Routine")
@@ -335,18 +351,20 @@ class TestExportEvents:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_events(db_session)
 
-        data = result[event.id]
+        data = result["Daily Routine"]
         assert data["name"] == "Daily Routine"
-        assert scene.id in data["scene_ids"]
+        scene_key = f"Morning Coffee::{entry.date.isoformat()}"
+        assert scene_key in data["scenes"]
 
 
 class TestExportThreads:
-    """Test thread serialization with date formats."""
+    """Test thread serialization with natural keys."""
 
     def test_export_thread_fields(self, db_session, test_db, tmp_dir):
-        """Thread export includes all fields with date strings."""
+        """Thread export includes all fields with natural keys."""
         entry = _create_entry(db_session)
         thread = Thread(
             name="The Bookend Kiss",
@@ -360,17 +378,19 @@ class TestExportThreads:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_threads(db_session)
 
-        data = result[thread.id]
+        key = f"The Bookend Kiss::{entry.date.isoformat()}"
+        data = result[key]
         assert data["name"] == "The Bookend Kiss"
         assert data["from_date"] == "2024-01-15"
         assert data["to_date"] == "2023"
         assert data["content"] == "Connection between moments"
-        assert data["entry_id"] == entry.id
+        assert data["entry_date"] == entry.date.isoformat()
 
     def test_export_thread_with_people(self, db_session, test_db, tmp_dir):
-        """Thread with people exports people_ids."""
+        """Thread with people exports people slugs."""
         entry = _create_entry(db_session)
         person = _create_person(db_session)
         thread = Thread(
@@ -386,35 +406,39 @@ class TestExportThreads:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_threads(db_session)
 
-        assert person.id in result[thread.id]["people_ids"]
+        key = f"Memory Thread::{entry.date.isoformat()}"
+        assert person.slug in result[key]["people"]
 
 
 class TestExportSimpleEntities:
     """Test serialization of tags, themes, arcs, motifs."""
 
     def test_export_tags(self, db_session, test_db, tmp_dir):
-        """Tag export includes id and name."""
-        tag = _create_tag(db_session, "writing")
+        """Tag export includes name."""
+        _create_tag(db_session, "writing")
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_tags(db_session)
 
-        assert result[tag.id]["name"] == "writing"
+        assert result["writing"]["name"] == "writing"
 
     def test_export_themes(self, db_session, test_db, tmp_dir):
-        """Theme export includes id and name."""
+        """Theme export includes name."""
         theme = Theme(name="identity")
         db_session.add(theme)
         db_session.flush()
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_themes(db_session)
 
-        assert result[theme.id]["name"] == "identity"
+        assert result["identity"]["name"] == "identity"
 
     def test_export_arcs(self, db_session, test_db, tmp_dir):
         """Arc export includes name and description."""
@@ -424,26 +448,28 @@ class TestExportSimpleEntities:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_arcs(db_session)
 
-        data = result[arc.id]
+        data = result["The Long Wanting"]
         assert data["name"] == "The Long Wanting"
         assert data["description"] == "A narrative arc"
 
     def test_export_motifs(self, db_session, test_db, tmp_dir):
-        """Motif export includes id and name."""
+        """Motif export includes name."""
         motif = Motif(name="water")
         db_session.add(motif)
         db_session.flush()
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_motifs(db_session)
 
-        assert result[motif.id]["name"] == "water"
+        assert result["water"]["name"] == "water"
 
     def test_export_motif_instances(self, db_session, test_db, tmp_dir):
-        """MotifInstance export includes motif_id and entry_id."""
+        """MotifInstance export includes motif name and entry date."""
         entry = _create_entry(db_session)
         motif = Motif(name="water")
         db_session.add(motif)
@@ -458,19 +484,21 @@ class TestExportSimpleEntities:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_motif_instances(db_session)
 
-        data = result[mi.id]
-        assert data["motif_id"] == motif.id
-        assert data["entry_id"] == entry.id
+        key = f"water::{entry.date.isoformat()}"
+        data = result[key]
+        assert data["motif"] == "water"
+        assert data["entry_date"] == entry.date.isoformat()
         assert data["description"] == "Water imagery"
 
 
 class TestExportReferences:
-    """Test reference serialization with mode enum and source_id."""
+    """Test reference serialization with natural keys."""
 
     def test_export_reference_with_mode(self, db_session, test_db, tmp_dir):
-        """Reference export includes mode enum value."""
+        """Reference export includes natural keys."""
         entry = _create_entry(db_session)
         source = ReferenceSource(
             title="Important Book",
@@ -491,13 +519,15 @@ class TestExportReferences:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_references(db_session)
 
-        data = result[ref.id]
+        key = f"Important Book::direct::{entry.date.isoformat()}"
+        data = result[key]
         assert data["content"] == "Quote from book"
         assert data["mode"] == "direct"
-        assert data["source_id"] == source.id
-        assert data["entry_id"] == entry.id
+        assert data["source"] == "Important Book"
+        assert data["entry_date"] == entry.date.isoformat()
 
     def test_export_reference_source(self, db_session, test_db, tmp_dir):
         """ReferenceSource export includes type enum."""
@@ -512,9 +542,10 @@ class TestExportReferences:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_reference_sources(db_session)
 
-        data = result[source.id]
+        data = result["Important Book"]
         assert data["title"] == "Important Book"
         assert data["type"] == "book"
         assert data["url"] == "https://example.com"
@@ -527,7 +558,7 @@ class TestChangeDetection:
         """New entity in new_exports generates '+' change."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         old = {"tags": {}}
-        new = {"tags": {1: {"id": 1, "name": "writing"}}}
+        new = {"tags": {"writing": {"name": "writing"}}}
 
         exporter._generate_changes(old, new)
 
@@ -538,7 +569,7 @@ class TestChangeDetection:
     def test_detect_deleted_entity(self, test_db, tmp_dir):
         """Entity in old but not new generates '-' change."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"tags": {1: {"id": 1, "name": "old-tag"}}}
+        old = {"tags": {"old-tag": {"name": "old-tag"}}}
         new = {"tags": {}}
 
         exporter._generate_changes(old, new)
@@ -549,8 +580,8 @@ class TestChangeDetection:
     def test_detect_modified_entity(self, test_db, tmp_dir):
         """Changed entity generates '~' change with field descriptions."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"tags": {1: {"id": 1, "name": "old-name"}}}
-        new = {"tags": {1: {"id": 1, "name": "new-name"}}}
+        old = {"tags": {"myTag": {"name": "old-name"}}}
+        new = {"tags": {"myTag": {"name": "new-name"}}}
 
         exporter._generate_changes(old, new)
 
@@ -562,29 +593,29 @@ class TestChangeDetection:
     def test_no_changes_when_equal(self, test_db, tmp_dir):
         """Identical exports generate no changes."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        data = {"tags": {1: {"id": 1, "name": "same"}}}
+        data = {"tags": {"same": {"name": "same"}}}
 
         exporter._generate_changes(data, data)
 
         assert len(exporter.changes) == 0
 
     def test_detect_relationship_changes(self, test_db, tmp_dir):
-        """Changes to ID lists describe additions/removals."""
+        """Changes to natural key lists describe additions/removals."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"entries": {1: {"id": 1, "date": "2024-01-15", "people_ids": [1, 2]}}}
-        new = {"entries": {1: {"id": 1, "date": "2024-01-15", "people_ids": [2, 3]}}}
+        old = {"entries": {"2024-01-15": {"date": "2024-01-15", "people": ["alice_smith", "bob_jones"]}}}
+        new = {"entries": {"2024-01-15": {"date": "2024-01-15", "people": ["bob_jones", "charlie_brown"]}}}
 
         exporter._generate_changes(old, new)
 
         assert len(exporter.changes) == 1
         change = exporter.changes[0]
-        assert "+people_ids" in change or "-people_ids" in change
+        assert "+people" in change or "-people" in change
 
     def test_text_field_change_not_verbose(self, test_db, tmp_dir):
         """Text field changes say [changed] instead of showing full diff."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"entries": {1: {"id": 1, "date": "2024-01-15", "summary": "old text"}}}
-        new = {"entries": {1: {"id": 1, "date": "2024-01-15", "summary": "new text"}}}
+        old = {"entries": {"2024-01-15": {"date": "2024-01-15", "summary": "old text"}}}
+        new = {"entries": {"2024-01-15": {"date": "2024-01-15", "summary": "new text"}}}
 
         exporter._generate_changes(old, new)
 
@@ -599,7 +630,7 @@ class TestWriteExports:
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         exports = {
             "entries": {
-                1: {"id": 1, "date": "2024-01-15", "summary": "Test"},
+                "2024-01-15": {"date": "2024-01-15", "summary": "Test"},
             },
             "people": {},
             "locations": {},
@@ -630,7 +661,7 @@ class TestWriteExports:
         exports = {
             "entries": {},
             "people": {
-                1: {"id": 1, "name": "Alice", "lastname": "Smith", "disambiguator": None},
+                "alice_smith": {"slug": "alice_smith", "name": "Alice", "lastname": "Smith", "disambiguator": None},
             },
             "locations": {},
             "cities": {},
@@ -661,10 +692,10 @@ class TestWriteExports:
             "entries": {},
             "people": {},
             "locations": {
-                1: {"id": 1, "name": "Cafe X", "city_id": 1},
+                "Cafe X::Montreal": {"name": "Cafe X", "city": "Montreal"},
             },
             "cities": {
-                1: {"id": 1, "name": "Montreal", "country": "Canada"},
+                "Montreal": {"name": "Montreal", "country": "Canada"},
             },
             "scenes": {},
             "events": {},
@@ -688,14 +719,12 @@ class TestWriteExports:
         """Scenes are written to scenes/{YYYY-MM-DD}/{scene-name}.json."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         exports = {
-            "entries": {
-                1: {"id": 1, "date": "2024-01-15"},
-            },
+            "entries": {},
             "people": {},
             "locations": {},
             "cities": {},
             "scenes": {
-                1: {"id": 1, "name": "Morning Coffee", "entry_id": 1},
+                "Morning Coffee::2024-01-15": {"name": "Morning Coffee", "entry_date": "2024-01-15"},
             },
             "events": {},
             "threads": {},
@@ -726,7 +755,7 @@ class TestWriteExports:
             "cities": {},
             "scenes": {},
             "events": {
-                1: {"id": 1, "name": "Daily Routine", "scene_ids": []},
+                "Daily Routine": {"name": "Daily Routine", "scenes": []},
             },
             "threads": {},
             "arcs": {},
@@ -734,7 +763,7 @@ class TestWriteExports:
             "references": {},
             "reference_sources": {},
             "tags": {
-                1: {"id": 1, "name": "writing"},
+                "writing": {"name": "writing"},
             },
             "themes": {},
             "motifs": {},
@@ -765,15 +794,15 @@ class TestLoadExistingExports:
         # Write a JSON file manually
         journal_dir = tmp_dir / "journal" / "tags"
         journal_dir.mkdir(parents=True)
-        tag_data = {"id": 1, "name": "writing"}
+        tag_data = {"name": "writing"}
         (journal_dir / "writing.json").write_text(json.dumps(tag_data))
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         result = exporter._load_existing_exports()
 
         assert "tags" in result
-        assert 1 in result["tags"]
-        assert result["tags"][1]["name"] == "writing"
+        assert "writing" in result["tags"]
+        assert result["tags"]["writing"]["name"] == "writing"
 
     def test_skip_corrupted_files(self, test_db, tmp_dir):
         """Corrupted JSON files are skipped with warning."""
@@ -788,11 +817,11 @@ class TestLoadExistingExports:
         assert "tags" in result
         assert len(result["tags"]) == 0
 
-    def test_skip_files_without_id(self, test_db, tmp_dir):
-        """JSON files without 'id' field are skipped."""
+    def test_skip_files_without_natural_key(self, test_db, tmp_dir):
+        """JSON files without natural key fields are skipped."""
         journal_dir = tmp_dir / "journal" / "tags"
         journal_dir.mkdir(parents=True)
-        (journal_dir / "no-id.json").write_text(json.dumps({"name": "orphan"}))
+        (journal_dir / "no-name.json").write_text(json.dumps({"other": "field"}))
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         result = exporter._load_existing_exports()
@@ -819,9 +848,9 @@ class TestWriteReadme:
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         exporter.stats = {"entries": 5}
         exporter.changes = [
-            "+ tag writing (id=1)",
-            "~ entry 2024-01-15 (id=1): ~summary [changed]",
-            "- tag old-tag (id=2)",
+            "+ tag writing",
+            "~ entry 2024-01-15: ~summary [changed]",
+            "- tag old-tag",
         ]
 
         exporter._write_readme()
@@ -839,54 +868,54 @@ class TestGetEntitySlug:
     def test_entry_slug_is_date(self, test_db, tmp_dir):
         """Entry slug is the date string."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        slug = exporter._get_entity_slug("entries", {"id": 1, "date": "2024-01-15"})
+        slug = exporter._get_entity_slug("entries", {"date": "2024-01-15"})
         assert slug == "2024-01-15"
 
-    def test_people_slug_uses_filename(self, test_db, tmp_dir):
-        """People slug uses generate_person_filename logic."""
+    def test_people_slug_uses_slug_field(self, test_db, tmp_dir):
+        """People slug uses the slug field."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
         slug = exporter._get_entity_slug(
-            "people", {"id": 1, "name": "Alice", "lastname": "Smith", "disambiguator": None}
+            "people", {"slug": "alice_smith", "name": "Alice", "lastname": "Smith"}
         )
-        assert "alice" in slug.lower()
+        assert slug == "alice_smith"
 
     def test_generic_slug_uses_name(self, test_db, tmp_dir):
         """Other entities use name field."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        slug = exporter._get_entity_slug("tags", {"id": 1, "name": "writing"})
+        slug = exporter._get_entity_slug("tags", {"name": "writing"})
         assert slug == "writing"
 
-    def test_fallback_slug_uses_id(self, test_db, tmp_dir):
-        """Entity without name/title/date falls back to id."""
+    def test_fallback_slug_uses_unknown(self, test_db, tmp_dir):
+        """Entity without name/title/slug falls back to unknown."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        slug = exporter._get_entity_slug("unknown_type", {"id": 42})
-        assert slug == "id-42"
+        slug = exporter._get_entity_slug("unknown_type", {"other": "field"})
+        assert slug == "unknown"
 
 
 class TestDescribeFieldChanges:
     """Test field change description formatting."""
 
     def test_relationship_additions(self, test_db, tmp_dir):
-        """Added IDs in relationship lists are described."""
+        """Added items in relationship lists are described."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"id": 1, "people_ids": [1]}
-        new = {"id": 1, "people_ids": [1, 2]}
+        old = {"people": ["alice_smith"]}
+        new = {"people": ["alice_smith", "bob_jones"]}
         result = exporter._describe_field_changes(old, new)
-        assert "+people_ids" in result
+        assert "+people" in result
 
     def test_relationship_removals(self, test_db, tmp_dir):
-        """Removed IDs in relationship lists are described."""
+        """Removed items in relationship lists are described."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"id": 1, "people_ids": [1, 2]}
-        new = {"id": 1, "people_ids": [1]}
+        old = {"people": ["alice_smith", "bob_jones"]}
+        new = {"people": ["alice_smith"]}
         result = exporter._describe_field_changes(old, new)
-        assert "-people_ids" in result
+        assert "-people" in result
 
     def test_scalar_changes(self, test_db, tmp_dir):
         """Scalar field changes show old->new."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"id": 1, "word_count": 500}
-        new = {"id": 1, "word_count": 600}
+        old = {"word_count": 500}
+        new = {"word_count": 600}
         result = exporter._describe_field_changes(old, new)
         assert "500" in result
         assert "600" in result
@@ -894,16 +923,16 @@ class TestDescribeFieldChanges:
     def test_text_changes_abbreviated(self, test_db, tmp_dir):
         """Text field changes are abbreviated to [changed]."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"id": 1, "summary": "old text"}
-        new = {"id": 1, "summary": "new text"}
+        old = {"summary": "old text"}
+        new = {"summary": "new text"}
         result = exporter._describe_field_changes(old, new)
         assert "[changed]" in result
 
     def test_changes_limited_to_five(self, test_db, tmp_dir):
         """Field changes are limited to 5 per entity."""
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
-        old = {"id": 1, "a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
-        new = {"id": 1, "a": 10, "b": 20, "c": 30, "d": 40, "e": 50, "f": 60}
+        old = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
+        new = {"a": 10, "b": 20, "c": 30, "d": 40, "e": 50, "f": 60}
         result = exporter._describe_field_changes(old, new)
         # Should have at most 5 comma-separated parts
         assert result.count(",") <= 4
@@ -924,9 +953,10 @@ class TestExportParts:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_parts(db_session)
 
-        data = result[part.id]
+        data = result["1"]
         assert data["number"] == 1
         assert data["title"] == "Arrival"
 
@@ -937,9 +967,13 @@ class TestExportParts:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_parts(db_session)
 
-        data = result[part.id]
+        # Should have a key (fallback to part-{id})
+        keys = list(result.keys())
+        assert len(keys) == 1
+        data = result[keys[0]]
         assert data["number"] is None
         assert data["title"] is None
 
@@ -950,13 +984,14 @@ class TestExportParts:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         exporter._export_parts(db_session)
 
         assert exporter.stats["parts"] == 2
 
 
 class TestExportChapters:
-    """Test chapter serialization with enums and relationship IDs."""
+    """Test chapter serialization with natural keys."""
 
     def test_export_chapter_fields(self, db_session, test_db, tmp_dir):
         """Chapter export includes all scalar fields and enum values."""
@@ -971,18 +1006,19 @@ class TestExportChapters:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_chapters(db_session)
 
-        data = result[chapter.id]
+        data = result["The Gray Fence"]
         assert data["title"] == "The Gray Fence"
         assert data["number"] == 1
         assert data["type"] == "prose"
         assert data["status"] == "draft"
         assert data["content"] == "A brief moment."
-        assert data["part_id"] is None
+        assert data["part"] is None
 
     def test_export_chapter_with_part(self, db_session, test_db, tmp_dir):
-        """Chapter export includes part_id when assigned."""
+        """Chapter export includes part number when assigned."""
         part = Part(number=1, title="Arrival")
         db_session.add(part)
         db_session.flush()
@@ -991,12 +1027,13 @@ class TestExportChapters:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_chapters(db_session)
 
-        assert result[chapter.id]["part_id"] == part.id
+        assert result["First Chapter"]["part"] == 1
 
-    def test_export_chapter_relationship_ids(self, db_session, test_db, tmp_dir):
-        """Chapter export includes character_ids and arc_ids."""
+    def test_export_chapter_relationship_natural_keys(self, db_session, test_db, tmp_dir):
+        """Chapter export includes character names and arc names."""
         chapter = Chapter(title="Test Chapter")
         char = Character(name="Sofia", is_narrator=True)
         arc = Arc(name="The Long Wanting")
@@ -1007,25 +1044,27 @@ class TestExportChapters:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_chapters(db_session)
 
-        data = result[chapter.id]
-        assert char.id in data["character_ids"]
-        assert arc.id in data["arc_ids"]
+        data = result["Test Chapter"]
+        assert "Sofia" in data["characters"]
+        assert "The Long Wanting" in data["arcs"]
 
     def test_export_chapter_empty_relationships(self, db_session, test_db, tmp_dir):
-        """Chapter with no relationships exports empty ID lists."""
+        """Chapter with no relationships exports empty lists."""
         chapter = Chapter(title="Empty Chapter")
         db_session.add(chapter)
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_chapters(db_session)
 
-        data = result[chapter.id]
-        assert data["poem_ids"] == []
-        assert data["character_ids"] == []
-        assert data["arc_ids"] == []
+        data = result["Empty Chapter"]
+        assert data["poems"] == []
+        assert data["characters"] == []
+        assert data["arcs"] == []
 
 
 class TestExportCharacters:
@@ -1043,9 +1082,10 @@ class TestExportCharacters:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_characters(db_session)
 
-        data = result[char.id]
+        data = result["Sofia"]
         assert data["name"] == "Sofia"
         assert data["description"] == "The narrator"
         assert data["role"] == "protagonist"
@@ -1058,9 +1098,10 @@ class TestExportCharacters:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_characters(db_session)
 
-        data = result[char.id]
+        data = result["Minor"]
         assert data["name"] == "Minor"
         assert data["description"] is None
         assert data["role"] is None
@@ -1068,10 +1109,10 @@ class TestExportCharacters:
 
 
 class TestExportPersonCharacterMaps:
-    """Test person-character mapping serialization with contribution enum."""
+    """Test person-character mapping serialization with natural keys."""
 
     def test_export_mapping_fields(self, db_session, test_db, tmp_dir):
-        """PersonCharacterMap export includes all fields with enum value."""
+        """PersonCharacterMap export includes all fields with natural keys."""
         person = _create_person(db_session, "Maria", "Garcia")
         char = Character(name="Sofia")
         db_session.add(char)
@@ -1086,11 +1127,13 @@ class TestExportPersonCharacterMaps:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_person_character_maps(db_session)
 
-        data = result[mapping.id]
-        assert data["person_id"] == person.id
-        assert data["character_id"] == char.id
+        key = f"{person.slug}::Sofia"
+        data = result[key]
+        assert data["person"] == person.slug
+        assert data["character"] == "Sofia"
         assert data["contribution"] == "primary"
         assert data["notes"] == "Main inspiration"
 
@@ -1109,18 +1152,20 @@ class TestExportPersonCharacterMaps:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_person_character_maps(db_session)
 
-        data = result[mapping.id]
+        key = f"{person.slug}::Clara"
+        data = result[key]
         assert data["contribution"] == "inspiration"
         assert data["notes"] is None
 
 
 class TestExportManuscriptScenes:
-    """Test manuscript scene serialization with origin/status enums."""
+    """Test manuscript scene serialization with natural keys."""
 
     def test_export_scene_fields(self, db_session, test_db, tmp_dir):
-        """ManuscriptScene export includes all fields with enum values."""
+        """ManuscriptScene export includes all fields with natural keys."""
         chapter = Chapter(title="Test Chapter")
         db_session.add(chapter)
         db_session.flush()
@@ -1136,12 +1181,13 @@ class TestExportManuscriptScenes:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_manuscript_scenes(db_session)
 
-        data = result[scene.id]
+        data = result["Morning at the Fence"]
         assert data["name"] == "Morning at the Fence"
         assert data["description"] == "A quiet scene"
-        assert data["chapter_id"] == chapter.id
+        assert data["chapter"] == "Test Chapter"
         assert data["origin"] == "journaled"
         assert data["status"] == "included"
         assert data["notes"] == "Key scene"
@@ -1161,9 +1207,10 @@ class TestExportManuscriptScenes:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_manuscript_scenes(db_session)
 
-        data = result[scene.id]
+        data = result["Fragment"]
         assert data["description"] is None
         assert data["notes"] is None
         assert data["origin"] == "invented"
@@ -1171,10 +1218,11 @@ class TestExportManuscriptScenes:
 
 
 class TestExportManuscriptSources:
-    """Test manuscript source serialization with source_type polymorphism."""
+    """Test manuscript source serialization with natural keys."""
 
     def test_export_entry_source(self, db_session, test_db, tmp_dir):
-        """ManuscriptSource with entry source_type exports entry_id."""
+        """ManuscriptSource with entry source_type exports entry date."""
+        entry = _create_entry(db_session)
         chapter = Chapter(title="Test Chapter")
         db_session.add(chapter)
         db_session.flush()
@@ -1189,19 +1237,23 @@ class TestExportManuscriptSources:
         source = ManuscriptSource(
             manuscript_scene_id=ms_scene.id,
             source_type=SourceType.ENTRY,
-            entry_id=1,
+            entry_id=entry.id,
         )
         db_session.add(source)
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_manuscript_sources(db_session)
 
-        data = result[source.id]
+        # Key should contain scene name, source type, and entry date
+        keys = list(result.keys())
+        assert len(keys) == 1
+        data = result[keys[0]]
         assert data["source_type"] == "entry"
-        assert data["entry_id"] == 1
-        assert data["scene_id"] is None
-        assert data["thread_id"] is None
+        assert data["entry_date"] == entry.date.isoformat()
+        assert data["scene"] is None
+        assert data["thread"] is None
 
     def test_export_external_source(self, db_session, test_db, tmp_dir):
         """ManuscriptSource with external type exports external_note."""
@@ -1225,18 +1277,21 @@ class TestExportManuscriptSources:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_manuscript_sources(db_session)
 
-        data = result[source.id]
+        keys = list(result.keys())
+        assert len(keys) == 1
+        data = result[keys[0]]
         assert data["source_type"] == "external"
         assert data["external_note"] == "Family story told by mother"
 
 
 class TestExportManuscriptReferences:
-    """Test manuscript reference serialization with mode enum."""
+    """Test manuscript reference serialization with natural keys."""
 
     def test_export_reference_fields(self, db_session, test_db, tmp_dir):
-        """ManuscriptReference export includes all fields with enum value."""
+        """ManuscriptReference export includes all fields with natural keys."""
         chapter = Chapter(title="Test Chapter")
         ref_source = ReferenceSource(
             title="Important Book",
@@ -1256,11 +1311,13 @@ class TestExportManuscriptReferences:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_manuscript_references(db_session)
 
-        data = result[ref.id]
-        assert data["chapter_id"] == chapter.id
-        assert data["source_id"] == ref_source.id
+        key = "Test Chapter::Important Book"
+        data = result[key]
+        assert data["chapter"] == "Test Chapter"
+        assert data["source"] == "Important Book"
         assert data["mode"] == "direct"
         assert data["content"] == "A notable quote"
         assert data["notes"] == "Use in opening"
@@ -1284,9 +1341,11 @@ class TestExportManuscriptReferences:
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
+        exporter._build_lookups(db_session)
         result = exporter._export_manuscript_references(db_session)
 
-        data = result[ref.id]
+        key = "Test Chapter::Film"
+        data = result[key]
         assert data["mode"] == "thematic"
         assert data["content"] is None
         assert data["notes"] is None

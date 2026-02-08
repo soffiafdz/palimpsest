@@ -421,7 +421,10 @@ class Thread(Base):
     """
 
     __tablename__ = "threads"
-    __table_args__ = (CheckConstraint("name != ''", name="ck_thread_non_empty_name"),)
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_thread_non_empty_name"),
+        UniqueConstraint("name", "entry_id", name="uq_thread_name_entry"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)

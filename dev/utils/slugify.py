@@ -110,7 +110,6 @@ def generate_person_filename(
     name: str,
     lastname: str | None,
     disambiguator: str | None,
-    person_id: int | None = None,
 ) -> str:
     """
     Generate filename for person entity following design spec.
@@ -153,11 +152,9 @@ def generate_person_filename(
         disambig_slug = slugify(disambiguator)  # type: ignore
         filename = f"{first_slug}_{disambig_slug}.json"
 
-    # Fallback for extremely long names (>250 chars)
+    # Truncate extremely long names
     if len(filename) > 250:
-        if person_id is None:
-            raise ValueError(f"Filename too long ({len(filename)} chars) and no person_id provided for fallback")
-        return f"person-{person_id}.json"
+        filename = f"{filename[:246]}.json"
 
     return filename
 

@@ -27,7 +27,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 # --- Third party imports ---
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # --- Local imports ---
@@ -135,6 +135,7 @@ class MotifInstance(Base):
     __tablename__ = "motif_instances"
     __table_args__ = (
         CheckConstraint("description != ''", name="ck_motif_instance_non_empty_desc"),
+        UniqueConstraint("motif_id", "entry_id", name="uq_motif_instance_motif_entry"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

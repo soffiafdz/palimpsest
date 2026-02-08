@@ -67,15 +67,14 @@ class TestPoemManagerGetPoem:
         assert result is not None
         assert result.id == created.id
 
-    def test_get_poem_returns_first_when_multiple_same_title(self, poem_manager, db_session):
-        """Test get_poem returns first match when multiple poems have same title."""
-        poem1 = poem_manager.create_poem({"title": "Duplicate"})
-        poem_manager.create_poem({"title": "Duplicate"})
+    def test_get_poem_with_unique_title(self, poem_manager, db_session):
+        """Test get_poem returns poem when title is unique."""
+        poem = poem_manager.create_poem({"title": "Unique Title"})
         db_session.commit()
 
-        result = poem_manager.get_poem(title="Duplicate")
+        result = poem_manager.get_poem(title="Unique Title")
         assert result is not None
-        assert result.id == poem1.id
+        assert result.id == poem.id
 
 
 class TestPoemManagerGetAllPoems:
@@ -131,14 +130,14 @@ class TestPoemManagerCreatePoem:
         with pytest.raises(ValidationError):
             poem_manager.create_poem({"title": ""})
 
-    def test_create_poem_allows_duplicate_titles(self, poem_manager, db_session):
-        """Test multiple poems can have same title."""
-        poem1 = poem_manager.create_poem({"title": "Duplicate"})
-        poem2 = poem_manager.create_poem({"title": "Duplicate"})
+    def test_create_poem_rejects_duplicate_titles(self, poem_manager, db_session):
+        """Test duplicate poem titles are rejected by unique constraint."""
+        poem_manager.create_poem({"title": "Duplicate"})
         db_session.commit()
 
-        assert poem1.id != poem2.id
-        assert poem1.title == poem2.title == "Duplicate"
+        with pytest.raises(DatabaseError, match="integrity violation"):
+            poem_manager.create_poem({"title": "Duplicate"})
+            db_session.commit()
 
 
 class TestPoemManagerUpdatePoem:
@@ -465,15 +464,14 @@ class TestPoemManagerGetPoemsByTitle:
         assert len(result) == 1
         assert result[0].title == "Unique Title"
 
-    def test_get_poems_by_title_multiple(self, poem_manager, db_session):
-        """Test get_poems_by_title with multiple poems."""
-        poem_manager.create_poem({"title": "Same Title"})
-        poem_manager.create_poem({"title": "Same Title"})
-        poem_manager.create_poem({"title": "Same Title"})
+    def test_get_poems_by_title_single_match(self, poem_manager, db_session):
+        """Test get_poems_by_title returns single poem when title matches."""
+        poem_manager.create_poem({"title": "Unique Title"})
         db_session.commit()
 
-        result = poem_manager.get_poems_by_title("Same Title")
-        assert len(result) == 3
+        result = poem_manager.get_poems_by_title("Unique Title")
+        assert len(result) == 1
+        assert result[0].title == "Unique Title"
 
     def test_get_poems_by_title_empty(self, poem_manager):
         """Test get_poems_by_title returns empty when no matches."""

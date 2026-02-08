@@ -6,22 +6,24 @@ Export database entities to JSON files for version control and cross-machine syn
 
 This module exports database entities to individual JSON files organized by entity type.
 Unlike metadata YAML files (human-authored, per-entry ground truth), these JSON exports
-are machine-generated, machine-focused files using IDs for relationships.
+are machine-generated, machine-focused files using natural keys for relationships.
 
 Key Features:
     - One JSON file per entity instance (not per entry)
-    - ID-based relationships (no slug generation needed)
+    - Natural-key-based relationships (slugs, names, dates — no integer IDs)
     - Unidirectional relationship storage (zero redundancy)
     - README.md with human-readable change log
     - Single git commit per export with detailed README
     - Fast JSON parsing and compact file size
 
 Architecture:
+    - Relationships use natural keys: person slugs, entity names, entry dates
     - Entry owns: people, locations, cities, tags, themes, arcs, scenes, events, threads
     - Scene owns: people, locations, dates
     - Event owns: scenes
     - Thread owns: people, locations, referenced_entry
     - Entities don't store back-references (derived on import)
+    - Lookup dicts built once per export for O(1) FK resolution
 
 Directory Structure:
     data/exports/journal/
@@ -75,6 +77,7 @@ from dev.database.models import (
     Part,
     Person,
     PersonCharacterMap,
+    Poem,
     PoemVersion,
     Reference,
     ReferenceSource,
@@ -98,6 +101,7 @@ class JSONExporter:
 
     Generates one JSON file per entity instance, organized by entity type.
     Tracks changes and generates human-readable README for git commits.
+    Uses natural keys (names, slugs, dates) instead of integer IDs.
     """
 
     def __init__(
@@ -122,6 +126,64 @@ class JSONExporter:
         # Track changes for README
         self.changes: List[str] = []
         self.stats: Dict[str, int] = {}
+
+        # Lookup dicts for FK resolution (populated by _build_lookups)
+        self._entry_dates: Dict[int, str] = {}
+        self._person_slugs: Dict[int, str] = {}
+        self._city_names: Dict[int, str] = {}
+        self._location_keys: Dict[int, str] = {}
+        self._event_names: Dict[int, str] = {}
+        self._arc_names: Dict[int, str] = {}
+        self._tag_names: Dict[int, str] = {}
+        self._theme_names: Dict[int, str] = {}
+        self._motif_names: Dict[int, str] = {}
+        self._source_titles: Dict[int, str] = {}
+        self._poem_titles: Dict[int, str] = {}
+        self._scene_keys: Dict[int, str] = {}
+        self._thread_keys: Dict[int, str] = {}
+        self._part_numbers: Dict[int, Optional[int]] = {}
+        self._chapter_titles: Dict[int, str] = {}
+        self._character_names: Dict[int, str] = {}
+        self._ms_scene_names: Dict[int, str] = {}
+
+    def _build_lookups(self, session: Session) -> None:
+        """
+        Build lookup dicts from all entity tables for O(1) FK resolution.
+
+        Queries each entity table once and builds {int_id: natural_key_string}
+        maps used by export methods to replace integer FK references with
+        deterministic natural keys.
+
+        Args:
+            session: Active SQLAlchemy session
+        """
+        self._entry_dates = {e.id: e.date.isoformat() for e in session.query(Entry)}
+        self._person_slugs = {p.id: p.slug for p in session.query(Person)}
+        self._city_names = {c.id: c.name for c in session.query(City)}
+        self._location_keys = {
+            loc.id: f"{loc.name}::{self._city_names[loc.city_id]}"
+            for loc in session.query(Location)
+        }
+        self._event_names = {e.id: e.name for e in session.query(Event)}
+        self._arc_names = {a.id: a.name for a in session.query(Arc)}
+        self._tag_names = {t.id: t.name for t in session.query(Tag)}
+        self._theme_names = {t.id: t.name for t in session.query(Theme)}
+        self._motif_names = {m.id: m.name for m in session.query(Motif)}
+        self._source_titles = {s.id: s.title for s in session.query(ReferenceSource)}
+        self._poem_titles = {p.id: p.title for p in session.query(Poem)}
+        self._scene_keys = {
+            s.id: f"{s.name}::{self._entry_dates[s.entry_id]}"
+            for s in session.query(Scene)
+        }
+        self._thread_keys = {
+            t.id: f"{t.name}::{self._entry_dates[t.entry_id]}"
+            for t in session.query(Thread)
+        }
+        # Manuscript lookups
+        self._part_numbers = {p.id: p.number for p in session.query(Part)}
+        self._chapter_titles = {c.id: c.title for c in session.query(Chapter)}
+        self._character_names = {c.id: c.name for c in session.query(Character)}
+        self._ms_scene_names = {s.id: s.name for s in session.query(ManuscriptScene)}
 
     def export_all(self) -> None:
         """
@@ -178,16 +240,22 @@ class JSONExporter:
             )
             raise
 
-    def _export_all_entities(self) -> Dict[str, Dict[int, Dict[str, Any]]]:
+    def _export_all_entities(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """
         Export all entities to in-memory JSON structures.
 
+        Builds lookup dicts first, then exports each entity type using
+        natural keys as dict keys.
+
         Returns:
-            Nested dict: {entity_type: {entity_id: json_data}}
+            Nested dict: {entity_type: {natural_key: json_data}}
         """
         exports = {}
 
         with self.db.session_scope() as session:
+            # Build lookup dicts for FK resolution
+            self._build_lookups(session)
+
             # Journal entities
             exports["entries"] = self._export_entries(session)
             exports["people"] = self._export_people(session)
@@ -220,16 +288,27 @@ class JSONExporter:
     # ENTITY EXPORT METHODS
     # =========================================================================
 
-    def _export_entries(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all entries with their owned relationships."""
+    def _export_entries(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all entries with their owned relationships.
+
+        Dict key is entry date string (e.g. "2024-01-15").
+        Relationships use natural keys instead of integer IDs.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping entry date to entry data
+        """
         entries = session.query(Entry).all()
         result = {}
         total = len(entries)
 
         for i, entry in enumerate(entries, 1):
-            result[entry.id] = {
-                "id": entry.id,
-                "date": entry.date.isoformat(),
+            key = entry.date.isoformat()
+            result[key] = {
+                "date": key,
                 "file_path": entry.file_path,
                 "file_hash": entry.file_hash,
                 "metadata_hash": entry.metadata_hash,
@@ -238,19 +317,24 @@ class JSONExporter:
                 "summary": entry.summary,
                 "rating": float(entry.rating) if entry.rating else None,
                 "rating_justification": entry.rating_justification,
-                # Owned relationships (IDs only)
-                "people_ids": [p.id for p in entry.people],
-                "location_ids": [loc.id for loc in entry.locations],
-                "city_ids": [c.id for c in entry.cities],
-                "arc_ids": [a.id for a in entry.arcs],
-                "tag_ids": [t.id for t in entry.tags],
-                "theme_ids": [th.id for th in entry.themes],
-                "scene_ids": [s.id for s in entry.scenes],
-                "event_ids": [e.id for e in entry.events],
-                "thread_ids": [th.id for th in entry.threads],
-                "poem_ids": [pv.id for pv in entry.poems],
-                "reference_ids": [r.id for r in entry.references],
-                "motif_instance_ids": [mi.id for mi in entry.motif_instances],
+                # Owned relationships (natural keys)
+                "people": [p.slug for p in entry.people],
+                "locations": [self._location_keys[loc.id] for loc in entry.locations],
+                "cities": [c.name for c in entry.cities],
+                "arcs": [a.name for a in entry.arcs],
+                "tags": [t.name for t in entry.tags],
+                "themes": [th.name for th in entry.themes],
+                "scenes": [s.name for s in entry.scenes],
+                "events": [e.name for e in entry.events],
+                "threads": [th.name for th in entry.threads],
+                "poems": [self._poem_titles[pv.poem_id] for pv in entry.poems],
+                "references": [
+                    f"{self._source_titles[r.source_id]}::{r.mode.value}"
+                    for r in entry.references
+                ],
+                "motif_instances": [
+                    self._motif_names[mi.motif_id] for mi in entry.motif_instances
+                ],
             }
 
             # Progress feedback every 100 entities
@@ -260,15 +344,25 @@ class JSONExporter:
         self.stats["entries"] = len(result)
         return result
 
-    def _export_people(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all people (no back-references to entries)."""
+    def _export_people(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all people (no back-references to entries).
+
+        Dict key is person slug (e.g. "alice_smith").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping person slug to person data
+        """
         people = session.query(Person).all()
         result = {}
         total = len(people)
 
         for i, person in enumerate(people, 1):
-            result[person.id] = {
-                "id": person.id,
+            result[person.slug] = {
+                "slug": person.slug,
                 "name": person.name,
                 "lastname": person.lastname,
                 "disambiguator": person.disambiguator,
@@ -282,17 +376,27 @@ class JSONExporter:
         self.stats["people"] = len(result)
         return result
 
-    def _export_locations(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all locations."""
+    def _export_locations(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all locations.
+
+        Dict key is "name::city_name" (e.g. "Cafe X::Montreal").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping location key to location data
+        """
         locations = session.query(Location).all()
         result = {}
         total = len(locations)
 
         for i, loc in enumerate(locations, 1):
-            result[loc.id] = {
-                "id": loc.id,
+            key = self._location_keys[loc.id]
+            result[key] = {
                 "name": loc.name,
-                "city_id": loc.city_id,
+                "city": self._city_names[loc.city_id],
             }
 
             # Progress feedback every 100 entities
@@ -302,14 +406,23 @@ class JSONExporter:
         self.stats["locations"] = len(result)
         return result
 
-    def _export_cities(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all cities."""
+    def _export_cities(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all cities.
+
+        Dict key is city name (e.g. "Montreal").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping city name to city data
+        """
         cities = session.query(City).all()
         result = {}
 
         for city in cities:
-            result[city.id] = {
-                "id": city.id,
+            result[city.name] = {
                 "name": city.name,
                 "country": city.country,
             }
@@ -317,8 +430,18 @@ class JSONExporter:
         self.stats["cities"] = len(result)
         return result
 
-    def _export_scenes(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all scenes with their owned relationships."""
+    def _export_scenes(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all scenes with their owned relationships.
+
+        Dict key is "name::entry_date" (e.g. "Morning Coffee::2024-01-15").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping scene key to scene data
+        """
         scenes = session.query(Scene).all()
         result = {}
         total = len(scenes)
@@ -327,14 +450,14 @@ class JSONExporter:
             # Get scene dates (already strings in flexible format)
             dates = [sd.date for sd in scene.dates]
 
-            result[scene.id] = {
-                "id": scene.id,
+            key = self._scene_keys[scene.id]
+            result[key] = {
                 "name": scene.name,
                 "description": scene.description,
-                "entry_id": scene.entry_id,
+                "entry_date": self._entry_dates[scene.entry_id],
                 "dates": dates,
-                "people_ids": [p.id for p in scene.people],
-                "location_ids": [loc.id for loc in scene.locations],
+                "people": [p.slug for p in scene.people],
+                "locations": [self._location_keys[loc.id] for loc in scene.locations],
             }
 
             # Progress feedback every 100 entities
@@ -344,17 +467,26 @@ class JSONExporter:
         self.stats["scenes"] = len(result)
         return result
 
-    def _export_events(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all events with their owned relationships."""
+    def _export_events(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all events with their owned relationships.
+
+        Dict key is event name (e.g. "Daily Routine").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping event name to event data
+        """
         events = session.query(Event).all()
         result = {}
         total = len(events)
 
         for i, event in enumerate(events, 1):
-            result[event.id] = {
-                "id": event.id,
+            result[event.name] = {
                 "name": event.name,
-                "scene_ids": [s.id for s in event.scenes],
+                "scenes": [self._scene_keys[s.id] for s in event.scenes],
             }
 
             # Progress feedback every 100 entities
@@ -364,27 +496,37 @@ class JSONExporter:
         self.stats["events"] = len(result)
         return result
 
-    def _export_threads(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all threads with their owned relationships."""
+    def _export_threads(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all threads with their owned relationships.
+
+        Dict key is "name::entry_date" (e.g. "The Bookend Kiss::2024-01-15").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping thread key to thread data
+        """
         threads = session.query(Thread).all()
         result = {}
         total = len(threads)
 
         for i, thread in enumerate(threads, 1):
-            result[thread.id] = {
-                "id": thread.id,
+            key = self._thread_keys[thread.id]
+            result[key] = {
                 "name": thread.name,
-                "from_date": thread.from_date,  # Already a string (supports ~YYYY, ~YYYY-MM, YYYY-MM-DD)
-                "to_date": thread.to_date,  # Already a string (YYYY, YYYY-MM, or YYYY-MM-DD)
+                "from_date": thread.from_date,
+                "to_date": thread.to_date,
                 "referenced_entry_date": (
                     thread.referenced_entry_date.isoformat()
                     if thread.referenced_entry_date
                     else None
                 ),
                 "content": thread.content,
-                "entry_id": thread.entry_id,
-                "people_ids": [p.id for p in thread.people],
-                "location_ids": [loc.id for loc in thread.locations],
+                "entry_date": self._entry_dates[thread.entry_id],
+                "people": [p.slug for p in thread.people],
+                "locations": [self._location_keys[loc.id] for loc in thread.locations],
             }
 
             # Progress feedback every 100 entities
@@ -394,14 +536,23 @@ class JSONExporter:
         self.stats["threads"] = len(result)
         return result
 
-    def _export_arcs(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all arcs."""
+    def _export_arcs(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all arcs.
+
+        Dict key is arc name (e.g. "The Long Wanting").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping arc name to arc data
+        """
         arcs = session.query(Arc).all()
         result = {}
 
         for arc in arcs:
-            result[arc.id] = {
-                "id": arc.id,
+            result[arc.name] = {
                 "name": arc.name,
                 "description": arc.description,
             }
@@ -409,18 +560,30 @@ class JSONExporter:
         self.stats["arcs"] = len(result)
         return result
 
-    def _export_poems(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all poem versions."""
+    def _export_poems(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all poem versions.
+
+        Dict key is "poem_title::entry_date" (e.g. "Untitled::2024-01-15").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping poem version key to poem version data
+        """
         poem_versions = session.query(PoemVersion).all()
         result = {}
         total = len(poem_versions)
 
         for i, pv in enumerate(poem_versions, 1):
-            result[pv.id] = {
-                "id": pv.id,
+            poem_title = self._poem_titles[pv.poem_id]
+            entry_date = self._entry_dates[pv.entry_id]
+            key = f"{poem_title}::{entry_date}"
+            result[key] = {
                 "content": pv.content,
-                "poem_id": pv.poem_id,
-                "entry_id": pv.entry_id,
+                "poem": poem_title,
+                "entry_date": entry_date,
             }
 
             # Progress feedback every 100 entities
@@ -430,20 +593,34 @@ class JSONExporter:
         self.stats["poems"] = len(result)
         return result
 
-    def _export_references(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all references."""
+    def _export_references(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all references.
+
+        Dict key is "source_title::mode::entry_date"
+        (e.g. "Important Book::direct::2024-01-15").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping reference key to reference data
+        """
         references = session.query(Reference).all()
         result = {}
         total = len(references)
 
         for i, ref in enumerate(references, 1):
-            result[ref.id] = {
-                "id": ref.id,
+            source_title = self._source_titles[ref.source_id]
+            mode = ref.mode.value if ref.mode else "unknown"
+            entry_date = self._entry_dates[ref.entry_id]
+            key = f"{source_title}::{mode}::{entry_date}"
+            result[key] = {
                 "content": ref.content,
                 "description": ref.description,
-                "mode": ref.mode.value if ref.mode else None,
-                "source_id": ref.source_id,
-                "entry_id": ref.entry_id,
+                "mode": mode,
+                "source": source_title,
+                "entry_date": entry_date,
             }
 
             # Progress feedback every 100 entities
@@ -453,14 +630,23 @@ class JSONExporter:
         self.stats["references"] = len(result)
         return result
 
-    def _export_reference_sources(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all reference sources."""
+    def _export_reference_sources(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all reference sources.
+
+        Dict key is source title (e.g. "Important Book").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping source title to source data
+        """
         sources = session.query(ReferenceSource).all()
         result = {}
 
         for source in sources:
-            result[source.id] = {
-                "id": source.id,
+            result[source.title] = {
                 "title": source.title,
                 "author": source.author,
                 "type": source.type.value if source.type else None,
@@ -470,60 +656,99 @@ class JSONExporter:
         self.stats["reference_sources"] = len(result)
         return result
 
-    def _export_tags(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all tags."""
+    def _export_tags(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all tags.
+
+        Dict key is tag name (e.g. "writing").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping tag name to tag data
+        """
         tags = session.query(Tag).all()
         result = {}
 
         for tag in tags:
-            result[tag.id] = {
-                "id": tag.id,
+            result[tag.name] = {
                 "name": tag.name,
             }
 
         self.stats["tags"] = len(result)
         return result
 
-    def _export_themes(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all themes."""
+    def _export_themes(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all themes.
+
+        Dict key is theme name (e.g. "identity").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping theme name to theme data
+        """
         themes = session.query(Theme).all()
         result = {}
 
         for theme in themes:
-            result[theme.id] = {
-                "id": theme.id,
+            result[theme.name] = {
                 "name": theme.name,
             }
 
         self.stats["themes"] = len(result)
         return result
 
-    def _export_motifs(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all motifs."""
+    def _export_motifs(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all motifs.
+
+        Dict key is motif name (e.g. "water").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping motif name to motif data
+        """
         motifs = session.query(Motif).all()
         result = {}
 
         for motif in motifs:
-            result[motif.id] = {
-                "id": motif.id,
+            result[motif.name] = {
                 "name": motif.name,
             }
 
         self.stats["motifs"] = len(result)
         return result
 
-    def _export_motif_instances(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all motif instances."""
+    def _export_motif_instances(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all motif instances.
+
+        Dict key is "motif_name::entry_date" (e.g. "water::2024-01-15").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping motif instance key to motif instance data
+        """
         instances = session.query(MotifInstance).all()
         result = {}
         total = len(instances)
 
         for i, mi in enumerate(instances, 1):
-            result[mi.id] = {
-                "id": mi.id,
+            motif_name = self._motif_names[mi.motif_id]
+            entry_date = self._entry_dates[mi.entry_id]
+            key = f"{motif_name}::{entry_date}"
+            result[key] = {
                 "description": mi.description,
-                "motif_id": mi.motif_id,
-                "entry_id": mi.entry_id,
+                "motif": motif_name,
+                "entry_date": entry_date,
             }
 
             # Progress feedback every 100 entities
@@ -537,14 +762,24 @@ class JSONExporter:
     # MANUSCRIPT ENTITY EXPORT METHODS
     # =========================================================================
 
-    def _export_parts(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all parts."""
+    def _export_parts(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all parts.
+
+        Dict key is part number as string, or title if no number.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping part key to part data
+        """
         parts = session.query(Part).all()
         result = {}
 
         for part in parts:
-            result[part.id] = {
-                "id": part.id,
+            key = str(part.number) if part.number is not None else (part.title or f"part-{part.id}")
+            result[key] = {
                 "number": part.number,
                 "title": part.title,
             }
@@ -552,37 +787,55 @@ class JSONExporter:
         self.stats["parts"] = len(result)
         return result
 
-    def _export_chapters(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all chapters with type/status enums and relationship IDs."""
+    def _export_chapters(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all chapters with type/status enums and relationship natural keys.
+
+        Dict key is chapter title (e.g. "The Gray Fence").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping chapter title to chapter data
+        """
         chapters = session.query(Chapter).all()
         result = {}
 
         for chapter in chapters:
-            result[chapter.id] = {
-                "id": chapter.id,
+            result[chapter.title] = {
                 "title": chapter.title,
                 "number": chapter.number,
-                "part_id": chapter.part_id,
+                "part": self._part_numbers.get(chapter.part_id) if chapter.part_id else None,
                 "type": chapter.type.value if chapter.type else None,
                 "status": chapter.status.value if chapter.status else None,
                 "content": chapter.content,
                 "draft_path": chapter.draft_path,
-                "poem_ids": [p.id for p in chapter.poems],
-                "character_ids": [c.id for c in chapter.characters],
-                "arc_ids": [a.id for a in chapter.arcs],
+                "poems": [self._poem_titles[p.id] for p in chapter.poems],
+                "characters": [c.name for c in chapter.characters],
+                "arcs": [a.name for a in chapter.arcs],
             }
 
         self.stats["chapters"] = len(result)
         return result
 
-    def _export_characters(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all characters."""
+    def _export_characters(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all characters.
+
+        Dict key is character name (e.g. "Sofia").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping character name to character data
+        """
         characters = session.query(Character).all()
         result = {}
 
         for char in characters:
-            result[char.id] = {
-                "id": char.id,
+            result[char.name] = {
                 "name": char.name,
                 "description": char.description,
                 "role": char.role,
@@ -592,16 +845,29 @@ class JSONExporter:
         self.stats["characters"] = len(result)
         return result
 
-    def _export_person_character_maps(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all person-character mappings."""
+    def _export_person_character_maps(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all person-character mappings.
+
+        Dict key is "person_slug::character_name"
+        (e.g. "maria_garcia::Sofia").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping mapping key to mapping data
+        """
         mappings = session.query(PersonCharacterMap).all()
         result = {}
 
         for mapping in mappings:
-            result[mapping.id] = {
-                "id": mapping.id,
-                "person_id": mapping.person_id,
-                "character_id": mapping.character_id,
+            person_slug = self._person_slugs[mapping.person_id]
+            character_name = self._character_names[mapping.character_id]
+            key = f"{person_slug}::{character_name}"
+            result[key] = {
+                "person": person_slug,
+                "character": character_name,
                 "contribution": mapping.contribution.value if mapping.contribution else None,
                 "notes": mapping.notes,
             }
@@ -609,17 +875,26 @@ class JSONExporter:
         self.stats["person_character_maps"] = len(result)
         return result
 
-    def _export_manuscript_scenes(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all manuscript scenes with origin/status enums."""
+    def _export_manuscript_scenes(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all manuscript scenes with origin/status enums.
+
+        Dict key is manuscript scene name (e.g. "Morning at the Fence").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping scene name to scene data
+        """
         scenes = session.query(ManuscriptScene).all()
         result = {}
 
         for scene in scenes:
-            result[scene.id] = {
-                "id": scene.id,
+            result[scene.name] = {
                 "name": scene.name,
                 "description": scene.description,
-                "chapter_id": scene.chapter_id,
+                "chapter": self._chapter_titles.get(scene.chapter_id) if scene.chapter_id else None,
                 "origin": scene.origin.value if scene.origin else None,
                 "status": scene.status.value if scene.status else None,
                 "notes": scene.notes,
@@ -628,19 +903,45 @@ class JSONExporter:
         self.stats["manuscript_scenes"] = len(result)
         return result
 
-    def _export_manuscript_sources(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all manuscript sources with source_type polymorphism."""
+    def _export_manuscript_sources(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all manuscript sources with source_type polymorphism.
+
+        Dict key is "manuscript_scene_name::source_type::index" for uniqueness.
+        Since manuscript sources don't have a simple unique natural key,
+        we use a composite of scene name, source type, and referenced entity.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping source key to source data
+        """
         sources = session.query(ManuscriptSource).all()
         result = {}
 
         for source in sources:
-            result[source.id] = {
-                "id": source.id,
-                "manuscript_scene_id": source.manuscript_scene_id,
-                "source_type": source.source_type.value if source.source_type else None,
-                "scene_id": source.scene_id,
-                "entry_id": source.entry_id,
-                "thread_id": source.thread_id,
+            ms_scene_name = self._ms_scene_names[source.manuscript_scene_id]
+            source_type = source.source_type.value if source.source_type else "unknown"
+
+            # Build a unique key from source type + referenced entity
+            ref_key = ""
+            if source.scene_id:
+                ref_key = self._scene_keys.get(source.scene_id, "")
+            elif source.entry_id:
+                ref_key = self._entry_dates.get(source.entry_id, "")
+            elif source.thread_id:
+                ref_key = self._thread_keys.get(source.thread_id, "")
+            elif source.external_note:
+                ref_key = slugify(source.external_note)[:50]
+
+            key = f"{ms_scene_name}::{source_type}::{ref_key}"
+            result[key] = {
+                "manuscript_scene": ms_scene_name,
+                "source_type": source_type,
+                "scene": self._scene_keys.get(source.scene_id) if source.scene_id else None,
+                "entry_date": self._entry_dates.get(source.entry_id) if source.entry_id else None,
+                "thread": self._thread_keys.get(source.thread_id) if source.thread_id else None,
                 "external_note": source.external_note,
                 "notes": source.notes,
             }
@@ -648,16 +949,29 @@ class JSONExporter:
         self.stats["manuscript_sources"] = len(result)
         return result
 
-    def _export_manuscript_references(self, session: Session) -> Dict[int, Dict[str, Any]]:
-        """Export all manuscript references with mode enum."""
+    def _export_manuscript_references(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all manuscript references with mode enum.
+
+        Dict key is "chapter_title::source_title"
+        (e.g. "The Gray Fence::Important Book").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping reference key to reference data
+        """
         refs = session.query(ManuscriptReference).all()
         result = {}
 
         for ref in refs:
-            result[ref.id] = {
-                "id": ref.id,
-                "chapter_id": ref.chapter_id,
-                "source_id": ref.source_id,
+            chapter_title = self._chapter_titles[ref.chapter_id]
+            source_title = self._source_titles[ref.source_id]
+            key = f"{chapter_title}::{source_title}"
+            result[key] = {
+                "chapter": chapter_title,
+                "source": source_title,
                 "mode": ref.mode.value if ref.mode else None,
                 "content": ref.content,
                 "notes": ref.notes,
@@ -670,17 +984,18 @@ class JSONExporter:
     # FILE OPERATIONS
     # =========================================================================
 
-    def _load_existing_exports(self) -> Dict[str, Dict[int, Dict[str, Any]]]:
+    def _load_existing_exports(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """
         Load existing JSON files from disk for comparison.
 
         Scans data/exports/journal/ directory tree and loads all JSON files.
         Returns same structure as _export_all_entities for easy comparison.
+        Extracts natural keys from file data based on entity type.
 
         Returns:
-            Nested dict: {entity_type: {entity_id: json_data}}
+            Nested dict: {entity_type: {natural_key: json_data}}
         """
-        old_exports: Dict[str, Dict[int, Dict[str, Any]]] = {}
+        old_exports: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
         if not self.journal_dir.exists():
             # First export - no existing files
@@ -706,15 +1021,17 @@ class JSONExporter:
                 relative_path = json_file.relative_to(self.journal_dir)
                 entity_type = relative_path.parts[0]  # First directory (people, entries, etc.)
 
-                # Get entity ID from JSON data
-                entity_id = data.get("id")
-                if entity_id is None:
-                    safe_logger(self.logger).log_warning(f"Skipping {json_file}: no 'id' field")
+                # Extract natural key from data
+                natural_key = self._extract_natural_key(entity_type, data)
+                if natural_key is None:
+                    safe_logger(self.logger).log_warning(
+                        f"Skipping {json_file}: cannot extract natural key"
+                    )
                     continue
 
                 # Store in structure
                 if entity_type in old_exports:
-                    old_exports[entity_type][entity_id] = data
+                    old_exports[entity_type][natural_key] = data
                 else:
                     safe_logger(self.logger).log_warning(f"Unknown entity type: {entity_type}")
 
@@ -728,10 +1045,107 @@ class JSONExporter:
 
         return old_exports
 
+    def _extract_natural_key(self, entity_type: str, data: Dict[str, Any]) -> Optional[str]:
+        """
+        Extract the natural key from entity JSON data based on entity type.
+
+        Args:
+            entity_type: Type of entity (people, entries, etc.)
+            data: Entity JSON data
+
+        Returns:
+            Natural key string, or None if data doesn't have required fields
+        """
+        if entity_type == "entries":
+            return data.get("date")
+        elif entity_type == "people":
+            return data.get("slug")
+        elif entity_type == "locations":
+            name = data.get("name")
+            city = data.get("city")
+            if name and city:
+                return f"{name}::{city}"
+            return None
+        elif entity_type == "cities":
+            return data.get("name")
+        elif entity_type == "scenes":
+            name = data.get("name")
+            entry_date = data.get("entry_date")
+            if name and entry_date:
+                return f"{name}::{entry_date}"
+            return None
+        elif entity_type == "threads":
+            name = data.get("name")
+            entry_date = data.get("entry_date")
+            if name and entry_date:
+                return f"{name}::{entry_date}"
+            return None
+        elif entity_type == "poems":
+            poem = data.get("poem")
+            entry_date = data.get("entry_date")
+            if poem and entry_date:
+                return f"{poem}::{entry_date}"
+            return None
+        elif entity_type == "references":
+            source = data.get("source")
+            mode = data.get("mode")
+            entry_date = data.get("entry_date")
+            if source and mode and entry_date:
+                return f"{source}::{mode}::{entry_date}"
+            return None
+        elif entity_type == "motif_instances":
+            motif = data.get("motif")
+            entry_date = data.get("entry_date")
+            if motif and entry_date:
+                return f"{motif}::{entry_date}"
+            return None
+        elif entity_type == "person_character_maps":
+            person = data.get("person")
+            character = data.get("character")
+            if person and character:
+                return f"{person}::{character}"
+            return None
+        elif entity_type == "manuscript_references":
+            chapter = data.get("chapter")
+            source = data.get("source")
+            if chapter and source:
+                return f"{chapter}::{source}"
+            return None
+        elif entity_type == "manuscript_sources":
+            ms_scene = data.get("manuscript_scene")
+            source_type = data.get("source_type")
+            # Reconstruct key from referenced entity
+            ref_key = ""
+            if data.get("scene"):
+                ref_key = data["scene"]
+            elif data.get("entry_date"):
+                ref_key = data["entry_date"]
+            elif data.get("thread"):
+                ref_key = data["thread"]
+            elif data.get("external_note"):
+                ref_key = slugify(data["external_note"])[:50]
+            if ms_scene and source_type:
+                return f"{ms_scene}::{source_type}::{ref_key}"
+            return None
+        elif entity_type == "parts":
+            number = data.get("number")
+            if number is not None:
+                return str(number)
+            return data.get("title")
+        elif entity_type == "chapters":
+            return data.get("title")
+        elif entity_type == "characters":
+            return data.get("name")
+        elif entity_type == "manuscript_scenes":
+            return data.get("name")
+        else:
+            # Simple entities: events, arcs, tags, themes, motifs, reference_sources
+            return data.get("name") or data.get("title")
+
     def _generate_changes(
         self,
-        old_exports: Dict[str, Dict[int, Dict[str, Any]]],
-        new_exports: Dict[str, Dict[int, Dict[str, Any]]],
+        old_exports: Dict[str, Dict[str, Dict[str, Any]]],
+        new_exports: Dict[str, Dict[str, Dict[str, Any]]],
     ) -> None:
         """
         Generate human-readable change descriptions by comparing old and new.
@@ -742,6 +1156,10 @@ class JSONExporter:
         - - entity deleted
 
         Populates self.changes list with formatted change strings.
+
+        Args:
+            old_exports: Previous export data
+            new_exports: Current export data
         """
         safe_logger(self.logger).log_debug("Generating change descriptions")
 
@@ -751,34 +1169,32 @@ class JSONExporter:
             new_entities = new_exports[entity_type]
 
             # Find added, modified, deleted
-            old_ids = set(old_entities.keys())
-            new_ids = set(new_entities.keys())
+            old_keys = set(old_entities.keys())
+            new_keys = set(new_entities.keys())
 
-            added_ids = new_ids - old_ids
-            deleted_ids = old_ids - new_ids
-            common_ids = old_ids & new_ids
+            added_keys = new_keys - old_keys
+            deleted_keys = old_keys - new_keys
+            common_keys = old_keys & new_keys
 
             # Generate descriptions for each change
-            for entity_id in added_ids:
-                entity_data = new_entities[entity_id]
-                slug = self._get_entity_slug(entity_type, entity_data)
-                self.changes.append(f"+ {entity_type[:-1]} {slug} (id={entity_id})")
+            for key in added_keys:
+                slug = self._get_entity_slug(entity_type, new_entities[key])
+                self.changes.append(f"+ {entity_type[:-1]} {slug}")
 
-            for entity_id in deleted_ids:
-                entity_data = old_entities[entity_id]
-                slug = self._get_entity_slug(entity_type, entity_data)
-                self.changes.append(f"- {entity_type[:-1]} {slug} (id={entity_id})")
+            for key in deleted_keys:
+                slug = self._get_entity_slug(entity_type, old_entities[key])
+                self.changes.append(f"- {entity_type[:-1]} {slug}")
 
-            for entity_id in common_ids:
-                old_data = old_entities[entity_id]
-                new_data = new_entities[entity_id]
+            for key in common_keys:
+                old_data = old_entities[key]
+                new_data = new_entities[key]
 
                 if old_data != new_data:
                     # Entity modified - describe what changed
                     slug = self._get_entity_slug(entity_type, new_data)
                     field_changes = self._describe_field_changes(old_data, new_data)
                     if field_changes:
-                        change_desc = f"~ {entity_type[:-1]} {slug} (id={entity_id}): {field_changes}"
+                        change_desc = f"~ {entity_type[:-1]} {slug}: {field_changes}"
                         self.changes.append(change_desc)
 
         safe_logger(self.logger).log_debug(f"Generated {len(self.changes)} change descriptions")
@@ -792,29 +1208,23 @@ class JSONExporter:
             entity_data: Entity JSON data
 
         Returns:
-            Human-readable identifier (slug or date)
+            Human-readable identifier
         """
         if entity_type == "entries":
-            return entity_data["date"]
+            return entity_data.get("date", "unknown")
         elif entity_type == "people":
-            # Use same logic as filename generation
-            try:
-                filename = generate_person_filename(
-                    entity_data["name"],
-                    entity_data.get("lastname"),
-                    entity_data.get("disambiguator"),
-                    entity_data["id"]
-                )
-                return filename.replace(".json", "")
-            except ValueError:
-                return entity_data["name"]
+            return entity_data.get("slug", entity_data.get("name", "unknown"))
         elif entity_type == "locations":
-            return entity_data["name"]
+            return entity_data.get("name", "unknown")
         elif entity_type == "scenes":
-            return entity_data["name"]
+            return entity_data.get("name", "unknown")
         else:
-            # Use name or title field
-            return entity_data.get("name") or entity_data.get("title") or f"id-{entity_data['id']}"
+            return (
+                entity_data.get("name")
+                or entity_data.get("title")
+                or entity_data.get("slug")
+                or "unknown"
+            )
 
     def _describe_field_changes(self, old_data: Dict[str, Any], new_data: Dict[str, Any]) -> str:
         """
@@ -833,24 +1243,24 @@ class JSONExporter:
         all_keys = set(old_data.keys()) | set(new_data.keys())
 
         for key in all_keys:
-            if key == "id":
-                continue  # ID never changes
-
             old_val = old_data.get(key)
             new_val = new_data.get(key)
 
             if old_val != new_val:
                 # Describe the change
-                if key.endswith("_ids") or key.endswith("_id"):
-                    # Relationship changes - show additions/removals
-                    if isinstance(old_val, list) and isinstance(new_val, list):
-                        added = set(new_val) - set(old_val)
-                        removed = set(old_val) - set(new_val)
-                        if added:
-                            changes.append(f"+{key} {list(added)}")
-                        if removed:
-                            changes.append(f"-{key} {list(removed)}")
-                    elif old_val is None:
+                if isinstance(old_val, list) and isinstance(new_val, list):
+                    # Relationship list changes - show additions/removals
+                    added = set(new_val) - set(old_val) if all(isinstance(v, str) for v in new_val + old_val) else set()
+                    removed = set(old_val) - set(new_val) if all(isinstance(v, str) for v in new_val + old_val) else set()
+                    if added:
+                        changes.append(f"+{key} {list(added)}")
+                    if removed:
+                        changes.append(f"-{key} {list(removed)}")
+                    if not added and not removed:
+                        changes.append(f"~{key}")
+                elif isinstance(old_val, list) or isinstance(new_val, list):
+                    # List to non-list or vice versa
+                    if old_val is None:
                         changes.append(f"+{key}")
                     elif new_val is None:
                         changes.append(f"-{key}")
@@ -865,7 +1275,7 @@ class JSONExporter:
 
         return ", ".join(changes[:5])  # Limit to first 5 changes per entity
 
-    def _write_exports(self, exports: Dict[str, Dict[int, Dict[str, Any]]]) -> None:
+    def _write_exports(self, exports: Dict[str, Dict[str, Dict[str, Any]]]) -> None:
         """
         Write all JSON files to disk with proper directory structure and filenames.
 
@@ -875,6 +1285,9 @@ class JSONExporter:
         - Scenes: scenes/{YYYY-MM-DD}/{scene-name}.json
         - Entries: entries/{YYYY}/{YYYY-MM-DD}.json
         - Others: {entity_type}/{slug}.json
+
+        Args:
+            exports: All entity data keyed by natural keys
         """
         # Create base directories
         self.journal_dir.mkdir(parents=True, exist_ok=True)
@@ -882,8 +1295,8 @@ class JSONExporter:
         # Write each entity type with proper paths
         self._write_entries(exports.get("entries", {}))
         self._write_people(exports.get("people", {}))
-        self._write_locations(exports.get("locations", {}), exports.get("cities", {}))
-        self._write_scenes(exports.get("scenes", {}), exports.get("entries", {}))
+        self._write_locations(exports.get("locations", {}))
+        self._write_scenes(exports.get("scenes", {}))
         self._write_simple_entities("events", exports.get("events", {}))
         self._write_simple_entities("threads", exports.get("threads", {}))
         self._write_simple_entities("arcs", exports.get("arcs", {}))
@@ -905,12 +1318,17 @@ class JSONExporter:
         self._write_simple_entities("manuscript_sources", exports.get("manuscript_sources", {}))
         self._write_simple_entities("manuscript_references", exports.get("manuscript_references", {}))
 
-    def _write_entries(self, entries: Dict[int, Dict[str, Any]]) -> None:
-        """Write entries to entries/YYYY/YYYY-MM-DD.json"""
+    def _write_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
+        """
+        Write entries to entries/YYYY/YYYY-MM-DD.json.
+
+        Args:
+            entries: Dict mapping entry date to entry data
+        """
         entries_dir = self.journal_dir / "entries"
 
         total = len(entries)
-        for i, entry_data in enumerate(entries.values(), 1):
+        for i, (key, entry_data) in enumerate(entries.items(), 1):
             try:
                 entry_date = entry_data["date"]
                 filepath = entries_dir / generate_entry_path(entry_date)
@@ -925,22 +1343,26 @@ class JSONExporter:
 
             except (KeyError, OSError) as e:
                 safe_logger(self.logger).log_warning(
-                    f"Failed to write entry {entry_data.get('id', 'unknown')}: {e}"
+                    f"Failed to write entry {key}: {e}"
                 )
 
-    def _write_people(self, people: Dict[int, Dict[str, Any]]) -> None:
-        """Write people to people/{first}_{last|disambig}.json"""
+    def _write_people(self, people: Dict[str, Dict[str, Any]]) -> None:
+        """
+        Write people to people/{first}_{last|disambig}.json.
+
+        Args:
+            people: Dict mapping person slug to person data
+        """
         people_dir = self.journal_dir / "people"
         people_dir.mkdir(parents=True, exist_ok=True)
 
         total = len(people)
-        for i, person_data in enumerate(people.values(), 1):
+        for i, (slug, person_data) in enumerate(people.items(), 1):
             try:
                 filename = generate_person_filename(
                     person_data["name"],
                     person_data.get("lastname"),
                     person_data.get("disambiguator"),
-                    person_data["id"]
                 )
                 filepath = people_dir / filename
 
@@ -954,22 +1376,22 @@ class JSONExporter:
             except ValueError as e:
                 # Person violates lastname OR disambiguator requirement
                 safe_logger(self.logger).log_warning(
-                    f"Skipping person {person_data['id']} ({person_data['name']}): {e}"
+                    f"Skipping person {slug} ({person_data['name']}): {e}"
                 )
 
-    def _write_locations(self, locations: Dict[int, Dict[str, Any]], cities: Dict[int, Dict[str, Any]]) -> None:
-        """Write locations to locations/{city}/{location}.json"""
+    def _write_locations(self, locations: Dict[str, Dict[str, Any]]) -> None:
+        """
+        Write locations to locations/{city}/{location}.json.
+
+        Args:
+            locations: Dict mapping location key to location data
+        """
         locations_dir = self.journal_dir / "locations"
 
-        # Build city ID to name lookup
-        city_names = {city_data["id"]: city_data["name"] for city_data in cities.values()}
-
         total = len(locations)
-        for i, loc_data in enumerate(locations.values(), 1):
+        for i, (key, loc_data) in enumerate(locations.items(), 1):
             try:
-                city_id = loc_data["city_id"]
-                city_name = city_names.get(city_id, "unknown-city")
-
+                city_name = loc_data["city"]
                 filepath = locations_dir / generate_location_path(city_name, loc_data["name"])
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -982,22 +1404,22 @@ class JSONExporter:
 
             except (KeyError, OSError) as e:
                 safe_logger(self.logger).log_warning(
-                    f"Failed to write location {loc_data.get('id', 'unknown')}: {e}"
+                    f"Failed to write location {key}: {e}"
                 )
 
-    def _write_scenes(self, scenes: Dict[int, Dict[str, Any]], entries: Dict[int, Dict[str, Any]]) -> None:
-        """Write scenes to scenes/{YYYY-MM-DD}/{scene-name}.json"""
+    def _write_scenes(self, scenes: Dict[str, Dict[str, Any]]) -> None:
+        """
+        Write scenes to scenes/{YYYY-MM-DD}/{scene-name}.json.
+
+        Args:
+            scenes: Dict mapping scene key to scene data
+        """
         scenes_dir = self.journal_dir / "scenes"
 
-        # Build entry ID to date lookup
-        entry_dates = {entry_data["id"]: entry_data["date"] for entry_data in entries.values()}
-
         total = len(scenes)
-        for i, scene_data in enumerate(scenes.values(), 1):
+        for i, (key, scene_data) in enumerate(scenes.items(), 1):
             try:
-                entry_id = scene_data["entry_id"]
-                entry_date = entry_dates.get(entry_id, "unknown-date")
-
+                entry_date = scene_data["entry_date"]
                 filepath = scenes_dir / generate_scene_path(entry_date, scene_data["name"])
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -1010,18 +1432,26 @@ class JSONExporter:
 
             except (KeyError, OSError) as e:
                 safe_logger(self.logger).log_warning(
-                    f"Failed to write scene {scene_data.get('id', 'unknown')}: {e}"
+                    f"Failed to write scene {key}: {e}"
                 )
 
-    def _write_simple_entities(self, entity_type: str, entities: Dict[int, Dict[str, Any]]) -> None:
-        """Write entities with simple slug-based filenames."""
+    def _write_simple_entities(self, entity_type: str, entities: Dict[str, Dict[str, Any]]) -> None:
+        """
+        Write entities with simple slug-based filenames.
+
+        Uses the natural key (dict key) to generate filenames.
+
+        Args:
+            entity_type: Entity type name (used as directory)
+            entities: Dict mapping natural key to entity data
+        """
         entity_dir = self.journal_dir / entity_type
         entity_dir.mkdir(parents=True, exist_ok=True)
 
-        for entity_data in entities.values():
+        for key, entity_data in entities.items():
             try:
-                name = entity_data.get("name") or entity_data.get("title") or str(entity_data["id"])
-                filename = f"{slugify(name)}.json"
+                name = entity_data.get("name") or entity_data.get("title") or key
+                filename = f"{slugify(str(name))}.json"
                 filepath = entity_dir / filename
 
                 with open(filepath, "w", encoding="utf-8") as f:
@@ -1029,7 +1459,7 @@ class JSONExporter:
 
             except (KeyError, OSError) as e:
                 safe_logger(self.logger).log_warning(
-                    f"Failed to write {entity_type} {entity_data.get('id', 'unknown')}: {e}"
+                    f"Failed to write {entity_type} {key}: {e}"
                 )
 
     def _write_readme(self) -> None:
@@ -1040,7 +1470,7 @@ class JSONExporter:
         - Export timestamp
         - Entity counts
         - Categorized changes (added, modified, deleted)
-        - Human-readable entity identifiers (slugs, not IDs)
+        - Human-readable entity identifiers (natural keys)
         """
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

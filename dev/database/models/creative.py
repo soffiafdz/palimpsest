@@ -22,7 +22,7 @@ from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -142,6 +142,7 @@ class Reference(Base):
             "content IS NOT NULL OR description IS NOT NULL",
             name="ck_reference_has_content_or_description",
         ),
+        UniqueConstraint("source_id", "entry_id", "mode", name="uq_reference_source_entry_mode"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -216,7 +217,7 @@ class Poem(Base):
     __table_args__ = (CheckConstraint("title != ''", name="ck_poem_non_empty_title"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
 
     # --- Relationship ---
     versions: Mapped[List["PoemVersion"]] = relationship(
@@ -281,6 +282,7 @@ class PoemVersion(Base):
     __tablename__ = "poem_versions"
     __table_args__ = (
         CheckConstraint("content != ''", name="ck_poem_version_non_empty_content"),
+        UniqueConstraint("poem_id", "entry_id", name="uq_poem_version_poem_entry"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

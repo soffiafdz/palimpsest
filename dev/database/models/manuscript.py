@@ -29,7 +29,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -69,6 +69,9 @@ class Part(Base):
     """
 
     __tablename__ = "parts"
+    __table_args__ = (
+        UniqueConstraint("number", name="uq_part_number"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     number: Mapped[Optional[int]] = mapped_column(Integer)
@@ -135,7 +138,7 @@ class Chapter(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     number: Mapped[Optional[int]] = mapped_column(Integer)
     part_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("parts.id", ondelete="SET NULL")
@@ -236,7 +239,7 @@ class Character(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
     role: Mapped[Optional[str]] = mapped_column(String(100))
     is_narrator: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -295,6 +298,9 @@ class PersonCharacterMap(Base):
     """
 
     __tablename__ = "person_character_map"
+    __table_args__ = (
+        UniqueConstraint("person_id", "character_id", name="uq_person_character_map"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     person_id: Mapped[int] = mapped_column(
@@ -358,7 +364,7 @@ class ManuscriptScene(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
     chapter_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("chapters.id", ondelete="SET NULL")
@@ -517,6 +523,9 @@ class ManuscriptReference(Base):
     """
 
     __tablename__ = "manuscript_references"
+    __table_args__ = (
+        UniqueConstraint("chapter_id", "source_id", name="uq_manuscript_reference_chapter_source"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     chapter_id: Mapped[int] = mapped_column(
