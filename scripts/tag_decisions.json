@@ -1,0 +1,8564 @@
+{
+  "100 Day Milestone": {
+    "action": "MERGE",
+    "target": "Milestone"
+  },
+  "150 Days": {
+    "action": "DELETE",
+    "reason": "specific milestone number"
+  },
+  "180 Days": {
+    "action": "DELETE",
+    "reason": "specific milestone number"
+  },
+  "4AM Text": {
+    "action": "DELETE",
+    "reason": "specific time detail"
+  },
+  "750words Deadline": {
+    "action": "DELETE",
+    "reason": "specific tool/platform"
+  },
+  "750words Failure": {
+    "action": "DELETE",
+    "reason": "specific tool/platform"
+  },
+  "A Softer World": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "A&W": {
+    "action": "DELETE",
+    "reason": "specific restaurant chain"
+  },
+  "ADHD Assessment": {
+    "action": "MERGE",
+    "target": "Evaluation"
+  },
+  "ADPD": {
+    "action": "DELETE",
+    "reason": "unclear acronym, one-off"
+  },
+  "Abandoned Church": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Abandoned Projects": {
+    "action": "MERGE",
+    "target": "Procrastination"
+  },
+  "Academic Life": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Accent": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Accident": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Accidental Feminization": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Accidental Texts": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Accommodation": {
+    "action": "DELETE",
+    "reason": "housing/travel"
+  },
+  "Accomplishments": {
+    "action": "DELETE",
+    "reason": "achievement"
+  },
+  "Accountability": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Accumulating Wounds": {
+    "action": "MERGE",
+    "target": "Core Wound"
+  },
+  "Achievement": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Achievement Emptiness": {
+    "action": "MERGE",
+    "target": "Emptiness"
+  },
+  "Adolescent Echoes": {
+    "action": "MERGE",
+    "target": "Childhood"
+  },
+  "Advice Frustration": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Affection Starvation": {
+    "action": "MERGE",
+    "target": "Loneliness"
+  },
+  "Aftermath": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Age Gap Discomfort": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Agency": {
+    "action": "KEEP",
+    "reason": "autonomy/power"
+  },
+  "Agenda": {
+    "action": "DELETE",
+    "reason": "generic"
+  },
+  "Aging": {
+    "action": "KEEP",
+    "reason": "temporal anxiety"
+  },
+  "Airplane": {
+    "action": "MERGE",
+    "target": "Flight"
+  },
+  "Algebra": {
+    "action": "DELETE",
+    "reason": "specific subject"
+  },
+  "Algorithm": {
+    "action": "MERGE",
+    "target": "Dating App"
+  },
+  "Alienation": {
+    "action": "KEEP",
+    "reason": "core emotional theme"
+  },
+  "Allegory": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Allyship": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Almost Drowned": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Almost Kiss": {
+    "action": "KEEP",
+    "reason": "near-intimacy"
+  },
+  "Alternate Self": {
+    "action": "MERGE",
+    "target": "Doubled Self"
+  },
+  "Ambiguous Gendering": {
+    "action": "MERGE",
+    "target": "Gender Ambiguity"
+  },
+  "American Gods": {
+    "action": "DELETE",
+    "reason": "specific media title"
+  },
+  "Amusement Park": {
+    "action": "DELETE",
+    "reason": "specific location type"
+  },
+  "Androgynous": {
+    "action": "MERGE",
+    "target": "Androgyny"
+  },
+  "Androgynous Presentation": {
+    "action": "MERGE",
+    "target": "Androgyny"
+  },
+  "Anhedonia": {
+    "action": "MERGE",
+    "target": "Depression"
+  },
+  "Anime": {
+    "action": "DELETE",
+    "reason": "media type"
+  },
+  "Anonymous Reader": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Anora": {
+    "action": "DELETE",
+    "reason": "specific media title"
+  },
+  "Answer": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Anti-Androgens": {
+    "action": "MERGE",
+    "target": "Medication"
+  },
+  "Anti-Date": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Anti-Depressants": {
+    "action": "MERGE",
+    "target": "Antidepressants"
+  },
+  "Anti-LGBT March": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Anticipated Fear": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Anticipation Over Arrival": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Antidepresivos": {
+    "action": "MERGE",
+    "target": "Antidepressants"
+  },
+  "Antidepressant": {
+    "action": "MERGE",
+    "target": "Antidepressants"
+  },
+  "Antipsychotics": {
+    "action": "MERGE",
+    "target": "Medication"
+  },
+  "Apagada": {
+    "action": "DELETE",
+    "reason": "specific Spanish term, too specific"
+  },
+  "Apartment": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Apartment Hunting": {
+    "action": "MERGE",
+    "target": "Housing"
+  },
+  "Apartment Search": {
+    "action": "MERGE",
+    "target": "Apartment Hunting"
+  },
+  "Apartments": {
+    "action": "DELETE",
+    "reason": "housing type"
+  },
+  "Aphantasia": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Appearance Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Appetite Loss": {
+    "action": "MERGE",
+    "target": "Side Effects"
+  },
+  "Appointment Countdown": {
+    "action": "MERGE",
+    "target": "Countdown"
+  },
+  "Approaching 30": {
+    "action": "DELETE",
+    "reason": "specific age milestone"
+  },
+  "Approval": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Arcade": {
+    "action": "DELETE",
+    "reason": "specific location type"
+  },
+  "Archives": {
+    "action": "MERGE",
+    "target": "Archive"
+  },
+  "Armor": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Arousal Override": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Arrested Development": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Art Film": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Art Making": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Artificiality": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Ashes": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Asking": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Assertiveness": {
+    "action": "KEEP",
+    "reason": "communication skill"
+  },
+  "Association": {
+    "action": "DELETE",
+    "reason": "vague concept"
+  },
+  "Asylum": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Asymmetric Desire": {
+    "action": "DELETE",
+    "reason": "duplicate of Asymmetrical Longing"
+  },
+  "Asymmetrical Longing": {
+    "action": "MERGE",
+    "target": "Longing"
+  },
+  "Attitudes": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Attraction": {
+    "action": "KEEP",
+    "reason": "desire/relationship"
+  },
+  "Attraction Absence": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Attraction As Aspiration": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Audience": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Audiobooks": {
+    "action": "DELETE",
+    "reason": "media format detail"
+  },
+  "Authenticity": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Autofiction": {
+    "action": "MERGE",
+    "target": "Meta-Narrative"
+  },
+  "Automated Systems": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Aval": {
+    "action": "DELETE",
+    "reason": "unclear/specific term"
+  },
+  "Award": {
+    "action": "MERGE",
+    "target": "Award Ceremony"
+  },
+  "Awards": {
+    "action": "MERGE",
+    "target": "Award Ceremony"
+  },
+  "BDSM": {
+    "action": "KEEP",
+    "reason": "sexuality"
+  },
+  "Babies": {
+    "action": "DELETE",
+    "reason": "generic"
+  },
+  "Baby": {
+    "action": "DELETE",
+    "reason": "generic"
+  },
+  "Baby Steps": {
+    "action": "DELETE",
+    "reason": "cliche phrase"
+  },
+  "Bachelor": {
+    "action": "DELETE",
+    "reason": "degree type"
+  },
+  "Backache": {
+    "action": "MERGE",
+    "target": "Back Pain"
+  },
+  "Backup Plan": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Bad Decisions": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Bad Omen": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Baiting": {
+    "action": "DELETE",
+    "reason": "unclear concept"
+  },
+  "Bakery": {
+    "action": "DELETE",
+    "reason": "specific location type"
+  },
+  "Balcony": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Bank": {
+    "action": "DELETE",
+    "reason": "venue type"
+  },
+  "Bank Errand": {
+    "action": "DELETE",
+    "reason": "mundane errand type"
+  },
+  "Bargaining": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Barthes": {
+    "action": "MERGE",
+    "target": "Roland Barthes"
+  },
+  "Batgirl": {
+    "action": "DELETE",
+    "reason": "specific character reference"
+  },
+  "Beach Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Becoming": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Bed": {
+    "action": "DELETE",
+    "reason": "mundane object"
+  },
+  "Bed Sides": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Bed Wetting Shame": {
+    "action": "MERGE",
+    "target": "Shame"
+  },
+  "Bedridden": {
+    "action": "MERGE",
+    "target": "Bed-Bound"
+  },
+  "Before After Photos": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Before And After": {
+    "action": "MERGE",
+    "target": "Transformation"
+  },
+  "Before Midnight": {
+    "action": "DELETE",
+    "reason": "specific film title"
+  },
+  "Before Trilogy": {
+    "action": "DELETE",
+    "reason": "specific film series"
+  },
+  "Being Named": {
+    "action": "MERGE",
+    "target": "Naming"
+  },
+  "Being Seen": {
+    "action": "KEEP",
+    "reason": "visibility desire"
+  },
+  "Belonging Crisis": {
+    "action": "MERGE",
+    "target": "Belonging"
+  },
+  "Benzodiazepines": {
+    "action": "MERGE",
+    "target": "Medication"
+  },
+  "Best Friend": {
+    "action": "MERGE",
+    "target": "Friendship"
+  },
+  "Bienvenidas": {
+    "action": "DELETE",
+    "reason": "specific Spanish greeting"
+  },
+  "Bioidentical": {
+    "action": "MERGE",
+    "target": "Hormones"
+  },
+  "Biological Family": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Bipolar Diagnosis": {
+    "action": "MERGE",
+    "target": "Bipolar"
+  },
+  "Bipolar Spectrum": {
+    "action": "MERGE",
+    "target": "Bipolar"
+  },
+  "Bipolar Study": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Birth Cert": {
+    "action": "MERGE",
+    "target": "Birth Certificate"
+  },
+  "Bisexual": {
+    "action": "DELETE",
+    "reason": "identity label overlap with Queer"
+  },
+  "Bisexuality Question": {
+    "action": "MERGE",
+    "target": "Sexuality Questioning"
+  },
+  "Biting": {
+    "action": "DELETE",
+    "reason": "too specific physical detail"
+  },
+  "Black Mirror": {
+    "action": "DELETE",
+    "reason": "specific TV show"
+  },
+  "Blame": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Bleeding Metaphor": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Blending": {
+    "action": "MERGE",
+    "target": "Passing"
+  },
+  "Blocked": {
+    "action": "MERGE",
+    "target": "Blocking"
+  },
+  "Blockers": {
+    "action": "MERGE",
+    "target": "Medication"
+  },
+  "Blogging": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Blood Pressure": {
+    "action": "MERGE",
+    "target": "Bloodwork"
+  },
+  "Blouse": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Blouse Denied": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Blue Checks": {
+    "action": "DELETE",
+    "reason": "social media detail"
+  },
+  "Blue Hour": {
+    "action": "DELETE",
+    "reason": "too specific time"
+  },
+  "Bluets": {
+    "action": "DELETE",
+    "reason": "specific book title"
+  },
+  "Body Betrayal": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Bondage": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Bonding": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Books": {
+    "action": "DELETE",
+    "reason": "generic media"
+  },
+  "Bookstore": {
+    "action": "DELETE",
+    "reason": "specific location type"
+  },
+  "Boots": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Borrowed Clothes": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Borrowed Device": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Borrowed Language": {
+    "action": "KEEP",
+    "reason": "linguistic borrowing"
+  },
+  "Boulder": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Bouquet": {
+    "action": "MERGE",
+    "target": "Gift"
+  },
+  "Boy Mode": {
+    "action": "KEEP",
+    "reason": "gender presentation"
+  },
+  "Boyfriend": {
+    "action": "MERGE",
+    "target": "Relationship"
+  },
+  "Boyfriend Performance": {
+    "action": "MERGE",
+    "target": "Gender Performance"
+  },
+  "Bra Discovery": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Bra Visible": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Bracelet": {
+    "action": "MERGE",
+    "target": "Gift"
+  },
+  "Bracelets": {
+    "action": "MERGE",
+    "target": "Gift"
+  },
+  "Braided Narrative": {
+    "action": "MERGE",
+    "target": "Meta-Narrative"
+  },
+  "Braids": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Brainwashing Fear": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Brave": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Breadcrumbing": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Breadcrumbs": {
+    "action": "DELETE",
+    "reason": "too generic metaphor"
+  },
+  "Break": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Breakfast": {
+    "action": "DELETE",
+    "reason": "generic meal"
+  },
+  "Breaking Promises": {
+    "action": "MERGE",
+    "target": "Broken Promises"
+  },
+  "Breakthrough": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Brevity": {
+    "action": "DELETE",
+    "reason": "writing style"
+  },
+  "Bridal": {
+    "action": "DELETE",
+    "reason": "specific context"
+  },
+  "Bride Fantasy": {
+    "action": "MERGE",
+    "target": "Fantasy"
+  },
+  "Broken Object": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Broken Tooth": {
+    "action": "MERGE",
+    "target": "Injury"
+  },
+  "Brokenness": {
+    "action": "KEEP",
+    "reason": "emotional state"
+  },
+  "Brother Ambiguity": {
+    "action": "MERGE",
+    "target": "Brother"
+  },
+  "Brother Question": {
+    "action": "MERGE",
+    "target": "Brother"
+  },
+  "Brother'S Signs": {
+    "action": "MERGE",
+    "target": "Brother"
+  },
+  "Browser Tabs": {
+    "action": "DELETE",
+    "reason": "too specific digital detail"
+  },
+  "Brunch": {
+    "action": "DELETE",
+    "reason": "generic meal"
+  },
+  "Brutal Honesty": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Bubble Burst": {
+    "action": "DELETE",
+    "reason": "cliche metaphor"
+  },
+  "Bulimia": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Burden Lifted": {
+    "action": "MERGE",
+    "target": "Relief"
+  },
+  "Burial": {
+    "action": "MERGE",
+    "target": "Death"
+  },
+  "Burial Metaphor": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Buried Truth": {
+    "action": "MERGE",
+    "target": "Secret"
+  },
+  "Burlesque": {
+    "action": "DELETE",
+    "reason": "specific performance type"
+  },
+  "Burlesque Show": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Burned Edges": {
+    "action": "DELETE",
+    "reason": "too specific metaphor"
+  },
+  "Burning": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Burning Words": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Burnout": {
+    "action": "MERGE",
+    "target": "Exhaustion"
+  },
+  "Bus Stop": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Bus Travel": {
+    "action": "MERGE",
+    "target": "Transit"
+  },
+  "Business Cards": {
+    "action": "DELETE",
+    "reason": "too specific object"
+  },
+  "Cafe": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Cage": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Cake": {
+    "action": "DELETE",
+    "reason": "generic object"
+  },
+  "Call Center": {
+    "action": "DELETE",
+    "reason": "specific workplace"
+  },
+  "Calling": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Calling In Sick": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Calm": {
+    "action": "KEEP",
+    "reason": "emotional state"
+  },
+  "Calories": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Camera": {
+    "action": "MERGE",
+    "target": "Photography"
+  },
+  "Camera Repair": {
+    "action": "DELETE",
+    "reason": "too specific errand"
+  },
+  "Camp": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Cancer": {
+    "action": "MERGE",
+    "target": "Health"
+  },
+  "Candidacy": {
+    "action": "MERGE",
+    "target": "PHD Candidacy"
+  },
+  "Candidacy Exam": {
+    "action": "MERGE",
+    "target": "PHD Candidacy"
+  },
+  "Cannabis Memories": {
+    "action": "MERGE",
+    "target": "Cannabis"
+  },
+  "Capitalization As Code": {
+    "action": "DELETE",
+    "reason": "too specific stylistic detail"
+  },
+  "Car Breakdown": {
+    "action": "MERGE",
+    "target": "Car"
+  },
+  "Card Game": {
+    "action": "DELETE",
+    "reason": "activity type"
+  },
+  "Card Games": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "Cardiac Arrest": {
+    "action": "DELETE",
+    "reason": "specific medical event"
+  },
+  "Care": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Career": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Career Identity": {
+    "action": "MERGE",
+    "target": "Professional Identity"
+  },
+  "Caregiving": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Caregiving Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Cartel Violence": {
+    "action": "DELETE",
+    "reason": "specific political event"
+  },
+  "Casino": {
+    "action": "DELETE",
+    "reason": "specific location type"
+  },
+  "Casual Dating": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Casual Sex": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Cat Cafe": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Cat Death": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cat Emergency": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cat Health": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Catcalling": {
+    "action": "MERGE",
+    "target": "Street Harassment"
+  },
+  "Catfisher Echo": {
+    "action": "MERGE",
+    "target": "Catfisher"
+  },
+  "Catfishing": {
+    "action": "MERGE",
+    "target": "Catfisher"
+  },
+  "Cee": {
+    "action": "DELETE",
+    "reason": "unclear reference"
+  },
+  "Celebration": {
+    "action": "KEEP",
+    "reason": "positive event"
+  },
+  "Censorship": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Ceremony Photos": {
+    "action": "MERGE",
+    "target": "Ceremony"
+  },
+  "Chambelan": {
+    "action": "DELETE",
+    "reason": "specific cultural role"
+  },
+  "Changed Places": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Changing Clothes": {
+    "action": "DELETE",
+    "reason": "mundane action"
+  },
+  "Chaos": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Chaser Paranoia": {
+    "action": "MERGE",
+    "target": "Paranoia"
+  },
+  "Chasing": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "ChatGPT": {
+    "action": "DELETE",
+    "reason": "AI tool"
+  },
+  "ChatGPT Generated": {
+    "action": "MERGE",
+    "target": "AI"
+  },
+  "Cheap Copy": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cheating": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Chess": {
+    "action": "DELETE",
+    "reason": "game type"
+  },
+  "Child Staring": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Child Witness": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Children": {
+    "action": "KEEP",
+    "reason": "child interaction/desire"
+  },
+  "Children Notice": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Chin Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Choosing Together": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Chosen Family": {
+    "action": "KEEP",
+    "reason": "family concept"
+  },
+  "Chronic Pain": {
+    "action": "MERGE",
+    "target": "Pain"
+  },
+  "Church Party": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Cigarette": {
+    "action": "MERGE",
+    "target": "Smoking"
+  },
+  "Cigarettes": {
+    "action": "MERGE",
+    "target": "Smoking"
+  },
+  "Cinema": {
+    "action": "DELETE",
+    "reason": "venue type"
+  },
+  "Circular Paradox": {
+    "action": "DELETE",
+    "reason": "too abstract"
+  },
+  "Circular Thoughts": {
+    "action": "MERGE",
+    "target": "Rumination"
+  },
+  "Circus": {
+    "action": "DELETE",
+    "reason": "specific event type"
+  },
+  "Cis Guilt": {
+    "action": "MERGE",
+    "target": "Guilt"
+  },
+  "Claiming Identity": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Clara": {
+    "action": "DELETE",
+    "reason": "person name"
+  },
+  "Clarity": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Class Anxiety": {
+    "action": "MERGE",
+    "target": "Academic Anxiety"
+  },
+  "Class Avoidance": {
+    "action": "MERGE",
+    "target": "Avoidance"
+  },
+  "Class Exercise": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Classroom": {
+    "action": "DELETE",
+    "reason": "venue type"
+  },
+  "Clingy Message": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Clinical Behavior": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Clinical Note": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Clinical Training": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Clinical Voice": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Clocking Anxiety": {
+    "action": "MERGE",
+    "target": "Passing"
+  },
+  "Clonazepam": {
+    "action": "MERGE",
+    "target": "Medication"
+  },
+  "Closet Purge": {
+    "action": "MERGE",
+    "target": "Closet"
+  },
+  "Closeted Feeling": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Clubbing": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "Coda": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Code Switching": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Coding": {
+    "action": "KEEP",
+    "reason": "professional work"
+  },
+  "Cold Response": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cold Shower": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cold Slap": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Coldness": {
+    "action": "MERGE",
+    "target": "Emotional Withdrawal"
+  },
+  "Colleagues": {
+    "action": "DELETE",
+    "reason": "generic relationship"
+  },
+  "Comfort": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Comfort Food": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Coming On Too Strong": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Comments": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Committee Meeting": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Communication Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Community": {
+    "action": "KEEP",
+    "reason": "belonging theme"
+  },
+  "Community Distance": {
+    "action": "MERGE",
+    "target": "Community"
+  },
+  "Community Recognition": {
+    "action": "MERGE",
+    "target": "Recognition"
+  },
+  "Commute": {
+    "action": "DELETE",
+    "reason": "mundane activity"
+  },
+  "Comparative Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Comparative Misery": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Comparison Curse": {
+    "action": "MERGE",
+    "target": "Comparison"
+  },
+  "Competition": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Completion": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Complex PTSD": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Compliment": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Compliments Believed": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Compulsive Eating": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Computers": {
+    "action": "DELETE",
+    "reason": "generic object"
+  },
+  "Concealment": {
+    "action": "MERGE",
+    "target": "Hiding"
+  },
+  "Concern": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Concert Anticipation": {
+    "action": "MERGE",
+    "target": "Anticipation"
+  },
+  "Conditional Help": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Condolence": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Condom": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Condom Accident": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Confidentiality Breach": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Confinement": {
+    "action": "MERGE",
+    "target": "Trapped"
+  },
+  "Confirmation": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Conflict": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Conflict Avoidance": {
+    "action": "MERGE",
+    "target": "Avoidance"
+  },
+  "Consent": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Consequences": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Consulate": {
+    "action": "MERGE",
+    "target": "Bureaucracy"
+  },
+  "Consultation": {
+    "action": "MERGE",
+    "target": "Appointment"
+  },
+  "Consumerism Dopamine": {
+    "action": "MERGE",
+    "target": "Consumerism"
+  },
+  "Contact Games": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Contact Lenses": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Contact Purge": {
+    "action": "MERGE",
+    "target": "Contact Deletion"
+  },
+  "Contact Sheet": {
+    "action": "MERGE",
+    "target": "Photography"
+  },
+  "Contacts": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Contagion Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Contingency Planning": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Contradiction": {
+    "action": "KEEP",
+    "reason": "internal conflict"
+  },
+  "Contrast": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Conversation Deletion": {
+    "action": "MERGE",
+    "target": "Deletion"
+  },
+  "Conversation Struggle": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Cooking": {
+    "action": "KEEP",
+    "reason": "domestic activity"
+  },
+  "Corpse": {
+    "action": "MERGE",
+    "target": "Death"
+  },
+  "Correct Gendering": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Correction": {
+    "action": "DELETE",
+    "reason": "vague action"
+  },
+  "Council Of Friends": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Counter": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Counterfactual Thinking": {
+    "action": "MERGE",
+    "target": "Rumination"
+  },
+  "Counting Days": {
+    "action": "KEEP",
+    "reason": "temporal obsession"
+  },
+  "Counting Time": {
+    "action": "MERGE",
+    "target": "Countdown"
+  },
+  "Couple": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Couple Rehearsal": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Couples": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Courage": {
+    "action": "KEEP",
+    "reason": "emotional strength"
+  },
+  "Craving": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Cravings": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Creative Frustration": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Creative Work": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Credential": {
+    "action": "MERGE",
+    "target": "Documents"
+  },
+  "Credit Card Debt": {
+    "action": "MERGE",
+    "target": "Money"
+  },
+  "Creep Comment": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cremation": {
+    "action": "MERGE",
+    "target": "Death"
+  },
+  "Cringe": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Crisis": {
+    "action": "KEEP",
+    "reason": "mental health crisis"
+  },
+  "Crisis Support": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Criticism": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Crossroads Spread": {
+    "action": "MERGE",
+    "target": "Tarot"
+  },
+  "Crowd Searching": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cruelty": {
+    "action": "KEEP",
+    "reason": "interpersonal harm"
+  },
+  "Crumbs": {
+    "action": "DELETE",
+    "reason": "too generic metaphor"
+  },
+  "Crushed": {
+    "action": "DELETE",
+    "reason": "too generic emotion"
+  },
+  "Crystal Ball Exercise": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Cuddling": {
+    "action": "MERGE",
+    "target": "Intimacy"
+  },
+  "Curatorial Voice": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Customs Risk": {
+    "action": "MERGE",
+    "target": "Border"
+  },
+  "Cycle Of Hurt": {
+    "action": "MERGE",
+    "target": "Core Wound"
+  },
+  "Cycles": {
+    "action": "MERGE",
+    "target": "Pattern Recognition"
+  },
+  "Cyproterone": {
+    "action": "MERGE",
+    "target": "Medication"
+  },
+  "DNA Sample": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "DNA Study": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Daily Practice": {
+    "action": "DELETE",
+    "reason": "routine type"
+  },
+  "Daily Writing": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Dance": {
+    "action": "MERGE",
+    "target": "Dancing"
+  },
+  "Dancing Plans": {
+    "action": "MERGE",
+    "target": "Dancing"
+  },
+  "Danger": {
+    "action": "KEEP",
+    "reason": "threat/fear"
+  },
+  "Danish Girl Reference": {
+    "action": "DELETE",
+    "reason": "specific film reference"
+  },
+  "Dark Thoughts": {
+    "action": "MERGE",
+    "target": "Intrusive Thought"
+  },
+  "Darkness": {
+    "action": "DELETE",
+    "reason": "vague metaphor"
+  },
+  "Data Analysis": {
+    "action": "MERGE",
+    "target": "Research"
+  },
+  "Data Doubt": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Data Error": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Database Errors": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Day After Death Meditation": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Day Of The Dead": {
+    "action": "DELETE",
+    "reason": "specific holiday"
+  },
+  "Daylight Savings": {
+    "action": "DELETE",
+    "reason": "mundane detail"
+  },
+  "Dead End": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Dead Projects": {
+    "action": "MERGE",
+    "target": "Procrastination"
+  },
+  "Deadname Avoidance": {
+    "action": "MERGE",
+    "target": "Deadnaming"
+  },
+  "Deadname Invocation": {
+    "action": "MERGE",
+    "target": "Deadnaming"
+  },
+  "Debit Card": {
+    "action": "DELETE",
+    "reason": "mundane object"
+  },
+  "Deception": {
+    "action": "KEEP",
+    "reason": "lying/hiding"
+  },
+  "Decision Made": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Defense Mechanism": {
+    "action": "MERGE",
+    "target": "Avoidance"
+  },
+  "Deferral": {
+    "action": "MERGE",
+    "target": "Procrastination"
+  },
+  "Degree": {
+    "action": "DELETE",
+    "reason": "generic credential"
+  },
+  "Deja Vu Dread": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Deleted Match": {
+    "action": "MERGE",
+    "target": "Dating App"
+  },
+  "Deleted Tweet": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Deleting Messages": {
+    "action": "MERGE",
+    "target": "Deletion"
+  },
+  "Deleting vs Blocking": {
+    "action": "MERGE",
+    "target": "Deletion"
+  },
+  "Deletion Ritual": {
+    "action": "MERGE",
+    "target": "Deletion"
+  },
+  "Delusion": {
+    "action": "MERGE",
+    "target": "Self-Deception"
+  },
+  "Demacrada": {
+    "action": "DELETE",
+    "reason": "specific Spanish term"
+  },
+  "Demons": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Denial": {
+    "action": "KEEP",
+    "reason": "psychological defense"
+  },
+  "Denial History": {
+    "action": "MERGE",
+    "target": "Denial"
+  },
+  "Dependence": {
+    "action": "MERGE",
+    "target": "Dependency"
+  },
+  "Desire As Masculine": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Desire Disgust": {
+    "action": "MERGE",
+    "target": "Desire"
+  },
+  "Desire vs Friendship": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Despentes": {
+    "action": "KEEP",
+    "reason": "author/influence"
+  },
+  "Detention Centres": {
+    "action": "DELETE",
+    "reason": "specific political topic"
+  },
+  "Detransition": {
+    "action": "MERGE",
+    "target": "Transition"
+  },
+  "Detransition Baby": {
+    "action": "DELETE",
+    "reason": "specific book title"
+  },
+  "Developer Tools": {
+    "action": "DELETE",
+    "reason": "too specific tech detail"
+  },
+  "Developmental Loss": {
+    "action": "MERGE",
+    "target": "Childhood"
+  },
+  "Diabetic": {
+    "action": "DELETE",
+    "reason": "medical condition"
+  },
+  "Dialogue": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Diane": {
+    "action": "DELETE",
+    "reason": "person name"
+  },
+  "Diet": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Dinner": {
+    "action": "DELETE",
+    "reason": "generic meal"
+  },
+  "Diploma": {
+    "action": "MERGE",
+    "target": "Documents"
+  },
+  "Direct Address": {
+    "action": "DELETE",
+    "reason": "narrative technique, too specific"
+  },
+  "Dirty": {
+    "action": "DELETE",
+    "reason": "vague descriptor"
+  },
+  "Dirty Laundry": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Disappearance": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Disappointment": {
+    "action": "KEEP",
+    "reason": "emotional response"
+  },
+  "Discipline": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Disclosure Fantasy": {
+    "action": "MERGE",
+    "target": "Disclosure"
+  },
+  "Discovery": {
+    "action": "DELETE",
+    "reason": "vague event"
+  },
+  "Discovery Fear": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Disguise": {
+    "action": "KEEP",
+    "reason": "hiding identity"
+  },
+  "Disgust": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Disinterest Awareness": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Dismissal": {
+    "action": "MERGE",
+    "target": "Rejection"
+  },
+  "Disney Plus": {
+    "action": "DELETE",
+    "reason": "specific platform"
+  },
+  "Disneyland": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Disorientation": {
+    "action": "MERGE",
+    "target": "Dissociation"
+  },
+  "Displaced Anger": {
+    "action": "MERGE",
+    "target": "Anger"
+  },
+  "Dissuasion": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Distance": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Distance Checking": {
+    "action": "MERGE",
+    "target": "Surveillance"
+  },
+  "Distraction": {
+    "action": "KEEP",
+    "reason": "avoidance"
+  },
+  "Distraction Date": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Distraction List": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Distrust Of Acceptance": {
+    "action": "MERGE",
+    "target": "Imposter Syndrome"
+  },
+  "Do Not Disturb": {
+    "action": "DELETE",
+    "reason": "phone feature detail"
+  },
+  "Doctor": {
+    "action": "MERGE",
+    "target": "Appointment"
+  },
+  "Document Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Documentation Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Documentation Status": {
+    "action": "MERGE",
+    "target": "Documents"
+  },
+  "Doppelganger": {
+    "action": "KEEP",
+    "reason": "identity/doubling theme"
+  },
+  "Doppelganger Confusion": {
+    "action": "MERGE",
+    "target": "Doppelganger"
+  },
+  "Double Bind": {
+    "action": "KEEP",
+    "reason": "impossible choice"
+  },
+  "Double Lives": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Double Standard": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Doubled Self": {
+    "action": "KEEP",
+    "reason": "identity/split theme"
+  },
+  "Doubles": {
+    "action": "MERGE",
+    "target": "Doubled Self"
+  },
+  "Doubling": {
+    "action": "MERGE",
+    "target": "Doubled Self"
+  },
+  "Doubt": {
+    "action": "MERGE",
+    "target": "Self-Doubt"
+  },
+  "Downtown": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Draft": {
+    "action": "DELETE",
+    "reason": "writing stage"
+  },
+  "Draft Messages": {
+    "action": "MERGE",
+    "target": "Message Drafts"
+  },
+  "Drafting Texts": {
+    "action": "MERGE",
+    "target": "Message Drafting"
+  },
+  "Drag Comparison": {
+    "action": "DELETE",
+    "reason": "too specific"
+  },
+  "Dramatic Irony": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Drawing": {
+    "action": "DELETE",
+    "reason": "art medium"
+  },
+  "Dread": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Dressed Up": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Dressing Room": {
+    "action": "MERGE",
+    "target": "Fitting Room"
+  },
+  "Drinking To Suppress": {
+    "action": "MERGE",
+    "target": "Alcohol"
+  },
+  "Driving": {
+    "action": "DELETE",
+    "reason": "activity"
+  },
+  "Drowning": {
+    "action": "DELETE",
+    "reason": "metaphor"
+  },
+  "Drowning Metaphor": {
+    "action": "DELETE",
+    "reason": "too specific metaphor"
+  },
+  "Drunk Confession": {
+    "action": "KEEP",
+    "reason": "alcohol disclosure"
+  },
+  "Drunk Crying": {
+    "action": "MERGE",
+    "target": "Alcohol"
+  },
+  "Drunk Texting": {
+    "action": "KEEP",
+    "reason": "alcohol communication"
+  },
+  "Drunk Writing": {
+    "action": "KEEP",
+    "reason": "alcohol writing"
+  },
+  "Dry Climax": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Dry Orgasm": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Dual Identity": {
+    "action": "KEEP",
+    "reason": "split self"
+  },
+  "Dual Life": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Dual Names": {
+    "action": "MERGE",
+    "target": "Name"
+  },
+  "Dual Timelines": {
+    "action": "MERGE",
+    "target": "Meta-Narrative"
+  },
+  "Dying Pet": {
+    "action": "MERGE",
+    "target": "Pet Mortality"
+  },
+  "Dysphoria Fear": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Dysphoric Ideation": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "ED Nostalgia": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "EGEL": {
+    "action": "DELETE",
+    "reason": "exam acronym"
+  },
+  "Early Exhaustion": {
+    "action": "MERGE",
+    "target": "Exhaustion"
+  },
+  "Early Relationship": {
+    "action": "DELETE",
+    "reason": "temporal descriptor, covered by context"
+  },
+  "Early Romance": {
+    "action": "DELETE",
+    "reason": "temporal descriptor, covered by context"
+  },
+  "Early Sunset": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Early Transition Memory": {
+    "action": "MERGE",
+    "target": "Early Transition"
+  },
+  "Earrings": {
+    "action": "KEEP",
+    "reason": "feminine accessory"
+  },
+  "Earthquake Memory": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Eclipse": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Editorial Work": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Effeminate": {
+    "action": "MERGE",
+    "target": "Feminine"
+  },
+  "Elections": {
+    "action": "DELETE",
+    "reason": "political event"
+  },
+  "Elementary School": {
+    "action": "MERGE",
+    "target": "Childhood"
+  },
+  "Email": {
+    "action": "DELETE",
+    "reason": "communication method"
+  },
+  "Email Account": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Email Correspondence": {
+    "action": "DELETE",
+    "reason": "redundant with communication themes"
+  },
+  "Emails": {
+    "action": "DELETE",
+    "reason": "redundant with communication themes"
+  },
+  "Embarrassment": {
+    "action": "MERGE",
+    "target": "Shame"
+  },
+  "Embodiment": {
+    "action": "MERGE",
+    "target": "Body Image"
+  },
+  "Emergency": {
+    "action": "KEEP",
+    "reason": "thematic - crisis moments"
+  },
+  "Emergency Contraception": {
+    "action": "DELETE",
+    "reason": "specific event detail"
+  },
+  "Emotional": {
+    "action": "DELETE",
+    "reason": "too vague, covered by specific emotions"
+  },
+  "Emotional Awakening": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Emotional Blackmail": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Emotional Collapse": {
+    "action": "MERGE",
+    "target": "Breakdown"
+  },
+  "Emotional Dysregulation": {
+    "action": "MERGE",
+    "target": "Bipolar"
+  },
+  "Emotional Eating": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Emotional Immaturity": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Emotional Misalignment": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Emotional Overwhelm": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Emotional Processing": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Emotional Regulation": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Emotional Release": {
+    "action": "MERGE",
+    "target": "Crying"
+  },
+  "Emotional Withdrawal": {
+    "action": "MERGE",
+    "target": "Isolation"
+  },
+  "Employment": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Employment Paralysis": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Emptiness Prediction": {
+    "action": "MERGE",
+    "target": "Emptiness"
+  },
+  "Empty Chair": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Empty Entry": {
+    "action": "DELETE",
+    "reason": "meta descriptor"
+  },
+  "Empty Group Chat": {
+    "action": "MERGE",
+    "target": "Group Chat"
+  },
+  "Ending": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Endings": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Endo": {
+    "action": "MERGE",
+    "target": "Endocrinologist"
+  },
+  "Endo Appointment": {
+    "action": "MERGE",
+    "target": "Endocrinologist"
+  },
+  "Endocrinologist Search": {
+    "action": "MERGE",
+    "target": "Endocrinologist"
+  },
+  "Energy": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "English Insecurity": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "English Practice": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Entrepreneurial Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Ephemeral Messages": {
+    "action": "MERGE",
+    "target": "Digital"
+  },
+  "Epilogue": {
+    "action": "DELETE",
+    "reason": "structural descriptor"
+  },
+  "Epiphany": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Epitaph": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Equal Marriage": {
+    "action": "DELETE",
+    "reason": "specific event/topic"
+  },
+  "Erectile Dysfunction": {
+    "action": "KEEP",
+    "reason": "HRT side effect"
+  },
+  "Erection Dysphoria": {
+    "action": "MERGE",
+    "target": "Genital Dysphoria"
+  },
+  "Erection Panic": {
+    "action": "MERGE",
+    "target": "Genital Dysphoria"
+  },
+  "Erections": {
+    "action": "MERGE",
+    "target": "Genital Dysphoria"
+  },
+  "Erotic Dream": {
+    "action": "MERGE",
+    "target": "Dream"
+  },
+  "Errands": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Escape Fantasies": {
+    "action": "MERGE",
+    "target": "Fantasy"
+  },
+  "Escape Fantasy": {
+    "action": "MERGE",
+    "target": "Escape"
+  },
+  "Escapism": {
+    "action": "KEEP",
+    "reason": "thematic - avoidance pattern"
+  },
+  "Escapism Failure": {
+    "action": "MERGE",
+    "target": "Escapism"
+  },
+  "Escitalopram": {
+    "action": "MERGE",
+    "target": "Antidepressants"
+  },
+  "Estradiol": {
+    "action": "MERGE",
+    "target": "Estrogen"
+  },
+  "Estrangement": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Estrogen Overdose": {
+    "action": "MERGE",
+    "target": "Estrogen"
+  },
+  "Ethics Of Writing": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Euphoria": {
+    "action": "MERGE",
+    "target": "Gender Euphoria"
+  },
+  "European Friends": {
+    "action": "DELETE",
+    "reason": "demographic detail"
+  },
+  "Eve": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Eve Of Transition": {
+    "action": "MERGE",
+    "target": "Transition"
+  },
+  "Evidence": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Ex": {
+    "action": "MERGE",
+    "target": "Ex-Girlfriend"
+  },
+  "Ex-Dream": {
+    "action": "MERGE",
+    "target": "Ex-Girlfriend"
+  },
+  "Ex-Encounter": {
+    "action": "KEEP",
+    "reason": "seeing ex"
+  },
+  "Ex-Haunting": {
+    "action": "MERGE",
+    "target": "Ex-Girlfriend"
+  },
+  "Ex-Lover": {
+    "action": "DELETE",
+    "reason": "person category"
+  },
+  "Ex-Obsession": {
+    "action": "MERGE",
+    "target": "Ex-Girlfriend"
+  },
+  "Ex-Sighting": {
+    "action": "MERGE",
+    "target": "Ex-Girlfriend"
+  },
+  "Exam Results": {
+    "action": "MERGE",
+    "target": "Exam"
+  },
+  "Exception": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Excessive Messaging": {
+    "action": "MERGE",
+    "target": "Texting Anxiety"
+  },
+  "Excitement": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Excluded": {
+    "action": "MERGE",
+    "target": "Exclusion"
+  },
+  "Excuses": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Exercise Chain": {
+    "action": "MERGE",
+    "target": "Exercise"
+  },
+  "Exercise Habit": {
+    "action": "MERGE",
+    "target": "Exercise"
+  },
+  "Exercise Program": {
+    "action": "MERGE",
+    "target": "Exercise"
+  },
+  "Exile": {
+    "action": "MERGE",
+    "target": "Isolation"
+  },
+  "Existential Crisis": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Existential Fear": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Expectations": {
+    "action": "KEEP",
+    "reason": "thematic - social/relational pressure"
+  },
+  "Expectations Discomfort": {
+    "action": "MERGE",
+    "target": "Expectations"
+  },
+  "Expert Identity": {
+    "action": "MERGE",
+    "target": "Professional Identity"
+  },
+  "Expiration Date": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Expression": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "External Perspective": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Eyeshadow": {
+    "action": "MERGE",
+    "target": "Makeup"
+  },
+  "FFS Research": {
+    "action": "MERGE",
+    "target": "Surgery"
+  },
+  "Face": {
+    "action": "KEEP",
+    "reason": "dysphoria/appearance"
+  },
+  "Facial Shadow": {
+    "action": "MERGE",
+    "target": "Facial Hair"
+  },
+  "Failed Connection": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Failure": {
+    "action": "KEEP",
+    "reason": "self-perception"
+  },
+  "Failure Template": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Fake": {
+    "action": "MERGE",
+    "target": "Imposter Syndrome"
+  },
+  "Faked Orgasm": {
+    "action": "MERGE",
+    "target": "Sex"
+  },
+  "Faking Competence": {
+    "action": "MERGE",
+    "target": "Imposter Syndrome"
+  },
+  "False Awakening": {
+    "action": "MERGE",
+    "target": "Dream"
+  },
+  "False Hope": {
+    "action": "KEEP",
+    "reason": "relationship pattern"
+  },
+  "False Memory Resolution": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Family Breakfast": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Family Crisis": {
+    "action": "MERGE",
+    "target": "Family Conflict"
+  },
+  "Family Encounter": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Family Rejection": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Family Reunion": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Family Trip": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Fantasizing": {
+    "action": "MERGE",
+    "target": "Fantasy"
+  },
+  "Fantasy Rejected": {
+    "action": "MERGE",
+    "target": "Fantasy"
+  },
+  "Fantasy Romance": {
+    "action": "MERGE",
+    "target": "Fantasy"
+  },
+  "Father'S Echo": {
+    "action": "MERGE",
+    "target": "Father"
+  },
+  "Fatigue": {
+    "action": "MERGE",
+    "target": "Exhaustion"
+  },
+  "Fee Negotiation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Feedback": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Female Friendship": {
+    "action": "MERGE",
+    "target": "Friendship"
+  },
+  "Female Range": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Feminizing Filter": {
+    "action": "MERGE",
+    "target": "Digital"
+  },
+  "Femme Presenting": {
+    "action": "MERGE",
+    "target": "Femininity"
+  },
+  "Fetish Anxiety": {
+    "action": "KEEP",
+    "reason": "objectification fear"
+  },
+  "Fetishism Differential": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Fight": {
+    "action": "MERGE",
+    "target": "Argument"
+  },
+  "Filenames As Conscience": {
+    "action": "DELETE",
+    "reason": "meta descriptor"
+  },
+  "Film Analysis": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Film Consumption": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Film Outing": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Film Response": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Film Watching": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Films": {
+    "action": "MERGE",
+    "target": "Film"
+  },
+  "Final Day": {
+    "action": "DELETE",
+    "reason": "temporal marker"
+  },
+  "Final Meeting": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Final Message": {
+    "action": "KEEP",
+    "reason": "ending communication"
+  },
+  "Final Performance": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Fire": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "First Birthday As Sofia": {
+    "action": "MERGE",
+    "target": "Birthday"
+  },
+  "First Crush": {
+    "action": "MERGE",
+    "target": "First Time"
+  },
+  "First Day": {
+    "action": "MERGE",
+    "target": "First Time"
+  },
+  "First Endo Appointment": {
+    "action": "MERGE",
+    "target": "Endocrinologist"
+  },
+  "First Fight": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "First Love": {
+    "action": "MERGE",
+    "target": "First Time"
+  },
+  "First Meeting": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "First Name Use": {
+    "action": "MERGE",
+    "target": "Chosen Name"
+  },
+  "First Pay": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "First Paycheck": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "First Pill": {
+    "action": "MERGE",
+    "target": "HRT"
+  },
+  "First Pills Bottle": {
+    "action": "MERGE",
+    "target": "HRT"
+  },
+  "First Public Appearance": {
+    "action": "MERGE",
+    "target": "Public Presentation"
+  },
+  "First Public Presentation": {
+    "action": "MERGE",
+    "target": "Public Presentation"
+  },
+  "First Reveal": {
+    "action": "MERGE",
+    "target": "Disclosure"
+  },
+  "First Session": {
+    "action": "MERGE",
+    "target": "Therapy"
+  },
+  "First Solo Travel": {
+    "action": "MERGE",
+    "target": "Travel"
+  },
+  "First-Night": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Firsts": {
+    "action": "MERGE",
+    "target": "First Time"
+  },
+  "Fitting": {
+    "action": "MERGE",
+    "target": "Fitting Room"
+  },
+  "Five Months HRT": {
+    "action": "MERGE",
+    "target": "HRT"
+  },
+  "Flames": {
+    "action": "DELETE",
+    "reason": "metaphor/image detail"
+  },
+  "Flashback": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Flats": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Flaw Seeking": {
+    "action": "MERGE",
+    "target": "Self-Loathing"
+  },
+  "Fleeing Disclosure": {
+    "action": "MERGE",
+    "target": "Disclosure Anxiety"
+  },
+  "Flight Cancellation": {
+    "action": "MERGE",
+    "target": "Flight"
+  },
+  "Flight Delay": {
+    "action": "MERGE",
+    "target": "Flight"
+  },
+  "Flight Impulse": {
+    "action": "MERGE",
+    "target": "Escape"
+  },
+  "Flight Response": {
+    "action": "KEEP",
+    "reason": "trauma response"
+  },
+  "Flight Ticket": {
+    "action": "DELETE",
+    "reason": "travel object"
+  },
+  "Flu": {
+    "action": "MERGE",
+    "target": "Illness"
+  },
+  "Fluid Sexuality": {
+    "action": "MERGE",
+    "target": "Sexuality"
+  },
+  "Fog": {
+    "action": "DELETE",
+    "reason": "weather/metaphor"
+  },
+  "Food Delivery": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Food Scarcity": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Forced Detachment": {
+    "action": "MERGE",
+    "target": "Avoidance"
+  },
+  "Forced Vacation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Foreignness": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Foreshadowing": {
+    "action": "DELETE",
+    "reason": "literary device descriptor"
+  },
+  "Foreshadowing Payoff": {
+    "action": "DELETE",
+    "reason": "literary device descriptor"
+  },
+  "Formal Event": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Formal Photos": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Formal Wear": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Fourth Date": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Fourth Semester": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Fractured Identity": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Fragile": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Fragmented": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Francization": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Francs": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Free Stuff": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Freedom": {
+    "action": "KEEP",
+    "reason": "liberation"
+  },
+  "Freelance": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Freelance Work": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Freeze Response": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "French": {
+    "action": "MERGE",
+    "target": "French Language"
+  },
+  "French Accent": {
+    "action": "MERGE",
+    "target": "French Class"
+  },
+  "French Date": {
+    "action": "DELETE",
+    "reason": "language practice"
+  },
+  "French Exam": {
+    "action": "MERGE",
+    "target": "French Class"
+  },
+  "French Fixation": {
+    "action": "MERGE",
+    "target": "French Class"
+  },
+  "French Flirting": {
+    "action": "MERGE",
+    "target": "French Class"
+  },
+  "French Language": {
+    "action": "KEEP",
+    "reason": "language learning"
+  },
+  "Fresh Start": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Friends' Advice": {
+    "action": "MERGE",
+    "target": "Friends"
+  },
+  "Frozen Lake": {
+    "action": "DELETE",
+    "reason": "scene-level location"
+  },
+  "Frustration": {
+    "action": "KEEP",
+    "reason": "emotional state"
+  },
+  "Full Time": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Fumigation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Fun Home": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Funding": {
+    "action": "MERGE",
+    "target": "Money"
+  },
+  "Funeral": {
+    "action": "MERGE",
+    "target": "Death"
+  },
+  "Furniture": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Game Metaphor": {
+    "action": "DELETE",
+    "reason": "literary device"
+  },
+  "Game Of Thrones Dogs": {
+    "action": "DELETE",
+    "reason": "specific reference"
+  },
+  "Gaming Identity": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Gatekeeping Fear": {
+    "action": "MERGE",
+    "target": "Gatekeeping"
+  },
+  "Gathering": {
+    "action": "DELETE",
+    "reason": "social event"
+  },
+  "Gender Acceptance": {
+    "action": "MERGE",
+    "target": "Gender Affirmation"
+  },
+  "Gender Alienation": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Bending": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Crisis": {
+    "action": "MERGE",
+    "target": "Gender Questioning"
+  },
+  "Gender Critique": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Dynamics": {
+    "action": "KEEP",
+    "reason": "gendered interaction"
+  },
+  "Gender Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Gender Erasure": {
+    "action": "MERGE",
+    "target": "Erasure"
+  },
+  "Gender Euphoria": {
+    "action": "KEEP",
+    "reason": "thematic - positive gender experience"
+  },
+  "Gender Exchange": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Expression": {
+    "action": "MERGE",
+    "target": "Gender Presentation"
+  },
+  "Gender Fear": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Fluidity": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Identity": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Gender In Dreams": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Jokes": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Misread": {
+    "action": "MERGE",
+    "target": "Gendering"
+  },
+  "Gender Play": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Policing": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Question": {
+    "action": "MERGE",
+    "target": "Gender Questioning"
+  },
+  "Gender Questioning": {
+    "action": "KEEP",
+    "reason": "identity exploration"
+  },
+  "Gender Recognition": {
+    "action": "MERGE",
+    "target": "Recognition"
+  },
+  "Gender Reversal": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Spaces": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Swap": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Gender Uncertainty": {
+    "action": "MERGE",
+    "target": "Gender Questioning"
+  },
+  "Gender Validation": {
+    "action": "MERGE",
+    "target": "Gender Affirmation"
+  },
+  "Gender Visibility": {
+    "action": "MERGE",
+    "target": "Visibility"
+  },
+  "Genital Naming": {
+    "action": "MERGE",
+    "target": "Genital Dysphoria"
+  },
+  "Genitals": {
+    "action": "MERGE",
+    "target": "Genital Dysphoria"
+  },
+  "Gestalt": {
+    "action": "DELETE",
+    "reason": "too abstract"
+  },
+  "Ghost Encounter": {
+    "action": "MERGE",
+    "target": "Ghost"
+  },
+  "Ghost Litany": {
+    "action": "MERGE",
+    "target": "Ghost"
+  },
+  "Ghost Tour": {
+    "action": "DELETE",
+    "reason": "scene-level event"
+  },
+  "Ghost Watching": {
+    "action": "MERGE",
+    "target": "Surveillance"
+  },
+  "Gift Exchange": {
+    "action": "MERGE",
+    "target": "Gifts"
+  },
+  "Gift Shopping": {
+    "action": "MERGE",
+    "target": "Gifts"
+  },
+  "Gimmick Rejection": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Girl": {
+    "action": "MERGE",
+    "target": "Gender Affirmation"
+  },
+  "Girlfriend": {
+    "action": "DELETE",
+    "reason": "relationship role"
+  },
+  "Girlfriend'S Mother": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Girlhood Grief": {
+    "action": "KEEP",
+    "reason": "thematic - missing childhood experiences"
+  },
+  "Girls Movie Time": {
+    "action": "MERGE",
+    "target": "Friends"
+  },
+  "Glucose": {
+    "action": "MERGE",
+    "target": "Health"
+  },
+  "Goalpost": {
+    "action": "DELETE",
+    "reason": "metaphor"
+  },
+  "Going Alone": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Going Public": {
+    "action": "MERGE",
+    "target": "Coming Out"
+  },
+  "Golden Hour": {
+    "action": "DELETE",
+    "reason": "photography term"
+  },
+  "Golden Ratio": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Gown": {
+    "action": "MERGE",
+    "target": "Dress"
+  },
+  "Gpa": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Grad School": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Graduate School": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Graduate School Escape": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Grandchildren": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Grandfather": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Grandmother": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Grant": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Graphic Novels": {
+    "action": "DELETE",
+    "reason": "media type"
+  },
+  "Gratitude": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Green Circle": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Grey Dress": {
+    "action": "DELETE",
+    "reason": "specific item"
+  },
+  "Grief Ritual": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Grocery": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Grocery Shopping": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Grooming": {
+    "action": "DELETE",
+    "reason": "hygiene activity"
+  },
+  "Grounding Exercises": {
+    "action": "MERGE",
+    "target": "Therapy"
+  },
+  "Group Chat Dynamics": {
+    "action": "MERGE",
+    "target": "Group Chat"
+  },
+  "Group Kiss": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Group Of Seven": {
+    "action": "DELETE",
+    "reason": "specific reference"
+  },
+  "Group Outing": {
+    "action": "MERGE",
+    "target": "Friends"
+  },
+  "Group Work": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Grouped With Men": {
+    "action": "MERGE",
+    "target": "Misgendering"
+  },
+  "Growth": {
+    "action": "KEEP",
+    "reason": "personal development"
+  },
+  "Grudge": {
+    "action": "MERGE",
+    "target": "Resentment"
+  },
+  "Habit Forming": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Haiku": {
+    "action": "MERGE",
+    "target": "Poetry"
+  },
+  "Hair And Makeup": {
+    "action": "MERGE",
+    "target": "Makeup"
+  },
+  "Hair Care": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Hair Compliment": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Hair Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Hair Styling": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Haircut": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Haircut Transformation": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Hairline": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Hairstyle": {
+    "action": "MERGE",
+    "target": "Hair"
+  },
+  "Half-Truth": {
+    "action": "MERGE",
+    "target": "Lying"
+  },
+  "Handwritten Letters": {
+    "action": "MERGE",
+    "target": "Letter"
+  },
+  "Harry Potter Costume": {
+    "action": "DELETE",
+    "reason": "specific item"
+  },
+  "Hate": {
+    "action": "KEEP",
+    "reason": "emotional state"
+  },
+  "Hated Existence": {
+    "action": "MERGE",
+    "target": "Self-Loathing"
+  },
+  "Hateful Rhetoric": {
+    "action": "MERGE",
+    "target": "Transphobia"
+  },
+  "Haunted Furniture": {
+    "action": "MERGE",
+    "target": "Haunting"
+  },
+  "Haunted Geography": {
+    "action": "KEEP",
+    "reason": "place memory"
+  },
+  "Haunted Objects": {
+    "action": "MERGE",
+    "target": "Haunting"
+  },
+  "Health": {
+    "action": "KEEP",
+    "reason": "medical issues"
+  },
+  "Healthcare": {
+    "action": "KEEP",
+    "reason": "thematic - medical system access"
+  },
+  "Healthcare Abandonment": {
+    "action": "MERGE",
+    "target": "Healthcare"
+  },
+  "Healthcare Access": {
+    "action": "MERGE",
+    "target": "Healthcare"
+  },
+  "Healthcare Crisis": {
+    "action": "MERGE",
+    "target": "Healthcare"
+  },
+  "Heartbeat": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Heartbreak": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Heat": {
+    "action": "DELETE",
+    "reason": "weather/physical"
+  },
+  "Heels": {
+    "action": "KEEP",
+    "reason": "feminine footwear"
+  },
+  "Heirloom": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Help Needed": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Her Story": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Heteronormativity": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Hidden Femininity": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Hidden Note": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Hiding In Plain Sight": {
+    "action": "MERGE",
+    "target": "Hiding"
+  },
+  "Hierarchy Of Suffering": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "High School": {
+    "action": "MERGE",
+    "target": "High School Memory"
+  },
+  "High School Memories": {
+    "action": "MERGE",
+    "target": "Childhood"
+  },
+  "High School Memory": {
+    "action": "MERGE",
+    "target": "Childhood"
+  },
+  "Hiking": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "History": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Holiday": {
+    "action": "MERGE",
+    "target": "Holidays"
+  },
+  "Holiday Discount": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Holiday Dress": {
+    "action": "MERGE",
+    "target": "Dress"
+  },
+  "Holiday Grief": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Holiday Season": {
+    "action": "MERGE",
+    "target": "Holidays"
+  },
+  "Hollow": {
+    "action": "MERGE",
+    "target": "Emptiness"
+  },
+  "Hollow Praise": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Homecoming": {
+    "action": "MERGE",
+    "target": "Return"
+  },
+  "Homelessness Fear": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Homophobia": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Honesty": {
+    "action": "KEEP",
+    "reason": "truth-telling"
+  },
+  "Honour Mention": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Hoodies": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Hookah": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Hope": {
+    "action": "KEEP",
+    "reason": "emotional state"
+  },
+  "Hope After Despair": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Hope Crushing": {
+    "action": "MERGE",
+    "target": "Desperation"
+  },
+  "Hope For Healing": {
+    "action": "MERGE",
+    "target": "Healing"
+  },
+  "Horror": {
+    "action": "DELETE",
+    "reason": "genre descriptor"
+  },
+  "Hospital": {
+    "action": "KEEP",
+    "reason": "medical venue"
+  },
+  "Hospital Misgendering": {
+    "action": "MERGE",
+    "target": "Misgendering"
+  },
+  "Hospital Visit": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Hospitalization": {
+    "action": "MERGE",
+    "target": "Illness"
+  },
+  "Hotels": {
+    "action": "MERGE",
+    "target": "Hotel"
+  },
+  "House Party": {
+    "action": "MERGE",
+    "target": "Party"
+  },
+  "Human Experiment": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Hyperventilation": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Hypomania": {
+    "action": "MERGE",
+    "target": "Bipolar"
+  },
+  "Hypomania Doubt": {
+    "action": "MERGE",
+    "target": "Bipolar"
+  },
+  "Hypomania Question": {
+    "action": "MERGE",
+    "target": "Bipolar"
+  },
+  "ID": {
+    "action": "MERGE",
+    "target": "ID Anxiety"
+  },
+  "ID Check": {
+    "action": "MERGE",
+    "target": "ID Anxiety"
+  },
+  "ID Mismatch": {
+    "action": "MERGE",
+    "target": "ID Anxiety"
+  },
+  "IQ Test": {
+    "action": "DELETE",
+    "reason": "scene-level event"
+  },
+  "IVF": {
+    "action": "MERGE",
+    "target": "Infertility"
+  },
+  "Ice": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Idealization": {
+    "action": "MERGE",
+    "target": "Obsession"
+  },
+  "Ignored": {
+    "action": "MERGE",
+    "target": "Rejection"
+  },
+  "Ignored Feeling": {
+    "action": "MERGE",
+    "target": "Rejection"
+  },
+  "Ill Fitting Clothes": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Imaginary Conscience": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Imaginary Conversation": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Imagined Confession": {
+    "action": "MERGE",
+    "target": "Disclosure Anxiety"
+  },
+  "Imagined Letter": {
+    "action": "DELETE",
+    "reason": "mental rehearsal"
+  },
+  "Imagined Ridicule": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Imbalance": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Imitation Accusation": {
+    "action": "MERGE",
+    "target": "Trans"
+  },
+  "Immigration Anxiety": {
+    "action": "MERGE",
+    "target": "Immigration"
+  },
+  "Impasse": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Impending Travel": {
+    "action": "MERGE",
+    "target": "Travel"
+  },
+  "Imposter": {
+    "action": "MERGE",
+    "target": "Imposter Syndrome"
+  },
+  "Imposter Feeling": {
+    "action": "MERGE",
+    "target": "Imposter Syndrome"
+  },
+  "Impulse Purchase": {
+    "action": "MERGE",
+    "target": "Consumerism"
+  },
+  "Impulsive Spending": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Impulsivity": {
+    "action": "KEEP",
+    "reason": "behavioral pattern"
+  },
+  "In Laws": {
+    "action": "MERGE",
+    "target": "Family"
+  },
+  "Inbox": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Incapacity": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Incompletion": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Indecision": {
+    "action": "KEEP",
+    "reason": "decision paralysis"
+  },
+  "Indie Game": {
+    "action": "DELETE",
+    "reason": "media type"
+  },
+  "Inexplicable Pain": {
+    "action": "MERGE",
+    "target": "Pain"
+  },
+  "Infestation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Infrastructure": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Insight": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Instant Investment": {
+    "action": "MERGE",
+    "target": "Attachment"
+  },
+  "Instinctive Lying": {
+    "action": "MERGE",
+    "target": "Lying"
+  },
+  "Institutional Violence": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Insurance": {
+    "action": "MERGE",
+    "target": "Bureaucracy"
+  },
+  "Integration": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Intellectualization": {
+    "action": "KEEP",
+    "reason": "defense mechanism"
+  },
+  "Intentional Reset": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Interest Asymmetry": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Internal Critic": {
+    "action": "MERGE",
+    "target": "Self-Loathing"
+  },
+  "Internalized Shame": {
+    "action": "MERGE",
+    "target": "Shame"
+  },
+  "Internet Outage": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Intersecting Identities": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Intruder": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Invalidation": {
+    "action": "KEEP",
+    "reason": "emotional dismissal"
+  },
+  "Invisible": {
+    "action": "MERGE",
+    "target": "Invisibility"
+  },
+  "Irritation": {
+    "action": "MERGE",
+    "target": "Irritability"
+  },
+  "January Night": {
+    "action": "DELETE",
+    "reason": "temporal detail"
+  },
+  "Jasmine Flower": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Job": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Job Application": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Job Competition": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Job Fear": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Job Hunting": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Job Offer": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Job Paralysis": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Job Search Paralysis": {
+    "action": "MERGE",
+    "target": "Job Search"
+  },
+  "Jolie Voix": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Journal": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal As Book": {
+    "action": "MERGE",
+    "target": "Manuscript"
+  },
+  "Journal As Currency": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal Completion": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal Curation": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal Export": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal Reflection": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal Restart": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journal Sharing": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journaling Streak": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Journey": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Juan Gabriel": {
+    "action": "DELETE",
+    "reason": "media reference"
+  },
+  "Juggling Metaphor": {
+    "action": "DELETE",
+    "reason": "literary device"
+  },
+  "Jungian": {
+    "action": "DELETE",
+    "reason": "theory reference"
+  },
+  "Keys": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Killing": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Kiss Rejected": {
+    "action": "MERGE",
+    "target": "Rejection"
+  },
+  "Kissing": {
+    "action": "MERGE",
+    "target": "Kiss"
+  },
+  "Knee Injury": {
+    "action": "MERGE",
+    "target": "Injury"
+  },
+  "Kraken": {
+    "action": "DELETE",
+    "reason": "metaphor"
+  },
+  "LGBT": {
+    "action": "MERGE",
+    "target": "Queer"
+  },
+  "LGBTQ Massacre": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Lab": {
+    "action": "DELETE",
+    "reason": "workplace"
+  },
+  "Lab Absence": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Lab Drinks": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Lab Failure": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Lab Form": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Lab Meeting": {
+    "action": "DELETE",
+    "reason": "work event"
+  },
+  "Lab Politics": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Lab Results": {
+    "action": "MERGE",
+    "target": "Blood Test"
+  },
+  "Lab Retreat": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Language": {
+    "action": "KEEP",
+    "reason": "linguistic identity"
+  },
+  "Language Anxiety": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Language Pride": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Language Switch": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Laptop": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Laptop Repair": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Lasertag": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Last Cigarette": {
+    "action": "MERGE",
+    "target": "Smoking"
+  },
+  "Last Day": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Last Kiss": {
+    "action": "MERGE",
+    "target": "Kiss"
+  },
+  "Last Minute Cancellation": {
+    "action": "MERGE",
+    "target": "Cancellation"
+  },
+  "Last Patient In Disguise": {
+    "action": "MERGE",
+    "target": "Patient"
+  },
+  "Last Prescription": {
+    "action": "MERGE",
+    "target": "Prescription"
+  },
+  "Last Time": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Late Night": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Late Night Writing": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Laughter": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Leap": {
+    "action": "DELETE",
+    "reason": "metaphor"
+  },
+  "Learning": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Lease Anxiety": {
+    "action": "MERGE",
+    "target": "Housing"
+  },
+  "Leave Before Abandoned": {
+    "action": "MERGE",
+    "target": "Abandonment"
+  },
+  "Leave Of Absence": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Leaving The Country": {
+    "action": "MERGE",
+    "target": "Immigration"
+  },
+  "Leaving vs Dying": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Left On Read": {
+    "action": "MERGE",
+    "target": "Texting Anxiety"
+  },
+  "Leg Pain": {
+    "action": "MERGE",
+    "target": "Pain"
+  },
+  "Legacy": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Legal Documents": {
+    "action": "MERGE",
+    "target": "Documents"
+  },
+  "Legal Identity": {
+    "action": "MERGE",
+    "target": "Legal Transition"
+  },
+  "Legal Name": {
+    "action": "MERGE",
+    "target": "Deadnaming"
+  },
+  "Legal Transition": {
+    "action": "KEEP",
+    "reason": "bureaucratic transition"
+  },
+  "Legs": {
+    "action": "MERGE",
+    "target": "Body Image"
+  },
+  "Leitmotif": {
+    "action": "DELETE",
+    "reason": "literary device"
+  },
+  "Lesbian": {
+    "action": "KEEP",
+    "reason": "sexuality identity"
+  },
+  "Lesbian Recognition": {
+    "action": "MERGE",
+    "target": "Recognition"
+  },
+  "Lesbian Visibility": {
+    "action": "MERGE",
+    "target": "Visibility"
+  },
+  "Lethargy": {
+    "action": "MERGE",
+    "target": "Exhaustion"
+  },
+  "Letter To Self": {
+    "action": "MERGE",
+    "target": "Letter"
+  },
+  "Letters": {
+    "action": "MERGE",
+    "target": "Letter"
+  },
+  "Liberation Ritual": {
+    "action": "MERGE",
+    "target": "Ritual"
+  },
+  "Library": {
+    "action": "DELETE",
+    "reason": "venue type"
+  },
+  "Lie": {
+    "action": "MERGE",
+    "target": "Lying"
+  },
+  "Lies": {
+    "action": "MERGE",
+    "target": "Lying"
+  },
+  "Life Catalog": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Life Review": {
+    "action": "MERGE",
+    "target": "Reflection"
+  },
+  "Life Stations": {
+    "action": "DELETE",
+    "reason": "metaphor"
+  },
+  "Limerence": {
+    "action": "KEEP",
+    "reason": "obsessive love"
+  },
+  "Liminal Hour": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Liminal State": {
+    "action": "MERGE",
+    "target": "Limbo"
+  },
+  "Linguistic Betrayal": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Linguistic Intimacy": {
+    "action": "MERGE",
+    "target": "Language Barrier"
+  },
+  "Lips": {
+    "action": "MERGE",
+    "target": "Body Image"
+  },
+  "Lipstick": {
+    "action": "MERGE",
+    "target": "Makeup"
+  },
+  "Literary Analysis": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Literary Connection": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Living Not Writing": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Living Together Plans": {
+    "action": "MERGE",
+    "target": "Relationship"
+  },
+  "Locked Out": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Logistical Survival": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Logistics": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Long-Distance-Relationship": {
+    "action": "MERGE",
+    "target": "Relationship"
+  },
+  "Long-Weekend": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Longest Residence": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Longevity vs Intensity": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Longing For Connection": {
+    "action": "MERGE",
+    "target": "Longing"
+  },
+  "Looking Pretty": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Loss": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Lost Motivation": {
+    "action": "MERGE",
+    "target": "Depression"
+  },
+  "Lost Time": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Lost Weekend": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Lost Writing": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Lost Youth": {
+    "action": "MERGE",
+    "target": "Childhood"
+  },
+  "Love Declaration": {
+    "action": "MERGE",
+    "target": "Love Letter"
+  },
+  "Love Notes": {
+    "action": "MERGE",
+    "target": "Love Letter"
+  },
+  "Low Mood": {
+    "action": "MERGE",
+    "target": "Depression"
+  },
+  "Low Pressure Companionship": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Lowercase": {
+    "action": "DELETE",
+    "reason": "typographic detail"
+  },
+  "Lucid Dream": {
+    "action": "MERGE",
+    "target": "Dream"
+  },
+  "Lucid Nightmare": {
+    "action": "MERGE",
+    "target": "Nightmare"
+  },
+  "Luke Cage": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Lying To Doctors": {
+    "action": "MERGE",
+    "target": "Lying"
+  },
+  "M Marker": {
+    "action": "DELETE",
+    "reason": "technical metadata marker"
+  },
+  "MMPI": {
+    "action": "DELETE",
+    "reason": "psychological test"
+  },
+  "Maggie Nelson": {
+    "action": "DELETE",
+    "reason": "specific author reference"
+  },
+  "Maintained Status": {
+    "action": "MERGE",
+    "reason": "immigration administrative detail",
+    "target": "Immigration"
+  },
+  "Male Clothing": {
+    "action": "MERGE",
+    "reason": "gendered clothing subset",
+    "target": "Clothes"
+  },
+  "Male Gaze": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Maleness Fear": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Man Curiosity": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Manifesto": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Manliness Irony": {
+    "action": "MERGE",
+    "reason": "masculinity-related concept",
+    "target": "Masculinity"
+  },
+  "Mannequin": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Mascara": {
+    "action": "MERGE",
+    "reason": "specific makeup item",
+    "target": "Makeup"
+  },
+  "Masculine Adjective": {
+    "action": "MERGE",
+    "reason": "linguistic gendering subset",
+    "target": "Masculinity"
+  },
+  "Masculine Clothes": {
+    "action": "MERGE",
+    "target": "Boy Mode"
+  },
+  "Masculine Performance": {
+    "action": "MERGE",
+    "reason": "specific type of gender performance",
+    "target": "Gender Performance"
+  },
+  "Masculine Presentation": {
+    "action": "MERGE",
+    "reason": "specific type of gender presentation",
+    "target": "Gender Presentation"
+  },
+  "Masculine Shame": {
+    "action": "MERGE",
+    "reason": "masculinity-related emotion",
+    "target": "Masculinity"
+  },
+  "Masculinity": {
+    "action": "KEEP",
+    "reason": "distinct gender concept"
+  },
+  "Masculinity Guilt": {
+    "action": "MERGE",
+    "reason": "masculinity-related emotion",
+    "target": "Masculinity"
+  },
+  "Masculinity Performance": {
+    "action": "MERGE",
+    "reason": "specific type of gender performance",
+    "target": "Gender Performance"
+  },
+  "Masking": {
+    "action": "MERGE",
+    "target": "Hiding"
+  },
+  "Massacre": {
+    "action": "DELETE",
+    "reason": "vague event reference"
+  },
+  "Master Application": {
+    "action": "DELETE",
+    "reason": "specific academic task"
+  },
+  "Master Program": {
+    "action": "MERGE",
+    "target": "Graduate School"
+  },
+  "Master'S Exam": {
+    "action": "MERGE",
+    "reason": "specific exam type",
+    "target": "Exam"
+  },
+  "Master'S Test": {
+    "action": "MERGE",
+    "reason": "specific exam type",
+    "target": "Exam"
+  },
+  "Masters Application": {
+    "action": "DELETE",
+    "reason": "specific academic task"
+  },
+  "Masturbation Counter": {
+    "action": "DELETE",
+    "reason": "hyper-specific tracking detail"
+  },
+  "Maternal Longing": {
+    "action": "MERGE",
+    "reason": "motherhood-related longing",
+    "target": "Motherhood Grief"
+  },
+  "Mdma": {
+    "action": "DELETE",
+    "reason": "specific drug"
+  },
+  "Measurements": {
+    "action": "MERGE",
+    "reason": "body tracking detail",
+    "target": "Body Change"
+  },
+  "Meat Disgust": {
+    "action": "MERGE",
+    "target": "Vegetarianism"
+  },
+  "Mechanic": {
+    "action": "DELETE",
+    "reason": "specific service provider"
+  },
+  "Medal": {
+    "action": "DELETE",
+    "reason": "specific object/achievement"
+  },
+  "Media": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Media Analysis": {
+    "action": "DELETE",
+    "reason": "activity type, not thematic"
+  },
+  "Media Fixation": {
+    "action": "MERGE",
+    "reason": "specific obsession type",
+    "target": "Obsession"
+  },
+  "Medical": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Medical Anxiety": {
+    "action": "MERGE",
+    "reason": "specific anxiety type",
+    "target": "Anxiety"
+  },
+  "Medical Bureaucracy": {
+    "action": "MERGE",
+    "target": "Bureaucracy"
+  },
+  "Medical Document": {
+    "action": "MERGE",
+    "reason": "specific document type",
+    "target": "Documents"
+  },
+  "Medical Emergency": {
+    "action": "MERGE",
+    "reason": "specific emergency type",
+    "target": "Emergency"
+  },
+  "Medical Encounter": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Medical Fear": {
+    "action": "MERGE",
+    "reason": "specific fear type",
+    "target": "Fear"
+  },
+  "Medical Gatekeeping": {
+    "action": "MERGE",
+    "target": "Gatekeeping"
+  },
+  "Medical Trauma": {
+    "action": "MERGE",
+    "target": "Healthcare"
+  },
+  "Meeting": {
+    "action": "DELETE",
+    "reason": "too generic event"
+  },
+  "Melancholy": {
+    "action": "MERGE",
+    "reason": "emotional state subset",
+    "target": "Depression"
+  },
+  "Meme": {
+    "action": "DELETE",
+    "reason": "media format"
+  },
+  "Mementos": {
+    "action": "DELETE",
+    "reason": "objects"
+  },
+  "Memoir Fantasy": {
+    "action": "MERGE",
+    "target": "Writing"
+  },
+  "Memories": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Memory"
+  },
+  "Mental Exhaustion": {
+    "action": "MERGE",
+    "reason": "exhaustion subset",
+    "target": "Exhaustion"
+  },
+  "Mental Health Disclosure": {
+    "action": "MERGE",
+    "reason": "specific disclosure type",
+    "target": "Disclosure"
+  },
+  "Message Draft": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Draft Messages"
+  },
+  "Message Drafting": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Draft Messages"
+  },
+  "Message Drafts": {
+    "action": "MERGE",
+    "target": "Texting Anxiety"
+  },
+  "Message Limbo": {
+    "action": "MERGE",
+    "target": "Waiting"
+  },
+  "Message Sent": {
+    "action": "DELETE",
+    "reason": "too generic action"
+  },
+  "Messaging": {
+    "action": "DELETE",
+    "reason": "too generic activity"
+  },
+  "Messaging Anxiety": {
+    "action": "MERGE",
+    "target": "Texting Anxiety"
+  },
+  "Messaging Strategy": {
+    "action": "MERGE",
+    "reason": "communication anxiety subset",
+    "target": "Texting Anxiety"
+  },
+  "Meta-Awareness": {
+    "action": "MERGE",
+    "target": "Self-Awareness"
+  },
+  "Meta-Fiction": {
+    "action": "MERGE",
+    "target": "Meta-Narrative"
+  },
+  "Meta-Journal": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Meta-Writing": {
+    "action": "MERGE",
+    "target": "Meta-Narrative"
+  },
+  "Metaphor": {
+    "action": "DELETE",
+    "reason": "too generic literary device"
+  },
+  "Meter": {
+    "action": "DELETE",
+    "reason": "technical literary term"
+  },
+  "Metro Kiss": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Metrobus": {
+    "action": "DELETE",
+    "reason": "specific transit line"
+  },
+  "Mice": {
+    "action": "DELETE",
+    "reason": "pest issue"
+  },
+  "Middle School": {
+    "action": "MERGE",
+    "reason": "childhood period subset",
+    "target": "Childhood"
+  },
+  "Midnight Confession": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Migajas": {
+    "action": "MERGE",
+    "reason": "Spanish for breadcrumbs",
+    "target": "Breadcrumbs"
+  },
+  "Milestones": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Milestone"
+  },
+  "Mini Golf": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "Minimal": {
+    "action": "DELETE",
+    "reason": "too vague descriptor"
+  },
+  "Minimal Documentation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Minimal Entry": {
+    "action": "DELETE",
+    "reason": "meta journaling detail"
+  },
+  "Minority Identity": {
+    "action": "MERGE",
+    "reason": "identity subset",
+    "target": "Identity"
+  },
+  "Mirrors": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Mirror"
+  },
+  "Misdiagnosis Fear": {
+    "action": "MERGE",
+    "reason": "specific fear type",
+    "target": "Fear"
+  },
+  "Misery": {
+    "action": "MERGE",
+    "reason": "emotional state",
+    "target": "Depression"
+  },
+  "Misgendering Dread": {
+    "action": "MERGE",
+    "reason": "anticipatory subset",
+    "target": "Misgendering"
+  },
+  "Misinterpretation": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Misrecognition": {
+    "action": "MERGE",
+    "reason": "recognition subset",
+    "target": "Recognition"
+  },
+  "Missed Signals": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Missing": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Missing Girlhood": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Girlhood Grief"
+  },
+  "Mixed Signal": {
+    "action": "KEEP",
+    "reason": "unclear communication"
+  },
+  "Mixture": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Mock Candidacy": {
+    "action": "DELETE",
+    "reason": "specific academic event"
+  },
+  "Modern Love": {
+    "action": "DELETE",
+    "reason": "specific media reference"
+  },
+  "Money Anxiety": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Financial Anxiety"
+  },
+  "Mood": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Mood Swings": {
+    "action": "MERGE",
+    "reason": "mood disorder symptom",
+    "target": "Bipolar"
+  },
+  "Mood Tracking": {
+    "action": "DELETE",
+    "reason": "technical tracking activity"
+  },
+  "Morning": {
+    "action": "DELETE",
+    "reason": "too generic time"
+  },
+  "Morning Inertia": {
+    "action": "MERGE",
+    "reason": "depression symptom",
+    "target": "Depression"
+  },
+  "Morning Routine": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Mornings": {
+    "action": "DELETE",
+    "reason": "too generic time"
+  },
+  "Mortality": {
+    "action": "MERGE",
+    "reason": "death contemplation",
+    "target": "Death"
+  },
+  "Mortality Fear": {
+    "action": "MERGE",
+    "reason": "death anxiety",
+    "target": "Death"
+  },
+  "Motel": {
+    "action": "MERGE",
+    "target": "Hotel"
+  },
+  "Mother Daughter": {
+    "action": "MERGE",
+    "reason": "mother relationship subset",
+    "target": "Mother"
+  },
+  "Mother Echo": {
+    "action": "MERGE",
+    "reason": "mother relationship aspect",
+    "target": "Mother"
+  },
+  "Mother'S Sweater": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Motherhood Dream": {
+    "action": "MERGE",
+    "reason": "motherhood longing subset",
+    "target": "Motherhood Grief"
+  },
+  "Motivation Letter": {
+    "action": "DELETE",
+    "reason": "specific document type"
+  },
+  "Mourning": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Move Anxiety": {
+    "action": "MERGE",
+    "reason": "moving subset",
+    "target": "Moving"
+  },
+  "Movie": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Film"
+  },
+  "Movie Date": {
+    "action": "MERGE",
+    "reason": "specific date type",
+    "target": "Date"
+  },
+  "Movie Night": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Movie-Night": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Moving On": {
+    "action": "MERGE",
+    "reason": "closure process",
+    "target": "Closure"
+  },
+  "Multi-Dating": {
+    "action": "MERGE",
+    "reason": "dating pattern",
+    "target": "Dating"
+  },
+  "Multilingualism": {
+    "action": "DELETE",
+    "reason": "too generic trait"
+  },
+  "Murder": {
+    "action": "DELETE",
+    "reason": "vague content reference"
+  },
+  "Muscle Memory": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Muse vs Subject": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Museum": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Music": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Music Memory": {
+    "action": "MERGE",
+    "reason": "memory subset",
+    "target": "Memory"
+  },
+  "Music Video": {
+    "action": "DELETE",
+    "reason": "media format"
+  },
+  "Mute": {
+    "action": "DELETE",
+    "reason": "social media action"
+  },
+  "Muted Notifications": {
+    "action": "MERGE",
+    "reason": "digital avoidance behavior",
+    "target": "Avoidance"
+  },
+  "Mutual Cancellation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Mutual Closets": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Mutual Haunting": {
+    "action": "MERGE",
+    "target": "Haunting"
+  },
+  "NB Prejudice": {
+    "action": "MERGE",
+    "reason": "transphobia subset",
+    "target": "Transphobia"
+  },
+  "NGO": {
+    "action": "DELETE",
+    "reason": "generic organization type"
+  },
+  "NGO Opportunity": {
+    "action": "DELETE",
+    "reason": "specific opportunity"
+  },
+  "Nail Polish": {
+    "action": "MERGE",
+    "target": "Nails"
+  },
+  "Naked Fantasy": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Names": {
+    "action": "MERGE",
+    "target": "Name"
+  },
+  "Naming Sofia": {
+    "action": "MERGE",
+    "reason": "naming subset",
+    "target": "Naming"
+  },
+  "Narrative Envy": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Narrative Reconstruction": {
+    "action": "MERGE",
+    "target": "Meta-Narrative"
+  },
+  "Ncod": {
+    "action": "DELETE",
+    "reason": "acronym/event"
+  },
+  "Near Miss": {
+    "action": "DELETE",
+    "reason": "vague event"
+  },
+  "Necklace Dream": {
+    "action": "DELETE",
+    "reason": "specific dream content"
+  },
+  "Need For Help": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Neediness": {
+    "action": "MERGE",
+    "target": "Loneliness"
+  },
+  "Needles": {
+    "action": "MERGE",
+    "reason": "HRT administration detail",
+    "target": "HRT"
+  },
+  "Needs Articulated": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Negative Narration": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Negativity Bias": {
+    "action": "MERGE",
+    "reason": "cognitive pattern",
+    "target": "Self-Loathing"
+  },
+  "Neglect": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Neighbors": {
+    "action": "DELETE",
+    "reason": "generic people"
+  },
+  "Nervousness": {
+    "action": "MERGE",
+    "reason": "anxiety subset",
+    "target": "Anxiety"
+  },
+  "Nested Dreams": {
+    "action": "MERGE",
+    "reason": "dream subset",
+    "target": "Dream"
+  },
+  "Netflix": {
+    "action": "DELETE",
+    "reason": "specific platform"
+  },
+  "Neural Net": {
+    "action": "DELETE",
+    "reason": "technical term"
+  },
+  "Neuromatch": {
+    "action": "DELETE",
+    "reason": "specific event/organization"
+  },
+  "Neutral Presentation": {
+    "action": "MERGE",
+    "reason": "presentation subset",
+    "target": "Gender Presentation"
+  },
+  "New City": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "New Name": {
+    "action": "MERGE",
+    "reason": "naming subset",
+    "target": "Naming"
+  },
+  "New Patient": {
+    "action": "MERGE",
+    "reason": "patient subset",
+    "target": "Patient"
+  },
+  "New Romance": {
+    "action": "MERGE",
+    "reason": "romance subset",
+    "target": "Romance"
+  },
+  "New Year'S Eve": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "New Year"
+  },
+  "Nickname": {
+    "action": "MERGE",
+    "reason": "naming subset",
+    "target": "Name"
+  },
+  "Nicknames": {
+    "action": "MERGE",
+    "reason": "naming subset",
+    "target": "Name"
+  },
+  "Night Out": {
+    "action": "DELETE",
+    "reason": "social activity"
+  },
+  "Night Sweats": {
+    "action": "MERGE",
+    "reason": "medication side effect",
+    "target": "Side Effects"
+  },
+  "Night Wandering": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Nightmares": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Nightmare"
+  },
+  "Nihilism": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Nipple Sensitivity": {
+    "action": "MERGE",
+    "reason": "HRT body change",
+    "target": "Body Change"
+  },
+  "No Closure": {
+    "action": "MERGE",
+    "reason": "closure absence",
+    "target": "Closure"
+  },
+  "No Internet": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "No Makeup": {
+    "action": "MERGE",
+    "target": "Makeup"
+  },
+  "No Message": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "No Signal": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "No Way Of Winning": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Non-Monogamy": {
+    "action": "MERGE",
+    "target": "Relationship"
+  },
+  "Normal Girlhood": {
+    "action": "MERGE",
+    "reason": "girlhood longing",
+    "target": "Girlhood Grief"
+  },
+  "Normal People": {
+    "action": "DELETE",
+    "reason": "specific media reference"
+  },
+  "Normalcy": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Norms": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Nosferatu": {
+    "action": "DELETE",
+    "reason": "specific film"
+  },
+  "Nosotras": {
+    "action": "DELETE",
+    "reason": "linguistic detail"
+  },
+  "Not Invited": {
+    "action": "MERGE",
+    "reason": "exclusion subset",
+    "target": "Exclusion"
+  },
+  "Not Out": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Notebook": {
+    "action": "DELETE",
+    "reason": "writing object"
+  },
+  "Notes": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Notification": {
+    "action": "DELETE",
+    "reason": "phone feature"
+  },
+  "Nude Photography": {
+    "action": "MERGE",
+    "target": "Photography"
+  },
+  "Nuit Blanche": {
+    "action": "DELETE",
+    "reason": "event name"
+  },
+  "Object Memory": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Objectification": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Ocean": {
+    "action": "DELETE",
+    "reason": "nature element"
+  },
+  "Ocean Metaphor": {
+    "action": "DELETE",
+    "reason": "specific metaphor"
+  },
+  "Old Friends": {
+    "action": "MERGE",
+    "reason": "friends subset",
+    "target": "Friends"
+  },
+  "Old Journals": {
+    "action": "MERGE",
+    "reason": "journal reading subset",
+    "target": "Journal Reading"
+  },
+  "Old Photo": {
+    "action": "MERGE",
+    "reason": "photograph subset",
+    "target": "Photographs"
+  },
+  "Old Photographs": {
+    "action": "MERGE",
+    "reason": "photograph subset",
+    "target": "Photographs"
+  },
+  "One Month HRT": {
+    "action": "MERGE",
+    "target": "HRT"
+  },
+  "One Week": {
+    "action": "DELETE",
+    "reason": "temporal marker"
+  },
+  "One-Directional Relationships": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "One-Night Stand": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "One-Night-Stand": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "One-Off-Character": {
+    "action": "DELETE",
+    "reason": "meta-writing detail"
+  },
+  "One-Way Ticket": {
+    "action": "DELETE",
+    "reason": "specific detail"
+  },
+  "One-Week": {
+    "action": "DELETE",
+    "reason": "temporal marker"
+  },
+  "Online Class": {
+    "action": "MERGE",
+    "reason": "class subset",
+    "target": "Class"
+  },
+  "Online Community": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Online Hate": {
+    "action": "MERGE",
+    "reason": "online transphobia",
+    "target": "Transphobia"
+  },
+  "Online Hatred": {
+    "action": "MERGE",
+    "reason": "online transphobia",
+    "target": "Transphobia"
+  },
+  "Online Identity": {
+    "action": "MERGE",
+    "reason": "identity subset",
+    "target": "Identity"
+  },
+  "Online Status Watching": {
+    "action": "MERGE",
+    "reason": "digital surveillance",
+    "target": "Surveillance"
+  },
+  "Open Relationship": {
+    "action": "MERGE",
+    "target": "Relationship"
+  },
+  "Open Secret": {
+    "action": "MERGE",
+    "target": "Disclosure"
+  },
+  "Openly Trans": {
+    "action": "MERGE",
+    "reason": "trans visibility subset",
+    "target": "Trans"
+  },
+  "Optimism": {
+    "action": "DELETE",
+    "reason": "too generic mood"
+  },
+  "Option Tea/kafé": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Orgasm": {
+    "action": "MERGE",
+    "reason": "sex subset",
+    "target": "Sex"
+  },
+  "Oscars": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Othering": {
+    "action": "MERGE",
+    "target": "Exclusion"
+  },
+  "Out Of Body": {
+    "action": "MERGE",
+    "reason": "dissociation subset",
+    "target": "Dissociation"
+  },
+  "Outgrown Garments": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Outing": {
+    "action": "KEEP",
+    "reason": "distinct disclosure/safety concept"
+  },
+  "Outing Fear": {
+    "action": "MERGE",
+    "reason": "outing subset",
+    "target": "Outing"
+  },
+  "Outsider": {
+    "action": "MERGE",
+    "reason": "alienation feeling",
+    "target": "Alienation"
+  },
+  "Over-Analysis": {
+    "action": "MERGE",
+    "reason": "thought pattern",
+    "target": "Rumination"
+  },
+  "Overdose Ideation": {
+    "action": "MERGE",
+    "reason": "suicidal ideation subset",
+    "target": "Suicide Ideation"
+  },
+  "Overeating": {
+    "action": "MERGE",
+    "target": "Eating Disorder"
+  },
+  "Oversharing": {
+    "action": "KEEP",
+    "reason": "distinct communication pattern"
+  },
+  "Oversharing Impulse": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Oversharing"
+  },
+  "Overspending": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Impulsive Spending"
+  },
+  "Overwhelm": {
+    "action": "MERGE",
+    "reason": "anxiety state",
+    "target": "Anxiety"
+  },
+  "Overwhelming Response": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Oysters": {
+    "action": "DELETE",
+    "reason": "specific food"
+  },
+  "PHD Candidacy": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "PHD Candidate": {
+    "action": "MERGE",
+    "reason": "academic status",
+    "target": "Academia"
+  },
+  "Pace Anxiety": {
+    "action": "MERGE",
+    "reason": "specific anxiety type",
+    "target": "Anxiety"
+  },
+  "Package Waiting": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Packages": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Pad": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Painful Normalization": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Pajamas": {
+    "action": "DELETE",
+    "reason": "specific clothing item"
+  },
+  "Palimpsest": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Pandemic Dating": {
+    "action": "MERGE",
+    "reason": "dating context subset",
+    "target": "Dating"
+  },
+  "Panties Discovery": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Pants": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Paper Rejection": {
+    "action": "MERGE",
+    "reason": "academic rejection",
+    "target": "Rejection"
+  },
+  "Paper vs Reality": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Paperwork": {
+    "action": "MERGE",
+    "reason": "bureaucracy subset",
+    "target": "Bureaucracy"
+  },
+  "Paradox Of Connection": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Paradoxical Intervention": {
+    "action": "DELETE",
+    "reason": "specific therapeutic technique"
+  },
+  "Parallel": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Parental Fear": {
+    "action": "MERGE",
+    "reason": "parent relationship subset",
+    "target": "Parents"
+  },
+  "Parental Notification": {
+    "action": "MERGE",
+    "reason": "coming out subset",
+    "target": "Coming Out"
+  },
+  "Parental Reaction": {
+    "action": "MERGE",
+    "reason": "parent relationship subset",
+    "target": "Parents"
+  },
+  "Parental Support": {
+    "action": "MERGE",
+    "reason": "family support subset",
+    "target": "Family Support"
+  },
+  "Parenthood": {
+    "action": "MERGE",
+    "reason": "motherhood longing",
+    "target": "Motherhood"
+  },
+  "Partial Acceptance": {
+    "action": "MERGE",
+    "reason": "acceptance subset",
+    "target": "Acceptance"
+  },
+  "Partial Passing": {
+    "action": "MERGE",
+    "reason": "passing subset",
+    "target": "Passing"
+  },
+  "Parting Ways": {
+    "action": "MERGE",
+    "reason": "breakup/separation",
+    "target": "Breakup"
+  },
+  "Partner Crisis": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Partner Knows": {
+    "action": "MERGE",
+    "reason": "disclosure subset",
+    "target": "Disclosure"
+  },
+  "Partner Perspective": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Partner Tension": {
+    "action": "MERGE",
+    "reason": "relationship conflict subset",
+    "target": "Relationship Conflict"
+  },
+  "Partnership": {
+    "action": "MERGE",
+    "reason": "relationship subset",
+    "target": "Relationship"
+  },
+  "Passed": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Passive Aggression": {
+    "action": "DELETE",
+    "reason": "scene-level behavior"
+  },
+  "Passive Revelation": {
+    "action": "MERGE",
+    "reason": "disclosure pattern",
+    "target": "Disclosure"
+  },
+  "Passive Suicidal Ideation": {
+    "action": "MERGE",
+    "reason": "suicidal ideation subset",
+    "target": "Suicide Ideation"
+  },
+  "Passivity": {
+    "action": "KEEP",
+    "reason": "distinct psychological pattern"
+  },
+  "Past": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Past Relationship": {
+    "action": "MERGE",
+    "reason": "relationship subset",
+    "target": "Relationship"
+  },
+  "Past Self": {
+    "action": "MERGE",
+    "reason": "pre-transition self",
+    "target": "Pre-Transition"
+  },
+  "Past Selves": {
+    "action": "MERGE",
+    "reason": "pre-transition self",
+    "target": "Pre-Transition"
+  },
+  "Past vs Present": {
+    "action": "MERGE",
+    "target": "Nostalgia"
+  },
+  "Pastry Date": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Patient Gratitude": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Patient Recognition": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Patient Report": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Patient Session": {
+    "action": "MERGE",
+    "target": "Patient"
+  },
+  "Patient Work": {
+    "action": "MERGE",
+    "reason": "patient work subset",
+    "target": "Patient"
+  },
+  "Patients": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Patient"
+  },
+  "Peace": {
+    "action": "DELETE",
+    "reason": "too generic emotion"
+  },
+  "Peer Acceptance": {
+    "action": "MERGE",
+    "reason": "acceptance subset",
+    "target": "Acceptance"
+  },
+  "Penelope Myth": {
+    "action": "DELETE",
+    "reason": "specific mythological reference"
+  },
+  "Penguin": {
+    "action": "DELETE",
+    "reason": "specific reference/metaphor"
+  },
+  "People Watching": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Perception Shift": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Performance": {
+    "action": "KEEP",
+    "reason": "identity performance"
+  },
+  "Performance Anxiety": {
+    "action": "MERGE",
+    "reason": "anxiety subset",
+    "target": "Anxiety"
+  },
+  "Performance Collapse": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Period Dream": {
+    "action": "MERGE",
+    "reason": "dream content",
+    "target": "Dream"
+  },
+  "Permanent Residency": {
+    "action": "MERGE",
+    "reason": "immigration status",
+    "target": "Immigration"
+  },
+  "Permission To Grieve": {
+    "action": "MERGE",
+    "reason": "grief subset",
+    "target": "Grief"
+  },
+  "Permissions": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Persistence Pattern": {
+    "action": "MERGE",
+    "target": "Pattern Recognition"
+  },
+  "Persistence Rewarded": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Personality Test": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "Pet Amnesia": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Pet Mortality": {
+    "action": "MERGE",
+    "reason": "death/loss subset",
+    "target": "Death"
+  },
+  "Pet Parenthood": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Phantom Limb": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Phantom Sensations": {
+    "action": "MERGE",
+    "reason": "body change sensation",
+    "target": "Body Change"
+  },
+  "Pharmacy Error": {
+    "action": "DELETE",
+    "reason": "specific incident"
+  },
+  "Phi": {
+    "action": "DELETE",
+    "reason": "specific symbol/concept"
+  },
+  "Phone": {
+    "action": "MERGE",
+    "target": "Phone Anxiety"
+  },
+  "Phone As Refuge": {
+    "action": "MERGE",
+    "reason": "avoidance behavior",
+    "target": "Avoidance"
+  },
+  "Phone Avoidance": {
+    "action": "MERGE",
+    "reason": "phone anxiety behavior",
+    "target": "Phone Anxiety"
+  },
+  "Phone Frustration": {
+    "action": "MERGE",
+    "reason": "phone anxiety subset",
+    "target": "Phone Anxiety"
+  },
+  "Phone Off": {
+    "action": "MERGE",
+    "reason": "avoidance behavior",
+    "target": "Avoidance"
+  },
+  "Phone Panic": {
+    "action": "MERGE",
+    "reason": "phone anxiety subset",
+    "target": "Phone Anxiety"
+  },
+  "Phone Rehearsal": {
+    "action": "MERGE",
+    "reason": "phone anxiety behavior",
+    "target": "Phone Anxiety"
+  },
+  "Phone Watching": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Phone Checking"
+  },
+  "Photo Archive": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Photograph": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Photographs"
+  },
+  "Photographs": {
+    "action": "DELETE",
+    "reason": "too generic, covered by Photography tag"
+  },
+  "Physical Acceptance": {
+    "action": "MERGE",
+    "reason": "acceptance subset",
+    "target": "Acceptance"
+  },
+  "Physical Comfort": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Physical Discomfort": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Physical Pain": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Pain"
+  },
+  "Picnic Date": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Pillow Scream": {
+    "action": "DELETE",
+    "reason": "specific action"
+  },
+  "Pills As Meal": {
+    "action": "MERGE",
+    "reason": "eating disorder behavior",
+    "target": "Eating Disorder"
+  },
+  "Pity": {
+    "action": "DELETE",
+    "reason": "too generic emotion"
+  },
+  "Planning": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Platonic Date": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Platonic Longing": {
+    "action": "MERGE",
+    "target": "Longing"
+  },
+  "Playlist": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Pneumonia": {
+    "action": "DELETE",
+    "reason": "specific illness"
+  },
+  "Podcast": {
+    "action": "DELETE",
+    "reason": "media format"
+  },
+  "Poetry Translation": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "Pokémon": {
+    "action": "DELETE",
+    "reason": "specific media reference"
+  },
+  "Polarsteps": {
+    "action": "DELETE",
+    "reason": "specific app"
+  },
+  "Pole Dancing": {
+    "action": "DELETE",
+    "reason": "activity type"
+  },
+  "Police Checkpoint": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Police Encounter": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Politeness vs Interest": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Political Awakening": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Polyamory": {
+    "action": "KEEP",
+    "reason": "relationship style"
+  },
+  "Pool Game": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "Porn Theater": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Possessed": {
+    "action": "DELETE",
+    "reason": "metaphor/dream content"
+  },
+  "Possessiveness": {
+    "action": "MERGE",
+    "reason": "jealousy subset",
+    "target": "Jealousy"
+  },
+  "Post-Date": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Post-Doc-Anxiety": {
+    "action": "MERGE",
+    "reason": "academic anxiety",
+    "target": "Academia"
+  },
+  "Post-Midnight Ritual": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Post-Midnight Story": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Post-Sex-Intimacy": {
+    "action": "MERGE",
+    "reason": "intimacy subset",
+    "target": "Intimacy"
+  },
+  "Poster": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Poster Presentation": {
+    "action": "MERGE",
+    "reason": "conference activity",
+    "target": "Conference"
+  },
+  "Posthumous Misgendering": {
+    "action": "MERGE",
+    "target": "Misgendering"
+  },
+  "Postponed Changes": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Potato Salad": {
+    "action": "DELETE",
+    "reason": "specific food"
+  },
+  "Potential": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Power Dynamics": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Practice Dating": {
+    "action": "MERGE",
+    "reason": "dating pattern",
+    "target": "Dating"
+  },
+  "Pre-Awareness": {
+    "action": "MERGE",
+    "reason": "pre-transition subset",
+    "target": "Pre-Transition"
+  },
+  "Pre-Departure": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Pre-Diabetic": {
+    "action": "DELETE",
+    "reason": "medical detail"
+  },
+  "Pre-Emptive Grief": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Anticipatory Grief"
+  },
+  "Pre-Transition Image": {
+    "action": "MERGE",
+    "reason": "pre-transition subset",
+    "target": "Pre-Transition"
+  },
+  "Pre-Transition-Memory": {
+    "action": "MERGE",
+    "reason": "pre-transition subset",
+    "target": "Pre-Transition"
+  },
+  "Pre-Transition-Photo": {
+    "action": "MERGE",
+    "target": "Pre-Transition"
+  },
+  "Pre-Verbal-Longing": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Precarity": {
+    "action": "MERGE",
+    "target": "Financial Anxiety"
+  },
+  "Predatory Anxiety": {
+    "action": "MERGE",
+    "reason": "specific fear type",
+    "target": "Fear"
+  },
+  "Predatory Worry": {
+    "action": "MERGE",
+    "reason": "specific fear type",
+    "target": "Fear"
+  },
+  "Preemptive Abandonment": {
+    "action": "MERGE",
+    "reason": "self-sabotage pattern",
+    "target": "Self-Sabotage"
+  },
+  "Preemptive Rejection": {
+    "action": "MERGE",
+    "reason": "self-sabotage pattern",
+    "target": "Self-Sabotage"
+  },
+  "Preemptive Self Rejection": {
+    "action": "MERGE",
+    "reason": "self-sabotage pattern",
+    "target": "Self-Sabotage"
+  },
+  "Pregnancy": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Pregnancy Dysphoria": {
+    "action": "MERGE",
+    "reason": "dysphoria subset",
+    "target": "Dysphoria"
+  },
+  "Pregnancy Scare": {
+    "action": "MERGE",
+    "target": "Pregnancy"
+  },
+  "Premarin": {
+    "action": "DELETE",
+    "reason": "specific medication"
+  },
+  "Premature Attachment": {
+    "action": "KEEP",
+    "reason": "distinct relational pattern"
+  },
+  "Premature Investment": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Premature Attachment"
+  },
+  "Preparation": {
+    "action": "DELETE",
+    "reason": "vague action"
+  },
+  "Preparation Ritual": {
+    "action": "MERGE",
+    "reason": "ritual subset",
+    "target": "Ritual"
+  },
+  "Present Moment": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Presentation Strategy": {
+    "action": "MERGE",
+    "reason": "presentation subset",
+    "target": "Gender Presentation"
+  },
+  "Presents": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Gifts"
+  },
+  "Pretty": {
+    "action": "MERGE",
+    "reason": "appearance validation",
+    "target": "Validation"
+  },
+  "Princess": {
+    "action": "DELETE",
+    "reason": "specific reference/metaphor"
+  },
+  "Princess Breakfast": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Princess Insight": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Privacy": {
+    "action": "KEEP",
+    "reason": "personal boundary"
+  },
+  "Privacy Breach": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Privacy Violation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Private Browser": {
+    "action": "MERGE",
+    "reason": "secrecy behavior",
+    "target": "Secrecy"
+  },
+  "Private Documentation": {
+    "action": "MERGE",
+    "reason": "secrecy behavior",
+    "target": "Secrecy"
+  },
+  "Privilege Awareness": {
+    "action": "DELETE",
+    "reason": "too generic concept"
+  },
+  "Productivity": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Profession": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Professional": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Professional Anxiety": {
+    "action": "MERGE",
+    "reason": "professional identity subset",
+    "target": "Professional Identity"
+  },
+  "Professional Closet": {
+    "action": "MERGE",
+    "target": "Stealth"
+  },
+  "Professional Doubt": {
+    "action": "MERGE",
+    "reason": "professional identity subset",
+    "target": "Professional Identity"
+  },
+  "Professional Experience": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Professional Life": {
+    "action": "MERGE",
+    "reason": "professional identity subset",
+    "target": "Professional Identity"
+  },
+  "Professional Persona": {
+    "action": "MERGE",
+    "reason": "professional identity subset",
+    "target": "Professional Identity"
+  },
+  "Professional Resilience": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Professional Shame": {
+    "action": "MERGE",
+    "reason": "professional identity subset",
+    "target": "Professional Identity"
+  },
+  "Profile Picture": {
+    "action": "MERGE",
+    "reason": "social media detail",
+    "target": "Social Media"
+  },
+  "Progress": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Projection": {
+    "action": "KEEP",
+    "reason": "psychological defense"
+  },
+  "Projects": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Promises": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Prophetic Dream": {
+    "action": "MERGE",
+    "reason": "dream subset",
+    "target": "Dream"
+  },
+  "Prophetic Words": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Prostitution": {
+    "action": "DELETE",
+    "reason": "scene-level reference"
+  },
+  "Protection": {
+    "action": "DELETE",
+    "reason": "vague concept"
+  },
+  "Proximity Anxiety": {
+    "action": "MERGE",
+    "reason": "anxiety subset",
+    "target": "Anxiety"
+  },
+  "Proxy Closure": {
+    "action": "MERGE",
+    "reason": "closure pattern",
+    "target": "Closure"
+  },
+  "Prozac": {
+    "action": "MERGE",
+    "target": "Antidepressants"
+  },
+  "Psychedelics": {
+    "action": "DELETE",
+    "reason": "specific substance"
+  },
+  "Psychiatric Appointment": {
+    "action": "MERGE",
+    "reason": "psychiatry subset",
+    "target": "Psychiatry"
+  },
+  "Psychiatric Report": {
+    "action": "MERGE",
+    "target": "Psychiatry"
+  },
+  "Psychiatric Treatment": {
+    "action": "MERGE",
+    "reason": "psychiatry subset",
+    "target": "Psychiatry"
+  },
+  "Psychiatrist": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Psychiatry"
+  },
+  "Psychoanalysis": {
+    "action": "MERGE",
+    "reason": "therapy modality",
+    "target": "Therapy"
+  },
+  "Psychological Deconstruction": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Psychological Testing": {
+    "action": "DELETE",
+    "reason": "evaluation type"
+  },
+  "Psychologists": {
+    "action": "MERGE",
+    "reason": "therapy provider",
+    "target": "Therapy"
+  },
+  "Psychology": {
+    "action": "DELETE",
+    "reason": "too generic field"
+  },
+  "Psychology Irony": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Psychology Practice": {
+    "action": "DELETE",
+    "reason": "work activity"
+  },
+  "Psychology Session": {
+    "action": "MERGE",
+    "reason": "therapy session",
+    "target": "Therapy"
+  },
+  "Psychosomatic": {
+    "action": "KEEP",
+    "reason": "distinct mind-body concept"
+  },
+  "Pub Gathering": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Puberty": {
+    "action": "MERGE",
+    "reason": "second puberty/transition",
+    "target": "HRT"
+  },
+  "Public Transit": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Publication": {
+    "action": "MERGE",
+    "reason": "academic milestone",
+    "target": "Academia"
+  },
+  "Publication Pressure": {
+    "action": "MERGE",
+    "reason": "academic pressure",
+    "target": "Academia"
+  },
+  "Punctuation Obsession": {
+    "action": "DELETE",
+    "reason": "specific quirk"
+  },
+  "Puppies": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Puppy"
+  },
+  "Puppy Care": {
+    "action": "MERGE",
+    "target": "Puppy"
+  },
+  "Pupusas": {
+    "action": "DELETE",
+    "reason": "specific food"
+  },
+  "Purchase": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Pure Sadness": {
+    "action": "MERGE",
+    "reason": "emotional state",
+    "target": "Depression"
+  },
+  "Purse": {
+    "action": "DELETE",
+    "reason": "specific clothing item"
+  },
+  "Pursuit vs Being Pursued": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Push And Pull": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Push Away Pattern": {
+    "action": "MERGE",
+    "reason": "self-sabotage pattern",
+    "target": "Self-Sabotage"
+  },
+  "Pushiness": {
+    "action": "DELETE",
+    "reason": "scene-level behavior"
+  },
+  "Quarantine": {
+    "action": "DELETE",
+    "reason": "specific temporal context"
+  },
+  "Quartz": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Question": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Quinceanera": {
+    "action": "DELETE",
+    "reason": "specific event type"
+  },
+  "Quinceañera": {
+    "action": "DELETE",
+    "reason": "specific event type"
+  },
+  "Race": {
+    "action": "KEEP",
+    "reason": "racial identity"
+  },
+  "Rage": {
+    "action": "MERGE",
+    "reason": "anger intensity",
+    "target": "Anger"
+  },
+  "Rain": {
+    "action": "DELETE",
+    "reason": "weather"
+  },
+  "Raincheck": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Raki": {
+    "action": "MERGE",
+    "target": "Alcohol"
+  },
+  "Raw": {
+    "action": "DELETE",
+    "reason": "too vague descriptor"
+  },
+  "Razor Blade": {
+    "action": "MERGE",
+    "target": "Self-Harm"
+  },
+  "Razor Blades": {
+    "action": "MERGE",
+    "reason": "self-harm tool",
+    "target": "Self-Harm"
+  },
+  "Read Receipt": {
+    "action": "MERGE",
+    "reason": "texting anxiety detail",
+    "target": "Texting Anxiety"
+  },
+  "Read Receipts": {
+    "action": "MERGE",
+    "reason": "texting anxiety detail",
+    "target": "Texting Anxiety"
+  },
+  "Reading App": {
+    "action": "DELETE",
+    "reason": "specific app"
+  },
+  "Realization": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Reassurance": {
+    "action": "KEEP",
+    "reason": "seeking validation"
+  },
+  "Receipt": {
+    "action": "DELETE",
+    "reason": "mundane object"
+  },
+  "Receipt Note": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Reciprocal Desire": {
+    "action": "MERGE",
+    "reason": "desire subset",
+    "target": "Desire"
+  },
+  "Reciprocation": {
+    "action": "MERGE",
+    "target": "Reciprocity"
+  },
+  "Reciprocity": {
+    "action": "KEEP",
+    "reason": "relationship balance"
+  },
+  "Reciprocity Fantasy": {
+    "action": "MERGE",
+    "target": "Longing"
+  },
+  "Reclaiming The Gaze": {
+    "action": "MERGE",
+    "target": "Visibility"
+  },
+  "Reclamation": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Recognition Anxiety": {
+    "action": "MERGE",
+    "reason": "recognition subset",
+    "target": "Recognition"
+  },
+  "Reconciliation": {
+    "action": "KEEP",
+    "reason": "relationship repair"
+  },
+  "Recovery": {
+    "action": "KEEP",
+    "reason": "healing process"
+  },
+  "Recurring Dream": {
+    "action": "MERGE",
+    "reason": "dream pattern",
+    "target": "Dream"
+  },
+  "Recurring Dreams": {
+    "action": "MERGE",
+    "reason": "dream pattern",
+    "target": "Dream"
+  },
+  "Recurring School Dreams": {
+    "action": "MERGE",
+    "reason": "dream pattern",
+    "target": "Dream"
+  },
+  "Red Eye Flight": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Red Hearts": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Red Nails": {
+    "action": "DELETE",
+    "reason": "specific appearance detail"
+  },
+  "Red Pill": {
+    "action": "DELETE",
+    "reason": "specific cultural reference"
+  },
+  "Reddit": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Reframing The Past": {
+    "action": "MERGE",
+    "reason": "memory reprocessing",
+    "target": "Memory"
+  },
+  "Regifting": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Registration": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Rehearsed Disclosure": {
+    "action": "MERGE",
+    "reason": "disclosure anxiety behavior",
+    "target": "Disclosure Anxiety"
+  },
+  "Rehearsed Questions": {
+    "action": "MERGE",
+    "reason": "rehearsal subset",
+    "target": "Rehearsal"
+  },
+  "Rehearsing Disclosure": {
+    "action": "MERGE",
+    "reason": "disclosure anxiety behavior",
+    "target": "Disclosure Anxiety"
+  },
+  "Rejected Invitation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Relatability Crisis": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Relationship Ambiguity": {
+    "action": "MERGE",
+    "reason": "relationship pattern",
+    "target": "Relationship"
+  },
+  "Relationship Anxiety": {
+    "action": "MERGE",
+    "reason": "relationship subset",
+    "target": "Relationship"
+  },
+  "Relationship Archaeology": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Relationship Conflict": {
+    "action": "MERGE",
+    "reason": "relationship subset",
+    "target": "Relationship"
+  },
+  "Relationship Friction": {
+    "action": "MERGE",
+    "target": "Relationship Tension"
+  },
+  "Relationship Frustration": {
+    "action": "MERGE",
+    "reason": "relationship subset",
+    "target": "Relationship"
+  },
+  "Relationship History": {
+    "action": "DELETE",
+    "reason": "past relationships"
+  },
+  "Relationship Limbo": {
+    "action": "MERGE",
+    "reason": "limbo subset",
+    "target": "Limbo"
+  },
+  "Relationship Pattern": {
+    "action": "KEEP",
+    "reason": "recurring dynamic"
+  },
+  "Relationship Strain": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Relationship Conflict"
+  },
+  "Relationship Tension": {
+    "action": "KEEP",
+    "reason": "conflict"
+  },
+  "Release": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Relic": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Relief In Failure": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Religion": {
+    "action": "KEEP",
+    "reason": "religious conflict"
+  },
+  "Religious Intrusion": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Religious Rejection": {
+    "action": "MERGE",
+    "reason": "rejection subset",
+    "target": "Family Rejection"
+  },
+  "Reliving": {
+    "action": "MERGE",
+    "reason": "memory experience",
+    "target": "Memory"
+  },
+  "Relocation": {
+    "action": "MERGE",
+    "target": "Moving"
+  },
+  "Rent": {
+    "action": "KEEP",
+    "reason": "housing cost"
+  },
+  "Rent Disparity": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Rent Increase": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Repair": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Reply Anxiety": {
+    "action": "MERGE",
+    "reason": "texting anxiety subset",
+    "target": "Texting Anxiety"
+  },
+  "Report Anxiety": {
+    "action": "MERGE",
+    "reason": "academic anxiety",
+    "target": "Academia"
+  },
+  "Representation Pain": {
+    "action": "MERGE",
+    "target": "Representation"
+  },
+  "Rescheduling": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Research Stay": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Research Visit": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Resignation": {
+    "action": "KEEP",
+    "reason": "giving up"
+  },
+  "Resistance To Life": {
+    "action": "MERGE",
+    "reason": "suicidal ideation subset",
+    "target": "Suicide Ideation"
+  },
+  "Resolution": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Response": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Response Strategizing": {
+    "action": "MERGE",
+    "reason": "texting anxiety behavior",
+    "target": "Texting Anxiety"
+  },
+  "Rest Day": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Restaurant Betrayal": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Restaurant Exclusion": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Restraint": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Retaliation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Retrospective Guilt": {
+    "action": "MERGE",
+    "reason": "guilt subset",
+    "target": "Guilt"
+  },
+  "Return To Office": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Return To Past": {
+    "action": "MERGE",
+    "reason": "memory/nostalgia",
+    "target": "Memory"
+  },
+  "Reunion": {
+    "action": "DELETE",
+    "reason": "too generic event"
+  },
+  "Reunion Fantasy": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Revelation": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Revenge Fantasy": {
+    "action": "KEEP",
+    "reason": "intrusive thought"
+  },
+  "Reversal": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Revulsion": {
+    "action": "MERGE",
+    "reason": "dysphoria emotion",
+    "target": "Dysphoria"
+  },
+  "Road Trip Memory": {
+    "action": "MERGE",
+    "reason": "memory subset",
+    "target": "Memory"
+  },
+  "Rock & Ocean": {
+    "action": "DELETE",
+    "reason": "unclear reference"
+  },
+  "Roland Barthes": {
+    "action": "DELETE",
+    "reason": "specific author reference"
+  },
+  "Role": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Role Play": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Roleplay": {
+    "action": "KEEP",
+    "reason": "sexual/identity play"
+  },
+  "Romance Fiction": {
+    "action": "DELETE",
+    "reason": "specific genre"
+  },
+  "Room Assignment": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Roommate Conflict": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Roommate Tension"
+  },
+  "Roommate Conflicts": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Roommate Tension"
+  },
+  "Roommate Disclosure": {
+    "action": "MERGE",
+    "reason": "disclosure subset",
+    "target": "Disclosure"
+  },
+  "Roommate Dynamics": {
+    "action": "MERGE",
+    "target": "Roommate Tension"
+  },
+  "Roommate Gossip": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Roommate Transition": {
+    "action": "MERGE",
+    "reason": "roommate relationship",
+    "target": "Roommate"
+  },
+  "Routine": {
+    "action": "KEEP",
+    "reason": "daily structure"
+  },
+  "Ruins": {
+    "action": "DELETE",
+    "reason": "scene-level location"
+  },
+  "Rule Breaking": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Running": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Rush Hour": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "SRS": {
+    "action": "MERGE",
+    "reason": "specific surgery type",
+    "target": "Surgery"
+  },
+  "SRS Discussion": {
+    "action": "MERGE",
+    "reason": "surgery discussion",
+    "target": "Surgery"
+  },
+  "SRS Video": {
+    "action": "DELETE",
+    "reason": "specific media"
+  },
+  "SSRI": {
+    "action": "MERGE",
+    "reason": "antidepressant type",
+    "target": "Antidepressants"
+  },
+  "SSRI Withdrawal": {
+    "action": "MERGE",
+    "reason": "withdrawal subset",
+    "target": "Withdrawal"
+  },
+  "Sadness": {
+    "action": "MERGE",
+    "reason": "emotional state",
+    "target": "Depression"
+  },
+  "Safe Subjects": {
+    "action": "MERGE",
+    "reason": "avoidance strategy",
+    "target": "Avoidance"
+  },
+  "Salary Raise": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Salsa": {
+    "action": "DELETE",
+    "reason": "dance type"
+  },
+  "Salsa Class": {
+    "action": "DELETE",
+    "reason": "specific activity"
+  },
+  "San Junipero": {
+    "action": "DELETE",
+    "reason": "specific episode reference"
+  },
+  "Saudade": {
+    "action": "KEEP",
+    "reason": "Portuguese longing"
+  },
+  "Scarcity": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Scavenging": {
+    "action": "DELETE",
+    "reason": "vague activity"
+  },
+  "Scent Memory": {
+    "action": "MERGE",
+    "target": "Sensory Memory"
+  },
+  "Scheduling Panic": {
+    "action": "MERGE",
+    "reason": "anxiety subset",
+    "target": "Anxiety"
+  },
+  "Scholarship": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "School": {
+    "action": "DELETE",
+    "reason": "general venue"
+  },
+  "School Counselor": {
+    "action": "DELETE",
+    "reason": "specific person"
+  },
+  "School Ending": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "School Festival": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "School Pickup": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "School Skirt": {
+    "action": "DELETE",
+    "reason": "specific clothing item"
+  },
+  "School Stress": {
+    "action": "MERGE",
+    "reason": "academic stress",
+    "target": "Academia"
+  },
+  "Science": {
+    "action": "DELETE",
+    "reason": "too generic field"
+  },
+  "Scientist": {
+    "action": "DELETE",
+    "reason": "too generic identity"
+  },
+  "Scream Into Void": {
+    "action": "MERGE",
+    "reason": "voicelessness expression",
+    "target": "Voicelessness"
+  },
+  "Screenshot": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Sea": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Search History": {
+    "action": "MERGE",
+    "reason": "digital trail/privacy",
+    "target": "Digital"
+  },
+  "Second Chance": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Second Chances": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Second Date": {
+    "action": "DELETE",
+    "reason": "date number"
+  },
+  "Second Date Invitation": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Second Puberty": {
+    "action": "MERGE",
+    "reason": "HRT/transition",
+    "target": "HRT"
+  },
+  "Secret Burden": {
+    "action": "MERGE",
+    "reason": "secret subset",
+    "target": "Secret"
+  },
+  "Secret Note": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Secret Santa": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Secrets Overheard": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Seeking": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Seen Status": {
+    "action": "MERGE",
+    "reason": "texting anxiety detail",
+    "target": "Texting Anxiety"
+  },
+  "Seizure": {
+    "action": "DELETE",
+    "reason": "medical incident"
+  },
+  "Self-Absorption": {
+    "action": "DELETE",
+    "reason": "scene-level trait"
+  },
+  "Self-Advocacy-Failure": {
+    "action": "MERGE",
+    "reason": "passivity subset",
+    "target": "Passivity"
+  },
+  "Self-Confrontation": {
+    "action": "MERGE",
+    "reason": "self-awareness subset",
+    "target": "Self-Awareness"
+  },
+  "Self-Correction": {
+    "action": "DELETE",
+    "reason": "scene-level behavior"
+  },
+  "Self-Destructive Patterns": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Self-Sabotage"
+  },
+  "Self-Diagnosis": {
+    "action": "DELETE",
+    "reason": "scene-level behavior"
+  },
+  "Self-Documentation": {
+    "action": "MERGE",
+    "target": "Journaling"
+  },
+  "Self-Generated Pressure": {
+    "action": "MERGE",
+    "reason": "anxiety pattern",
+    "target": "Anxiety"
+  },
+  "Self-Harm Ideation": {
+    "action": "MERGE",
+    "target": "Self-Harm"
+  },
+  "Self-Injection": {
+    "action": "MERGE",
+    "reason": "HRT administration",
+    "target": "HRT"
+  },
+  "Self-Introduction": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Self-Naming": {
+    "action": "MERGE",
+    "reason": "naming process",
+    "target": "Naming"
+  },
+  "Self-Policing": {
+    "action": "MERGE",
+    "target": "Passing"
+  },
+  "Self-Protection": {
+    "action": "MERGE",
+    "reason": "boundary-setting",
+    "target": "Boundary"
+  },
+  "Self-Recording": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Self-Rejection": {
+    "action": "KEEP",
+    "reason": "internalized rejection"
+  },
+  "Self-Restraint": {
+    "action": "MERGE",
+    "reason": "control behavior",
+    "target": "Control"
+  },
+  "Self-Sufficiency": {
+    "action": "MERGE",
+    "reason": "independence subset",
+    "target": "Independence"
+  },
+  "Self-Surveillance": {
+    "action": "MERGE",
+    "target": "Surveillance"
+  },
+  "Semi-Friends": {
+    "action": "DELETE",
+    "reason": "vague relationship type"
+  },
+  "Seminar": {
+    "action": "DELETE",
+    "reason": "generic academic event"
+  },
+  "Sensory Detail": {
+    "action": "DELETE",
+    "reason": "writing technique"
+  },
+  "Sensory Memory": {
+    "action": "KEEP",
+    "reason": "embodied memory"
+  },
+  "Sentri Expiration": {
+    "action": "DELETE",
+    "reason": "specific document detail"
+  },
+  "Separation": {
+    "action": "KEEP",
+    "reason": "relationship distance"
+  },
+  "Serial First Dates": {
+    "action": "MERGE",
+    "reason": "dating pattern",
+    "target": "Dating"
+  },
+  "Session": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Seven Months": {
+    "action": "DELETE",
+    "reason": "temporal marker"
+  },
+  "Severe Dysphoria": {
+    "action": "MERGE",
+    "reason": "dysphoria intensity",
+    "target": "Dysphoria"
+  },
+  "Sex Marker": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Gender Marker"
+  },
+  "Sex Shop": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Sex vs Gender": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Sexism": {
+    "action": "MERGE",
+    "target": "Discrimination"
+  },
+  "Sexologist": {
+    "action": "DELETE",
+    "reason": "professional type"
+  },
+  "Sexologist Anxiety": {
+    "action": "DELETE",
+    "reason": "specific medical anxiety"
+  },
+  "Sexuality": {
+    "action": "KEEP",
+    "reason": "sexual identity"
+  },
+  "Sexuality Crisis": {
+    "action": "MERGE",
+    "reason": "identity crisis subset",
+    "target": "Identity"
+  },
+  "Sexuality Education": {
+    "action": "DELETE",
+    "reason": "scene-level topic"
+  },
+  "Sexuality Fluidity": {
+    "action": "MERGE",
+    "target": "Sexuality"
+  },
+  "Sexuality Questioning": {
+    "action": "MERGE",
+    "target": "Gender Questioning"
+  },
+  "Shadow Self": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Shared Clothes": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Shared Delusion": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Shared Guilt": {
+    "action": "MERGE",
+    "reason": "guilt subset",
+    "target": "Guilt"
+  },
+  "Shared Housing": {
+    "action": "MERGE",
+    "reason": "housing subset",
+    "target": "Housing"
+  },
+  "Shared Vulnerability": {
+    "action": "MERGE",
+    "reason": "vulnerability subset",
+    "target": "Vulnerability"
+  },
+  "Shaved Legs": {
+    "action": "MERGE",
+    "reason": "shaving subset",
+    "target": "Shaving"
+  },
+  "Shedding": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Shoe Store": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Shoes": {
+    "action": "MERGE",
+    "target": "Shopping"
+  },
+  "Short Films": {
+    "action": "DELETE",
+    "reason": "media format"
+  },
+  "Shorts": {
+    "action": "DELETE",
+    "reason": "specific clothing item"
+  },
+  "Shower": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Shower Collapse": {
+    "action": "DELETE",
+    "reason": "specific scene detail"
+  },
+  "Siblings": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Sibling"
+  },
+  "Sick": {
+    "action": "MERGE",
+    "reason": "illness state",
+    "target": "Illness"
+  },
+  "Sickness": {
+    "action": "MERGE",
+    "target": "Illness"
+  },
+  "Silence As Response": {
+    "action": "MERGE",
+    "reason": "silence subset",
+    "target": "Silence"
+  },
+  "Silencing": {
+    "action": "MERGE",
+    "reason": "voicelessness subset",
+    "target": "Voicelessness"
+  },
+  "Silent Signals": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Silent Support": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Silent Treatment": {
+    "action": "MERGE",
+    "reason": "silence pattern",
+    "target": "Silence"
+  },
+  "Simmering Rage": {
+    "action": "MERGE",
+    "reason": "anger state",
+    "target": "Anger"
+  },
+  "Simulation": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Singing": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Sisyphus Metaphor": {
+    "action": "DELETE",
+    "reason": "specific metaphor"
+  },
+  "Situationship": {
+    "action": "MERGE",
+    "reason": "relationship ambiguity",
+    "target": "Relationship"
+  },
+  "Six Month Milestone": {
+    "action": "MERGE",
+    "reason": "HRT milestone",
+    "target": "Milestone"
+  },
+  "Six Months": {
+    "action": "MERGE",
+    "target": "Milestone"
+  },
+  "Six Months HRT": {
+    "action": "MERGE",
+    "reason": "HRT milestone",
+    "target": "Milestone"
+  },
+  "Skin": {
+    "action": "MERGE",
+    "reason": "body change detail",
+    "target": "Body Change"
+  },
+  "Skirt Plan": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Skirt Shopping": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Skull Fantasy": {
+    "action": "DELETE",
+    "reason": "specific imagery"
+  },
+  "Sleeplessness": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Insomnia"
+  },
+  "Slow Burn": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Slow Dance": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Small Kindness": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Small Signals": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Smile Taxonomy": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Smoking Relapse": {
+    "action": "MERGE",
+    "reason": "smoking subset",
+    "target": "Smoking"
+  },
+  "Snapchat": {
+    "action": "DELETE",
+    "reason": "specific platform"
+  },
+  "Snl": {
+    "action": "DELETE",
+    "reason": "specific media reference"
+  },
+  "Snooping": {
+    "action": "MERGE",
+    "target": "Surveillance"
+  },
+  "Snow": {
+    "action": "DELETE",
+    "reason": "generic weather"
+  },
+  "Sobriety": {
+    "action": "MERGE",
+    "reason": "alcoholism recovery",
+    "target": "Alcoholism"
+  },
+  "Soccer": {
+    "action": "DELETE",
+    "reason": "generic sport"
+  },
+  "Social Gathering": {
+    "action": "DELETE",
+    "reason": "too generic event"
+  },
+  "Social Outing": {
+    "action": "DELETE",
+    "reason": "too generic event"
+  },
+  "Social Planning": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Socks": {
+    "action": "DELETE",
+    "reason": "specific clothing item"
+  },
+  "Sofi": {
+    "action": "MERGE",
+    "reason": "name variant",
+    "target": "Name"
+  },
+  "Sofia": {
+    "action": "MERGE",
+    "reason": "chosen name",
+    "target": "Name"
+  },
+  "Softness": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Solidarity": {
+    "action": "DELETE",
+    "reason": "too generic"
+  },
+  "Solitude": {
+    "action": "MERGE",
+    "target": "Loneliness"
+  },
+  "Solo Cinema": {
+    "action": "DELETE",
+    "reason": "activity type"
+  },
+  "Solo Travel": {
+    "action": "MERGE",
+    "reason": "travel subset",
+    "target": "Travel"
+  },
+  "Solo Trip": {
+    "action": "MERGE",
+    "reason": "travel subset",
+    "target": "Travel"
+  },
+  "Solo Weekend": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Somatic Response": {
+    "action": "MERGE",
+    "reason": "body-mind connection",
+    "target": "Psychosomatic"
+  },
+  "Somatization": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Psychosomatic"
+  },
+  "Song Lyrics": {
+    "action": "DELETE",
+    "reason": "media content"
+  },
+  "Sorrow": {
+    "action": "MERGE",
+    "reason": "grief emotion",
+    "target": "Grief"
+  },
+  "Sorting": {
+    "action": "DELETE",
+    "reason": "too generic activity"
+  },
+  "Spain": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Spain Memories": {
+    "action": "MERGE",
+    "reason": "memory subset",
+    "target": "Memory"
+  },
+  "Spare Key": {
+    "action": "DELETE",
+    "reason": "specific object"
+  },
+  "Speech Drafting": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Spiders": {
+    "action": "DELETE",
+    "reason": "generic subject"
+  },
+  "Spirituality": {
+    "action": "DELETE",
+    "reason": "too generic topic"
+  },
+  "Spironolactone": {
+    "action": "DELETE",
+    "reason": "specific medication"
+  },
+  "Split Self": {
+    "action": "MERGE",
+    "target": "Identity"
+  },
+  "Spoiled": {
+    "action": "DELETE",
+    "reason": "too vague"
+  },
+  "Spreadsheet": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "St. Valentine": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Valentine'S Day"
+  },
+  "Staged Authenticity": {
+    "action": "MERGE",
+    "target": "Performance"
+  },
+  "Stagnation": {
+    "action": "MERGE",
+    "reason": "depression state",
+    "target": "Depression"
+  },
+  "Stand Up Comedy": {
+    "action": "DELETE",
+    "reason": "specific media/event"
+  },
+  "Starvation": {
+    "action": "MERGE",
+    "reason": "eating disorder behavior",
+    "target": "Eating Disorder"
+  },
+  "Stasis": {
+    "action": "MERGE",
+    "reason": "depression state",
+    "target": "Depression"
+  },
+  "Static vs Signal": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Stealth Ending": {
+    "action": "MERGE",
+    "reason": "stealth subset",
+    "target": "Stealth"
+  },
+  "Stench": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Steven Universe": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Stimulants": {
+    "action": "DELETE",
+    "reason": "generic substance type"
+  },
+  "Stood Up": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Storm": {
+    "action": "DELETE",
+    "reason": "generic weather"
+  },
+  "Story Deletion": {
+    "action": "MERGE",
+    "reason": "social media behavior",
+    "target": "Social Media"
+  },
+  "Story Muting": {
+    "action": "MERGE",
+    "reason": "social media behavior",
+    "target": "Social Media"
+  },
+  "Story Performance": {
+    "action": "MERGE",
+    "reason": "social media behavior",
+    "target": "Social Media"
+  },
+  "Story Views": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Viewer List"
+  },
+  "Storytelling": {
+    "action": "DELETE",
+    "reason": "too generic activity"
+  },
+  "Straight Crush": {
+    "action": "MERGE",
+    "target": "Attraction"
+  },
+  "Stranger": {
+    "action": "MERGE",
+    "target": "Strangers"
+  },
+  "Stranger Perception": {
+    "action": "MERGE",
+    "reason": "passing/validation",
+    "target": "Passing"
+  },
+  "Stranger Watching": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Strangers": {
+    "action": "KEEP",
+    "reason": "public interaction"
+  },
+  "Strangers Gendering": {
+    "action": "MERGE",
+    "reason": "gendering subset",
+    "target": "Gendering"
+  },
+  "Strangers vs Known People": {
+    "action": "MERGE",
+    "reason": "passing context",
+    "target": "Passing"
+  },
+  "Streak Broken": {
+    "action": "MERGE",
+    "reason": "streak subset",
+    "target": "Streak"
+  },
+  "Street Encounter": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Street Harassment": {
+    "action": "KEEP",
+    "reason": "distinct gender/safety concept"
+  },
+  "Street Photography": {
+    "action": "DELETE",
+    "reason": "scene-level activity"
+  },
+  "Street Validation": {
+    "action": "MERGE",
+    "reason": "validation subset",
+    "target": "Validation"
+  },
+  "Strength Loss": {
+    "action": "MERGE",
+    "target": "Body Change"
+  },
+  "Stress": {
+    "action": "MERGE",
+    "reason": "anxiety state",
+    "target": "Anxiety"
+  },
+  "Stubble": {
+    "action": "MERGE",
+    "reason": "facial hair subset",
+    "target": "Facial Hair"
+  },
+  "Student Exchange Memory": {
+    "action": "MERGE",
+    "reason": "memory subset",
+    "target": "Memory"
+  },
+  "Study Abroad": {
+    "action": "DELETE",
+    "reason": "academic program"
+  },
+  "Subconscious": {
+    "action": "DELETE",
+    "reason": "psychological concept"
+  },
+  "Subject/self": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Substance Use": {
+    "action": "MERGE",
+    "target": "Addiction"
+  },
+  "Substitution": {
+    "action": "MERGE",
+    "reason": "avoidance pattern",
+    "target": "Avoidance"
+  },
+  "Substitution Behavior": {
+    "action": "MERGE",
+    "reason": "avoidance pattern",
+    "target": "Avoidance"
+  },
+  "Substitution Pattern": {
+    "action": "MERGE",
+    "reason": "avoidance pattern",
+    "target": "Avoidance"
+  },
+  "Substitution Sex": {
+    "action": "MERGE",
+    "reason": "avoidance pattern",
+    "target": "Avoidance"
+  },
+  "Subway": {
+    "action": "MERGE",
+    "target": "Metro"
+  },
+  "Suicidal": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Suicide Ideation"
+  },
+  "Suicidal History": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Suicide Ideation"
+  },
+  "Suicide Attempt": {
+    "action": "MERGE",
+    "reason": "suicide subset",
+    "target": "Suicide"
+  },
+  "Suit As Cage": {
+    "action": "MERGE",
+    "reason": "suit metaphor",
+    "target": "Suit"
+  },
+  "Summer": {
+    "action": "DELETE",
+    "reason": "generic season"
+  },
+  "Sun Poisoning": {
+    "action": "DELETE",
+    "reason": "specific medical incident"
+  },
+  "Sunburn": {
+    "action": "DELETE",
+    "reason": "specific incident"
+  },
+  "Sunday": {
+    "action": "DELETE",
+    "reason": "day of week"
+  },
+  "Supermoon": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Support Group": {
+    "action": "MERGE",
+    "reason": "support subset",
+    "target": "Support"
+  },
+  "Support Network": {
+    "action": "MERGE",
+    "reason": "support subset",
+    "target": "Support"
+  },
+  "Suppression": {
+    "action": "MERGE",
+    "target": "Avoidance"
+  },
+  "Surprise Party": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Surprise Visit": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Survival Income": {
+    "action": "MERGE",
+    "reason": "survival subset",
+    "target": "Survival"
+  },
+  "Swap Meet": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Sweat": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Sweater": {
+    "action": "DELETE",
+    "reason": "specific clothing item"
+  },
+  "Sweet Bullshit": {
+    "action": "DELETE",
+    "reason": "scene-level phrase"
+  },
+  "Swimming Pool": {
+    "action": "DELETE",
+    "reason": "generic location"
+  },
+  "Swipe Trick": {
+    "action": "DELETE",
+    "reason": "dating app tactic"
+  },
+  "Symbolic Death": {
+    "action": "MERGE",
+    "target": "Death"
+  },
+  "Symbolism Ruined": {
+    "action": "DELETE",
+    "reason": "scene-level detail"
+  },
+  "Symposium": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Syncope": {
+    "action": "MERGE",
+    "reason": "same concept",
+    "target": "Fainting"
+  },
+  "Synesthesia": {
+    "action": "DELETE",
+    "reason": "specific phenomenon"
+  },
+  "TERF": {
+    "action": "MERGE",
+    "target": "Transphobia"
+  },
+  "TERF Internalization": {
+    "action": "MERGE",
+    "target": "Internalized Transphobia"
+  },
+  "Talisman": {
+    "action": "DELETE",
+    "reason": "object type"
+  },
+  "Tattoo": {
+    "action": "KEEP",
+    "reason": "body modification"
+  },
+  "Tattoo Planning": {
+    "action": "MERGE",
+    "target": "Tattoo"
+  },
+  "Tattoos": {
+    "action": "MERGE",
+    "target": "Tattoo"
+  },
+  "Te Quiero": {
+    "action": "DELETE",
+    "reason": "Spanish phrase"
+  },
+  "Tea House": {
+    "action": "DELETE",
+    "reason": "specific venue"
+  },
+  "Teaching": {
+    "action": "MERGE",
+    "target": "Academia"
+  },
+  "Technical Truth": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Technology": {
+    "action": "DELETE",
+    "reason": "vague topic"
+  },
+  "Teeth": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Telegram": {
+    "action": "DELETE",
+    "reason": "messaging app"
+  },
+  "Telehealth": {
+    "action": "MERGE",
+    "target": "Therapy"
+  },
+  "Temporal Dialogue": {
+    "action": "DELETE",
+    "reason": "narrative technique"
+  },
+  "Temporal Drifting": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Temporal Suspension": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Tension": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Terrace": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Terrace Argument": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Terrazas": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Test Results": {
+    "action": "MERGE",
+    "target": "Blood Test"
+  },
+  "Testosterone Results": {
+    "action": "MERGE",
+    "target": "Testosterone"
+  },
+  "Text Analysis": {
+    "action": "DELETE",
+    "reason": "academic activity"
+  },
+  "Text Messaging": {
+    "action": "MERGE",
+    "target": "Texting"
+  },
+  "Text Sent": {
+    "action": "DELETE",
+    "reason": "messaging action"
+  },
+  "Texts": {
+    "action": "MERGE",
+    "target": "Texting"
+  },
+  "Thanatology": {
+    "action": "DELETE",
+    "reason": "academic field"
+  },
+  "The Argonauts": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "The Box": {
+    "action": "DELETE",
+    "reason": "vague reference"
+  },
+  "The Chariot": {
+    "action": "DELETE",
+    "reason": "tarot card"
+  },
+  "The Fool": {
+    "action": "DELETE",
+    "reason": "tarot card"
+  },
+  "The Last Of Us": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "The Leftovers": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "The Tempest": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Theme Park": {
+    "action": "MERGE",
+    "target": "Amusement Park"
+  },
+  "Therapeutic Goals": {
+    "action": "MERGE",
+    "target": "Therapy"
+  },
+  "Therese Et Isabelle": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Thesis": {
+    "action": "MERGE",
+    "target": "Thesis Progress"
+  },
+  "Thesis Postponement": {
+    "action": "MERGE",
+    "target": "Thesis Progress"
+  },
+  "Thesis Progress": {
+    "action": "KEEP",
+    "reason": "academic milestone"
+  },
+  "Third Date": {
+    "action": "DELETE",
+    "reason": "specific date number"
+  },
+  "Thought Loop": {
+    "action": "MERGE",
+    "target": "Rumination"
+  },
+  "Thousand First Dates": {
+    "action": "MERGE",
+    "target": "Dating"
+  },
+  "Three Faces": {
+    "action": "DELETE",
+    "reason": "unclear reference"
+  },
+  "Thrift Store": {
+    "action": "DELETE",
+    "reason": "specific venue"
+  },
+  "Thwarted Vice": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Tickets": {
+    "action": "DELETE",
+    "reason": "mundane object"
+  },
+  "Tides": {
+    "action": "DELETE",
+    "reason": "nature metaphor"
+  },
+  "Tights": {
+    "action": "MERGE",
+    "target": "Leggings"
+  },
+  "Tiktok": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Time": {
+    "action": "KEEP",
+    "reason": "temporal experience"
+  },
+  "Time As Affection": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Time Difference": {
+    "action": "DELETE",
+    "reason": "logistical detail"
+  },
+  "Time Disorientation": {
+    "action": "MERGE",
+    "target": "Dissociation"
+  },
+  "Time Distortion": {
+    "action": "MERGE",
+    "target": "Dissociation"
+  },
+  "Time Passing": {
+    "action": "MERGE",
+    "target": "Time"
+  },
+  "Time Travel": {
+    "action": "DELETE",
+    "reason": "fantasy concept"
+  },
+  "Time Travel Fantasy": {
+    "action": "DELETE",
+    "reason": "fantasy concept"
+  },
+  "Timeline": {
+    "action": "MERGE",
+    "target": "Time"
+  },
+  "Timeline Uncertainty": {
+    "action": "MERGE",
+    "target": "Transition"
+  },
+  "Timelines": {
+    "action": "MERGE",
+    "target": "Time"
+  },
+  "Timing": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Toenail Painting": {
+    "action": "MERGE",
+    "target": "Nails"
+  },
+  "Tombstone": {
+    "action": "MERGE",
+    "target": "Death"
+  },
+  "Touch": {
+    "action": "MERGE",
+    "target": "Intimacy"
+  },
+  "Touch Aversion": {
+    "action": "KEEP",
+    "reason": "physical boundary"
+  },
+  "Tourism": {
+    "action": "DELETE",
+    "reason": "travel activity"
+  },
+  "Tourist Day": {
+    "action": "DELETE",
+    "reason": "activity type"
+  },
+  "Toxic Confession": {
+    "action": "MERGE",
+    "target": "Confession"
+  },
+  "Toxic Friendships": {
+    "action": "MERGE",
+    "target": "Friendship"
+  },
+  "Toxicity": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Traffic": {
+    "action": "DELETE",
+    "reason": "mundane detail"
+  },
+  "Train Journey": {
+    "action": "DELETE",
+    "reason": "travel detail"
+  },
+  "Transaction": {
+    "action": "DELETE",
+    "reason": "vague concept"
+  },
+  "Transfeminicide": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Transgender": {
+    "action": "MERGE",
+    "target": "Trans"
+  },
+  "Transit": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Translation": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Transphobia Internalized": {
+    "action": "MERGE",
+    "target": "Internalized Transphobia"
+  },
+  "Transphobic Joke": {
+    "action": "MERGE",
+    "target": "Transphobia"
+  },
+  "Trapped Cycle": {
+    "action": "MERGE",
+    "target": "Trapped"
+  },
+  "Trapped Feeling": {
+    "action": "MERGE",
+    "target": "Trapped"
+  },
+  "Trapped In Honesty": {
+    "action": "MERGE",
+    "target": "Trapped"
+  },
+  "Trauma Bonding": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Trauma Framework": {
+    "action": "DELETE",
+    "reason": "analytical frame"
+  },
+  "Trauma Surfacing": {
+    "action": "MERGE",
+    "target": "Memory"
+  },
+  "Travel Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Travel Log": {
+    "action": "DELETE",
+    "reason": "documentation type"
+  },
+  "Travel Planning": {
+    "action": "MERGE",
+    "target": "Trip Planning"
+  },
+  "Triggering": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Trigonometry": {
+    "action": "DELETE",
+    "reason": "academic subject"
+  },
+  "Trip": {
+    "action": "MERGE",
+    "target": "Travel"
+  },
+  "Trip Anxiety": {
+    "action": "MERGE",
+    "target": "Anxiety"
+  },
+  "Trip Indecision": {
+    "action": "MERGE",
+    "target": "Indecision"
+  },
+  "Trip Preparation": {
+    "action": "MERGE",
+    "target": "Trip Planning"
+  },
+  "Trip Substitution": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Truncated Entry": {
+    "action": "DELETE",
+    "reason": "journal meta"
+  },
+  "Trust": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Trust Betrayal": {
+    "action": "MERGE",
+    "target": "Betrayal"
+  },
+  "Truth": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Tu/vous": {
+    "action": "KEEP",
+    "reason": "French intimacy marker"
+  },
+  "Tumors": {
+    "action": "MERGE",
+    "target": "Health"
+  },
+  "Tutoring": {
+    "action": "DELETE",
+    "reason": "work activity"
+  },
+  "Tux": {
+    "action": "MERGE",
+    "target": "Suit"
+  },
+  "Tuxedo": {
+    "action": "MERGE",
+    "target": "Suit"
+  },
+  "Tv Memory": {
+    "action": "DELETE",
+    "reason": "media memory"
+  },
+  "Tv Watching": {
+    "action": "MERGE",
+    "target": "Television"
+  },
+  "Twitter": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Twitter Drama": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Two-Kisses": {
+    "action": "DELETE",
+    "reason": "specific event"
+  },
+  "Two-Part-Date": {
+    "action": "DELETE",
+    "reason": "date structure"
+  },
+  "Two-Personas": {
+    "action": "MERGE",
+    "target": "Dual Identity"
+  },
+  "Two-Selves": {
+    "action": "MERGE",
+    "target": "Dual Identity"
+  },
+  "Two-Year-Reflection": {
+    "action": "DELETE",
+    "reason": "temporal milestone"
+  },
+  "Typography As Meaning": {
+    "action": "DELETE",
+    "reason": "stylistic technique"
+  },
+  "Ukulele": {
+    "action": "DELETE",
+    "reason": "specific instrument"
+  },
+  "Ukulele Cover": {
+    "action": "DELETE",
+    "reason": "music activity"
+  },
+  "Unanswered Email": {
+    "action": "MERGE",
+    "target": "Unanswered Messages"
+  },
+  "Unasked Questions": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Unavailability Pattern": {
+    "action": "MERGE",
+    "target": "Rejection"
+  },
+  "Uncertainty": {
+    "action": "MERGE",
+    "target": "Indecision"
+  },
+  "Unconscious": {
+    "action": "DELETE",
+    "reason": "vague state"
+  },
+  "Unconscious Misgendering": {
+    "action": "MERGE",
+    "target": "Misgendering"
+  },
+  "Unconscious Processing": {
+    "action": "DELETE",
+    "reason": "mental process"
+  },
+  "Underground City": {
+    "action": "DELETE",
+    "reason": "specific location"
+  },
+  "Undisclosed Identity": {
+    "action": "MERGE",
+    "target": "Closeted"
+  },
+  "Unfinished Work": {
+    "action": "MERGE",
+    "target": "Procrastination"
+  },
+  "Unfollow Sting": {
+    "action": "MERGE",
+    "target": "Unfollowing"
+  },
+  "Uniform": {
+    "action": "DELETE",
+    "reason": "clothing type"
+  },
+  "Uniforms": {
+    "action": "DELETE",
+    "reason": "clothing type"
+  },
+  "University Recognition": {
+    "action": "MERGE",
+    "target": "University"
+  },
+  "University Trip": {
+    "action": "DELETE",
+    "reason": "specific trip"
+  },
+  "Unmatched": {
+    "action": "MERGE",
+    "target": "Dating App"
+  },
+  "Unopened Messages": {
+    "action": "MERGE",
+    "target": "Unopened Message"
+  },
+  "Unread": {
+    "action": "MERGE",
+    "target": "Unread Message"
+  },
+  "Unread Emails": {
+    "action": "MERGE",
+    "target": "Unread Message"
+  },
+  "Unread Message": {
+    "action": "KEEP",
+    "reason": "communication avoidance"
+  },
+  "Unreciprocated Intensity": {
+    "action": "MERGE",
+    "target": "Rejection"
+  },
+  "Unregistered Number": {
+    "action": "DELETE",
+    "reason": "phone detail"
+  },
+  "Unreplied": {
+    "action": "MERGE",
+    "target": "Unreplied Messages"
+  },
+  "Unreplied Messages": {
+    "action": "KEEP",
+    "reason": "communication avoidance"
+  },
+  "Unrequited": {
+    "action": "MERGE",
+    "target": "Unrequited Love"
+  },
+  "Unrequited Love": {
+    "action": "KEEP",
+    "reason": "relationship pattern"
+  },
+  "Unseen Message": {
+    "action": "MERGE",
+    "target": "Unread Message"
+  },
+  "Unseen Messages": {
+    "action": "MERGE",
+    "target": "Unread Message"
+  },
+  "Unselfconsciousness": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Unspoken Confession": {
+    "action": "MERGE",
+    "target": "Confession"
+  },
+  "Unvalidated Emotions": {
+    "action": "MERGE",
+    "target": "Validation"
+  },
+  "Upskirt": {
+    "action": "DELETE",
+    "reason": "specific image type"
+  },
+  "Urges": {
+    "action": "MERGE",
+    "target": "Compulsion"
+  },
+  "Us Politics": {
+    "action": "DELETE",
+    "reason": "political topic"
+  },
+  "Us Trip": {
+    "action": "DELETE",
+    "reason": "specific trip"
+  },
+  "Vacation": {
+    "action": "MERGE",
+    "target": "Travel"
+  },
+  "Vaccination": {
+    "action": "MERGE",
+    "target": "Vaccine"
+  },
+  "Vaccine": {
+    "action": "KEEP",
+    "reason": "medical event"
+  },
+  "Vaccine Passport": {
+    "action": "DELETE",
+    "reason": "pandemic artifact"
+  },
+  "Vagina Language": {
+    "action": "MERGE",
+    "target": "Genital Dysphoria"
+  },
+  "Valentine Anxiety": {
+    "action": "MERGE",
+    "target": "Valentine'S Day"
+  },
+  "Valentine'S": {
+    "action": "MERGE",
+    "target": "Valentine'S Day"
+  },
+  "Valentine'S Separation": {
+    "action": "MERGE",
+    "target": "Valentine'S Day"
+  },
+  "Veganism": {
+    "action": "MERGE",
+    "target": "Vegetarianism"
+  },
+  "Vending Machine": {
+    "action": "DELETE",
+    "reason": "mundane object"
+  },
+  "Vet": {
+    "action": "DELETE",
+    "reason": "venue type"
+  },
+  "Vet Visit": {
+    "action": "DELETE",
+    "reason": "pet care"
+  },
+  "Vicarious Suffering": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Vicarious Trauma": {
+    "action": "MERGE",
+    "target": "Grief"
+  },
+  "Video As Proof": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Video Call": {
+    "action": "DELETE",
+    "reason": "communication method"
+  },
+  "Video Dysphoria": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Video Game": {
+    "action": "KEEP",
+    "reason": "gaming/escapism"
+  },
+  "Video Games": {
+    "action": "MERGE",
+    "target": "Video Game"
+  },
+  "Viewer Count": {
+    "action": "MERGE",
+    "target": "Viewer List"
+  },
+  "Viewer List Analysis": {
+    "action": "MERGE",
+    "target": "Viewer List"
+  },
+  "Violence": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Violence Fantasy": {
+    "action": "MERGE",
+    "target": "Fantasy"
+  },
+  "Violence Fear": {
+    "action": "MERGE",
+    "target": "Fear"
+  },
+  "Virginie Despentes": {
+    "action": "MERGE",
+    "target": "Despentes"
+  },
+  "Visa Stress": {
+    "action": "MERGE",
+    "target": "Visa"
+  },
+  "Visualization": {
+    "action": "DELETE",
+    "reason": "mental technique"
+  },
+  "Vocational Epiphany": {
+    "action": "MERGE",
+    "target": "Work"
+  },
+  "Voice Dictation": {
+    "action": "DELETE",
+    "reason": "writing method"
+  },
+  "Voice Messages": {
+    "action": "MERGE",
+    "target": "Voice Message"
+  },
+  "Voice Note": {
+    "action": "MERGE",
+    "target": "Voice Message"
+  },
+  "Voicelessness": {
+    "action": "KEEP",
+    "reason": "silencing/erasure"
+  },
+  "Void": {
+    "action": "KEEP",
+    "reason": "existential emptiness"
+  },
+  "Void Filling": {
+    "action": "MERGE",
+    "target": "Void"
+  },
+  "Void Question": {
+    "action": "MERGE",
+    "target": "Void"
+  },
+  "Vomit": {
+    "action": "DELETE",
+    "reason": "bodily function"
+  },
+  "Vomiting": {
+    "action": "DELETE",
+    "reason": "bodily function"
+  },
+  "Vouvoiement": {
+    "action": "MERGE",
+    "target": "Tu/vous"
+  },
+  "Waiter": {
+    "action": "DELETE",
+    "reason": "person role"
+  },
+  "Waitress": {
+    "action": "DELETE",
+    "reason": "person role"
+  },
+  "Waking Life": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Walk": {
+    "action": "MERGE",
+    "target": "Walking"
+  },
+  "Walking": {
+    "action": "KEEP",
+    "reason": "activity/coping"
+  },
+  "Walking Record": {
+    "action": "DELETE",
+    "reason": "exercise metric"
+  },
+  "Wandering": {
+    "action": "MERGE",
+    "target": "Walking"
+  },
+  "Wanting To Be Seen": {
+    "action": "MERGE",
+    "target": "Being Seen"
+  },
+  "Wanting vs Being": {
+    "action": "MERGE",
+    "target": "Dysphoria"
+  },
+  "Wardrobe": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Wardrobe Impossibility": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Wardrobe Transition": {
+    "action": "MERGE",
+    "target": "Clothes"
+  },
+  "Warning": {
+    "action": "DELETE",
+    "reason": "vague concept"
+  },
+  "Watches": {
+    "action": "DELETE",
+    "reason": "accessory type"
+  },
+  "Water": {
+    "action": "DELETE",
+    "reason": "mundane element"
+  },
+  "Watermelon": {
+    "action": "DELETE",
+    "reason": "specific food"
+  },
+  "Weekend Curse": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Weekend Plans": {
+    "action": "DELETE",
+    "reason": "planning type"
+  },
+  "Welfare Check": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Wet Dream": {
+    "action": "DELETE",
+    "reason": "bodily experience"
+  },
+  "Whatsapp": {
+    "action": "DELETE",
+    "reason": "app platform"
+  },
+  "Whisky": {
+    "action": "MERGE",
+    "target": "Alcohol"
+  },
+  "White Whale": {
+    "action": "DELETE",
+    "reason": "literary reference"
+  },
+  "Wig": {
+    "action": "MERGE",
+    "target": "Costume"
+  },
+  "Wii": {
+    "action": "DELETE",
+    "reason": "gaming console"
+  },
+  "Will To Live": {
+    "action": "DELETE",
+    "reason": "single-use, not searchable"
+  },
+  "Wine": {
+    "action": "MERGE",
+    "target": "Alcohol"
+  },
+  "Wine Hangover": {
+    "action": "MERGE",
+    "target": "Hangover"
+  },
+  "Wisdom Tooth": {
+    "action": "DELETE",
+    "reason": "dental issue"
+  },
+  "Wish": {
+    "action": "DELETE",
+    "reason": "vague desire"
+  },
+  "Withdrawal Fear": {
+    "action": "MERGE",
+    "target": "Withdrawal"
+  },
+  "Woman": {
+    "action": "KEEP",
+    "reason": "gender identity"
+  },
+  "Womanhood": {
+    "action": "MERGE",
+    "target": "Gender"
+  },
+  "Womb": {
+    "action": "KEEP",
+    "reason": "dysphoria/grief"
+  },
+  "Womb Dysphoria": {
+    "action": "MERGE",
+    "target": "Womb"
+  },
+  "Women": {
+    "action": "MERGE",
+    "target": "Woman"
+  },
+  "Women Only Housing": {
+    "action": "MERGE",
+    "target": "Women'S Space"
+  },
+  "Women'S Section": {
+    "action": "MERGE",
+    "target": "Women'S Space"
+  },
+  "Women'S Space": {
+    "action": "KEEP",
+    "reason": "gendered space access"
+  },
+  "Womens Shoes": {
+    "action": "DELETE",
+    "reason": "clothing item"
+  },
+  "Workplace Transition": {
+    "action": "MERGE",
+    "target": "Transition"
+  },
+  "Writer Dream": {
+    "action": "DELETE",
+    "reason": "specific dream"
+  },
+  "Writers' Group": {
+    "action": "DELETE",
+    "reason": "writing community"
+  },
+  "Written Name": {
+    "action": "MERGE",
+    "target": "Name"
+  },
+  "Wrong Name": {
+    "action": "MERGE",
+    "target": "Deadnaming"
+  },
+  "Y Tu Mamá También": {
+    "action": "DELETE",
+    "reason": "media title"
+  },
+  "Year 2016": {
+    "action": "DELETE",
+    "reason": "temporal marker"
+  },
+  "Younger Brother Mirroring": {
+    "action": "MERGE",
+    "target": "Brother"
+  },
+  "Youtube": {
+    "action": "MERGE",
+    "target": "Social Media"
+  },
+  "Zoo": {
+    "action": "DELETE",
+    "reason": "specific venue"
+  }
+}
