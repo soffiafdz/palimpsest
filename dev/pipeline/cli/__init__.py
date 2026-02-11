@@ -16,7 +16,7 @@ Command Groups:
     - Text Conversion: convert
     - Database: import-metadata, prune-orphans
     - Export: export-json
-    - PDF Generation: build-pdf
+    - PDF Generation: build-pdf, build-metadata-pdf
     - Maintenance: backup-full, backup-list-full, run-all, status, validate
 
 Usage:
@@ -73,6 +73,7 @@ from .text import convert  # noqa: E402
 from .database import import_metadata, prune_orphans  # noqa: E402
 from .export import export_json  # noqa: E402
 from .pdf import build_pdf  # noqa: E402
+from .metadata_pdf import build_metadata_pdf  # noqa: E402
 from .maintenance import backup_full, backup_list_full, run_all, status, validate  # noqa: E402
 
 # Register commands
@@ -82,6 +83,7 @@ cli.add_command(import_metadata)
 cli.add_command(export_json)
 cli.add_command(prune_orphans)
 cli.add_command(build_pdf)
+cli.add_command(build_metadata_pdf)
 cli.add_command(backup_full)
 cli.add_command(backup_list_full)
 cli.add_command(run_all)

@@ -162,6 +162,7 @@ class RelationType(str, Enum):
     Enumeration of personal relationship types.
 
     Categories of relationships with people mentioned in journal:
+        - SELF: The narrator / journal author
         - FAMILY: Family members
         - FRIEND: Friends
         - ROMANTIC: Romantic partners
@@ -172,6 +173,7 @@ class RelationType(str, Enum):
         - OTHER: Uncategorized relationships
     """
 
+    SELF = "self"
     FAMILY = "family"
     FRIEND = "friend"
     ROMANTIC = "romantic"
@@ -209,7 +211,7 @@ class RelationType(str, Enum):
     @property
     def is_close(self) -> bool:
         """Check if this typically represents a close relationship."""
-        return self in [self.FAMILY, self.FRIEND, self.ROMANTIC]
+        return self in [self.SELF, self.FAMILY, self.FRIEND, self.ROMANTIC]
 
     @property
     def privacy_level(self) -> int:
@@ -222,8 +224,10 @@ class RelationType(str, Enum):
             - 3: Friend
             - 2: Professional, Colleague
             - 1: Acquaintance, Public (lowest privacy)
+            - 0: Self (no privacy concern)
         """
         privacy_map = {
+            self.SELF: 0,
             self.ROMANTIC: 5,
             self.FAMILY: 4,
             self.FRIEND: 3,
