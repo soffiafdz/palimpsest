@@ -4,9 +4,13 @@ This file contains project-specific instructions for Claude Code that persist ac
 
 ## Git Commits
 
-- **No `git add -A`** — every commit should be intentional, stage specific files
-- **Brief, descriptive commit messages** — prefer one-liners
-- **No AI attribution** — do not mention AI, co-authors, or automated generation in commits
+**CRITICAL RULES - NEVER VIOLATE:**
+- **ABSOLUTELY NO MENTION OF AI ANYWHERE** — no AI, no co-authors, no automated generation, no Claude, nothing
+- **ONE-LINE COMMIT MESSAGES** — brief, descriptive, imperative mood
+- **NO `git add -A` OR `git add .`** — stage specific files strategically and intentionally
+- **INTENTIONAL STAGING** — review each file, stage only what belongs in the commit
+
+**Submodule handling:**
 - The `data/` directory is a git submodule — commit changes there separately before updating the submodule reference in the main repo
 
 ## Code Style Requirements
