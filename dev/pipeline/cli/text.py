@@ -14,7 +14,7 @@ from __future__ import annotations
 import click
 from pathlib import Path
 
-from dev.core.paths import TXT_DIR, MD_DIR
+from dev.core.paths import TXT_DIR, MD_DIR, JOURNAL_YAML_DIR
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.pipeline.txt2md import convert_directory, convert_file
 
@@ -36,8 +36,28 @@ from dev.pipeline.txt2md import convert_directory, convert_file
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite existing files")
 @click.option("--dry-run", is_flag=True, help="Preview changes without modifying files")
+@click.option(
+    "--yaml-dir",
+    type=click.Path(),
+    default=str(JOURNAL_YAML_DIR),
+    show_default=True,
+    help="Output directory for YAML metadata skeletons",
+)
+@click.option(
+    "--no-yaml",
+    is_flag=True,
+    help="Disable YAML skeleton generation",
+)
 @click.pass_context
-def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: bool) -> None:
+def convert(
+    ctx: click.Context,
+    input: str,
+    output: str,
+    force: bool,
+    dry_run: bool,
+    yaml_dir: str,
+    no_yaml: bool,
+) -> None:
     """
     Convert formatted text to Markdown entries.
 
@@ -45,6 +65,9 @@ def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: b
     individual daily Markdown files with minimal YAML frontmatter.
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
+
+    # Resolve yaml_dir: None if disabled, Path otherwise
+    resolved_yaml_dir = None if no_yaml else Path(yaml_dir)
 
     if dry_run:
         click.echo("📝 Converting text to Markdown (DRY RUN - no files will be modified)...")
@@ -61,6 +84,10 @@ def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: b
             click.echo(f"  • {input_path.name}")
 
         click.echo(f"\nOutput directory: {output}")
+        if resolved_yaml_dir:
+            click.echo(f"YAML skeleton directory: {resolved_yaml_dir}")
+        else:
+            click.echo("YAML skeletons: disabled")
         click.echo(f"Force overwrite: {force}")
         click.echo("\n💡 Run without --dry-run to execute conversion")
         return
@@ -76,6 +103,7 @@ def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: b
                 output_dir=Path(output),
                 force_overwrite=force,
                 logger=logger,
+                yaml_dir=resolved_yaml_dir,
             )
 
         if input_path.is_file():
@@ -84,12 +112,16 @@ def convert(ctx: click.Context, input: str, output: str, force: bool, dry_run: b
                 output_dir=Path(output),
                 force_overwrite=force,
                 logger=logger,
+                yaml_dir=resolved_yaml_dir,
             )
 
         if stats:
             click.echo("\n✅ Conversion complete:")
             click.echo(f"  Files processed: {stats.files_processed}")
             click.echo(f"  Entries created: {stats.entries_created}")
+            if stats.skeletons_created or stats.skeletons_skipped:
+                click.echo(f"  Skeletons created: {stats.skeletons_created}")
+                click.echo(f"  Skeletons skipped: {stats.skeletons_skipped}")
             click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:

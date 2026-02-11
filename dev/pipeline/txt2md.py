@@ -10,22 +10,29 @@ Generates daily Markdown files with basic computed metadata only:
 - word_count (computed)
 - reading_time (computed)
 
-Complex YAML metadata handling is deferred to yaml2sql/MdEntry pipeline.
+Also generates companion YAML metadata skeletons (commented-out templates)
+in the metadata directory for each entry, unless disabled with yaml_dir=None.
 
     journal/
     ├── sources/
     │   └── txt/
     │       └── <YYYY>
-    │           └── <YYYY-MM>.md
+    │           └── <YYYY-MM>.txt
     └── content/
         └── md/
             └── <YYYY>
                 └── <YYYY-MM-DD>.md
 
+    metadata/
+    └── journal/
+        └── <YYYY>
+            └── <YYYY-MM-DD>.yaml  (skeleton with instructions)
+
 Programmatic API:
     from dev.pipeline.txt2md import convert_file, convert_directory
     stats = convert_file(input_path, output_dir, force_overwrite, logger)
-    stats = convert_directory(input_dir, output_dir, force_overwrite, logger)
+    stats = convert_file(input_path, output_dir, yaml_dir=yaml_dir)
+    stats = convert_directory(input_dir, output_dir, yaml_dir=yaml_dir)
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -40,6 +47,7 @@ from dev.core.temporal_files import TemporalFileManager
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.cli import ConversionStats
 from dev.dataclasses.txt_entry import TxtEntry
+from dev.pipeline.yaml_skeleton import generate_skeleton
 
 
 # --- Conversion ---
@@ -49,6 +57,8 @@ def process_entry(
     force_overwrite: bool,
     minimal_yaml: bool,
     logger: Optional[PalimpsestLogger] = None,
+    yaml_dir: Optional[Path] = None,
+    stats: Optional[ConversionStats] = None,
 ) -> Optional[Path]:
     """
     Process a single TxtEntry and write to Markdown file.
@@ -90,6 +100,9 @@ def process_entry(
         force_overwrite: If True, overwrite existing files
         minimal_yaml: If True, generate minimal frontmatter only
         logger: Optional logger for debug output
+        yaml_dir: If provided, generate a YAML metadata skeleton alongside
+            the Markdown file. Set to None to disable skeleton generation.
+        stats: Optional ConversionStats to track skeleton creation counts
 
     Returns:
         Path to created/overwritten file, or None if skipped
@@ -123,6 +136,17 @@ def process_entry(
     action = "Overwrote" if output_path.exists() else "Created"
     safe_logger(logger).log_debug(f"{action} file: {output_path.name}")
 
+    # Generate YAML skeleton if yaml_dir is provided
+    if yaml_dir is not None:
+        skeleton_path = generate_skeleton(
+            entry.date, yaml_dir, force_overwrite, logger
+        )
+        if stats is not None:
+            if skeleton_path:
+                stats.skeletons_created += 1
+            else:
+                stats.skeletons_skipped += 1
+
     return output_path
 
 
@@ -132,6 +156,7 @@ def convert_file(
     force_overwrite: bool = False,
     minimal_yaml: bool = False,
     logger: Optional[PalimpsestLogger] = None,
+    yaml_dir: Optional[Path] = None,
 ) -> ConversionStats:
     """
     Convert a single monthly .txt file to multiple daily Markdown files.
@@ -180,6 +205,8 @@ def convert_file(
         force_overwrite: If True, overwrite existing .md files
         minimal_yaml: If True, generate minimal frontmatter only
         logger: Optional logger for operation tracking
+        yaml_dir: If provided, generate YAML metadata skeletons alongside
+            Markdown files. Set to None to disable skeleton generation.
 
     Returns:
         ConversionStats object with processing results
@@ -228,7 +255,8 @@ def convert_file(
     for entry in entries:
         try:
             result = process_entry(
-                entry, output_dir, force_overwrite, minimal_yaml, logger
+                entry, output_dir, force_overwrite, minimal_yaml, logger,
+                yaml_dir=yaml_dir, stats=stats,
             )
             if result:
                 stats.entries_created += 1
@@ -254,9 +282,20 @@ def convert_directory(
     force_overwrite: bool = False,
     minimal_yaml: bool = False,
     logger: Optional[PalimpsestLogger] = None,
+    yaml_dir: Optional[Path] = None,
 ) -> ConversionStats:
     """
     Convert all .txt files in a directory.
+
+    Args:
+        input_dir: Directory containing .txt files to convert
+        output_dir: Base output directory for Markdown files
+        pattern: Glob pattern for finding text files
+        force_overwrite: If True, overwrite existing files
+        minimal_yaml: If True, generate minimal frontmatter only
+        logger: Optional logger for operation tracking
+        yaml_dir: If provided, generate YAML metadata skeletons alongside
+            Markdown files. Set to None to disable skeleton generation.
 
     Returns:
         ConversionStats with results
@@ -285,13 +324,16 @@ def convert_directory(
             safe_logger(logger).log_info(f"Processing {txt_file.name}")
 
             stats = convert_file(
-                txt_file, output_dir, force_overwrite, minimal_yaml, logger
+                txt_file, output_dir, force_overwrite, minimal_yaml, logger,
+                yaml_dir=yaml_dir,
             )
 
             # Aggregate stats
             total_stats.files_processed += stats.files_processed
             total_stats.entries_created += stats.entries_created
             total_stats.entries_skipped += stats.entries_skipped
+            total_stats.skeletons_created += stats.skeletons_created
+            total_stats.skeletons_skipped += stats.skeletons_skipped
             total_stats.errors += stats.errors
 
         except Txt2MdError as e:

@@ -145,10 +145,14 @@ class ConversionStats(OperationStats):
         entries_created: Number of new entries created
         entries_updated: Number of existing entries updated
         entries_skipped: Number of entries skipped (unchanged)
+        skeletons_created: Number of YAML skeleton files created
+        skeletons_skipped: Number of YAML skeletons skipped (already exist)
     """
     entries_created: int = 0
     entries_updated: int = 0
     entries_skipped: int = 0
+    skeletons_created: int = 0
+    skeletons_skipped: int = 0
 
     def __post_init__(self) -> None:
         """Validate statistics on initialization."""
@@ -159,17 +163,25 @@ class ConversionStats(OperationStats):
             raise ValueError(f"entries_updated must be non-negative, got {self.entries_updated}")
         if self.entries_skipped < 0:
             raise ValueError(f"entries_skipped must be non-negative, got {self.entries_skipped}")
+        if self.skeletons_created < 0:
+            raise ValueError(f"skeletons_created must be non-negative, got {self.skeletons_created}")
+        if self.skeletons_skipped < 0:
+            raise ValueError(f"skeletons_skipped must be non-negative, got {self.skeletons_skipped}")
 
     def summary(self) -> str:
         """Get formatted summary with entry metrics."""
-        return (
-            f"{self.files_processed} files processed, "
-            f"{self.entries_created} created, "
-            f"{self.entries_updated} updated, "
-            f"{self.entries_skipped} skipped, "
-            f"{self.errors} errors, "
-            f"{self.duration():.2f}s"
-        )
+        parts = [
+            f"{self.files_processed} files processed",
+            f"{self.entries_created} created",
+            f"{self.entries_updated} updated",
+            f"{self.entries_skipped} skipped",
+        ]
+        if self.skeletons_created or self.skeletons_skipped:
+            parts.append(f"{self.skeletons_created} skeletons created")
+            parts.append(f"{self.skeletons_skipped} skeletons skipped")
+        parts.append(f"{self.errors} errors")
+        parts.append(f"{self.duration():.2f}s")
+        return ", ".join(parts)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary with entry metrics."""
@@ -178,6 +190,8 @@ class ConversionStats(OperationStats):
             "entries_created": self.entries_created,
             "entries_updated": self.entries_updated,
             "entries_skipped": self.entries_skipped,
+            "skeletons_created": self.skeletons_created,
+            "skeletons_skipped": self.skeletons_skipped,
         })
         return d
 

@@ -15,12 +15,12 @@ These files are companions to the Markdown prose files and contain:
 
 Key Design:
 - Separate from MD prose: metadata lives in YAML, not frontmatter
-- Human-populated: created by txt2md skeleton, filled by human
+- Skeleton-assisted: txt2md generates skeleton, human fills it in
 - Validate-only mode: check entities against curation without DB
 - Database-mappable: every field maps to ORM models
 
 Data Flow:
-    txt2md creates skeleton → Human populates → Validate → DB import
+    txt2md generates skeleton → Human populates → Validate → DB import
 
 Usage:
     from dev.dataclasses.metadata_entry import MetadataEntry

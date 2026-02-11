@@ -110,6 +110,7 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 
 - **`txt2md.py`**: Convert formatted text → Markdown with YAML frontmatter
   - Parses entries, computes metadata (word count, reading time)
+  - Generates YAML metadata skeletons with commented instructions
 
 - **`metadata_importer.py`**: Import metadata YAML → Database
   - Parses complex metadata, manages relationships
