@@ -402,18 +402,281 @@ File type routing:
   (`BufModified` check)
 - Status line indicator shows dirty page count and lint error count
 
+## Resolved Design Questions
+
+### Wiki Page Schema — RESOLVED
+
+Detailed designs for all 27 page types documented in
+`docs/development/wiki-page-designs.md`. Includes exact heading
+conventions, parsing rules, zone breakdowns, and mockups for every
+entity type. Key architectural decisions:
+
+- **YAML + floating window** for manuscript structural metadata (Part,
+  ManuscriptScene metadata)
+- **Pure wiki editing** for Character and Chapter (no YAML files)
+- **Sources and Based On** in wiki with guided insertion commands
+- **Journal entity metadata** in per-entity YAML files (People, Locations)
+  or single files (Cities, Arcs)
+- **11 Palimpsest nvim commands** with DB-backed autocomplete
+
+### Template Design — RESOLVED
+
+1. **Pre-computation layer:** Context builders (in exporter/orchestrator)
+   query DB, compute aggregates (co-occurrence, frequency counts, arc
+   grouping), pass prepared context dicts to templates. Templates are
+   dumb renderers — no queries, no computation.
+
+2. **One template per entity type:** Tier-based conditionals within single
+   template (e.g., Person template checks `tier == "narrator"` /
+   `"frequent"` / `"infrequent"`). Avoids duplicating shared logic
+   across multiple templates.
+
+3. **Reusable macros:** Shared patterns as Jinja2 macros in
+   `templates/macros/`:
+   - `entry_listing.jinja2` — Year → month → week hierarchy
+   - `timeline_table.jinja2` — Month-by-month density table
+   - `frequent_people.jinja2` — Bulleted wikilinked list with counts
+   - `thread_display.jinja2` — Thread heading + dates + content + people
+   - `patterns_section.jinja2` — Co-occurring tags/themes list
+
+4. **Custom Jinja2 filters** (`dev/wiki/filters.py`):
+   - `wikilink(name, display)` — `[[name]]` or `[[name|display]]`
+   - `date_long(d)` — `Tuesday, November 8, 2024`
+   - `date_range(start, end)` — `Nov 2024 – Jan 2025`
+   - `mid_dot_join(items)` — `[[A]] · [[B]] · [[C]]`
+   - `adaptive_list(items, threshold)` — inline or bulleted by count
+   - `timeline_table(monthly_counts)` — full markdown table
+   - `source_path(entity, wiki_root)` — relative path to source file
+
+5. **Empty section suppression:** Per-section `{% if data %}` blocks.
+   No wrapping macro — explicit conditionals are more readable.
+
+6. **User prose verbatim:** DB stores exact text from wiki sections
+   (synopsis, description, notes). Templates output `{{ chapter.synopsis }}`
+   with no transformation, trimming, or normalization. Parser captures
+   raw text between section headings.
+
+7. **Quartz frontmatter as post-processing:** Templates always output
+   clean markdown (no YAML frontmatter). Quartz metadata (title, aliases,
+   tags) injected by a separate post-processing step during
+   `plm wiki publish`, not by templates. Keeps editing experience clean.
+
+### Parser Implementation — RESOLVED
+
+**Approach:** Markdown AST via `markdown-it-py` with custom wikilink plugin.
+
+**Rationale:**
+- Most robust handling of markdown variations (code blocks, nested
+  formatting, blockquotes inside prose sections)
+- `markdown-it-py` is the Python port of `markdown-it`, which Quartz
+  uses internally — same parsing rules guarantee round-trip consistency
+- Natively understands heading levels, blockquotes, lists — the exact
+  structures our wiki sections use
+- Additional dependency is trivial (project already uses SQLAlchemy,
+  Jinja2, Click, PyYAML)
+- Custom plugin for `[[wikilink]]` inline syntax
+
+**Architecture:**
+
+```
+Wiki file → markdown-it-py AST
+         → Section splitter (walk tree, group nodes by ## headings)
+         → Per-section extractors:
+             Prose sections (Synopsis, Description, Notes):
+               Reassemble raw text from AST nodes, preserve verbatim
+             List sections (Scenes, Characters, Arcs, Poems):
+               Extract list item nodes, parse [[wikilinks]] from text
+             Structured sections (Sources, Based On):
+               Extract patterns from text nodes (type + wikilink + metadata)
+             Blockquote sections (References):
+               Extract blockquote content, parse attribution + mode
+```
+
+**What gets parsed (manuscript pages only):**
+
+| Page | Heading | Content Extractor | DB Target |
+|------|---------|-------------------|-----------|
+| Chapter | `#` | Title text | `chapter.title` |
+| Chapter | metadata line | Number, part, type, status | scalar fields |
+| Chapter | `## Synopsis` | Prose (verbatim) | `chapter.content` |
+| Chapter | `## Scenes` | Wikilink list (ordered) | `chapter_scenes` M2M |
+| Chapter | `## Characters` | Wikilink list | `chapter_characters` M2M |
+| Chapter | `## Arcs` | Wikilink list | `chapter.arcs` M2M |
+| Chapter | `## Notes` | Prose (verbatim) | `chapter.notes` |
+| Chapter | `## References` | Blockquotes + attribution | `manuscript_references` |
+| Chapter | `## Poems` | Wikilink list | `chapter_poems` M2M |
+| Character | `#` | Name text (strip " (character)") | `character.name` |
+| Character | `## Description` | Prose (verbatim) | `character.description` |
+| Character | `## Based On` | Structured: wikilink + contribution + notes | `person_character_map` |
+| ManuscriptScene | `#` | Name text | `manuscript_scene.name` |
+| ManuscriptScene | `## Description` | Prose (verbatim) | `manuscript_scene.description` |
+| ManuscriptScene | `## Sources` | Structured: type + wikilink + name | `manuscript_sources` |
+| ManuscriptScene | `## Notes` | Prose (verbatim) | `manuscript_scene.notes` |
+
+**Wikilink resolution:** Parser extracts `[[Display Name]]` from AST,
+resolves to entity ID via DB lookup (slug or display_name match).
+Unresolved links flagged as lint errors.
+
+### Neovim Plugin Architecture — RESOLVED
+
+**Existing implementation:** `dev/lua/palimpsest/`
+
+The plugin already provides:
+- **commands.lua** — Export, validate, import, stats, index commands
+- **keymaps.lua** — which-key.nvim bindings (`<leader>v` or `<leader>p`)
+- **fzf.lua** — fzf-lua integration for browse/search
+- **validators.lua** — Async Python validator → Neovim diagnostics
+- **autocmds.lua** — Validation on save, template population
+- **templates.lua** — Template system for diary entries
+- **config.lua** — Project root detection, path configuration
+- **vimwiki.lua** — VimWiki instance registration
+
+**Architecture pattern:** Plugin shells out to `plm` CLI for all DB
+operations. No direct SQLite access from Lua. fzf-lua provides
+fuzzy-finder UI. which-key.nvim provides discoverable keybindings.
+
+**New modules needed for wiki design commands:**
+
+```
+dev/lua/palimpsest/
+├── (existing modules)
+├── float.lua          # NEW: Floating window management
+│                      #   Open YAML in popup, save/close flow
+│                      #   Configurable size (60% default, larger for big files)
+├── context.lua        # NEW: Page type detection
+│                      #   Detect current wiki page entity type
+│                      #   Resolve entity slug from file path/heading
+│                      #   Determine available commands per context
+├── entity.lua         # NEW: Entity editing commands
+│                      #   PalimpsestEdit: open metadata YAML via float.lua
+│                      #   PalimpsestNew: create entity from template
+│                      #   PalimpsestAdd*: guided insertion with autocomplete
+│                      #   PalimpsestLinkTo*: bidirectional linking
+└── cache.lua          # NEW: Entity list caching for autocomplete
+                       #   On buffer enter / sync: call plm to dump entity lists
+                       #   Cache as Lua tables (people names, scene names, etc.)
+                       #   Provide completion source for nvim-cmp or native
+```
+
+**Autocomplete strategy:** Cache + async CLI. On sync or buffer enter,
+plugin calls `plm` to export entity lists as JSON. Cached in Lua tables.
+Autocomplete works against cached tables (instant). Cache refreshes on
+`:PalimpsestSync`.
+
+**Command registration:** Extend `commands.lua` setup function with new
+commands. Add keybindings to `keymaps.lua` under new groups:
+- `<leader>pe` / `<leader>ve` — Edit metadata (`:PalimpsestEdit`)
+- `<leader>pn` / `<leader>vn` — New entity (`:PalimpsestNew`)
+- Context-sensitive add commands available in manuscript buffers
+
+### `plm lint` Output Format — RESOLVED
+
+**JSON diagnostic schema** consumed by both the Neovim plugin
+(`validators.lua`) and the pre-sync validator.
+
+**Schema:**
+
+```json
+[
+  {
+    "file": "wiki/manuscript/chapters/the-gray-fence.md",
+    "diagnostics": [
+      {
+        "line": 12,
+        "col": 1,
+        "end_line": 12,
+        "end_col": 24,
+        "severity": "error",
+        "code": "UNRESOLVED_WIKILINK",
+        "message": "Unresolved wikilink: [[Clarizrd]]",
+        "source": "palimpsest"
+      }
+    ]
+  }
+]
+```
+
+**Decisions:**
+
+1. **Severity levels:** `error` / `warning` / `info` / `hint` — maps
+   1:1 to `vim.diagnostic.severity`
+
+2. **Errors block sync, warnings don't:** Unresolved wikilinks and
+   missing required sections are errors (corrupt DB data). Empty
+   sections and orphan scenes are warnings (work-in-progress).
+
+3. **Diagnostic codes:** Namespaced strings for programmatic filtering:
+   - Errors: `UNRESOLVED_WIKILINK`, `MISSING_REQUIRED_SECTION`,
+     `INVALID_METADATA`, `DUPLICATE_ENTRY`
+   - Warnings: `EMPTY_SECTION`, `ORPHAN_SCENE`, `MISSING_SOURCES`
+   - Info: `LONG_SYNOPSIS`, `UNLINKED_CHARACTER`
+
+4. **Batch mode:** `plm lint <path>` accepts files or directories,
+   returns array of file results.
+
+5. **Output format:** `--format json|text`, auto-detect based on TTY.
+   JSON for Neovim/programmatic consumers, colored text summary for
+   terminal use.
+
+### Quartz Configuration — RESOLVED
+
+Quartz is the **secondary** rendering layer — a static site for browser
+reading, discovery, and graph visualization. Vimwiki is primary.
+
+**Publish pipeline:**
+
+```
+wiki/                              quartz/content/
+  journal/people/clara.md    →       journal/people/clara.md
+  (clean markdown)                   (YAML frontmatter + same markdown)
+```
+
+`plm wiki publish` copies wiki files into the Quartz `content/`
+directory, injecting YAML frontmatter during the copy. Source wiki
+files are never modified. The Quartz output directory is disposable
+and `.gitignore`d.
+
+**Decisions:**
+
+1. **Frontmatter injection:** `plm wiki publish` injects per-file:
+   - `title` — from `# Heading`
+   - `aliases` — entity aliases from DB (enables `[[Nymi]]` → Nymeria)
+   - `tags` — entity type label (for graph coloring / filtering)
+   - `date` — for entry pages (chronological sorting)
+   - `draft: true` — for WIP pages to exclude from rendering
+
+2. **Theme:** Quartz defaults with minimal overrides. Serif body font
+   for manuscript prose readability. Dark mode enabled (built-in).
+
+3. **Layout:**
+   - Left sidebar: folder tree (journal / manuscript / indexes)
+   - Right sidebar: table of contents + local graph
+   - Backlinks section at page bottom (auto-generated by Quartz)
+
+4. **Navigation:** Folder hierarchy matches wiki structure:
+   ```
+   Journal/
+     Entries/ People/ Locations/ Tags/ Themes/ Arcs/ Events/
+   Manuscript/
+     Parts/ Chapters/ Characters/ Scenes/
+   Indexes/
+   ```
+   Custom index pages replace Quartz auto-generated folder pages.
+
+5. **Graph — local:** Depth 2, shown on every page in right sidebar.
+   Primary discovery tool for following connections.
+
+6. **Graph — global:** Filtered to hub entities only (People, Arcs,
+   Chapters). Individual entries omitted to keep the visualization
+   usable at 1000+ pages.
+
+7. **Graph coloring:** Entity type injected as `tags` frontmatter →
+   Quartz colors graph nodes by tag. Distinct colors for People,
+   Locations, Arcs, Entries, Chapters.
+
+8. **Plugins enabled:** WikiLinks, Backlinks, Graph, TableOfContents,
+   Search (Flexsearch). FolderPage disabled (custom indexes instead).
+
 ## Open Design Questions
 
-Topics requiring further discussion before implementation:
-
-- **Wiki page schema**: Exact heading conventions and parsing rules per
-  entity type (chapter, character, scene, part)
-- **Template design**: Jinja2 template structure, custom filters, and
-  generated-vs-user content boundaries
-- **Parser implementation**: How wiki → DB ingestion works concretely
-  (regex, markdown AST, or structured parsing)
-- **Neovim plugin architecture**: Lua module structure, diagnostic
-  provider implementation details
-- **`plm lint` output format**: JSON diagnostic schema specification
-- **Quartz configuration**: Theme, layout customization, navigation
-  structure, graph view settings
+All design questions resolved.
