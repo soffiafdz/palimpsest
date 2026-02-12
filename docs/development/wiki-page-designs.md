@@ -2878,21 +2878,28 @@ Unassigned scenes in separate section.
 
 ---
 
-## Editable vs Generated Boundary Summary
+## Content Source Summary
 
-| Page Type | Editable Fields | Parser Complexity |
-|-----------|----------------|-------------------|
-| Entry | — | None |
-| Person | relation_type | Simple (one field) |
-| Location | neighborhood | Simple (one field) |
-| City | country | Simple (one field) |
-| Arc | description | Simple (one field) |
-| Event | — | None |
-| Tag, Theme, Poem, Reference, Motif | — | None |
-| Chapter | title, number, part, type, status, synopsis, scenes, characters, arcs, notes, references, poems | Complex |
-| Character | name, description, role, is_narrator, based_on | Moderate |
-| ManuscriptScene | name, description, chapter, origin, status, notes, sources | Moderate |
-| Part | number, title | Simple |
+How each page type gets its data:
+
+| Page Type | Source | Editing Method | Parser |
+|-----------|--------|---------------|--------|
+| **Fully Generated (journal)** | | | |
+| Entry | DB → wiki | — (read-only) | None |
+| Event | DB → wiki | — (read-only) | None |
+| Tag, Theme, Poem, Reference, Motif | DB → wiki | — (read-only) | None |
+| All Index Pages | DB → wiki | — (read-only) | None |
+| **YAML Metadata (floating window)** | | | |
+| Person | Per-entity YAML | `:PalimpsestEdit` | YAML loader |
+| Location | Per-entity YAML | `:PalimpsestEdit` | YAML loader |
+| City | Single YAML file | `:PalimpsestEdit` | YAML loader |
+| Arc | Single YAML file | `:PalimpsestEdit` | YAML loader |
+| Part | YAML metadata | `:PalimpsestEdit` | YAML loader |
+| ManuscriptScene (metadata) | YAML metadata | `:PalimpsestEdit` | YAML loader |
+| **Pure Wiki (parsed from markdown)** | | | |
+| Chapter | Wiki page | Direct editing | markdown-it-py (complex) |
+| Character | Wiki page | Direct editing | markdown-it-py (moderate) |
+| ManuscriptScene (prose) | Wiki page | Direct editing | markdown-it-py (moderate) |
 
 ### Index Pages Review
 

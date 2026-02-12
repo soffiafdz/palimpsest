@@ -23,58 +23,80 @@ Content types:
 ### Data Flow
 
 ```
-                    ┌─────────────┐
-                    │   Database   │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-              ▼            │            ▼
-     ┌────────────┐        │   ┌────────────────┐
-     │  Journal    │        │   │  Manuscript     │
-     │  Wiki Pages │        │   │  Wiki Pages     │
-     │  (read-only)│        │   │  (editable)     │
-     └─────┬──────┘        │   └───────┬────────┘
-           │               │           │
-           │               │     ┌─────▼─────┐
-           │               │     │  Validate  │
-           │               │     │  (linter)  │
-           │               │     └─────┬─────┘
-           │               │           │
-           │               │     ┌─────▼─────┐
-           │               │     │   Sync     │
-           │               │     │  (ingest)  │
-           │               │     └─────┬─────┘
-           │               │           │
-           │               └───────────┘
-           │                           │
-           └──────────┬────────────────┘
-                      ▼
-              ┌──────────────┐
-              │    Quartz    │
-              │  (static     │
-              │   site gen)  │
-              └──────────────┘
+                      ┌─────────────┐
+                      │   Database   │
+                      └──────┬──────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+ ┌──────────────┐   ┌───────────────┐   ┌────────────────┐
+ │ Journal Wiki  │   │ YAML Metadata │   │ Manuscript Wiki │
+ │ (generated)   │   │ (per-entity)  │   │ (mixed)         │
+ └──────┬───────┘   └───────┬───────┘   └───────┬────────┘
+        │                   │                    │
+        │            ┌──────▼───────┐     ┌──────▼───────┐
+        │            │  Palimpsest  │     │   Validate   │
+        │            │  nvim plugin │     │   (linter)   │
+        │            │  (float edit)│     └──────┬───────┘
+        │            └──────┬───────┘            │
+        │                   │              ┌─────▼──────┐
+        │                   └──────┐       │    Sync    │
+        │                          │       │  (ingest)  │
+        │                          │       └─────┬──────┘
+        │                          │             │
+        │                          └──────┬──────┘
+        │                                 │
+        └────────────┬────────────────────┘
+                     ▼
+            ┌──────────────┐
+            │  plm wiki    │
+            │  publish     │
+            │  (copy +     │
+            │  frontmatter)│
+            └──────┬───────┘
+                   ▼
+            ┌──────────────┐
+            │    Quartz    │
+            │  (static     │
+            │   site gen)  │
+            └──────────────┘
 ```
 
-- **Journal**: DB → Wiki (one-way generation)
-- **Manuscript**: DB → Wiki → User edits → Validate → Sync → DB → Regenerate
-- **Browser**: Wiki → Quartz build → static site
+Three content paths:
+
+- **Journal wiki** (generated): DB → Jinja2 → wiki pages (read-only)
+- **YAML metadata** (per-entity): DB → YAML files ↔ Palimpsest nvim
+  plugin (floating window editing) → DB
+- **Manuscript wiki** (mixed): DB → wiki pages → user edits prose
+  (Character, Chapter) → validate → sync → DB → regenerate
+- **Browser**: wiki → `plm wiki publish` (copy + frontmatter injection)
+  → Quartz build → static site
 
 ### Round-Trip Cycle
 
-The manuscript workflow follows a read-edit-sync-regenerate loop:
+Two editing paths feed back into the database:
+
+**YAML metadata path** (Part, ManuscriptScene metadata, journal entities):
+
+1. **Generate**: DB exports YAML metadata files
+2. **Edit**: User opens `:PalimpsestEdit` → floating window with YAML
+3. **Save**: YAML validated and ingested into DB on window close
+4. **Regenerate**: DB re-renders wiki pages with updated metadata
+
+**Wiki prose path** (Chapter, Character, ManuscriptScene prose):
 
 1. **Generate**: DB renders wiki pages via Jinja2 templates
-2. **Edit**: User modifies wiki pages freely in Neovim
+2. **Edit**: User modifies wiki pages directly in Neovim
 3. **Validate**: Linter checks edits on save (async, advisory)
-4. **Sync**: On explicit user command, validated pages are ingested into DB
+4. **Sync**: On explicit user command, validated pages are parsed and
+   ingested into DB
 5. **Regenerate**: DB re-renders pages, normalizing content and adding
    computed data (backlinks, cross-references, status badges)
 
-Every piece of user-written content on a wiki page maps to a DB field.
-Nothing is lost in the round-trip — the user's text passes through
-ingest before generation overwrites the file.
+Every piece of user-written content maps to a DB field. Nothing is
+lost in the round-trip — the user's text passes through ingest before
+generation overwrites the file.
 
 ### Regeneration Safety
 
