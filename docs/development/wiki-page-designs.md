@@ -89,6 +89,26 @@ prose lives in wiki sections, generated content feels unified.
 
 ### Palimpsest Plugin Commands
 
+**Command Reference Table**
+
+| Command | Keybinding | Context | Purpose | Autocomplete |
+|---------|-----------|---------|---------|--------------|
+| `:PalimpsestEdit` | `<leader>em` | Any entity page | Open metadata YAML in floating window | N/A |
+| `:PalimpsestNew {type}` | `<leader>en` | Any page | Create new entity (scene/chapter/character/part) | Entity type on input |
+| `:PalimpsestAddSource` | — | ManuscriptScene page | Add source reference to Sources section | Entry dates, scene names, thread names |
+| `:PalimpsestLinkToManuscript` | — | Journal pages (Entry, Person, Poem, etc.) | Link journal content as manuscript source | Manuscript scene names |
+| `:PalimpsestAddBasedOn` | — | Character page | Add person mapping to Based On section | People (display_name + entry count + relation), contribution types |
+| `:PalimpsestLinkToCharacter` | — | Person page | Link journal person to manuscript character | Character names, contribution types |
+| `:PalimpsestAddScene` | — | Chapter page | Add scene to Scenes section | Manuscript scene names |
+| `:PalimpsestAddCharacter` | — | Chapter page | Add character to Characters section | Character names |
+| `:PalimpsestAddArc` | — | Chapter page | Add arc to Arcs section | Arc names |
+| `:PalimpsestAddReference` | — | Chapter page | Add reference to References section | Reference sources, prompts for quote/mode |
+| `:PalimpsestAddPoem` | — | Chapter page | Add poem to Poems section | Poem titles |
+
+---
+
+### Palimpsest Plugin Command Details
+
 **`:PalimpsestEdit` (or `<leader>em`)**
 Opens metadata YAML for current entity in floating window.
 
@@ -159,6 +179,41 @@ Parser extracts sources from wiki structured format:
 ```
 
 Pattern: `**{Type}:** [[{date}]]( — {name})?` or `**{Type}:** {name} ([[{date}]])`
+
+**`:PalimpsestAddBasedOn`** (on Character page)
+Guided insertion of person-character mappings into Based On section.
+
+Workflow:
+1. Cursor in `## Based On` section of Character page
+2. Command prompts for person
+3. DB-backed autocomplete: shows People with display_name, entry count, relation type
+4. Select contribution type: primary, composite, inspiration (autocomplete)
+5. Optionally add notes paragraph (free text)
+6. Inserts formatted wiki section:
+```markdown
+**[[Clara Dupont]]** · primary
+The central inspiration. Most scenes are drawn directly
+from journal observations.
+```
+
+**`:PalimpsestLinkToCharacter`** (on Person page)
+Bidirectional linking: mark journal person as character inspiration.
+
+Workflow:
+1. On Person page (e.g., Clara's page)
+2. Command prompts: "Link to which character?"
+3. Autocompletes manuscript character names
+4. Prompts for contribution type (primary/composite/inspiration)
+5. Adds person mapping to selected character's Based On section
+6. Use case: while reviewing journal people, mark character inspirations
+
+Parser extracts person mappings from wiki structured format:
+```markdown
+**[[Person Display Name]]** · {contribution_type}
+Optional notes paragraph describing the contribution.
+```
+
+Pattern: `**[[{person}]]** · {contribution}` + optional prose block
 
 ### Journal Entity Metadata Files
 
@@ -1968,14 +2023,14 @@ and don't have enough data density for a month-by-month table.
 ### Page 14: Chapter
 
 **Purpose:** The central manuscript editing page.
-**Fully editable.**
+**Pure wiki editing.** No YAML metadata files.
 
 **Mockup:**
 
 ```markdown
 # The Gray Fence
 
-**Part:** [[Part I — Arrival]] | **Number:** 3
+**Number:** 3 | **Part:** [[Part I — Arrival]]
 **Type:** prose | **Status:** draft
 
 ---
@@ -1989,18 +2044,14 @@ mornings with the same view of the same fence.
 
 ## Scenes
 
-**[[Morning at the Fence]]** (journaled, included)
-← [[2024-11-08]]: The Gray Fence
-
-**[[The Dog Walker]]** (invented, fragment)
-
-**[[Plateau Drift]]** (journaled, draft)
-← [[2024-11-22]]: Plateau Drift
+- [[Morning at the Fence]]
+- [[The Dog Walker]]
+- [[Plateau Drift]]
 
 ## Characters
 
-- [[Sofia (character)]] — protagonist, narrator
-- [[Clara (character)]] — mentioned
+- [[Sofia (character)]]
+- [[Clara (character)]]
 
 ## Arcs
 
@@ -2036,36 +2087,84 @@ to work on the transition between scenes 1 and 3.
 - [[The Bookend Kiss]] ([[2024-12-15]])
 ```
 
-**Zone breakdown:**
-- **Header (editable):** Title as `#`, part (wikilink) + number, type + status.
-- **Synopsis (editable):** Free text → `content` DB field.
-- **Scenes (editable):** ManuscriptScene links with origin + status.
-  Source entries shown beneath each (← entry_date: scene_name).
-- **Characters (editable):** Character wikilinks with role annotation.
-- **Arcs (editable):** Arc wikilinks.
-- **Notes (editable):** Free text → `notes` DB field.
-- **References (editable):** Blockquoted content with source attribution + mode.
-- **Poems (editable):** Poem wikilinks.
-- **Sources (generated):** Aggregated from ManuscriptScene → ManuscriptSource.
-  Grouped by source type. Read-only, regenerated from DB.
+**No YAML metadata.** Chapter defined entirely by wiki page content.
 
-**Parser boundary:** Everything above the final `---` is editable. The
-`## Sources` section below the `---` is generated and ignored by the parser.
+**Zone breakdown:**
+- **Header:** Title from `#` heading. Metadata line: number, part (wikilink),
+  type, status. All parsed from wiki.
+- **Synopsis (editable):** Free prose describing chapter's narrative arc
+- **Scenes (editable):** Ordered list of manuscript scenes. Added via
+  `:PalimpsestAddScene` or manual editing
+- **Characters (editable):** List of characters appearing. Added via
+  `:PalimpsestAddCharacter` or manual editing
+- **Arcs (editable):** List of narrative arcs this chapter belongs to. Added
+  via `:PalimpsestAddArc` or manual editing
+- **Notes (editable):** Free-form author notes, craft observations, TODOs
+- **References (editable):** Blockquoted content with source attribution + mode.
+  Added via `:PalimpsestAddReference` or manual editing
+- **Poems (editable):** List of poems appearing in chapter. Added via
+  `:PalimpsestAddPoem` or manual editing
+- **Sources (generated):** Aggregated from ManuscriptScene → ManuscriptSource.
+  Grouped by source type. Read-only, regenerated from DB
+
+**Parser behavior:**
+- Extracts title from `#` heading
+- Parses metadata line: number (integer), part (wikilink → part ID),
+  type (validates against ChapterType enum), status (validates against ChapterStatus enum)
+- Reads Synopsis and Notes section content (prose)
+- Parses Scenes list → manuscript_scene IDs
+- Parses Characters list → character IDs
+- Parses Arcs list → arc IDs
+- Parses References (blockquote format)
+- Parses Poems list → poem IDs
+- Ignores Sources section (generated)
+
+**Creation:** `:PalimpsestNew chapter` creates wiki page template, user edits directly.
+No `:PalimpsestEdit` needed (direct wiki editing).
+
+### Chapter Review Decisions
+
+1. **No YAML metadata files:** All chapter metadata (title, number, part, type,
+   status) is parseable from wiki header. No separate YAML files needed.
+   Consistent with Character (pure wiki editing).
+
+2. **Metadata from header line:** Parser extracts number (integer), part
+   (resolves wikilink to part ID), type and status (validates against enums)
+   from header metadata line. Format: `**Number:** 3 | **Part:** [[Part I]]`
+
+3. **All relationships in wiki:** Scenes, Characters, Arcs, References, Poems
+   stored as structured lists in wiki sections. Parser extracts entity IDs/slugs
+   via wikilink resolution and DB lookup.
+
+4. **Guided relationship insertion:** Special commands for adding relationships:
+   - `:PalimpsestAddScene` (autocomplete manuscript scenes)
+   - `:PalimpsestAddCharacter` (autocomplete characters)
+   - `:PalimpsestAddArc` (autocomplete arcs)
+   - `:PalimpsestAddReference` (autocomplete reference sources, prompts for quote/mode)
+   - `:PalimpsestAddPoem` (autocomplete poems)
+
+5. **Parser boundary:** Everything above final `---` is editable (title, metadata,
+   synopsis, all relationship lists, notes). Sources section below `---` is
+   generated (aggregated from scene sources).
+
+6. **Scene ordering matters:** Scenes list order determines chapter structure.
+   Parser preserves order (uses list position for scene sequence in chapter).
+
+7. **Complex but unified:** Chapter is the most complex page (most editable
+   sections), but keeping everything in wiki avoids context switching. All
+   chapter planning happens in one document.
 
 ---
 
 ### Page 15: Character
 
 **Purpose:** Manuscript character definition and mapping.
-**Fully editable.**
+**Pure wiki editing.** No YAML metadata files.
 
 **Mockup:**
 
 ```markdown
 # Clara (character)
-
-**Role:** love interest
-**Narrator:** no
 
 ---
 
@@ -2077,11 +2176,11 @@ scenes. She is less a character than a gravitational pull.
 
 ## Based On
 
-**[[Clara]]** · primary
+**[[Clara Dupont]]** · primary
 The central inspiration. Most scenes are drawn directly
 from journal observations.
 
-**[[Majo]]** · composite
+**[[Majo Rodríguez]]** · composite
 Some of Clara's dialogue borrows Majo's speech patterns.
 
 ---
@@ -2101,18 +2200,52 @@ Some of Clara's dialogue borrows Majo's speech patterns.
 - [[Station Kiss]] (journaled, included)
 ```
 
-**Zone breakdown:**
-- **Header (editable):** Name, role, narrator flag.
-- **Description (editable):** Free text → `description` DB field.
-- **Based On (editable):** PersonCharacterMap entries. Person wikilink +
-  contribution type, with optional notes paragraph beneath.
-- **Chapters (generated):** From chapter_characters M2M. Chapter wikilink +
-  part + status.
-- **Scenes (generated):** ManuscriptScenes in chapters where this character
-  appears, grouped by chapter.
+**No YAML metadata.** Character defined entirely by wiki page content.
 
-**Parser boundary:** Header, Description, and Based On are editable (above
-the `---`). Chapters and Scenes are generated (below the `---`).
+**Zone breakdown:**
+- **Header:** Character name extracted from `#` heading. Format: `# {Name} (character)`
+- **Description (editable):** Free prose describing character's narrative function
+- **Based On (editable):** Person-character mappings. Added via `:PalimpsestAddBasedOn`
+  or manual editing. Format: `**[[Person]]** · {contribution_type}` + optional notes
+- **Chapters (generated):** From chapter_characters M2M. Chapter wikilink + part + status
+- **Scenes (generated):** ManuscriptScenes where character appears, grouped by chapter
+
+**Parser behavior:**
+- Extracts character name from `#` heading
+- Reads Description section content → `description` DB field
+- Parses Based On section → creates PersonCharacterMap entries
+- Ignores Chapters and Scenes sections (generated)
+
+**Creation:** `:PalimpsestNew character` creates wiki page template, user edits directly.
+No `:PalimpsestEdit` needed (or opens current wiki page in place).
+
+### Character Review Decisions
+
+1. **No YAML metadata files:** Character has no structured metadata fields beyond
+   name. Role and is_narrator fields deemed redundant (all non-narrator characters
+   are obviously not narrators; role categorization is reductive). Character
+   defined entirely by wiki page content.
+
+2. **Pure wiki editing:** Character pages edited directly in wiki, no floating
+   window YAML editing. Name extracted from heading, description from prose
+   section, person mappings from structured Based On section.
+
+3. **Guided person mapping:** `:PalimpsestAddBasedOn` command provides DB-backed
+   autocomplete for adding person-character mappings. Ensures data integrity
+   (no typos, only actual journal people). Autocomplete shows display_name,
+   entry count, relation type.
+
+4. **Bidirectional linking:** `:PalimpsestLinkToCharacter` from Person pages
+   creates character mappings. While reviewing journal people, mark character
+   inspirations without leaving context.
+
+5. **Parser extracts from wiki:** Character name from `#` heading (format:
+   `# {Name} (character)`), description from prose section, person mappings
+   from structured format (`**[[Person]]** · {contribution}`).
+
+6. **Creation workflow:** `:PalimpsestNew character` creates wiki page template
+   with editable sections. User fills name, description, adds person mappings,
+   saves. Parser extracts → DB updates → page regenerates with Chapters/Scenes.
 
 ---
 
@@ -2761,6 +2894,72 @@ Unassigned scenes in separate section.
 | ManuscriptScene | name, description, chapter, origin, status, notes, sources | Moderate |
 | Part | number, title | Simple |
 
+### Index Pages Review
+
+**All 10 index pages confirmed as fully auto-generated navigation.** No editable content, pure DB views. Original designs work for both Neovim/vimwiki (primary) and Quartz static site (secondary).
+
+**Package functions on indexes:**
+- `:PalimpsestEdit` — Not applicable (nothing to edit)
+- `:PalimpsestNew {type}` — Contextual on Manuscript Index (create chapter/part)
+- Primary interaction: browsing via wikilinks
+
+**Markdown-based enhancements (vimwiki-first, Quartz-compatible):**
+
+**People Index:**
+- Add co-occurrence table showing top person pairs (who appears together most)
+```markdown
+## Frequent Pairs
+
+| Person 1 | Person 2 | Shared Entries |
+|----------|----------|----------------|
+| [[Clara Dupont]] | [[Majo Rodríguez]] | 34 |
+| [[Mom]] | [[Dad]] | 28 |
+```
+
+**Manuscript Index:**
+- Add progress table showing chapter status breakdown
+```markdown
+**Progress Summary:**
+
+| Status | Count | Chapters |
+|--------|-------|----------|
+| Draft | 4 | [[Ch 1]], [[Ch 2]], [[Ch 4]], [[Ch 7]] |
+| Revised | 6 | [[Ch 3]], [[Ch 5]], [[Ch 6]], [[Ch 8]], [[Ch 9]], [[Ch 10]] |
+| Final | 2 | [[Ch 11]], [[Ch 12]] |
+```
+
+- Add source coverage stats
+```markdown
+**Journal Coverage:**
+- Entries sourced: 127 / 384 (33%)
+- Scenes sourced: 89 / 3,097 (3%)
+- Unsourced entries: [link to filtered view]
+```
+
+**Tag & Theme Index:**
+- Add co-occurrence table for top tag pairs
+```markdown
+## Tag Patterns
+
+| Tag 1 | Tag 2 | Co-occurrences |
+|-------|-------|----------------|
+| [[loneliness]] | [[routine]] | 28 |
+| [[writing]] | [[procrastination]] | 22 |
+```
+
+**Arc Index:**
+- Add arc overlap table
+```markdown
+## Arc Overlaps
+
+| Arc 1 | Arc 2 | Shared Entries |
+|-------|-------|----------------|
+| [[The Long Wanting]] | [[The Dating Carousel]] | 45 |
+| [[Growing Up]] | [[The Therapy Journey]] | 12 |
+```
+
+**Design principle:** All enhancements use standard markdown (tables, lists, links). No JavaScript, no interactive elements. Must render cleanly in Neovim and Quartz. Vimwiki is primary interface; static site is bonus.
+
 ---
 
 ## Review Status
@@ -2777,9 +2976,9 @@ Review order (simple → complex):
 
 **Manuscript:**
 7. ✅ Part — REVIEWED
-8. ManuscriptScene — designed, not yet reviewed
-9. Character — designed, not yet reviewed
-10. Chapter — designed, not yet reviewed
+8. ✅ ManuscriptScene — REVIEWED
+9. ✅ Character — REVIEWED
+10. ✅ Chapter — REVIEWED
 
 **Indexes:**
-11. All indexes — designed, not yet reviewed
+11. ✅ All indexes — REVIEWED
