@@ -122,6 +122,7 @@ Commands for wiki generation, linting, sync, and publishing:
 :PalimpsestSync [mode]         " Sync wiki pages with database
 :PalimpsestLint                " Lint wiki pages for errors
 :PalimpsestGenerate [section]  " Generate wiki pages from database
+:PalimpsestPublish             " Publish wiki to Quartz
 ```
 
 **Sync modes:**
@@ -144,6 +145,19 @@ Commands for editing YAML metadata in floating windows:
 ```
 
 **New entity types:** `people`, `chapters`, `characters`, `scenes`
+
+### Validation Commands
+
+Commands for validating frontmatter, links, and entry consistency:
+
+```vim
+:PalimpsestValidateFrontmatter    " Validate markdown frontmatter
+:PalimpsestValidateMetadata       " Validate all frontmatter structure
+:PalimpsestValidateLinks          " Validate markdown links
+:PalimpsestValidateEntry [DATE]   " Validate entry (MD + YAML) with quickfix
+```
+
+`:PalimpsestValidateEntry` auto-detects the entry date from the current buffer filename if not provided. Results populate the quickfix list.
 
 ### Metadata Commands
 
@@ -215,20 +229,37 @@ If Palimpsest is your only vimwiki, keybindings use `<leader>v` prefix:
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>vE` | Export all to wiki |
 | `<leader>vS` | Wiki sync |
 | `<leader>vL` | Wiki lint |
 | `<leader>vG` | Wiki generate |
+| `<leader>vP` | Wiki publish (Quartz) |
 
 #### Validation
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>vvw` | Validate wiki links |
-| `<leader>vvo` | Find orphaned pages |
+| `<leader>vvw` | Lint wiki pages |
 | `<leader>vvf` | Validate frontmatter |
-| `<leader>vvm` | Validate metadata |
+| `<leader>vvm` | Validate frontmatter structure |
 | `<leader>vvl` | Validate markdown links |
+| `<leader>vve` | Validate entry (quickfix) |
+
+#### Manuscript
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>vme` | Generate manuscript |
+| `<leader>vmi` | Ingest manuscript edits |
+| `<leader>vmh` | Manuscript homepage |
+
+#### Quick Navigation
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>vs` | Statistics dashboard |
+| `<leader>va` | Analysis report |
+| `<leader>vh` | Wiki homepage |
+| `<leader>vf` | Quick access wiki pages |
 
 ### Multiple VimWiki Setup
 
@@ -283,20 +314,37 @@ If you have multiple vimwikis configured, Palimpsest uses `<leader>p` prefix ins
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>pE` | Export all to wiki |
 | `<leader>pS` | Wiki sync |
 | `<leader>pL` | Wiki lint |
 | `<leader>pG` | Wiki generate |
+| `<leader>pP` | Wiki publish (Quartz) |
 
 #### Validation
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>pvw` | Validate wiki links |
-| `<leader>pvo` | Find orphaned pages |
+| `<leader>pvw` | Lint wiki pages |
 | `<leader>pvf` | Validate frontmatter |
-| `<leader>pvm` | Validate metadata |
+| `<leader>pvm` | Validate frontmatter structure |
 | `<leader>pvl` | Validate markdown links |
+| `<leader>pve` | Validate entry (quickfix) |
+
+#### Manuscript
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>pme` | Generate manuscript |
+| `<leader>pmi` | Ingest manuscript edits |
+| `<leader>pmh` | Manuscript homepage |
+
+#### Quick Navigation
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>ps` | Statistics dashboard |
+| `<leader>pa` | Analysis report |
+| `<leader>ph` | Wiki homepage |
+| `<leader>pf` | Quick access wiki pages |
 
 ---
 
@@ -307,15 +355,16 @@ Palimpsest automatically validates markdown files on save with inline LSP-style 
 ### Automatic Validation
 
 **On Save (BufWritePost):**
-- Entry files (`data/wiki/entries/**/*.md`) → Frontmatter validation
-- All wiki files → Link validation
+- Journal entries (`data/journal/content/md/**/*.md`) → Frontmatter validation + Link validation
+- Wiki pages (`data/wiki/**/*.md`) → Wiki lint validation
 
 ### Manual Validation
 
 ```vim
 :PalimpsestValidateFrontmatter    " Validate YAML frontmatter
-:PalimpsestValidateMetadata       " Validate metadata fields
+:PalimpsestValidateMetadata       " Validate all frontmatter structure
 :PalimpsestValidateLinks          " Validate markdown links
+:PalimpsestValidateEntry [DATE]   " Validate entry with quickfix output
 ```
 
 ### Validation Types
@@ -346,24 +395,14 @@ Example output:
 
 ---
 
-## Export/Import Commands
-
-Standard Palimpsest wiki commands are also available:
+## Quick Navigation Commands
 
 ```vim
-:PalimpsestExport [entity]         " Export from database to wiki
-:PalimpsestValidate [mode]         " Validate wiki cross-references
 :PalimpsestStats                   " Open statistics dashboard
 :PalimpsestIndex                   " Open wiki homepage
 :PalimpsestAnalysis                " Open analysis report
-
-" Manuscript-specific
-:PalimpsestManuscriptExport [entity]
-:PalimpsestManuscriptImport [entity]
-:PalimpsestManuscriptIndex
+:PalimpsestManuscriptIndex         " Open manuscript homepage
 ```
-
-See `:help PalimpsestExport` for full command details.
 
 ---
 
@@ -447,6 +486,7 @@ These paths are used by:
 │  │  ├── commands.lua   (cmds)         │  │
 │  │  ├── keymaps.lua    (keys)         │  │
 │  │  ├── vimwiki.lua    (config)       │  │
+│  │  ├── utils.lua      (shared util)  │  │
 │  │  ├── context.lua    (page detect)  │  │
 │  │  ├── cache.lua      (entity cache) │  │
 │  │  ├── float.lua      (popup YAML)   │  │
@@ -504,6 +544,103 @@ The Neovim package acts as a frontend to the Python backend:
 - **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, sync, publish
 - **Entity Editing** - Opens YAML metadata in floating windows via `plm metadata`
 - **Entity Caching** - Calls `plm metadata list-entities` for autocomplete data
+
+---
+
+## Deck Mode (Writer Deck)
+
+Deck mode is a lightweight plugin profile for the writer deck (Raspberry Pi Zero 2W), which runs a minimal neovim setup without Python. It enables manuscript editing via vimwiki with safety guards that prevent data loss from wiki/DB drift.
+
+### Setup
+
+Set `vim.g.palimpsest_deck_mode = true` before calling `setup()`:
+
+```lua
+config = function()
+    vim.g.palimpsest_deck_mode = true
+    require("palimpsest").setup()
+end,
+```
+
+### Sync-Pending Marker
+
+When a manuscript wiki file is saved on the deck, a `.sync-pending` marker (`data/wiki/.sync-pending`) is created tracking which files were edited. This marker:
+
+- **Blocks** `plm wiki generate` and `plm wiki sync --generate` on the main machine
+- **Is cleared** by `plm wiki sync` (full or ingest-only) after ingesting changes
+- **Triggers a notification** on main machine nvim startup: "Deck edits pending"
+
+The marker is a JSON file tracked in git:
+
+```json
+{
+  "machine": "writer-deck",
+  "timestamp": "2026-02-13T14:22:00",
+  "files": ["manuscript/chapters/the-gray-fence.md"]
+}
+```
+
+### Sync Workflow
+
+```
+Main Machine                          Writer Deck
+────────────                          ───────────
+plm wiki generate
+git commit + push
+                                      git pull (wiki pages available)
+                                      edit manuscript in vimwiki
+                                      BufWritePost creates .sync-pending
+                                      git commit + push
+git pull (sees .sync-pending)
+plm wiki sync (ingest → clear → generate)
+git commit + push
+                                      git pull (clean state)
+```
+
+### Feature Matrix
+
+| Feature | Main Machine | Writer Deck |
+|---------|-------------|-------------|
+| Vimwiki navigation | Yes | Yes |
+| Read/edit wiki pages | Yes | Yes |
+| Log entry templates | Yes | Yes |
+| which-key menus | Yes | Yes |
+| fzf-lua entity browse | Yes | No (use snacks.nvim) |
+| Wiki on-save lint | Yes | No |
+| Float YAML editing | Yes | No |
+| Wiki sync/generate | Yes | No |
+| Entity cache | Yes | No |
+| Validation commands | Yes | No |
+| Sync-pending marker | Reads + clears | Writes |
+| Quick navigation | Yes | Yes |
+
+### Available Deck Commands
+
+Navigation (open pre-generated wiki files):
+- `:PalimpsestStats` - Statistics dashboard
+- `:PalimpsestIndex` - Wiki homepage
+- `:PalimpsestAnalysis` - Analysis report
+- `:PalimpsestManuscriptIndex` - Manuscript homepage
+- `:PalimpsestQuickAccess` - Quick access wiki pages
+
+Browse/Search (requires fzf-lua):
+- `:PalimpsestBrowse [type]` - Browse wiki entities
+- `:PalimpsestSearch [scope]` - Search wiki content
+
+### Troubleshooting Deck Mode
+
+**Wiki pages not found:**
+- Ensure wiki pages are generated and committed on the main machine
+- Run `git pull` in the data submodule on the deck
+
+**Sync-pending not created:**
+- Verify `vim.g.palimpsest_deck_mode = true` is set
+- Check autocmd group: `:autocmd palimpsest_deck_sync`
+- Only manuscript files (`wiki/manuscript/**/*.md`) trigger the marker
+
+**Main machine blocked by stale marker:**
+- Run `plm wiki sync` to ingest and clear the marker
+- Or manually delete `data/wiki/.sync-pending` if edits were already handled
 
 ---
 
