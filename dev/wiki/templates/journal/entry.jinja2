@@ -1,0 +1,95 @@
+{% from "macros/thread_display.jinja2" import render_thread %}
+# {{ entry_date | date_long }}
+{% if summary %}
+
+{{ summary }}
+{% endif %}
+{% if rating %}
+
+**Rating:** [{{ rating }}/5]({{ date_str }}-rating.md)
+{% endif %}
+{% if word_count %}
+
+{{ word_count | string }} words · {{ reading_time }}
+{% endif %}
+[Read entry]({{ "journal_md" | source_path(date_str) }}) ·
+[Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})
+
+---
+{% if people_groups %}
+
+## People
+{% for group in people_groups %}
+{% if group.relation %}
+**{{ group.relation }}:** {{ group.names | map("wikilink") | list | adaptive_list }}
+{% else %}
+{{ group.names | map("wikilink") | list | adaptive_list }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if places %}
+
+## Places
+{% for city in places %}
+
+**{{ city.name | wikilink }}**
+{% if city.neighborhoods %}
+{% for nb in city.neighborhoods %}
+
+**{{ nb.name }}**
+{{ nb.locations | map("wikilink") | list | mid_dot_join }}
+{% endfor %}
+{% else %}
+{{ city.locations | map("wikilink") | list | mid_dot_join }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if events %}
+
+---
+
+## Events
+{% for event in events %}
+- {{ event.name | wikilink }}{% if event.arc %} · {{ event.arc }}{% else %} · unlinked{% endif %}
+{% endfor %}
+{% endif %}
+{% if threads %}
+
+---
+
+## Threads
+{% for thread in threads %}
+
+{{ render_thread(thread) }}
+{% endfor %}
+{% endif %}
+{% if themes or tags %}
+
+---
+
+## Themes & Tags
+{% if themes %}
+**Themes:** {{ themes | mid_dot_join }}
+{% endif %}
+{% if tags %}
+**Tags:** {{ tags | mid_dot_join }}
+{% endif %}
+{% endif %}
+{% if references %}
+
+---
+
+## References
+{% for ref in references %}
+
+> *"{{ ref.content }}"*
+> — **{{ ref.source_title }}**{% if ref.author %}, {{ ref.author }}{% endif %} *({{ ref.mode }})*
+{% endfor %}
+{% endif %}
+{% if poems %}
+
+## Poems
+{% for poem in poems %}
+- {{ poem.title | wikilink }}{% if poem.version %} · v{{ poem.version }}{% endif %}
+{% endfor %}
+{% endif %}

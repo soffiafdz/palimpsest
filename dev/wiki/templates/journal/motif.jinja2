@@ -1,0 +1,29 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }}
+
+{{ instance_count }} instance{{ "s" if instance_count != 1 else "" }}{% if date_range %} · {{ date_range }}{% endif %}
+
+---
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+
+---
+{% endif %}
+{% if instances %}
+
+## Instances
+{% for instance in instances %}
+**{{ instance.entry_date | wikilink }}** — {{ instance.description }}
+{% endfor %}
+{% endif %}
+{% if entries %}
+
+---
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}

@@ -1,0 +1,23 @@
+{#
+  Arc index page.
+
+  All arcs sorted by entry count with date range and description.
+
+  Context:
+    arcs: list of dicts:
+      - name: str
+      - description: str or None
+      - entry_count: int
+      - first_date: str (ISO date) or None
+      - last_date: str (ISO date) or None
+#}
+# Arcs
+
+---
+{% for arc in arcs %}
+
+**{{ arc.name | wikilink }}**{% if arc.first_date and arc.last_date %} · {{ arc.first_date | flexible_date }} – {{ arc.last_date | flexible_date }}{% endif %} · {{ arc.entry_count }} entries
+{% if arc.description %}
+{{ arc.description }}
+{% endif %}
+{% endfor %}

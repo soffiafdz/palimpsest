@@ -1,0 +1,23 @@
+# {{ name }}
+
+**Arc:** {% if arc %}{{ arc | wikilink }}{% else %}unlinked{% endif %} · {{ scene_count }} scene{{ "s" if scene_count != 1 else "" }}
+{% for d in entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+
+---
+{% for scene in scenes %}
+
+**{{ scene.name }}**
+{{ scene.description }}
+{% if scene.people %}
+
+**People:**
+{% for chunk in scene.people | chunked %}
+- {% for person in chunk %}{{ person | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endfor %}
+{% endif %}
+{% for loc_group in scene.locations %}
+**{{ loc_group.city | wikilink }}:** {% for name in loc_group.names %}{{ name | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+{% endfor %}
+
+---
+{% endfor %}

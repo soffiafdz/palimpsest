@@ -366,6 +366,25 @@ class NullLogger:
         error_type = type(error).__name__
         return f"❌ {error_type}: {error}"
 
+    # Standard logging interface (used by wiki sync and other modules
+    # that call logger.info/warning/error directly)
+
+    def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        """No-op info logger (standard logging interface)."""
+        pass
+
+    def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        """No-op warning logger (standard logging interface)."""
+        pass
+
+    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        """No-op error logger (standard logging interface)."""
+        pass
+
+    def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        """No-op debug logger (standard logging interface)."""
+        pass
+
 
 # Singleton null logger instance
 _null_logger = NullLogger()

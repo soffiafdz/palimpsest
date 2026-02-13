@@ -1,0 +1,32 @@
+# {{ title }}
+
+{{ version_count }} version{{ "s" if version_count != 1 else "" }}{% if first_appearance %} · first appeared {{ first_appearance | wikilink }}{% endif %}
+
+---
+{% if versions %}
+{% set latest = versions[0] %}
+
+## Latest Version — {{ latest.entry_date | wikilink }}
+
+> {{ latest.content | replace("\n", "\n> ") }}
+{% if latest.line_count or latest.word_count %}
+
+{{ latest.line_count }} lines · {{ latest.word_count }} words
+{% endif %}
+{% if versions | length > 1 %}
+
+---
+
+## Version History
+{% for version in versions[1:] %}
+
+### Version {{ version.number }} — {{ version.entry_date | wikilink }}
+
+> {{ version.content | replace("\n", "\n> ") }}
+{% if version.line_count or version.word_count %}
+
+{{ version.line_count }} lines · {{ version.word_count }} words
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endif %}

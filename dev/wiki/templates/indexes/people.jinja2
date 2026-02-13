@@ -1,0 +1,25 @@
+{#
+  People index page.
+
+  Groups all people by relation type, sorted by entry frequency
+  within each group. Each person rendered as a wikilink with count.
+
+  Context:
+    groups: dict of str (relation type) -> list of dicts:
+      - display_name: str
+      - slug: str
+      - entry_count: int
+    total: int (total number of people)
+#}
+# People
+
+{{ total }} people
+
+---
+{% for relation, people in groups.items() %}
+
+## {{ relation }}
+{% for person in people %}
+- {{ person.display_name | wikilink }} ({{ person.entry_count }})
+{% endfor %}
+{% endfor %}

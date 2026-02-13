@@ -1,0 +1,57 @@
+# {{ title }}
+
+**Type:** {{ type }} · **Status:** {{ status }}
+{% if part %}
+**Part:** {{ part | wikilink }}
+{% endif %}
+{{ scene_count }} scene{{ "s" if scene_count != 1 else "" }}
+
+---
+{% if characters %}
+
+## Characters
+{% for char in characters %}
+- {{ char.name | wikilink }}{% if char.role %} · {{ char.role }}{% endif %}
+{% endfor %}
+{% endif %}
+{% if arcs %}
+
+## Arcs
+{% for arc in arcs %}
+- {{ arc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% if scenes %}
+
+---
+
+## Scenes
+{% for scene in scenes %}
+
+### {{ scene.name }}
+{% if scene.description %}{{ scene.description }}{% endif %}
+
+*{{ scene.origin }}* · {{ scene.status }}
+{% if scene.sources %}
+{% for src in scene.sources %}
+- {{ src.type }}: {{ src.reference }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if references %}
+
+---
+
+## References
+{% for ref in references %}
+- {{ ref.source_title | wikilink }} *({{ ref.mode }})*{% if ref.content %} — {{ ref.content }}{% endif %}
+{% endfor %}
+{% endif %}
+{% if poems %}
+
+## Poems
+{% for poem in poems %}
+- {{ poem.title | wikilink }}
+{% endfor %}
+{% endif %}

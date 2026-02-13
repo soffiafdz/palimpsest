@@ -1,0 +1,34 @@
+{#
+  Reusable entry listing macro.
+
+  Renders a hierarchical entry listing grouped by year, then month,
+  with optional week sub-grouping for months with 8+ entries.
+
+  Parameters:
+    entries: list of dicts with keys:
+      - year: int
+      - count: int (entries in this year)
+      - months: list of dicts with keys:
+          - name: str (month name)
+          - count: int (entries in this month, present when weeks defined)
+          - weeks: list of dicts (optional, for months with 8+ entries):
+              - number: int (week number)
+              - dates: list of str (entry date strings)
+          - dates: list of str (entry date strings, when no weeks)
+#}
+{% macro render_entries(entries) %}
+{% for year_group in entries %}
+### {{ year_group.year }} · {{ year_group.count }} entries
+{% for month in year_group.months %}
+{% if month.weeks is defined %}
+
+#### {{ month.name }} · {{ month.count }} entries
+{% for week in month.weeks %}
+**Week {{ week.number }}:** {% for d in week.dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+{% endfor %}
+{% else %}
+**{{ month.name }}:** {% for d in month.dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endmacro %}

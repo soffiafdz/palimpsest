@@ -1,0 +1,27 @@
+{#
+  Places index page.
+
+  Cities as section headings with entry counts, locations bulleted
+  beneath with their own counts. Cities sorted by frequency.
+
+  Context:
+    cities: list of dicts:
+      - name: str
+      - country: str or None
+      - entry_count: int
+      - locations: list of dicts:
+          - name: str
+          - entry_count: int
+#}
+# Places
+
+---
+{% for city in cities %}
+
+## {{ city.name | wikilink }}{% if city.country %} · {{ city.country }}{% endif %} · {{ city.entry_count }} entries
+{% if city.locations %}
+{% for loc in city.locations %}
+- {{ loc.name | wikilink }} ({{ loc.entry_count }})
+{% endfor %}
+{% endif %}
+{% endfor %}

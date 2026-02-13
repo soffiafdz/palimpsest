@@ -1,0 +1,26 @@
+{#
+  Entry index page.
+
+  Chronological listing of all entries using the reusable
+  entry listing macro (year -> month -> optional week grouping).
+
+  Context:
+    entries: list of dicts (hierarchical listing):
+      - year: int
+      - count: int
+      - months: list of dicts:
+          - name: str
+          - count: int
+          - dates: list of str (when < 8 entries)
+          - weeks: list of dicts (when >= 8 entries):
+              - number: int
+              - dates: list of str
+#}
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# Entries
+
+---
+{% if entries %}
+
+{{ render_entries(entries) }}
+{% endif %}

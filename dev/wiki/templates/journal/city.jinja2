@@ -1,0 +1,32 @@
+# {{ name }}
+{% if country %}
+
+**Country:** {{ country }}
+{% endif %}
+{{ entry_count }} entries · {{ location_count }} locations · {{ date_range }}
+
+---
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+
+---
+{% endif %}
+{% if top_locations %}
+
+## Top Locations
+{% for loc in top_locations %}
+- {{ loc.name | wikilink }} ({{ loc.entry_count }})
+{% endfor %}
+{% endif %}
+{% if frequent_people %}
+
+---
+
+## Frequent people
+{% for person in frequent_people %}
+- {{ person.name | wikilink }} ({{ person.count }})
+{% endfor %}
+{% endif %}

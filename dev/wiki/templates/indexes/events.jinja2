@@ -1,0 +1,24 @@
+{#
+  Event index page.
+
+  Events nested under arc headings with scene and entry counts.
+  Unlinked events grouped in a separate section at the end.
+
+  Context:
+    arc_groups: list of dicts:
+      - name: str (arc name, or "Unlinked")
+      - events: list of dicts:
+          - name: str
+          - scene_count: int
+          - entry_count: int
+#}
+# Events
+
+---
+{% for group in arc_groups %}
+
+## {{ group.name | wikilink }}
+{% for event in group.events %}
+- {{ event.name | wikilink }} · {{ event.scene_count }} scenes · {{ event.entry_count }} entries
+{% endfor %}
+{% endfor %}

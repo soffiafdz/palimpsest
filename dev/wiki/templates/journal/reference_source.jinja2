@@ -1,0 +1,32 @@
+# {{ title }}
+{% if author %}
+
+**Author:** {{ author }}
+{% endif %}
+{% if type %}
+**Type:** {{ type }}
+{% endif %}
+{% if url %}
+**URL:** [{{ url }}]({{ url }})
+{% endif %}
+{{ reference_count }} reference{{ "s" if reference_count != 1 else "" }}{% if first_referenced and last_referenced %} · {{ first_referenced | flexible_date }} – {{ last_referenced | flexible_date }}{% endif %}
+
+---
+{% if references %}
+
+## References
+{% for ref in references %}
+
+### {{ ref.entry_date | wikilink }}
+{% if ref.mode == "direct" %}
+> *"{{ ref.content }}"*
+{% else %}
+> {{ ref.content }}
+{% endif %}
+> *({{ ref.mode }})*
+{% if ref.description %}
+
+{{ ref.description }}
+{% endif %}
+{% endfor %}
+{% endif %}

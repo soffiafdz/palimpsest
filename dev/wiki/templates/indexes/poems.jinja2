@@ -1,0 +1,21 @@
+{#
+  Poem index page.
+
+  All poems sorted alphabetically with version counts and first
+  appearance dates.
+
+  Context:
+    poems: list of dicts:
+      - title: str
+      - version_count: int
+      - first_appearance: str (ISO date) or None
+#}
+# Poems
+
+---
+{% if poems %}
+{% for poem in poems %}
+- {{ poem.title | wikilink }} · {{ poem.version_count }} versions{% if poem.first_appearance %} · first {{ poem.first_appearance | wikilink }}{% endif %}
+
+{% endfor %}
+{% endif %}

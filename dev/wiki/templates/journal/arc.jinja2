@@ -1,0 +1,44 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }}
+{% if description %}
+
+{{ description }}
+{% endif %}
+
+{{ entry_count }} entries · {{ date_range }}
+
+---
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+
+---
+{% endif %}
+{% if events %}
+
+## Events
+{% for event in events %}
+
+**{{ event.name | wikilink }}** · {{ event.scene_count }} scenes
+{% for d in event.entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+{% endfor %}
+{% endif %}
+{% if frequent_people %}
+
+---
+
+## Key People
+{% for person in frequent_people %}
+- {{ person.name | wikilink }} ({{ person.count }})
+{% endfor %}
+{% endif %}
+{% if entries %}
+
+---
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}
