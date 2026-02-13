@@ -1,4 +1,4 @@
-local palimpsest_icon = ""
+local palimpsest_icon = ""
 local has_wk, wk = pcall(require, "which-key")
 
 local M = {}
@@ -25,9 +25,20 @@ function M.setup()
 				{ "<leader>p<leader>w", "<cmd>1VimwikiMakeDiaryNote<cr>", desc = "Palimpsest Log (Today)" },
 				{ "<leader>p<leader>t", "<cmd>1VimwikiTabMakeDiaryNote<cr>", desc = "Palimpsest Log (Today, new tab)" },
 				{ "<leader>pr", "<Plug>VimwikiDiaryGenerateLinks", desc = "Rebuild log links" },
-				-- Wiki export/validation commands
-				{ "<leader>pe", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
-				{ "<leader>pE", "<cmd>PalimpsestExport ", desc = "Export specific entity..." },
+				-- Entity commands (YAML floating window)
+				{ "<leader>pe", group = "entity" },
+				{ "<leader>pee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)" },
+				{ "<leader>pen", "<cmd>PalimpsestNew<cr>", desc = "New entity..." },
+				{ "<leader>pes", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene" },
+				{ "<leader>peb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character" },
+				{ "<leader>pel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript" },
+				{ "<leader>pex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML" },
+				{ "<leader>per", "<cmd>PalimpsestCacheRefresh<cr>", desc = "Refresh entity cache" },
+				-- Wiki operations
+				{ "<leader>pE", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
+				{ "<leader>pS", "<cmd>PalimpsestSync<cr>", desc = "Wiki sync" },
+				{ "<leader>pL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint" },
+				{ "<leader>pG", "<cmd>PalimpsestGenerate<cr>", desc = "Wiki generate" },
 				-- Validators
 				{ "<leader>pv", group = "validators" },
 				{ "<leader>pvw", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },
@@ -83,9 +94,20 @@ function M.setup()
 				{ "<leader>v<leader>w", "<Plug>VimwikiMakeDiaryNote", desc = "Palimpsest Log (Today)" },
 				{ "<leader>v<leader>t", "<Plug>VimwikiTabMakeDiaryNote", desc = "Palimpsest Log (Today, new tab)" },
 				{ "<leader>v<leader>i", "<Plug>VimwikiDiaryGenerateLinks", desc = "Rebuild log links" },
-				-- Wiki export/validation commands
-				{ "<leader>ve", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
-				{ "<leader>vE", "<cmd>PalimpsestExport ", desc = "Export specific entity..." },
+				-- Entity commands (YAML floating window)
+				{ "<leader>ve", group = "entity" },
+				{ "<leader>vee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)" },
+				{ "<leader>ven", "<cmd>PalimpsestNew<cr>", desc = "New entity..." },
+				{ "<leader>ves", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene" },
+				{ "<leader>veb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character" },
+				{ "<leader>vel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript" },
+				{ "<leader>vex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML" },
+				{ "<leader>ver", "<cmd>PalimpsestCacheRefresh<cr>", desc = "Refresh entity cache" },
+				-- Wiki operations
+				{ "<leader>vE", "<cmd>PalimpsestExport<cr>", desc = "Export all to wiki" },
+				{ "<leader>vS", "<cmd>PalimpsestSync<cr>", desc = "Wiki sync" },
+				{ "<leader>vL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint" },
+				{ "<leader>vG", "<cmd>PalimpsestGenerate<cr>", desc = "Wiki generate" },
 				-- Validators
 				{ "<leader>vv", group = "validators" },
 				{ "<leader>vvw", "<cmd>PalimpsestValidate check<cr>", desc = "Validate wiki links" },

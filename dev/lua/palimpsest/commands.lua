@@ -259,6 +259,116 @@ function M.manuscript_index()
 	end
 end
 
+-- Wiki sync: run plm wiki sync asynchronously
+function M.wiki_sync(opts)
+	opts = opts or {}
+	local root = get_project_root()
+	local cmd = "cd " .. root .. " && plm wiki sync"
+
+	if opts.ingest then
+		cmd = cmd .. " --ingest"
+	elseif opts.generate then
+		cmd = cmd .. " --generate"
+	end
+
+	vim.notify("Running wiki sync...", vim.log.levels.INFO)
+	vim.fn.jobstart(cmd, {
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code == 0 then
+					vim.notify("Wiki sync completed", vim.log.levels.INFO)
+				else
+					vim.notify("Wiki sync failed (exit " .. exit_code .. ")", vim.log.levels.ERROR)
+				end
+			end)
+		end,
+	})
+end
+
+-- Wiki lint: run plm wiki lint asynchronously
+function M.wiki_lint(opts)
+	opts = opts or {}
+	local root = get_project_root()
+	local cmd = "cd " .. root .. " && plm wiki lint --format json"
+
+	vim.fn.jobstart(cmd, {
+		stdout_buffered = true,
+		on_stdout = function(_, data)
+			if data then
+				vim.schedule(function()
+					local json_str = table.concat(data, "")
+					if json_str ~= "" then
+						local ok, diagnostics = pcall(vim.fn.json_decode, json_str)
+						if ok and type(diagnostics) == "table" then
+							vim.notify(
+								string.format("Lint: %d diagnostics", #diagnostics),
+								#diagnostics > 0 and vim.log.levels.WARN or vim.log.levels.INFO
+							)
+						end
+					end
+				end)
+			end
+		end,
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code ~= 0 then
+					vim.notify("Wiki lint failed", vim.log.levels.ERROR)
+				end
+			end)
+		end,
+	})
+end
+
+-- Wiki generate: run plm wiki generate asynchronously
+function M.wiki_generate(opts)
+	opts = opts or {}
+	local root = get_project_root()
+	local cmd = "cd " .. root .. " && plm wiki generate"
+
+	if opts.section then
+		cmd = cmd .. " --section " .. opts.section
+	end
+	if opts.entity_type then
+		cmd = cmd .. " --type " .. opts.entity_type
+	end
+
+	vim.notify("Generating wiki pages...", vim.log.levels.INFO)
+	vim.fn.jobstart(cmd, {
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code == 0 then
+					vim.notify("Wiki generation completed", vim.log.levels.INFO)
+				else
+					vim.notify("Wiki generation failed", vim.log.levels.ERROR)
+				end
+			end)
+		end,
+	})
+end
+
+-- Metadata export: run plm metadata export asynchronously
+function M.metadata_export(entity_type)
+	local root = get_project_root()
+	local cmd = "cd " .. root .. " && plm metadata export"
+
+	if entity_type and entity_type ~= "" then
+		cmd = cmd .. " --type " .. entity_type
+	end
+
+	vim.notify("Exporting metadata YAML...", vim.log.levels.INFO)
+	vim.fn.jobstart(cmd, {
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code == 0 then
+					vim.notify("Metadata export completed", vim.log.levels.INFO)
+				else
+					vim.notify("Metadata export failed", vim.log.levels.ERROR)
+				end
+			end)
+		end,
+	})
+end
+
 -- Setup user commands
 function M.setup()
 	-- Export command with completion
@@ -427,6 +537,111 @@ function M.setup()
 		require("palimpsest.fzf").quick_access()
 	end, {
 		desc = "Quick access to wiki index pages",
+	})
+
+	-- Wiki sync command
+	vim.api.nvim_create_user_command("PalimpsestSync", function(opts)
+		local args = {}
+		if opts.args == "ingest" then
+			args.ingest = true
+		elseif opts.args == "generate" then
+			args.generate = true
+		end
+		M.wiki_sync(args)
+	end, {
+		nargs = "?",
+		desc = "Sync wiki pages with database",
+		complete = function()
+			return { "ingest", "generate" }
+		end,
+	})
+
+	-- Wiki lint command
+	vim.api.nvim_create_user_command("PalimpsestLint", function()
+		M.wiki_lint()
+	end, {
+		desc = "Lint wiki pages for errors",
+	})
+
+	-- Wiki generate command
+	vim.api.nvim_create_user_command("PalimpsestGenerate", function(opts)
+		local args = {}
+		local parts = vim.split(opts.args or "", "%s+")
+		for _, part in ipairs(parts) do
+			if part ~= "" then
+				if vim.tbl_contains({ "journal", "manuscript", "indexes" }, part) then
+					args.section = part
+				else
+					args.entity_type = part
+				end
+			end
+		end
+		M.wiki_generate(args)
+	end, {
+		nargs = "?",
+		desc = "Generate wiki pages from database",
+		complete = function()
+			return { "journal", "manuscript", "indexes" }
+		end,
+	})
+
+	-- Entity edit command (opens YAML in floating window)
+	vim.api.nvim_create_user_command("PalimpsestEdit", function()
+		require("palimpsest.entity").edit()
+	end, {
+		desc = "Edit current entity metadata in floating window",
+	})
+
+	-- Entity new command
+	vim.api.nvim_create_user_command("PalimpsestNew", function(opts)
+		local entity_type = opts.args ~= "" and opts.args or nil
+		require("palimpsest.entity").new(entity_type)
+	end, {
+		nargs = "?",
+		desc = "Create new entity metadata",
+		complete = function()
+			return { "people", "chapters", "characters", "scenes" }
+		end,
+	})
+
+	-- Add source to manuscript scene
+	vim.api.nvim_create_user_command("PalimpsestAddSource", function()
+		require("palimpsest.entity").add_source()
+	end, {
+		desc = "Add source entry to manuscript scene",
+	})
+
+	-- Add based_on person mapping to character
+	vim.api.nvim_create_user_command("PalimpsestAddBasedOn", function()
+		require("palimpsest.entity").add_based_on()
+	end, {
+		desc = "Add based_on person mapping to character",
+	})
+
+	-- Link journal entry to manuscript
+	vim.api.nvim_create_user_command("PalimpsestLinkToManuscript", function()
+		require("palimpsest.entity").link_to_manuscript()
+	end, {
+		desc = "Link current entry to manuscript scene or chapter",
+	})
+
+	-- Metadata export command
+	vim.api.nvim_create_user_command("PalimpsestMetadataExport", function(opts)
+		M.metadata_export(opts.args)
+	end, {
+		nargs = "?",
+		desc = "Export entity metadata to YAML files",
+		complete = function()
+			return { "people", "locations", "cities", "arcs", "chapters", "characters", "scenes" }
+		end,
+	})
+
+	-- Cache refresh command
+	vim.api.nvim_create_user_command("PalimpsestCacheRefresh", function()
+		require("palimpsest.cache").refresh_all()
+		vim.notify("Entity cache refreshing...", vim.log.levels.INFO)
+	end, {
+		desc = "Refresh entity name cache",
 	})
 end
 
