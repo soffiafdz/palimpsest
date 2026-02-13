@@ -41,16 +41,16 @@ from dev.dataclasses.metadata_entry import (
 
 def test_format_rating_full_stars():
     """Test full star ratings."""
-    assert format_rating(5.0) == "[⭐⭐⭐⭐⭐]"
-    assert format_rating(3.0) == "[⭐⭐⭐]"
-    assert format_rating(1.0) == "[⭐]"
+    assert format_rating(5.0) == "⭐⭐⭐⭐⭐"
+    assert format_rating(3.0) == "⭐⭐⭐"
+    assert format_rating(1.0) == "⭐"
 
 
 def test_format_rating_half_stars():
     """Test half star ratings."""
-    assert format_rating(4.5) == "[⭐⭐⭐⭐½]"
-    assert format_rating(2.5) == "[⭐⭐½]"
-    assert format_rating(0.5) == "[½]"
+    assert format_rating(4.5) == "⭐⭐⭐⭐½"
+    assert format_rating(2.5) == "⭐⭐½"
+    assert format_rating(0.5) == "½"
 
 
 def test_format_rating_none():
@@ -60,9 +60,9 @@ def test_format_rating_none():
 
 def test_format_rating_edge_cases():
     """Test edge cases."""
-    assert format_rating(0.0) == "[]"  # No stars
-    assert format_rating(4.3) == "[⭐⭐⭐⭐]"  # No half (< 0.5)
-    assert format_rating(4.7) == "[⭐⭐⭐⭐½]"  # Half (>= 0.5)
+    assert format_rating(0.0) == ""  # No stars
+    assert format_rating(4.3) == "⭐⭐⭐⭐"  # No half (< 0.5)
+    assert format_rating(4.7) == "⭐⭐⭐⭐½"  # Half (>= 0.5)
 
 
 # --- Test format_scene ---
@@ -231,7 +231,8 @@ def test_format_entry_metadata_minimal():
     )
     result = format_entry_metadata(entry)
 
-    assert "## 2025-02-28 [⭐⭐⭐]" in result
+    assert "\\Huge\\bfseries 2025-02-28" in result
+    assert "⭐⭐⭐" in result
     assert "A day happened" in result
 
 
@@ -244,7 +245,8 @@ def test_format_entry_metadata_with_arcs():
     )
     result = format_entry_metadata(entry)
 
-    assert "*Arc: The Long Wanting • The Stalled Transition*" in result
+    assert "\\large\\bfseries The Long Wanting" in result
+    assert "The Stalled Transition" in result
 
 
 def test_format_entry_metadata_with_scenes():
@@ -262,8 +264,8 @@ def test_format_entry_metadata_with_scenes():
     entry = MetadataEntry(date=date(2025, 2, 28), summary="Day", scenes=scenes)
     result = format_entry_metadata(entry)
 
-    assert "### Scenes" in result
-    assert "**MORNING WALK**" in result
+    assert "\\LARGE\\bfseries Scenes" in result
+    assert "Morning Walk" in result
     assert "Clara" in result
 
 
@@ -279,9 +281,9 @@ def test_format_entry_metadata_with_events():
     entry = MetadataEntry(date=date(2025, 2, 28), summary="Day", events=events, scenes=scenes)
     result = format_entry_metadata(entry)
 
-    assert "### Events & Scenes" in result
-    assert "**CITY ERRANDS**" in result
-    assert "**Scene1**" in result
+    assert "\\LARGE\\bfseries Events \\& Scenes" in result
+    assert "\\large\\bfseries City Errands" in result
+    assert "\\large\\itshape Scene1" in result
 
 
 def test_format_entry_metadata_with_themes():
@@ -291,9 +293,9 @@ def test_format_entry_metadata_with_themes():
     )
     result = format_entry_metadata(entry)
 
-    assert "### Themes" in result
-    assert "• Loneliness" in result
-    assert "• Hope" in result
+    assert "\\bfseries\\large Themes" in result
+    assert "Loneliness" in result
+    assert "Hope" in result
 
 
 def test_format_entry_metadata_with_motifs():
@@ -307,8 +309,8 @@ def test_format_entry_metadata_with_motifs():
     entry = MetadataEntry(date=date(2025, 2, 28), summary="Day", motifs=motifs)
     result = format_entry_metadata(entry)
 
-    assert "### Motifs" in result
-    assert "**THE GRAY FENCE**" in result
+    assert "\\bfseries\\large Motifs" in result
+    assert "\\textbf{The Gray Fence}" in result
     assert "Boundary between worlds" in result
 
 
@@ -328,19 +330,24 @@ def test_format_entry_metadata_with_threads():
     entry = MetadataEntry(date=date(2025, 2, 28), summary="Day", threads=threads)
     result = format_entry_metadata(entry)
 
-    assert "### Threads" in result
-    assert "**ECHO**" in result
-    assert "*2025-02-28 → 2024-01-15*" in result
+    assert "\\bfseries\\large Threads" in result
+    assert "\\textbf{Echo}" in result
+    assert "\\textit{2025-02-28 $\\rightarrow$ 2024-01-15}" in result
 
 
 def test_format_entry_metadata_with_tags():
-    """Test entry with tags."""
+    """Test entry with tags (tags render inside multicol with themes)."""
     entry = MetadataEntry(
-        date=date(2025, 2, 28), summary="Day", tags=["Introspection", "City", "Clara"]
+        date=date(2025, 2, 28), summary="Day",
+        themes=["Hope"],
+        tags=["Introspection", "City", "Clara"],
     )
     result = format_entry_metadata(entry)
 
-    assert "*Tags: Introspection • City • Clara*" in result
+    assert "\\bfseries\\large Tags" in result
+    assert "Introspection" in result
+    assert "City" in result
+    assert "Clara" in result
 
 
 def test_format_entry_metadata_single_column():
@@ -354,7 +361,7 @@ def test_format_entry_metadata_single_column():
     result = format_entry_metadata(entry)
 
     # Should have themes section
-    assert "### Themes" in result
+    assert "\\bfseries\\large Themes" in result
     assert "Theme" in result
 
 
@@ -363,7 +370,7 @@ def test_format_entry_metadata_no_rating():
     entry = MetadataEntry(date=date(2025, 2, 28), summary="Day")
     result = format_entry_metadata(entry)
 
-    # Should not have rating star in header
-    assert "## 2025-02-28\n" in result or "## 2025-02-28 \n" in result
-    # Should not have rating line
-    assert "**Rating**:" not in result
+    # Should have date in LaTeX header
+    assert "\\Huge\\bfseries 2025-02-28" in result
+    # Should not have rating stars
+    assert "⭐" not in result

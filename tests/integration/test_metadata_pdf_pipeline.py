@@ -212,13 +212,13 @@ def test_write_temp_md_success(temp_yaml_dir, tmp_path):
 
     # Check structure
     assert "February, 2025" in content or "March, 2025" in content
-    assert "## 2025-02-28" in content
-    assert "## 2025-03-01" in content
+    assert "\\Huge\\bfseries 2025-02-28" in content
+    assert "\\Huge\\bfseries 2025-03-01" in content
     assert "First entry" in content
     assert "Second entry" in content
 
-    # Check arc tags
-    assert "*Arc:" in content
+    # Check arc tags (LaTeX format)
+    assert "\\large\\bfseries" in content
     assert "The Stalled Transition" in content
 
     # Check TOC
@@ -227,8 +227,8 @@ def test_write_temp_md_success(temp_yaml_dir, tmp_path):
     # Check newpage before entries
     assert "\\newpage" in content
 
-    # Check events & scenes section
-    assert "### Events & Scenes" in content
+    # Check events & scenes section (LaTeX format)
+    assert "\\LARGE\\bfseries Events \\& Scenes" in content
 
 
 def test_write_temp_md_arc_inline(temp_yaml_dir, tmp_path):
@@ -247,9 +247,10 @@ def test_write_temp_md_arc_inline(temp_yaml_dir, tmp_path):
 
     content = tmp_file.read_text()
 
-    # Arcs shown as inline tags in entries
-    assert "*Arc: The Long Wanting*" in content
-    assert "*Arc: The Long Wanting • The Stalled Transition*" in content
+    # Arcs shown as LaTeX tags in entries
+    assert "The Long Wanting" in content
+    assert "The Stalled Transition" in content
+    assert "\\large\\bfseries" in content
 
 
 @patch("dev.builders.metadata_pdfbuilder.convert_file")
