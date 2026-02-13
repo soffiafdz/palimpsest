@@ -5,27 +5,10 @@
 -- and per-type invalidation.
 local M = {}
 
+local get_project_root = require("palimpsest.utils").get_project_root
+
 -- Internal cache: entity_type → list of names
 local _cache = {}
-
--- Get project root (reuse from commands module)
-local function get_project_root()
-	local markers = { "pyproject.toml", ".git" }
-	local path = vim.fn.getcwd()
-
-	while path ~= "/" do
-		for _, marker in ipairs(markers) do
-			if vim.fn.filereadable(path .. "/" .. marker) == 1
-				or vim.fn.isdirectory(path .. "/" .. marker) == 1
-			then
-				return path
-			end
-		end
-		path = vim.fn.fnamemodify(path, ":h")
-	end
-
-	return vim.fn.getcwd()
-end
 
 --- Refresh the cache for a specific entity type.
 ---

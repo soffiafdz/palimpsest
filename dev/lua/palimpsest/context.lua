@@ -74,7 +74,7 @@ end
 --- @param context table|nil Context from detect()
 --- @return table List of available command name strings
 function M.available_commands(context)
-	local commands = { "PalimpsestSync", "PalimpsestExport" }
+	local commands = { "PalimpsestSync", "PalimpsestGenerate" }
 
 	if not context then
 		return commands
@@ -83,12 +83,7 @@ function M.available_commands(context)
 	-- Always available for any wiki page
 	table.insert(commands, "PalimpsestLint")
 
-	-- Manuscript-specific
-	if context.section == "manuscript" then
-		table.insert(commands, "PalimpsestEdit")
-	end
-
-	-- Entity types with metadata YAML
+	-- Entity types with metadata YAML (includes all manuscript types)
 	local yaml_types = {
 		person = true,
 		location = true,

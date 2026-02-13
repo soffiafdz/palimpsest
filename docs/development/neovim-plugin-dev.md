@@ -8,6 +8,7 @@ Technical documentation for developing and extending the Palimpsest Neovim integ
 dev/lua/palimpsest/
 ├── init.lua          # Entry point and setup
 ├── config.lua        # Configuration and paths
+├── utils.lua         # Shared utilities (get_project_root)
 ├── fzf.lua           # fzf-lua integration (browse/search)
 ├── validators.lua    # Validation integration
 ├── templates.lua     # Template system
@@ -52,6 +53,16 @@ M.paths = {
     templates = root .. "/templates/wiki",
 }
 ```
+
+### utils.lua
+
+Shared utility functions used across the plugin:
+
+**Key Functions:**
+
+- `M.get_project_root()` — Walk up from current file to find project root (markers: `pyproject.toml`, `.git`, `palimpsest.db`)
+
+Used by `commands.lua`, `validators.lua`, `cache.lua`, `entity.lua`, and `float.lua` via `require("palimpsest.utils").get_project_root`.
 
 ### fzf.lua
 
@@ -140,9 +151,10 @@ See [Validator Architecture](./validator-architecture.md) for details.
 
 **Key Functions:**
 
-- `M.validate_frontmatter(bufnr)` - YAML frontmatter validation (uses `md.py`)
-- `M.validate_metadata(bufnr)` - Metadata field validation (uses `metadata.py`)
-- `M.validate_links(bufnr)` - Link validation (uses `md.py`)
+- `M.validate_frontmatter(bufnr)` - YAML frontmatter validation (uses `validate md frontmatter`)
+- `M.validate_metadata(bufnr)` - Frontmatter structure validation (uses `validate frontmatter all`)
+- `M.validate_links(bufnr)` - Link validation (uses `validate md links`)
+- `M.validate_wiki_page(bufnr)` - Wiki page lint (uses `plm wiki lint --format json`)
 
 **Diagnostic Format:**
 
@@ -195,15 +207,20 @@ event = "BufNewFile"
 **Validators:**
 
 ```lua
--- Validate entry frontmatter on save
-pattern = palimpsest.paths.wiki .. "/entries/**/*.md"
+-- Validate journal entry frontmatter on save
+pattern = palimpsest.paths.journal .. "/**/*.md"
 event = "BufWritePost"
 → validators.validate_frontmatter(bufnr)
 
--- Validate all wiki links on save
-pattern = palimpsest.paths.wiki .. "/**/*.md"
+-- Validate journal entry links on save
+pattern = palimpsest.paths.journal .. "/**/*.md"
 event = "BufWritePost"
 → validators.validate_links(bufnr)
+
+-- Lint wiki pages on save
+pattern = palimpsest.paths.wiki .. "/**/*.md"
+event = "BufWritePost"
+→ validators.validate_wiki_page(bufnr)
 ```
 
 ### commands.lua
@@ -238,7 +255,7 @@ end, {
 
 **Wiki and Entity Commands:**
 
-The `setup()` function also registers wiki operation commands (`PalimpsestSync`, `PalimpsestLint`, `PalimpsestGenerate`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), and metadata commands (`PalimpsestMetadataExport`, `PalimpsestCacheRefresh`). These delegate to `commands.wiki_sync()`, `commands.wiki_lint()`, `commands.wiki_generate()`, `entity.edit()`, `cache.refresh_all()`, etc.
+The `setup()` function also registers wiki operation commands (`PalimpsestSync`, `PalimpsestLint`, `PalimpsestGenerate`, `PalimpsestPublish`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), validation commands (`PalimpsestValidateEntry`), metadata commands (`PalimpsestMetadataExport`, `PalimpsestCacheRefresh`), and navigation commands (`PalimpsestStats`, `PalimpsestIndex`, `PalimpsestAnalysis`, `PalimpsestManuscriptIndex`). These delegate to the corresponding module functions via async `vim.fn.jobstart()` calls.
 
 ### keymaps.lua
 
@@ -290,11 +307,12 @@ end
 | Group | Prefix | Purpose |
 |-------|--------|---------|
 | Entity | `e` | YAML metadata editing (edit, new, add source, based_on, link, export, cache) |
-| Wiki ops | uppercase | Sync (`S`), Lint (`L`), Generate (`G`), Export (`E`) |
+| Wiki ops | uppercase | Sync (`S`), Lint (`L`), Generate (`G`), Publish (`P`) |
 | Browse | `F` | fzf-lua file browsing by entity type |
 | Search | `/` | ripgrep content search by scope |
-| Validators | `v` | Validation commands (wiki links, frontmatter, metadata) |
-| Manuscript | `m` | Manuscript export, import, index |
+| Validators | `v` | Validation commands (wiki lint, frontmatter, structure, links, entry) |
+| Manuscript | `m` | Generate manuscript, ingest edits, manuscript homepage |
+| Navigation | lowercase | Stats (`s`), Analysis (`a`), Homepage (`h`), Quick access (`f`) |
 
 **Benefits:**
 - Discoverable keybindings via which-key popup menus
@@ -441,7 +459,7 @@ function M.validate_custom(bufnr)
 
     vim.diagnostic.reset(ns, bufnr)
 
-    local root = get_project_root()
+    local root = require("palimpsest.utils").get_project_root()
     local cmd = string.format(
         "cd %s && python -m dev.validators.cli.custom %s 2>&1",
         vim.fn.shellescape(root),

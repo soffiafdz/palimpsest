@@ -161,6 +161,7 @@ class MetadataSchema:
         FieldSpec("role", str),
         FieldSpec("is_narrator", bool),
         FieldSpec("description", str),
+        FieldSpec("based_on", list),
     ]
 
     SCENE_FIELDS: List[FieldSpec] = [
@@ -726,6 +727,94 @@ class MetadataValidator:
                         f"{prefix}Field {field_spec.name} should be "
                         f"{field_spec.field_type.__name__}, "
                         f"got {type(value).__name__}"
+                    ),
+                ))
+
+        # Validate based_on entries for characters
+        if entity_type == "characters":
+            diagnostics.extend(
+                self._validate_based_on(data, file_path, prefix)
+            )
+
+        return diagnostics
+
+    def _validate_based_on(
+        self,
+        data: Dict[str, Any],
+        file_path: str,
+        prefix: str = "",
+    ) -> List[Diagnostic]:
+        """
+        Validate based_on entries in character YAML.
+
+        Each entry must be a dict with 'person' (required str) and
+        'contribution' (required, must be a valid ContributionType).
+
+        Args:
+            data: Character entity data dict
+            file_path: File path for diagnostics
+            prefix: Prefix for list-index context
+
+        Returns:
+            List of diagnostics
+        """
+        diagnostics: List[Diagnostic] = []
+        based_on = data.get("based_on")
+
+        if based_on is None:
+            return diagnostics
+
+        if not isinstance(based_on, list):
+            diagnostics.append(Diagnostic(
+                file=file_path, line=1, col=1,
+                end_line=1, end_col=1,
+                severity="error",
+                code="INVALID_TYPE",
+                message=f"{prefix}based_on should be a list, got {type(based_on).__name__}",
+            ))
+            return diagnostics
+
+        valid_contributions = ContributionType.choices()
+        for i, entry in enumerate(based_on):
+            entry_prefix = f"{prefix}based_on[{i}]: "
+
+            if not isinstance(entry, dict):
+                diagnostics.append(Diagnostic(
+                    file=file_path, line=1, col=1,
+                    end_line=1, end_col=1,
+                    severity="error",
+                    code="INVALID_TYPE",
+                    message=f"{entry_prefix}should be a dict with 'person' and 'contribution'",
+                ))
+                continue
+
+            if "person" not in entry or not entry["person"]:
+                diagnostics.append(Diagnostic(
+                    file=file_path, line=1, col=1,
+                    end_line=1, end_col=1,
+                    severity="error",
+                    code="MISSING_REQUIRED_FIELD",
+                    message=f"{entry_prefix}missing required field 'person'",
+                ))
+
+            contribution = entry.get("contribution")
+            if contribution is None:
+                diagnostics.append(Diagnostic(
+                    file=file_path, line=1, col=1,
+                    end_line=1, end_col=1,
+                    severity="error",
+                    code="MISSING_REQUIRED_FIELD",
+                    message=f"{entry_prefix}missing required field 'contribution'",
+                ))
+            elif str(contribution) not in valid_contributions:
+                diagnostics.append(Diagnostic(
+                    file=file_path, line=1, col=1,
+                    end_line=1, end_col=1,
+                    severity="error",
+                    code="INVALID_ENUM_VALUE",
+                    message=(
+                        f"{entry_prefix}invalid contribution '{contribution}'. "
+                        f"Valid values: {valid_contributions}"
                     ),
                 ))
 

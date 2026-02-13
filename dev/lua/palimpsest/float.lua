@@ -5,6 +5,11 @@
 -- the core UI component for the entity editing workflow.
 local M = {}
 
+local get_project_root = require("palimpsest.utils").get_project_root
+
+-- Diagnostic namespace for float validation
+local ns = vim.api.nvim_create_namespace("palimpsest_float")
+
 -- Default window options
 local DEFAULT_OPTS = {
 	width_ratio = 0.6,
@@ -14,22 +19,8 @@ local DEFAULT_OPTS = {
 	title_pos = "center",
 }
 
--- Get project root
-local function get_project_root()
-	local markers = { "pyproject.toml", ".git" }
-	local path = vim.fn.getcwd()
-	while path ~= "/" do
-		for _, marker in ipairs(markers) do
-			if vim.fn.filereadable(path .. "/" .. marker) == 1
-				or vim.fn.isdirectory(path .. "/" .. marker) == 1
-			then
-				return path
-			end
-		end
-		path = vim.fn.fnamemodify(path, ":h")
-	end
-	return vim.fn.getcwd()
-end
+-- Track which buffers have been saved (for conditional import on close)
+local _saved_buffers = {}
 
 --- Open a file in a floating window.
 ---
@@ -70,6 +61,9 @@ function M.open(filepath, opts)
 	vim.api.nvim_set_option_value("winblend", 0, { win = win })
 	vim.api.nvim_set_option_value("cursorline", true, { win = win })
 
+	-- Clear saved flag
+	_saved_buffers[buf] = false
+
 	-- Setup autocmds for this buffer
 	local group = vim.api.nvim_create_augroup("PalimpsestFloat_" .. buf, { clear = true })
 
@@ -78,22 +72,26 @@ function M.open(filepath, opts)
 		group = group,
 		buffer = buf,
 		callback = function()
+			_saved_buffers[buf] = true
 			M.on_save(buf, filepath)
 		end,
 	})
 
-	-- Import on window close
+	-- Import on window close (only if saved)
 	vim.api.nvim_create_autocmd("WinClosed", {
 		group = group,
 		pattern = tostring(win),
 		callback = function()
-			M.on_close(buf, filepath)
+			if _saved_buffers[buf] then
+				M.on_close(buf, filepath)
+			end
 			-- Cleanup
+			_saved_buffers[buf] = nil
 			vim.api.nvim_del_augroup_by_id(group)
 		end,
 	})
 
-	-- ESC to close
+	-- q to close
 	vim.keymap.set("n", "q", function()
 		vim.api.nvim_win_close(win, true)
 	end, { buffer = buf, desc = "Close metadata float" })
@@ -109,17 +107,51 @@ end
 function M.on_save(bufnr, filepath)
 	local root = get_project_root()
 	local cmd = string.format(
-		"cd %s && plm metadata validate %s",
+		"cd %s && plm metadata validate %s 2>&1",
 		root, vim.fn.fnameescape(filepath)
 	)
 
+	vim.diagnostic.reset(ns, bufnr)
+
+	local output_lines = {}
 	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
+		on_stdout = function(_, data)
+			if data then
+				for _, line in ipairs(data) do
+					if line ~= "" then
+						table.insert(output_lines, line)
+					end
+				end
+			end
+		end,
 		on_exit = function(_, exit_code)
 			vim.schedule(function()
 				if exit_code == 0 then
+					vim.diagnostic.reset(ns, bufnr)
 					vim.notify("Metadata valid", vim.log.levels.INFO)
 				else
+					-- Try to parse JSON diagnostics
+					local json_str = table.concat(output_lines, "")
+					local ok, parsed = pcall(vim.fn.json_decode, json_str)
+					if ok and type(parsed) == "table" then
+						local diagnostics = {}
+						for _, diag in ipairs(parsed) do
+							table.insert(diagnostics, {
+								bufnr = bufnr,
+								lnum = (diag.line or 1) - 1,
+								col = (diag.col or 1) - 1,
+								severity = diag.severity == "error"
+									and vim.diagnostic.severity.ERROR
+									or vim.diagnostic.severity.WARN,
+								source = "palimpsest",
+								message = diag.message or "Validation error",
+							})
+						end
+						if #diagnostics > 0 then
+							vim.diagnostic.set(ns, bufnr, diagnostics, {})
+						end
+					end
 					vim.notify("Validation errors found", vim.log.levels.WARN)
 				end
 			end)
@@ -130,12 +162,12 @@ end
 --- Handle window close: import the YAML file and refresh.
 ---
 --- Runs `plm metadata import <filepath>` to push changes to DB,
---- then refreshes the entity cache.
+--- then refreshes the entity cache. Only called if the buffer
+--- was actually saved during the float session.
 ---
 --- @param bufnr number Buffer number
 --- @param filepath string Path to the YAML file
 function M.on_close(bufnr, filepath)
-	-- Check if buffer was modified and saved
 	if not vim.api.nvim_buf_is_valid(bufnr) then
 		return
 	end
@@ -151,7 +183,6 @@ function M.on_close(bufnr, filepath)
 			vim.schedule(function()
 				if exit_code == 0 then
 					vim.notify("Metadata imported", vim.log.levels.INFO)
-					-- Refresh cache
 					local cache = require("palimpsest.cache")
 					cache.refresh_all()
 				else

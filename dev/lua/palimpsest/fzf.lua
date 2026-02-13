@@ -37,13 +37,41 @@ function M.browse(entity_type)
 
 	local search_path = entity_paths[entity_type] or wiki_dir
 
-	-- Check if path exists
+	-- Handle multi-directory case (e.g., 'all' = wiki + journal)
+	if type(search_path) == "table" then
+		-- Verify at least one directory exists
+		local valid_dirs = {}
+		for _, dir in ipairs(search_path) do
+			if vim.fn.isdirectory(dir) == 1 then
+				table.insert(valid_dirs, vim.fn.shellescape(dir))
+			end
+		end
+		if #valid_dirs == 0 then
+			vim.notify("No wiki directories found", vim.log.levels.ERROR)
+			return
+		end
+
+		fzf.files({
+			prompt = "Palimpsest: " .. (entity_type or "all") .. "> ",
+			cmd = "fd -t f -e md . " .. table.concat(valid_dirs, " "),
+			winopts = {
+				height = 0.85,
+				width = 0.80,
+				preview = {
+					layout = "vertical",
+					vertical = "down:60%",
+				},
+			},
+		})
+		return
+	end
+
+	-- Single directory case
 	if vim.fn.isdirectory(search_path) == 0 then
 		vim.notify("Directory not found: " .. search_path, vim.log.levels.ERROR)
 		return
 	end
 
-	-- Use fzf-lua files with the specific directory
 	fzf.files({
 		prompt = "Palimpsest: " .. (entity_type or "all") .. "> ",
 		cwd = search_path,
@@ -157,7 +185,7 @@ function M.quick_access()
 	end
 
 	if #entries == 0 then
-		vim.notify("No wiki pages found. Generate them first with :PalimpsestExport", vim.log.levels.WARN)
+		vim.notify("No wiki pages found. Generate them first with :PalimpsestGenerate", vim.log.levels.WARN)
 		return
 	end
 
