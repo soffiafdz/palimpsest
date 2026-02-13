@@ -33,6 +33,7 @@ Dependencies:
 from __future__ import annotations
 
 # --- Standard library imports ---
+import json
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -102,6 +103,36 @@ class WikiExporter:
         self.stats: Dict[str, int] = {}
         self.generated_files: Set[Path] = set()
 
+    def _check_sync_pending(self) -> None:
+        """
+        Check for deck sync-pending marker and refuse generation.
+
+        The .sync-pending file indicates manuscript edits were made on the
+        writer deck and haven't been ingested yet. Generation would
+        overwrite those edits.
+
+        Raises:
+            RuntimeError: If .sync-pending marker exists
+        """
+        marker = self.output_dir / ".sync-pending"
+        if not marker.exists():
+            return
+
+        try:
+            data = json.loads(marker.read_text(encoding="utf-8"))
+            files = data.get("files", [])
+            machine = data.get("machine", "unknown")
+            file_list = "\n  ".join(files) if files else "(no files listed)"
+        except (json.JSONDecodeError, OSError):
+            file_list = "(could not read marker)"
+            machine = "unknown"
+
+        raise RuntimeError(
+            f"Deck edits pending from '{machine}' — run 'plm wiki sync' "
+            f"to ingest before generating.\n"
+            f"Pending files:\n  {file_list}"
+        )
+
     def generate_all(
         self,
         section: Optional[str] = None,
@@ -110,10 +141,19 @@ class WikiExporter:
         """
         Generate all wiki pages from database.
 
+        Checks for a .sync-pending marker from the writer deck before
+        starting. If deck edits are pending, refuses to generate to
+        prevent overwriting unsynced changes.
+
         Args:
             section: Optional filter: "journal", "manuscript", "indexes"
             entity_type: Optional filter: entity name (e.g., "people")
+
+        Raises:
+            RuntimeError: If .sync-pending marker exists
         """
+        self._check_sync_pending()
+
         safe_logger(self.logger).log_info("Starting wiki generation")
 
         with self.db.session_scope() as session:
