@@ -141,9 +141,9 @@ Parses validated wiki pages into DB, then regenerates. Never runs
 silently or automatically — always triggered explicitly by the user.
 
 ```bash
-plm sync manuscript              # Full: ingest + regenerate
-plm sync manuscript --ingest     # Wiki → DB only
-plm sync manuscript --generate   # DB → Wiki only
+plm wiki sync                    # Full: ingest + regenerate
+plm wiki sync --ingest           # Wiki → DB only
+plm wiki sync --generate         # DB → Wiki only
 ```
 
 ### Unified Validation Entry Point
@@ -374,13 +374,10 @@ plm wiki generate --section manuscript
 plm wiki generate --type people
 
 # Lint a wiki page (structured diagnostics)
-plm lint <filepath>
+plm wiki lint <filepath>
 
 # Sync manuscript (ingest + regenerate)
-plm sync manuscript
-
-# Validate before sync (dry run)
-plm validate manuscript
+plm wiki sync
 
 # Build static site (Quartz)
 plm wiki publish
@@ -562,19 +559,19 @@ fuzzy-finder UI. which-key.nvim provides discoverable keybindings.
 ```
 dev/lua/palimpsest/
 ├── (existing modules)
-├── float.lua          # NEW: Floating window management
+├── float.lua          # Floating window management
 │                      #   Open YAML in popup, save/close flow
 │                      #   Configurable size (60% default, larger for big files)
-├── context.lua        # NEW: Page type detection
+├── context.lua        # Page type detection
 │                      #   Detect current wiki page entity type
 │                      #   Resolve entity slug from file path/heading
 │                      #   Determine available commands per context
-├── entity.lua         # NEW: Entity editing commands
+├── entity.lua         # Entity editing commands
 │                      #   PalimpsestEdit: open metadata YAML via float.lua
 │                      #   PalimpsestNew: create entity from template
 │                      #   PalimpsestAdd*: guided insertion with autocomplete
 │                      #   PalimpsestLinkTo*: bidirectional linking
-└── cache.lua          # NEW: Entity list caching for autocomplete
+└── cache.lua          # Entity list caching for autocomplete
                        #   On buffer enter / sync: call plm to dump entity lists
                        #   Cache as Lua tables (people names, scene names, etc.)
                        #   Provide completion source for nvim-cmp or native

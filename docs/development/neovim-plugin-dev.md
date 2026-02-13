@@ -1,8 +1,5 @@
 # Neovim Package Development Guide
 
-> **Note:** This plugin provides journal file browsing and search capabilities.
-> Wiki features are not currently implemented.
-
 Technical documentation for developing and extending the Palimpsest Neovim integration package.
 
 ## Package Structure
@@ -17,7 +14,11 @@ dev/lua/palimpsest/
 ├── autocmds.lua      # Autocommands
 ├── commands.lua      # User commands
 ├── keymaps.lua       # Key bindings (which-key)
-└── vimwiki.lua       # VimWiki configuration
+├── vimwiki.lua       # VimWiki configuration
+├── context.lua       # Page type detection from file path
+├── cache.lua         # Entity list caching for autocomplete
+├── float.lua         # Floating window management for YAML editing
+└── entity.lua        # Entity editing commands
 ```
 
 ---
@@ -170,8 +171,6 @@ Template system for VimWiki diary entries only:
 
 - `M.populate_log()` - Creates diary/log entries (triggered by VimWiki autocmd on `BufNewFile` for log files)
 
-**Note:** Wiki features are not currently implemented.
-
 ### autocmds.lua
 
 Autocommand definitions:
@@ -237,6 +236,10 @@ end, {
 })
 ```
 
+**Wiki and Entity Commands:**
+
+The `setup()` function also registers wiki operation commands (`PalimpsestSync`, `PalimpsestLint`, `PalimpsestGenerate`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), and metadata commands (`PalimpsestMetadataExport`, `PalimpsestCacheRefresh`). These delegate to `commands.wiki_sync()`, `commands.wiki_lint()`, `commands.wiki_generate()`, `entity.edit()`, `cache.refresh_all()`, etc.
+
 ### keymaps.lua
 
 Key binding registration using `which-key.nvim`:
@@ -258,33 +261,138 @@ if #vim.g.vimwiki_list > 1 then
     -- Multiple vimwikis - use <leader>p prefix
     wk.add({
         { "<leader>p", group = "Palimpsest", icon = { icon = palimpsest_icon, color = "green" } },
+        -- Entity commands (YAML floating window)
+        { "<leader>pe", group = "entity" },
+        { "<leader>pee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)" },
+        { "<leader>pen", "<cmd>PalimpsestNew<cr>", desc = "New entity..." },
+        { "<leader>pes", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene" },
+        { "<leader>peb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character" },
+        { "<leader>pel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript" },
+        { "<leader>pex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML" },
+        { "<leader>per", "<cmd>PalimpsestCacheRefresh<cr>", desc = "Refresh entity cache" },
+        -- Wiki operations
+        { "<leader>pS", "<cmd>PalimpsestSync<cr>", desc = "Wiki sync" },
+        { "<leader>pL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint" },
+        { "<leader>pG", "<cmd>PalimpsestGenerate<cr>", desc = "Wiki generate" },
+        -- Browse/Search
         { "<leader>pF", group = "browse entities" },
-        { "<leader>pFa", "<cmd>lua require('palimpsest.fzf').browse('all')<cr>", desc = "Browse wiki" },
-        { "<leader>pFj", "<cmd>lua require('palimpsest.fzf').browse('journal')<cr>", desc = "Browse journal" },
-        { "<leader>p/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
-        { "<leader>p?w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
-        { "<leader>p?j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
+        { "<leader>pFa", "...", desc = "Browse wiki" },
+        { "<leader>p/w", "...", desc = "Search wiki" },
         -- ... more keybindings
     })
 else
-    -- Single vimwiki - use <leader>v prefix
-    wk.add({
-        { "<leader>v", group = "Palimpsest", icon = { icon = palimpsest_icon, color = "green" } },
-        { "<leader>vF", group = "browse entities" },
-        { "<leader>vFa", "<cmd>lua require('palimpsest.fzf').browse('all')<cr>", desc = "Browse wiki" },
-        { "<leader>vFj", "<cmd>lua require('palimpsest.fzf').browse('journal')<cr>", desc = "Browse journal" },
-        { "<leader>v/", "<cmd>lua require('palimpsest.fzf').search('all')<cr>", desc = "Search all content" },
-        { "<leader>v?w", "<cmd>lua require('palimpsest.fzf').search('wiki')<cr>", desc = "Search wiki" },
-        { "<leader>v?j", "<cmd>lua require('palimpsest.fzf').search('journal')<cr>", desc = "Search journal" },
-        -- ... more keybindings
-    })
+    -- Single vimwiki - use <leader>v prefix (same structure, different prefix)
 end
 ```
+
+**Binding Groups:**
+
+| Group | Prefix | Purpose |
+|-------|--------|---------|
+| Entity | `e` | YAML metadata editing (edit, new, add source, based_on, link, export, cache) |
+| Wiki ops | uppercase | Sync (`S`), Lint (`L`), Generate (`G`), Export (`E`) |
+| Browse | `F` | fzf-lua file browsing by entity type |
+| Search | `/` | ripgrep content search by scope |
+| Validators | `v` | Validation commands (wiki links, frontmatter, metadata) |
+| Manuscript | `m` | Manuscript export, import, index |
 
 **Benefits:**
 - Discoverable keybindings via which-key popup menus
 - Grouped keybindings with visual hierarchy
 - Icons and descriptions for better UX
+
+### context.lua
+
+Page type detection from wiki file paths. Used by entity commands and keymaps to provide context-sensitive behavior.
+
+**Key Functions:**
+
+- `M.detect(filepath)` — Analyze file path to determine entity type, section, and slug
+- `M.available_commands(context)` — Return valid commands for the detected context
+- `M.is_wiki_page()` — Check if current buffer is inside the wiki directory
+- `M.metadata_type(context)` — Map context type to `plm metadata` entity type key
+
+**Path Patterns:**
+
+Matches 15 subdirectory patterns covering journal entities (entry, person, location, city, event, arc, tag, theme, poem, reference, motif), manuscript entities (chapter, character, scene), and index pages.
+
+**Return Value:**
+
+```lua
+{
+    type = "chapter",     -- Entity type
+    section = "manuscript", -- Section (journal/manuscript/indexes)
+    slug = "the-gray-fence" -- Entity slug from filename
+}
+```
+
+### cache.lua
+
+Entity name caching for autocomplete support. Calls `plm metadata list-entities` asynchronously and stores results in Lua tables.
+
+**Key Functions:**
+
+- `M.refresh(entity_type, callback)` — Refresh cache for one type (async via jobstart)
+- `M.refresh_all()` — Trigger parallel refreshes for all entity types
+- `M.get(entity_type)` — Get cached names (triggers lazy refresh if empty)
+- `M.completion_source(entity_type)` — Return a completion function for nvim APIs
+- `M.clear(entity_type)` — Clear cache (one type or all)
+
+**Cached Entity Types:** people, locations, cities, arcs, chapters, characters, scenes
+
+**Usage:**
+
+```lua
+-- Get names for autocomplete
+local people = require("palimpsest.cache").get("people")
+
+-- Create a completion source
+local complete_fn = require("palimpsest.cache").completion_source("people")
+local matches = complete_fn("Cla")  -- Returns names matching "Cla"
+```
+
+### float.lua
+
+Floating window management for YAML metadata editing. Creates centered popup windows with auto-validation on save and auto-import on close.
+
+**Key Functions:**
+
+- `M.open(filepath, opts)` — Open YAML file in floating window
+- `M.on_save(bufnr, filepath)` — Handle save: runs `plm metadata validate`
+- `M.on_close(bufnr, filepath)` — Handle close: runs `plm metadata import` and refreshes cache
+
+**Window Options:**
+
+```lua
+{
+    width_ratio = 0.6,    -- 60% of editor width
+    height_ratio = 0.7,   -- 70% of editor height
+    border = "rounded",
+    title = " Metadata ",
+    title_pos = "center",
+}
+```
+
+**Autocmds:** Sets up `BufWritePost` (validate) and `WinClosed` (import) per floating buffer. Cleanup runs on window close. Press `q` to close.
+
+### entity.lua
+
+Context-aware entity editing commands. Detects the current wiki page type and opens the corresponding YAML metadata file in a floating window.
+
+**Key Functions:**
+
+- `M.edit()` — Open metadata YAML for current page entity (via context detection + float)
+- `M.new(entity_type)` — Create entity from template with name prompt
+- `M.add_source()` — Guided source insertion for manuscript scenes (type + reference)
+- `M.add_based_on()` — Guided person mapping for characters (person + contribution)
+- `M.link_to_manuscript()` — Link journal entries to chapters or scenes
+
+**Dependencies:** Requires `context.lua` (page detection), `float.lua` (popup UI), `cache.lua` (entity names for autocomplete)
+
+**YAML Path Resolution:**
+
+- Per-entity files: `data/metadata/{people,locations,manuscript/chapters,...}/{slug}.yaml`
+- Single files: `data/metadata/cities.yaml`, `data/metadata/arcs.yaml`
 
 ---
 
@@ -306,9 +414,15 @@ The validator should output structured messages that Lua can parse:
    💡 Add 'date: <value>' to frontmatter
 ```
 
-### Wiki Page Generation
+### Wiki System
 
-**Note:** Wiki features are not currently implemented.
+The Python wiki system (`dev/wiki/`) handles generation, linting, sync, and publishing. The Lua plugin interacts with it via the `plm wiki` and `plm metadata` CLI commands:
+
+- `plm wiki generate` — Generate wiki pages from database
+- `plm wiki lint <path>` — Lint wiki files (returns JSON diagnostics)
+- `plm wiki sync` — Bidirectional manuscript sync
+- `plm metadata export/import` — YAML metadata file management
+- `plm metadata list-entities` — Entity name lists for autocomplete
 
 ---
 
@@ -394,10 +508,11 @@ end
 
 To add a new wiki entity type to the export system:
 
-1. **Create database model** in `dev/database/models.py`
-2. **Add to fzf-lua** browse/search (see "Adding New Entity Types" above)
-
-**Note:** Wiki features are not currently implemented.
+1. **Create database model** in `dev/database/models/`
+2. **Add export config** in `dev/wiki/configs.py`
+3. **Create Jinja2 template** in `dev/wiki/templates/`
+4. **Add to fzf-lua** browse/search (see "Adding New Entity Types" above)
+5. **Update context.lua** PATH_PATTERNS if the entity has a wiki directory
 
 ---
 

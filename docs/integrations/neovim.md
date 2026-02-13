@@ -1,9 +1,6 @@
 # Neovim Integration Guide
 
-> **Note:** This integration is designed for journal markdown file browsing and searching.
-> Wiki features are not currently implemented.
-
-Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides editor integration for working with journal entries.
+Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides editor integration for working with journal entries, wiki pages, and manuscript editing.
 
 ## Features
 
@@ -11,6 +8,10 @@ Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides ed
 - **Automatic Validation** - On-save validation with LSP-style diagnostics
 - **VimWiki Templates** - Automated log entry creation
 - **which-key Integration** - Discoverable keybindings with visual menus
+- **Wiki Operations** - Generate, lint, sync, and publish wiki pages
+- **Entity Editing** - YAML metadata editing in floating windows
+- **Entity Caching** - Autocomplete support via cached entity names
+- **Context Detection** - Commands adapt based on current wiki page type
 
 ---
 
@@ -113,6 +114,48 @@ Search content across wiki and journal files using ripgrep:
 :PalimpsestSearch people       " Search only people pages
 ```
 
+### Wiki Operation Commands
+
+Commands for wiki generation, linting, sync, and publishing:
+
+```vim
+:PalimpsestSync [mode]         " Sync wiki pages with database
+:PalimpsestLint                " Lint wiki pages for errors
+:PalimpsestGenerate [section]  " Generate wiki pages from database
+```
+
+**Sync modes:**
+- (no argument) - Full sync: ingest + regenerate
+- `ingest` - Wiki → DB only
+- `generate` - DB → Wiki only
+
+**Generate sections:** `journal`, `manuscript`, `indexes`
+
+### Entity Editing Commands
+
+Commands for editing YAML metadata in floating windows:
+
+```vim
+:PalimpsestEdit                " Edit current entity metadata (floating window)
+:PalimpsestNew [type]          " Create new entity metadata
+:PalimpsestAddSource           " Add source entry to manuscript scene
+:PalimpsestAddBasedOn          " Add based_on person mapping to character
+:PalimpsestLinkToManuscript    " Link current entry to manuscript
+```
+
+**New entity types:** `people`, `chapters`, `characters`, `scenes`
+
+### Metadata Commands
+
+Commands for YAML metadata export and entity caching:
+
+```vim
+:PalimpsestMetadataExport [type]  " Export entity metadata to YAML files
+:PalimpsestCacheRefresh           " Refresh entity name cache
+```
+
+**Entity types:** `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`
+
 ---
 
 ## Keybindings
@@ -156,11 +199,36 @@ If Palimpsest is your only vimwiki, keybindings use `<leader>v` prefix:
 | `<leader>v?w` | Search wiki only |
 | `<leader>v?j` | Search journal only |
 
+#### Entity Editing
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>vee` | Edit metadata (floating window) |
+| `<leader>ven` | New entity |
+| `<leader>ves` | Add source to scene |
+| `<leader>veb` | Add based_on to character |
+| `<leader>vel` | Link to manuscript |
+| `<leader>vex` | Export metadata YAML |
+| `<leader>ver` | Refresh entity cache |
+
+#### Wiki Operations
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>vE` | Export all to wiki |
+| `<leader>vS` | Wiki sync |
+| `<leader>vL` | Wiki lint |
+| `<leader>vG` | Wiki generate |
+
 #### Validation
 
 | Keymap | Action |
 |--------|--------|
 | `<leader>vvw` | Validate wiki links |
+| `<leader>vvo` | Find orphaned pages |
+| `<leader>vvf` | Validate frontmatter |
+| `<leader>vvm` | Validate metadata |
+| `<leader>vvl` | Validate markdown links |
 
 ### Multiple VimWiki Setup
 
@@ -199,11 +267,36 @@ If you have multiple vimwikis configured, Palimpsest uses `<leader>p` prefix ins
 | `<leader>p?w` | Search wiki only |
 | `<leader>p?j` | Search journal only |
 
+#### Entity Editing
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>pee` | Edit metadata (floating window) |
+| `<leader>pen` | New entity |
+| `<leader>pes` | Add source to scene |
+| `<leader>peb` | Add based_on to character |
+| `<leader>pel` | Link to manuscript |
+| `<leader>pex` | Export metadata YAML |
+| `<leader>per` | Refresh entity cache |
+
+#### Wiki Operations
+
+| Keymap | Action |
+|--------|--------|
+| `<leader>pE` | Export all to wiki |
+| `<leader>pS` | Wiki sync |
+| `<leader>pL` | Wiki lint |
+| `<leader>pG` | Wiki generate |
+
 #### Validation
 
 | Keymap | Action |
 |--------|--------|
 | `<leader>pvw` | Validate wiki links |
+| `<leader>pvo` | Find orphaned pages |
+| `<leader>pvf` | Validate frontmatter |
+| `<leader>pvm` | Validate metadata |
+| `<leader>pvl` | Validate markdown links |
 
 ---
 
@@ -280,8 +373,6 @@ The package includes a template for diary/log entries located in `templates/wiki
 
 - `log.template` - Diary/log entry template (auto-populated on `VimwikiMakeDiaryNote`)
 
-**Note:** Wiki features are not currently implemented.
-
 ---
 
 ## Configuration
@@ -345,64 +436,74 @@ These paths are used by:
 ## Architecture
 
 ```
-┌─────────────────────────────────────┐
-│         Neovim Editor               │
-│  ┌───────────────────────────────┐  │
-│  │  palimpsest.nvim Package      │  │
-│  │  ├── fzf.lua        (browse)  │  │
-│  │  ├── validators.lua (lint)    │  │
-│  │  ├── templates.lua  (diary)   │  │
-│  │  ├── autocmds.lua   (hooks)   │  │
-│  │  ├── commands.lua   (cmds)    │  │
-│  │  ├── keymaps.lua    (keys)    │  │
-│  │  └── vimwiki.lua    (config)  │  │
-│  └───────────────────────────────┘  │
-│           │                          │
-│           ▼                          │
-│  ┌───────────────────────────────┐  │
-│  │  External Dependencies        │  │
-│  │  ├── fzf-lua (browse/search)  │  │
-│  │  ├── which-key (keybindings)  │  │
-│  │  ├── ripgrep (search backend) │  │
-│  │  └── fd (file finding)        │  │
-│  └───────────────────────────────┘  │
-│           │                          │
-│           ▼                          │
-│  ┌───────────────────────────────┐  │
-│  │  Async Job Execution          │  │
-│  │  - Python validators only     │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│         Neovim Editor                    │
+│  ┌────────────────────────────────────┐  │
+│  │  palimpsest.nvim Package           │  │
+│  │  ├── fzf.lua        (browse)       │  │
+│  │  ├── validators.lua (lint)         │  │
+│  │  ├── templates.lua  (diary)        │  │
+│  │  ├── autocmds.lua   (hooks)        │  │
+│  │  ├── commands.lua   (cmds)         │  │
+│  │  ├── keymaps.lua    (keys)         │  │
+│  │  ├── vimwiki.lua    (config)       │  │
+│  │  ├── context.lua    (page detect)  │  │
+│  │  ├── cache.lua      (entity cache) │  │
+│  │  ├── float.lua      (popup YAML)   │  │
+│  │  └── entity.lua     (edit cmds)    │  │
+│  └────────────────────────────────────┘  │
+│           │                               │
+│           ▼                               │
+│  ┌────────────────────────────────────┐  │
+│  │  External Dependencies             │  │
+│  │  ├── fzf-lua (browse/search)       │  │
+│  │  ├── which-key (keybindings)       │  │
+│  │  ├── ripgrep (search backend)      │  │
+│  │  └── fd (file finding)             │  │
+│  └────────────────────────────────────┘  │
+│           │                               │
+│           ▼                               │
+│  ┌────────────────────────────────────┐  │
+│  │  Async Job Execution               │  │
+│  │  - Python validators                │  │
+│  │  - plm wiki (generate/lint/sync)    │  │
+│  │  - plm metadata (export/import)     │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
            │
            ▼
-┌─────────────────────────────────────┐
-│     Python Backend                  │
-│  ┌───────────────────────────────┐  │
-│  │  validators/                  │  │
-│  │  ├── md.py       (frontmatter)│  │
-│  │  └── wiki.py     (links)      │  │
-│  └───────────────────────────────┘  │
-│  ┌───────────────────────────────┐  │
-│  │  builders/wiki.py             │  │
-│  │  - WikiEntity.from_database() │  │
-│  │  - WikiEntity.to_wiki()       │  │
-│  │  Generates complete wiki pages│  │
-│  └───────────────────────────────┘  │
-│           │                          │
-│           ▼                          │
-│  ┌───────────────────────────────┐  │
-│  │  palimpsest.db (SQLite)       │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│     Python Backend                       │
+│  ┌────────────────────────────────────┐  │
+│  │  validators/                       │  │
+│  │  ├── md.py       (frontmatter)     │  │
+│  │  └── wiki.py     (links)           │  │
+│  └────────────────────────────────────┘  │
+│  ┌────────────────────────────────────┐  │
+│  │  wiki/                             │  │
+│  │  ├── exporter.py  (DB → wiki)      │  │
+│  │  ├── parser.py    (wiki → DB)      │  │
+│  │  ├── validator.py (linting)        │  │
+│  │  ├── sync.py      (bidirectional)  │  │
+│  │  ├── publisher.py (→ Quartz)       │  │
+│  │  └── metadata.py  (YAML files)     │  │
+│  └────────────────────────────────────┘  │
+│           │                               │
+│           ▼                               │
+│  ┌────────────────────────────────────┐  │
+│  │  palimpsest.db (SQLite)            │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
 ```
 
 The Neovim package acts as a frontend to the Python backend:
 - **Browse/Search** - Direct file access via fzf-lua + ripgrep (wiki + journal)
 - **Keybindings** - Managed via which-key.nvim for discoverability
 - **Validation** - Calls Python validators asynchronously
-- **Templates** - Only for diary entries (VimWiki integration)
-
-**Note:** Wiki features are not currently implemented.
+- **Templates** - Diary entries (VimWiki integration)
+- **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, sync, publish
+- **Entity Editing** - Opens YAML metadata in floating windows via `plm metadata`
+- **Entity Caching** - Calls `plm metadata list-entities` for autocomplete data
 
 ---
 

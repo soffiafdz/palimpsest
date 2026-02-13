@@ -1,9 +1,6 @@
 # Palimpsest Complete Feature Testing Plan
 
-> **Note:** Wiki system tests (Section 6) reference features not yet implemented.
-> Skip wiki-related test steps until the wiki module is built.
-
-**Last Updated:** 2025-11-29
+**Last Updated:** 2026-02-13
 **Purpose:** Comprehensive testing guide for all Palimpsest features from beginning to end
 
 ---
@@ -445,8 +442,8 @@ vim data/wiki/events/thesis-writing.md
 # Major narrative arc in manuscript. Represents protagonist's
 # intellectual journey and struggle with identity.
 
-# Save and import
-# (wiki features not implemented) all
+# Save and sync
+plm wiki sync
 
 # Verify notes were imported
 metadb query "SELECT notes FROM events WHERE name='thesis-writing'"
@@ -607,7 +604,7 @@ vim data/wiki/manuscript/entries/2024/2024-11-25.md
 # Ana Sofía: wisdom figure, catalyst for realization
 
 # Import manuscript edits
-# (wiki features not implemented) manuscript-all
+plm wiki sync
 
 # Verify
 metadb query show 2024-11-25 | grep -A5 "manuscript"

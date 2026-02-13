@@ -31,6 +31,27 @@ plm inbox && plm convert && plm import-metadata
 jsearch query "therapy" person:alice in:2024
 ```
 
+### Wiki Operations
+
+```bash
+# Generate wiki pages
+plm wiki generate
+
+# Lint and sync manuscript
+plm wiki lint data/wiki/ && plm wiki sync
+
+# Publish to Quartz
+plm wiki publish
+```
+
+### Metadata Management
+
+```bash
+# Export/import YAML metadata
+plm metadata export --type people
+plm metadata import data/metadata/people/clara.yaml
+```
+
 ### Database Operations
 
 ```bash
@@ -254,6 +275,227 @@ plm validate COMMAND
 **Commands:**
 - `pipeline` - Validate pipeline directory structure
 - `entry` - Validate journal entries (MD + YAML)
+
+### Wiki Commands
+
+#### `plm wiki generate`
+
+Generate wiki pages from database.
+
+```bash
+plm wiki generate [--section SECTION] [--type TYPE] [--output-dir PATH]
+```
+
+**What it does:**
+- Renders journal and manuscript pages via Jinja2 templates
+- Creates index pages with cross-references
+- Outputs clean markdown with `[[wikilinks]]`
+- Populates `data/wiki/` directory structure
+
+**Options:**
+- `--section` - Generate only a specific section: `journal`, `manuscript`, `indexes`
+- `--type` - Generate only a specific entity type (e.g., `people`, `locations`)
+- `--output-dir PATH` - Custom output directory (defaults to `data/wiki`)
+
+**Examples:**
+```bash
+# Generate everything
+plm wiki generate
+
+# Generate only journal pages
+plm wiki generate --section journal
+
+# Generate only people pages
+plm wiki generate --type people
+```
+
+#### `plm wiki lint`
+
+Lint wiki files for structural issues and broken wikilinks.
+
+```bash
+plm wiki lint <path> [--format FORMAT]
+```
+
+**Arguments:**
+- `path` - File or directory to lint (required)
+
+**What it does:**
+- Validates wiki page structure (headings, sections)
+- Checks `[[wikilinks]]` resolve to known entities
+- Reports missing required sections, invalid metadata
+- Returns structured diagnostics with file, line, severity, and code
+
+**Options:**
+- `--format` - Output format: `json` or `text` (auto-detects based on TTY)
+
+**Examples:**
+```bash
+# Lint a single file
+plm wiki lint data/wiki/manuscript/chapters/the-gray-fence.md
+
+# Lint entire wiki directory
+plm wiki lint data/wiki/
+
+# JSON output for Neovim integration
+plm wiki lint data/wiki/ --format json
+```
+
+**Diagnostic Codes:**
+- Errors (block sync): `UNRESOLVED_WIKILINK`, `MISSING_REQUIRED_SECTION`, `INVALID_METADATA`
+- Warnings: `EMPTY_SECTION`, `ORPHAN_SCENE`, `MISSING_SOURCES`
+
+#### `plm wiki sync`
+
+Sync manuscript wiki pages with database.
+
+```bash
+plm wiki sync [--ingest] [--generate]
+```
+
+**What it does:**
+- Validates manuscript wiki pages (errors block sync)
+- Parses validated pages into database (ingest)
+- Regenerates wiki pages from updated database (generate)
+- Only overwrites pages where DB state diverges from disk
+
+**Options:**
+- `--ingest` - Only ingest wiki → DB (skip regeneration)
+- `--generate` - Only regenerate DB → wiki (skip ingestion)
+
+**Note:** `--ingest` and `--generate` are mutually exclusive. Without either flag, runs the full cycle: ingest + regenerate.
+
+**Examples:**
+```bash
+# Full sync cycle
+plm wiki sync
+
+# Ingest only (wiki → DB)
+plm wiki sync --ingest
+
+# Regenerate only (DB → wiki)
+plm wiki sync --generate
+```
+
+#### `plm wiki publish`
+
+Publish wiki to Quartz with frontmatter injection.
+
+```bash
+plm wiki publish [--output-dir PATH]
+```
+
+**What it does:**
+- Copies wiki files to Quartz content directory
+- Injects YAML frontmatter (title, aliases, tags, date)
+- Source wiki files are never modified
+- Output directory is disposable and `.gitignore`d
+
+**Options:**
+- `--output-dir PATH` - Quartz content directory (defaults to `quartz/content`)
+
+### Metadata Commands
+
+#### `plm metadata export`
+
+Export entity metadata to YAML files.
+
+```bash
+plm metadata export [--type TYPE] [--output-dir PATH]
+```
+
+**What it does:**
+- Exports database entities as structured YAML files
+- Per-entity files for people, locations, chapters, characters, scenes
+- Single files for cities, arcs
+- Outputs to `data/metadata/` directory
+
+**Options:**
+- `--type` - Export only a specific type: `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`
+- `--output-dir PATH` - Custom output directory (defaults to `data/metadata`)
+
+**Examples:**
+```bash
+# Export all entity types
+plm metadata export
+
+# Export only people
+plm metadata export --type people
+```
+
+#### `plm metadata import`
+
+Import YAML metadata files into database.
+
+```bash
+plm metadata import [<path>] [--type TYPE]
+```
+
+**Arguments:**
+- `path` - Single YAML file to import (optional if using `--type`)
+
+**What it does:**
+- Validates YAML structure against schema
+- Imports metadata into database
+- Reports import errors with diagnostic codes
+
+**Options:**
+- `--type` - Import all YAML files of a specific entity type
+
+**Examples:**
+```bash
+# Import a single file
+plm metadata import data/metadata/people/clara.yaml
+
+# Import all people
+plm metadata import --type people
+```
+
+#### `plm metadata validate`
+
+Validate a YAML metadata file against its schema.
+
+```bash
+plm metadata validate <path>
+```
+
+**Arguments:**
+- `path` - YAML file to validate (required)
+
+**What it does:**
+- Checks YAML syntax and structure
+- Validates against the entity type schema
+- Reports errors and warnings with severity and diagnostic codes
+
+**Exit codes:**
+- `0` - Valid (no errors)
+- `1` - Validation errors found
+
+#### `plm metadata list-entities`
+
+List entity names for autocomplete support.
+
+```bash
+plm metadata list-entities --type TYPE [--format FORMAT]
+```
+
+**What it does:**
+- Queries database for all entity names of a given type
+- Outputs names as plain text or JSON array
+- Used by the Neovim plugin for entity name caching
+
+**Options:**
+- `--type` - Entity type (required): `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`
+- `--format` - Output format: `text` (default) or `json`
+
+**Examples:**
+```bash
+# List all people names
+plm metadata list-entities --type people
+
+# JSON output for programmatic consumption
+plm metadata list-entities --type chapters --format json
+```
 
 ---
 
@@ -1246,6 +1488,26 @@ plm backup-full
 metadb health
 ```
 
+### Wiki Workflow
+
+```bash
+# Generate wiki from database
+plm wiki generate
+
+# Edit manuscript pages in Neovim, then sync
+plm wiki lint data/wiki/manuscript/
+plm wiki sync
+
+# Export metadata for entity editing
+plm metadata export --type people
+
+# After editing YAML, import back
+plm metadata import --type people
+
+# Publish to Quartz for browser viewing
+plm wiki publish
+```
+
 ### Before Major Changes
 
 ```bash
@@ -1316,4 +1578,4 @@ metadb health
 
 ---
 
-**Last Updated:** 2026-02-06
+**Last Updated:** 2026-02-13

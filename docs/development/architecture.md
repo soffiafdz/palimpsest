@@ -1,6 +1,6 @@
 # Palimpsest Modular Architecture
 
-**Last Updated**: 2026-02-06
+**Last Updated**: 2026-02-13
 
 ---
 
@@ -120,7 +120,9 @@ dev/pipeline/cli/
 ├── import_metadata.py   # Metadata YAML → SQL (import journal metadata)
 ├── export_json.py       # SQL → JSON export
 ├── build_pdf.py         # PDF generation
-└── maintenance.py       # Backup, status, validation
+├── maintenance.py       # Backup, status, validation
+├── wiki.py              # Wiki generation, linting, sync, publishing
+└── metadata_yaml.py     # YAML metadata export, import, validation
 ```
 
 **Key Pattern**: Data flow organization
@@ -208,6 +210,43 @@ from dev.dataclasses.metadata_entry import MetadataEntry
 txt_entry = TxtEntry.from_file(Path("2024-01-15.txt"))
 metadata = MetadataEntry.from_yaml(Path("metadata/2024/2024-01-15.yaml"))
 ```
+
+---
+
+### 6. Wiki System (`dev/wiki/`)
+
+**Purpose**: Wiki generation, linting, sync, and publishing for journal and manuscript pages
+
+**Structure**:
+```
+dev/wiki/
+├── __init__.py          # Public API
+├── renderer.py          # Jinja2 template rendering engine
+├── exporter.py          # Database → wiki page generation orchestrator
+├── parser.py            # Wiki → database ingestion (manuscript)
+├── validator.py         # Wiki page validation and linting
+├── sync.py              # Bidirectional manuscript sync cycle
+├── publisher.py         # Wiki → Quartz publishing with frontmatter injection
+├── metadata.py          # YAML metadata export/import/validation
+├── context.py           # Context builder for template rendering
+├── configs.py           # Entity export configurations
+├── filters.py           # Custom Jinja2 filters (wikilink, date, etc.)
+├── mdit_wikilink.py     # markdown-it-py wikilink plugin
+└── templates/           # Jinja2 templates for all entity types
+    ├── journal/         # Entry, person, location, event, etc.
+    ├── manuscript/      # Chapter, character, scene, part
+    └── indexes/         # Main, people, locations, entries
+```
+
+**Key Pattern**: Template-based rendering with pre-computed context
+- Context builders query DB and compute aggregates
+- Templates are dumb renderers — no queries, no computation
+- Custom Jinja2 filters handle wiki link formatting and date display
+- Quartz frontmatter injected during publish, not during generation
+
+**Entry Points**:
+- `plm wiki` → `dev.pipeline.cli.wiki` (generate, lint, sync, publish)
+- `plm metadata` → `dev.pipeline.cli.metadata_yaml` (export, import, validate, list-entities)
 
 ---
 
@@ -344,6 +383,8 @@ Entry Points (metadb, plm, validate)
     ↓
 CLI Modules (dev/*/cli/)
     ↓
+Wiki System (dev/wiki/)  ←→  Jinja2 Templates
+    ↓
 Database Manager (dev/database/manager.py)
     ↓
 Database Models (dev/database/models/)
@@ -352,7 +393,8 @@ SQLAlchemy / Database
 ```
 
 **Key Dependencies**:
-- CLI modules depend on managers
+- CLI modules depend on managers and wiki system
+- Wiki system depends on managers and Jinja2
 - Managers depend on models
 - Models depend on SQLAlchemy
 - Minimal circular dependencies
@@ -577,5 +619,5 @@ The Palimpsest refactoring created a clean, modular architecture:
 
 ---
 
-**Last Updated**: 2026-02-06
+**Last Updated**: 2026-02-13
 **Maintained By**: Palimpsest Development Team
