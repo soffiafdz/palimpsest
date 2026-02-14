@@ -100,15 +100,40 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
             "import_metadata",
             additional_context={"dry_run": dry_run},
         )
+        return
     finally:
         session.close()
+
+    # Auto-prune orphaned entities after successful import
+    if not dry_run:
+        from dev.database.cli.prune import _prune_entity_type
+
+        click.echo("\nPruning orphaned entities...")
+        db = PalimpsestDB(
+            db_path=DB_PATH,
+            alembic_dir=ALEMBIC_DIR,
+            log_dir=LOG_DIR,
+            backup_dir=BACKUP_DIR,
+            enable_auto_backup=False,
+        )
+        total_pruned = 0
+        for etype in [
+            "people", "locations", "cities", "tags", "themes", "arcs",
+            "events", "reference_sources",
+        ]:
+            _, deleted = _prune_entity_type(db, etype, False, False)
+            total_pruned += deleted
+        if total_pruned:
+            click.echo(f"Pruned {total_pruned} orphaned entities.")
+        else:
+            click.echo("No orphans found.")
 
 
 @click.command("prune-orphans")
 @click.option(
     "--type",
     "entity_type",
-    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "all"]),
+    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "events", "reference_sources", "all"]),
     default="all",
     help="Type of entity to prune",
 )
@@ -129,7 +154,10 @@ def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run
 
     types_to_check = []
     if entity_type == "all":
-        types_to_check = ["people", "locations", "cities", "tags", "themes", "arcs"]
+        types_to_check = [
+            "people", "locations", "cities", "tags", "themes", "arcs",
+            "events", "reference_sources",
+        ]
     else:
         types_to_check = [entity_type]
 

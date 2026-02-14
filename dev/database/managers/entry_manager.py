@@ -31,6 +31,7 @@ from sqlalchemy import insert
 
 from dev.core.exceptions import ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from dev.core.paths import JOURNAL_DIR
 from dev.core.validators import DataValidator
 from dev.utils import fs
 from dev.database.models import (
@@ -242,8 +243,10 @@ class EntryManager(BaseManager):
             file_hash = DataValidator.normalize_string((metadata.get("file_hash")))
             if not file_hash and file_path:
                 file_path_obj = Path(file_path)
+                if not file_path_obj.is_absolute():
+                    file_path_obj = JOURNAL_DIR / file_path_obj
                 if file_path_obj.exists():
-                    file_hash = fs.get_file_hash(file_path)
+                    file_hash = fs.get_file_hash(file_path_obj)
                 else:
                     safe_logger(self.logger).log_warning(
                         f"File path does not exist, cannot calculate hash: {file_path}"
@@ -345,7 +348,10 @@ class EntryManager(BaseManager):
                         "rating_justification",
                     ]:
                         if field == "file_path" and value is not None:
-                            file_hash = fs.get_file_hash(value)
+                            resolved = Path(value)
+                            if not resolved.is_absolute():
+                                resolved = JOURNAL_DIR / resolved
+                            file_hash = fs.get_file_hash(resolved)
                             setattr(entry, "file_hash", file_hash)
                         setattr(entry, field, value)
 
@@ -460,7 +466,10 @@ class EntryManager(BaseManager):
                     file_hash = DataValidator.normalize_string(metadata.get("file_hash"))
 
                     if file_path and not file_hash:
-                        file_hash = fs.get_file_hash(file_path)
+                        resolved = Path(file_path)
+                        if not resolved.is_absolute():
+                            resolved = JOURNAL_DIR / resolved
+                        file_hash = fs.get_file_hash(resolved)
 
                     # Use default values for NOT NULL fields with defaults
                     word_count = DataValidator.normalize_int(metadata.get("word_count"))
@@ -915,6 +924,23 @@ class EntryManager(BaseManager):
                 url=source_data.get("url"),
             )
             self.session.add(source)
+            self.session.flush()
+        else:
+            # Update mutable fields if they changed
+            new_author = source_data.get("author")
+            if new_author and new_author != source.author:
+                source.author = new_author
+            new_url = source_data.get("url")
+            if new_url and new_url != source.url:
+                source.url = new_url
+            new_type = source_data.get("type")
+            if new_type:
+                try:
+                    ref_type = ReferenceType(new_type)
+                    if ref_type != source.type:
+                        source.type = ref_type
+                except ValueError:
+                    pass
             self.session.flush()
         return source
 
