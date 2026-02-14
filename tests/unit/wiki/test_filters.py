@@ -12,9 +12,11 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 from datetime import date
+from typing import Dict, Optional
 
 # --- Third-party imports ---
 import pytest
+from jinja2 import Environment
 
 # --- Local imports ---
 from dev.wiki.filters import (
@@ -33,32 +35,82 @@ from dev.wiki.filters import (
 
 # ==================== wikilink ====================
 
+def _make_env(targets: Optional[Dict[str, str]] = None) -> Environment:
+    """Create a Jinja2 Environment with optional wikilink targets."""
+    env = Environment()
+    if targets is not None:
+        env.globals["_wikilink_targets"] = targets
+    return env
+
+
 class TestWikilink:
     """Tests for wikilink filter."""
 
-    def test_simple_wikilink(self) -> None:
-        """Generate basic wikilink without display text."""
-        assert wikilink("Clara Dupont") == "[[Clara Dupont]]"
+    def test_simple_wikilink_no_targets(self) -> None:
+        """Name not in lookup falls back to plain wikilink."""
+        env = _make_env()
+        assert wikilink(env, "Marguerite Duras") == "[[Marguerite Duras]]"
 
-    def test_wikilink_with_display(self) -> None:
-        """Generate wikilink with alternate display text."""
-        assert wikilink("Clara Dupont", "Clara") == "[[Clara Dupont|Clara]]"
+    def test_wikilink_resolved_via_lookup(self) -> None:
+        """Name found in lookup produces absolute path wikilink."""
+        targets = {"Marguerite Duras": "/journal/people/marguerite_duras"}
+        env = _make_env(targets)
+        result = wikilink(env, "Marguerite Duras")
+        assert result == "[[/journal/people/marguerite_duras|Marguerite Duras]]"
 
-    def test_wikilink_display_same_as_name(self) -> None:
-        """Display text identical to name produces simple wikilink."""
-        assert wikilink("Clara", "Clara") == "[[Clara]]"
+    def test_wikilink_with_display_and_lookup(self) -> None:
+        """Resolved target uses custom display text."""
+        targets = {"Marguerite Duras": "/journal/people/marguerite_duras"}
+        env = _make_env(targets)
+        result = wikilink(env, "Marguerite Duras", "Marguerite")
+        assert result == "[[/journal/people/marguerite_duras|Marguerite]]"
 
-    def test_wikilink_display_none(self) -> None:
-        """Explicit None display produces simple wikilink."""
-        assert wikilink("Clara", None) == "[[Clara]]"
+    def test_wikilink_display_fallback_no_match(self) -> None:
+        """Unresolved name with display text still falls back to plain link."""
+        env = _make_env({})
+        result = wikilink(env, "Unknown Person")
+        assert result == "[[Unknown Person]]"
 
     def test_wikilink_empty_string(self) -> None:
         """Empty name still produces wikilink structure."""
-        assert wikilink("") == "[[]]"
+        env = _make_env()
+        assert wikilink(env, "") == "[[]]"
 
-    def test_wikilink_with_date(self) -> None:
-        """Date strings work as wikilink targets."""
-        assert wikilink("2024-11-08") == "[[2024-11-08]]"
+    def test_wikilink_with_date_resolved(self) -> None:
+        """Date strings resolved via lookup produce absolute paths."""
+        targets = {"2024-11-08": "/journal/entries/2024/2024-11-08"}
+        env = _make_env(targets)
+        result = wikilink(env, "2024-11-08")
+        assert result == "[[/journal/entries/2024/2024-11-08|2024-11-08]]"
+
+    def test_wikilink_with_date_unresolved(self) -> None:
+        """Date strings not in lookup fall back to plain link."""
+        env = _make_env()
+        assert wikilink(env, "2024-11-08") == "[[2024-11-08]]"
+
+    def test_wikilink_none_targets_dict(self) -> None:
+        """Environment without _wikilink_targets key falls back."""
+        env = Environment()
+        assert wikilink(env, "Some Name") == "[[Some Name]]"
+
+    def test_wikilink_via_template(self) -> None:
+        """Wikilink filter works correctly when called from a template."""
+        env = Environment()
+        env.filters["wikilink"] = wikilink
+        targets = {"René Descartes": "/journal/people/rene_descartes"}
+        env.globals["_wikilink_targets"] = targets
+        tmpl = env.from_string('{{ name | wikilink }}')
+        result = tmpl.render(name="René Descartes")
+        assert result == "[[/journal/people/rene_descartes|René Descartes]]"
+
+    def test_wikilink_via_template_fallback(self) -> None:
+        """Unresolved name in template falls back to plain wikilink."""
+        env = Environment()
+        env.filters["wikilink"] = wikilink
+        env.globals["_wikilink_targets"] = {}
+        tmpl = env.from_string('{{ name | wikilink }}')
+        result = tmpl.render(name="Unknown")
+        assert result == "[[Unknown]]"
 
 
 # ==================== date_long ====================

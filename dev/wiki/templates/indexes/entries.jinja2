@@ -1,26 +1,24 @@
 {#
   Entry index page.
 
-  Chronological listing of all entries using the reusable
-  entry listing macro (year -> month -> optional week grouping).
+  Year-level summary with links to per-year detail pages.
 
   Context:
-    entries: list of dicts (hierarchical listing):
+    total_count: int (total entries across all years)
+    year_summaries: list of dicts:
       - year: int
       - count: int
-      - months: list of dicts:
-          - name: str
-          - count: int
-          - dates: list of str (when < 8 entries)
-          - weeks: list of dicts (when >= 8 entries):
-              - number: int
-              - dates: list of str
+      - first_date: str (YYYY-MM-DD)
+      - last_date: str (YYYY-MM-DD)
 #}
-{% from "macros/entry_listing.jinja2" import render_entries %}
 # Entries
 
----
-{% if entries %}
+**{{ total_count }}** entries total
 
-{{ render_entries(entries) }}
-{% endif %}
+---
+{% for ys in year_summaries %}
+
+### [[/indexes/entries-{{ ys.year }}|{{ ys.year }}]] · {{ ys.count }} entr{{ "y" if ys.count == 1 else "ies" }}
+
+{{ ys.first_date }} – {{ ys.last_date }}
+{% endfor %}

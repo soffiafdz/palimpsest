@@ -1,0 +1,21 @@
+{#
+  Per-year entry index page.
+
+  Month/week detail for a single year, linked from the main
+  entries index.
+
+  Context:
+    year: int
+    entries: list of dicts (hierarchical listing from
+             _build_entry_listing, single year group)
+#}
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# Entries: {{ year }}
+
+← [[/indexes/entry-index|Entries]]
+
+---
+{% if entries %}
+
+{{ render_entries(entries) }}
+{% endif %}

@@ -55,6 +55,7 @@ from dev.database.models.manuscript import (
     ManuscriptScene,
     Part,
 )
+from dev.utils.slugify import slugify
 
 
 # ==================== Constants ====================
@@ -209,61 +210,91 @@ class WikiValidator:
         targets: Set[str] = set()
 
         with self.db.session_scope() as session:
-            # People: by display_name
+            # People: by display_name + absolute path
             for person in session.query(Person).all():
                 targets.add(person.display_name.lower())
+                targets.add(f"/journal/people/{person.slug}")
 
-            # Locations: by name
+            # Locations: by name + absolute path
             for location in session.query(Location).all():
                 targets.add(location.name.lower())
+                city_slug = slugify(location.city.name)
+                loc_slug = slugify(location.name)
+                targets.add(f"/journal/locations/{city_slug}/{loc_slug}")
 
-            # Cities: by name
+            # Cities: by name + absolute path
             for city in session.query(City).all():
                 targets.add(city.name.lower())
+                targets.add(f"/journal/cities/{slugify(city.name)}")
 
-            # Events: by name
+            # Events: by name + absolute path
             for event in session.query(Event).all():
                 targets.add(event.name.lower())
+                targets.add(f"/journal/events/{slugify(event.name)}")
 
-            # Arcs: by name
+            # Arcs: by name + absolute path
             for arc in session.query(Arc).all():
                 targets.add(arc.name.lower())
+                targets.add(f"/journal/arcs/{slugify(arc.name)}")
 
-            # Tags: by name
+            # Tags: by name + absolute path
             for tag in session.query(Tag).all():
                 targets.add(tag.name.lower())
+                targets.add(f"/journal/tags/{slugify(tag.name)}")
 
-            # Themes: by name
+            # Themes: by name + absolute path
             for theme in session.query(Theme).all():
                 targets.add(theme.name.lower())
+                targets.add(f"/journal/themes/{slugify(theme.name)}")
 
-            # Poems: by title
+            # Poems: by title + absolute path
             for poem in session.query(Poem).all():
                 targets.add(poem.title.lower())
+                targets.add(f"/journal/poems/{slugify(poem.title)}")
 
-            # Reference sources: by title
+            # Reference sources: by title + absolute path
             for source in session.query(ReferenceSource).all():
                 targets.add(source.title.lower())
+                targets.add(f"/journal/references/{slugify(source.title)}")
 
-            # Motifs: by name
+            # Motifs: by name + absolute path
             for motif in session.query(Motif).all():
                 targets.add(motif.name.lower())
+                targets.add(f"/journal/motifs/{slugify(motif.name)}")
 
-            # Entries: by date (YYYY-MM-DD format)
+            # Entries: by date + absolute path + per-year index pages
+            entry_years: set = set()
             for entry in session.query(Entry).all():
-                targets.add(entry.date.isoformat().lower())
+                date_str = entry.date.isoformat()
+                year = entry.date.strftime("%Y")
+                targets.add(date_str.lower())
+                targets.add(f"/journal/entries/{year}/{date_str}")
+                entry_years.add(year)
 
-            # Manuscript: Chapters by title
+            for year in entry_years:
+                targets.add(f"/indexes/entries-{year}")
+            targets.add("/indexes/entry-index")
+
+            # Manuscript: Chapters by title + absolute path
             for chapter in session.query(Chapter).all():
                 targets.add(chapter.title.lower())
+                targets.add(
+                    f"/manuscript/chapters/{slugify(chapter.title)}"
+                )
 
-            # Manuscript: Characters by name
+            # Manuscript: Characters by name + absolute path
             for character in session.query(Character).all():
                 targets.add(character.name.lower())
+                targets.add(
+                    f"/manuscript/characters/{slugify(character.name)}"
+                )
 
-            # Manuscript: Scenes by name
+            # Manuscript: Scenes by name + absolute path
             for ms_scene in session.query(ManuscriptScene).all():
                 targets.add(ms_scene.name.lower())
+                targets.add(
+                    f"/manuscript/scenes/{slugify(ms_scene.name)}"
+                )
 
             # Manuscript: Parts by "Part N: Title" format
             for part in session.query(Part).all():

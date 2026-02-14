@@ -18,8 +18,9 @@ Key Features:
 Usage:
     from dev.wiki.filters import wikilink, date_long, mid_dot_join
 
-    wikilink("Clara Dupont")          # "[[Clara Dupont]]"
-    wikilink("Clara Dupont", "Clara") # "[[Clara Dupont|Clara]]"
+    # wikilink uses @pass_environment; env is injected by Jinja2.
+    # When called from templates: {{ "Clara Dupont" | wikilink }}
+    # Resolves via _wikilink_targets dict in env.globals.
     date_long(date(2024, 11, 8))      # "Friday, November 8, 2024"
     mid_dot_join(["A", "B", "C"])     # "A · B · C"
 """
@@ -31,20 +32,40 @@ import calendar
 from datetime import date
 from typing import Dict, List, Optional
 
+# --- Third-party imports ---
+from jinja2 import Environment, pass_environment
 
-def wikilink(name: str, display: Optional[str] = None) -> str:
+
+@pass_environment
+def wikilink(
+    env: Environment, name: str, display: Optional[str] = None
+) -> str:
     """
-    Generate a markdown wikilink.
+    Generate a markdown wikilink with absolute path resolution.
+
+    Looks up the target name in a global ``_wikilink_targets`` dict
+    injected into the Jinja2 environment. If found, produces an
+    absolute wiki path (``[[/path/to/slug|Display Name]]``) so that
+    links resolve correctly regardless of which subdirectory the
+    containing page lives in.
+
+    Falls back to a plain ``[[name]]`` link when the name is not
+    found in the lookup table.
 
     Args:
-        name: Target page name
-        display: Optional display text (shown instead of name)
+        env: Jinja2 Environment (injected by ``@pass_environment``)
+        name: Target page name / display name to resolve
+        display: Optional alternate display text
 
     Returns:
-        Wikilink string: ``[[name]]`` or ``[[name|display]]``
+        Wikilink string with absolute path if resolved,
+        or plain ``[[name]]`` as fallback
     """
-    if display and display != name:
-        return f"[[{name}|{display}]]"
+    targets = env.globals.get("_wikilink_targets", {})
+    target = targets.get(name)
+    display_text = display or name
+    if target:
+        return f"[[{target}|{display_text}]]"
     return f"[[{name}]]"
 
 

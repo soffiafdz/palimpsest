@@ -72,7 +72,6 @@ M.vimwiki = {
 	name = "Palimpsest",
 	syntax = "markdown",
 	ext = ".md",
-	links_space_char = "_",
 	diary_rel_path = "log",
 	diary_header = [[Session Log\n]],
 }

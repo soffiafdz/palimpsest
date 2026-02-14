@@ -60,6 +60,7 @@ from dev.database.models import (
 )
 from dev.database.models.enums import RelationType
 from dev.database.models.manuscript import Chapter, Character, ManuscriptScene, Part
+from dev.utils.slugify import slugify
 from dev.wiki.configs import JOURNAL_CONFIGS, MANUSCRIPT_CONFIGS, INDEX_CONFIGS
 from dev.wiki.context import WikiContextBuilder
 from dev.wiki.renderer import WikiRenderer
@@ -157,6 +158,10 @@ class WikiExporter:
         safe_logger(self.logger).log_info("Starting wiki generation")
 
         with self.db.session_scope() as session:
+            # Build global wikilink lookup and inject into Jinja2 env
+            targets = self._build_wikilink_targets(session)
+            self.renderer.env.globals["_wikilink_targets"] = targets
+
             builder = WikiContextBuilder(session)
 
             if not section or section == "journal":
@@ -239,9 +244,11 @@ class WikiExporter:
             self.output_dir / "journal" / "entries" / year / filename
         )
 
+        date_str = entry.date.isoformat()
+        entry_path = f"/journal/entries/{year}/{date_str}"
         content = (
             f"# Rating: {entry.rating}/5\n\n"
-            f"← [[{entry.date.isoformat()}]]\n\n"
+            f"\u2190 [[{entry_path}|{date_str}]]\n\n"
             f"---\n\n"
             f"{entry.rating_justification}\n"
         )
@@ -375,6 +382,50 @@ class WikiExporter:
             )
             self.generated_files.add(output_path)
 
+        # Per-year entry subpages
+        self._generate_entry_year_pages(session)
+
+    def _generate_entry_year_pages(
+        self, session: Session
+    ) -> None:
+        """
+        Generate per-year entry index subpages.
+
+        Each year gets its own page with month/week detail, linked
+        from the main entries index.
+
+        Args:
+            session: Active SQLAlchemy session
+        """
+        from collections import defaultdict as dd
+
+        entries = (
+            session.query(Entry)
+            .order_by(Entry.date.desc())
+            .all()
+        )
+
+        # Group entries by year
+        by_year: Dict[int, List[Entry]] = dd(list)
+        for entry in entries:
+            by_year[entry.date.year].append(entry)
+
+        builder = WikiContextBuilder(session)
+        for year, year_entries in sorted(by_year.items(), reverse=True):
+            listing = builder._build_entry_listing(year_entries)
+            # listing is a single-element list (one year group)
+            ctx = {
+                "year": year,
+                "entries": listing,
+            }
+            output_path = (
+                self.output_dir / "indexes" / f"entries-{year}.md"
+            )
+            self.renderer.render_to_file(
+                "indexes/entries_year.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
     def _cleanup_orphans(self) -> None:
         """
         Remove wiki files that no longer correspond to DB entities.
@@ -396,6 +447,121 @@ class WikiExporter:
                 f"Removed {removed} orphaned wiki files"
             )
         self.stats["orphans_removed"] = removed
+
+    # ==============================================================
+    #  WIKILINK TARGET RESOLUTION
+    # ==============================================================
+
+    def _build_wikilink_targets(
+        self, session: Session
+    ) -> Dict[str, str]:
+        """
+        Build a lookup table mapping display names to absolute wiki paths.
+
+        Queries all entity types and maps each entity's display name to
+        its absolute wiki path (with leading ``/``). This table is
+        injected into the Jinja2 environment so the ``wikilink`` filter
+        can resolve names to correct paths regardless of which page
+        directory the link appears in.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping display_name → absolute wiki path (no extension)
+        """
+        targets: Dict[str, str] = {}
+
+        # Entries: date string → /journal/entries/YYYY/YYYY-MM-DD
+        for entry in session.query(Entry).all():
+            date_str = entry.date.isoformat()
+            year = entry.date.strftime("%Y")
+            targets[date_str] = f"/journal/entries/{year}/{date_str}"
+
+        # People: display_name → /journal/people/{slug}
+        for person in session.query(Person).all():
+            targets[person.display_name] = (
+                f"/journal/people/{person.slug}"
+            )
+
+        # Cities: name → /journal/cities/{slug}
+        for city in session.query(City).all():
+            targets[city.name] = (
+                f"/journal/cities/{slugify(city.name)}"
+            )
+
+        # Locations: name → /journal/locations/{city_slug}/{loc_slug}
+        for loc in session.query(Location).all():
+            city_slug = slugify(loc.city.name)
+            loc_slug = slugify(loc.name)
+            targets[loc.name] = (
+                f"/journal/locations/{city_slug}/{loc_slug}"
+            )
+
+        # Events: name → /journal/events/{slug}
+        for event in session.query(Event).all():
+            targets[event.name] = (
+                f"/journal/events/{slugify(event.name)}"
+            )
+
+        # Arcs: name → /journal/arcs/{slug}
+        for arc in session.query(Arc).all():
+            targets[arc.name] = (
+                f"/journal/arcs/{slugify(arc.name)}"
+            )
+
+        # Tags: name → /journal/tags/{slug}
+        for tag in session.query(Tag).all():
+            targets[tag.name] = (
+                f"/journal/tags/{slugify(tag.name)}"
+            )
+
+        # Themes: name → /journal/themes/{slug}
+        for theme in session.query(Theme).all():
+            targets[theme.name] = (
+                f"/journal/themes/{slugify(theme.name)}"
+            )
+
+        # Motifs: name → /journal/motifs/{slug}
+        for motif in session.query(Motif).all():
+            targets[motif.name] = (
+                f"/journal/motifs/{slugify(motif.name)}"
+            )
+
+        # Poems: title → /journal/poems/{slug}
+        for poem in session.query(Poem).all():
+            targets[poem.title] = (
+                f"/journal/poems/{slugify(poem.title)}"
+            )
+
+        # Reference sources: title → /journal/references/{slug}
+        for source in session.query(ReferenceSource).all():
+            targets[source.title] = (
+                f"/journal/references/{slugify(source.title)}"
+            )
+
+        # Chapters: title → /manuscript/chapters/{slug}
+        for chapter in session.query(Chapter).all():
+            targets[chapter.title] = (
+                f"/manuscript/chapters/{slugify(chapter.title)}"
+            )
+
+        # Characters: name → /manuscript/characters/{slug}
+        for character in session.query(Character).all():
+            targets[character.name] = (
+                f"/manuscript/characters/{slugify(character.name)}"
+            )
+
+        # Manuscript scenes: name → /manuscript/scenes/{slug}
+        for scene in session.query(ManuscriptScene).all():
+            targets[scene.name] = (
+                f"/manuscript/scenes/{slugify(scene.name)}"
+            )
+
+        safe_logger(self.logger).log_debug(
+            f"Built wikilink targets: {len(targets)} entries"
+        )
+        return targets
 
     # ==============================================================
     #  INDEX CONTEXT BUILDERS
@@ -505,21 +671,53 @@ class WikiExporter:
         self, session: Session
     ) -> Dict[str, Any]:
         """
-        Build context for Entry index page (year → month listing).
+        Build context for Entry index page (year summary with links).
+
+        Produces a flat list of year summaries (count, date range)
+        for the top-level index. Per-year detail pages are generated
+        separately by ``_generate_entry_year_pages``.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with hierarchical entry listing
+            Dict with year_summaries list
         """
+        from collections import Counter
+
         entries = (
             session.query(Entry)
             .order_by(Entry.date.desc())
             .all()
         )
-        builder = WikiContextBuilder(session)
-        return {"entries": builder._build_entry_listing(entries)}
+
+        year_counts: Counter = Counter()
+        year_first: Dict[int, str] = {}
+        year_last: Dict[int, str] = {}
+
+        for entry in entries:
+            y = entry.date.year
+            d_str = entry.date.isoformat()
+            year_counts[y] += 1
+            # Track first and last date per year
+            if y not in year_first or d_str < year_first[y]:
+                year_first[y] = d_str
+            if y not in year_last or d_str > year_last[y]:
+                year_last[y] = d_str
+
+        year_summaries = []
+        for year in sorted(year_counts.keys(), reverse=True):
+            year_summaries.append({
+                "year": year,
+                "count": year_counts[year],
+                "first_date": year_first[year],
+                "last_date": year_last[year],
+            })
+
+        return {
+            "year_summaries": year_summaries,
+            "total_count": len(entries),
+        }
 
     def _build_events_index_context(
         self, session: Session
