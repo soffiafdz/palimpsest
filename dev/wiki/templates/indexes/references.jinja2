@@ -16,8 +16,8 @@
 ---
 {% for type_name, sources in groups.items() %}
 
-## {{ type_name | capitalize }}
+## {{ type_name | replace("_", " ") | title }}
 {% for source in sources %}
-- {{ source.title | wikilink }}{% if source.author %} by {{ source.author }}{% endif %} · {{ source.reference_count }} references
+- {{ source.title | wikilink }}{% if source.author %} by {{ source.author }}{% endif %} · {{ source.reference_count }} reference{{ "s" if source.reference_count != 1 else "" }}
 {% endfor %}
 {% endfor %}

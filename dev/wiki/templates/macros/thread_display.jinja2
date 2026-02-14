@@ -23,7 +23,10 @@
 
 **People:** {% for person in thread.people %}{{ person | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endif %}
+{% if thread.locations %}
 {% for loc_group in thread.locations %}
+
 **{{ loc_group.city | wikilink }}:** {% for name in loc_group.names %}{{ name | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endfor %}
+{%- endfor %}
+{% endif %}
 {% endmacro %}

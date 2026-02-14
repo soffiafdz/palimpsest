@@ -3,7 +3,7 @@
 
 **Country:** {{ country }}
 {% endif %}
-{{ entry_count }} entries · {{ location_count }} locations · {{ date_range }}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }} · {{ location_count }} location{{ "s" if location_count != 1 else "" }}{% if date_range %} · {{ date_range }}{% endif %}
 
 ---
 {% if timeline %}

@@ -10,7 +10,7 @@
 *Appears in all entries.*
 {% elif tier == "frequent" %}
 
-{{ entry_count }} entries · {{ date_range }}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 {% else %}
 
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
@@ -56,7 +56,11 @@
 ## Arcs
 {% for arc_group in arc_event_spine %}
 
+{% if arc_group.name == "Unlinked events" %}
+### Unlinked events
+{% else %}
 ### {{ arc_group.name | wikilink }}
+{% endif %}
 {% if arc_group.entry_count %}{{ arc_group.entry_count }} entries{% endif %}{% if arc_group.date_range %} · {{ arc_group.date_range }}{% endif %}
 
 {% for event in arc_group.events %}

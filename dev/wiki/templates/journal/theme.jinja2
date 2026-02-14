@@ -2,7 +2,7 @@
 # {{ name }}
 {% if tier == "dashboard" %}
 
-{{ entry_count }} entries · {{ date_range }}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 
 ---
 {% if timeline %}

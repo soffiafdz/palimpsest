@@ -18,10 +18,12 @@
 {% for ref in references %}
 
 ### {{ ref.entry_date | wikilink }}
+{% if ref.content %}
 {% if ref.mode == "direct" %}
 > *"{{ ref.content }}"*
 {% else %}
 > {{ ref.content }}
+{% endif %}
 {% endif %}
 > *({{ ref.mode }})*
 {% if ref.description %}

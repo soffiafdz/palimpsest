@@ -7,7 +7,7 @@
 {% for scene in scenes %}
 
 **{{ scene.name }}**
-{{ scene.description }}
+{% if scene.description %}{{ scene.description }}{% endif %}
 {% if scene.people %}
 
 **People:**
@@ -15,9 +15,12 @@
 - {% for person in chunk %}{{ person | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endfor %}
 {% endif %}
+{% if scene.locations %}
 {% for loc_group in scene.locations %}
+
 **{{ loc_group.city | wikilink }}:** {% for name in loc_group.names %}{{ name | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endfor %}
+{%- endfor %}
+{% endif %}
 
 ---
 {% endfor %}

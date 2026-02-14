@@ -16,7 +16,7 @@
 
 ## Instances
 {% for instance in instances %}
-**{{ instance.entry_date | wikilink }}** — {{ instance.description }}
+{% if instance.entry_date %}**{{ instance.entry_date | wikilink }}**{% endif %}{% if instance.description %}{% if instance.entry_date %} — {% endif %}{{ instance.description }}{% endif %}
 {% endfor %}
 {% endif %}
 {% if entries %}

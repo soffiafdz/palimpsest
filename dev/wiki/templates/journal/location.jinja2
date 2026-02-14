@@ -4,7 +4,7 @@
 
 **City:** {{ city | wikilink }}
 {% if tier == "dashboard" or tier == "mid" %}
-{{ entry_count }} entries · {{ date_range }}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 {% else %}
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
 {% endif %}
@@ -24,7 +24,11 @@
 ## Events here
 {% for arc_group in events_here %}
 
+{% if arc_group.name == "Unlinked events" %}
+### Unlinked events
+{% else %}
 ### {{ arc_group.name | wikilink }}
+{% endif %}
 {% for event in arc_group.events %}
 **{{ event.name | wikilink }}**
 {% if event.description %}*{{ event.description }}*{% endif %}
@@ -58,7 +62,11 @@
 ## Events here
 {% for arc_group in events_here %}
 
+{% if arc_group.name == "Unlinked events" %}
+### Unlinked events
+{% else %}
 ### {{ arc_group.name | wikilink }}
+{% endif %}
 {% for event in arc_group.events %}
 **{{ event.name | wikilink }}**
 {% if event.description %}*{{ event.description }}*{% endif %}

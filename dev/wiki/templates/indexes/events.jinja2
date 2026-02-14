@@ -17,8 +17,12 @@
 ---
 {% for group in arc_groups %}
 
+{% if group.name == "Unlinked" %}
+## Unlinked
+{% else %}
 ## {{ group.name | wikilink }}
+{% endif %}
 {% for event in group.events %}
-- {{ event.name | wikilink }} · {{ event.scene_count }} scenes · {{ event.entry_count }} entries
+- {{ event.name | wikilink }} · {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }} · {{ event.entry_count }} entr{{ "y" if event.entry_count == 1 else "ies" }}
 {% endfor %}
 {% endfor %}

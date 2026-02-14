@@ -5,7 +5,7 @@
 {{ description }}
 {% endif %}
 
-{{ entry_count }} entries · {{ date_range }}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 
 ---
 {% if timeline %}
@@ -21,7 +21,7 @@
 ## Events
 {% for event in events %}
 
-**{{ event.name | wikilink }}** · {{ event.scene_count }} scenes
+**{{ event.name | wikilink }}** · {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }}
 {% for d in event.entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endfor %}
 {% endif %}

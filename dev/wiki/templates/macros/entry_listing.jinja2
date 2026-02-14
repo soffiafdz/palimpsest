@@ -18,17 +18,20 @@
 #}
 {% macro render_entries(entries) %}
 {% for year_group in entries %}
-### {{ year_group.year }} · {{ year_group.count }} entries
+
+### {{ year_group.year }} · {{ year_group.count }} entr{{ "y" if year_group.count == 1 else "ies" }}
 {% for month in year_group.months %}
 {% if month.weeks is defined %}
 
-#### {{ month.name }} · {{ month.count }} entries
+#### {{ month.name }} · {{ month.count }} entr{{ "y" if month.count == 1 else "ies" }}
 {% for week in month.weeks %}
+
 **Week {{ week.number }}:** {% for d in week.dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endfor %}
+{%- endfor %}
 {% else %}
+
 **{{ month.name }}:** {% for d in month.dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endif %}
+{%- endif %}
 {% endfor %}
-{% endfor %}
+{%- endfor %}
 {% endmacro %}

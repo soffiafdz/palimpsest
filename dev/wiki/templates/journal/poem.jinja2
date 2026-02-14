@@ -6,7 +6,7 @@
 {% if versions %}
 {% set latest = versions[0] %}
 
-## Latest Version — {{ latest.entry_date | wikilink }}
+## Latest Version{% if latest.entry_date %} — {{ latest.entry_date | wikilink }}{% endif %}
 
 > {{ latest.content | replace("\n", "\n> ") }}
 {% if latest.line_count or latest.word_count %}
@@ -20,7 +20,7 @@
 ## Version History
 {% for version in versions[1:] %}
 
-### Version {{ version.number }} — {{ version.entry_date | wikilink }}
+### Version {{ version.number }}{% if version.entry_date %} — {{ version.entry_date | wikilink }}{% endif %}
 
 > {{ version.content | replace("\n", "\n> ") }}
 {% if version.line_count or version.word_count %}

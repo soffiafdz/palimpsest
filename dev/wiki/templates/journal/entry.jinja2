@@ -14,8 +14,10 @@
 {% endif %}
 [Read entry]({{ "journal_md" | source_path(date_str) }}) ·
 [Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})
+{% if people_groups or places %}
 
 ---
+{% endif %}
 {% if people_groups %}
 
 ## People
@@ -82,7 +84,9 @@
 ## References
 {% for ref in references %}
 
+{% if ref.content %}
 > *"{{ ref.content }}"*
+{% endif %}
 > — **{{ ref.source_title }}**{% if ref.author %}, {{ ref.author }}{% endif %} *({{ ref.mode }})*
 {% endfor %}
 {% endif %}
