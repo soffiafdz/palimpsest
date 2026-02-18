@@ -388,6 +388,31 @@ class TestBuildEntryContext:
         assert poems[0]["title"] == "Untitled (November)"
         assert poems[0]["version"] == 1
 
+    def test_scenes(self, builder, entry_nov8, scene_cafe, clara):
+        """Entry context includes scenes with people, locations, dates."""
+        ctx = builder.build_entry_context(entry_nov8)
+        scenes = ctx["scenes"]
+        assert len(scenes) == 1
+        s = scenes[0]
+        assert s["name"] == "Morning at the Cafe"
+        assert s["description"] == "A conversation over espresso."
+        assert "Clara Dupont" in s["people"]
+        assert len(s["locations"]) == 1
+        assert s["locations"][0]["city"] == "Montreal"
+        assert "Café Olimpico" in s["locations"][0]["names"]
+        assert len(s["dates"]) == 1
+
+    def test_scenes_empty(self, builder, db_session):
+        """Entry with no scenes has empty scenes list."""
+        entry = Entry(
+            date=date(2024, 1, 1),
+            file_path="2024/2024-01-01.md",
+        )
+        db_session.add(entry)
+        db_session.flush()
+        ctx = builder.build_entry_context(entry)
+        assert ctx["scenes"] == []
+
     def test_empty_entry(self, builder, db_session):
         """Entry with no relationships produces empty sections."""
         entry = Entry(
@@ -452,6 +477,22 @@ class TestBuildPersonContext:
         assert "arc_event_spine" in ctx
         assert "companions" in ctx
         assert ctx["entry_count"] >= 20
+
+    def test_aliases(self, builder, db_session, clara, entry_nov8):
+        """Person context includes aliases."""
+        from dev.database.models.entities import PersonAlias
+        alias = PersonAlias(person_id=clara.id, alias="Clarita")
+        db_session.add(alias)
+        db_session.flush()
+
+        ctx = builder.build_person_context(clara)
+        assert "aliases" in ctx
+        assert "Clarita" in ctx["aliases"]
+
+    def test_no_aliases(self, builder, clara, entry_nov8):
+        """Person without aliases has empty aliases list."""
+        ctx = builder.build_person_context(clara)
+        assert ctx["aliases"] == []
 
     def test_character_mappings(self, builder, clara, entry_nov8):
         """Character mappings included when present."""
@@ -535,6 +576,29 @@ class TestBuildArcContext:
         assert ctx["description"] == "A story of longing."
         assert ctx["entry_count"] == 1
 
+    def test_arc_chapters(self, builder, db_session, arc_wanting, entry_nov8):
+        """Arc context includes chapters linked via chapter_arcs."""
+        from dev.database.models.manuscript import Chapter
+        from dev.database.models.enums import ChapterType, ChapterStatus
+        ch = Chapter(
+            title="Wanting Chapter", number=1,
+            type=ChapterType.PROSE, status=ChapterStatus.DRAFT,
+        )
+        db_session.add(ch)
+        db_session.flush()
+        ch.arcs.append(arc_wanting)
+        db_session.flush()
+
+        ctx = builder.build_arc_context(arc_wanting)
+        assert len(ctx["chapters"]) == 1
+        assert ctx["chapters"][0]["title"] == "Wanting Chapter"
+        assert ctx["chapters"][0]["type"] == "Prose"
+
+    def test_arc_no_chapters(self, builder, arc_wanting, entry_nov8):
+        """Arc without chapters has empty chapters list."""
+        ctx = builder.build_arc_context(arc_wanting)
+        assert ctx["chapters"] == []
+
 
 # ==================== Tag Context ====================
 
@@ -591,6 +655,28 @@ class TestBuildPoemContext:
         assert len(ctx["versions"]) == 1
         assert ctx["versions"][0]["number"] == 1
         assert ctx["versions"][0]["entry_date"] == "2024-11-08"
+
+    def test_poem_chapters(self, builder, db_session, poem):
+        """Poem context includes chapters linked via chapter_poems."""
+        from dev.database.models.manuscript import Chapter
+        from dev.database.models.enums import ChapterType, ChapterStatus
+        ch = Chapter(
+            title="Poem Chapter", number=2,
+            type=ChapterType.POEM, status=ChapterStatus.DRAFT,
+        )
+        db_session.add(ch)
+        db_session.flush()
+        ch.poems.append(poem)
+        db_session.flush()
+
+        ctx = builder.build_poem_context(poem)
+        assert len(ctx["chapters"]) == 1
+        assert ctx["chapters"][0]["title"] == "Poem Chapter"
+
+    def test_poem_no_chapters(self, builder, poem):
+        """Poem without chapters has empty chapters list."""
+        ctx = builder.build_poem_context(poem)
+        assert ctx["chapters"] == []
 
 
 # ==================== Reference Source Context ====================

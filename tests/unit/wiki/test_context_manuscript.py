@@ -542,12 +542,13 @@ class TestBuildManuscriptSceneContext:
     def test_scene_source(
         self, builder, ms_scene, ms_source_scene
     ):
-        """Source with journal scene shows correct type and reference."""
+        """Source with journal scene shows name and entry date."""
         ctx = builder.build_manuscript_scene_context(ms_scene)
         assert len(ctx["sources"]) == 1
         src = ctx["sources"][0]
         assert src["type"] == "Scene"
-        assert "Morning at the Cafe" in src["reference"]
+        assert src["reference_name"] == "Morning at the Cafe"
+        assert src["entry_date"] == "2024-11-08"
 
     def test_entry_source(
         self, builder, ms_scene, ms_source_entry, entry_nov8
@@ -558,17 +559,18 @@ class TestBuildManuscriptSceneContext:
             s for s in ctx["sources"] if s["type"] == "Entry"
         )
         assert src["entry_date"] == "2024-11-08"
+        assert src["reference_name"] is None
 
     def test_thread_source(
         self, builder, ms_scene, ms_source_thread
     ):
-        """Source with thread shows correct reference."""
+        """Source with thread shows name and entry date."""
         ctx = builder.build_manuscript_scene_context(ms_scene)
         src = next(
             s for s in ctx["sources"] if s["type"] == "Thread"
         )
-        assert "The Bookend Kiss" in src["reference"]
-        assert src["entry_date"] is None
+        assert src["reference_name"] == "The Bookend Kiss"
+        assert src["entry_date"] == "2024-11-08"
 
     def test_external_source(
         self, builder, ms_scene, ms_source_external
@@ -578,8 +580,9 @@ class TestBuildManuscriptSceneContext:
         src = next(
             s for s in ctx["sources"] if s["type"] == "External"
         )
-        assert "Memory of a childhood event" in src["reference"]
+        assert src["reference_name"] == "Memory of a childhood event"
         assert src["entry_date"] is None
+        assert src["external_note"] == "Memory of a childhood event"
 
     def test_no_sources(self, builder, ms_scene_unassigned):
         """Scene without sources has empty list."""

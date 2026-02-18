@@ -30,6 +30,15 @@
 {% for d in event.entry_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endfor %}
 {% endif %}
+{% if chapters %}
+
+---
+
+## Chapters
+{% for ch in chapters %}
+- {{ ch.title | wikilink }} *({{ ch.type }})*
+{% endfor %}
+{% endif %}
 {% if frequent_people %}
 
 ---

@@ -17,7 +17,7 @@
 ## Instances
 {% for instance in instances %}
 {% if instance.entry_date %}
-- {{ instance.entry_date | wikilink }}
+- {{ instance.entry_date | entry_date_display }}
 {% if instance.description %}  {{ instance.description }}{% endif %}
 {% elif instance.description %}
 - {{ instance.description }}

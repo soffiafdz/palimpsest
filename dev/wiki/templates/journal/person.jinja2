@@ -1,6 +1,10 @@
 {% from "macros/thread_display.jinja2" import render_thread %}
 {% from "macros/entry_listing.jinja2" import render_entries %}
 # {{ display_name }}
+{% if aliases %}
+
+*Also known as: {{ aliases | mid_dot_join }}*
+{% endif %}
 {% if relation %}
 
 **Relation:** {{ relation }}{% if tier == "narrator" %} | **Narrator**{% endif %}

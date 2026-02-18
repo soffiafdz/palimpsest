@@ -55,6 +55,7 @@ from dev.database.models import (
     Person,
     Poem,
     ReferenceSource,
+    Scene,
     Tag,
     Theme,
 )
@@ -130,6 +131,7 @@ class WikiContextBuilder:
             "reading_time": entry.reading_time_display,
             "people_groups": self._build_people_groups(entry.people),
             "places": self._build_places(entry.locations, entry.cities),
+            "scenes": self._build_entry_scenes(entry.scenes),
             "events": self._build_entry_events(entry.events, entry.arcs),
             "threads": [self._build_thread_display(t) for t in entry.threads],
             "themes": [t.name for t in entry.themes],
@@ -237,6 +239,46 @@ class WikiContextBuilder:
                 "neighborhoods": [],  # Neighborhoods not yet in schema
             })
 
+        return result
+
+    def _build_entry_scenes(
+        self, scenes: List[Scene]
+    ) -> List[Dict[str, Any]]:
+        """
+        Build scene details for an entry page.
+
+        Each scene includes its name, description, people, locations
+        (grouped by city), and dates. Provides the narrative breakdown
+        that events alone cannot.
+
+        Args:
+            scenes: List of Scene entities from an entry
+
+        Returns:
+            List of scene dicts with name, description, people,
+            locations, dates
+        """
+        result = []
+        for scene in scenes:
+            loc_groups: Dict[str, List[str]] = defaultdict(list)
+            for loc in scene.locations:
+                loc_groups[loc.city.name].append(loc.name)
+
+            result.append({
+                "name": scene.name,
+                "description": scene.description,
+                "people": [
+                    p.display_name for p in scene.people
+                    if p.relation_type != RelationType.SELF
+                ],
+                "locations": [
+                    {"city": city, "names": sorted(names)}
+                    for city, names in sorted(loc_groups.items())
+                ],
+                "dates": [
+                    sd.date for sd in scene.dates
+                ],
+            })
         return result
 
     def _build_entry_events(
@@ -379,9 +421,12 @@ class WikiContextBuilder:
         is_narrator = person.relation_type == RelationType.SELF
         entry_count = person.entry_count
 
+        aliases = [a.alias for a in person.aliases] if person.aliases else []
+
         base = {
             "display_name": person.display_name,
             "slug": person.slug,
+            "aliases": aliases,
             "relation": (
                 person.relation_type.value if person.relation_type else None
             ),
@@ -1089,6 +1134,10 @@ class WikiContextBuilder:
                 arc.first_entry_date, arc.last_entry_date
             ),
             "timeline": self._compute_monthly_counts(arc.entries),
+            "chapters": [
+                {"title": ch.title, "type": ch.type_display}
+                for ch in arc.chapters
+            ],
             "events": sorted(
                 [
                     {
@@ -1247,6 +1296,10 @@ class WikiContextBuilder:
                 }
                 for i, v in enumerate(versions)
             ],
+            "chapters": [
+                {"title": ch.title}
+                for ch in poem.chapters
+            ],
         }
 
     # ==============================================================
@@ -1379,10 +1432,7 @@ class WikiContextBuilder:
                     "origin": ms.origin_display,
                     "status": ms.status_display,
                     "sources": [
-                        {
-                            "type": src.source_type_display,
-                            "reference": src.source_reference,
-                        }
+                        self._build_manuscript_source(src)
                         for src in ms.sources
                     ],
                 }
@@ -1471,14 +1521,7 @@ class WikiContextBuilder:
             "origin": ms_scene.origin_display,
             "status": ms_scene.status_display,
             "sources": [
-                {
-                    "type": src.source_type_display,
-                    "reference": src.source_reference,
-                    "entry_date": (
-                        src.entry.date.isoformat()
-                        if src.entry else None
-                    ),
-                }
+                self._build_manuscript_source(src)
                 for src in ms_scene.sources
             ],
         }
@@ -1524,6 +1567,43 @@ class WikiContextBuilder:
                 }
                 for ch in part.chapters
             ],
+        }
+
+    def _build_manuscript_source(self, src: Any) -> Dict[str, Any]:
+        """
+        Build context dict for a single ManuscriptSource.
+
+        Breaks the source reference into linkable components
+        so templates can wikilink scene names, entry dates,
+        and thread names instead of rendering plain text.
+
+        Args:
+            src: ManuscriptSource model instance
+
+        Returns:
+            Dict with type, reference_name, entry_date, external_note
+        """
+        from dev.database.models.enums import SourceType
+
+        entry_date = None
+        reference_name = None
+
+        if src.source_type == SourceType.SCENE and src.scene:
+            reference_name = src.scene.name
+            entry_date = src.scene.entry.date.isoformat()
+        elif src.source_type == SourceType.ENTRY and src.entry:
+            entry_date = src.entry.date.isoformat()
+        elif src.source_type == SourceType.THREAD and src.thread:
+            reference_name = src.thread.name
+            entry_date = src.thread.entry.date.isoformat()
+        elif src.source_type == SourceType.EXTERNAL:
+            reference_name = src.external_note or ""
+
+        return {
+            "type": src.source_type_display,
+            "reference_name": reference_name,
+            "entry_date": entry_date,
+            "external_note": src.external_note if src.source_type == SourceType.EXTERNAL else None,
         }
 
     # ==============================================================

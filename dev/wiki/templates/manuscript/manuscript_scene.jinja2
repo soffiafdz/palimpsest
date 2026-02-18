@@ -17,7 +17,6 @@
 
 ## Sources
 {% for src in sources %}
-- **{{ src.type }}:** {{ src.reference }}
-{% if src.entry_date %}  {{ src.entry_date | wikilink }}{% endif %}
+- **{{ src.type }}:**{% if src.reference_name %} *{{ src.reference_name }}*{% endif %}{% if src.entry_date %} {{ src.entry_date | entry_date_short }}{% endif %}
 {% endfor %}
 {% endif %}

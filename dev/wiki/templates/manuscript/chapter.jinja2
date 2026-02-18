@@ -37,7 +37,7 @@
 *{{ scene.origin }}* · {{ scene.status }}
 {% if scene.sources %}
 {% for src in scene.sources %}
-- {{ src.type }}: {{ src.reference }}
+- **{{ src.type }}:**{% if src.reference_name %} *{{ src.reference_name }}*{% endif %}{% if src.entry_date %} {{ src.entry_date | entry_date_short }}{% endif %}{% if src.external_note %} {{ src.external_note }}{% endif %}
 {% endfor %}
 {% endif %}
 {% endfor %}

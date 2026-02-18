@@ -50,14 +50,37 @@
 {% endif %}
 {% endfor %}
 {% endif %}
+{% if scenes %}
+
+---
+
+## Scenes
+{% for scene in scenes %}
+
+### {{ scene.name }}
+{% if scene.description %}{{ scene.description }}{% endif %}
+{% if scene.people %}
+{% for chunk in scene.people | chunked %}
+- {% for person in chunk %}{{ person | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endfor %}
+{% endif %}
+{% if scene.locations %}
+{% for loc_group in scene.locations %}
+- {{ loc_group.city | wikilink }}: {% for name in loc_group.names %}{{ name | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endfor %}
+{% endif %}
+{% if scene.dates %}
+{{ scene.dates | mid_dot_join }}
+{% endif %}
+{% endfor %}
+{% endif %}
 {% if events %}
 
 ---
 
 ## Events
 {% for event in events %}
-- {{ event.name | wikilink }}
-{% if event.arc %}  {{ event.arc }}{% endif %}
+- {{ event.name | wikilink }}{% if event.arc %}  {{ event.arc | wikilink }}{% endif %}
 {% endfor %}
 {% endif %}
 {% if threads %}
@@ -76,10 +99,10 @@
 
 ## Themes & Tags
 {% if themes %}
-**Themes:** {{ themes | mid_dot_join }}
+**Themes:** {% for t in themes %}{{ t | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endif %}
 {% if tags %}
-**Tags:** {{ tags | mid_dot_join }}
+**Tags:** {% for t in tags %}{{ t | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endif %}
 {% endif %}
 {% if references %}
@@ -92,7 +115,7 @@
 {% if ref.content %}
 > *"{{ ref.content }}"*
 {% endif %}
-> — **{{ ref.source_title }}**{% if ref.author %}, {{ ref.author }}{% endif %} *({{ ref.mode }})*
+> — **{{ ref.source_title | wikilink }}**{% if ref.author %}, {{ ref.author }}{% endif %} *({{ ref.mode }})*
 {% endfor %}
 {% endif %}
 {% if poems %}
