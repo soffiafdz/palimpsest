@@ -1,6 +1,8 @@
 # {{ title }}
 
 **Type:** {{ type }} · **Status:** {{ status }}
+
+[Edit metadata]({{ "chapter_yaml" | source_path(slug) }})
 {% if part %}
 **Part:** {{ part | wikilink }}
 {% endif %}
@@ -11,7 +13,8 @@
 
 ## Characters
 {% for char in characters %}
-- {{ char.name | wikilink }}{% if char.role %} · {{ char.role }}{% endif %}
+- {{ char.name | wikilink }}
+{% if char.role %}  *{{ char.role }}*{% endif %}
 {% endfor %}
 {% endif %}
 {% if arcs %}
@@ -45,7 +48,8 @@
 
 ## References
 {% for ref in references %}
-- {{ ref.source_title | wikilink }} *({{ ref.mode }})*{% if ref.content %} — {{ ref.content }}{% endif %}
+- {{ ref.source_title | wikilink }}
+  *({{ ref.mode }})*{% if ref.content %} — {{ ref.content }}{% endif %}
 {% endfor %}
 {% endif %}
 {% if poems %}

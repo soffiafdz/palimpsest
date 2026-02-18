@@ -13,12 +13,10 @@
 
 ---
 {% endif %}
-{% if entries %}
 
-## Entries
+**Recent:** {% for d in recent_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
 
-{{ render_entries(entries) }}
-{% endif %}
+[All entries ({{ entry_count }})]({{ slug }}-entries)
 {% if patterns %}
 
 ---

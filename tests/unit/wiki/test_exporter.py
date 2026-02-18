@@ -303,10 +303,91 @@ class TestWikiExporterIndexes:
             assert "groups" in ctx
             assert "total" in ctx
 
-    def test_tags_themes_index_context(self, test_db, populated_db):
-        """Tags & themes index includes frequency-sorted lists."""
+    def test_tags_index_context(self, test_db, populated_db):
+        """Tags index includes frequency-sorted list."""
         exporter = WikiExporter(test_db)
         with test_db.session_scope() as session:
-            ctx = exporter._build_tags_themes_index_context(session)
+            ctx = exporter._build_tags_index_context(session)
             assert "tags" in ctx
+
+    def test_themes_index_context(self, test_db, populated_db):
+        """Themes index includes frequency-sorted list."""
+        exporter = WikiExporter(test_db)
+        with test_db.session_scope() as session:
+            ctx = exporter._build_themes_index_context(session)
             assert "themes" in ctx
+
+    def test_events_index_standalone(self, test_db, populated_db):
+        """Events index uses 'Standalone' instead of 'Unlinked'."""
+        exporter = WikiExporter(test_db)
+        with test_db.session_scope() as session:
+            ctx = exporter._build_events_index_context(session)
+            names = [g["name"] for g in ctx["arc_groups"]]
+            assert "Unlinked" not in names
+
+
+class TestWikiExporterSubpages:
+    """Tests for entity subpage generation."""
+
+    def test_arc_subpage_generated(
+        self, test_db, populated_db, wiki_output
+    ):
+        """Arc entry subpage is generated."""
+        exporter = WikiExporter(test_db, output_dir=wiki_output)
+        exporter.generate_all(section="journal")
+
+        arc_subpage = (
+            wiki_output / "journal" / "arcs"
+            / "the-long-wanting-entries.md"
+        )
+        assert arc_subpage.exists()
+        content = arc_subpage.read_text()
+        assert "The Long Wanting" in content
+
+    def test_no_subpage_for_infrequent_person(
+        self, test_db, populated_db, wiki_output
+    ):
+        """Infrequent people do not get entry subpages."""
+        exporter = WikiExporter(test_db, output_dir=wiki_output)
+        exporter.generate_all(section="journal")
+
+        # Clara has 1 entry — no subpage
+        subpage = (
+            wiki_output / "journal" / "people"
+            / "clara_dupont-entries.md"
+        )
+        assert not subpage.exists()
+
+
+class TestWikiExporterParts:
+    """Tests for Part page generation."""
+
+    def test_part_pages_generated(self, test_db, populated_db, wiki_output):
+        """Part pages are generated in manuscript/parts/."""
+        from dev.database.models.manuscript import Part, Chapter
+
+        with test_db.session_scope() as session:
+            part = Part(number=1, title="The Beginning")
+            session.add(part)
+            session.flush()
+
+            chapter = session.query(Chapter).first()
+            if chapter is None:
+                chapter = Chapter(
+                    title="Opening",
+                    number=1,
+                )
+                session.add(chapter)
+                session.flush()
+            chapter.part_id = part.id
+            session.commit()
+
+        exporter = WikiExporter(test_db, output_dir=wiki_output)
+        exporter.generate_all(section="manuscript")
+
+        part_page = (
+            wiki_output / "manuscript" / "parts" / "the-beginning.md"
+        )
+        assert part_page.exists()
+        content = part_page.read_text()
+        assert "The Beginning" in content

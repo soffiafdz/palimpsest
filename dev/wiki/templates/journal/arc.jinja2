@@ -5,6 +5,8 @@
 {{ description }}
 {% endif %}
 
+[Edit metadata]({{ "arc_yaml" | source_path("") }})
+
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 
 ---
@@ -16,13 +18,16 @@
 
 ---
 {% endif %}
+
+[All entries ({{ entry_count }})]({{ slug }}-entries)
 {% if events %}
 
 ## Events
 {% for event in events %}
 
-**{{ event.name | wikilink }}** · {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }}
-{% for d in event.entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+### {{ event.name | wikilink }}
+{{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }}
+{% for d in event.entry_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endfor %}
 {% endif %}
 {% if frequent_people %}
@@ -33,12 +38,4 @@
 {% for person in frequent_people %}
 - {{ person.name | wikilink }} ({{ person.count }})
 {% endfor %}
-{% endif %}
-{% if entries %}
-
----
-
-## Entries
-
-{{ render_entries(entries) }}
 {% endif %}

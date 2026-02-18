@@ -150,6 +150,13 @@ def _character_filename(character: Any) -> str:
     return f"{slugify(character.name)}.md"
 
 
+def _part_filename(part: Any) -> str:
+    """Generate wiki page filename for a Part."""
+    if part.title:
+        return f"{slugify(part.title)}.md"
+    return f"part-{part.number}.md"
+
+
 # ==================== Visibility Filters ====================
 
 def _tag_should_generate(tag: Any) -> bool:
@@ -275,6 +282,14 @@ MANUSCRIPT_CONFIGS: List[EntityConfig] = [
         filename_fn=_named_entity_filename,
         context_method="build_manuscript_scene_context",
     ),
+    EntityConfig(
+        name="parts",
+        model=Part,
+        template="manuscript/part.jinja2",
+        output_subdir="manuscript/parts",
+        filename_fn=_part_filename,
+        context_method="build_part_context",
+    ),
 ]
 
 
@@ -316,10 +331,16 @@ INDEX_CONFIGS: List[IndexConfig] = [
         context_method="_build_arcs_index_context",
     ),
     IndexConfig(
-        name="tags_themes",
-        template="indexes/tags_themes.jinja2",
-        output_path="indexes/tags-themes-index.md",
-        context_method="_build_tags_themes_index_context",
+        name="tags",
+        template="indexes/tags.jinja2",
+        output_path="indexes/tags-index.md",
+        context_method="_build_tags_index_context",
+    ),
+    IndexConfig(
+        name="themes",
+        template="indexes/themes.jinja2",
+        output_path="indexes/themes-index.md",
+        context_method="_build_themes_index_context",
     ),
     IndexConfig(
         name="poems",

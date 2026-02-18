@@ -65,6 +65,7 @@ from dev.database.models.manuscript import (
     ManuscriptScene,
     Part,
 )
+from dev.utils.slugify import slugify
 
 
 # ==================== Thresholds ====================
@@ -402,6 +403,7 @@ class WikiContextBuilder:
             base["top_places"] = self._build_person_top_places(person)
         elif entry_count >= FREQUENT_PERSON_THRESHOLD:
             base["tier"] = "frequent"
+            base["has_entries_subpage"] = True
             base["date_range"] = self._date_range_str(
                 person.first_appearance, person.last_appearance
             )
@@ -604,6 +606,10 @@ class WikiContextBuilder:
             else:
                 unlinked_events.append(event_dict)
 
+        # Sort helper: earliest entry_date
+        def _event_sort_key(ev: Dict[str, Any]) -> str:
+            return ev["entry_dates"][0] if ev["entry_dates"] else "9999"
+
         # Build result
         result = []
         for arc_name, events in sorted(arc_events.items()):
@@ -622,15 +628,15 @@ class WikiContextBuilder:
                     min((e.date for e in arc_entries), default=None),
                     max((e.date for e in arc_entries), default=None),
                 ) if arc_entries else "",
-                "events": events,
+                "events": sorted(events, key=_event_sort_key),
             })
 
         if unlinked_events:
             result.append({
-                "name": "Unlinked events",
+                "name": "Standalone events",
                 "entry_count": None,
                 "date_range": None,
-                "events": unlinked_events,
+                "events": sorted(unlinked_events, key=_event_sort_key),
             })
 
         return result
@@ -738,9 +744,14 @@ class WikiContextBuilder:
         """
         entry_count = location.entry_count
 
+        city_slug = slugify(location.city.name)
+        loc_slug = slugify(location.name)
+
         base: Dict[str, Any] = {
             "name": location.name,
             "city": location.city.name,
+            "slug": loc_slug,
+            "metadata_id": f"{city_slug}/{loc_slug}",
             "entry_count": entry_count,
             "first_visit": (
                 location.first_visit.isoformat()
@@ -754,6 +765,7 @@ class WikiContextBuilder:
 
         if entry_count >= FREQUENT_LOCATION_THRESHOLD:
             base["tier"] = "dashboard"
+            base["has_entries_subpage"] = True
             base["date_range"] = self._date_range_str(
                 location.first_visit, location.last_visit
             )
@@ -761,6 +773,9 @@ class WikiContextBuilder:
                 location.entries
             )
             base["events_here"] = self._build_location_events(location)
+            base["entries_outside_events"] = (
+                self._build_location_entries_outside_events(location)
+            )
             base["frequent_people"] = self._build_location_people(location)
             base["threads"] = [
                 self._build_thread_display(t) for t in location.threads
@@ -823,16 +838,19 @@ class WikiContextBuilder:
             else:
                 unlinked.append(event_dict)
 
+        def _event_sort_key(ev: Dict[str, Any]) -> str:
+            return ev["entry_dates"][0] if ev["entry_dates"] else "9999"
+
         result = []
         for arc_name, events in sorted(arc_events.items()):
             result.append({
                 "name": arc_name,
-                "events": events,
+                "events": sorted(events, key=_event_sort_key),
             })
         if unlinked:
             result.append({
-                "name": "Unlinked events",
-                "events": unlinked,
+                "name": "Standalone events",
+                "events": sorted(unlinked, key=_event_sort_key),
             })
         return result
 
@@ -1063,22 +1081,27 @@ class WikiContextBuilder:
 
         return {
             "name": arc.name,
+            "slug": slugify(arc.name),
+            "has_entries_subpage": True,
             "description": arc.description,
             "entry_count": arc.entry_count,
             "date_range": self._date_range_str(
                 arc.first_entry_date, arc.last_entry_date
             ),
             "timeline": self._compute_monthly_counts(arc.entries),
-            "events": [
-                {
-                    "name": e.name,
-                    "scene_count": e.scene_count,
-                    "entry_dates": sorted(
-                        [en.date.isoformat() for en in e.entries]
-                    ),
-                }
-                for e in arc_events
-            ],
+            "events": sorted(
+                [
+                    {
+                        "name": e.name,
+                        "scene_count": e.scene_count,
+                        "entry_dates": sorted(
+                            [en.date.isoformat() for en in e.entries]
+                        ),
+                    }
+                    for e in arc_events
+                ],
+                key=lambda ev: ev["entry_dates"][0] if ev["entry_dates"] else "9999",
+            ),
             "frequent_people": [
                 {
                     "name": people_by_id[pid].display_name,
@@ -1115,16 +1138,21 @@ class WikiContextBuilder:
 
         base: Dict[str, Any] = {
             "name": tag.name,
+            "slug": slugify(tag.name),
             "entry_count": entry_count,
             "entries": self._build_entry_listing(entries),
         }
 
         if entry_count >= TAG_DASHBOARD_THRESHOLD:
             base["tier"] = "dashboard"
+            base["has_entries_subpage"] = True
             base["date_range"] = self._date_range_str(
                 entries[-1].date if entries else None,
                 entries[0].date if entries else None,
             )
+            base["recent_dates"] = [
+                e.date.isoformat() for e in entries[:5]
+            ]
             base["timeline"] = self._compute_monthly_counts(entries)
             base["patterns"] = self._compute_co_occurrences(entries)
             base["frequent_people"] = self._compute_frequent_people(entries)
@@ -1156,16 +1184,21 @@ class WikiContextBuilder:
 
         base: Dict[str, Any] = {
             "name": theme.name,
+            "slug": slugify(theme.name),
             "entry_count": entry_count,
             "entries": self._build_entry_listing(entries),
         }
 
         if entry_count >= TAG_DASHBOARD_THRESHOLD:
             base["tier"] = "dashboard"
+            base["has_entries_subpage"] = True
             base["date_range"] = self._date_range_str(
                 entries[-1].date if entries else None,
                 entries[0].date if entries else None,
             )
+            base["recent_dates"] = [
+                e.date.isoformat() for e in entries[:5]
+            ]
             base["timeline"] = self._compute_monthly_counts(entries)
             base["patterns"] = self._compute_co_occurrences(entries)
             base["frequent_people"] = self._compute_frequent_people(entries)
@@ -1324,6 +1357,7 @@ class WikiContextBuilder:
         """
         return {
             "title": chapter.title,
+            "slug": slugify(chapter.title),
             "number": chapter.number,
             "type": chapter.type_display,
             "status": chapter.status_display,
@@ -1386,6 +1420,7 @@ class WikiContextBuilder:
         """
         return {
             "name": character.name,
+            "slug": slugify(character.name),
             "description": character.description,
             "role": character.role,
             "is_narrator": character.is_narrator,
@@ -1430,6 +1465,7 @@ class WikiContextBuilder:
         """
         return {
             "name": ms_scene.name,
+            "slug": slugify(ms_scene.name),
             "description": ms_scene.description,
             "chapter": ms_scene.chapter.title if ms_scene.chapter else None,
             "origin": ms_scene.origin_display,
@@ -1465,11 +1501,20 @@ class WikiContextBuilder:
             Dict with keys: display_name, number, title,
             chapter_count, chapters
         """
+        slug = slugify(part.title) if part.title else f"part-{part.number}"
+
+        # Count scenes across all chapters
+        scene_count = sum(
+            len(ch.scenes) for ch in part.chapters
+        )
+
         return {
             "display_name": part.display_name,
             "number": part.number,
             "title": part.title,
+            "slug": slug,
             "chapter_count": part.chapter_count,
+            "scene_count": scene_count,
             "chapters": [
                 {
                     "title": ch.title,

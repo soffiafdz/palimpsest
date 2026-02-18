@@ -62,7 +62,14 @@ from dev.database.models.enums import RelationType
 from dev.database.models.manuscript import Chapter, Character, ManuscriptScene, Part
 from dev.utils.slugify import slugify
 from dev.wiki.configs import JOURNAL_CONFIGS, MANUSCRIPT_CONFIGS, INDEX_CONFIGS
-from dev.wiki.context import WikiContextBuilder
+from dev.wiki.context import (
+    WikiContextBuilder,
+    FREQUENT_PERSON_THRESHOLD,
+    FREQUENT_LOCATION_THRESHOLD,
+    TAG_DASHBOARD_THRESHOLD,
+    TAG_PAGE_THRESHOLD,
+    THEME_PAGE_THRESHOLD,
+)
 from dev.wiki.renderer import WikiRenderer
 
 
@@ -169,6 +176,8 @@ class WikiExporter:
                 self._generate_journal_entities(
                     session, builder, entity_type
                 )
+                if not entity_type:
+                    self._generate_entity_subpages(session, builder)
 
             if not section or section == "manuscript":
                 self._generate_manuscript_entities(
@@ -359,6 +368,158 @@ class WikiExporter:
 
             self.stats[config.name] = total
             self.stats[f"{config.name}_changed"] = changed
+
+    def _generate_entity_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for high-frequency entities.
+
+        Dispatches to per-type methods that check thresholds and
+        render subpage templates for entities with many entries.
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        self._generate_person_subpages(session, builder)
+        self._generate_location_subpages(session, builder)
+        self._generate_tag_subpages(session, builder)
+        self._generate_theme_subpages(session, builder)
+        self._generate_arc_subpages(session, builder)
+
+    def _generate_person_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for frequent people (20+ entries).
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for person in session.query(Person).all():
+            if person.relation_type == RelationType.SELF:
+                continue
+            if person.entry_count < FREQUENT_PERSON_THRESHOLD:
+                continue
+
+            ctx = builder.build_person_context(person)
+            filename = f"{person.slug}-entries.md"
+            output_path = self.output_dir / "journal" / "people" / filename
+
+            self.renderer.render_to_file(
+                "journal/person_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_location_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for dashboard locations (20+ entries).
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for location in session.query(Location).all():
+            if location.entry_count < FREQUENT_LOCATION_THRESHOLD:
+                continue
+
+            ctx = builder.build_location_context(location)
+            city_slug = slugify(location.city.name)
+            loc_slug = slugify(location.name)
+            output_path = (
+                self.output_dir / "journal" / "locations"
+                / city_slug / f"{loc_slug}-entries.md"
+            )
+
+            self.renderer.render_to_file(
+                "journal/location_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_tag_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for dashboard tags (5+ entries).
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for tag in session.query(Tag).all():
+            if tag.usage_count < TAG_DASHBOARD_THRESHOLD:
+                continue
+
+            ctx = builder.build_tag_context(tag)
+            slug = slugify(tag.name)
+            filename = f"{slug}-entries.md"
+            output_path = self.output_dir / "journal" / "tags" / filename
+
+            self.renderer.render_to_file(
+                "journal/tag_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_theme_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for dashboard themes (5+ entries).
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for theme in session.query(Theme).all():
+            if theme.usage_count < TAG_DASHBOARD_THRESHOLD:
+                continue
+
+            ctx = builder.build_theme_context(theme)
+            slug = slugify(theme.name)
+            filename = f"{slug}-entries.md"
+            output_path = self.output_dir / "journal" / "themes" / filename
+
+            self.renderer.render_to_file(
+                "journal/theme_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_arc_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for all arcs.
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for arc in session.query(Arc).all():
+            ctx = builder.build_arc_context(arc)
+            slug = slugify(arc.name)
+            filename = f"{slug}-entries.md"
+            output_path = self.output_dir / "journal" / "arcs" / filename
+
+            self.renderer.render_to_file(
+                "journal/arc_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
 
     def _generate_indexes(
         self,
@@ -558,6 +719,13 @@ class WikiExporter:
                 f"/manuscript/scenes/{slugify(scene.name)}"
             )
 
+        # Parts: display_name → /manuscript/parts/{filename_stem}
+        for part in session.query(Part).all():
+            stem = slugify(part.title) if part.title else f"part-{part.number}"
+            targets[part.display_name] = (
+                f"/manuscript/parts/{stem}"
+            )
+
         safe_logger(self.logger).log_debug(
             f"Built wikilink targets: {len(targets)} entries"
         )
@@ -741,22 +909,35 @@ class WikiExporter:
 
         for event in events:
             arc_name = builder._find_event_arc(event)
+            min_date = min(
+                (e.date.isoformat() for e in event.entries), default="9999"
+            )
             event_dict = {
                 "name": event.name,
                 "scene_count": event.scene_count,
                 "entry_count": event.entry_count,
+                "_min_date": min_date,
             }
             if arc_name:
                 arc_events[arc_name].append(event_dict)
             else:
                 unlinked.append(event_dict)
 
+        def _strip_sort_key(
+            evts: List[Dict[str, Any]],
+        ) -> List[Dict[str, Any]]:
+            """Sort events by min_date, then strip the helper key."""
+            sorted_evts = sorted(evts, key=lambda e: e["_min_date"])
+            for evt in sorted_evts:
+                del evt["_min_date"]
+            return sorted_evts
+
         result = [
-            {"name": name, "events": evts}
+            {"name": name, "events": _strip_sort_key(evts)}
             for name, evts in sorted(arc_events.items())
         ]
         if unlinked:
-            result.append({"name": "Unlinked", "events": unlinked})
+            result.append({"name": "Standalone", "events": _strip_sort_key(unlinked)})
 
         return {"arc_groups": result}
 
@@ -794,20 +975,19 @@ class WikiExporter:
             ]
         }
 
-    def _build_tags_themes_index_context(
+    def _build_tags_index_context(
         self, session: Session
     ) -> Dict[str, Any]:
         """
-        Build context for Tags & Themes index page.
+        Build context for Tags index page.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with frequency-sorted tags and themes
+            Dict with frequency-sorted tags (2+ uses)
         """
         tags = session.query(Tag).all()
-        themes = session.query(Theme).all()
 
         return {
             "tags": [
@@ -817,6 +997,23 @@ class WikiExporter:
                 )
                 if t.usage_count >= 2
             ],
+        }
+
+    def _build_themes_index_context(
+        self, session: Session
+    ) -> Dict[str, Any]:
+        """
+        Build context for Themes index page.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict with frequency-sorted themes (2+ uses)
+        """
+        themes = session.query(Theme).all()
+
+        return {
             "themes": [
                 {"name": t.name, "count": t.usage_count}
                 for t in sorted(

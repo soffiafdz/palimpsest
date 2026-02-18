@@ -2,11 +2,11 @@
   Event index page.
 
   Events nested under arc headings with scene and entry counts.
-  Unlinked events grouped in a separate section at the end.
+  Standalone events grouped in a separate section at the end.
 
   Context:
     arc_groups: list of dicts:
-      - name: str (arc name, or "Unlinked")
+      - name: str (arc name, or "Standalone")
       - events: list of dicts:
           - name: str
           - scene_count: int
@@ -17,12 +17,13 @@
 ---
 {% for group in arc_groups %}
 
-{% if group.name == "Unlinked" %}
-## Unlinked
+{% if group.name == "Standalone" %}
+## Standalone
 {% else %}
 ## {{ group.name | wikilink }}
 {% endif %}
 {% for event in group.events %}
-- {{ event.name | wikilink }} · {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }} · {{ event.entry_count }} entr{{ "y" if event.entry_count == 1 else "ies" }}
+- {{ event.name | wikilink }}
+  {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }} · {{ event.entry_count }} entr{{ "y" if event.entry_count == 1 else "ies" }}
 {% endfor %}
 {% endfor %}

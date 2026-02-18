@@ -27,6 +27,7 @@ from dev.database.models.enums import (
     RelationType,
 )
 from dev.database.models.geography import City, Location
+from dev.database.models.manuscript import Part
 from dev.database.models.metadata import Motif, MotifInstance
 from dev.wiki.context import WikiContextBuilder
 
@@ -660,3 +661,303 @@ class TestBuildEntryListing:
         june = result[0]["months"][0]
         assert june["name"] == "June"
         assert "weeks" in june
+
+
+# ==================== Slug and Metadata Keys ====================
+
+class TestContextSlugs:
+    """Tests for slug/metadata_id keys in context builders."""
+
+    def test_arc_has_slug(self, builder, arc_wanting, entry_nov8):
+        """Arc context includes slug."""
+        ctx = builder.build_arc_context(arc_wanting)
+        assert ctx["slug"] == "the-long-wanting"
+
+    def test_arc_has_entries_subpage(self, builder, arc_wanting, entry_nov8):
+        """Arc context always has has_entries_subpage."""
+        ctx = builder.build_arc_context(arc_wanting)
+        assert ctx["has_entries_subpage"] is True
+
+    def test_location_has_metadata_id(self, builder, cafe, entry_nov8):
+        """Location context includes metadata_id."""
+        ctx = builder.build_location_context(cafe)
+        assert ctx["metadata_id"] == "montreal/cafe-olimpico"
+
+    def test_location_has_slug(self, builder, cafe, entry_nov8):
+        """Location context includes slug (loc_slug only)."""
+        ctx = builder.build_location_context(cafe)
+        assert ctx["slug"] == "cafe-olimpico"
+
+    def test_tag_has_slug(self, builder, tag_loneliness, entry_nov8):
+        """Tag context includes slug."""
+        ctx = builder.build_tag_context(tag_loneliness)
+        assert ctx["slug"] == "loneliness"
+
+    def test_theme_has_slug(self, builder, theme_identity, entry_nov8):
+        """Theme context includes slug."""
+        ctx = builder.build_theme_context(theme_identity)
+        assert ctx["slug"] == "identity"
+
+    def test_frequent_person_has_subpage(
+        self, builder, db_session, clara, montreal, cafe
+    ):
+        """Frequent person gets has_entries_subpage flag."""
+        for i in range(20):
+            entry = Entry(
+                date=date(2024, 1, i + 1),
+                file_path=f"2024/2024-01-{i+1:02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            entry.people.append(clara)
+            scene = Scene(
+                name=f"Scene {i}",
+                description=f"Scene {i}",
+                entry_id=entry.id,
+            )
+            db_session.add(scene)
+            db_session.flush()
+            scene.people.append(clara)
+            scene.locations.append(cafe)
+        db_session.flush()
+
+        ctx = builder.build_person_context(clara)
+        assert ctx["has_entries_subpage"] is True
+
+    def test_infrequent_person_no_subpage(
+        self, builder, clara, entry_nov8
+    ):
+        """Infrequent person has no has_entries_subpage."""
+        ctx = builder.build_person_context(clara)
+        assert "has_entries_subpage" not in ctx
+
+    def test_dashboard_tag_has_subpage(
+        self, builder, db_session, tag_loneliness
+    ):
+        """Dashboard tag gets has_entries_subpage flag."""
+        for i in range(5):
+            entry = Entry(
+                date=date(2024, 3, i + 1),
+                file_path=f"2024/2024-03-{i+1:02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            entry.tags.append(tag_loneliness)
+        db_session.flush()
+
+        ctx = builder.build_tag_context(tag_loneliness)
+        assert ctx["has_entries_subpage"] is True
+
+    def test_dashboard_tag_has_recent_dates(
+        self, builder, db_session, tag_loneliness
+    ):
+        """Dashboard tag context includes recent_dates (up to 5)."""
+        for i in range(7):
+            entry = Entry(
+                date=date(2024, 3, i + 1),
+                file_path=f"2024/2024-03-{i+1:02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            entry.tags.append(tag_loneliness)
+        db_session.flush()
+
+        ctx = builder.build_tag_context(tag_loneliness)
+        assert "recent_dates" in ctx
+        assert len(ctx["recent_dates"]) == 5
+
+    def test_minimal_tag_no_recent_dates(
+        self, builder, db_session, tag_loneliness
+    ):
+        """Minimal tag has no recent_dates key."""
+        for i in range(3):
+            entry = Entry(
+                date=date(2024, 3, i + 1),
+                file_path=f"2024/2024-03-{i+1:02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            entry.tags.append(tag_loneliness)
+        db_session.flush()
+
+        ctx = builder.build_tag_context(tag_loneliness)
+        assert "recent_dates" not in ctx
+
+
+# ==================== Part Context Enrichment ====================
+
+class TestPartContext:
+    """Tests for Part context builder enrichments."""
+
+    def test_part_has_slug(self, builder, db_session):
+        """Part context includes slug from title."""
+        part = Part(number=1, title="The Beginning")
+        db_session.add(part)
+        db_session.flush()
+
+        ctx = builder.build_part_context(part)
+        assert ctx["slug"] == "the-beginning"
+
+    def test_part_slug_fallback(self, builder, db_session):
+        """Part without title uses part-N slug."""
+        part = Part(number=3)
+        db_session.add(part)
+        db_session.flush()
+
+        ctx = builder.build_part_context(part)
+        assert ctx["slug"] == "part-3"
+
+    def test_part_scene_count(self, builder, db_session):
+        """Part context includes scene_count from chapters."""
+        part = Part(number=1, title="First")
+        db_session.add(part)
+        db_session.flush()
+
+        ctx = builder.build_part_context(part)
+        assert "scene_count" in ctx
+        assert ctx["scene_count"] == 0
+
+
+# ==================== Standalone Rename ====================
+
+class TestStandaloneRename:
+    """Tests that 'Unlinked' is replaced with 'Standalone'."""
+
+    def test_arc_event_spine_standalone(
+        self, builder, db_session, clara, montreal, cafe
+    ):
+        """Unlinked events in arc_event_spine labeled 'Standalone events'."""
+        # Create entries and events for clara without arcs
+        for i in range(20):
+            entry = Entry(
+                date=date(2024, 1, i + 1),
+                file_path=f"2024/2024-01-{i+1:02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            entry.people.append(clara)
+            scene = Scene(
+                name=f"Scene {i}",
+                description=f"Scene {i}",
+                entry_id=entry.id,
+            )
+            db_session.add(scene)
+            db_session.flush()
+            scene.people.append(clara)
+            scene.locations.append(cafe)
+
+        # Add an event without arc on first entry
+        event = Event(name="Orphan Event")
+        db_session.add(event)
+        db_session.flush()
+        first_entry = db_session.query(Entry).filter(
+            Entry.date == date(2024, 1, 1)
+        ).first()
+        event.entries.append(first_entry)
+        first_scene = first_entry.scenes[0]
+        event.scenes.append(first_scene)
+        db_session.flush()
+
+        ctx = builder.build_person_context(clara)
+        spine = ctx["arc_event_spine"]
+        standalone = [
+            g for g in spine if g["name"] == "Standalone events"
+        ]
+        assert len(standalone) == 1
+        unlinked = [g for g in spine if "Unlinked" in g["name"]]
+        assert len(unlinked) == 0
+
+    def test_location_events_standalone(
+        self, builder, db_session, cafe, montreal
+    ):
+        """Location events use 'Standalone events' for arcless events."""
+        # Create entries at location
+        for i in range(3):
+            entry = Entry(
+                date=date(2024, 2, i + 1),
+                file_path=f"2024/2024-02-{i+1:02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            entry.locations.append(cafe)
+            entry.cities.append(montreal)
+            scene = Scene(
+                name=f"Loc Scene {i}",
+                description=f"Location scene {i}",
+                entry_id=entry.id,
+            )
+            db_session.add(scene)
+            db_session.flush()
+            scene.locations.append(cafe)
+
+        # Add arcless event
+        event = Event(name="Loc Event")
+        db_session.add(event)
+        db_session.flush()
+        first_entry = db_session.query(Entry).filter(
+            Entry.date == date(2024, 2, 1)
+        ).first()
+        event.entries.append(first_entry)
+        event.scenes.append(first_entry.scenes[0])
+        db_session.flush()
+
+        ctx = builder.build_location_context(cafe)
+        events_here = ctx.get("events_here", [])
+        standalone = [
+            g for g in events_here if g["name"] == "Standalone events"
+        ]
+        assert len(standalone) == 1
+
+
+# ==================== Event Chronological Sorting ====================
+
+class TestEventSorting:
+    """Tests for chronological event sorting."""
+
+    def test_arc_events_sorted(
+        self, builder, db_session, arc_wanting
+    ):
+        """Events in arc context are sorted by earliest entry date."""
+        # Add entries to arc
+        entry_early = Entry(
+            date=date(2024, 1, 1),
+            file_path="2024/2024-01-01.md",
+        )
+        entry_late = Entry(
+            date=date(2024, 6, 15),
+            file_path="2024/2024-06-15.md",
+        )
+        db_session.add_all([entry_early, entry_late])
+        db_session.flush()
+        entry_early.arcs.append(arc_wanting)
+        entry_late.arcs.append(arc_wanting)
+
+        # Create scenes
+        scene_early = Scene(
+            name="Early scene", description="Early",
+            entry_id=entry_early.id,
+        )
+        scene_late = Scene(
+            name="Late scene", description="Late",
+            entry_id=entry_late.id,
+        )
+        db_session.add_all([scene_early, scene_late])
+        db_session.flush()
+
+        # Events — late event created first to ensure sorting is not insertion order
+        event_late = Event(name="Late Event")
+        event_early = Event(name="Early Event")
+        db_session.add_all([event_late, event_early])
+        db_session.flush()
+        event_late.entries.append(entry_late)
+        event_late.scenes.append(scene_late)
+        event_early.entries.append(entry_early)
+        event_early.scenes.append(scene_early)
+        db_session.flush()
+
+        ctx = builder.build_arc_context(arc_wanting)
+        events = ctx["events"]
+        assert len(events) >= 2
+        # Verify chronological order
+        event_names = [e["name"] for e in events]
+        assert event_names.index("Early Event") < event_names.index("Late Event")

@@ -1,0 +1,49 @@
+{#
+  Themes index page.
+
+  Frequency-sorted themes with usage counts, grouped by frequency
+  bands for scannability. Only themes with 2+ uses are included.
+  Rare section (2-4 uses) is capped at 30 items.
+
+  Context:
+    themes: list of dicts (sorted by count descending):
+      - name: str
+      - count: int
+#}
+# Themes
+
+{{ themes | length }} themes
+
+---
+{% if themes %}
+{% set ns = namespace(band='', rare_count=0) %}
+{% for theme in themes %}
+{% if theme.count >= 20 and ns.band != 'frequent' %}
+{% set ns.band = 'frequent' %}
+
+## Frequent (20+)
+{% elif theme.count >= 10 and theme.count < 20 and ns.band != 'common' %}
+{% set ns.band = 'common' %}
+
+## Common (10–19)
+{% elif theme.count >= 5 and theme.count < 10 and ns.band != 'occasional' %}
+{% set ns.band = 'occasional' %}
+
+## Occasional (5–9)
+{% elif theme.count < 5 and ns.band != 'rare' %}
+{% set ns.band = 'rare' %}
+
+## Rare (2–4)
+{% endif %}
+{% if ns.band == 'rare' %}
+{% set ns.rare_count = ns.rare_count + 1 %}
+{% if ns.rare_count <= 30 %}
+- {{ theme.name | wikilink }} ({{ theme.count }})
+{% elif ns.rare_count == 31 %}
+*...and {{ themes | selectattr("count", "lt", 5) | list | length - 30 }} more*
+{% endif %}
+{% else %}
+- {{ theme.name | wikilink }} ({{ theme.count }})
+{% endif %}
+{% endfor %}
+{% endif %}

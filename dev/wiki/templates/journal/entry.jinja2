@@ -12,21 +12,21 @@
 
 {{ word_count | string }} words · {{ reading_time }}
 {% endif %}
-[Read entry]({{ "journal_md" | source_path(date_str) }}) ·
-[Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})
-{% if people_groups or places %}
 
 ---
-{% endif %}
+
+[Read entry]({{ "journal_md" | source_path(date_str) }}) · [Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})
 {% if people_groups %}
 
 ## People
 {% for group in people_groups %}
 {% if group.relation %}
-**{{ group.relation }}:** {{ group.names | map("wikilink") | list | adaptive_list }}
-{% else %}
-{{ group.names | map("wikilink") | list | adaptive_list }}
+
+**{{ group.relation }}**
 {% endif %}
+{% for name in group.names %}
+- {{ name | wikilink }}
+{% endfor %}
 {% endfor %}
 {% endif %}
 {% if places %}
@@ -34,15 +34,19 @@
 ## Places
 {% for city in places %}
 
-**{{ city.name | wikilink }}**
+### {{ city.name | wikilink }}
 {% if city.neighborhoods %}
 {% for nb in city.neighborhoods %}
 
 **{{ nb.name }}**
-{{ nb.locations | map("wikilink") | list | mid_dot_join }}
+{% for loc in nb.locations %}
+- {{ loc | wikilink }}
+{% endfor %}
 {% endfor %}
 {% else %}
-{{ city.locations | map("wikilink") | list | mid_dot_join }}
+{% for loc in city.locations %}
+- {{ loc | wikilink }}
+{% endfor %}
 {% endif %}
 {% endfor %}
 {% endif %}
@@ -52,7 +56,8 @@
 
 ## Events
 {% for event in events %}
-- {{ event.name | wikilink }}{% if event.arc %} · {{ event.arc }}{% else %} · unlinked{% endif %}
+- {{ event.name | wikilink }}
+{% if event.arc %}  {{ event.arc }}{% endif %}
 {% endfor %}
 {% endif %}
 {% if threads %}
@@ -94,6 +99,7 @@
 
 ## Poems
 {% for poem in poems %}
-- {{ poem.title | wikilink }}{% if poem.version %} · v{{ poem.version }}{% endif %}
+- {{ poem.title | wikilink }}
+{% if poem.version %}  v{{ poem.version }}{% endif %}
 {% endfor %}
 {% endif %}

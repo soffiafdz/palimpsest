@@ -113,7 +113,7 @@ class TestRender:
             templates={"t.jinja2": "{{ name | wikilink }}"}
         )
         result = renderer.render("t.jinja2", {"name": "Clara"})
-        assert result == "[[Clara]]"
+        assert result == "[Clara][]"
 
     def test_render_with_date_filter(self) -> None:
         """Render using date_long filter."""

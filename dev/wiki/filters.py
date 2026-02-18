@@ -37,20 +37,83 @@ from jinja2 import Environment, pass_environment
 
 
 @pass_environment
+def entry_date_short(env: Environment, date_str: str) -> str:
+    """
+    Generate a wikilink for an entry date with short display text.
+
+    Produces ``[Mar 13][/journal/entries/2025/2025-03-13]`` instead of
+    ``[2025-03-13][/journal/entries/2025/2025-03-13]``. Used inside
+    the entry_listing macro where year context is already established
+    by the heading, so the full ISO date would be redundant.
+
+    Args:
+        env: Jinja2 Environment (injected by ``@pass_environment``)
+        date_str: ISO date string in YYYY-MM-DD format
+
+    Returns:
+        WikiLink1 string with abbreviated month-day display,
+        or ``[date_str][]`` as fallback when target is not resolved
+    """
+    targets = env.globals.get("_wikilink_targets", {})
+    target = targets.get(date_str)
+    parts = date_str.split("-")
+    if len(parts) == 3:
+        month_abbr = calendar.month_abbr[int(parts[1])]
+        display = f"{month_abbr} {int(parts[2])}"
+    else:
+        display = date_str
+    if target:
+        return f"[{display}][{target}]"
+    return f"[{date_str}][]"
+
+
+@pass_environment
+def entry_date_display(env: Environment, date_str: str) -> str:
+    """
+    Generate a wikilink for an entry date with full human-readable display.
+
+    Produces ``[Jun 30, 2025][/journal/entries/2025/2025-06-30]`` instead
+    of raw ISO. Used on pages without year-heading context (poems index,
+    standalone references) where the year must be visible.
+
+    Args:
+        env: Jinja2 Environment (injected by ``@pass_environment``)
+        date_str: ISO date string in YYYY-MM-DD format
+
+    Returns:
+        WikiLink1 string with full human-readable date display,
+        or ``[date_str][]`` as fallback when target is not resolved
+    """
+    targets = env.globals.get("_wikilink_targets", {})
+    target = targets.get(date_str)
+    display = flexible_date_display(date_str)
+    if target:
+        return f"[{display}][{target}]"
+    return f"[{date_str}][]"
+
+
+@pass_environment
 def wikilink(
-    env: Environment, name: str, display: Optional[str] = None
+    env: Environment, name: str, display: Optional[str] = None,
 ) -> str:
     """
-    Generate a markdown wikilink with absolute path resolution.
+    Generate a markdown-style wikilink with absolute path resolution.
+
+    Vimwiki in markdown mode uses WikiLink1 format
+    (``[Description][URL]``) for proper syntax concealment. The
+    ``[[URL|Description]]`` format (WikiLink0) is not concealed
+    in markdown syntax, making pages unreadable.
 
     Looks up the target name in a global ``_wikilink_targets`` dict
-    injected into the Jinja2 environment. If found, produces an
-    absolute wiki path (``[[/path/to/slug|Display Name]]``) so that
-    links resolve correctly regardless of which subdirectory the
-    containing page lives in.
+    injected into the Jinja2 environment. If found, produces
+    ``[Display Name][/path/to/slug]``. Falls back to ``[name][]``
+    when the name is not in the lookup table.
 
-    Falls back to a plain ``[[name]]`` link when the name is not
-    found in the lookup table.
+    Note:
+        Wikilinks must NOT be wrapped in ``**...**`` bold markers.
+        Bold around ``[Display][URL]`` breaks vimwiki concealment,
+        and bold inside ``[**Display**][URL]`` renders literal
+        asterisks. Use heading syntax for emphasis instead.
 
     Args:
         env: Jinja2 Environment (injected by ``@pass_environment``)
@@ -58,15 +121,15 @@ def wikilink(
         display: Optional alternate display text
 
     Returns:
-        Wikilink string with absolute path if resolved,
-        or plain ``[[name]]`` as fallback
+        WikiLink1 string ``[display][target]`` if resolved,
+        or ``[name][]`` as fallback
     """
     targets = env.globals.get("_wikilink_targets", {})
     target = targets.get(name)
     display_text = display or name
     if target:
-        return f"[[{target}|{display_text}]]"
-    return f"[[{name}]]"
+        return f"[{display_text}][{target}]"
+    return f"[{name}][]"
 
 
 def date_long(d: date) -> str:
@@ -164,11 +227,16 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
         return ""
 
     month_abbrs = [calendar.month_abbr[m] for m in range(1, 13)]
+    cw = 6  # cell width — fits **XX** exactly, aligns all columns
 
     # Header
     lines = []
-    header = "| Year | " + " | ".join(month_abbrs) + " | Total |"
-    separator = "|-----:|" + "|".join([":---:"] * 12) + "|------:|"
+    header = "| Year |" + "|".join(
+        m.center(cw) for m in month_abbrs
+    ) + "| Total |"
+    separator = "|-----:|" + "|".join(
+        ":" + "-" * (cw - 2) + ":" for _ in range(12)
+    ) + "|------:|"
     lines.append(header)
     lines.append(separator)
 
@@ -188,15 +256,14 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
         for month_idx, count in enumerate(row_counts):
             month_num = month_idx + 1
             if count == 0:
-                # Future month in current year → empty cell
                 if year == today.year and month_num > today.month:
-                    cells.append("   ")
+                    cells.append(" " * cw)
                 else:
-                    cells.append(" — ")
+                    cells.append("—".center(cw))
             elif count == max_count and max_count > 1:
-                cells.append(f" **{count}** ")
+                cells.append(f"**{count}**".center(cw))
             else:
-                cells.append(f" {count} ")
+                cells.append(str(count).center(cw))
 
         row = f"| {year} |" + "|".join(cells) + f"| {year_total} |"
         lines.append(row)
@@ -206,23 +273,41 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
 
 def source_path(entity_type: str, identifier: str) -> str:
     """
-    Compute relative path to source file for a given entity.
+    Compute path to source file for a given entity.
 
-    Used on Entry pages to link to journal markdown and metadata YAML.
+    Used on wiki pages to link to journal markdown, metadata YAML,
+    and per-entity YAML metadata files.
 
     Args:
-        entity_type: One of "journal_md", "metadata_yaml"
-        identifier: Date string (YYYY-MM-DD) or slug
+        entity_type: One of "journal_md", "metadata_yaml",
+            "person_yaml", "location_yaml", "city_yaml", "arc_yaml",
+            "chapter_yaml", "character_yaml", "scene_yaml"
+        identifier: Entity-specific identifier (date string, slug,
+            or city_slug/loc_slug for locations)
 
     Returns:
-        Relative path string from wiki page to source file
+        Absolute path string from project root
     """
     if entity_type == "journal_md":
         year = identifier[:4]
-        return f"../../../journal/content/md/{year}/{identifier}.md"
+        return f"/data/journal/content/md/{year}/{identifier}.md"
     elif entity_type == "metadata_yaml":
         year = identifier[:4]
-        return f"../../../metadata/journal/{year}/{identifier}.yaml"
+        return f"/data/metadata/journal/{year}/{identifier}.yaml"
+    elif entity_type == "person_yaml":
+        return f"/data/metadata/people/{identifier}.yaml"
+    elif entity_type == "location_yaml":
+        return f"/data/metadata/locations/{identifier}.yaml"
+    elif entity_type == "city_yaml":
+        return "/data/metadata/cities.yaml"
+    elif entity_type == "arc_yaml":
+        return "/data/metadata/arcs.yaml"
+    elif entity_type == "chapter_yaml":
+        return f"/data/metadata/manuscript/chapters/{identifier}.yaml"
+    elif entity_type == "character_yaml":
+        return f"/data/metadata/manuscript/characters/{identifier}.yaml"
+    elif entity_type == "scene_yaml":
+        return f"/data/metadata/manuscript/scenes/{identifier}.yaml"
     return ""
 
 

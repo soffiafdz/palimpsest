@@ -8,6 +8,8 @@
 {{ description }}
 {% endif %}
 
+[Edit metadata]({{ "character_yaml" | source_path(slug) }})
+
 {{ chapter_count }} chapter{{ "s" if chapter_count != 1 else "" }}
 
 ---
@@ -15,13 +17,15 @@
 
 ## Based On
 {% for person in based_on %}
-- {{ person.person_name | wikilink }} *({{ person.contribution }})*
+- {{ person.person_name | wikilink }}
+  *({{ person.contribution }})*
 {% endfor %}
 {% endif %}
 {% if chapters %}
 
 ## Chapters
 {% for ch in chapters %}
-- {{ ch.title | wikilink }} · {{ ch.type }} · {{ ch.status }}
+- {{ ch.title | wikilink }}
+  {{ ch.type }} · {{ ch.status }}
 {% endfor %}
 {% endif %}

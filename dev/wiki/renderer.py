@@ -103,6 +103,8 @@ class WikiRenderer:
         Filters are pure functions defined in dev.wiki.filters and
         registered here for use in templates as ``{{ value | filter_name }}``.
         """
+        self.env.filters["entry_date_short"] = wiki_filters.entry_date_short
+        self.env.filters["entry_date_display"] = wiki_filters.entry_date_display
         self.env.filters["wikilink"] = wiki_filters.wikilink
         self.env.filters["date_long"] = wiki_filters.date_long
         self.env.filters["date_range"] = wiki_filters.date_range

@@ -61,6 +61,7 @@ from dev.utils.slugify import slugify
 # ==================== Constants ====================
 
 WIKILINK_PATTERN = re.compile(r'\[\[([^\]|]+)(?:\|[^\]]+)?\]\]')
+WIKILINK1_PATTERN = re.compile(r'\[([^\]]*)\]\[([^\]]*)\]')
 H1_PATTERN = re.compile(r'^# .+', re.MULTILINE)
 HEADING_PATTERN = re.compile(r'^(#{1,6}) (.+)', re.MULTILINE)
 
@@ -296,10 +297,12 @@ class WikiValidator:
                     f"/manuscript/scenes/{slugify(ms_scene.name)}"
                 )
 
-            # Manuscript: Parts by "Part N: Title" format
+            # Manuscript: Parts by display_name + absolute path
             for part in session.query(Part).all():
                 title = part.title or ""
                 targets.add(f"part {part.number}: {title}".lower())
+                stem = slugify(part.title) if part.title else f"part-{part.number}"
+                targets.add(f"/manuscript/parts/{stem}")
 
         self._known_targets = targets
         return self._known_targets
@@ -310,8 +313,8 @@ class WikiValidator:
         """
         Check all wikilinks in the content resolve to known targets.
 
-        Finds all ``[[target]]`` and ``[[target|display]]`` patterns
-        and verifies each target exists in the database.
+        Recognizes both WikiLink0 (``[[target]]``, ``[[target|display]]``)
+        and WikiLink1 (``[display][target]``, ``[target][]``) formats.
 
         Args:
             content: File content as string
@@ -325,6 +328,7 @@ class WikiValidator:
         lines = content.split("\n")
 
         for line_num, line in enumerate(lines, start=1):
+            # WikiLink0: [[target]] or [[target|display]]
             for match in WIKILINK_PATTERN.finditer(line):
                 target = match.group(1).strip()
                 if target.lower() not in known:
@@ -339,6 +343,29 @@ class WikiValidator:
                         severity="error",
                         code="UNRESOLVED_WIKILINK",
                         message=f"Wikilink target not found: [[{target}]]",
+                    ))
+
+            # WikiLink1: [display][target] or [target][]
+            for match in WIKILINK1_PATTERN.finditer(line):
+                display = match.group(1).strip()
+                target = match.group(2).strip()
+                # [target][] → target is in group 1, group 2 is empty
+                resolved = target if target else display
+                if resolved.lower() not in known:
+                    col = match.start() + 1
+                    end_col = match.end() + 1
+                    diagnostics.append(Diagnostic(
+                        file=file_path,
+                        line=line_num,
+                        col=col,
+                        end_line=line_num,
+                        end_col=end_col,
+                        severity="error",
+                        code="UNRESOLVED_WIKILINK",
+                        message=(
+                            f"Wikilink target not found: "
+                            f"[{display}][{target}]"
+                        ),
                     ))
 
         return diagnostics

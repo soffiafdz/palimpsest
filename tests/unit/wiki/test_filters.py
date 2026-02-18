@@ -47,51 +47,51 @@ class TestWikilink:
     """Tests for wikilink filter."""
 
     def test_simple_wikilink_no_targets(self) -> None:
-        """Name not in lookup falls back to plain wikilink."""
+        """Name not in lookup falls back to WikiLink1 fallback."""
         env = _make_env()
-        assert wikilink(env, "Marguerite Duras") == "[[Marguerite Duras]]"
+        assert wikilink(env, "Marguerite Duras") == "[Marguerite Duras][]"
 
     def test_wikilink_resolved_via_lookup(self) -> None:
-        """Name found in lookup produces absolute path wikilink."""
+        """Name found in lookup produces WikiLink1 with absolute path."""
         targets = {"Marguerite Duras": "/journal/people/marguerite_duras"}
         env = _make_env(targets)
         result = wikilink(env, "Marguerite Duras")
-        assert result == "[[/journal/people/marguerite_duras|Marguerite Duras]]"
+        assert result == "[Marguerite Duras][/journal/people/marguerite_duras]"
 
     def test_wikilink_with_display_and_lookup(self) -> None:
         """Resolved target uses custom display text."""
         targets = {"Marguerite Duras": "/journal/people/marguerite_duras"}
         env = _make_env(targets)
         result = wikilink(env, "Marguerite Duras", "Marguerite")
-        assert result == "[[/journal/people/marguerite_duras|Marguerite]]"
+        assert result == "[Marguerite][/journal/people/marguerite_duras]"
 
     def test_wikilink_display_fallback_no_match(self) -> None:
-        """Unresolved name with display text still falls back to plain link."""
+        """Unresolved name with display text still falls back."""
         env = _make_env({})
         result = wikilink(env, "Unknown Person")
-        assert result == "[[Unknown Person]]"
+        assert result == "[Unknown Person][]"
 
     def test_wikilink_empty_string(self) -> None:
-        """Empty name still produces wikilink structure."""
+        """Empty name still produces WikiLink1 structure."""
         env = _make_env()
-        assert wikilink(env, "") == "[[]]"
+        assert wikilink(env, "") == "[][]"
 
     def test_wikilink_with_date_resolved(self) -> None:
-        """Date strings resolved via lookup produce absolute paths."""
+        """Date strings resolved via lookup produce WikiLink1."""
         targets = {"2024-11-08": "/journal/entries/2024/2024-11-08"}
         env = _make_env(targets)
         result = wikilink(env, "2024-11-08")
-        assert result == "[[/journal/entries/2024/2024-11-08|2024-11-08]]"
+        assert result == "[2024-11-08][/journal/entries/2024/2024-11-08]"
 
     def test_wikilink_with_date_unresolved(self) -> None:
-        """Date strings not in lookup fall back to plain link."""
+        """Date strings not in lookup fall back to WikiLink1 fallback."""
         env = _make_env()
-        assert wikilink(env, "2024-11-08") == "[[2024-11-08]]"
+        assert wikilink(env, "2024-11-08") == "[2024-11-08][]"
 
     def test_wikilink_none_targets_dict(self) -> None:
         """Environment without _wikilink_targets key falls back."""
         env = Environment()
-        assert wikilink(env, "Some Name") == "[[Some Name]]"
+        assert wikilink(env, "Some Name") == "[Some Name][]"
 
     def test_wikilink_via_template(self) -> None:
         """Wikilink filter works correctly when called from a template."""
@@ -101,16 +101,16 @@ class TestWikilink:
         env.globals["_wikilink_targets"] = targets
         tmpl = env.from_string('{{ name | wikilink }}')
         result = tmpl.render(name="René Descartes")
-        assert result == "[[/journal/people/rene_descartes|René Descartes]]"
+        assert result == "[René Descartes][/journal/people/rene_descartes]"
 
     def test_wikilink_via_template_fallback(self) -> None:
-        """Unresolved name in template falls back to plain wikilink."""
+        """Unresolved name in template falls back to WikiLink1."""
         env = Environment()
         env.filters["wikilink"] = wikilink
         env.globals["_wikilink_targets"] = {}
         tmpl = env.from_string('{{ name | wikilink }}')
         result = tmpl.render(name="Unknown")
-        assert result == "[[Unknown]]"
+        assert result == "[Unknown][]"
 
 
 # ==================== date_long ====================
@@ -274,18 +274,53 @@ class TestSourcePath:
     """Tests for source_path filter."""
 
     def test_journal_md_path(self) -> None:
-        """Generates relative path to journal markdown."""
+        """Generates absolute path to journal markdown."""
         result = source_path("journal_md", "2024-11-08")
-        assert result == "../../../journal/content/md/2024/2024-11-08.md"
+        assert result == "/data/journal/content/md/2024/2024-11-08.md"
 
     def test_metadata_yaml_path(self) -> None:
-        """Generates relative path to metadata YAML."""
+        """Generates absolute path to metadata YAML."""
         result = source_path("metadata_yaml", "2024-11-08")
-        assert result == "../../../metadata/journal/2024/2024-11-08.yaml"
+        assert result == "/data/metadata/journal/2024/2024-11-08.yaml"
 
     def test_unknown_type(self) -> None:
         """Unknown entity type returns empty string."""
         assert source_path("unknown", "anything") == ""
+
+    def test_person_yaml_path(self) -> None:
+        """Generates path to person YAML metadata."""
+        result = source_path("person_yaml", "clara_dupont")
+        assert result == "/data/metadata/people/clara_dupont.yaml"
+
+    def test_location_yaml_path(self) -> None:
+        """Generates path to location YAML metadata."""
+        result = source_path("location_yaml", "montreal/cafe-olimpico")
+        assert result == "/data/metadata/locations/montreal/cafe-olimpico.yaml"
+
+    def test_city_yaml_path(self) -> None:
+        """Generates path to cities YAML (shared file)."""
+        result = source_path("city_yaml", "")
+        assert result == "/data/metadata/cities.yaml"
+
+    def test_arc_yaml_path(self) -> None:
+        """Generates path to arcs YAML (shared file)."""
+        result = source_path("arc_yaml", "")
+        assert result == "/data/metadata/arcs.yaml"
+
+    def test_chapter_yaml_path(self) -> None:
+        """Generates path to chapter YAML metadata."""
+        result = source_path("chapter_yaml", "the-beginning")
+        assert result == "/data/metadata/manuscript/chapters/the-beginning.yaml"
+
+    def test_character_yaml_path(self) -> None:
+        """Generates path to character YAML metadata."""
+        result = source_path("character_yaml", "protagonist")
+        assert result == "/data/metadata/manuscript/characters/protagonist.yaml"
+
+    def test_scene_yaml_path(self) -> None:
+        """Generates path to scene YAML metadata."""
+        result = source_path("scene_yaml", "opening-scene")
+        assert result == "/data/metadata/manuscript/scenes/opening-scene.yaml"
 
 
 # ==================== flexible_date_display ====================

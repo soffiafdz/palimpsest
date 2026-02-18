@@ -26,11 +26,13 @@
 #### {{ month.name }} · {{ month.count }} entr{{ "y" if month.count == 1 else "ies" }}
 {% for week in month.weeks %}
 
-**Week {{ week.number }}:** {% for d in week.dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+**Week {{ week.number }}**
+{% for d in week.dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
 {%- endfor %}
 {% else %}
 
-**{{ month.name }}:** {% for d in month.dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+**{{ month.name }}**
+{% for d in month.dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
 {%- endif %}
 {% endfor %}
 {%- endfor %}

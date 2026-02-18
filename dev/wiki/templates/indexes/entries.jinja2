@@ -18,7 +18,6 @@
 ---
 {% for ys in year_summaries %}
 
-### [[/indexes/entries-{{ ys.year }}|{{ ys.year }}]] · {{ ys.count }} entr{{ "y" if ys.count == 1 else "ies" }}
-
-{{ ys.first_date }} – {{ ys.last_date }}
+### [{{ ys.year }}][/indexes/entries-{{ ys.year }}]
+{{ ys.count }} entr{{ "y" if ys.count == 1 else "ies" }} · {{ ys.first_date }} – {{ ys.last_date }}
 {% endfor %}

@@ -18,6 +18,7 @@
 
 ## {{ type_name | replace("_", " ") | title }}
 {% for source in sources %}
-- {{ source.title | wikilink }}{% if source.author %} by {{ source.author }}{% endif %} · {{ source.reference_count }} reference{{ "s" if source.reference_count != 1 else "" }}
+- {{ source.title | wikilink }}
+  {% if source.author %}{{ source.author }} · {% endif %}{{ source.reference_count }} reference{{ "s" if source.reference_count != 1 else "" }}
 {% endfor %}
 {% endfor %}

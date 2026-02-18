@@ -1,0 +1,10 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }} — Entries
+
+[← {{ name }}][/journal/themes/{{ slug }}]
+
+---
+{% if entries %}
+
+{{ render_entries(entries) }}
+{% endif %}

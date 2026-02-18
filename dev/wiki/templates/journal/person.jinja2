@@ -7,11 +7,17 @@
 {% endif %}
 {% if tier == "narrator" %}
 
-*Appears in all entries.*
+[Edit metadata]({{ "person_yaml" | source_path(slug) }})
+
+*Appears in all entries.* [Browse entries](/indexes/entry-index)
 {% elif tier == "frequent" %}
+
+[Edit metadata]({{ "person_yaml" | source_path(slug) }})
 
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 {% else %}
+
+[Edit metadata]({{ "person_yaml" | source_path(slug) }})
 
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
 {% endif %}
@@ -36,12 +42,14 @@
 ## Top Places
 {% for city in top_places %}
 
-**{{ city.name | wikilink }}**
+### {{ city.name | wikilink }}
 {% if city.neighborhoods %}
 {% for nb in city.neighborhoods %}
 
 **{{ nb.name }}**
-{% for loc in nb.locations %}{{ loc.name | wikilink }} ({{ loc.count }}){% if not loop.last %} · {% endif %}{% endfor %}
+{% for loc in nb.locations %}
+- {{ loc.name | wikilink }} ({{ loc.count }})
+{% endfor %}
 {% endfor %}
 {% else %}
 {% for loc in city.locations %}
@@ -51,42 +59,16 @@
 {% endfor %}
 {% endif %}
 {% elif tier == "frequent" %}
-{% if arc_event_spine %}
 
-## Arcs
-{% for arc_group in arc_event_spine %}
-
-{% if arc_group.name == "Unlinked events" %}
-### Unlinked events
-{% else %}
-### {{ arc_group.name | wikilink }}
-{% endif %}
-{% if arc_group.entry_count %}{{ arc_group.entry_count }} entries{% endif %}{% if arc_group.date_range %} · {{ arc_group.date_range }}{% endif %}
-
-{% for event in arc_group.events %}
-**{{ event.name | wikilink }}**
-{% if event.description %}*{{ event.description }}*{% endif %}
-{% for d in event.entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-
-{% endfor %}
-{% endfor %}
-{% endif %}
-{% if entries_outside_events %}
-
----
-
-## Entries outside events
-
-{{ render_entries(entries_outside_events) }}
-{% endif %}
+[All entries ({{ entry_count }})]({{ slug }}-entries)
 {% if places %}
 
 ---
 
 ## Places
-{% for city in places %}
+{% for city in places[:5] %}
 
-**{{ city.name | wikilink }}**
+### {{ city.name | wikilink }}
 {% if city.neighborhoods %}
 {% for nb in city.neighborhoods %}
 
@@ -107,18 +89,8 @@
 ---
 
 ## Companions
-{% for companion in companions %}
+{% for companion in companions[:10] %}
 - {{ companion.name | wikilink }} ({{ companion.count }} shared)
-{% endfor %}
-{% endif %}
-{% if threads %}
-
----
-
-## Threads
-{% for thread in threads %}
-
-{{ render_thread(thread) }}
 {% endfor %}
 {% endif %}
 {% elif tier == "infrequent" %}
@@ -134,7 +106,11 @@
 
 ## Places
 {% for city in places %}
-**{{ city.name | wikilink }}:** {% for loc in city.locations %}{{ loc | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+
+### {{ city.name | wikilink }}
+{% for loc in city.locations %}
+- {{ loc | wikilink }}
+{% endfor %}
 {% endfor %}
 {% endif %}
 {% endif %}
@@ -144,6 +120,7 @@
 
 ## Characters
 {% for character in characters %}
-- {{ character.name | wikilink }}{% if character.contribution %} · {{ character.contribution }}{% endif %}
+- {{ character.name | wikilink }}
+{% if character.contribution %}  *{{ character.contribution }}*{% endif %}
 {% endfor %}
 {% endif %}

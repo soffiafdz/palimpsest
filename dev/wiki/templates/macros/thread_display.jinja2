@@ -16,17 +16,24 @@
 #}
 {% macro render_thread(thread) %}
 #### {{ thread.name | wikilink }}
-*{{ thread.from_date | flexible_date }} → {{ thread.to_date | flexible_date }}*{% if thread.referenced_entry_date %} · see {{ thread.referenced_entry_date | wikilink }}{% endif %}
+*{{ thread.from_date | flexible_date }} → {{ thread.to_date | flexible_date }}*
+{% if thread.referenced_entry_date %}see {{ thread.referenced_entry_date | wikilink }}{% endif %}
 
 {{ thread.content }}
 {% if thread.people %}
 
-**People:** {% for person in thread.people %}{{ person | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
+**People**
+{% for person in thread.people %}
+- {{ person | wikilink }}
+{% endfor %}
 {% endif %}
 {% if thread.locations %}
-{% for loc_group in thread.locations %}
 
-**{{ loc_group.city | wikilink }}:** {% for name in loc_group.names %}{{ name | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+**Places**
+{% for loc_group in thread.locations %}
+- {{ loc_group.city | wikilink }}
+{% for name in loc_group.names %}  - {{ name | wikilink }}
+{% endfor %}
 {%- endfor %}
 {% endif %}
 {% endmacro %}

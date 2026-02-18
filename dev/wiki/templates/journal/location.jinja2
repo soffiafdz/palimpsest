@@ -3,6 +3,8 @@
 # {{ name }}
 
 **City:** {{ city | wikilink }}
+
+[Edit metadata]({{ "location_yaml" | source_path(metadata_id) }})
 {% if tier == "dashboard" or tier == "mid" %}
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
 {% else %}
@@ -17,26 +19,8 @@
 
 {{ timeline | timeline_table }}
 {% endif %}
-{% if events_here %}
 
----
-
-## Events here
-{% for arc_group in events_here %}
-
-{% if arc_group.name == "Unlinked events" %}
-### Unlinked events
-{% else %}
-### {{ arc_group.name | wikilink }}
-{% endif %}
-{% for event in arc_group.events %}
-**{{ event.name | wikilink }}**
-{% if event.description %}*{{ event.description }}*{% endif %}
-{% for d in event.entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-
-{% endfor %}
-{% endfor %}
-{% endif %}
+[All entries ({{ entry_count }})]({{ slug }}-entries)
 {% if frequent_people %}
 
 ---
@@ -46,32 +30,22 @@
 - {{ person.name | wikilink }} ({{ person.count }})
 {% endfor %}
 {% endif %}
-{% if threads %}
-
----
-
-## Threads
-{% for thread in threads %}
-
-{{ render_thread(thread) }}
-{% endfor %}
-{% endif %}
 {% elif tier == "mid" %}
 {% if events_here %}
 
 ## Events here
 {% for arc_group in events_here %}
 
-{% if arc_group.name == "Unlinked events" %}
-### Unlinked events
+{% if arc_group.name == "Standalone events" %}
+### Standalone events
 {% else %}
 ### {{ arc_group.name | wikilink }}
 {% endif %}
 {% for event in arc_group.events %}
-**{{ event.name | wikilink }}**
-{% if event.description %}*{{ event.description }}*{% endif %}
-{% for d in event.entry_dates %}{{ d | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
 
+#### {{ event.name | wikilink }}
+{% if event.description %}*{{ event.description }}*{% endif %}
+{% for d in event.entry_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endfor %}
 {% endfor %}
 {% endif %}

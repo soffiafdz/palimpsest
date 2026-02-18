@@ -15,7 +15,8 @@
 ---
 {% if poems %}
 {% for poem in poems %}
-- {{ poem.title | wikilink }} · {{ poem.version_count }} version{{ "s" if poem.version_count != 1 else "" }}{% if poem.first_appearance %} · first {{ poem.first_appearance | wikilink }}{% endif %}
+- {{ poem.title | wikilink }}
+  {{ poem.version_count }} version{{ "s" if poem.version_count != 1 else "" }}{% if poem.first_appearance %} · first {{ poem.first_appearance | wikilink }}{% endif %}
 
 {% endfor %}
 {% endif %}
