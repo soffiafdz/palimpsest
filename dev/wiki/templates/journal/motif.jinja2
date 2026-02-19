@@ -12,6 +12,20 @@
 
 ---
 {% endif %}
+{% if has_entries_subpage %}
+
+## Recent Instances
+
+[All instances ({{ instance_count }})]({{ slug }}-entries)
+{% for instance in recent_instances %}
+{% if instance.entry_date %}
+- {{ instance.entry_date | entry_date_display }}
+{% if instance.description %}  {{ instance.description }}{% endif %}
+{% elif instance.description %}
+- {{ instance.description }}
+{% endif %}
+{% endfor %}
+{% else %}
 {% if instances %}
 
 ## Instances
@@ -31,4 +45,5 @@
 ## Entries
 
 {{ render_entries(entries) }}
+{% endif %}
 {% endif %}

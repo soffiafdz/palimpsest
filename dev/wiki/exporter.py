@@ -69,6 +69,9 @@ from dev.wiki.context import (
     TAG_DASHBOARD_THRESHOLD,
     TAG_PAGE_THRESHOLD,
     THEME_PAGE_THRESHOLD,
+    REFSOURCE_SUBPAGE_THRESHOLD,
+    MOTIF_SUBPAGE_THRESHOLD,
+    EVENT_SUBPAGE_THRESHOLD,
 )
 from dev.wiki.renderer import WikiRenderer
 
@@ -389,6 +392,9 @@ class WikiExporter:
         self._generate_tag_subpages(session, builder)
         self._generate_theme_subpages(session, builder)
         self._generate_arc_subpages(session, builder)
+        self._generate_reference_source_subpages(session, builder)
+        self._generate_motif_subpages(session, builder)
+        self._generate_event_subpages(session, builder)
 
     def _generate_person_subpages(
         self,
@@ -518,6 +524,100 @@ class WikiExporter:
 
             self.renderer.render_to_file(
                 "journal/arc_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_reference_source_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate reference subpages for heavy reference sources.
+
+        Sources with 15+ references get a dedicated subpage containing
+        all references, while the main page shows only the 10 most recent.
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for source in session.query(ReferenceSource).all():
+            if source.reference_count < REFSOURCE_SUBPAGE_THRESHOLD:
+                continue
+
+            ctx = builder.build_reference_source_context(source)
+            slug = slugify(source.title)
+            filename = f"{slug}-refs.md"
+            output_path = (
+                self.output_dir / "journal" / "references" / filename
+            )
+
+            self.renderer.render_to_file(
+                "journal/reference_source_refs.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_motif_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate entry subpages for heavy motifs.
+
+        Motifs with 15+ instances get a dedicated subpage containing
+        all instances and the full entry listing.
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for motif in session.query(Motif).all():
+            if motif.instance_count < MOTIF_SUBPAGE_THRESHOLD:
+                continue
+
+            ctx = builder.build_motif_context(motif)
+            slug = slugify(motif.name)
+            filename = f"{slug}-entries.md"
+            output_path = (
+                self.output_dir / "journal" / "motifs" / filename
+            )
+
+            self.renderer.render_to_file(
+                "journal/motif_entries.jinja2", ctx, output_path
+            )
+            self.generated_files.add(output_path)
+
+    def _generate_event_subpages(
+        self,
+        session: Session,
+        builder: WikiContextBuilder,
+    ) -> None:
+        """
+        Generate scene subpages for heavy events.
+
+        Events with 15+ scenes get a dedicated subpage containing
+        all scenes with full detail, while the main page shows a
+        summary of the first 5.
+
+        Args:
+            session: Active SQLAlchemy session
+            builder: WikiContextBuilder instance
+        """
+        for event in session.query(Event).all():
+            if event.scene_count < EVENT_SUBPAGE_THRESHOLD:
+                continue
+
+            ctx = builder.build_event_context(event)
+            slug = slugify(event.name)
+            filename = f"{slug}-scenes.md"
+            output_path = (
+                self.output_dir / "journal" / "events" / filename
+            )
+
+            self.renderer.render_to_file(
+                "journal/event_scenes.jinja2", ctx, output_path
             )
             self.generated_files.add(output_path)
 

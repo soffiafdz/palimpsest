@@ -93,16 +93,19 @@
 {{ render_thread(thread) }}
 {% endfor %}
 {% endif %}
-{% if themes or tags %}
+{% if themes or tags or motifs %}
 
 ---
 
-## Themes & Tags
+## Themes, Tags & Motifs
 {% if themes %}
 **Themes:** {% for t in themes %}{{ t | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endif %}
 {% if tags %}
 **Tags:** {% for t in tags %}{{ t | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
+{% endif %}
+{% if motifs %}
+**Motifs:** {% for m in motifs %}{{ m | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
 {% endif %}
 {% endif %}
 {% if references %}

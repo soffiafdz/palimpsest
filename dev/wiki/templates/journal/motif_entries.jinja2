@@ -1,0 +1,28 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }} — All Instances
+
+[← {{ name }}](/journal/motifs/{{ slug }})
+
+{{ instance_count }} instance{{ "s" if instance_count != 1 else "" }}
+
+---
+{% if instances %}
+
+## Instances
+{% for instance in instances %}
+{% if instance.entry_date %}
+- {{ instance.entry_date | entry_date_display }}
+{% if instance.description %}  {{ instance.description }}{% endif %}
+{% elif instance.description %}
+- {{ instance.description }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if entries %}
+
+---
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}

@@ -1,23 +1,11 @@
-# {{ name }}
+# {{ name }} — All Scenes
+
+[← {{ name }}](/journal/events/{{ slug }})
 
 {% if arc %}**Arc:** {{ arc | wikilink }}{% else %}*Standalone*{% endif %}
 {{ scene_count }} scene{{ "s" if scene_count != 1 else "" }}
 
-**Entries**
-{% for d in entry_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
-
 ---
-{% if has_scenes_subpage %}
-
-[All scenes ({{ scene_count }})]({{ slug }}-scenes)
-{% for scene in scenes[:5] %}
-
-### {{ scene.name }}
-{% if scene.description %}{{ scene.description }}{% endif %}
-
----
-{% endfor %}
-{% else %}
 {% for scene in scenes %}
 
 ### {{ scene.name }}
@@ -41,4 +29,3 @@
 
 ---
 {% endfor %}
-{% endif %}

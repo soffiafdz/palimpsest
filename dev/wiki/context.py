@@ -77,6 +77,9 @@ MID_LOCATION_THRESHOLD = 3
 TAG_DASHBOARD_THRESHOLD = 5
 TAG_PAGE_THRESHOLD = 2
 THEME_PAGE_THRESHOLD = 2
+REFSOURCE_SUBPAGE_THRESHOLD = 15
+MOTIF_SUBPAGE_THRESHOLD = 15
+EVENT_SUBPAGE_THRESHOLD = 15
 CO_OCCURRENCE_MIN_ENTRIES = 5
 CO_OCCURRENCE_MIN_OVERLAP = 3
 
@@ -138,6 +141,11 @@ class WikiContextBuilder:
             "tags": [t.name for t in entry.tags],
             "references": self._build_entry_references(entry.references),
             "poems": self._build_entry_poems(entry.poems),
+            "motifs": [
+                mi.motif.name
+                for mi in entry.motif_instances
+                if mi.motif
+            ],
         }
 
     def _build_people_groups(
@@ -1073,8 +1081,9 @@ class WikiContextBuilder:
                 "entry_date": scene.entry.date.isoformat(),
             })
 
-        return {
+        result: Dict[str, Any] = {
             "name": event.name,
+            "slug": slugify(event.name),
             "arc": arc,
             "scene_count": event.scene_count,
             "entry_count": event.entry_count,
@@ -1083,6 +1092,11 @@ class WikiContextBuilder:
                 [e.date.isoformat() for e in event.entries]
             ),
         }
+
+        if len(scenes) >= EVENT_SUBPAGE_THRESHOLD:
+            result["has_scenes_subpage"] = True
+
+        return result
 
     # ==============================================================
     #  ARC
@@ -1322,8 +1336,19 @@ class WikiContextBuilder:
             source.references,
             key=lambda r: r.entry.date if r.entry else date.min,
         )
-        return {
+        all_refs = [
+            {
+                "entry_date": r.entry.date.isoformat() if r.entry else None,
+                "mode": r.mode.value if r.mode else "thematic",
+                "content": r.content,
+                "description": r.description,
+            }
+            for r in refs
+        ]
+
+        result: Dict[str, Any] = {
             "title": source.title,
+            "slug": slugify(source.title),
             "author": source.author,
             "type": source.type.value if source.type else None,
             "url": source.url,
@@ -1336,16 +1361,14 @@ class WikiContextBuilder:
                 source.last_referenced.isoformat()
                 if source.last_referenced else None
             ),
-            "references": [
-                {
-                    "entry_date": r.entry.date.isoformat() if r.entry else None,
-                    "mode": r.mode.value if r.mode else "thematic",
-                    "content": r.content,
-                    "description": r.description,
-                }
-                for r in refs
-            ],
+            "references": all_refs,
         }
+
+        if len(all_refs) >= REFSOURCE_SUBPAGE_THRESHOLD:
+            result["has_refs_subpage"] = True
+            result["recent_references"] = all_refs[-10:]
+
+        return result
 
     # ==============================================================
     #  MOTIF
@@ -1368,27 +1391,36 @@ class WikiContextBuilder:
         )
         entries = [i.entry for i in instances if i.entry]
 
-        return {
+        all_instances = [
+            {
+                "entry_date": (
+                    i.entry.date.isoformat() if i.entry else None
+                ),
+                "description": i.description,
+            }
+            for i in instances
+        ]
+
+        result: Dict[str, Any] = {
             "name": motif.name,
+            "slug": slugify(motif.name),
             "instance_count": motif.instance_count,
             "date_range": self._date_range_str(
                 entries[-1].date if entries else None,
                 entries[0].date if entries else None,
             ),
             "timeline": self._compute_monthly_counts(entries),
-            "instances": [
-                {
-                    "entry_date": (
-                        i.entry.date.isoformat() if i.entry else None
-                    ),
-                    "description": i.description,
-                }
-                for i in instances
-            ],
+            "instances": all_instances,
             "entries": self._build_entry_listing(
                 sorted(entries, key=lambda e: e.date, reverse=True)
             ),
         }
+
+        if len(all_instances) >= MOTIF_SUBPAGE_THRESHOLD:
+            result["has_entries_subpage"] = True
+            result["recent_instances"] = all_instances[:10]
+
+        return result
 
     # ==============================================================
     #  CHAPTER

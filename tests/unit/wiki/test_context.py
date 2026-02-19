@@ -413,6 +413,17 @@ class TestBuildEntryContext:
         ctx = builder.build_entry_context(entry)
         assert ctx["scenes"] == []
 
+    def test_motifs(self, builder, entry_nov8, motif_loop, motif_instance):
+        """Entry context includes motif names."""
+        ctx = builder.build_entry_context(entry_nov8)
+        assert "motifs" in ctx
+        assert "The Loop" in ctx["motifs"]
+
+    def test_motifs_empty(self, builder, entry_nov8):
+        """Entry without motifs has empty motifs list."""
+        ctx = builder.build_entry_context(entry_nov8)
+        assert ctx["motifs"] == []
+
     def test_empty_entry(self, builder, db_session):
         """Entry with no relationships produces empty sections."""
         entry = Entry(
@@ -561,6 +572,20 @@ class TestBuildEventContext:
         assert len(ctx["scenes"]) == 1
         assert ctx["scenes"][0]["name"] == "Morning at the Cafe"
 
+    def test_event_has_slug(
+        self, builder, event_long_nov, scene_cafe, entry_nov8
+    ):
+        """Event context includes slug."""
+        ctx = builder.build_event_context(event_long_nov)
+        assert ctx["slug"] == "the-long-november"
+
+    def test_no_subpage_below_threshold(
+        self, builder, event_long_nov, scene_cafe, entry_nov8
+    ):
+        """Event with few scenes has no subpage flag."""
+        ctx = builder.build_event_context(event_long_nov)
+        assert "has_scenes_subpage" not in ctx
+
 
 # ==================== Arc Context ====================
 
@@ -694,6 +719,42 @@ class TestBuildReferenceSourceContext:
         assert ctx["reference_count"] == 1
         assert len(ctx["references"]) == 1
 
+    def test_source_has_slug(self, builder, ref_source, reference, entry_nov8):
+        """Reference source context includes slug."""
+        ctx = builder.build_reference_source_context(ref_source)
+        assert ctx["slug"] == "the-body-keeps-the-score"
+
+    def test_no_subpage_below_threshold(
+        self, builder, ref_source, reference, entry_nov8
+    ):
+        """Source with few refs has no subpage flag."""
+        ctx = builder.build_reference_source_context(ref_source)
+        assert "has_refs_subpage" not in ctx
+
+    def test_subpage_above_threshold(
+        self, builder, db_session, ref_source
+    ):
+        """Source with 15+ refs gets has_refs_subpage flag."""
+        for i in range(15):
+            entry = Entry(
+                date=date(2024, 4, min(i + 1, 28)),
+                file_path=f"2024/2024-04-{min(i+1,28):02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            ref = Reference(
+                content=f"Quote {i}",
+                mode=ReferenceMode.DIRECT,
+                entry_id=entry.id,
+                source_id=ref_source.id,
+            )
+            db_session.add(ref)
+        db_session.flush()
+
+        ctx = builder.build_reference_source_context(ref_source)
+        assert ctx["has_refs_subpage"] is True
+        assert len(ctx["recent_references"]) == 10
+
 
 # ==================== Motif Context ====================
 
@@ -709,6 +770,43 @@ class TestBuildMotifContext:
         assert ctx["instance_count"] == 1
         assert len(ctx["instances"]) == 1
         assert ctx["instances"][0]["description"].startswith("The recurring")
+
+    def test_motif_has_slug(
+        self, builder, motif_loop, motif_instance, entry_nov8
+    ):
+        """Motif context includes slug."""
+        ctx = builder.build_motif_context(motif_loop)
+        assert ctx["slug"] == "the-loop"
+
+    def test_no_subpage_below_threshold(
+        self, builder, motif_loop, motif_instance, entry_nov8
+    ):
+        """Motif with few instances has no subpage flag."""
+        ctx = builder.build_motif_context(motif_loop)
+        assert "has_entries_subpage" not in ctx
+
+    def test_subpage_above_threshold(
+        self, builder, db_session, motif_loop
+    ):
+        """Motif with 15+ instances gets has_entries_subpage flag."""
+        for i in range(15):
+            entry = Entry(
+                date=date(2024, 5, min(i + 1, 28)),
+                file_path=f"2024/2024-05-{min(i+1,28):02d}.md",
+            )
+            db_session.add(entry)
+            db_session.flush()
+            mi = MotifInstance(
+                description=f"Instance {i}",
+                motif_id=motif_loop.id,
+                entry_id=entry.id,
+            )
+            db_session.add(mi)
+        db_session.flush()
+
+        ctx = builder.build_motif_context(motif_loop)
+        assert ctx["has_entries_subpage"] is True
+        assert len(ctx["recent_instances"]) == 10
 
 
 # ==================== Entry Listing Helper ====================
