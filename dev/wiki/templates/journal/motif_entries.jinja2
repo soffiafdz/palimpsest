@@ -1,4 +1,3 @@
-{% from "macros/entry_listing.jinja2" import render_entries %}
 # {{ name }} — All Instances
 
 [← {{ name }}](/journal/motifs/{{ slug }})
@@ -18,11 +17,12 @@
 {% endif %}
 {% endfor %}
 {% endif %}
-{% if entries %}
+{% if year_summary %}
 
 ---
 
 ## Entries
-
-{{ render_entries(entries) }}
+{% for y in year_summary %}
+- [{{ y.year }}]({{ slug }}-entries-{{ y.year }}) · {{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}
+{% endfor %}
 {% endif %}

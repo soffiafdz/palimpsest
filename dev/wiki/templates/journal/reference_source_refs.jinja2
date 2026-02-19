@@ -3,21 +3,6 @@
 [← {{ title }}](/journal/references/{{ slug }})
 
 {{ reference_count }} reference{{ "s" if reference_count != 1 else "" }}
-
----
-{% for ref in references %}
-
-### {{ ref.entry_date | entry_date_display }}
-{% if ref.content %}
-{% if ref.mode == "direct" %}
-> *"{{ ref.content }}"*
-{% else %}
-> {{ ref.content }}
-{% endif %}
-{% endif %}
-> *({{ ref.mode }})*
-{% if ref.description %}
-
-{{ ref.description }}
-{% endif %}
+{% for y in year_summary %}
+- [{{ y.year }}]({{ slug }}-refs-{{ y.year }}) · {{ y.count }} ref{{ "s" if y.count != 1 else "" }}
 {% endfor %}

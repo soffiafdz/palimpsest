@@ -1,0 +1,6 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ entity_name }} — {{ year }}
+
+[← {{ entity_name }}]({{ back_link }})
+
+{{ render_entries(entries) }}

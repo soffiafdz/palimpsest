@@ -396,6 +396,52 @@ class WikiExporter:
         self._generate_motif_subpages(session, builder)
         self._generate_event_subpages(session, builder)
 
+    def _generate_year_pages(
+        self,
+        entries: List[Dict[str, Any]],
+        entity_name: str,
+        slug: str,
+        base_dir: Path,
+        file_prefix: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate per-year entry listing pages from render_entries data.
+
+        Splits the hierarchical year/month/week entry listing into
+        individual per-year files, each linking back to the parent
+        index page.
+
+        Args:
+            entries: Output from _build_entry_listing
+                     (list of {year, count, months})
+            entity_name: Display name for the entity
+            slug: URL slug for the entity
+            base_dir: Output directory for the per-year files
+            file_prefix: Base filename (e.g. "the-long-wanting-entries")
+
+        Returns:
+            Year summary list for use in index templates
+            (list of {year, count})
+        """
+        year_summary = []
+        for yg in entries:
+            year = yg["year"]
+            year_summary.append({"year": year, "count": yg["count"]})
+
+            year_ctx = {
+                "entity_name": entity_name,
+                "year": year,
+                "back_link": file_prefix,
+                "entries": [yg],
+            }
+            year_path = base_dir / f"{file_prefix}-{year}.md"
+            self.renderer.render_to_file(
+                "journal/entries_year_page.jinja2", year_ctx, year_path
+            )
+            self.generated_files.add(year_path)
+
+        return year_summary
+
     def _generate_person_subpages(
         self,
         session: Session,
@@ -403,6 +449,9 @@ class WikiExporter:
     ) -> None:
         """
         Generate entry subpages for frequent people (20+ entries).
+
+        Generates a main subpage with spine and threads, plus
+        per-year entry pages for entries outside events.
 
         Args:
             session: Active SQLAlchemy session
@@ -415,9 +464,20 @@ class WikiExporter:
                 continue
 
             ctx = builder.build_person_context(person)
-            filename = f"{person.slug}-entries.md"
-            output_path = self.output_dir / "journal" / "people" / filename
+            slug = person.slug
+            base_dir = self.output_dir / "journal" / "people"
+            file_prefix = f"{slug}-entries"
 
+            # Generate per-year pages for entries_outside_events
+            outside = ctx.get("entries_outside_events", [])
+            year_summary = self._generate_year_pages(
+                outside, person.display_name, slug,
+                base_dir, file_prefix,
+            )
+            ctx["outside_year_summary"] = year_summary
+
+            # Render main subpage (spine + threads + year links)
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/person_entries.jinja2", ctx, output_path
             )
@@ -431,6 +491,9 @@ class WikiExporter:
         """
         Generate entry subpages for dashboard locations (20+ entries).
 
+        Generates a main subpage with events and threads, plus
+        per-year entry pages for entries outside events.
+
         Args:
             session: Active SQLAlchemy session
             builder: WikiContextBuilder instance
@@ -442,11 +505,21 @@ class WikiExporter:
             ctx = builder.build_location_context(location)
             city_slug = slugify(location.city.name)
             loc_slug = slugify(location.name)
-            output_path = (
-                self.output_dir / "journal" / "locations"
-                / city_slug / f"{loc_slug}-entries.md"
+            base_dir = (
+                self.output_dir / "journal" / "locations" / city_slug
             )
+            file_prefix = f"{loc_slug}-entries"
 
+            # Generate per-year pages for entries_outside_events
+            outside = ctx.get("entries_outside_events", [])
+            year_summary = self._generate_year_pages(
+                outside, location.name, loc_slug,
+                base_dir, file_prefix,
+            )
+            ctx["outside_year_summary"] = year_summary
+
+            # Render main subpage (events_here + threads + year links)
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/location_entries.jinja2", ctx, output_path
             )
@@ -460,6 +533,8 @@ class WikiExporter:
         """
         Generate entry subpages for dashboard tags (5+ entries).
 
+        Generates a year-index page plus per-year entry files.
+
         Args:
             session: Active SQLAlchemy session
             builder: WikiContextBuilder instance
@@ -470,9 +545,16 @@ class WikiExporter:
 
             ctx = builder.build_tag_context(tag)
             slug = slugify(tag.name)
-            filename = f"{slug}-entries.md"
-            output_path = self.output_dir / "journal" / "tags" / filename
+            base_dir = self.output_dir / "journal" / "tags"
+            file_prefix = f"{slug}-entries"
 
+            year_summary = self._generate_year_pages(
+                ctx.get("entries", []), tag.name, slug,
+                base_dir, file_prefix,
+            )
+            ctx["year_summary"] = year_summary
+
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/tag_entries.jinja2", ctx, output_path
             )
@@ -486,6 +568,8 @@ class WikiExporter:
         """
         Generate entry subpages for dashboard themes (5+ entries).
 
+        Generates a year-index page plus per-year entry files.
+
         Args:
             session: Active SQLAlchemy session
             builder: WikiContextBuilder instance
@@ -496,9 +580,16 @@ class WikiExporter:
 
             ctx = builder.build_theme_context(theme)
             slug = slugify(theme.name)
-            filename = f"{slug}-entries.md"
-            output_path = self.output_dir / "journal" / "themes" / filename
+            base_dir = self.output_dir / "journal" / "themes"
+            file_prefix = f"{slug}-entries"
 
+            year_summary = self._generate_year_pages(
+                ctx.get("entries", []), theme.name, slug,
+                base_dir, file_prefix,
+            )
+            ctx["year_summary"] = year_summary
+
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/theme_entries.jinja2", ctx, output_path
             )
@@ -512,6 +603,8 @@ class WikiExporter:
         """
         Generate entry subpages for all arcs.
 
+        Generates a year-index page plus per-year entry files.
+
         Args:
             session: Active SQLAlchemy session
             builder: WikiContextBuilder instance
@@ -519,9 +612,16 @@ class WikiExporter:
         for arc in session.query(Arc).all():
             ctx = builder.build_arc_context(arc)
             slug = slugify(arc.name)
-            filename = f"{slug}-entries.md"
-            output_path = self.output_dir / "journal" / "arcs" / filename
+            base_dir = self.output_dir / "journal" / "arcs"
+            file_prefix = f"{slug}-entries"
 
+            year_summary = self._generate_year_pages(
+                ctx.get("entries", []), arc.name, slug,
+                base_dir, file_prefix,
+            )
+            ctx["year_summary"] = year_summary
+
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/arc_entries.jinja2", ctx, output_path
             )
@@ -535,8 +635,8 @@ class WikiExporter:
         """
         Generate reference subpages for heavy reference sources.
 
-        Sources with 15+ references get a dedicated subpage containing
-        all references, while the main page shows only the 10 most recent.
+        Sources with 15+ references get a year-index page plus
+        per-year reference pages. Main page shows 10 most recent.
 
         Args:
             session: Active SQLAlchemy session
@@ -548,11 +648,38 @@ class WikiExporter:
 
             ctx = builder.build_reference_source_context(source)
             slug = slugify(source.title)
-            filename = f"{slug}-refs.md"
-            output_path = (
-                self.output_dir / "journal" / "references" / filename
-            )
+            base_dir = self.output_dir / "journal" / "references"
+            file_prefix = f"{slug}-refs"
 
+            # Group references by year and generate per-year pages
+            refs_by_year: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+            for ref in ctx["references"]:
+                year = ref["entry_date"][:4] if ref["entry_date"] else "undated"
+                refs_by_year[year].append(ref)
+
+            year_summary = []
+            for year in sorted(refs_by_year.keys()):
+                year_refs = refs_by_year[year]
+                year_summary.append({
+                    "year": year, "count": len(year_refs),
+                })
+                year_ctx = {
+                    "entity_name": source.title,
+                    "year": year,
+                    "back_link": file_prefix,
+                    "references": year_refs,
+                }
+                year_path = base_dir / f"{file_prefix}-{year}.md"
+                self.renderer.render_to_file(
+                    "journal/reference_source_refs_year.jinja2",
+                    year_ctx, year_path,
+                )
+                self.generated_files.add(year_path)
+
+            ctx["year_summary"] = year_summary
+
+            # Render year-index page
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/reference_source_refs.jinja2", ctx, output_path
             )
@@ -566,8 +693,8 @@ class WikiExporter:
         """
         Generate entry subpages for heavy motifs.
 
-        Motifs with 15+ instances get a dedicated subpage containing
-        all instances and the full entry listing.
+        Motifs with 15+ instances get a subpage with all instances
+        and year-split entry pages.
 
         Args:
             session: Active SQLAlchemy session
@@ -579,11 +706,18 @@ class WikiExporter:
 
             ctx = builder.build_motif_context(motif)
             slug = slugify(motif.name)
-            filename = f"{slug}-entries.md"
-            output_path = (
-                self.output_dir / "journal" / "motifs" / filename
-            )
+            base_dir = self.output_dir / "journal" / "motifs"
+            file_prefix = f"{slug}-entries"
 
+            # Generate per-year entry pages
+            year_summary = self._generate_year_pages(
+                ctx.get("entries", []), motif.name, slug,
+                base_dir, file_prefix,
+            )
+            ctx["year_summary"] = year_summary
+
+            # Render main subpage (instances + year links)
+            output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/motif_entries.jinja2", ctx, output_path
             )

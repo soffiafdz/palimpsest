@@ -329,20 +329,36 @@ class TestWikiExporterIndexes:
 class TestWikiExporterSubpages:
     """Tests for entity subpage generation."""
 
-    def test_arc_subpage_generated(
+    def test_arc_subpage_is_year_index(
         self, test_db, populated_db, wiki_output
     ):
-        """Arc entry subpage is generated."""
+        """Arc entry subpage is a year index linking to per-year pages."""
         exporter = WikiExporter(test_db, output_dir=wiki_output)
         exporter.generate_all(section="journal")
 
-        arc_subpage = (
+        arc_index = (
             wiki_output / "journal" / "arcs"
             / "the-long-wanting-entries.md"
         )
-        assert arc_subpage.exists()
-        content = arc_subpage.read_text()
+        assert arc_index.exists()
+        content = arc_index.read_text()
         assert "The Long Wanting" in content
+        assert "2024" in content
+
+    def test_arc_per_year_page_generated(
+        self, test_db, populated_db, wiki_output
+    ):
+        """Arc per-year entry page exists alongside index."""
+        exporter = WikiExporter(test_db, output_dir=wiki_output)
+        exporter.generate_all(section="journal")
+
+        year_page = (
+            wiki_output / "journal" / "arcs"
+            / "the-long-wanting-entries-2024.md"
+        )
+        assert year_page.exists()
+        content = year_page.read_text()
+        assert "2024" in content
 
     def test_no_subpage_for_infrequent_person(
         self, test_db, populated_db, wiki_output

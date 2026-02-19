@@ -1,5 +1,4 @@
 {% from "macros/thread_display.jinja2" import render_thread %}
-{% from "macros/entry_listing.jinja2" import render_entries %}
 # {{ display_name }} — Entries
 
 [← {{ display_name }}][/journal/people/{{ slug }}]
@@ -25,13 +24,14 @@
 {% endfor %}
 {% endfor %}
 {% endif %}
-{% if entries_outside_events %}
+{% if outside_year_summary %}
 
 ---
 
 ## Entries outside events
-
-{{ render_entries(entries_outside_events) }}
+{% for y in outside_year_summary %}
+- [{{ y.year }}]({{ slug }}-entries-{{ y.year }}) · {{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}
+{% endfor %}
 {% endif %}
 {% if threads %}
 
