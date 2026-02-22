@@ -5,8 +5,6 @@
 {% endif %}
 
 *{{ origin }}* · {{ status }}
-
-[Edit metadata]({{ "scene_yaml" | source_path(slug) }})
 {% if description %}
 
 {{ description }}
@@ -17,6 +15,14 @@
 
 ## Sources
 {% for src in sources %}
-- **{{ src.type }}:**{% if src.reference_name %} *{{ src.reference_name }}*{% endif %}{% if src.entry_date %} {{ src.entry_date | entry_date_short }}{% endif %}
+- *{{ src.type }}*
+{% if src.reference_name %}  {{ src.reference_name }}
+{% endif %}
+{% if src.entry_date %}  {{ src.entry_date | entry_date_short }}
+{% endif %}
 {% endfor %}
 {% endif %}
+
+---
+
+- [Edit metadata]({{ "scene_yaml" | source_path(slug) }})

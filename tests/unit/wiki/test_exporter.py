@@ -317,6 +317,25 @@ class TestWikiExporterIndexes:
             ctx = exporter._build_themes_index_context(session)
             assert "themes" in ctx
 
+    def test_motifs_index_context(self, test_db, populated_db):
+        """Motifs index includes frequency-sorted list with descriptions."""
+        exporter = WikiExporter(test_db)
+        with test_db.session_scope() as session:
+            ctx = exporter._build_motifs_index_context(session)
+            assert "motifs" in ctx
+            assert "total_instances" in ctx
+            assert ctx["total_instances"] >= 1
+            motifs = ctx["motifs"]
+            assert len(motifs) >= 1
+            m = motifs[0]
+            assert "name" in m
+            assert "instance_count" in m
+            assert "first_date" in m
+            assert "last_date" in m
+            assert "latest_description" in m
+            assert m["name"] == "The Loop"
+            assert m["instance_count"] >= 1
+
     def test_events_index_standalone(self, test_db, populated_db):
         """Events index uses 'Standalone' instead of 'Unlinked'."""
         exporter = WikiExporter(test_db)

@@ -7,9 +7,11 @@
 **Type:** {{ type }}
 {% endif %}
 {% if url %}
-**URL:** [{{ url }}]({{ url }})
+**URL:**
+[{{ url }}]({{ url }})
 {% endif %}
-{{ reference_count }} reference{{ "s" if reference_count != 1 else "" }}{% if first_referenced and last_referenced %} · {{ first_referenced | flexible_date }} – {{ last_referenced | flexible_date }}{% endif %}
+{{ reference_count }} reference{{ "s" if reference_count != 1 else "" }}{% if first_referenced and last_referenced %} · {{ first_referenced | flexible_date }} – {{ last_referenced | flexible_date }}
+{% endif %}
 
 ---
 {% if has_refs_subpage %}

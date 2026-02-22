@@ -1,8 +1,29 @@
 # {{ name }} — Entries
 
-[← {{ name }}][/journal/arcs/{{ slug }}]
-
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
-{% for y in year_summary %}
-- [{{ y.year }}]({{ slug }}-entries-{{ y.year }}) · {{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}
+
+---
+{% if arc_event_spine %}
+
+## Narrative Arcs
+{% for arc_group in arc_event_spine %}
+
+{% if arc_group.name == "Standalone events" %}
+### Standalone events
+{% else %}
+### {{ arc_group.name | wikilink }}
+{% endif %}
+{% for event in arc_group.events %}
+- {{ event.name | wikilink }}
 {% endfor %}
+{% endfor %}
+{% endif %}
+{% if year_summary %}
+
+---
+
+## By Year
+{% for y in year_summary %}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
+{% endfor %}
+{% endif %}

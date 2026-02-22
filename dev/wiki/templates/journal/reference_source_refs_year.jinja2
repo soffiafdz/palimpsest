@@ -1,9 +1,9 @@
 # {{ entity_name }} — {{ year }}
 
-[← {{ entity_name }}]({{ back_link }})
+---
 {% for ref in references %}
 
-### {{ ref.entry_date | entry_date_display }}
+## {{ ref.entry_date | entry_date_display }}
 {% if ref.content %}
 {% if ref.mode == "direct" %}
 > *"{{ ref.content }}"*

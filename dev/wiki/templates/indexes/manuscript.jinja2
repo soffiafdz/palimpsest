@@ -1,5 +1,7 @@
 # Manuscript
 
+{{ character_count }} characters · {{ scene_count }} manuscript scenes
+
 ---
 {% if parts %}
 {% for part in parts %}
@@ -21,5 +23,3 @@
   {{ ch.type }} · {{ ch.status }}
 {% endfor %}
 {% endif %}
-
-{{ character_count }} characters · {{ scene_count }} manuscript scenes

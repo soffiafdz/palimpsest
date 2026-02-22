@@ -2,7 +2,8 @@
 # {{ name }}
 {% if tier == "dashboard" %}
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}
+{% endif %}
 
 ---
 {% if timeline %}
@@ -14,8 +15,6 @@
 ---
 {% endif %}
 
-**Recent:** {% for d in recent_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
-
 [All entries ({{ entry_count }})]({{ slug }}-entries)
 {% if patterns %}
 
@@ -26,14 +25,16 @@
 
 **Tags:**
 {% for tag in patterns.tags %}
-- {{ tag.name | wikilink }} ({{ tag.count }})
+- {{ tag.name | wikilink }}
+  {{ tag.count }}
 {% endfor %}
 {% endif %}
 {% if patterns.themes %}
 
 **Themes:**
 {% for theme in patterns.themes %}
-- {{ theme.name | wikilink }} ({{ theme.count }})
+- {{ theme.name | wikilink }}
+  {{ theme.count }}
 {% endfor %}
 {% endif %}
 {% endif %}
@@ -43,7 +44,8 @@
 
 ## Frequent people
 {% for person in frequent_people %}
-- {{ person.name | wikilink }} ({{ person.count }})
+- {{ person.name | wikilink }}
+  {{ person.count }}
 {% endfor %}
 {% endif %}
 {% elif tier == "minimal" %}

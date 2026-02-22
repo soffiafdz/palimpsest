@@ -1,16 +1,17 @@
 {#
   Reusable entry listing macro.
 
-  Renders a hierarchical entry listing grouped by year, then month,
-  with optional week sub-grouping for months with 8+ entries.
+  Renders entry listings grouped by month, with optional week
+  sub-grouping for months with 8+ entries. Caller provides
+  the page title (H1) — this macro renders months as H2.
 
   Parameters:
-    entries: list of dicts with keys:
+    entries: list of dicts (typically single-element for year pages):
       - year: int
       - count: int (entries in this year)
-      - months: list of dicts with keys:
+      - months: list of dicts:
           - name: str (month name)
-          - count: int (entries in this month, present when weeks defined)
+          - count: int
           - weeks: list of dicts (optional, for months with 8+ entries):
               - number: int (week number)
               - dates: list of str (entry date strings)
@@ -18,22 +19,22 @@
 #}
 {% macro render_entries(entries) %}
 {% for year_group in entries %}
-
-### {{ year_group.year }} · {{ year_group.count }} entr{{ "y" if year_group.count == 1 else "ies" }}
 {% for month in year_group.months %}
-{% if month.weeks is defined %}
 
-#### {{ month.name }} · {{ month.count }} entr{{ "y" if month.count == 1 else "ies" }}
+## {{ month.name }} · {{ month.count }} entr{{ "y" if month.count == 1 else "ies" }}
+{% if month.weeks is defined %}
 {% for week in month.weeks %}
 
 **Week {{ week.number }}**
-{% for d in week.dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
-{%- endfor %}
-{% else %}
-
-**{{ month.name }}**
-{% for d in month.dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
-{%- endif %}
+{% for d in week.dates %}
+- {{ d | entry_date_short }}
 {% endfor %}
-{%- endfor %}
+{% endfor %}
+{% else %}
+{% for d in month.dates %}
+- {{ d | entry_date_short }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}
 {% endmacro %}

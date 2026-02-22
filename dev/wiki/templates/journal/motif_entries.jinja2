@@ -1,7 +1,5 @@
 # {{ name }} — All Instances
 
-[← {{ name }}](/journal/motifs/{{ slug }})
-
 {{ instance_count }} instance{{ "s" if instance_count != 1 else "" }}
 
 ---
@@ -11,7 +9,9 @@
 {% for instance in instances %}
 {% if instance.entry_date %}
 - {{ instance.entry_date | entry_date_display }}
-{% if instance.description %}  {{ instance.description }}{% endif %}
+{% if instance.description %}
+  {{ instance.description }}
+{% endif %}
 {% elif instance.description %}
 - {{ instance.description }}
 {% endif %}
@@ -23,6 +23,6 @@
 
 ## Entries
 {% for y in year_summary %}
-- [{{ y.year }}]({{ slug }}-entries-{{ y.year }}) · {{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
 {% endfor %}
 {% endif %}

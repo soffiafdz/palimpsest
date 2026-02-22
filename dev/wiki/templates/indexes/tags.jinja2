@@ -38,12 +38,14 @@
 {% if ns.band == 'rare' %}
 {% set ns.rare_count = ns.rare_count + 1 %}
 {% if ns.rare_count <= 30 %}
-- {{ tag.name | wikilink }} ({{ tag.count }})
+- {{ tag.name | wikilink }}
+  {{ tag.count }}
 {% elif ns.rare_count == 31 %}
 *...and {{ tags | selectattr("count", "lt", 5) | list | length - 30 }} more*
 {% endif %}
 {% else %}
-- {{ tag.name | wikilink }} ({{ tag.count }})
+- {{ tag.name | wikilink }}
+  {{ tag.count }}
 {% endif %}
 {% endfor %}
 {% endif %}

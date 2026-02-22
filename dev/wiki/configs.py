@@ -343,6 +343,12 @@ INDEX_CONFIGS: List[IndexConfig] = [
         context_method="_build_themes_index_context",
     ),
     IndexConfig(
+        name="motifs",
+        template="indexes/motifs.jinja2",
+        output_path="indexes/motifs-index.md",
+        context_method="_build_motifs_index_context",
+    ),
+    IndexConfig(
         name="poems",
         template="indexes/poems.jinja2",
         output_path="indexes/poems-index.md",

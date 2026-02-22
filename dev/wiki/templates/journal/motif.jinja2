@@ -1,7 +1,8 @@
 {% from "macros/entry_listing.jinja2" import render_entries %}
 # {{ name }}
 
-{{ instance_count }} instance{{ "s" if instance_count != 1 else "" }}{% if date_range %} · {{ date_range }}{% endif %}
+{{ instance_count }} instance{{ "s" if instance_count != 1 else "" }}{% if date_range %} · {{ date_range }}
+{% endif %}
 
 ---
 {% if timeline %}
@@ -20,7 +21,9 @@
 {% for instance in recent_instances %}
 {% if instance.entry_date %}
 - {{ instance.entry_date | entry_date_display }}
-{% if instance.description %}  {{ instance.description }}{% endif %}
+{% if instance.description %}
+  {{ instance.description }}
+{% endif %}
 {% elif instance.description %}
 - {{ instance.description }}
 {% endif %}
@@ -32,7 +35,9 @@
 {% for instance in instances %}
 {% if instance.entry_date %}
 - {{ instance.entry_date | entry_date_display }}
-{% if instance.description %}  {{ instance.description }}{% endif %}
+{% if instance.description %}
+  {{ instance.description }}
+{% endif %}
 {% elif instance.description %}
 - {{ instance.description }}
 {% endif %}

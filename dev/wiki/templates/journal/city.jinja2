@@ -4,9 +4,8 @@
 **Country:** {{ country }}
 {% endif %}
 
-[Edit metadata]({{ "city_yaml" | source_path("") }})
-
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }} · {{ location_count }} location{{ "s" if location_count != 1 else "" }}{% if date_range %} · {{ date_range }}{% endif %}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }} · {{ location_count }} location{{ "s" if location_count != 1 else "" }}{% if date_range %} · {{ date_range }}
+{% endif %}
 
 ---
 {% if timeline %}
@@ -21,7 +20,8 @@
 
 ## Top Locations
 {% for loc in top_locations %}
-- {{ loc.name | wikilink }} ({{ loc.entry_count }})
+- {{ loc.name | wikilink }}
+  {{ loc.entry_count }} entr{{ "y" if loc.entry_count == 1 else "ies" }}
 {% endfor %}
 {% endif %}
 {% if frequent_people %}
@@ -30,6 +30,11 @@
 
 ## Frequent people
 {% for person in frequent_people %}
-- {{ person.name | wikilink }} ({{ person.count }})
+- {{ person.name | wikilink }}
+  {{ person.count }}
 {% endfor %}
 {% endif %}
+
+---
+
+- [Edit metadata]({{ "city_yaml" | source_path("") }})

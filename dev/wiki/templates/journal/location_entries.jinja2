@@ -1,12 +1,11 @@
-{% from "macros/thread_display.jinja2" import render_thread %}
 # {{ name }} — Entries
 
-[← {{ name }}][/journal/locations/{{ metadata_id }}]
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
 
 ---
 {% if events_here %}
 
-## Events here
+## Events Here
 {% for arc_group in events_here %}
 
 {% if arc_group.name == "Standalone events" %}
@@ -15,29 +14,16 @@
 ### {{ arc_group.name | wikilink }}
 {% endif %}
 {% for event in arc_group.events %}
-
-#### {{ event.name | wikilink }}
-{% if event.description %}*{{ event.description }}*{% endif %}
-{% for d in event.entry_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
+- {{ event.name | wikilink }}
 {% endfor %}
 {% endfor %}
 {% endif %}
-{% if outside_year_summary %}
+{% if year_summary %}
 
 ---
 
-## Entries outside events
-{% for y in outside_year_summary %}
-- [{{ y.year }}]({{ slug }}-entries-{{ y.year }}) · {{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}
-{% endfor %}
-{% endif %}
-{% if threads %}
-
----
-
-## Threads
-{% for thread in threads %}
-
-{{ render_thread(thread) }}
+## By Year
+{% for y in year_summary %}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
 {% endfor %}
 {% endif %}

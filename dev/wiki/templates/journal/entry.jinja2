@@ -12,10 +12,29 @@
 
 {{ word_count | string }} words · {{ reading_time }}
 {% endif %}
+{% if themes %}
+
+**Themes:**
+{% for t in themes %}
+- {{ t | wikilink }}
+{% endfor %}
+{% endif %}
+{% if tags %}
+
+**Tags:**
+{% for t in tags %}
+- {{ t | wikilink }}
+{% endfor %}
+{% endif %}
+{% if motifs %}
+
+**Motifs:**
+{% for m in motifs %}
+- {{ m | wikilink }}
+{% endfor %}
+{% endif %}
 
 ---
-
-[Read entry]({{ "journal_md" | source_path(date_str) }}) · [Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})
 {% if people_groups %}
 
 ## People
@@ -50,37 +69,26 @@
 {% endif %}
 {% endfor %}
 {% endif %}
-{% if scenes %}
+{% if narrative %}
 
 ---
 
-## Scenes
-{% for scene in scenes %}
+## Narrative
+{% for arc_group in narrative %}
+{% if arc_group.name %}
 
-### {{ scene.name }}
-{% if scene.description %}{{ scene.description }}{% endif %}
-{% if scene.people %}
-{% for chunk in scene.people | chunked %}
-- {% for person in chunk %}{{ person | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endfor %}
+### {{ arc_group.name | wikilink }}
 {% endif %}
-{% if scene.locations %}
-{% for loc_group in scene.locations %}
-- {{ loc_group.city | wikilink }}: {% for name in loc_group.names %}{{ name | wikilink }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endfor %}
-{% endif %}
-{% if scene.dates %}
-{{ scene.dates | mid_dot_join }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if events %}
+{% for event in arc_group.events %}
+{% if event.name %}
 
----
+**{{ event.name | wikilink }}**
+{% endif %}
+{% for scene in event.scenes %}
+- {{ scene.name }}{% if scene.dates %} · {% for d in scene.dates %}{{ d | flexible_date }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
 
-## Events
-{% for event in events %}
-- {{ event.name | wikilink }}{% if event.arc %}  {{ event.arc | wikilink }}{% endif %}
+{% endfor %}
+{% endfor %}
 {% endfor %}
 {% endif %}
 {% if threads %}
@@ -93,21 +101,6 @@
 {{ render_thread(thread) }}
 {% endfor %}
 {% endif %}
-{% if themes or tags or motifs %}
-
----
-
-## Themes, Tags & Motifs
-{% if themes %}
-**Themes:** {% for t in themes %}{{ t | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endif %}
-{% if tags %}
-**Tags:** {% for t in tags %}{{ t | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endif %}
-{% if motifs %}
-**Motifs:** {% for m in motifs %}{{ m | wikilink }}{% if not loop.last %} · {% endif %}{% endfor %}
-{% endif %}
-{% endif %}
 {% if references %}
 
 ---
@@ -118,14 +111,24 @@
 {% if ref.content %}
 > *"{{ ref.content }}"*
 {% endif %}
-> — **{{ ref.source_title | wikilink }}**{% if ref.author %}, {{ ref.author }}{% endif %} *({{ ref.mode }})*
+> — {{ ref.source_title | wikilink }}
+> {% if ref.author %}{{ ref.author }} · {% endif %}*({{ ref.mode }})*
 {% endfor %}
 {% endif %}
 {% if poems %}
 
+---
+
 ## Poems
 {% for poem in poems %}
 - {{ poem.title | wikilink }}
-{% if poem.version %}  v{{ poem.version }}{% endif %}
+{% if poem.version %}
+  v{{ poem.version }}
+{% endif %}
 {% endfor %}
 {% endif %}
+
+---
+
+- [Read entry]({{ "journal_md" | source_path(date_str) }})
+- [Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})

@@ -2,14 +2,16 @@
   Entry index page.
 
   Year-level summary with links to per-year detail pages.
+  Each year shows total count and month breakdown.
 
   Context:
     total_count: int (total entries across all years)
     year_summaries: list of dicts:
       - year: int
       - count: int
-      - first_date: str (YYYY-MM-DD)
-      - last_date: str (YYYY-MM-DD)
+      - months: list of dicts:
+          - name: str (abbreviated month name)
+          - count: int
 #}
 # Entries
 
@@ -18,6 +20,9 @@
 ---
 {% for ys in year_summaries %}
 
-### [{{ ys.year }}][/indexes/entries-{{ ys.year }}]
-{{ ys.count }} entr{{ "y" if ys.count == 1 else "ies" }} · {{ ys.first_date }} – {{ ys.last_date }}
+## {{ ys.year }}
+[{{ ys.count }} entr{{ "y" if ys.count == 1 else "ies" }}][/indexes/entries-{{ ys.year }}]
+{% for m in ys.months %}
+- **{{ m.name }}** {{ m.count }}
+{% endfor %}
 {% endfor %}

@@ -431,7 +431,7 @@ class WikiExporter:
             year_ctx = {
                 "entity_name": entity_name,
                 "year": year,
-                "back_link": file_prefix,
+                "count": yg["count"],
                 "entries": [yg],
             }
             year_path = base_dir / f"{file_prefix}-{year}.md"
@@ -450,8 +450,7 @@ class WikiExporter:
         """
         Generate entry subpages for frequent people (20+ entries).
 
-        Generates a main subpage with spine and threads, plus
-        per-year entry pages for entries outside events.
+        Generates a year-index subpage plus per-year entry pages.
 
         Args:
             session: Active SQLAlchemy session
@@ -468,15 +467,15 @@ class WikiExporter:
             base_dir = self.output_dir / "journal" / "people"
             file_prefix = f"{slug}-entries"
 
-            # Generate per-year pages for entries_outside_events
-            outside = ctx.get("entries_outside_events", [])
+            # Generate per-year pages for all entries
+            entries = ctx.get("entries", [])
             year_summary = self._generate_year_pages(
-                outside, person.display_name, slug,
+                entries, person.display_name, slug,
                 base_dir, file_prefix,
             )
-            ctx["outside_year_summary"] = year_summary
+            ctx["year_summary"] = year_summary
 
-            # Render main subpage (spine + threads + year links)
+            # Render year-index subpage
             output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/person_entries.jinja2", ctx, output_path
@@ -491,8 +490,7 @@ class WikiExporter:
         """
         Generate entry subpages for dashboard locations (20+ entries).
 
-        Generates a main subpage with events and threads, plus
-        per-year entry pages for entries outside events.
+        Generates a year-index subpage plus per-year entry pages.
 
         Args:
             session: Active SQLAlchemy session
@@ -510,15 +508,15 @@ class WikiExporter:
             )
             file_prefix = f"{loc_slug}-entries"
 
-            # Generate per-year pages for entries_outside_events
-            outside = ctx.get("entries_outside_events", [])
+            # Generate per-year pages for all entries
+            entries = ctx.get("entries", [])
             year_summary = self._generate_year_pages(
-                outside, location.name, loc_slug,
+                entries, location.name, loc_slug,
                 base_dir, file_prefix,
             )
-            ctx["outside_year_summary"] = year_summary
+            ctx["year_summary"] = year_summary
 
-            # Render main subpage (events_here + threads + year links)
+            # Render year-index subpage
             output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
                 "journal/location_entries.jinja2", ctx, output_path
@@ -811,6 +809,7 @@ class WikiExporter:
             # listing is a single-element list (one year group)
             ctx = {
                 "year": year,
+                "count": len(year_entries),
                 "entries": listing,
             }
             output_path = (
@@ -866,98 +865,131 @@ class WikiExporter:
             Dict mapping display_name → absolute wiki path (no extension)
         """
         targets: Dict[str, str] = {}
+        collisions: list[str] = []
+
+        def _register(name: str, path: str) -> None:
+            """Register a wikilink target, logging collisions."""
+            if name in targets and targets[name] != path:
+                collisions.append(
+                    f"  '{name}': {targets[name]} vs {path}"
+                )
+                return
+            targets[name] = path
 
         # Entries: date string → /journal/entries/YYYY/YYYY-MM-DD
         for entry in session.query(Entry).all():
             date_str = entry.date.isoformat()
             year = entry.date.strftime("%Y")
-            targets[date_str] = f"/journal/entries/{year}/{date_str}"
+            _register(date_str, f"/journal/entries/{year}/{date_str}")
 
         # People: display_name → /journal/people/{slug}
         for person in session.query(Person).all():
-            targets[person.display_name] = (
-                f"/journal/people/{person.slug}"
+            _register(
+                person.display_name,
+                f"/journal/people/{person.slug}",
             )
 
         # Cities: name → /journal/cities/{slug}
         for city in session.query(City).all():
-            targets[city.name] = (
-                f"/journal/cities/{slugify(city.name)}"
+            _register(
+                city.name,
+                f"/journal/cities/{slugify(city.name)}",
             )
 
         # Locations: name → /journal/locations/{city_slug}/{loc_slug}
         for loc in session.query(Location).all():
             city_slug = slugify(loc.city.name)
             loc_slug = slugify(loc.name)
-            targets[loc.name] = (
-                f"/journal/locations/{city_slug}/{loc_slug}"
+            _register(
+                loc.name,
+                f"/journal/locations/{city_slug}/{loc_slug}",
             )
 
         # Events: name → /journal/events/{slug}
         for event in session.query(Event).all():
-            targets[event.name] = (
-                f"/journal/events/{slugify(event.name)}"
+            _register(
+                event.name,
+                f"/journal/events/{slugify(event.name)}",
             )
 
         # Arcs: name → /journal/arcs/{slug}
         for arc in session.query(Arc).all():
-            targets[arc.name] = (
-                f"/journal/arcs/{slugify(arc.name)}"
+            _register(
+                arc.name,
+                f"/journal/arcs/{slugify(arc.name)}",
             )
 
         # Tags: name → /journal/tags/{slug}
         for tag in session.query(Tag).all():
-            targets[tag.name] = (
-                f"/journal/tags/{slugify(tag.name)}"
+            _register(
+                tag.name,
+                f"/journal/tags/{slugify(tag.name)}",
             )
 
         # Themes: name → /journal/themes/{slug}
         for theme in session.query(Theme).all():
-            targets[theme.name] = (
-                f"/journal/themes/{slugify(theme.name)}"
+            _register(
+                theme.name,
+                f"/journal/themes/{slugify(theme.name)}",
             )
 
         # Motifs: name → /journal/motifs/{slug}
         for motif in session.query(Motif).all():
-            targets[motif.name] = (
-                f"/journal/motifs/{slugify(motif.name)}"
+            _register(
+                motif.name,
+                f"/journal/motifs/{slugify(motif.name)}",
             )
 
         # Poems: title → /journal/poems/{slug}
         for poem in session.query(Poem).all():
-            targets[poem.title] = (
-                f"/journal/poems/{slugify(poem.title)}"
+            _register(
+                poem.title,
+                f"/journal/poems/{slugify(poem.title)}",
             )
 
         # Reference sources: title → /journal/references/{slug}
         for source in session.query(ReferenceSource).all():
-            targets[source.title] = (
-                f"/journal/references/{slugify(source.title)}"
+            _register(
+                source.title,
+                f"/journal/references/{slugify(source.title)}",
             )
 
         # Chapters: title → /manuscript/chapters/{slug}
         for chapter in session.query(Chapter).all():
-            targets[chapter.title] = (
-                f"/manuscript/chapters/{slugify(chapter.title)}"
+            _register(
+                chapter.title,
+                f"/manuscript/chapters/{slugify(chapter.title)}",
             )
 
         # Characters: name → /manuscript/characters/{slug}
         for character in session.query(Character).all():
-            targets[character.name] = (
-                f"/manuscript/characters/{slugify(character.name)}"
+            _register(
+                character.name,
+                f"/manuscript/characters/{slugify(character.name)}",
             )
 
         # Manuscript scenes: name → /manuscript/scenes/{slug}
         for scene in session.query(ManuscriptScene).all():
-            targets[scene.name] = (
-                f"/manuscript/scenes/{slugify(scene.name)}"
+            _register(
+                scene.name,
+                f"/manuscript/scenes/{slugify(scene.name)}",
             )
 
         # Parts: display_name → /manuscript/parts/{filename_stem}
         for part in session.query(Part).all():
-            stem = slugify(part.title) if part.title else f"part-{part.number}"
-            targets[part.display_name] = (
-                f"/manuscript/parts/{stem}"
+            stem = (
+                slugify(part.title) if part.title
+                else f"part-{part.number}"
+            )
+            _register(
+                part.display_name,
+                f"/manuscript/parts/{stem}",
+            )
+
+        if collisions:
+            safe_logger(self.logger).log_warning(
+                "Wikilink name collisions (first-registered wins):\n"
+                + "\n".join(collisions)
             )
 
         safe_logger(self.logger).log_debug(
@@ -1075,17 +1107,18 @@ class WikiExporter:
         """
         Build context for Entry index page (year summary with links).
 
-        Produces a flat list of year summaries (count, date range)
-        for the top-level index. Per-year detail pages are generated
-        separately by ``_generate_entry_year_pages``.
+        Produces a flat list of year summaries with per-month entry
+        counts for the top-level index. Per-year detail pages are
+        generated separately by ``_generate_entry_year_pages``.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with year_summaries list
+            Dict with year_summaries list and total_count
         """
-        from collections import Counter
+        import calendar
+        from collections import Counter, defaultdict
 
         entries = (
             session.query(Entry)
@@ -1093,27 +1126,25 @@ class WikiExporter:
             .all()
         )
 
-        year_counts: Counter = Counter()
-        year_first: Dict[int, str] = {}
-        year_last: Dict[int, str] = {}
-
+        year_months: Dict[int, Counter] = defaultdict(Counter)
         for entry in entries:
-            y = entry.date.year
-            d_str = entry.date.isoformat()
-            year_counts[y] += 1
-            # Track first and last date per year
-            if y not in year_first or d_str < year_first[y]:
-                year_first[y] = d_str
-            if y not in year_last or d_str > year_last[y]:
-                year_last[y] = d_str
+            year_months[entry.date.year][entry.date.month] += 1
 
         year_summaries = []
-        for year in sorted(year_counts.keys(), reverse=True):
+        for year in sorted(year_months.keys(), reverse=True):
+            month_counts = year_months[year]
+            year_total = sum(month_counts.values())
+            months = [
+                {
+                    "name": calendar.month_abbr[m],
+                    "count": month_counts[m],
+                }
+                for m in sorted(month_counts.keys())
+            ]
             year_summaries.append({
                 "year": year,
-                "count": year_counts[year],
-                "first_date": year_first[year],
-                "last_date": year_last[year],
+                "count": year_total,
+                "months": months,
             })
 
         return {
@@ -1255,6 +1286,60 @@ class WikiExporter:
                 )
                 if t.usage_count >= 2
             ],
+        }
+
+    def _build_motifs_index_context(
+        self, session: Session
+    ) -> Dict[str, Any]:
+        """
+        Build context for Motifs index page.
+
+        Queries all motifs with instance counts, date ranges, and
+        the most recent instance description for each.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict with frequency-sorted motifs and total instance count
+        """
+        motifs = session.query(Motif).all()
+
+        result = []
+        total_instances = 0
+        for m in sorted(
+            motifs, key=lambda m: m.instance_count, reverse=True
+        ):
+            count = m.instance_count
+            total_instances += count
+
+            entries = sorted(
+                [i.entry for i in m.instances if i.entry],
+                key=lambda e: e.date,
+            )
+            first = entries[0].date.isoformat() if entries else None
+            last = entries[-1].date.isoformat() if entries else None
+
+            # Most recent instance description
+            latest = None
+            if entries:
+                latest_entry = entries[-1]
+                for inst in m.instances:
+                    if inst.entry_id == latest_entry.id:
+                        latest = inst.description
+                        break
+
+            result.append({
+                "name": m.name,
+                "instance_count": count,
+                "first_date": first,
+                "last_date": last,
+                "latest_description": latest,
+            })
+
+        return {
+            "motifs": result,
+            "total_instances": total_instances,
         }
 
     def _build_poems_index_context(

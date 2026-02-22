@@ -20,9 +20,11 @@
 
 ## {{ city.name | wikilink }}
 {{ city.entry_count }} entr{{ "y" if city.entry_count == 1 else "ies" }}{% if city.country %} · {{ city.country }}{% endif %}
+
 {% if city.locations %}
 {% for loc in city.locations %}
-- {{ loc.name | wikilink }} ({{ loc.entry_count }})
+- {{ loc.name | wikilink }}
+  {{ loc.entry_count }} entr{{ "y" if loc.entry_count == 1 else "ies" }}
 {% endfor %}
 {% endif %}
 {% endfor %}

@@ -1,8 +1,8 @@
 # {{ name }} — Entries
 
-[← {{ name }}][/journal/tags/{{ slug }}]
-
 {{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
+
+---
 {% for y in year_summary %}
-- [{{ y.year }}]({{ slug }}-entries-{{ y.year }}) · {{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
 {% endfor %}

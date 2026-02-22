@@ -1,14 +1,19 @@
 # {{ title }}
 
 {{ version_count }} version{{ "s" if version_count != 1 else "" }}
-{% if first_appearance %}First appeared: {{ first_appearance | entry_date_short }}{% endif %}
+{% if first_appearance %}
+First appeared:
+{{ first_appearance | entry_date_short }}
+{% endif %}
 
 ---
 {% if versions %}
 {% set latest = versions[0] %}
 
 ## Latest Version
-{% if latest.entry_date %}{{ latest.entry_date | entry_date_short }}{% endif %}
+{% if latest.entry_date %}
+{{ latest.entry_date | entry_date_short }}
+{% endif %}
 
 > {{ latest.content | replace("\n", "\n> ") }}
 {% if latest.line_count or latest.word_count %}
@@ -23,7 +28,9 @@
 {% for version in versions[1:] %}
 
 ### Version {{ version.number }}
-{% if version.entry_date %}{{ version.entry_date | entry_date_short }}{% endif %}
+{% if version.entry_date %}
+{{ version.entry_date | entry_date_short }}
+{% endif %}
 
 > {{ version.content | replace("\n", "\n> ") }}
 {% if version.line_count or version.word_count %}

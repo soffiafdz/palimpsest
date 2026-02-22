@@ -325,18 +325,20 @@ class TestBuildEntryContext:
         assert "Café Olimpico" in places[0]["locations"]
         assert "Home" in places[0]["locations"]
 
-    def test_events_with_arc(
+    def test_narrative_with_arc(
         self, builder, entry_nov8, event_long_nov, arc_wanting, scene_cafe
     ):
-        """Events include arc name."""
+        """Narrative groups events by arc with scenes."""
         ctx = builder.build_entry_context(entry_nov8)
-        events = ctx["events"]
-        assert len(events) == 1
-        assert events[0]["name"] == "The Long November"
-        assert events[0]["arc"] == "The Long Wanting"
+        narrative = ctx["narrative"]
+        assert len(narrative) >= 1
+        arc_group = narrative[0]
+        assert arc_group["name"] == "The Long Wanting"
+        assert len(arc_group["events"]) == 1
+        assert arc_group["events"][0]["name"] == "The Long November"
 
-    def test_events_without_arc(self, builder, entry_nov8, scene_cafe):
-        """Events without arc show None."""
+    def test_narrative_without_arc(self, builder, entry_nov8, scene_cafe):
+        """Events without arc appear in standalone group."""
         event = Event(name="Random Event")
         self.session = builder.session
         self.session.add(event)
@@ -346,11 +348,12 @@ class TestBuildEntryContext:
         self.session.flush()
 
         ctx = builder.build_entry_context(entry_nov8)
-        random_ev = next(
-            (e for e in ctx["events"] if e["name"] == "Random Event"), None
+        standalone = next(
+            (g for g in ctx["narrative"] if g["name"] is None), None
         )
-        assert random_ev is not None
-        assert random_ev["arc"] is None
+        assert standalone is not None
+        event_names = [e["name"] for e in standalone["events"]]
+        assert "Random Event" in event_names
 
     def test_threads(self, builder, entry_nov8, thread_kiss, clara, cafe):
         """Threads include full display data."""
@@ -388,22 +391,20 @@ class TestBuildEntryContext:
         assert poems[0]["title"] == "Untitled (November)"
         assert poems[0]["version"] == 1
 
-    def test_scenes(self, builder, entry_nov8, scene_cafe, clara):
-        """Entry context includes scenes with people, locations, dates."""
+    def test_narrative_scenes(
+        self, builder, entry_nov8, scene_cafe, event_long_nov,
+        arc_wanting, clara,
+    ):
+        """Narrative includes scene names and dates under events."""
         ctx = builder.build_entry_context(entry_nov8)
-        scenes = ctx["scenes"]
-        assert len(scenes) == 1
-        s = scenes[0]
-        assert s["name"] == "Morning at the Cafe"
-        assert s["description"] == "A conversation over espresso."
-        assert "Clara Dupont" in s["people"]
-        assert len(s["locations"]) == 1
-        assert s["locations"][0]["city"] == "Montreal"
-        assert "Café Olimpico" in s["locations"][0]["names"]
-        assert len(s["dates"]) == 1
+        narrative = ctx["narrative"]
+        arc_group = narrative[0]
+        event = arc_group["events"][0]
+        assert len(event["scenes"]) == 1
+        assert event["scenes"][0]["name"] == "Morning at the Cafe"
 
-    def test_scenes_empty(self, builder, db_session):
-        """Entry with no scenes has empty scenes list."""
+    def test_narrative_empty(self, builder, db_session):
+        """Entry with no scenes/events has empty narrative."""
         entry = Entry(
             date=date(2024, 1, 1),
             file_path="2024/2024-01-01.md",
@@ -411,7 +412,7 @@ class TestBuildEntryContext:
         db_session.add(entry)
         db_session.flush()
         ctx = builder.build_entry_context(entry)
-        assert ctx["scenes"] == []
+        assert ctx["narrative"] == []
 
     def test_motifs(self, builder, entry_nov8, motif_loop, motif_instance):
         """Entry context includes motif names."""
@@ -436,7 +437,7 @@ class TestBuildEntryContext:
         ctx = builder.build_entry_context(entry)
         assert ctx["people_groups"] == []
         assert ctx["places"] == []
-        assert ctx["events"] == []
+        assert ctx["narrative"] == []
         assert ctx["threads"] == []
 
 

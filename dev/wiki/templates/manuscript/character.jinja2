@@ -1,14 +1,13 @@
 # {{ name }}
 {% if role %}
 
-**Role:** {{ role }}{% if is_narrator %} · **Narrator**{% endif %}
+**Role:** {{ role }}{% if is_narrator %} · **Narrator**
+{% endif %}
 {% endif %}
 {% if description %}
 
 {{ description }}
 {% endif %}
-
-[Edit metadata]({{ "character_yaml" | source_path(slug) }})
 
 {{ chapter_count }} chapter{{ "s" if chapter_count != 1 else "" }}
 
@@ -27,5 +26,10 @@
 {% for ch in chapters %}
 - {{ ch.title | wikilink }}
   {{ ch.type }} · {{ ch.status }}
+
 {% endfor %}
 {% endif %}
+
+---
+
+- [Edit metadata]({{ "character_yaml" | source_path(slug) }})

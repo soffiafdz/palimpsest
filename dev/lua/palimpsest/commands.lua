@@ -32,28 +32,16 @@ local function open_wiki_file(file_path, generate_opts)
 	})
 end
 
--- Open statistics dashboard
-function M.stats()
-	local root = get_project_root()
-	open_wiki_file(root .. "/data/wiki/stats.md")
-end
-
 -- Open wiki index
 function M.index()
 	local root = get_project_root()
 	open_wiki_file(root .. "/data/wiki/index.md")
 end
 
--- Open analysis report
-function M.analysis()
-	local root = get_project_root()
-	open_wiki_file(root .. "/data/wiki/analysis.md")
-end
-
 -- Open manuscript index
 function M.manuscript_index()
 	local root = get_project_root()
-	open_wiki_file(root .. "/data/wiki/manuscript/index.md", { section = "manuscript" })
+	open_wiki_file(root .. "/data/wiki/indexes/manuscript-index.md")
 end
 
 -- Wiki sync: run plm wiki sync asynchronously
@@ -86,7 +74,8 @@ end
 function M.wiki_lint(opts)
 	opts = opts or {}
 	local root = get_project_root()
-	local cmd = "cd " .. root .. " && plm wiki lint --format json"
+	local wiki_dir = root .. "/data/wiki"
+	local cmd = "cd " .. root .. " && plm wiki lint " .. wiki_dir .. " --format json"
 
 	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
@@ -259,22 +248,10 @@ end
 -- Deck mode: navigation-only commands (no Python dependency)
 function M.setup_deck()
 	-- Navigation commands (open pre-generated wiki files)
-	vim.api.nvim_create_user_command("PalimpsestStats", function()
-		M.stats()
-	end, {
-		desc = "Open statistics dashboard",
-	})
-
 	vim.api.nvim_create_user_command("PalimpsestIndex", function()
 		M.index()
 	end, {
 		desc = "Open wiki index/homepage",
-	})
-
-	vim.api.nvim_create_user_command("PalimpsestAnalysis", function()
-		M.analysis()
-	end, {
-		desc = "Open analysis report with visualizations",
 	})
 
 	vim.api.nvim_create_user_command("PalimpsestManuscriptIndex", function()
@@ -303,11 +280,11 @@ function M.setup_deck()
 				"tags",
 				"poems",
 				"references",
+				"motifs",
 				"manuscript",
-				"manuscript-entries",
+				"manuscript-chapters",
 				"manuscript-characters",
-				"manuscript-arcs",
-				"manuscript-events",
+				"manuscript-scenes",
 			}
 		end,
 	})
@@ -331,11 +308,11 @@ function M.setup_deck()
 				"tags",
 				"poems",
 				"references",
+				"motifs",
 				"manuscript",
-				"manuscript-entries",
+				"manuscript-chapters",
 				"manuscript-characters",
-				"manuscript-arcs",
-				"manuscript-events",
+				"manuscript-scenes",
 			}
 		end,
 	})
@@ -349,25 +326,11 @@ end
 
 -- Full setup: all commands including Python-dependent operations
 function M.setup()
-	-- Stats command
-	vim.api.nvim_create_user_command("PalimpsestStats", function()
-		M.stats()
-	end, {
-		desc = "Open statistics dashboard",
-	})
-
 	-- Index command
 	vim.api.nvim_create_user_command("PalimpsestIndex", function()
 		M.index()
 	end, {
 		desc = "Open wiki index/homepage",
-	})
-
-	-- Analysis command
-	vim.api.nvim_create_user_command("PalimpsestAnalysis", function()
-		M.analysis()
-	end, {
-		desc = "Open analysis report with visualizations",
 	})
 
 	-- Manuscript index command
@@ -397,11 +360,11 @@ function M.setup()
 				"tags",
 				"poems",
 				"references",
+				"motifs",
 				"manuscript",
-				"manuscript-entries",
+				"manuscript-chapters",
 				"manuscript-characters",
-				"manuscript-arcs",
-				"manuscript-events",
+				"manuscript-scenes",
 			}
 		end,
 	})
@@ -426,11 +389,11 @@ function M.setup()
 				"tags",
 				"poems",
 				"references",
+				"motifs",
 				"manuscript",
-				"manuscript-entries",
+				"manuscript-chapters",
 				"manuscript-characters",
-				"manuscript-arcs",
-				"manuscript-events",
+				"manuscript-scenes",
 			}
 		end,
 	})

@@ -15,9 +15,11 @@
       - locations: list of dict with keys: city (str), names (list of str)
 #}
 {% macro render_thread(thread) %}
-#### {{ thread.name | wikilink }}
+### {{ thread.name | wikilink }}
 *{{ thread.from_date | flexible_date }} → {{ thread.to_date | flexible_date }}*
-{% if thread.referenced_entry_date %}see {{ thread.referenced_entry_date | wikilink }}{% endif %}
+{% if thread.referenced_entry_date %}
+see {{ thread.referenced_entry_date | wikilink }}
+{% endif %}
 
 {{ thread.content }}
 {% if thread.people %}

@@ -18,21 +18,21 @@ function M.browse(entity_type)
 		all = { journal_dir, wiki_dir },
 		journal = journal_dir,
 		wiki = wiki_dir,
-		people = wiki_dir .. "/people",
-		entries = wiki_dir .. "/entries",
-		locations = wiki_dir .. "/locations",
-		cities = wiki_dir .. "/cities",
-		events = wiki_dir .. "/events",
-		themes = wiki_dir .. "/themes",
-		tags = wiki_dir .. "/tags",
-		poems = wiki_dir .. "/poems",
-		references = wiki_dir .. "/references",
+		people = wiki_dir .. "/journal/people",
+		entries = wiki_dir .. "/journal/entries",
+		locations = wiki_dir .. "/journal/locations",
+		cities = wiki_dir .. "/journal/cities",
+		events = wiki_dir .. "/journal/events",
+		themes = wiki_dir .. "/journal/themes",
+		tags = wiki_dir .. "/journal/tags",
+		poems = wiki_dir .. "/journal/poems",
+		references = wiki_dir .. "/journal/references",
+		motifs = wiki_dir .. "/journal/motifs",
 		-- Manuscript paths
 		manuscript = wiki_dir .. "/manuscript",
-		["manuscript-entries"] = wiki_dir .. "/manuscript/entries",
+		["manuscript-chapters"] = wiki_dir .. "/manuscript/chapters",
 		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
-		["manuscript-arcs"] = wiki_dir .. "/manuscript/arcs",
-		["manuscript-events"] = wiki_dir .. "/manuscript/events",
+		["manuscript-scenes"] = wiki_dir .. "/manuscript/scenes",
 	}
 
 	local search_path = entity_paths[entity_type] or wiki_dir
@@ -102,21 +102,21 @@ function M.search(entity_type)
 	local entity_paths = {
 		wiki = wiki_dir,
 		journal = journal_dir,
-		people = wiki_dir .. "/people",
-		entries = wiki_dir .. "/entries",
-		locations = wiki_dir .. "/locations",
-		cities = wiki_dir .. "/cities",
-		events = wiki_dir .. "/events",
-		themes = wiki_dir .. "/themes",
-		tags = wiki_dir .. "/tags",
-		poems = wiki_dir .. "/poems",
-		references = wiki_dir .. "/references",
+		people = wiki_dir .. "/journal/people",
+		entries = wiki_dir .. "/journal/entries",
+		locations = wiki_dir .. "/journal/locations",
+		cities = wiki_dir .. "/journal/cities",
+		events = wiki_dir .. "/journal/events",
+		themes = wiki_dir .. "/journal/themes",
+		tags = wiki_dir .. "/journal/tags",
+		poems = wiki_dir .. "/journal/poems",
+		references = wiki_dir .. "/journal/references",
+		motifs = wiki_dir .. "/journal/motifs",
 		-- Manuscript paths
 		manuscript = wiki_dir .. "/manuscript",
-		["manuscript-entries"] = wiki_dir .. "/manuscript/entries",
+		["manuscript-chapters"] = wiki_dir .. "/manuscript/chapters",
 		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
-		["manuscript-arcs"] = wiki_dir .. "/manuscript/arcs",
-		["manuscript-events"] = wiki_dir .. "/manuscript/events",
+		["manuscript-scenes"] = wiki_dir .. "/manuscript/scenes",
 	}
 
 	local search_path = entity_paths[entity_type]
@@ -153,26 +153,19 @@ function M.quick_access()
 
 	local wiki_dir = palimpsest.paths.wiki
 
-	-- Define quick access pages
+	-- Define quick access pages (must match actual generated paths)
 	local pages = {
 		{ name = "Wiki Homepage", path = wiki_dir .. "/index.md" },
-		{ name = "Statistics Dashboard", path = wiki_dir .. "/stats.md" },
-		{ name = "Timeline", path = wiki_dir .. "/timeline.md" },
-		{ name = "People Index", path = wiki_dir .. "/people.md" },
-		{ name = "Entries Index", path = wiki_dir .. "/entries.md" },
-		{ name = "Locations Index", path = wiki_dir .. "/locations.md" },
-		{ name = "Cities Index", path = wiki_dir .. "/cities.md" },
-		{ name = "Events Index", path = wiki_dir .. "/events.md" },
-		{ name = "Themes Index", path = wiki_dir .. "/themes.md" },
-		{ name = "Tags Index", path = wiki_dir .. "/tags.md" },
-		{ name = "Poems Index", path = wiki_dir .. "/poems.md" },
-		{ name = "References Index", path = wiki_dir .. "/references.md" },
-		-- Manuscript pages
-		{ name = "Manuscript Homepage", path = wiki_dir .. "/manuscript/index.md" },
-		{ name = "Manuscript Entries", path = wiki_dir .. "/manuscript/entries/entries.md" },
-		{ name = "Manuscript Characters", path = wiki_dir .. "/manuscript/characters/characters.md" },
-		{ name = "Manuscript Arcs", path = wiki_dir .. "/manuscript/arcs/arcs.md" },
-		{ name = "Manuscript Events", path = wiki_dir .. "/manuscript/events/events.md" },
+		{ name = "People Index", path = wiki_dir .. "/indexes/people-index.md" },
+		{ name = "Entries Index", path = wiki_dir .. "/indexes/entry-index.md" },
+		{ name = "Places Index", path = wiki_dir .. "/indexes/places-index.md" },
+		{ name = "Events Index", path = wiki_dir .. "/indexes/event-index.md" },
+		{ name = "Arcs Index", path = wiki_dir .. "/indexes/arc-index.md" },
+		{ name = "Tags Index", path = wiki_dir .. "/indexes/tags-index.md" },
+		{ name = "Themes Index", path = wiki_dir .. "/indexes/themes-index.md" },
+		{ name = "Poems Index", path = wiki_dir .. "/indexes/poems-index.md" },
+		{ name = "References Index", path = wiki_dir .. "/indexes/references-index.md" },
+		{ name = "Manuscript Index", path = wiki_dir .. "/indexes/manuscript-index.md" },
 	}
 
 	-- Filter to only existing pages and format for fzf

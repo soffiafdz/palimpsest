@@ -134,8 +134,9 @@ class WikiContextBuilder:
             "reading_time": entry.reading_time_display,
             "people_groups": self._build_people_groups(entry.people),
             "places": self._build_places(entry.locations, entry.cities),
-            "scenes": self._build_entry_scenes(entry.scenes),
-            "events": self._build_entry_events(entry.events, entry.arcs),
+            "narrative": self._build_entry_narrative(
+                entry.scenes, entry.events, entry.arcs
+            ),
             "threads": [self._build_thread_display(t) for t in entry.threads],
             "themes": [t.name for t in entry.themes],
             "tags": [t.name for t in entry.tags],
@@ -249,76 +250,107 @@ class WikiContextBuilder:
 
         return result
 
-    def _build_entry_scenes(
-        self, scenes: List[Scene]
-    ) -> List[Dict[str, Any]]:
-        """
-        Build scene details for an entry page.
-
-        Each scene includes its name, description, people, locations
-        (grouped by city), and dates. Provides the narrative breakdown
-        that events alone cannot.
-
-        Args:
-            scenes: List of Scene entities from an entry
-
-        Returns:
-            List of scene dicts with name, description, people,
-            locations, dates
-        """
-        result = []
-        for scene in scenes:
-            loc_groups: Dict[str, List[str]] = defaultdict(list)
-            for loc in scene.locations:
-                loc_groups[loc.city.name].append(loc.name)
-
-            result.append({
-                "name": scene.name,
-                "description": scene.description,
-                "people": [
-                    p.display_name for p in scene.people
-                    if p.relation_type != RelationType.SELF
-                ],
-                "locations": [
-                    {"city": city, "names": sorted(names)}
-                    for city, names in sorted(loc_groups.items())
-                ],
-                "dates": [
-                    sd.date for sd in scene.dates
-                ],
-            })
-        return result
-
-    def _build_entry_events(
+    def _build_entry_narrative(
         self,
+        scenes: List[Scene],
         events: List[Event],
         arcs: List[Arc],
     ) -> List[Dict[str, Any]]:
         """
-        Build flat event list with arc labels for Entry page.
+        Build arc-grouped narrative structure for an entry page.
 
-        Finds which arc each event belongs to by checking shared entries.
+        Groups events by arc, with each event listing only the
+        scenes from this entry. Standalone events (no arc) are
+        grouped under a None-named bucket. Scenes not linked to
+        any event appear under a standalone scenes bucket.
 
         Args:
-            events: Entry's events
-            arcs: Entry's arcs
+            scenes: Entry's Scene entities
+            events: Entry's Event entities
+            arcs: Entry's Arc entities
 
         Returns:
-            List of dicts with keys: name, arc (str or None)
+            List of arc group dicts:
+              - name: str or None (arc name, None for standalone)
+              - events: list of event dicts:
+                  - name: str (event name)
+                  - scenes: list of scene dicts:
+                      - name: str
+                      - dates: list of date objects
         """
-        # Build arc lookup: event → arc name
-        arc_names: Set[str] = {a.name for a in arcs}
-        result = []
+        entry_scene_ids = {s.id for s in scenes}
+
+        # Map event → arc name
+        event_arc: Dict[int, Optional[str]] = {}
         for event in events:
-            # Find arc for this event via shared entries
-            event_arc = None
+            arc_name = None
             for arc in arcs:
                 arc_entry_ids = {e.id for e in arc.entries}
                 event_entry_ids = {e.id for e in event.entries}
                 if arc_entry_ids & event_entry_ids:
-                    event_arc = arc.name
+                    arc_name = arc.name
                     break
-            result.append({"name": event.name, "arc": event_arc})
+            event_arc[event.id] = arc_name
+
+        # Build event dicts with only this entry's scenes
+        claimed_scene_ids: Set[int] = set()
+        arc_events: Dict[Optional[str], List[Dict[str, Any]]] = defaultdict(
+            list
+        )
+        for event in events:
+            event_scenes = [
+                {
+                    "name": s.name,
+                    "dates": [sd.date for sd in s.dates],
+                }
+                for s in event.scenes
+                if s.id in entry_scene_ids
+            ]
+            claimed_scene_ids.update(
+                s.id for s in event.scenes if s.id in entry_scene_ids
+            )
+            arc_events[event_arc[event.id]].append({
+                "name": event.name,
+                "scenes": event_scenes,
+            })
+
+        # Collect unclaimed scenes (not linked to any event)
+        unclaimed = [
+            {
+                "name": s.name,
+                "dates": [sd.date for sd in s.dates],
+            }
+            for s in scenes
+            if s.id not in claimed_scene_ids
+        ]
+
+        # Build ordered result: named arcs first, then standalone
+        result = []
+        for arc in arcs:
+            if arc.name in arc_events:
+                result.append({
+                    "name": arc.name,
+                    "events": arc_events.pop(arc.name),
+                })
+        # Standalone events (no arc)
+        if None in arc_events:
+            result.append({
+                "name": None,
+                "events": arc_events[None],
+            })
+        # Unclaimed scenes as pseudo-events
+        if unclaimed:
+            standalone_bucket = next(
+                (g for g in result if g["name"] is None), None
+            )
+            if standalone_bucket is None:
+                standalone_bucket = {"name": None, "events": []}
+                result.append(standalone_bucket)
+            standalone_bucket["events"].append({
+                "name": None,
+                "scenes": unclaimed,
+            })
+
         return result
 
     def _build_thread_display(self, thread: Any) -> Dict[str, Any]:
@@ -839,8 +871,10 @@ class WikiContextBuilder:
                 location.first_visit, location.last_visit
             )
             base["events_here"] = self._build_location_events(location)
-            base["entries_outside_events"] = (
-                self._build_location_entries_outside_events(location)
+            base["entries"] = self._build_entry_listing(
+                sorted(
+                    location.entries, key=lambda e: e.date, reverse=True
+                )
             )
             base["frequent_people"] = self._build_location_people(location)
         else:
@@ -1766,7 +1800,7 @@ class WikiContextBuilder:
             year_total = sum(len(dates) for dates in months_data.values())
 
             month_list = []
-            for month in sorted(months_data.keys(), reverse=True):
+            for month in sorted(months_data.keys()):
                 dates = sorted(months_data[month])
                 month_name = calendar.month_name[month]
 

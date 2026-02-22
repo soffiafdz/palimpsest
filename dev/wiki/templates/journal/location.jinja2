@@ -1,14 +1,10 @@
-{% from "macros/thread_display.jinja2" import render_thread %}
 {% from "macros/entry_listing.jinja2" import render_entries %}
 # {{ name }}
 
-**City:** {{ city | wikilink }}
+**City:**
+{{ city | wikilink }}
 
-[Edit metadata]({{ "location_yaml" | source_path(metadata_id) }})
-{% if tier == "dashboard" or tier == "mid" %}
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}{% endif %}
-{% else %}
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
+{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}
 {% endif %}
 
 ---
@@ -19,21 +15,9 @@
 
 {{ timeline | timeline_table }}
 {% endif %}
-
-[All entries ({{ entry_count }})]({{ slug }}-entries)
-{% if frequent_people %}
-
----
-
-## Frequent people
-{% for person in frequent_people %}
-- {{ person.name | wikilink }} ({{ person.count }})
-{% endfor %}
-{% endif %}
-{% elif tier == "mid" %}
 {% if events_here %}
 
-## Events here
+## Events Here
 {% for arc_group in events_here %}
 
 {% if arc_group.name == "Standalone events" %}
@@ -42,28 +26,54 @@
 ### {{ arc_group.name | wikilink }}
 {% endif %}
 {% for event in arc_group.events %}
-
-#### {{ event.name | wikilink }}
-{% if event.description %}*{{ event.description }}*{% endif %}
-{% for d in event.entry_dates %}{{ d | entry_date_short }}{% if not loop.last %} · {% endif %}{% endfor %}
+- {{ event.name | wikilink }}
 {% endfor %}
 {% endfor %}
 {% endif %}
-{% if entries_outside_events %}
+
+[All entries ({{ entry_count }})]({{ slug }}-entries)
+{% if frequent_people %}
 
 ---
 
-## Entries outside events
+## Frequent People
+{% for person in frequent_people %}
+- {{ person.name | wikilink }}
+  {{ person.count }}
+{% endfor %}
+{% endif %}
+{% elif tier == "mid" %}
+{% if events_here %}
 
-{{ render_entries(entries_outside_events) }}
+## Events Here
+{% for arc_group in events_here %}
+
+{% if arc_group.name == "Standalone events" %}
+### Standalone events
+{% else %}
+### {{ arc_group.name | wikilink }}
+{% endif %}
+{% for event in arc_group.events %}
+- {{ event.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if entries %}
+
+---
+
+## Entries
+
+{{ render_entries(entries) }}
 {% endif %}
 {% if frequent_people %}
 
 ---
 
-## Frequent people
+## Frequent People
 {% for person in frequent_people %}
-- {{ person.name | wikilink }} ({{ person.count }})
+- {{ person.name | wikilink }}
+  {{ person.count }}
 {% endfor %}
 {% endif %}
 {% elif tier == "minimal" %}
@@ -74,3 +84,7 @@
 {{ render_entries(entries) }}
 {% endif %}
 {% endif %}
+
+---
+
+- [Edit metadata]({{ "location_yaml" | source_path(metadata_id) }})

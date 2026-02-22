@@ -62,7 +62,8 @@ M.paths = setmetatable({}, {
 			wiki = root .. "/data/wiki",
 			log = root .. "/data/wiki/log",
 			journal = root .. "/data/journal/content/md",
-			templates = root .. "/templates/wiki",
+			metadata = root .. "/data/metadata",
+			templates = root .. "/dev/lua/palimpsest/templates",
 		}
 		return paths[key]
 	end,
@@ -72,8 +73,9 @@ M.vimwiki = {
 	name = "Palimpsest",
 	syntax = "markdown",
 	ext = ".md",
+	links_space_char = "-",
 	diary_rel_path = "log",
-	diary_header = [[Session Log\n]],
+	diary_header = "Session Log",
 }
 
 return M

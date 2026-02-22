@@ -19,6 +19,17 @@ import pytest
 from jinja2 import Environment
 
 # --- Local imports ---
+from dev.core.paths import (
+    MD_DIR,
+    JOURNAL_YAML_DIR,
+    PEOPLE_YAML_DIR,
+    LOCATIONS_YAML_DIR,
+    CITIES_YAML_PATH,
+    ARCS_YAML_PATH,
+    MANUSCRIPT_CHAPTERS_DIR,
+    MANUSCRIPT_CHARACTERS_DIR,
+    MANUSCRIPT_SCENES_DIR,
+)
 from dev.wiki.filters import (
     wikilink,
     date_long,
@@ -234,7 +245,7 @@ class TestTimelineTable:
         result = timeline_table(counts)
         assert "| Year |" in result
         assert "| 2024 |" in result
-        assert "**20**" in result  # Peak month bolded
+        assert " 20 " in result  # Peak month present (no bold)
         assert "24" in result  # Total: 3+1+20=24
 
     def test_multiple_years(self) -> None:
@@ -274,53 +285,62 @@ class TestSourcePath:
     """Tests for source_path filter."""
 
     def test_journal_md_path(self) -> None:
-        """Generates absolute path to journal markdown."""
+        """Generates absolute file: path to journal markdown."""
         result = source_path("journal_md", "2024-11-08")
-        assert result == "/data/journal/content/md/2024/2024-11-08.md"
+        expected = f"file:{MD_DIR / '2024' / '2024-11-08.md'}"
+        assert result == expected
 
     def test_metadata_yaml_path(self) -> None:
-        """Generates absolute path to metadata YAML."""
+        """Generates absolute file: path to metadata YAML."""
         result = source_path("metadata_yaml", "2024-11-08")
-        assert result == "/data/metadata/journal/2024/2024-11-08.yaml"
+        expected = f"file:{JOURNAL_YAML_DIR / '2024' / '2024-11-08.yaml'}"
+        assert result == expected
 
     def test_unknown_type(self) -> None:
         """Unknown entity type returns empty string."""
         assert source_path("unknown", "anything") == ""
 
     def test_person_yaml_path(self) -> None:
-        """Generates path to person YAML metadata."""
+        """Generates absolute file: path to person YAML metadata."""
         result = source_path("person_yaml", "clara_dupont")
-        assert result == "/data/metadata/people/clara_dupont.yaml"
+        expected = f"file:{PEOPLE_YAML_DIR / 'clara_dupont.yaml'}"
+        assert result == expected
 
     def test_location_yaml_path(self) -> None:
-        """Generates path to location YAML metadata."""
+        """Generates absolute file: path to location YAML metadata."""
         result = source_path("location_yaml", "montreal/cafe-olimpico")
-        assert result == "/data/metadata/locations/montreal/cafe-olimpico.yaml"
+        expected = f"file:{LOCATIONS_YAML_DIR / 'montreal' / 'cafe-olimpico.yaml'}"
+        assert result == expected
 
     def test_city_yaml_path(self) -> None:
-        """Generates path to cities YAML (shared file)."""
+        """Generates absolute file: path to cities YAML (shared file)."""
         result = source_path("city_yaml", "")
-        assert result == "/data/metadata/cities.yaml"
+        expected = f"file:{CITIES_YAML_PATH}"
+        assert result == expected
 
     def test_arc_yaml_path(self) -> None:
-        """Generates path to arcs YAML (shared file)."""
+        """Generates absolute file: path to arcs YAML (shared file)."""
         result = source_path("arc_yaml", "")
-        assert result == "/data/metadata/arcs.yaml"
+        expected = f"file:{ARCS_YAML_PATH}"
+        assert result == expected
 
     def test_chapter_yaml_path(self) -> None:
-        """Generates path to chapter YAML metadata."""
+        """Generates absolute file: path to chapter YAML metadata."""
         result = source_path("chapter_yaml", "the-beginning")
-        assert result == "/data/metadata/manuscript/chapters/the-beginning.yaml"
+        expected = f"file:{MANUSCRIPT_CHAPTERS_DIR / 'the-beginning.yaml'}"
+        assert result == expected
 
     def test_character_yaml_path(self) -> None:
-        """Generates path to character YAML metadata."""
+        """Generates absolute file: path to character YAML metadata."""
         result = source_path("character_yaml", "protagonist")
-        assert result == "/data/metadata/manuscript/characters/protagonist.yaml"
+        expected = f"file:{MANUSCRIPT_CHARACTERS_DIR / 'protagonist.yaml'}"
+        assert result == expected
 
     def test_scene_yaml_path(self) -> None:
-        """Generates path to scene YAML metadata."""
+        """Generates absolute file: path to scene YAML metadata."""
         result = source_path("scene_yaml", "opening-scene")
-        assert result == "/data/metadata/manuscript/scenes/opening-scene.yaml"
+        expected = f"file:{MANUSCRIPT_SCENES_DIR / 'opening-scene.yaml'}"
+        assert result == expected
 
 
 # ==================== flexible_date_display ====================

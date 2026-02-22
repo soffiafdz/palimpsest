@@ -35,6 +35,19 @@ from typing import Dict, List, Optional
 # --- Third-party imports ---
 from jinja2 import Environment, pass_environment
 
+# --- Local imports ---
+from dev.core.paths import (
+    MD_DIR,
+    JOURNAL_YAML_DIR,
+    PEOPLE_YAML_DIR,
+    LOCATIONS_YAML_DIR,
+    CITIES_YAML_PATH,
+    ARCS_YAML_PATH,
+    MANUSCRIPT_CHAPTERS_DIR,
+    MANUSCRIPT_CHARACTERS_DIR,
+    MANUSCRIPT_SCENES_DIR,
+)
+
 
 @pass_environment
 def entry_date_short(env: Environment, date_str: str) -> str:
@@ -206,7 +219,7 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
 
     Expects keys in "YYYY-MM" format. Produces a table with years as
     rows, months as columns, and yearly totals. Months with zero entries
-    show "—". The highest count per year is bolded.
+    show "—".
 
     Args:
         monthly_counts: Mapping of "YYYY-MM" → entry count
@@ -216,7 +229,7 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
 
     Notes:
         - Future months in the current year show empty cells
-        - Bold formatting applied to peak month per year
+        - No bold formatting (breaks vimwiki concealment alignment)
     """
     if not monthly_counts:
         return ""
@@ -227,7 +240,7 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
         return ""
 
     month_abbrs = [calendar.month_abbr[m] for m in range(1, 13)]
-    cw = 6  # cell width — fits **XX** exactly, aligns all columns
+    cw = 4  # cell width — fits 2-digit counts, keeps table compact
 
     # Header
     lines = []
@@ -261,7 +274,7 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
                 else:
                     cells.append("—".center(cw))
             elif count == max_count and max_count > 1:
-                cells.append(f"**{count}**".center(cw))
+                cells.append(str(count).center(cw))
             else:
                 cells.append(str(count).center(cw))
 
@@ -275,8 +288,9 @@ def source_path(entity_type: str, identifier: str) -> str:
     """
     Compute path to source file for a given entity.
 
-    Used on wiki pages to link to journal markdown, metadata YAML,
-    and per-entity YAML metadata files.
+    Uses absolute filesystem paths with ``file:`` scheme so vimwiki
+    opens the file directly without appending ``.md`` or resolving
+    relative to the wiki root.
 
     Args:
         entity_type: One of "journal_md", "metadata_yaml",
@@ -286,28 +300,29 @@ def source_path(entity_type: str, identifier: str) -> str:
             or city_slug/loc_slug for locations)
 
     Returns:
-        Absolute path string from project root
+        ``file:`` URI with absolute filesystem path, or empty string
+        for unknown entity types
     """
     if entity_type == "journal_md":
         year = identifier[:4]
-        return f"/data/journal/content/md/{year}/{identifier}.md"
+        return f"file:{MD_DIR / year / f'{identifier}.md'}"
     elif entity_type == "metadata_yaml":
         year = identifier[:4]
-        return f"/data/metadata/journal/{year}/{identifier}.yaml"
+        return f"file:{JOURNAL_YAML_DIR / year / f'{identifier}.yaml'}"
     elif entity_type == "person_yaml":
-        return f"/data/metadata/people/{identifier}.yaml"
+        return f"file:{PEOPLE_YAML_DIR / f'{identifier}.yaml'}"
     elif entity_type == "location_yaml":
-        return f"/data/metadata/locations/{identifier}.yaml"
+        return f"file:{LOCATIONS_YAML_DIR / f'{identifier}.yaml'}"
     elif entity_type == "city_yaml":
-        return "/data/metadata/cities.yaml"
+        return f"file:{CITIES_YAML_PATH}"
     elif entity_type == "arc_yaml":
-        return "/data/metadata/arcs.yaml"
+        return f"file:{ARCS_YAML_PATH}"
     elif entity_type == "chapter_yaml":
-        return f"/data/metadata/manuscript/chapters/{identifier}.yaml"
+        return f"file:{MANUSCRIPT_CHAPTERS_DIR / f'{identifier}.yaml'}"
     elif entity_type == "character_yaml":
-        return f"/data/metadata/manuscript/characters/{identifier}.yaml"
+        return f"file:{MANUSCRIPT_CHARACTERS_DIR / f'{identifier}.yaml'}"
     elif entity_type == "scene_yaml":
-        return f"/data/metadata/manuscript/scenes/{identifier}.yaml"
+        return f"file:{MANUSCRIPT_SCENES_DIR / f'{identifier}.yaml'}"
     return ""
 
 
