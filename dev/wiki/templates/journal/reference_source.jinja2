@@ -10,15 +10,14 @@
 **URL:**
 [{{ url }}]({{ url }})
 {% endif %}
-{{ reference_count }} reference{{ "s" if reference_count != 1 else "" }}{% if first_referenced and last_referenced %} · {{ first_referenced | flexible_date }} – {{ last_referenced | flexible_date }}
-{% endif %}
+{{ reference_count | zpad }} reference{{ "s" if reference_count != 1 else "" }}{{ " · " ~ first_referenced | flexible_date ~ " – " ~ last_referenced | flexible_date if first_referenced and last_referenced else "" }}
 
 ---
 {% if has_refs_subpage %}
 
 ## Recent References
 
-[All references ({{ reference_count }})]({{ slug }}-refs)
+[All references ({{ reference_count | zpad }})]({{ slug }}-refs)
 {% for ref in recent_references %}
 
 ### {{ ref.entry_date | entry_date_display }}

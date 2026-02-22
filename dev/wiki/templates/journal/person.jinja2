@@ -7,19 +7,17 @@
 {% endif %}
 {% if relation %}
 
-**Relation:** {{ relation }}{% if tier == "narrator" %} | **Narrator**
-{% endif %}
+**Relation:** {{ relation }}{{ " | **Narrator**" if tier == "narrator" else "" }}
 {% endif %}
 {% if tier == "narrator" %}
 
 *Appears in all entries.* [Browse entries](/indexes/entry-index)
 {% elif tier == "frequent" %}
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}
-{% endif %}
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
 {% else %}
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
 {% endif %}
 
 ---
@@ -33,8 +31,7 @@
 **{{ group.relation }}:**
 {% endif %}
 {% for companion in group.companions %}
-- {{ companion.name | wikilink }}
-  {{ companion.count }}
+- {{ companion.count | zpad }} · {{ companion.name | wikilink }}
 {% endfor %}
 {% endfor %}
 {% endif %}
@@ -49,21 +46,19 @@
 
 **{{ nb.name }}**
 {% for loc in nb.locations %}
-- {{ loc.name | wikilink }}
-  {{ loc.count }}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}
 {% endfor %}
 {% else %}
 {% for loc in city.locations %}
-- {{ loc.name | wikilink }}
-  {{ loc.count }}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% endfor %}
 {% endif %}
 {% elif tier == "frequent" %}
 
-[All entries ({{ entry_count }})]({{ slug }}-entries)
+[All entries ({{ entry_count | zpad }})]({{ slug }}-entries)
 {% if places %}
 
 ---
@@ -77,14 +72,12 @@
 
 **{{ nb.name }}**
 {% for loc in nb.locations %}
-- {{ loc.name | wikilink }}
-  {{ loc.count }}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}
 {% endfor %}
 {% else %}
 {% for loc in city.locations %}
-- {{ loc.name | wikilink }}
-  {{ loc.count }}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% endfor %}
@@ -95,8 +88,7 @@
 
 ## Companions
 {% for companion in companions[:10] %}
-- {{ companion.name | wikilink }}
-  {{ companion.count }} shared
+- {{ companion.count | zpad }} · {{ companion.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% elif tier == "infrequent" %}
@@ -126,10 +118,7 @@
 
 ## Characters
 {% for character in characters %}
-- {{ character.name | wikilink }}
-{% if character.contribution %}
-  *{{ character.contribution }}*
-{% endif %}
+- {{ "*" ~ character.contribution ~ "* · " if character.contribution else "" }}{{ character.name | wikilink }}
 {% endfor %}
 {% endif %}
 

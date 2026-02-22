@@ -1,8 +1,7 @@
 # {{ name }}
 {% if role %}
 
-**Role:** {{ role }}{% if is_narrator %} · **Narrator**
-{% endif %}
+**Role:** {{ role }}{{ " · **Narrator**" if is_narrator else "" }}
 {% endif %}
 {% if description %}
 
@@ -16,17 +15,14 @@
 
 ## Based On
 {% for person in based_on %}
-- {{ person.person_name | wikilink }}
-  *({{ person.contribution }})*
+- *{{ person.contribution }}* · {{ person.person_name | wikilink }}
 {% endfor %}
 {% endif %}
 {% if chapters %}
 
 ## Chapters
 {% for ch in chapters %}
-- {{ ch.title | wikilink }}
-  {{ ch.type }} · {{ ch.status }}
-
+- {{ ch.type }} · {{ ch.status }} · {{ ch.title | wikilink }}
 {% endfor %}
 {% endif %}
 

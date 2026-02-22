@@ -5,6 +5,8 @@
   beneath with their own counts. Cities sorted by frequency.
 
   Context:
+    city_count: int
+    location_count: int
     cities: list of dicts:
       - name: str
       - country: str or None
@@ -15,16 +17,17 @@
 #}
 # Places
 
+{{ location_count | zpad }} locations in {{ city_count | zpad }} cities
+
 ---
 {% for city in cities %}
 
 ## {{ city.name | wikilink }}
-{{ city.entry_count }} entr{{ "y" if city.entry_count == 1 else "ies" }}{% if city.country %} · {{ city.country }}{% endif %}
+{{ city.entry_count | zpad }} entr{{ "y" if city.entry_count == 1 else "ies" }}{% if city.country %} · {{ city.country }}{% endif %}
 
 {% if city.locations %}
 {% for loc in city.locations %}
-- {{ loc.name | wikilink }}
-  {{ loc.entry_count }} entr{{ "y" if loc.entry_count == 1 else "ies" }}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% endfor %}

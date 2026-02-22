@@ -21,7 +21,7 @@
 {% for year_group in entries %}
 {% for month in year_group.months %}
 
-## {{ month.name }} · {{ month.count }} entr{{ "y" if month.count == 1 else "ies" }}
+## {{ month.name }} · {{ month.count | zpad }} entr{{ "y" if month.count == 1 else "ies" }}
 {% if month.weeks is defined %}
 {% for week in month.weeks %}
 

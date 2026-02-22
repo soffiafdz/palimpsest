@@ -1,8 +1,8 @@
 # {{ title }} — All References
 
-{{ reference_count }} reference{{ "s" if reference_count != 1 else "" }}
+{{ reference_count | zpad }} reference{{ "s" if reference_count != 1 else "" }}
 
 ---
 {% for y in year_summary %}
-- **{{ y.year }}** — [{{ y.count }} ref{{ "s" if y.count != 1 else "" }}]({{ slug }}-refs-{{ y.year }})
+- **{{ y.year }}** — [{{ y.count | zpad }} ref{{ "s" if y.count != 1 else "" }}]({{ slug }}-refs-{{ y.year }})
 {% endfor %}

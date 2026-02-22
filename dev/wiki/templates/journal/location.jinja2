@@ -1,11 +1,9 @@
 {% from "macros/entry_listing.jinja2" import render_entries %}
 # {{ name }}
 
-**City:**
-{{ city | wikilink }}
+**City:** {{ city | wikilink }}
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}
-{% endif %}
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
 
 ---
 {% if tier == "dashboard" %}
@@ -31,15 +29,14 @@
 {% endfor %}
 {% endif %}
 
-[All entries ({{ entry_count }})]({{ slug }}-entries)
+[All entries ({{ entry_count | zpad }})]({{ slug }}-entries)
 {% if frequent_people %}
 
 ---
 
 ## Frequent People
 {% for person in frequent_people %}
-- {{ person.name | wikilink }}
-  {{ person.count }}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% elif tier == "mid" %}
@@ -72,8 +69,7 @@
 
 ## Frequent People
 {% for person in frequent_people %}
-- {{ person.name | wikilink }}
-  {{ person.count }}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% elif tier == "minimal" %}

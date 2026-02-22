@@ -5,6 +5,7 @@
   Standalone events grouped in a separate section at the end.
 
   Context:
+    event_count: int
     arc_groups: list of dicts:
       - name: str (arc name, or "Standalone")
       - events: list of dicts:
@@ -13,6 +14,8 @@
           - entry_count: int
 #}
 # Events
+
+{{ event_count | zpad }} events
 
 ---
 {% for group in arc_groups %}
@@ -23,7 +26,6 @@
 ## {{ group.name | wikilink }}
 {% endif %}
 {% for event in group.events %}
-- {{ event.name | wikilink }}
-  {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }} · {{ event.entry_count }} entr{{ "y" if event.entry_count == 1 else "ies" }}
+- {{ event.scene_count | zpad }}s · {{ event.entry_count | zpad }}e · {{ event.name | wikilink }}
 {% endfor %}
 {% endfor %}

@@ -21,14 +21,13 @@
 #}
 # Motifs
 
-{{ motifs | length }} motifs · {{ total_instances }} total instances
+{{ motifs | length | zpad }} motifs · {{ total_instances | zpad }} total instances
 
 ---
 {% for motif in motifs %}
 
 ## {{ motif.name | wikilink }}
-{{ motif.instance_count }} instance{{ "s" if motif.instance_count != 1 else "" }}{% if motif.first_date and motif.last_date %} · {{ motif.first_date | flexible_date }} – {{ motif.last_date | flexible_date }}
-{% endif %}
+{{ motif.instance_count | zpad }} instance{{ "s" if motif.instance_count != 1 else "" }}{{ " · " ~ motif.first_date | flexible_date ~ " – " ~ motif.last_date | flexible_date if motif.first_date and motif.last_date else "" }}
 {% if motif.latest_description %}
 
 > {{ motif.latest_description }}

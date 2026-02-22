@@ -38,6 +38,12 @@ local function resolve_yaml_path(ctx)
 	local root = get_project_root()
 	local base = root .. "/data/metadata/"
 
+	-- Entry metadata: slug is YYYY-MM-DD, YAML at journal/YYYY/YYYY-MM-DD.yaml
+	if ctx.type == "entry" then
+		local year = ctx.slug:sub(1, 4)
+		return base .. "journal/" .. year .. "/" .. ctx.slug .. ".yaml"
+	end
+
 	-- Per-entity file
 	if YAML_PATHS[ctx.type] then
 		return base .. YAML_PATHS[ctx.type] .. "/" .. ctx.slug .. ".yaml"

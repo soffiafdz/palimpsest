@@ -30,7 +30,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 import calendar
 from datetime import date
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 # --- Third-party imports ---
 from jinja2 import Environment, pass_environment
@@ -213,6 +213,35 @@ def adaptive_list(items: List[str], threshold: int = 4) -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
+def month_display(months: List[Dict[str, Any]], chunk_size: int = 6) -> str:
+    """
+    Format month counts inline, split into rows for readability.
+
+    Takes a list of month dicts (name + count) and renders them
+    inline with mid-dot separators, splitting into rows of
+    ``chunk_size`` months for years with many active months.
+
+    Args:
+        months: List of dicts with ``name`` (str) and ``count`` (int)
+        chunk_size: Maximum months per row (default 6, i.e. semesters)
+
+    Returns:
+        One or more lines of inline month counts, e.g.::
+
+            **Jan** 6 · **Feb** 11 · **Mar** 24
+            **Apr** 25 · **May** 23 · **Jun** 12
+    """
+    if not months:
+        return ""
+    chunks = [months[i:i + chunk_size]
+              for i in range(0, len(months), chunk_size)]
+    lines = []
+    for chunk in chunks:
+        items = [f"**{m['name']}** {m['count']:02d}" for m in chunk]
+        lines.append(" · ".join(items))
+    return "\n".join(lines)
+
+
 def timeline_table(monthly_counts: Dict[str, int]) -> str:
     """
     Generate a markdown table showing monthly entry distribution.
@@ -263,7 +292,6 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
             row_counts.append(count)
 
         year_total = sum(row_counts)
-        max_count = max(row_counts) if row_counts else 0
 
         cells = []
         for month_idx, count in enumerate(row_counts):
@@ -273,12 +301,10 @@ def timeline_table(monthly_counts: Dict[str, int]) -> str:
                     cells.append(" " * cw)
                 else:
                     cells.append("—".center(cw))
-            elif count == max_count and max_count > 1:
-                cells.append(str(count).center(cw))
             else:
-                cells.append(str(count).center(cw))
+                cells.append(f"{count:02d}".center(cw))
 
-        row = f"| {year} |" + "|".join(cells) + f"| {year_total} |"
+        row = f"| {year} |" + "|".join(cells) + f"|  {year_total:03d}  |"
         lines.append(row)
 
     return "\n".join(lines)
@@ -390,3 +416,19 @@ def chunked_list(items: List[str], chunk_size: int = 3) -> List[List[str]]:
         List of lists, each containing up to chunk_size items
     """
     return [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]
+
+
+def zpad(value: int) -> str:
+    """
+    Zero-pad an integer to at least two digits.
+
+    Produces uniform-width counts for inline displays:
+    1 → "01", 9 → "09", 12 → "12", 100 → "100".
+
+    Args:
+        value: Integer count to format
+
+    Returns:
+        Zero-padded string, minimum two characters wide
+    """
+    return f"{value:02d}"

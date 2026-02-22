@@ -115,6 +115,8 @@ class WikiRenderer:
         self.env.filters["flexible_date"] = wiki_filters.flexible_date_display
         self.env.filters["thread_dates"] = wiki_filters.thread_date_range
         self.env.filters["chunked"] = wiki_filters.chunked_list
+        self.env.filters["month_display"] = wiki_filters.month_display
+        self.env.filters["zpad"] = wiki_filters.zpad
 
     def render(
         self,

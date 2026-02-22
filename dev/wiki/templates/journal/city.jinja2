@@ -4,8 +4,7 @@
 **Country:** {{ country }}
 {% endif %}
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }} · {{ location_count }} location{{ "s" if location_count != 1 else "" }}{% if date_range %} · {{ date_range }}
-{% endif %}
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }} · {{ location_count | zpad }} location{{ "s" if location_count != 1 else "" }}{{ " · " ~ date_range if date_range else "" }}
 
 ---
 {% if timeline %}
@@ -20,8 +19,7 @@
 
 ## Top Locations
 {% for loc in top_locations %}
-- {{ loc.name | wikilink }}
-  {{ loc.entry_count }} entr{{ "y" if loc.entry_count == 1 else "ies" }}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% if frequent_people %}
@@ -30,8 +28,7 @@
 
 ## Frequent people
 {% for person in frequent_people %}
-- {{ person.name | wikilink }}
-  {{ person.count }}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
 {% endfor %}
 {% endif %}
 

@@ -4,8 +4,7 @@
 {{ description }}
 {% endif %}
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}{% if date_range %} · {{ date_range }}
-{% endif %}
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
 
 ---
 {% if timeline %}
@@ -17,13 +16,12 @@
 ---
 {% endif %}
 
-[All entries ({{ entry_count }})]({{ slug }}-entries)
+[All entries ({{ entry_count | zpad }})]({{ slug }}-entries)
 {% if events %}
 
 ## Events
 {% for event in events %}
-- {{ event.name | wikilink }}
-  {{ event.scene_count }} scene{{ "s" if event.scene_count != 1 else "" }}
+- {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% if chapters %}
@@ -32,8 +30,7 @@
 
 ## Chapters
 {% for ch in chapters %}
-- {{ ch.title | wikilink }}
-  *{{ ch.type }}*
+- *{{ ch.type }}* · {{ ch.title | wikilink }}
 {% endfor %}
 {% endif %}
 {% if frequent_people %}
@@ -42,8 +39,7 @@
 
 ## Key People
 {% for person in frequent_people %}
-- {{ person.name | wikilink }}
-  {{ person.count }}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
 {% endfor %}
 {% endif %}
 

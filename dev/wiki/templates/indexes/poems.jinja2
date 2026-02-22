@@ -5,6 +5,7 @@
   appearance dates.
 
   Context:
+    poem_count: int
     poems: list of dicts:
       - title: str
       - version_count: int
@@ -12,13 +13,14 @@
 #}
 # Poems
 
+{{ poem_count | zpad }} poems
+
 ---
 {% if poems %}
 {% for poem in poems %}
-- {{ poem.title | wikilink }}
-  {{ poem.version_count }} version{{ "s" if poem.version_count != 1 else "" }}
+
+- {{ poem.version_count | zpad }} · {{ poem.title | wikilink }}
 {% if poem.first_appearance %}  first: {{ poem.first_appearance | entry_date_display }}
 {% endif %}
-
 {% endfor %}
 {% endif %}

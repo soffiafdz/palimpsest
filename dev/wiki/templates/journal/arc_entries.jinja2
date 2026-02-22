@@ -1,6 +1,6 @@
 # {{ name }} — Entries
 
-{{ entry_count }} entr{{ "y" if entry_count == 1 else "ies" }}
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
 
 ---
 {% if arc_event_spine %}

@@ -6,6 +6,7 @@
   each group.
 
   Context:
+    source_count: int
     groups: dict of str (type) -> list of dicts:
       - title: str
       - author: str or None
@@ -13,12 +14,13 @@
 #}
 # References
 
+{{ source_count | zpad }} sources
+
 ---
 {% for type_name, sources in groups.items() %}
 
 ## {{ type_name | replace("_", " ") | title }}
 {% for source in sources %}
-- {{ source.title | wikilink }}
-  {% if source.author %}{{ source.author }} · {% endif %}{{ source.reference_count }} reference{{ "s" if source.reference_count != 1 else "" }}
+- {{ source.reference_count | zpad }}{{ " · " ~ source.author if source.author else "" }} · {{ source.title | wikilink }}
 {% endfor %}
 {% endfor %}

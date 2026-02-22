@@ -4,6 +4,7 @@
   All arcs sorted by entry count with date range and description.
 
   Context:
+    arc_count: int
     arcs: list of dicts:
       - name: str
       - description: str or None
@@ -13,12 +14,13 @@
 #}
 # Arcs
 
+{{ arc_count | zpad }} arcs
+
 ---
 {% for arc in arcs %}
 
 ## {{ arc.name | wikilink }}
-{{ arc.entry_count }} entr{{ "y" if arc.entry_count == 1 else "ies" }}{% if arc.first_date and arc.last_date %} · {{ arc.first_date | flexible_date }} – {{ arc.last_date | flexible_date }}
-{% endif %}
+{{ arc.entry_count | zpad }} entr{{ "y" if arc.entry_count == 1 else "ies" }}{{ " · " ~ arc.first_date | flexible_date ~ " – " ~ arc.last_date | flexible_date if arc.first_date and arc.last_date else "" }}
 {% if arc.description %}
 {{ arc.description }}
 {% endif %}

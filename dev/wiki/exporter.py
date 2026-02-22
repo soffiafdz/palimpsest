@@ -1099,7 +1099,12 @@ class WikiExporter:
                     if loc.entry_count >= 3
                 ],
             })
-        return {"cities": result}
+        total_locations = sum(len(city.locations) for city in cities)
+        return {
+            "cities": result,
+            "city_count": len(result),
+            "location_count": total_locations,
+        }
 
     def _build_entries_index_context(
         self, session: Session
@@ -1204,7 +1209,8 @@ class WikiExporter:
         if unlinked:
             result.append({"name": "Standalone", "events": _strip_sort_key(unlinked)})
 
-        return {"arc_groups": result}
+        total_events = sum(len(g["events"]) for g in result)
+        return {"arc_groups": result, "event_count": total_events}
 
     def _build_arcs_index_context(
         self, session: Session
@@ -1220,6 +1226,7 @@ class WikiExporter:
         """
         arcs = session.query(Arc).all()
         return {
+            "arc_count": len(arcs),
             "arcs": [
                 {
                     "name": arc.name,
@@ -1356,6 +1363,7 @@ class WikiExporter:
         """
         poems = session.query(Poem).all()
         return {
+            "poem_count": len(poems),
             "poems": [
                 {
                     "title": p.title,
@@ -1400,7 +1408,8 @@ class WikiExporter:
                 key=lambda s: s["reference_count"], reverse=True
             )
 
-        return {"groups": dict(groups)}
+        total_sources = sum(len(srcs) for srcs in groups.values())
+        return {"groups": dict(groups), "source_count": total_sources}
 
     def _build_manuscript_index_context(
         self, session: Session

@@ -6,7 +6,7 @@
 {% else %}
 *Standalone*
 {% endif %}
-{{ scene_count }} scene{{ "s" if scene_count != 1 else "" }}
+{{ scene_count | zpad }} scene{{ "s" if scene_count != 1 else "" }}
 
 ---
 {% for scene in scenes %}

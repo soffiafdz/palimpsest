@@ -21,8 +21,6 @@
 {% for ys in year_summaries %}
 
 ## {{ ys.year }}
-[{{ ys.count }} entr{{ "y" if ys.count == 1 else "ies" }}][/indexes/entries-{{ ys.year }}]
-{% for m in ys.months %}
-- **{{ m.name }}** {{ m.count }}
-{% endfor %}
+[{{ ys.count | zpad }} entr{{ "y" if ys.count == 1 else "ies" }}][/indexes/entries-{{ ys.year }}]
+{{ ys.months | month_display }}
 {% endfor %}

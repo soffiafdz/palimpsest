@@ -85,6 +85,7 @@ function M.available_commands(context)
 
 	-- Entity types with metadata YAML (includes all manuscript types)
 	local yaml_types = {
+		entry = true,
 		person = true,
 		location = true,
 		city = true,
