@@ -98,6 +98,16 @@ function M.available_commands(context)
 		table.insert(commands, "PalimpsestEdit")
 	end
 
+	-- Entity types with curation files
+	local curation_types = {
+		person = true,
+		location = true,
+		city = true,
+	}
+	if curation_types[context.type] then
+		table.insert(commands, "PalimpsestEditCuration")
+	end
+
 	return commands
 end
 

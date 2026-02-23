@@ -26,6 +26,13 @@ local YAML_FILES = {
 	arc = "arcs.yaml",
 }
 
+-- Map context type to curation YAML file
+local CURATION_FILES = {
+	location = "neighborhoods.yaml",
+	city = "neighborhoods.yaml",
+	person = "relation_types.yaml",
+}
+
 --- Resolve the YAML path for the current entity.
 ---
 --- @param ctx table Context from context.detect()
@@ -87,6 +94,41 @@ function M.edit()
 	end
 
 	local title = string.format(" %s: %s ", ctx.type, ctx.slug or "")
+	float.open(yaml_path, { title = title })
+end
+
+--- Edit the curation file for the current page's entity type.
+---
+--- Opens neighborhoods.yaml when on a location or city page,
+--- relation_types.yaml when on a person page.
+function M.edit_curation()
+	local ctx = context_mod.detect()
+	if not ctx then
+		vim.notify("Not on a wiki entity page", vim.log.levels.WARN)
+		return
+	end
+
+	local curation_file = CURATION_FILES[ctx.type]
+	if not curation_file then
+		vim.notify(
+			"No curation file for entity type: " .. (ctx.type or "unknown"),
+			vim.log.levels.WARN
+		)
+		return
+	end
+
+	local root = get_project_root()
+	local yaml_path = root .. "/data/metadata/" .. curation_file
+
+	if vim.fn.filereadable(yaml_path) == 0 then
+		vim.notify(
+			"Curation file not found: " .. yaml_path .. "\nRun :PalimpsestMetadataExport first",
+			vim.log.levels.WARN
+		)
+		return
+	end
+
+	local title = string.format(" %s ", curation_file)
 	float.open(yaml_path, { title = title })
 end
 

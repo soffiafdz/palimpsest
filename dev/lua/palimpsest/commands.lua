@@ -465,6 +465,13 @@ function M.setup()
 		desc = "Edit current entity metadata in floating window",
 	})
 
+	-- Curation file edit command (opens neighborhoods/relation_types YAML)
+	vim.api.nvim_create_user_command("PalimpsestEditCuration", function()
+		require("palimpsest.entity").edit_curation()
+	end, {
+		desc = "Edit curation file for current entity type",
+	})
+
 	-- Entity new command
 	vim.api.nvim_create_user_command("PalimpsestNew", function(opts)
 		local entity_type = opts.args ~= "" and opts.args or nil
@@ -505,7 +512,11 @@ function M.setup()
 		nargs = "?",
 		desc = "Export entity metadata to YAML files",
 		complete = function()
-			return { "people", "locations", "cities", "arcs", "chapters", "characters", "scenes" }
+			return {
+				"people", "locations", "cities", "arcs",
+				"chapters", "characters", "scenes",
+				"neighborhoods", "relation_types",
+			}
 		end,
 	})
 

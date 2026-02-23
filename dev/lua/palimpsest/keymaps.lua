@@ -28,6 +28,7 @@ function M.setup()
 				-- Entity commands (YAML floating window)
 				{ "<leader>pe", group = "entity", icon = "󰕘" },
 				{ "<leader>pee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)", icon = "󰏫" },
+				{ "<leader>pec", "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation file", icon = "󰒓" },
 				{ "<leader>pen", "<cmd>PalimpsestNew<cr>", desc = "New entity...", icon = "" },
 				{ "<leader>pes", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene", icon = "󰁅" },
 				{ "<leader>peb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character", icon = "󰌹" },
@@ -93,6 +94,7 @@ function M.setup()
 				-- Entity commands (YAML floating window)
 				{ "<leader>ve", group = "entity", icon = "󰕘" },
 				{ "<leader>vee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)", icon = "󰏫" },
+				{ "<leader>vec", "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation file", icon = "󰒓" },
 				{ "<leader>ven", "<cmd>PalimpsestNew<cr>", desc = "New entity...", icon = "" },
 				{ "<leader>ves", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene", icon = "󰁅" },
 				{ "<leader>veb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character", icon = "󰌹" },
