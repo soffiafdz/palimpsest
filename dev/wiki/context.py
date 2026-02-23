@@ -75,8 +75,6 @@ FREQUENT_PERSON_THRESHOLD = 20
 FREQUENT_LOCATION_THRESHOLD = 20
 MID_LOCATION_THRESHOLD = 3
 TAG_DASHBOARD_THRESHOLD = 5
-TAG_PAGE_THRESHOLD = 2
-THEME_PAGE_THRESHOLD = 2
 REFSOURCE_SUBPAGE_THRESHOLD = 15
 MOTIF_SUBPAGE_THRESHOLD = 15
 EVENT_SUBPAGE_THRESHOLD = 15
@@ -232,20 +230,35 @@ class WikiContextBuilder:
         if not locations and not cities:
             return []
 
-        # Group locations by city
-        city_locs: Dict[str, List[str]] = defaultdict(list)
+        # Group locations by city, then by neighborhood
+        city_data: Dict[str, Dict[Optional[str], List[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for loc in locations:
-            city_locs[loc.city.name].append(loc.name)
+            city_data[loc.city.name][loc.neighborhood].append(loc.name)
 
-        # Sort location names within each city
         result = []
-        city_names = sorted(city_locs.keys())
-        for city_name in city_names:
-            locs = sorted(city_locs[city_name])
+        for city_name in sorted(city_data.keys()):
+            hood_groups = city_data[city_name]
+            neighborhoods = []
+            ungrouped: List[str] = []
+
+            for hood_name, locs in sorted(
+                hood_groups.items(),
+                key=lambda x: (x[0] is None, x[0] or ""),
+            ):
+                if hood_name is None:
+                    ungrouped = sorted(locs)
+                else:
+                    neighborhoods.append({
+                        "name": hood_name,
+                        "locations": sorted(locs),
+                    })
+
             result.append({
                 "name": city_name,
-                "locations": locs,
-                "neighborhoods": [],  # Neighborhoods not yet in schema
+                "locations": ungrouped,
+                "neighborhoods": neighborhoods,
             })
 
         return result
@@ -493,6 +506,9 @@ class WikiContextBuilder:
                 person.first_appearance, person.last_appearance
             )
             base["arc_event_spine"] = self._build_arc_event_spine(person)
+            base["entries"] = self._build_entry_listing(
+                sorted(person.entries, key=lambda e: e.date, reverse=True)
+            )
             base["entries_outside_events"] = (
                 self._build_entries_outside_events(person)
             )
@@ -587,25 +603,50 @@ class WikiContextBuilder:
         Returns:
             List of city dicts with location lists and counts
         """
-        loc_counts: Counter = Counter()
+        loc_entries: Dict[tuple, set] = defaultdict(set)
+        loc_hoods: Dict[tuple, Optional[str]] = {}
         for scene in person.scenes:
             for loc in scene.locations:
-                loc_counts[(loc.city.name, loc.name)] = (
-                    loc_counts.get((loc.city.name, loc.name), 0) + 1
-                )
+                key = (loc.city.name, loc.name)
+                loc_entries[key].add(scene.entry_id)
+                loc_hoods[key] = loc.neighborhood
+        loc_counts: Counter = Counter(
+            {key: len(eids) for key, eids in loc_entries.items()}
+        )
 
-        # Group by city
-        city_locs: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        # Group by city, then by neighborhood
+        city_hood_locs: Dict[
+            str, Dict[Optional[str], List[Dict[str, Any]]]
+        ] = defaultdict(lambda: defaultdict(list))
         for (city_name, loc_name), count in loc_counts.most_common():
-            city_locs[city_name].append({"name": loc_name, "count": count})
+            hood = loc_hoods.get((city_name, loc_name))
+            city_hood_locs[city_name][hood].append({
+                "name": loc_name, "count": count,
+            })
 
         result = []
-        for city_name in sorted(city_locs.keys()):
-            locs = city_locs[city_name][:limit]
+        for city_name in sorted(city_hood_locs.keys()):
+            hood_groups = city_hood_locs[city_name]
+            neighborhoods = []
+            ungrouped: List[Dict[str, Any]] = []
+
+            for hood_name, locs in sorted(
+                hood_groups.items(),
+                key=lambda x: (x[0] is None, x[0] or ""),
+            ):
+                trimmed = locs[:limit]
+                if hood_name is None:
+                    ungrouped = trimmed
+                else:
+                    neighborhoods.append({
+                        "name": hood_name,
+                        "locations": trimmed,
+                    })
+
             result.append({
                 "name": city_name,
-                "neighborhoods": [],
-                "locations": locs,
+                "neighborhoods": neighborhoods,
+                "locations": ungrouped,
             })
         return result
 
@@ -835,6 +876,7 @@ class WikiContextBuilder:
         base: Dict[str, Any] = {
             "name": location.name,
             "city": location.city.name,
+            "neighborhood": location.neighborhood,
             "slug": loc_slug,
             "metadata_id": f"{city_slug}/{loc_slug}",
             "entry_count": entry_count,
@@ -858,6 +900,11 @@ class WikiContextBuilder:
                 location.entries
             )
             base["events_here"] = self._build_location_events(location)
+            base["entries"] = self._build_entry_listing(
+                sorted(
+                    location.entries, key=lambda e: e.date, reverse=True
+                )
+            )
             base["entries_outside_events"] = (
                 self._build_location_entries_outside_events(location)
             )
@@ -947,18 +994,27 @@ class WikiContextBuilder:
         """
         Compute frequent people at a location via scene joins.
 
+        For each person, collects the entry IDs where they co-occur
+        with this location, then resolves those to sorted date strings.
+        Templates use ``entry_dates`` for inline display (<=5 entries)
+        or link to a subpage (>5 entries).
+
         Args:
             location: Location entity
             limit: Max people to return
 
         Returns:
-            List of dicts with name and count, narrator excluded
+            List of dicts with keys: name, slug, count, entry_dates,
+            entry_ids. Narrator excluded.
         """
-        people_counts: Counter = Counter()
+        people_entries: Dict[int, set] = defaultdict(set)
         for scene in location.scenes:
             for person in scene.people:
                 if person.relation_type != RelationType.SELF:
-                    people_counts[person.id] += 1
+                    people_entries[person.id].add(scene.entry_id)
+        people_counts: Counter = Counter(
+            {pid: len(eids) for pid, eids in people_entries.items()}
+        )
 
         top_ids = [pid for pid, _ in people_counts.most_common(limit)]
         people_by_id = {
@@ -968,11 +1024,36 @@ class WikiContextBuilder:
             ).all()
         } if top_ids else {}
 
-        return [
-            {"name": people_by_id[pid].display_name, "count": count}
-            for pid, count in people_counts.most_common(limit)
-            if pid in people_by_id
-        ]
+        # Resolve entry dates for each person
+        all_entry_ids: Set[int] = set()
+        for pid in top_ids:
+            all_entry_ids.update(people_entries[pid])
+        entry_date_map: Dict[int, str] = {}
+        if all_entry_ids:
+            for entry in self.session.query(Entry).filter(
+                Entry.id.in_(all_entry_ids)
+            ).all():
+                entry_date_map[entry.id] = entry.date.isoformat()
+
+        result = []
+        for pid, count in people_counts.most_common(limit):
+            person = people_by_id.get(pid)
+            if not person:
+                continue
+            eids = people_entries[pid]
+            dates = sorted(
+                (entry_date_map[eid] for eid in eids if eid in entry_date_map),
+                reverse=True,
+            )
+            result.append({
+                "name": person.display_name,
+                "slug": person.slug,
+                "count": count,
+                "entry_dates": dates,
+                "entry_ids": sorted(eids),
+            })
+
+        return result
 
     def _build_location_entries_outside_events(
         self, location: Location
@@ -1016,6 +1097,33 @@ class WikiContextBuilder:
         locations = sorted(
             city.locations, key=lambda l: l.entry_count, reverse=True
         )
+
+        # Group locations by neighborhood
+        hood_locs: Dict[Optional[str], List[Dict[str, Any]]] = defaultdict(
+            list
+        )
+        for loc in locations:
+            hood_locs[loc.neighborhood].append({
+                "name": loc.name,
+                "entry_count": loc.entry_count,
+            })
+
+        neighborhoods = []
+        ungrouped: List[Dict[str, Any]] = []
+        for hood_name, locs in sorted(
+            hood_locs.items(),
+            key=lambda x: (x[0] is None, x[0] or ""),
+        ):
+            if hood_name is None:
+                ungrouped = locs
+            else:
+                neighborhoods.append({
+                    "name": hood_name,
+                    "locations": locs,
+                })
+
+        any_neighborhoods = len(neighborhoods) > 0
+
         return {
             "name": city.name,
             "country": city.country,
@@ -1033,14 +1141,9 @@ class WikiContextBuilder:
                 city.first_mentioned, city.last_mentioned
             ),
             "timeline": self._compute_monthly_counts(city.entries),
-            "top_locations": [
-                {
-                    "name": loc.name,
-                    "entry_count": loc.entry_count,
-                }
-                for loc in locations[:20]
-                if loc.entry_count >= MID_LOCATION_THRESHOLD
-            ],
+            "any_neighborhoods": any_neighborhoods,
+            "neighborhoods": neighborhoods,
+            "top_locations": ungrouped,
             "frequent_people": self._build_city_people(city),
         }
 
@@ -1190,6 +1293,7 @@ class WikiContextBuilder:
                 [
                     {
                         "name": e.name,
+                        "entry_count": e.entry_count,
                         "scene_count": e.scene_count,
                         "entry_dates": sorted(
                             [en.date.isoformat() for en in e.entries]

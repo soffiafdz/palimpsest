@@ -67,8 +67,6 @@ from dev.wiki.context import (
     FREQUENT_PERSON_THRESHOLD,
     FREQUENT_LOCATION_THRESHOLD,
     TAG_DASHBOARD_THRESHOLD,
-    TAG_PAGE_THRESHOLD,
-    THEME_PAGE_THRESHOLD,
     REFSOURCE_SUBPAGE_THRESHOLD,
     MOTIF_SUBPAGE_THRESHOLD,
     EVENT_SUBPAGE_THRESHOLD,
@@ -491,6 +489,8 @@ class WikiExporter:
         Generate entry subpages for dashboard locations (20+ entries).
 
         Generates a year-index subpage plus per-year entry pages.
+        Also generates person-at-location subpages for frequent people
+        with more than 5 co-occurring entries.
 
         Args:
             session: Active SQLAlchemy session
@@ -522,6 +522,37 @@ class WikiExporter:
                 "journal/location_entries.jinja2", ctx, output_path
             )
             self.generated_files.add(output_path)
+
+            # Generate person-at-location subpages (>5 entries)
+            for person_data in ctx.get("frequent_people", []):
+                if person_data["count"] <= 5:
+                    continue
+
+                entry_ids = person_data.get("entry_ids", [])
+                if not entry_ids:
+                    continue
+
+                person_entries = sorted(
+                    session.query(Entry).filter(
+                        Entry.id.in_(entry_ids)
+                    ).all(),
+                    key=lambda e: e.date,
+                    reverse=True,
+                )
+
+                person_ctx = {
+                    "location_name": location.name,
+                    "person_name": person_data["name"],
+                    "entry_count": len(person_entries),
+                    "entries": builder._build_entry_listing(person_entries),
+                }
+                person_slug = person_data["slug"]
+                person_path = base_dir / f"{loc_slug}-people-{person_slug}.md"
+                self.renderer.render_to_file(
+                    "journal/location_person_entries.jinja2",
+                    person_ctx, person_path,
+                )
+                self.generated_files.add(person_path)
 
     def _generate_tag_subpages(
         self,
@@ -1267,7 +1298,6 @@ class WikiExporter:
                 for t in sorted(
                     tags, key=lambda t: t.usage_count, reverse=True
                 )
-                if t.usage_count >= 2
             ],
         }
 
@@ -1291,7 +1321,6 @@ class WikiExporter:
                 for t in sorted(
                     themes, key=lambda t: t.usage_count, reverse=True
                 )
-                if t.usage_count >= 2
             ],
         }
 
