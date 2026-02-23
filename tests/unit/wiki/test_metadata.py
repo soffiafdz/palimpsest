@@ -528,3 +528,172 @@ class TestMetadataImporter:
         stats = importer.import_all(entity_type="people")
         assert stats["imported"] == 2
         assert stats["errors"] == 0
+
+
+# ==================== Curation File Tests ====================
+
+class TestNeighborhoodExportImport:
+    """Tests for neighborhoods.yaml curation file."""
+
+    def test_export_neighborhoods(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export generates neighborhoods.yaml grouped by city slug."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_neighborhoods()
+
+        path = metadata_output / "neighborhoods.yaml"
+        assert path.is_file()
+
+        data = yaml.safe_load(path.read_text())
+        assert "montreal" in data
+        assert "cafe-olimpico" in data["montreal"]
+        assert "home" in data["montreal"]
+
+    def test_import_neighborhoods_updates_db(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import from neighborhoods.yaml updates location records."""
+        # Write curation file
+        neighborhoods_dir = metadata_output
+        neighborhoods_dir.mkdir(parents=True, exist_ok=True)
+        path = neighborhoods_dir / "neighborhoods.yaml"
+        data = {
+            "montreal": {
+                "cafe-olimpico": "Mile End",
+                "home": None,
+            }
+        }
+        path.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(path)
+        assert len(diagnostics) == 0
+
+        # Verify DB
+        with test_db.session_scope() as session:
+            cafe = session.query(Location).filter(
+                Location.name == "Café Olimpico"
+            ).first()
+            assert cafe.neighborhood == "Mile End"
+
+            home = session.query(Location).filter(
+                Location.name == "Home"
+            ).first()
+            assert home.neighborhood is None
+
+    def test_import_neighborhoods_clears_value(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Null values in neighborhoods.yaml clear existing neighborhood."""
+        # First set a neighborhood
+        with test_db.session_scope() as session:
+            cafe = session.query(Location).filter(
+                Location.name == "Café Olimpico"
+            ).first()
+            cafe.neighborhood = "Mile End"
+            session.commit()
+
+        # Import with null
+        path = metadata_output / "neighborhoods.yaml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {"montreal": {"cafe-olimpico": None}}
+        path.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        importer.import_file(path)
+
+        with test_db.session_scope() as session:
+            cafe = session.query(Location).filter(
+                Location.name == "Café Olimpico"
+            ).first()
+            assert cafe.neighborhood is None
+
+    def test_location_export_includes_neighborhood(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Per-entity location export includes neighborhood when set."""
+        with test_db.session_scope() as session:
+            cafe = session.query(Location).filter(
+                Location.name == "Café Olimpico"
+            ).first()
+            cafe.neighborhood = "Mile End"
+            session.commit()
+
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_locations()
+
+        loc_file = metadata_output / "locations" / "montreal" / "cafe-olimpico.yaml"
+        assert loc_file.is_file()
+        data = yaml.safe_load(loc_file.read_text())
+        assert data["neighborhood"] == "Mile End"
+
+
+class TestRelationTypesExportImport:
+    """Tests for relation_types.yaml curation file."""
+
+    def test_export_relation_types(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export generates relation_types.yaml with person slugs."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_relation_types()
+
+        path = metadata_output / "relation_types.yaml"
+        assert path.is_file()
+
+        data = yaml.safe_load(path.read_text())
+        assert "clara_dupont" in data
+        assert data["clara_dupont"] == "romantic"
+        assert "sofia_fernandez" in data
+        assert data["sofia_fernandez"] == "self"
+
+    def test_import_relation_types_updates_db(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import from relation_types.yaml updates person records."""
+        path = metadata_output / "relation_types.yaml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "clara_dupont": "friend",
+            "sofia_fernandez": "self",
+        }
+        path.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(path)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            clara = session.query(Person).filter(
+                Person.slug == "clara_dupont"
+            ).first()
+            assert clara.relation_type == RelationType.FRIEND
+
+    def test_import_relation_types_clears_value(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Null values in relation_types.yaml clear existing relation_type."""
+        path = metadata_output / "relation_types.yaml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {"clara_dupont": None}
+        path.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        importer.import_file(path)
+
+        with test_db.session_scope() as session:
+            clara = session.query(Person).filter(
+                Person.slug == "clara_dupont"
+            ).first()
+            assert clara.relation_type is None
+
+    def test_export_all_includes_curation_files(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """export_all generates both curation files."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all()
+
+        assert (metadata_output / "neighborhoods.yaml").is_file()
+        assert (metadata_output / "relation_types.yaml").is_file()

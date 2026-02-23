@@ -26,6 +26,8 @@ from dev.core.paths import (
     LOCATIONS_YAML_DIR,
     CITIES_YAML_PATH,
     ARCS_YAML_PATH,
+    NEIGHBORHOODS_YAML_PATH,
+    RELATION_TYPES_YAML_PATH,
     MANUSCRIPT_CHAPTERS_DIR,
     MANUSCRIPT_CHARACTERS_DIR,
     MANUSCRIPT_SCENES_DIR,
@@ -340,6 +342,18 @@ class TestSourcePath:
         """Generates absolute file: path to scene YAML metadata."""
         result = source_path("scene_yaml", "opening-scene")
         expected = f"file:{MANUSCRIPT_SCENES_DIR / 'opening-scene.yaml'}"
+        assert result == expected
+
+    def test_neighborhoods_yaml_path(self) -> None:
+        """Generates absolute file: path to neighborhoods curation YAML."""
+        result = source_path("neighborhoods_yaml", "")
+        expected = f"file:{NEIGHBORHOODS_YAML_PATH}"
+        assert result == expected
+
+    def test_relation_types_yaml_path(self) -> None:
+        """Generates absolute file: path to relation_types curation YAML."""
+        result = source_path("relation_types_yaml", "")
+        expected = f"file:{RELATION_TYPES_YAML_PATH}"
         assert result == expected
 
 

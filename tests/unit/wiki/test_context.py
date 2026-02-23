@@ -1146,3 +1146,97 @@ class TestEventSorting:
         # Verify chronological order
         event_names = [e["name"] for e in events]
         assert event_names.index("Early Event") < event_names.index("Late Event")
+
+
+# ==================== Neighborhood Context ====================
+
+class TestNeighborhoodContext:
+    """Tests for neighborhood field in context builders."""
+
+    def test_location_context_includes_neighborhood(
+        self, builder, db_session, montreal
+    ):
+        """Location context includes neighborhood when set."""
+        loc = Location(
+            name="Café Test", city_id=montreal.id, neighborhood="Mile End",
+        )
+        db_session.add(loc)
+        db_session.flush()
+
+        entry = Entry(
+            date=date(2024, 7, 1), file_path="2024/2024-07-01.md",
+        )
+        db_session.add(entry)
+        db_session.flush()
+        entry.locations.append(loc)
+        db_session.flush()
+
+        ctx = builder.build_location_context(loc)
+        assert ctx["neighborhood"] == "Mile End"
+
+    def test_location_context_neighborhood_none(self, builder, cafe, entry_nov8):
+        """Location without neighborhood has None."""
+        ctx = builder.build_location_context(cafe)
+        assert ctx["neighborhood"] is None
+
+    def test_places_groups_by_neighborhood(
+        self, builder, db_session, montreal
+    ):
+        """_build_places groups locations by neighborhood within city."""
+        loc1 = Location(
+            name="Spot A", city_id=montreal.id, neighborhood="Mile End",
+        )
+        loc2 = Location(
+            name="Spot B", city_id=montreal.id, neighborhood="Mile End",
+        )
+        loc3 = Location(
+            name="Spot C", city_id=montreal.id,
+        )
+        db_session.add_all([loc1, loc2, loc3])
+        db_session.flush()
+
+        result = builder._build_places(
+            [loc1, loc2, loc3], [montreal],
+        )
+        assert len(result) == 1
+        city = result[0]
+        assert city["name"] == "Montreal"
+        assert len(city["neighborhoods"]) == 1
+        assert city["neighborhoods"][0]["name"] == "Mile End"
+        assert sorted(city["neighborhoods"][0]["locations"]) == ["Spot A", "Spot B"]
+        assert city["locations"] == ["Spot C"]
+
+    def test_city_context_neighborhood_grouping(
+        self, builder, db_session, montreal
+    ):
+        """City context groups locations by neighborhood."""
+        for i in range(4):
+            loc = Location(
+                name=f"Place {i}", city_id=montreal.id,
+                neighborhood="Plateau",
+            )
+            db_session.add(loc)
+            db_session.flush()
+            for j in range(3):
+                entry = Entry(
+                    date=date(2024, 8, i * 4 + j + 1),
+                    file_path=f"2024/2024-08-{i*4+j+1:02d}.md",
+                )
+                db_session.add(entry)
+                db_session.flush()
+                entry.locations.append(loc)
+                entry.cities.append(montreal)
+        db_session.flush()
+
+        ctx = builder.build_city_context(montreal)
+        assert ctx["any_neighborhoods"] is True
+        assert len(ctx["neighborhoods"]) == 1
+        assert ctx["neighborhoods"][0]["name"] == "Plateau"
+
+    def test_city_context_no_neighborhoods(
+        self, builder, montreal, entry_nov8, cafe
+    ):
+        """City without neighborhoods uses flat layout."""
+        ctx = builder.build_city_context(montreal)
+        assert ctx["any_neighborhoods"] is False
+        assert ctx["neighborhoods"] == []
