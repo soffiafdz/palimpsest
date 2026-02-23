@@ -1101,13 +1101,14 @@ class WikiExporter:
         """
         Build context for Places index page.
 
-        Nests locations under cities.
+        Nests locations under cities, grouped by neighborhood when
+        neighborhoods are assigned. Falls back to flat list otherwise.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with cities and their locations
+            Dict with cities containing neighborhoods and locations
         """
         cities = session.query(City).all()
         result = []
@@ -1117,18 +1118,38 @@ class WikiExporter:
                 key=lambda l: l.entry_count,
                 reverse=True,
             )
+
+            hood_locs: Dict[Optional[str], List[Dict[str, Any]]] = (
+                defaultdict(list)
+            )
+            for loc in locs:
+                if loc.entry_count >= 3:
+                    hood_locs[loc.neighborhood].append({
+                        "name": loc.name,
+                        "entry_count": loc.entry_count,
+                    })
+
+            neighborhoods = []
+            ungrouped: List[Dict[str, Any]] = []
+            for hood_name, hood_locations in sorted(
+                hood_locs.items(),
+                key=lambda x: (x[0] is None, x[0] or ""),
+            ):
+                if hood_name is None:
+                    ungrouped = hood_locations
+                else:
+                    neighborhoods.append({
+                        "name": hood_name,
+                        "locations": hood_locations,
+                    })
+
             result.append({
                 "name": city.name,
                 "country": city.country,
                 "entry_count": city.entry_count,
-                "locations": [
-                    {
-                        "name": loc.name,
-                        "entry_count": loc.entry_count,
-                    }
-                    for loc in locs
-                    if loc.entry_count >= 3
-                ],
+                "any_neighborhoods": len(neighborhoods) > 0,
+                "neighborhoods": neighborhoods,
+                "locations": ungrouped,
             })
         total_locations = sum(len(city.locations) for city in cities)
         return {

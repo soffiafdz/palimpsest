@@ -4,19 +4,20 @@ rename.py
 ---------
 Format-preserving entity rename engine with merge semantics.
 
-Renames entities across all YAML metadata files, handling the case where
-both old and new names coexist in the same list by merging (removing the
-duplicate) rather than creating a collision. Uses ruamel.yaml for
-format-preserving round-trip to keep hand-curated YAML intact.
+Renames entities across all YAML metadata files and MD frontmatter,
+handling the case where both old and new names coexist in the same list
+by merging (removing the duplicate) rather than creating a collision.
+Uses ruamel.yaml for format-preserving round-trip to keep hand-curated
+YAML intact. MD content below frontmatter is never touched.
 
 Supported Entity Types:
     - location: scenes[].locations, threads[].locations, per-entity file,
-      neighborhoods.yaml
+      neighborhoods.yaml, MD frontmatter locations dict
     - tag: tags (top-level list)
     - theme: themes (top-level list)
     - arc: arcs (top-level list), arcs.yaml
     - person: people[].name, scenes[].people, threads[].people,
-      per-entity file, relation_types.yaml
+      per-entity file, relation_types.yaml, MD frontmatter people list
     - city: cities.yaml, location YAML city fields, neighborhoods.yaml
       section keys, directory rename
     - motif: motifs[].name
@@ -30,11 +31,15 @@ Key Features:
       quoting, and comments intact
     - Per-entity file handling: rename/merge/delete as appropriate
     - Curation file handling: slug-keyed YAML updates
+    - MD frontmatter: renames in locations/people fields while
+      preserving markdown content byte-for-byte
+    - Date filtering: skips entries before a configurable cutoff
+      (default: 2020-01-01)
 
 Usage:
     from dev.wiki.rename import EntityRenamer
 
-    renamer = EntityRenamer(metadata_dir, journal_dir)
+    renamer = EntityRenamer(metadata_dir, journal_dir, md_dir)
     report = renamer.rename("location", "Home", "Apartment - Jarry")
     print(report.summary())
 
@@ -49,8 +54,11 @@ Dependencies:
 from __future__ import annotations
 
 # --- Standard library imports ---
+import io
+import re
 import shutil
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -91,6 +99,7 @@ class RenameReport:
         entry_changes: Changes to entry YAML files
         file_changes: Changes to per-entity YAML files
         curation_changes: Changes to curation YAML files
+        md_changes: Changes to MD frontmatter files
     """
 
     entity_type: str
@@ -99,6 +108,7 @@ class RenameReport:
     entry_changes: List[RenameAction] = field(default_factory=list)
     file_changes: List[RenameAction] = field(default_factory=list)
     curation_changes: List[RenameAction] = field(default_factory=list)
+    md_changes: List[RenameAction] = field(default_factory=list)
 
     def summary(self) -> str:
         """
@@ -142,10 +152,20 @@ class RenameReport:
                 lines.append(f"  {icon} {change.file} — {change.detail}")
             lines.append("")
 
+        if self.md_changes:
+            lines.append(f"MD frontmatter ({len(self.md_changes)} files):")
+            for change in self.md_changes:
+                icon = {"renamed": "✎", "merged": "⊕"}.get(
+                    change.action, "?"
+                )
+                lines.append(f"  {icon} {change.file} — {change.detail}")
+            lines.append("")
+
         total = (
             len(self.entry_changes)
             + len(self.file_changes)
             + len(self.curation_changes)
+            + len(self.md_changes)
         )
         if total == 0:
             lines.append("No changes needed.")
@@ -173,6 +193,11 @@ class EntityTypeConfig:
         curation_file: Name of curation file if applicable
         per_entity_dir: Subdirectory for per-entity files
         city_scoped: Whether per-entity files are organized by city
+        md_frontmatter_field: Field name in MD frontmatter, or None if
+            not present. For locations this is "locations" (nested dict
+            {city: [names]}), for people it is "people" (flat list).
+        md_frontmatter_nested: Whether the MD frontmatter field is a
+            nested dict (True for locations) or flat list (False for people)
     """
 
     top_level_lists: List[str] = field(default_factory=list)
@@ -183,6 +208,8 @@ class EntityTypeConfig:
     curation_file: Optional[str] = None
     per_entity_dir: Optional[str] = None
     city_scoped: bool = False
+    md_frontmatter_field: Optional[str] = None
+    md_frontmatter_nested: bool = False
 
 
 ENTITY_CONFIGS: Dict[str, EntityTypeConfig] = {
@@ -193,6 +220,8 @@ ENTITY_CONFIGS: Dict[str, EntityTypeConfig] = {
         curation_file="neighborhoods.yaml",
         per_entity_dir="locations",
         city_scoped=True,
+        md_frontmatter_field="locations",
+        md_frontmatter_nested=True,
     ),
     "tag": EntityTypeConfig(
         top_level_lists=["tags"],
@@ -211,6 +240,8 @@ ENTITY_CONFIGS: Dict[str, EntityTypeConfig] = {
         has_per_entity_file=True,
         curation_file="relation_types.yaml",
         per_entity_dir="people",
+        md_frontmatter_field="people",
+        md_frontmatter_nested=False,
     ),
     "city": EntityTypeConfig(),
     "motif": EntityTypeConfig(
@@ -224,21 +255,34 @@ ENTITY_CONFIGS: Dict[str, EntityTypeConfig] = {
 
 # ==================== Renamer ====================
 
+# Minimum year directory to process (skip pre-2020 entries)
+MIN_YEAR = 2020
+
+
 class EntityRenamer:
     """
     Format-preserving entity rename engine with merge semantics.
 
-    Scans entry YAML files, per-entity YAML files, and curation YAML
-    files to rename an entity across all occurrences. When both old
-    and new names exist in the same list, merges by removing the old
-    entry rather than creating duplicates.
+    Scans entry YAML files, per-entity YAML files, curation YAML files,
+    and MD frontmatter files to rename an entity across all occurrences.
+    When both old and new names exist in the same list, merges by
+    removing the old entry rather than creating duplicates.
+
+    MD frontmatter processing preserves the markdown content below
+    the frontmatter delimiter byte-for-byte.
 
     Attributes:
         metadata_dir: Root metadata directory (data/metadata/)
         journal_dir: Journal YAML directory (data/metadata/journal/)
+        md_dir: MD journal directory (data/journal/content/md/) or None
     """
 
-    def __init__(self, metadata_dir: Path, journal_dir: Path) -> None:
+    def __init__(
+        self,
+        metadata_dir: Path,
+        journal_dir: Path,
+        md_dir: Optional[Path] = None,
+    ) -> None:
         """
         Initialize the rename engine.
 
@@ -246,9 +290,14 @@ class EntityRenamer:
             metadata_dir: Root metadata directory containing per-entity
                 and curation YAML files
             journal_dir: Journal YAML directory containing entry files
+            md_dir: MD journal directory containing .md files with YAML
+                frontmatter. When provided, renames also apply to MD
+                frontmatter fields (locations, people). Content below
+                the frontmatter is never modified.
         """
         self.metadata_dir = metadata_dir
         self.journal_dir = journal_dir
+        self.md_dir = md_dir
         self._yaml = YAML()
         self._yaml.preserve_quotes = True
 
@@ -312,6 +361,11 @@ class EntityRenamer:
                 self._handle_curation_file(
                     entity_type, config, old_name, new_name,
                     city, dry_run, report,
+                )
+
+            if self.md_dir and config.md_frontmatter_field:
+                self._rename_in_md_frontmatter(
+                    config, old_name, new_name, dry_run, report
                 )
 
         return report
@@ -968,6 +1022,257 @@ class EntityRenamer:
 
                 if not dry_run:
                     self._save_yaml(neighborhoods_path, data)
+
+    # ---- MD frontmatter ----
+
+    def _rename_in_md_frontmatter(
+        self,
+        config: EntityTypeConfig,
+        old_name: str,
+        new_name: str,
+        dry_run: bool,
+        report: RenameReport,
+    ) -> None:
+        """
+        Scan and update MD frontmatter files for the rename.
+
+        Iterates over year directories in md_dir (2020+), parses
+        YAML frontmatter from each .md file, applies rename/merge
+        logic to the configured field, and writes back. The markdown
+        content below the frontmatter is preserved byte-for-byte.
+
+        Args:
+            config: Entity type configuration
+            old_name: Current entity name
+            new_name: Target entity name
+            dry_run: If True, don't modify files
+            report: Report to append changes to
+        """
+        if not self.md_dir or not self.md_dir.exists():
+            return
+
+        for year_dir in sorted(self.md_dir.iterdir()):
+            if not year_dir.is_dir():
+                continue
+            try:
+                year = int(year_dir.name)
+            except ValueError:
+                continue
+            if year < MIN_YEAR:
+                continue
+
+            for md_path in sorted(year_dir.glob("*.md")):
+                self._process_md_file(
+                    md_path, config, old_name, new_name,
+                    dry_run, report,
+                )
+
+    def _process_md_file(
+        self,
+        path: Path,
+        config: EntityTypeConfig,
+        old_name: str,
+        new_name: str,
+        dry_run: bool,
+        report: RenameReport,
+    ) -> None:
+        """
+        Process a single MD file for frontmatter rename.
+
+        Uses targeted text replacement within the frontmatter to
+        avoid any YAML reformatting. The frontmatter is parsed with
+        ruamel.yaml only for detection; the actual replacement is
+        done on the raw text. The markdown content after the second
+        ``---`` is never parsed or modified.
+
+        Args:
+            path: Path to the .md file
+            config: Entity type configuration
+            old_name: Current entity name
+            new_name: Target entity name
+            dry_run: If True, don't write changes
+            report: Report to append changes to
+        """
+        raw = path.read_text(encoding="utf-8")
+
+        # Split frontmatter from content
+        parts = raw.split("---", 2)
+        if len(parts) < 3:
+            return
+
+        # parts[0] is empty (before first ---), parts[1] is frontmatter,
+        # parts[2] is the markdown content (preserved exactly)
+        frontmatter_text = parts[1]
+        content = parts[2]
+
+        data = self._yaml.load(io.StringIO(frontmatter_text))
+        if not isinstance(data, dict):
+            return
+
+        field_name = config.md_frontmatter_field
+        if not field_name:
+            return
+
+        field_data = data.get(field_name)
+        if field_data is None:
+            return
+
+        # Detect what needs changing using parsed data
+        changes: List[str] = []
+        needs_merge = False
+
+        if config.md_frontmatter_nested:
+            if isinstance(field_data, dict):
+                for city_key, loc_list in field_data.items():
+                    if isinstance(loc_list, list):
+                        if old_name in loc_list:
+                            if new_name in loc_list:
+                                changes.append(
+                                    f"{field_name}.{city_key}: merged"
+                                )
+                                needs_merge = True
+                            else:
+                                changes.append(
+                                    f"{field_name}.{city_key}: renamed"
+                                )
+        else:
+            if isinstance(field_data, list):
+                if old_name in field_data:
+                    if new_name in field_data:
+                        changes.append(f"{field_name}: merged")
+                        needs_merge = True
+                    else:
+                        changes.append(f"{field_name}: renamed")
+
+        if not changes:
+            return
+
+        # Apply text-based replacement on the frontmatter only
+        new_frontmatter = self._apply_md_text_rename(
+            frontmatter_text, old_name, new_name, needs_merge
+        )
+
+        rel_path = path.relative_to(self.md_dir) if self.md_dir else path
+        detail = "; ".join(changes)
+        action = "merged" if needs_merge else "renamed"
+        report.md_changes.append(
+            RenameAction(file=rel_path, action=action, detail=detail)
+        )
+        if not dry_run:
+            rebuilt = f"---{new_frontmatter}---{content}"
+            path.write_text(rebuilt, encoding="utf-8")
+
+    def _apply_md_text_rename(
+        self,
+        frontmatter: str,
+        old_name: str,
+        new_name: str,
+        needs_merge: bool,
+    ) -> str:
+        """
+        Apply rename or merge via text replacement on raw frontmatter.
+
+        For rename: replaces old_name with new_name as a complete
+        list item (avoiding substring matches).
+        For merge: removes old_name as a list item entirely.
+
+        Uses exact item matching to prevent substring collisions
+        (e.g., "Home" must not match inside "Bar Home").
+
+        Args:
+            frontmatter: Raw frontmatter text (between --- delimiters)
+            old_name: Name to find
+            new_name: Name to replace with
+            needs_merge: If True, remove old_name instead of replacing
+
+        Returns:
+            Updated frontmatter text with the same formatting
+        """
+        escaped = re.escape(old_name)
+        block_item_re = re.compile(
+            rf"-\s+{escaped}$|"
+            rf'-\s+"{escaped}"$|'
+            rf"-\s+'{escaped}'$"
+        )
+
+        lines = frontmatter.split("\n")
+        new_lines = []
+
+        for line in lines:
+            stripped = line.strip()
+
+            if needs_merge:
+                # Block-style: remove entire line "- OldName"
+                if block_item_re.fullmatch(stripped):
+                    continue
+
+                # Flow-style: rebuild bracketed list without old_name
+                if "[" in line and old_name in line:
+                    line = self._remove_flow_item(line, old_name)
+            else:
+                # Block-style rename: "- OldName" → "- NewName"
+                if block_item_re.fullmatch(stripped):
+                    line = line.replace(old_name, new_name, 1)
+                # Flow-style rename: replace exact item
+                elif "[" in line and old_name in line:
+                    line = self._replace_flow_item(
+                        line, old_name, new_name
+                    )
+
+            new_lines.append(line)
+
+        return "\n".join(new_lines)
+
+    @staticmethod
+    def _remove_flow_item(line: str, item: str) -> str:
+        """
+        Remove an exact item from a YAML flow-style list in a line.
+
+        Parses the bracketed portion, splits by ", ", removes the
+        exact match, and reconstructs.
+
+        Args:
+            line: Line containing a flow-style list
+            item: Exact item name to remove
+
+        Returns:
+            Line with the item removed
+        """
+        match = re.search(r'\[([^\]]*)\]', line)
+        if not match:
+            return line
+
+        items = [i.strip() for i in match.group(1).split(",")]
+        items = [i for i in items if i != item]
+        replacement = "[" + ", ".join(items) + "]"
+        return line[:match.start()] + replacement + line[match.end():]
+
+    @staticmethod
+    def _replace_flow_item(
+        line: str, old_item: str, new_item: str
+    ) -> str:
+        """
+        Replace an exact item in a YAML flow-style list in a line.
+
+        Parses the bracketed portion, splits by ", ", replaces the
+        exact match, and reconstructs.
+
+        Args:
+            line: Line containing a flow-style list
+            old_item: Exact item name to find
+            new_item: Replacement item name
+
+        Returns:
+            Line with the item replaced
+        """
+        match = re.search(r'\[([^\]]*)\]', line)
+        if not match:
+            return line
+
+        items = [i.strip() for i in match.group(1).split(",")]
+        items = [new_item if i == old_item else i for i in items]
+        replacement = "[" + ", ".join(items) + "]"
+        return line[:match.start()] + replacement + line[match.end():]
 
     # ---- YAML I/O ----
 

@@ -257,14 +257,15 @@ def rename(
     city: Optional[str],
     execute: bool,
 ) -> None:
-    """Rename an entity across all YAML files (dry-run by default)."""
-    from dev.core.paths import JOURNAL_YAML_DIR, METADATA_DIR
+    """Rename an entity across all YAML and MD files (dry-run by default)."""
+    from dev.core.paths import JOURNAL_YAML_DIR, MD_DIR, METADATA_DIR
     from dev.wiki.rename import EntityRenamer
 
     try:
         renamer = EntityRenamer(
             metadata_dir=METADATA_DIR,
             journal_dir=JOURNAL_YAML_DIR,
+            md_dir=MD_DIR,
         )
         report = renamer.rename(
             entity_type=entity_type,

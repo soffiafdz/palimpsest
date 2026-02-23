@@ -1,8 +1,8 @@
 {#
   Places index page.
 
-  Cities as section headings with entry counts, locations bulleted
-  beneath with their own counts. Cities sorted by frequency.
+  Cities as section headings with entry counts, locations grouped
+  by neighborhood when curated. Cities sorted by frequency.
 
   Context:
     city_count: int
@@ -11,7 +11,13 @@
       - name: str
       - country: str or None
       - entry_count: int
-      - locations: list of dicts:
+      - any_neighborhoods: bool
+      - neighborhoods: list of dicts:
+          - name: str
+          - locations: list of dicts:
+              - name: str
+              - entry_count: int
+      - locations: list of dicts (ungrouped):
           - name: str
           - entry_count: int
 #}
@@ -25,7 +31,22 @@
 ## {{ city.name | wikilink }}
 {{ city.entry_count | zpad }} entr{{ "y" if city.entry_count == 1 else "ies" }}{% if city.country %} · {{ city.country }}{% endif %}
 
+{% if city.any_neighborhoods %}
+{% for hood in city.neighborhoods %}
+
+### {{ hood.name }}
+{% for loc in hood.locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endfor %}
 {% if city.locations %}
+
+### Other
+{% for loc in city.locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% elif city.locations %}
 {% for loc in city.locations %}
 - {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
 {% endfor %}

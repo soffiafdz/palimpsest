@@ -1002,3 +1002,379 @@ class TestMultipleFiles:
         report = renamer.rename("tag", "Self Image", "Self-Image", dry_run=False)
 
         assert len(report.entry_changes) == 1
+
+
+# ==================== MD Frontmatter Tests ====================
+
+def write_md(path: Path, frontmatter: str, content: str = "") -> None:
+    """Write an MD file with YAML frontmatter and content."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = content if content else "\nSome journal content here.\n"
+    path.write_text(
+        f"---\n{dedent(frontmatter)}---{body}",
+        encoding="utf-8",
+    )
+
+
+@pytest.fixture
+def md_dir(tmp_path):
+    """Create a temporary MD directory with year subdirectories."""
+    md = tmp_path / "md"
+    (md / "2022").mkdir(parents=True)
+    (md / "2024").mkdir(parents=True)
+    return md
+
+
+@pytest.fixture
+def renamer_with_md(metadata_dir, journal_dir, md_dir):
+    """Create an EntityRenamer with md_dir set."""
+    return EntityRenamer(
+        metadata_dir=metadata_dir,
+        journal_dir=journal_dir,
+        md_dir=md_dir,
+    )
+
+
+class TestMdFrontmatterLocation:
+    """Tests for location rename in MD frontmatter."""
+
+    def test_location_rename_in_frontmatter(self, renamer_with_md, md_dir):
+        """Location name is updated in frontmatter locations dict."""
+        md_path = md_dir / "2022" / "2022-01-01.md"
+        write_md(md_path, """\
+            date: 2022-01-01
+            word_count: 500
+            locations:
+              Montréal:
+              - Home
+              - Café
+        """)
+
+        report = renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        assert "Apartment - Jarry" in data["locations"]["Montréal"]
+        assert "Home" not in data["locations"]["Montréal"]
+        assert len(report.md_changes) == 1
+        assert report.md_changes[0].action == "renamed"
+
+    def test_location_merge_in_frontmatter(self, renamer_with_md, md_dir):
+        """When both old and new location exist, old is removed."""
+        md_path = md_dir / "2022" / "2022-01-02.md"
+        write_md(md_path, """\
+            date: 2022-01-02
+            word_count: 500
+            locations:
+              Montréal:
+              - Home
+              - Apartment - Jarry
+              - Café
+        """)
+
+        report = renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        locs = data["locations"]["Montréal"]
+        assert locs.count("Apartment - Jarry") == 1
+        assert "Home" not in locs
+        assert len(locs) == 2
+        assert report.md_changes[0].action == "merged"
+
+    def test_location_multi_city(self, renamer_with_md, md_dir):
+        """Rename works across multiple city sections."""
+        md_path = md_dir / "2024" / "2024-06-15.md"
+        write_md(md_path, """\
+            date: 2024-06-15
+            word_count: 800
+            locations:
+              Montréal:
+              - Home
+              - Bar
+              Tijuana:
+              - Home
+              - Beach
+        """)
+
+        report = renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        assert "Apartment - Jarry" in data["locations"]["Montréal"]
+        assert "Apartment - Jarry" in data["locations"]["Tijuana"]
+        assert len(report.md_changes) == 1
+
+
+class TestMdFrontmatterSubstring:
+    """Tests for substring safety in MD frontmatter renames."""
+
+    def test_rename_no_substring_match_block(self, renamer_with_md, md_dir):
+        """Rename 'Home' must not match inside 'Bar Home' (block style)."""
+        md_path = md_dir / "2022" / "2022-01-10.md"
+        write_md(md_path, """\
+            date: 2022-01-10
+            word_count: 500
+            locations:
+              Montréal:
+              - Bar Home
+              - Home
+        """)
+
+        renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        locs = data["locations"]["Montréal"]
+        assert "Bar Home" in locs
+        assert "Apartment - Jarry" in locs
+        assert "Home" not in locs
+
+    def test_rename_no_substring_match_flow(self, renamer_with_md, md_dir):
+        """Rename 'Home' must not match inside 'Bar Home' (flow style)."""
+        md_path = md_dir / "2022" / "2022-01-11.md"
+        md_path.parent.mkdir(parents=True, exist_ok=True)
+        md_path.write_text(
+            "---\ndate: 2022-01-11\nword_count: 500\n"
+            "locations:\n"
+            "  Montréal: [Bar Home, Home, Café]\n"
+            "---\n\nContent.\n",
+            encoding="utf-8",
+        )
+
+        renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        locs = data["locations"]["Montréal"]
+        assert "Bar Home" in locs
+        assert "Apartment - Jarry" in locs
+        assert "Home" not in locs
+
+    def test_merge_no_substring_match_flow(self, renamer_with_md, md_dir):
+        """Merge 'Darling' must not affect 'Bar Darling' (flow style)."""
+        md_path = md_dir / "2022" / "2022-01-12.md"
+        md_path.parent.mkdir(parents=True, exist_ok=True)
+        md_path.write_text(
+            "---\ndate: 2022-01-12\nword_count: 500\n"
+            "locations:\n"
+            "  Montréal: [Bar Darling, Darling, Home]\n"
+            "---\n\nContent.\n",
+            encoding="utf-8",
+        )
+
+        renamer_with_md.rename(
+            "location", "Darling", "Bar Darling", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        locs = data["locations"]["Montréal"]
+        assert "Bar Darling" in locs
+        assert "Darling" not in locs
+        assert "Home" in locs
+
+
+class TestMdFrontmatterPerson:
+    """Tests for person rename in MD frontmatter."""
+
+    def test_person_rename_in_frontmatter(self, renamer_with_md, md_dir):
+        """Person name is updated in frontmatter people list."""
+        md_path = md_dir / "2022" / "2022-02-01.md"
+        write_md(md_path, """\
+            date: 2022-02-01
+            word_count: 500
+            people:
+            - Kate
+            - Johanna
+        """)
+
+        report = renamer_with_md.rename(
+            "person", "Kate", "Katherine", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        assert "Katherine" in data["people"]
+        assert "Kate" not in data["people"]
+        assert len(report.md_changes) == 1
+
+    def test_person_merge_in_frontmatter(self, renamer_with_md, md_dir):
+        """When both old and new person exist, old is removed."""
+        md_path = md_dir / "2022" / "2022-02-02.md"
+        write_md(md_path, """\
+            date: 2022-02-02
+            word_count: 500
+            people: [Kate, Katherine, Johanna]
+        """)
+
+        report = renamer_with_md.rename(
+            "person", "Kate", "Katherine", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        parts = raw.split("---", 2)
+        y = YAML()
+        data = y.load(parts[1])
+        assert data["people"].count("Katherine") == 1
+        assert "Kate" not in data["people"]
+
+
+class TestMdFrontmatterContentPreservation:
+    """Tests ensuring markdown content is never modified."""
+
+    def test_content_preserved_byte_for_byte(self, renamer_with_md, md_dir):
+        """Markdown content below frontmatter is preserved exactly."""
+        content_text = (
+            "\n# My Journal Entry\n\n"
+            "Today I went to **Home** and had coffee.\n\n"
+            "- Item 1\n- Item 2\n\n"
+            "## Special chars: àéîöü — «quotes» & ampersands\n"
+        )
+        md_path = md_dir / "2022" / "2022-03-01.md"
+        write_md(md_path, """\
+            date: 2022-03-01
+            word_count: 500
+            locations:
+              Montréal:
+              - Home
+        """, content=content_text)
+
+        renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        raw = md_path.read_text(encoding="utf-8")
+        # Content after second --- must be preserved exactly
+        parts = raw.split("---", 2)
+        assert parts[2] == content_text
+
+    def test_tag_rename_no_md_changes(self, renamer_with_md, md_dir):
+        """Entity types without MD frontmatter field produce no MD changes."""
+        md_path = md_dir / "2022" / "2022-03-02.md"
+        write_md(md_path, """\
+            date: 2022-03-02
+            word_count: 500
+            people: [Kate]
+        """)
+        original = md_path.read_text(encoding="utf-8")
+
+        report = renamer_with_md.rename(
+            "tag", "Self Image", "Self-Image", dry_run=False
+        )
+
+        assert len(report.md_changes) == 0
+        assert md_path.read_text(encoding="utf-8") == original
+
+
+class TestMdFrontmatterDateFilter:
+    """Tests for pre-2020 file filtering."""
+
+    def test_pre2020_files_skipped(self, renamer_with_md, md_dir):
+        """Files in year directories before 2020 are not processed."""
+        pre2020_dir = md_dir / "2019"
+        pre2020_dir.mkdir()
+        md_path = pre2020_dir / "2019-06-15.md"
+        write_md(md_path, """\
+            date: 2019-06-15
+            word_count: 500
+            locations:
+              Montréal:
+              - Home
+        """)
+        original = md_path.read_text(encoding="utf-8")
+
+        report = renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        assert len(report.md_changes) == 0
+        assert md_path.read_text(encoding="utf-8") == original
+
+    def test_2020_files_processed(self, renamer_with_md, md_dir):
+        """Files in 2020 directory ARE processed."""
+        y2020_dir = md_dir / "2020"
+        y2020_dir.mkdir()
+        md_path = y2020_dir / "2020-01-15.md"
+        write_md(md_path, """\
+            date: 2020-01-15
+            word_count: 500
+            locations:
+              Montréal:
+              - Home
+        """)
+
+        report = renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        assert len(report.md_changes) == 1
+
+
+class TestMdFrontmatterDryRun:
+    """Tests for dry-run mode with MD frontmatter."""
+
+    def test_dry_run_no_md_changes(self, renamer_with_md, md_dir):
+        """Dry-run reports MD changes but doesn't modify files."""
+        md_path = md_dir / "2022" / "2022-04-01.md"
+        write_md(md_path, """\
+            date: 2022-04-01
+            word_count: 500
+            locations:
+              Montréal:
+              - Home
+        """)
+        original = md_path.read_text(encoding="utf-8")
+
+        report = renamer_with_md.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=True
+        )
+
+        assert len(report.md_changes) == 1
+        assert md_path.read_text(encoding="utf-8") == original
+
+
+class TestMdFrontmatterNoMdDir:
+    """Tests for renamer without md_dir (backward compatibility)."""
+
+    def test_no_md_dir_no_md_changes(self, renamer, journal_dir):
+        """When md_dir is None, no MD changes are produced."""
+        entry_path = journal_dir / "2022" / "2022-05-01.yaml"
+        write_yaml(entry_path, """\
+            date: 2022-05-01
+            scenes:
+              - name: Morning
+                locations:
+                  - Home
+        """)
+
+        report = renamer.rename(
+            "location", "Home", "Apartment - Jarry", dry_run=False
+        )
+
+        assert len(report.md_changes) == 0
+        assert len(report.entry_changes) == 1
