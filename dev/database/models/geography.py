@@ -136,6 +136,7 @@ class Location(Base):
         id: Primary key
         name: Name of the location/venue
         city_id: Foreign key to parent City
+        neighborhood: Optional neighborhood/district within the city
 
     Relationships:
         city: Many-to-one with City (parent city)
@@ -158,6 +159,9 @@ class Location(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     city_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
+    )
+    neighborhood: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True, default=None
     )
 
     # --- Relationships ---

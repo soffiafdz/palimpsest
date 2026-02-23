@@ -373,9 +373,13 @@ class LocationManager(EntityManager):
 
             location = self.session.merge(db_location)
 
-            # Update name
+            # Update scalar fields
             self._update_scalar_fields(
-                location, metadata, [("name", DataValidator.normalize_string)]
+                location, metadata,
+                [
+                    ("name", DataValidator.normalize_string),
+                    ("neighborhood", DataValidator.normalize_string),
+                ],
             )
 
             # Update city using parent resolution
