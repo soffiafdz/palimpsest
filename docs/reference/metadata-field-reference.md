@@ -424,21 +424,21 @@ Person(name='Ana', full_name='Ana Sofía')
 ```yaml
 # ⚠️ WARNING: These create THREE DIFFERENT people!
 people:
-  - María              # Person(name='María', full_name=NULL)
-  - María-José         # Person(name='María José', full_name=NULL)
-  - María José         # Person(name='María', full_name='María José')
+  - Lucía              # Person(name='Lucía', full_name=NULL)
+  - Lucía-Elena         # Person(name='Lucía Elena', full_name=NULL)
+  - Lucía Elena         # Person(name='Lucía', full_name='Lucía Elena')
 ```
 
 **Solution - Use one canonical form:**
 ```yaml
 # Option 1: Compound name with alias array
 people:
-  - name: María José
-    alias: [María, Majo]
+  - name: Lucía Elena
+    alias: [Lucía, Luchi]
 
 # Option 2: Alias notation
 people:
-  - "@María (María-José)"  # "María" is alias for "María José"
+  - "@Lucía (Lucía-Elena)"  # "Lucía" is alias for "Lucía Elena"
 ```
 
 **Format 2: Hyphenated Names**
@@ -489,21 +489,21 @@ people:
 
 ```yaml
 people:
-  - name: Clara
-    alias: [Clarabelais, Ari]  # Multiple nicknames for same person
+  - name: Léa
+    alias: [Léadelsol, Ari]  # Multiple nicknames for same person
 ```
 
 **Important:**
 ```yaml
 # ✅ CORRECT - One person with multiple nicknames
 people:
-  - name: Clara
-    alias: [Clarabelais, Ari]
+  - name: Léa
+    alias: [Léadelsol, Ari]
 
 # ❌ WRONG - Creates duplicate relationships
 people:
-  - "@Clarabelais (Clara)"
-  - "@Ari (Clara)"  # Don't do this!
+  - "@Léadelsol (Léa)"
+  - "@Ari (Léa)"  # Don't do this!
 ```
 
 ---
@@ -623,7 +623,7 @@ dates:
 ```yaml
 ---
 date: 2024-01-15
-people: [María, John]
+people: [Lucía, John]
 locations: [Café X]
 ---
 ```
@@ -635,7 +635,7 @@ locations: [Café X]
 ```yaml
 ---
 date: 2024-01-15
-people: [María, John]
+people: [Lucía, John]
 locations: [Café X]
 dates:
   - "2024-01-20"
@@ -650,17 +650,17 @@ dates:
 ```yaml
 ---
 date: 2024-01-15
-people: [María, John]
+people: [Lucía, John]
 dates:
   - date: "2024-01-15"
-    people: [María]
+    people: [Lucía]
     locations: [Café X]
   - date: "2024-01-20"
     people: [John]
 ---
 ```
 **Result:**
-- 2024-01-15: María and Café X associated
+- 2024-01-15: Lucía and Café X associated
 - 2024-01-20: John associated
 - Entry has both as general mentions
 
@@ -998,9 +998,9 @@ people:
 
 # IMPORTANT: Different formats create different people
 people:
-  - María             # Person(name='María')
-  - María-José        # Person(name='María José')  [DIFFERENT!]
-  - María José        # Person(full_name='María José')  [DIFFERENT!]
+  - Lucía             # Person(name='Lucía')
+  - Lucía-Elena        # Person(name='Lucía Elena')  [DIFFERENT!]
+  - Lucía Elena        # Person(full_name='Lucía Elena')  [DIFFERENT!]
 
 # Name with expansion
 people:
@@ -1013,8 +1013,8 @@ people:
 
 # Multiple nicknames (use alias array)
 people:
-  - name: María José
-    alias: [María, Majo, MJ]
+  - name: Lucía Elena
+    alias: [Lucía, Luchi, LE]
 ```
 
 ### Location Patterns
@@ -1109,13 +1109,13 @@ people:
 
 # ✅ Multiple nicknames (use alias array)
 people:
-  - name: Clara
-    alias: [Clarabelais, Ari]
+  - name: Léa
+    alias: [Léadelsol, Ari]
 
 # ❌ DON'T add same person twice
 people:
-  - "@Clarabelais (Clara)"
-  - "@Ari (Clara)"  # Wrong!
+  - "@Léadelsol (Léa)"
+  - "@Ari (Léa)"  # Wrong!
 ```
 
 ### 1b. People: Name Variants Create Different People
@@ -1123,14 +1123,14 @@ people:
 ```yaml
 # ⚠️ WARNING: These create THREE DIFFERENT people!
 people:
-  - María              # Person(name='María')
-  - María-José         # Person(name='María José')
-  - María José         # Person(full_name='María José')
+  - Lucía              # Person(name='Lucía')
+  - Lucía-Elena         # Person(name='Lucía Elena')
+  - Lucía Elena         # Person(full_name='Lucía Elena')
 
 # ✅ SOLUTION: Use one canonical form + aliases
 people:
-  - name: María José
-    alias: [María, Majo]
+  - name: Lucía Elena
+    alias: [Lucía, Luchi]
 ```
 
 ### 2. Locations: Multiple Cities Need Nested Dict
@@ -1154,12 +1154,12 @@ locations:
 
 ```yaml
 # NO dates field → Entry date added WITH people/locations
-people: [María]
+people: [Lucía]
 locations: [Café X]
 # Result: Associations created
 
 # HAS dates field → Entry date added WITHOUT associations
-people: [María]
+people: [Lucía]
 dates:
   - "2024-01-20"
 # Result: No date associations
@@ -1167,7 +1167,7 @@ dates:
 # Explicit associations
 dates:
   - date: "2024-01-15"
-    people: [María]
+    people: [Lucía]
 # Result: Creates people_dates records
 
 # Opt out (tilde MUST be quoted!)
@@ -1302,6 +1302,8 @@ dates:
 - `Acquaintance`
 - `Other`
 
+Relation types are bulk-editable via `data/metadata/relation_types.yaml`. See [YAML Specifications](yaml_specifications.md#relation-types-datametadarelation_typesyaml).
+
 ---
 
 ## SQL Schema Quick Reference
@@ -1310,7 +1312,7 @@ dates:
 
 - `entries` - Journal entries
 - `cities` - Cities visited
-- `locations` - Specific locations
+- `locations` - Specific locations (with optional `neighborhood`)
 - `people` - People mentioned
 - `aliases` - Person aliases
 - `dates` - Mentioned dates
@@ -1359,7 +1361,7 @@ dates:
 | Entity    | Fields                                     |
 | --------- | ------------------------------------------ |
 | Person    | `notes`, `vignettes`, `category`, `themes` |
-| Location  | `notes`                                    |
+| Location  | `notes`, `neighborhood`                    |
 | City      | `notes`                                    |
 | Theme     | `notes`                                    |
 | Reference | `notes`                                    |

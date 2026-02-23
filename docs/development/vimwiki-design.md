@@ -125,7 +125,7 @@ Backed by `plm lint <filepath>`, which outputs JSON diagnostics
 (file, line, column, severity, message).
 
 Example diagnostics:
-- "Character `[[Claara]]` not found — did you mean `[[Clara]]`?"
+- "Character `[[Léaa]]` not found — did you mean `[[Léa]]`?"
 - "Invalid status value `Draft` — expected `draft`"
 - "Scene link `[[Morning Walk]]` does not exist"
 
@@ -201,7 +201,7 @@ User writes a brief summary here.
 
 ## Characters
 - [[Sofia]] — protagonist, narrator
-- [[Clara]] — mentioned
+- [[Léa]] — mentioned
 
 ## Arcs
 - [[The Long Wanting]]

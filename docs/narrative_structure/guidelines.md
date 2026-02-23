@@ -20,8 +20,8 @@ Entries from 2021-2024 (pre-November) are evaluated for their potential as:
 ### Pre-Requisites
 
 Before beginning flashback analysis, read all narrative analyses from the core story period (Nov 2024 - Oct 2025) to familiarize yourself with:
-- The primary romantic obsession (Clara) and its patterns
-- The key people: Bea, Amanda, Alexia, Majo, Paty, Sonny, Alda, Aliza, Fabiola
+- The primary romantic obsession (Léa) and its patterns
+- The key people: Bea, Amanda, Alexia, Inès, Paty, Sonny, Alda, Aliza, Fabiola
 - The 15 thematic arcs (see consolidated_tags_themes.md)
 - The narrative rhythms and climactic moments
 
@@ -47,7 +47,7 @@ The rating scale is recalibrated with **much stricter standards**:
 - **Alexia**: The night at Le Darling
 - **Amanda**: Context before her return in Sept 2025
 - **Emily**: The first catfisher (parallels Gaelle)
-- **Paty**: The almost-kiss dynamic (parallels Clara)
+- **Paty**: The almost-kiss dynamic (parallels Léa)
 - **Trans disclosure moments**: Previous coming-out patterns
 - **Obsessive surveillance patterns**: Pre-Instagram era equivalents
 - **Origin stories**: First appearances of recurring motifs (red anklet, specific songs, photography)
@@ -67,7 +67,7 @@ Same format as core analysis, plus:
 1. **Locate Files:** List the markdown files for the target month in `data/journal/content/md/[YEAR]`.
 2. **Process One by One:** Read a file, analyze it, and create a corresponding report file in `data/journal/narrative_analysis/` with the naming convention `[YYYY-MM-DD]_analysis.md`.
 3. **Analysis Format:**
-    - **Summary:** A concise summary of the events, focusing on narrative arcs (Clara, HRT crisis, friendships, professional life) and emotional impact.
+    - **Summary:** A concise summary of the events, focusing on narrative arcs (Léa, HRT crisis, friendships, professional life) and emotional impact.
     - **Narrative Rating:** A strict **1-5** scale based on **raw potential for a literary manuscript**.
       - **1/5:** Purely logistical, repetitive, or meta-analysis without narrative scenes. (e.g., Clinical reports, repetitive venting).
       - **2/5:** Meta-fictional exercises (letters to self, imagined confessions) or low-stakes domestic filler. Interesting psychologically but static narratively.
@@ -81,7 +81,7 @@ Same format as core analysis, plus:
     - **Themes:** A bulleted list of the underlying themes explored in the entry (e.g., "The Body as Archive," "Digital Surveillance," "Scarcity").
 
 4. **Content Guidelines:**
-    - **Tags:** Keep them simple and useful for retrieval (e.g., "Majo," "Clara," "Metro," "Insomnia").
+    - **Tags:** Keep them simple and useful for retrieval (e.g., "Inès," "Léa," "Metro," "Insomnia").
     - **Justification:** The justification for the rating must be specific. Quote the text. Explain _why_ it works or fails as a scene.
     - **Meta-Narrative Entries:** Entries that are meta-text (Clinical notes, imagined letters) generally receive lower narrative ratings (1-2) because they are "telling" not "showing," unless they contain a breakthrough insight that can be dramatized.
 
@@ -89,8 +89,8 @@ Same format as core analysis, plus:
 
 ### The Arcs
 
-- **Clara:** The primary romantic obsession. Defined by silence, ambiguity, and digital breadcrumbs (Instagram stories).
+- **Léa:** The primary romantic obsession. Defined by silence, ambiguity, and digital breadcrumbs (Instagram stories).
 - **HRT Crisis:** The logistical nightmare of losing access to hormones, leading to grey-market smuggling and physical dysphoria.
 - **Mental Health:** The struggle with Bipolar Disorder, mixed episodes, medication (Seroquel, Clonazepam), and suicidal ideation.
-- **Friendship:** The "Cavalry" (Majo, Sonny, Alda) supporting the narrator, but also the strain on these relationships (e.g., Majo's frustration).
+- **Friendship:** The "Cavalry" (Inès, Sonny, Alda) supporting the narrator, but also the strain on these relationships (e.g., Inès's frustration).
 - **Professional:** The ticking clock of the thesis seminar, funding (CIHR), and immigration status.

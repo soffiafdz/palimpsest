@@ -161,7 +161,7 @@ Manages Person entities with slug-based lookup and soft delete support.
 **Example:**
 ```python
 people = PersonManager(session, logger)
-person = people.get_or_create("Maria Jose", lastname="Castro")
+person = people.get_or_create("Lucia Elena", lastname="Castro")
 majo = people.get(slug="maria-jose-castro")
 
 # Soft delete and restore
@@ -321,7 +321,7 @@ class EntryManager(BaseManager):
 EntryManager uses `unicodedata` normalization for matching people and locations in scenes and threads against entry-level collections:
 
 ```python
-# Matches: Sofía == Sofia, María-José == Maria Jose
+# Matches: Sofía == Sofia, Lucía-Elena == Lucia Elena
 person = self._find_person_in_entry("Sofia", entry)  # Finds "Sofía"
 ```
 

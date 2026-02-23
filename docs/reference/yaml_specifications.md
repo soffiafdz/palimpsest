@@ -32,8 +32,8 @@ Human-edited source that gets parsed into the database:
 # date, file_path, word_count, reading_time derived from filename/MD frontmatter
 
 people:
-  - name: Clara
-    lastname: Moreno
+  - name: Léa
+    lastname: Moreau
     alias: null
 
 locations:
@@ -58,7 +58,7 @@ threads:
     to_date: '2024-11'
     to_entry: '2024-11-08'
     content: The greeting kiss bookends the goodbye kiss.
-    people: [Clara]
+    people: [Léa]
 
 tags: [Depression, Medication]
 themes: [The Spiral]
@@ -124,7 +124,7 @@ threads:
     content: >-
       The greeting kiss bookends the goodbye kiss—structural
       symmetry marking the relationship's progression.
-    people: [Clara]
+    people: [Léa]
 
 tags:
   - name: Depression
@@ -176,8 +176,8 @@ Entry-level data is superset of scene data:
 # Entry level
 people:
   - Robert Franck
-  - Clara Moreno
-  - Majo  # Mentioned but not in specific scene
+  - Léa Moreau
+  - Inès  # Mentioned but not in specific scene
 
 # Scene level
 scenes:
@@ -217,7 +217,7 @@ type: prose
 
 scenes:
   - name: First Sight
-    description: Sofia sees Clara at the fence.
+    description: Sofia sees Léa at the fence.
     source_entries: ['2024-11-08']
 ```
 
@@ -235,7 +235,7 @@ created_at: '2024-12-20T15:30:00Z'
 updated_at: '2025-01-15T09:45:00Z'
 
 notes: >-
-  First chapter introducing Clara.
+  First chapter introducing Léa.
 
 themes:
   - name: Longing
@@ -247,7 +247,7 @@ scenes:
     origin: journaled
     status: included
     description: >-
-      Sofia sees Clara for the first time.
+      Sofia sees Léa for the first time.
     source_entries: ['2024-11-08']
     notes: Primary scene from Nov 8.
 
@@ -277,19 +277,19 @@ draft_file: data/manuscript/drafts/the_gray_fence.md
 **Minimal Input:**
 
 ```yaml
-# characters/clara.yaml
-name: Clara
+# characters/lea.yaml
+name: Léa
 role: Love Interest
 
 based_on:
-  - person: Clara Moreno
+  - person: Léa Moreau
 ```
 
 **Complete Export:**
 
 ```yaml
-name: Clara
-slug: clara
+name: Léa
+slug: lea
 role: Love Interest
 archetype: The Muse
 created_at: '2024-12-20T15:30:00Z'
@@ -299,8 +299,8 @@ description: >-
 
 based_on:
   - person:
-      name: Clara
-      lastname: Moreno
+      name: Léa
+      lastname: Moreau
       alias: null
     notes: >-
       Physical description directly drawn from real relationship.
@@ -380,10 +380,78 @@ Export maintains original precision (doesn't normalize).
 
 ---
 
+## Curation YAML Files
+
+Single-file bulk-editing formats for curation-only fields. These are the primary source of truth for their respective fields; values propagate to per-entity YAML and DB on import/export.
+
+### Neighborhoods (`data/metadata/neighborhoods.yaml`)
+
+Maps location neighborhoods grouped by city slug:
+
+```yaml
+# Neighborhood for each location, grouped by city slug
+# Valid: any free-text string (or ~ for unset)
+montreal:
+  cafe-olimpico: Mile End
+  parc-jarry: Villeray
+  apartment-jarry: ~
+paris:
+  cafe-de-flore: Saint-Germain
+  jardin-du-luxembourg: ~
+```
+
+**Structure:** `{city_slug: {location_slug: neighborhood_string | null}}`
+
+**Rules:**
+- All locations listed (filled values + `~` for null)
+- Grouped by parent city slug
+- Free-text values (no enum constraint)
+- `~` (null) clears existing neighborhood value on import
+- Slug keys match per-entity YAML filenames
+
+### Relation Types (`data/metadata/relation_types.yaml`)
+
+Maps person relation types by person slug:
+
+```yaml
+# Valid: family, friend, romantic, colleague, professional, acquaintance, public, other
+ines: romantic
+lea: friend
+marc: ~
+robert: professional
+```
+
+**Structure:** `{person_slug: relation_type_string | null}`
+
+**Rules:**
+- All people listed (filled values + `~` for null)
+- Values must be valid `RelationType` enum values (lowercase)
+- `~` (null) clears existing relation type on import
+- Slug keys match per-entity YAML filenames
+
+### Import/Export Commands
+
+```bash
+# Export curation files
+plm metadata export --type neighborhoods
+plm metadata export --type relation_types
+
+# Import curation files
+plm metadata import --type neighborhoods
+plm metadata import --type relation_types
+
+# Export all (includes curation files)
+plm metadata export
+```
+
+---
+
 ## Database Reconstruction
 
 Export YAMLs contain complete data. Database can be fully reconstructed from:
 - `data/metadata/journal/**/*.yaml`
 - `data/metadata/manuscript/**/*.yaml`
+- `data/metadata/neighborhoods.yaml`
+- `data/metadata/relation_types.yaml`
 
 All relationships, descriptions, and metadata preserved in export format.

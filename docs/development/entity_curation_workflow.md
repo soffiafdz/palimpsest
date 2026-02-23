@@ -4,7 +4,7 @@
 
 Before importing narrative_analysis YAML files into the database, extract and curate all people and locations to:
 - Resolve typos and spelling variations
-- Deduplicate entities (e.g., "María", "Maria", "@Majo" → one person)
+- Deduplicate entities (e.g., "Lucía", "Lucia", "@Luchi" → one person)
 - Handle ambiguous cases (multiple people with same name)
 - Expand shorthand (e.g., "Alda's" → "Alda's apartment")
 - Add missing metadata (lastnames, city assignments, date ranges)
@@ -83,13 +83,13 @@ python -m dev.bin.bulk import
 When extracting a person mention like `"@Dr-Franck (Robert Franck)"`:
 
 1. **@ prefix** → extract as `alias`
-   - `"@Majo"` → `alias: "Majo"`
+   - `"@Luchi"` → `alias: "Luchi"`
 
 2. **Parenthetical (Full Name)** → parse as `name` + `lastname`
    - `"(Robert Franck)"` → `name: "Robert", lastname: "Franck"`
 
 3. **Hyphen in first position** → dehyphenate multi-word first name
-   - `"María-José"` → `name: "María José"`
+   - `"Lucía-Elena"` → `name: "Lucía Elena"`
 
 4. **Everything after first word block** → `lastname`
    - `"Sofia Fajardo"` → `name: "Sofia", lastname: "Fajardo"`
@@ -98,9 +98,9 @@ When extracting a person mention like `"@Dr-Franck (Robert Franck)"`:
 
 | Input | Parsed |
 |-------|--------|
-| `"@Majo"` | `{alias: "Majo", name: null, lastname: null}` |
+| `"@Luchi"` | `{alias: "Luchi", name: null, lastname: null}` |
 | `"@Dr-Franck (Robert Franck)"` | `{alias: "Dr-Franck", name: "Robert", lastname: "Franck"}` |
-| `"María-José"` | `{name: "María José", lastname: null}` |
+| `"Lucía-Elena"` | `{name: "Lucía Elena", lastname: null}` |
 | `"Sofia Fajardo Zuñiga"` | `{name: "Sofia", lastname: "Fajardo Zuñiga"}` |
 | `"Fabiola"` | `{name: "Fabiola", lastname: null}` |
 
@@ -134,7 +134,7 @@ def should_group(name1: str, name2: str) -> bool:
 ```
 
 **Example groups:**
-- `["@Majo", "Maria", "María", "María-José"]` → Levenshtein + first-3-chars
+- `["@Luchi", "Lucia", "Lucía", "Lucía-Elena"]` → Levenshtein + first-3-chars
 - `["Dr-Franck", "Dr. Franck", "Dr Franck"]` → substring match
 - `["Fabiola"]` → no similar names, single member
 
@@ -149,22 +149,22 @@ groups:
   # Group with multiple variations (needs review)
   - id: 1
     members:
-      - name: "@Majo"
+      - name: "@Luchi"
         occurrences:
           - {date: "2024-11-08", scene: "First Date at Kafé"}
           - {date: "2024-11-15", scene: "Texting After Dark"}
           - {date: "2024-12-03", scene: "The Money Fight"}
         total_count: 45
-      - name: "Maria"
+      - name: "Lucia"
         occurrences:
           - {date: "2024-11-12", scene: "Coffee Thoughts"}
         total_count: 3
-      - name: "María"
+      - name: "Lucía"
         occurrences:
           - {date: "2024-11-10", scene: "Morning Text"}
           - {date: "2024-11-20", scene: "The Kiss at Jarry"}
         total_count: 8
-      - name: "María-José"
+      - name: "Lucía-Elena"
         occurrences:
           - {date: "2024-11-09", scene: "Remembering Childhood"}
         total_count: 12
@@ -211,21 +211,21 @@ If the auto-grouping is correct (all variations refer to one person):
 # Before:
 - id: 1
   members:
-    - name: "@Majo"
+    - name: "@Luchi"
       occurrences: [...]
       total_count: 45
-    - name: "Maria"
+    - name: "Lucia"
       occurrences: [...]
       total_count: 3
   canonical: null
 
 # After:
 - id: 1
-  members: ["@Majo", "Maria", "María", "María-José"]
+  members: ["@Luchi", "Lucia", "Lucía", "Lucía-Elena"]
   canonical:
-    name: María José
+    name: Lucía Elena
     lastname: null
-    alias: Majo
+    alias: Luchi
 ```
 
 **Actions:**
@@ -318,11 +318,11 @@ After curation, simplify to this format:
 ```yaml
 # data/curation/people_curation.yaml
 
-- members: ["@Majo", "Maria", "María", "María-José"]
+- members: ["@Luchi", "Lucia", "Lucía", "Lucía-Elena"]
   canonical:
-    name: María José
+    name: Lucía Elena
     lastname: null
-    alias: Majo
+    alias: Luchi
 
 - members: ["Fabiola"]
   canonical:
@@ -556,7 +556,7 @@ Once curation is validated, the bulk import script:
        alias=canonical.alias
    )
    ```
-3. Build reverse mapping: `{"@Majo": person_id, "Maria": person_id, ...}`
+3. Build reverse mapping: `{"@Luchi": person_id, "Lucia": person_id, ...}`
 
 ### Locations Import:
 1. Read `locations_curation.yaml`
@@ -628,7 +628,7 @@ Once curation is validated, the bulk import script:
 **Solution:** Adjust ranges so they don't overlap, or merge into one person
 
 ### "Variation maps to multiple canonicals"
-**Problem:** "María" appears in two different groups
+**Problem:** "Lucía" appears in two different groups
 **Solution:** Remove from one group (typo), or split properly with date_ranges
 
 ### "Missing city for location"

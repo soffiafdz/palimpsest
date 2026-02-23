@@ -29,46 +29,44 @@ Review each page design individually.
 
 ### Editable Boundary
 
-The original design proposed "journal = read-only, manuscript = editable."
-After analysis, the boundary shifted to:
+All journal pages are **fully generated** from the database. No journal
+wiki page contains user-editable fields — all metadata editing happens
+through YAML files via the `:PalimpsestEdit` floating window.
 
-- **Entry pages** = read-only (generated from DB)
-- **Journal entity pages** = editable for curation fields that have no
-  YAML source (relation_type, neighborhood, country, arc description)
-- **Manuscript pages** = fully editable
+- **Journal pages** = fully generated (read-only wiki output)
+- **Journal entity metadata** = edited via YAML files (per-entity YAML
+  for People/Locations; single file for Cities/Arcs)
+- **Manuscript pages** = round-trip editable (wiki parser + sync)
 
-Only 3 DB fields lack a YAML/markdown source:
+Metadata fields managed via YAML:
 
-| Model | Field | Editable on wiki |
-|-------|-------|-----------------|
-| Person | `relation_type` | Yes — only editable field on Person pages |
-| City | `country` | Yes — only editable field on City pages |
-| Arc | `description` | Yes — only editable field on Arc pages |
+| Model | YAML Fields | Editing Method |
+|-------|-------------|----------------|
+| Person | `relation_type`, name, lastname, disambiguator, etc. | Per-entity YAML via `:PalimpsestEdit` |
+| Location | `neighborhood`, name, city, etc. | Per-entity YAML via `:PalimpsestEdit` |
+| City | `country`, name | Single YAML file via `:PalimpsestEdit` |
+| Arc | `description`, name | Single YAML file via `:PalimpsestEdit` |
 
-Additionally, `Location.neighborhood` is a new field (string on Location
-model) requiring a schema migration. It adds an intermediate geographic
-hierarchy: City → Neighborhood → Location.
-
-**Full name is NOT editable** — it is computed from `name + lastname`
-(both sourced from YAML). Disambiguator is also YAML-sourced. The Person
-wiki page displays these as read-only generated content.
+**Full name is NOT editable on the wiki** — it is computed from
+`name + lastname` (both sourced from YAML). Disambiguator is also
+YAML-sourced. The Person wiki page displays these as read-only
+generated content.
 
 ### Manuscript Metadata Architecture
 
-**YAML as structured metadata source:**
-Manuscript structural metadata (Part number/title, Character name/role,
-Scene origin/status, Chapter type/status) is stored in YAML files:
-- `data/manuscript/parts.yaml`
-- `data/manuscript/characters/*.yaml` (or single file)
-- `data/manuscript/scenes/*.yaml`
-- `data/manuscript/chapters/*.yaml`
+**Journal metadata via YAML:**
+Journal entity metadata is stored in YAML files:
+- Per-entity YAML for People and Locations
+- Single YAML file for Cities and Arcs
 
-**Wiki as prose content + generated views:**
-Wiki pages are auto-generated from DB, displaying both YAML-sourced metadata
-and editable prose content:
-- **Fully generated pages:** Part, Index pages, all Journal pages
-- **Mixed pages:** Chapter, Character, ManuscriptScene have editable prose
-  sections (synopsis, description, notes) alongside generated sections
+**Manuscript prose via wiki editing:**
+Manuscript pages (Chapter, Character, ManuscriptScene) contain editable
+prose sections (synopsis, description, notes) alongside generated sections.
+The wiki parser reads these prose sections; `plm wiki sync` updates the DB
+and regenerates the pages.
+
+**Fully generated pages:** Part, Index pages, all Journal pages — no
+user-editable content on the wiki page itself.
 
 **Floating window editing (Palimpsest nvim plugin):**
 Structured metadata is edited via floating window popup:
@@ -191,7 +189,7 @@ Workflow:
 5. Optionally add notes paragraph (free text)
 6. Inserts formatted wiki section:
 ```markdown
-**[[Clara Dupont]]** · primary
+**[[Léa Fournier]]** · primary
 The central inspiration. Most scenes are drawn directly
 from journal observations.
 ```
@@ -200,7 +198,7 @@ from journal observations.
 Bidirectional linking: mark journal person as character inspiration.
 
 Workflow:
-1. On Person page (e.g., Clara's page)
+1. On Person page (e.g., Léa's page)
 2. Command prompts: "Link to which character?"
 3. Autocompletes manuscript character names
 4. Prompts for contribution type (primary/composite/inspiration)
@@ -223,8 +221,8 @@ Pattern: `**[[{person}]]** · {contribution}` + optional prose block
 
 Format:
 ```yaml
-name: Clara
-lastname: Dupont
+name: Léa
+lastname: Fournier
 relation_type: romantic
 ```
 
@@ -260,7 +258,7 @@ Thread display format (used everywhere):
 The greeting kiss at Jarry bookends the goodbye —
 structural symmetry marking the relationship's progression.
 
-**People:** [[Clara]]
+**People:** [[Léa]]
 **[[Montreal]]:** [[Station Jarry]]
 ```
 
@@ -302,10 +300,13 @@ page** linked from the main page:
 
 The overflow page is generated automatically when entry count exceeds the
 threshold (20 entries). Below the threshold, entries are listed directly
-on the main page.
+on the main page. Overflow pages show "By Year" links first, then
+narrative content (Events, Arcs).
 
 This pattern applies to:
-- Location pages (20+ entries)
+- Location pages (20+ entries) — also generates person-at-location
+  subpages (`{loc-slug}-people-{person-slug}.md`) for frequent people
+  with more than 5 co-occurring entries
 - Person pages (handled via the frequent tier's Arc → Event spine, with
   "Entries outside events" moving to overflow when large)
 
@@ -424,7 +425,7 @@ When a scene has many people (5+), chunk into bulleted groups of 3-4:
 
 ```markdown
 **People:**
-- [[Sofia]], [[Clara]], [[Majo]]
+- [[Sofia]], [[Léa]], [[Inès]]
 - [[Bob]], [[Alice]], [[Fernanda]]
 - [[Charlie]], [[Dave]], [[Eve]]
 ```
@@ -442,7 +443,7 @@ For few people/locations (1-4), a single line suffices:
 
 ```markdown
 **People:**
-- [[Sofia]], [[Clara]]
+- [[Sofia]], [[Léa]]
 
 **[[Montreal]]:** [[Home]]
 ```
@@ -527,12 +528,33 @@ listed when overlap >= 3 entries.
 Used on Tag, Theme, Location, City, Arc pages. Bulleted list with
 wikilinks and counts. **Narrator always excluded.**
 
+On **Location pages**, each person also shows the intersection entries
+(entries where person + location co-occur via scenes):
+- **5 or fewer entries:** Dates listed inline as a sub-list
+- **More than 5 entries:** Link to a person-at-location subpage
+  (`{location-slug}-people-{person-slug}.md`)
+
 ```markdown
 ## Frequent people
 
-- [[Majo]] (12)
-- [[Clara]] (8)
-- [[Bob]] (5)
+- 034 · [[Alice]]
+  - [all entries](cafe-olimpico-people-alice)
+- 008 · [[Bob]]
+  - [[2024-11-08|Nov 08]] · [[2024-11-15|Nov 15]] · [[2024-12-03|Dec 03]]
+  - [[2025-01-05|Jan 05]] · [[2025-01-19|Jan 19]]
+- 005 · [[Eve]]
+  - [[2024-09-12|Sep 12]] · [[2024-10-01|Oct 01]] · [[2024-10-15|Oct 15]]
+  - [[2024-11-22|Nov 22]] · [[2025-02-10|Feb 10]]
+```
+
+On **Tag, Theme, City, Arc pages**, the simpler count-only format is used:
+
+```markdown
+## Frequent people
+
+- [[Alice]] (12)
+- [[Bob]] (8)
+- [[Eve]] (5)
 ```
 
 ---
@@ -540,12 +562,15 @@ wikilinks and counts. **Narrator always excluded.**
 ## Page Inventory
 
 ### Journal Entity Pages (13 types)
-| # | Page | Editable Fields | Key Question It Answers |
-|---|------|----------------|------------------------|
+
+All journal pages are fully generated. Metadata editing happens via YAML files.
+
+| # | Page | Metadata via YAML | Key Question It Answers |
+|---|------|------------------|------------------------|
 | 1 | Entry | — | "What happened this day?" |
-| 2 | Person (narrator) | relation | "Overview of my journal life" |
-| 3 | Person (frequent) | relation | "Who is this person and how do they appear in my narrative?" |
-| 4 | Person (infrequent) | relation | "When/where did I encounter this person?" |
+| 2 | Person (narrator) | relation_type | "Overview of my journal life" |
+| 3 | Person (frequent) | relation_type | "Who is this person and how do they appear in my narrative?" |
+| 4 | Person (infrequent) | relation_type | "When/where did I encounter this person?" |
 | 5 | Location | neighborhood | "What happens at this place?" |
 | 6 | City | country | "What is my relationship with this city?" |
 | 7 | Event | — | "What scenes make up this narrative event?" |
@@ -606,7 +631,7 @@ Entry → Events → Scenes, with Arcs as a grouping layer.
 The entry opens with a nostalgic trigger: Bea appears on Tinder.
 The narrator swipes right, but the lack of a match feels like a silent
 rejection. This serves as a backdrop to the primary narrative arc
-involving Clara, a French filmmaker and photographer. The narrator
+involving Léa, a French filmmaker and photographer. The narrator
 recounts their "first" date, which lasted six hours and felt deeply
 promising. However, current tension stems from a message left unopened
 for five days.
@@ -621,8 +646,8 @@ for five days.
 
 ## People
 
-**Romantic:** [[Clara Dupont]]
-**Friends:** [[Majo Rodríguez]]
+**Romantic:** [[Léa Fournier]]
+**Friends:** [[Inès Cabrera]]
 **Colleagues:** [[Bob Williams]]
 
 ## Places
@@ -654,7 +679,7 @@ for five days.
 The greeting kiss at Jarry bookends the goodbye —
 structural symmetry marking the relationship's progression.
 
-**People:** [[Clara]]
+**People:** [[Léa]]
 **[[Montreal]]:** [[Station Jarry]]
 
 ---
@@ -761,7 +786,7 @@ screenful. No special scaling needed.
 ### Page 2: Person (Narrator Tier)
 
 **Purpose:** The user's own page — aggregate view of the entire journal.
-**Editable:** `relation_type` field only.
+**Metadata:** `relation_type` via YAML.
 
 The narrator appears in every entry. Listing entries, scenes, or locations
 exhaustively is meaningless. Instead, show aggregates: who do I see most,
@@ -781,7 +806,7 @@ where do I spend time, what characters am I mapped to.
 ## Top Companions
 
 **Romantic:**
-- [[Clara]] (89)
+- [[Léa]] (89)
 
 **Family:**
 - [[Mom]] (67)
@@ -789,7 +814,7 @@ where do I spend time, what characters am I mapped to.
 - [[Fernanda]] (38)
 
 **Friends:**
-- [[Majo]] (56)
+- [[Inès]] (56)
 - [[Bob]] (23)
 - [[Alice]] (18)
 
@@ -801,7 +826,7 @@ where do I spend time, what characters am I mapped to.
 [[Home]] (412) · [[Café Olimpico]] (89)
 
 **Mile End**
-[[Fairmount Bagels]] (34) · [[Casa de Majo]] (28)
+[[Fairmount Bagels]] (34) · [[Casa de Inès]] (28)
 
 **Downtown**
 [[McGill Library]] (45)
@@ -841,13 +866,13 @@ pure aggregation.
 ### Page 3: Person (Frequent Tier — 20+ entries)
 
 **Purpose:** Who is this person and how do they weave through the narrative?
-**Editable:** `relation_type` field only.
+**Metadata:** `relation_type` via YAML.
 **Threshold:** 20+ entries (configurable).
 
 **Mockup:**
 
 ```markdown
-# Clara Dupont
+# Léa Fournier
 
 **Relation:** romantic
 89 entries · Nov 2023 – Jan 2025
@@ -899,13 +924,13 @@ pure aggregation.
 [[Café Olimpico]] (12) · [[Home]] (8)
 
 **Mile End**
-[[Station Jarry]] (3) · [[Casa de Majo]] (2)
+[[Station Jarry]] (3) · [[Casa de Inès]] (2)
 
 ---
 
 ## Companions
 
-- [[Majo]] (34 shared)
+- [[Inès]] (34 shared)
 - [[Bob]] (12 shared)
 - [[Alice]] (8 shared)
 
@@ -913,7 +938,7 @@ pure aggregation.
 
 ## Characters
 
-- [[Clara (character)]] · primary
+- [[Léa (character)]] · primary
 ```
 
 **Zone breakdown:**
@@ -944,7 +969,7 @@ pure aggregation.
 ### Page 4: Person (Infrequent Tier — <20 entries)
 
 **Purpose:** Quick reference for occasional people.
-**Editable:** `relation_type` field only.
+**Metadata:** `relation_type` via YAML.
 
 **Mockup:**
 
@@ -1006,7 +1031,7 @@ No arcs, no events, no companions — insufficient data for those sections.
 ### Page 5: Location
 
 **Purpose:** What happens at this place? Who goes here?
-**Editable:** `neighborhood` field.
+**Metadata:** `neighborhood` via YAML.
 
 Three layout tiers based on entry count:
 
@@ -1055,9 +1080,12 @@ linked overflow page.
 
 ## Frequent people
 
-- [[Majo]] (34)
-- [[Clara]] (28)
-- [[Bob]] (15)
+- 034 · [[Inès]]
+  - [all entries](cafe-olimpico-people-ines)
+- 028 · [[Léa]]
+  - [all entries](cafe-olimpico-people-lea)
+- 015 · [[Bob]]
+  - [all entries](cafe-olimpico-people-bob)
 
 ---
 
@@ -1068,7 +1096,7 @@ linked overflow page.
 
 The greeting kiss at Jarry bookends the goodbye.
 
-**People:** [[Clara]]
+**People:** [[Léa]]
 
 ---
 
@@ -1080,26 +1108,26 @@ The greeting kiss at Jarry bookends the goodbye.
 ```markdown
 # Café Olimpico — Entries
 
-← [[Café Olimpico]]
+89 entries
 
 ---
 
-### 2025 · 18 entries
+## By Year
 
-#### February · 10 entries
-**Week 1:** [[2025-02-01]] · [[2025-02-03]]
-**Week 2:** [[2025-02-08]] · [[2025-02-10]] · [[2025-02-14]]
-**Week 3:** [[2025-02-17]] · [[2025-02-19]]
-**Week 4:** [[2025-02-24]] · [[2025-02-26]] · [[2025-02-28]]
+- **2025** — [18 entries](cafe-olimpico-entries-2025)
+- **2024** — [62 entries](cafe-olimpico-entries-2024)
+- **2023** — [9 entries](cafe-olimpico-entries-2023)
 
-#### January · 8 entries
-**Week 1:** [[2025-01-02]] · [[2025-01-05]]
-**Week 2:** [[2025-01-08]] · [[2025-01-12]]
-**Week 3:** [[2025-01-15]] · [[2025-01-19]]
-**Week 4:** [[2025-01-25]] · [[2025-01-28]]
+---
 
-### 2024 · 62 entries
-...
+## Events Here
+
+### [[The Long Wanting]]
+- [[The Long November]]
+- [[Morning Rituals]]
+
+### Unlinked events
+- [[Chance Encounter]]
 ```
 
 #### Location with 3–19 entries (inline entries)
@@ -1139,8 +1167,10 @@ Entries listed directly on the main page. No overflow page needed.
 
 ## Frequent people
 
-- [[Clara]] (6)
-- [[Majo]] (3)
+- 006 · [[Léa]]
+  - [all entries](station-jarry-people-lea)
+- 003 · [[Inès]]
+  - [[2024-11-08|Nov 08]] · [[2024-12-03|Dec 03]] · [[2025-01-19|Jan 19]]
 ```
 
 #### Location with 1–2 entries (minimal page)
@@ -1172,8 +1202,11 @@ pages that mention it.
   arcs. Same arc → event nesting pattern as Person page. Leverages:
   Location → Scene → Event → Entry → Arc. Omitted if no events.
 - **Frequent people:** Most frequent people at this location via
-  scene_locations + scene_people join. Narrator excluded. Top 10-15.
-  Omitted if fewer than 3 people.
+  scene_locations + scene_people join. Narrator excluded. Top 10.
+  Each person shows intersection entries (entries where person + location
+  co-occur via scenes): 5 or fewer entries listed inline as date links,
+  more than 5 entries link to a person-at-location subpage
+  (`{location-slug}-people-{person-slug}.md`).
 - **Entries outside events / Entries:** Entry-level appearances not covered
   by events. For 20+ entry locations, this moves to the overflow page.
   For 3-19 entry locations, inline on the main page using reusable
@@ -1199,7 +1232,7 @@ headline entry count. Scene-level data (via `scene_locations`) feeds the
 ### Page 6: City
 
 **Purpose:** Overview of life in this city.
-**Editable:** `country` field.
+**Metadata:** `country` via YAML.
 
 Cities can have hundreds of locations (mid-hundreds in practice). The City
 page uses a conditional layout depending on whether neighborhoods have been
@@ -1239,7 +1272,7 @@ curated.
 
 ### Mile End
 - [[Fairmount Bagels]] (34)
-- [[Casa de Majo]] (28)
+- [[Casa de Inès]] (28)
 - [[Station Jarry]] (15)
 - [[Drawn & Quarterly]] (10)
 - [[Dépanneur Le Pick Up]] (7)
@@ -1261,8 +1294,8 @@ curated.
 
 ## Frequent people
 
-- [[Clara]] (89)
-- [[Majo]] (67)
+- [[Léa]] (89)
+- [[Inès]] (67)
 - [[Mom]] (45)
 - [[Bob]] (23)
 
@@ -1311,7 +1344,7 @@ and incentivizes curation.
 - [[McGill Library]] (45)
 - [[Parc La Fontaine]] (34)
 - [[Fairmount Bagels]] (34)
-- [[Casa de Majo]] (28)
+- [[Casa de Inès]] (28)
 - [[Station Jarry]] (15)
 - [[Marché Jean-Talon]] (12)
 - [[Librairie S+M]] (12)
@@ -1449,20 +1482,20 @@ Same structure, but scenes grouped under `###` entry date headings:
 ### [[2024-11-08]] · Tuesday
 
 **The Gray Fence**
-Sofia watches Clara from the balcony as she walks past
+Sofia watches Léa from the balcony as she walks past
 without looking up.
 
 **People:**
-- [[Sofia]], [[Clara]]
+- [[Sofia]], [[Léa]]
 
 **[[Montréal]]:** [[Home]]
 
 **Morning Coffee**
-Majo calls to debrief the weekend; the conversation
-circles back to Clara.
+Inès calls to debrief the weekend; the conversation
+circles back to Léa.
 
 **People:**
-- [[Sofia]], [[Majo]]
+- [[Sofia]], [[Inès]]
 
 **[[Montréal]]:** [[Café Olimpico]]
 
@@ -1517,7 +1550,7 @@ bulleted groups of 3-4. For few (1-4), single bullet.
 ### Page 8: Arc
 
 **Purpose:** Long narrative arc — its trajectory across time.
-**Editable:** `description` field.
+**Metadata:** `description` via YAML.
 
 **Real data:** 33 arcs, ranging from 2 entries ("The Quebec Road Trip") to
 177 entries ("The Dating Carousel"). 997 of 1,026 events overlap with arcs.
@@ -1570,7 +1603,7 @@ two years of romantic pursuits.
 
 - [[Sophie]] (48)
 - [[Alda]] (34)
-- [[Clara]] (28)
+- [[Léa]] (28)
 - [[Kate]] (22)
 - [[Aliza]] (18)
 
@@ -1708,8 +1741,8 @@ Three tiers matching the visibility rules in Architectural Decisions:
 
 ## Frequent people
 
-- [[Majo]] (12)
-- [[Clara]] (8)
+- [[Inès]] (12)
+- [[Léa]] (8)
 - [[Bob]] (5)
 ```
 
@@ -1986,7 +2019,7 @@ author without journaling about it).
 **[[2024-12-03]]** — The fence in rain, paint peeling
 **[[2024-11-22]]** — Touching the fence post while waiting
 **[[2024-11-15]]** — Noticing the fence has been repainted gray
-**[[2024-11-08]]** — First mention: Clara walks past the
+**[[2024-11-08]]** — First mention: Léa walks past the
   gray fence without looking up
 **[[2024-11-01]]** — The fence glimpsed from the bus
 
@@ -2037,7 +2070,7 @@ and don't have enough data density for a month-by-month table.
 
 ## Synopsis
 
-Sofia watches Clara from the balcony, tracking the slow
+Sofia watches Léa from the balcony, tracking the slow
 accumulation of near-misses that define their early
 non-relationship. The chapter interleaves three November
 mornings with the same view of the same fence.
@@ -2051,7 +2084,7 @@ mornings with the same view of the same fence.
 ## Characters
 
 - [[Sofia (character)]]
-- [[Clara (character)]]
+- [[Léa (character)]]
 
 ## Arcs
 
@@ -2060,7 +2093,7 @@ mornings with the same view of the same fence.
 ## Notes
 
 The fence is both literal and metaphorical — it separates
-Sofia's balcony world from Clara's street-level life. Need
+Sofia's balcony world from Léa's street-level life. Need
 to work on the transition between scenes 1 and 3.
 
 ## References
@@ -2164,24 +2197,24 @@ No `:PalimpsestEdit` needed (direct wiki editing).
 **Mockup:**
 
 ```markdown
-# Clara (character)
+# Léa (character)
 
 ---
 
 ## Description
 
-Clara exists mostly in absence — glimpsed through windows,
+Léa exists mostly in absence — glimpsed through windows,
 mentioned in conversations, present in the spaces between
 scenes. She is less a character than a gravitational pull.
 
 ## Based On
 
-**[[Clara Dupont]]** · primary
+**[[Léa Fournier]]** · primary
 The central inspiration. Most scenes are drawn directly
 from journal observations.
 
-**[[Majo Rodríguez]]** · composite
-Some of Clara's dialogue borrows Majo's speech patterns.
+**[[Inès Cabrera]]** · composite
+Some of Léa's dialogue borrows Inès's speech patterns.
 
 ---
 
@@ -2266,7 +2299,7 @@ No `:PalimpsestEdit` needed (or opens current wiki page in place).
 
 ## Description
 
-Sofia watches from the balcony as Clara walks past the gray
+Sofia watches from the balcony as Léa walks past the gray
 fence. The scene captures the first of three November mornings
 with the same view — establishing the motif of watching from
 above.
@@ -2289,9 +2322,9 @@ smell like?
 ## Context
 
 **The Gray Fence** (journal scene, [[2024-11-08]])
-Sofia watches Clara from the balcony as she walks past
+Sofia watches Léa from the balcony as she walks past
 without looking up.
-**People:** [[Sofia]], [[Clara]]
+**People:** [[Sofia]], [[Léa]]
 **[[Montreal]]:** [[Home]]
 ```
 
@@ -2375,7 +2408,7 @@ Chapter pages.
 
 ## Description
 
-Sofia watches from the balcony as Clara walks past the gray fence.
+Sofia watches from the balcony as Léa walks past the gray fence.
 The scene captures the first of three November mornings with the same
 view — establishing the motif of watching from above.
 
@@ -2396,9 +2429,9 @@ sensory detail — what does the November air smell like?
 ## Context
 
 **The Gray Fence** (journal scene, [[2024-11-08]])
-Sofia watches Clara from the balcony as she walks past without looking up.
+Sofia watches Léa from the balcony as she walks past without looking up.
 
-**People:** [[Sofia]], [[Clara]]
+**People:** [[Sofia]], [[Léa]]
 **[[Montreal]]:** [[Home]]
 ```
 
@@ -2540,7 +2573,7 @@ status: included
 - [[Sofia]] (972)
 
 ## Romantic
-- [[Clara]] (89)
+- [[Léa]] (89)
 
 ## Family
 - [[Mom]] (67)
@@ -2548,7 +2581,7 @@ status: included
 - [[Fernanda]] (38)
 
 ## Friends
-- [[Majo]] (56)
+- [[Inès]] (56)
 - [[Bob]] (23)
 - [[Alice]] (18)
 - [[Charlie]] (12)
@@ -2591,7 +2624,7 @@ descending within each group. Wikilinked names with entry count.
 
 ### Mile End
 - [[Fairmount Bagels]] (34)
-- [[Casa de Majo]] (28)
+- [[Casa de Inès]] (28)
 
 ### Downtown
 - [[McGill Library]] (45)
@@ -2615,7 +2648,7 @@ descending within each group. Wikilinked names with entry count.
 ## [[New York]] · 8 entries
 
 - [[Penn Station]] (3)
-- [[Clara's Apartment]] (5)
+- [[Léa's Apartment]] (5)
 ```
 
 Cities as `##` wikilinked headings with entry count. Neighborhoods as
@@ -2720,10 +2753,10 @@ separate section.
 ---
 
 **[[The Long Wanting]]** · Nov 2024 – Jan 2025 · 12 entries
-An arc tracing the gravitational pull between Sofia and Clara.
+An arc tracing the gravitational pull between Sofia and Léa.
 
 **[[Starting Over]]** · Feb – Mar 2025 · 6 entries
-Learning to rebuild routines without Clara.
+Learning to rebuild routines without Léa.
 
 **[[Growing Up]]** · Oct 2023 – Dec 2024 · 34 entries
 The slow reckoning with adulthood and responsibility.
@@ -2897,9 +2930,9 @@ How each page type gets its data:
 | Part | YAML metadata | `:PalimpsestEdit` | YAML loader |
 | ManuscriptScene (metadata) | YAML metadata | `:PalimpsestEdit` | YAML loader |
 | **Pure Wiki (parsed from markdown)** | | | |
-| Chapter | Wiki page | Direct editing | markdown-it-py (complex) |
-| Character | Wiki page | Direct editing | markdown-it-py (moderate) |
-| ManuscriptScene (prose) | Wiki page | Direct editing | markdown-it-py (moderate) |
+| Chapter | Wiki page | Direct editing | Regex-based section parser |
+| Character | Wiki page | Direct editing | Regex-based section parser |
+| ManuscriptScene (prose) | Wiki page | Direct editing | Regex-based section parser |
 
 ### Index Pages Review
 
@@ -2919,7 +2952,7 @@ How each page type gets its data:
 
 | Person 1 | Person 2 | Shared Entries |
 |----------|----------|----------------|
-| [[Clara Dupont]] | [[Majo Rodríguez]] | 34 |
+| [[Léa Fournier]] | [[Inès Cabrera]] | 34 |
 | [[Mom]] | [[Dad]] | 28 |
 ```
 

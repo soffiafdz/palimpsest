@@ -50,7 +50,7 @@ Comprehensive review of the ~137 preliminary narrative analyses to identify cali
 ### November 2024 - February 2025
 | Date | Current | Suggested | Issue |
 |------|---------|-----------|-------|
-| 2024-11-16 | 4/5 | 4.5/5 | Foreshadowing of stand-up friend + Majo's prediction |
+| 2024-11-16 | 4/5 | 4.5/5 | Foreshadowing of stand-up friend + Inès's prediction |
 | 2024-11-19 | 4.5/5 | 5/5? | "First kiss as sexual assault" - foundational trauma |
 | 2024-12-03 | 4/5 | 4.5/5 | Drinking mid-entry signals crisis shift |
 | 2025-02-08 | 4/5 | 4.5/5 | Receipt tradition = literary motif with future payoff |
@@ -61,7 +61,7 @@ Comprehensive review of the ~137 preliminary narrative analyses to identify cali
 | Date | Current | Suggested | Issue |
 |------|---------|-----------|-------|
 | 2025-03-06 | 3/5 | 3.5/5 | Viewer count timestamps = clever structural device |
-| 2025-03-09 | 2/5 | 2.5/5 | Majo's external diagnosis provides narrative function |
+| 2025-03-09 | 2/5 | 2.5/5 | Inès's external diagnosis provides narrative function |
 | 2025-03-27 | 3/5 | 3.5/5 | Medicalization arc + shame visibility theme |
 | 2025-04-07 | 2.5/5 | 3/5 | Unreliable narrator framework is intentional |
 | 2025-04-28 | 4/5 | 4.5/5 | Metro line as timeline = structurally masterful |
@@ -82,7 +82,7 @@ Comprehensive review of the ~137 preliminary narrative analyses to identify cali
 ## Pattern Analysis
 
 ### Calibration Strengths
-1. **Correctly identifies climactic moments:** First kiss, seizure, final goodbye, Clara's message opening all rated 5/5
+1. **Correctly identifies climactic moments:** First kiss, seizure, final goodbye, Léa's message opening all rated 5/5
 2. **Appropriate use of bridge ratings:** Logistical entries consistently 2-3/5
 3. **Meta-narrative awareness:** Rewards sophisticated auto-fiction treatment
 4. **Arc sensitivity:** Ratings track psychological journey
@@ -134,7 +134,7 @@ Essential entries that both analyses agree are climactic:
 - 2025-02-23: Anti-date / receipt theft
 - 2025-03-16: Razor blade / crisis
 - 2025-03-18: Seizure / intervention
-- 2025-03-29/30: Clara returns / Café Velours
+- 2025-03-29/30: Léa returns / Café Velours
 - 2025-04-11: Tamino concert
 - 2025-05-14: Bad Bunny video / Spanish song
 - 2025-05-20: Costa Rica breakdown
@@ -142,15 +142,15 @@ Essential entries that both analyses agree are climactic:
 - 2025-06-24: Voice message farewell
 - 2025-06-25: HRT bloodwork victory
 - 2025-06-29: Instagram deletion / peace
-- 2025-07-06: Opening Clara's message
+- 2025-07-06: Opening Léa's message
 - 2025-07-23: Medical trauma / double-exposure
-- 2025-08-01: Clara kissing someone
+- 2025-08-01: Léa kissing someone
 - 2025-08-03: Desperate text / In the Mood for Love
-- 2025-08-07: Clara viewing despite removal
+- 2025-08-07: Léa viewing despite removal
 - 2025-09-19: Bluets / looking back at Amanda
 - 2025-10-15: Nymeria's illness
-- 2025-10-27: Final Clara meeting
-- 2025-11-29: Instagram posts / Majo conflict
+- 2025-10-27: Final Léa meeting
+- 2025-11-29: Instagram posts / Inès conflict
 
 **Potential promotions to 5/5 (currently 4.5/5):**
 - 2025-08-04: Unfollowing scene

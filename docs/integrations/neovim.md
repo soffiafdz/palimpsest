@@ -138,6 +138,7 @@ Commands for editing YAML metadata in floating windows:
 
 ```vim
 :PalimpsestEdit                " Edit current entity metadata (floating window)
+:PalimpsestEditCuration        " Edit curation file (neighborhoods/relation_types)
 :PalimpsestNew [type]          " Create new entity metadata
 :PalimpsestAddSource           " Add source entry to manuscript scene
 :PalimpsestAddBasedOn          " Add based_on person mapping to character
@@ -168,7 +169,7 @@ Commands for YAML metadata export and entity caching:
 :PalimpsestCacheRefresh           " Refresh entity name cache
 ```
 
-**Entity types:** `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`
+**Entity types:** `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`, `neighborhoods`, `relation_types`
 
 ---
 
@@ -218,6 +219,7 @@ If Palimpsest is your only vimwiki, keybindings use `<leader>v` prefix:
 | Keymap | Action |
 |--------|--------|
 | `<leader>vee` | Edit metadata (floating window) |
+| `<leader>vec` | Edit curation file (neighborhoods/relation_types) |
 | `<leader>ven` | New entity |
 | `<leader>ves` | Add source to scene |
 | `<leader>veb` | Add based_on to character |
@@ -303,6 +305,7 @@ If you have multiple vimwikis configured, Palimpsest uses `<leader>p` prefix ins
 | Keymap | Action |
 |--------|--------|
 | `<leader>pee` | Edit metadata (floating window) |
+| `<leader>pec` | Edit curation file (neighborhoods/relation_types) |
 | `<leader>pen` | New entity |
 | `<leader>pes` | Add source to scene |
 | `<leader>peb` | Add based_on to character |
