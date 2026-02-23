@@ -40,6 +40,12 @@ from dev.core.paths import DB_PATH
 ENTITY_TYPES = [
     "people", "locations", "cities", "arcs",
     "chapters", "characters", "scenes",
+    "neighborhoods", "relation_types",
+]
+
+RENAME_TYPES = [
+    "location", "tag", "theme", "arc",
+    "person", "city", "motif", "event",
 ]
 
 
@@ -224,4 +230,56 @@ def list_entities(
 
     except Exception as e:
         handle_cli_error(ctx, e, "metadata_list_entities")
+        raise
+
+
+@metadata.command()
+@click.argument("entity_type", type=click.Choice(RENAME_TYPES))
+@click.argument("old_name")
+@click.argument("new_name")
+@click.option(
+    "--city",
+    default=None,
+    help="City for location disambiguation",
+)
+@click.option(
+    "--apply",
+    "execute",
+    is_flag=True,
+    help="Execute rename (default: dry-run)",
+)
+@click.pass_context
+def rename(
+    ctx: click.Context,
+    entity_type: str,
+    old_name: str,
+    new_name: str,
+    city: Optional[str],
+    execute: bool,
+) -> None:
+    """Rename an entity across all YAML files (dry-run by default)."""
+    from dev.core.paths import JOURNAL_YAML_DIR, METADATA_DIR
+    from dev.wiki.rename import EntityRenamer
+
+    try:
+        renamer = EntityRenamer(
+            metadata_dir=METADATA_DIR,
+            journal_dir=JOURNAL_YAML_DIR,
+        )
+        report = renamer.rename(
+            entity_type=entity_type,
+            old_name=old_name,
+            new_name=new_name,
+            city=city,
+            dry_run=not execute,
+        )
+        click.echo(report.summary())
+
+        if not execute:
+            click.echo("Run with --apply to execute.")
+
+    except ValueError as e:
+        raise click.UsageError(str(e))
+    except Exception as e:
+        handle_cli_error(ctx, e, "metadata_rename")
         raise
