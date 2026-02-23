@@ -134,6 +134,7 @@ class MetadataSchema:
     LOCATION_FIELDS: List[FieldSpec] = [
         FieldSpec("name", str, required=True),
         FieldSpec("city", str, required=True),
+        FieldSpec("neighborhood", str),
     ]
 
     CITY_FIELDS: List[FieldSpec] = [
@@ -267,6 +268,10 @@ class MetadataExporter:
                 self.export_characters(session)
             if not entity_type or entity_type == "scenes":
                 self.export_scenes(session)
+            if not entity_type or entity_type == "neighborhoods":
+                self.export_neighborhoods(session)
+            if not entity_type or entity_type == "relation_types":
+                self.export_relation_types(session)
 
         safe_logger(self.logger).log_info(
             f"Metadata export complete: {self.stats}"
@@ -324,6 +329,7 @@ class MetadataExporter:
                 data = {
                     "name": location.name,
                     "city": location.city.name,
+                    "neighborhood": location.neighborhood,
                 }
                 city_slug = slugify(location.city.name)
                 loc_slug = slugify(location.name)
@@ -504,6 +510,93 @@ class MetadataExporter:
             with self.db.session_scope() as sess:
                 _export(sess)
 
+    def export_neighborhoods(self, session: Optional[Session] = None) -> None:
+        """
+        Export location neighborhoods to a single curation YAML file.
+
+        Writes neighborhoods.yaml grouped by city slug, with each
+        location slug mapped to its neighborhood value (or null).
+
+        Args:
+            session: Optional SQLAlchemy session
+        """
+        def _export(sess: Session) -> None:
+            locations = (
+                sess.query(Location)
+                .join(City, Location.city_id == City.id)
+                .order_by(City.name, Location.name)
+                .all()
+            )
+            data: Dict[str, Dict[str, Optional[str]]] = {}
+            for location in locations:
+                city_slug = slugify(location.city.name)
+                loc_slug = slugify(location.name)
+                if city_slug not in data:
+                    data[city_slug] = {}
+                data[city_slug][loc_slug] = location.neighborhood
+
+            header = (
+                "# Neighborhood assignments for locations, grouped by city.\n"
+                "# Set a value to assign a neighborhood, or null to leave unset.\n"
+                "# Free-text values (no enum constraint).\n"
+                "#\n"
+                "# Usage:\n"
+                "#   plm metadata import --type neighborhoods\n"
+            )
+            path = self.output_dir / "neighborhoods.yaml"
+            self._write_yaml_with_nulls(path, data, header=header)
+            self.stats["neighborhoods"] = len(locations)
+
+        if session:
+            _export(session)
+        else:
+            with self.db.session_scope() as sess:
+                _export(sess)
+
+    def export_relation_types(
+        self, session: Optional[Session] = None
+    ) -> None:
+        """
+        Export person relation types to a single curation YAML file.
+
+        Writes relation_types.yaml mapping each person slug to its
+        relation_type value (or null).
+
+        Args:
+            session: Optional SQLAlchemy session
+        """
+        def _export(sess: Session) -> None:
+            people = (
+                sess.query(Person)
+                .order_by(Person.name)
+                .all()
+            )
+            data: Dict[str, Optional[str]] = {}
+            for person in people:
+                data[person.slug] = (
+                    person.relation_type.value
+                    if person.relation_type else None
+                )
+
+            header = (
+                "# Relation type for each person.\n"
+                "# Valid values: self, family, friend, romantic,\n"
+                "#   colleague, acquaintance, professional, public, other\n"
+                "# Set to null to leave unset.\n"
+                "#\n"
+                "# Usage:\n"
+                "#   plm metadata import --type relation_types\n"
+            )
+            path = self.output_dir / "relation_types.yaml"
+            self._write_yaml_with_nulls(path, data, header=header)
+            self.stats["relation_types"] = len(people)
+
+        if session:
+            _export(session)
+        else:
+            with self.db.session_scope() as sess:
+                _export(sess)
+
     def list_entities(
         self, entity_type: str, format: str = "names"
     ) -> List[str]:
@@ -539,6 +632,38 @@ class MetadataExporter:
                 names.append(getattr(entity, attr))
 
         return sorted(names)
+
+    def _write_yaml_with_nulls(
+        self, path: Path, data: Any, header: Optional[str] = None
+    ) -> bool:
+        """
+        Write YAML file preserving null values.
+
+        Unlike _write_yaml, does not strip None values since curation
+        files use null (~) to indicate unset fields explicitly.
+
+        Args:
+            path: Output file path
+            data: Data to serialize as YAML
+            header: Optional comment block prepended to file
+
+        Returns:
+            True if file was written (new or changed), False if unchanged
+        """
+        body = yaml.dump(
+            data, default_flow_style=False, allow_unicode=True,
+            sort_keys=False,
+        )
+        content = (header + "\n" + body) if header else body
+
+        if path.exists():
+            existing = path.read_text(encoding="utf-8")
+            if existing == content:
+                return False
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return True
 
     def _write_yaml(self, path: Path, data: Any) -> bool:
         """
@@ -636,6 +761,10 @@ class MetadataValidator:
                 code="UNKNOWN_TYPE",
                 message="Cannot determine entity type from path",
             ))
+            return diagnostics
+
+        # Curation files have non-entity formats — skip schema validation
+        if entity_type in ("neighborhoods", "relation_types"):
             return diagnostics
 
         # Handle single-file formats (cities, arcs, parts)
@@ -848,6 +977,10 @@ class MetadataValidator:
             return "scenes"
         elif path_str.endswith("parts.yaml"):
             return "chapters"  # Parts use similar schema
+        elif path_str.endswith("neighborhoods.yaml"):
+            return "neighborhoods"
+        elif path_str.endswith("relation_types.yaml"):
+            return "relation_types"
 
         return None
 
@@ -893,6 +1026,8 @@ class MetadataImporter:
         Import a single YAML metadata file.
 
         Validates the file first, then applies changes to the database.
+        Curation files (neighborhoods, relation_types) skip schema
+        validation and use dedicated import methods.
 
         Args:
             path: Path to the YAML file to import
@@ -900,14 +1035,37 @@ class MetadataImporter:
         Returns:
             List of diagnostics (empty if successful)
         """
-        # Validate first
+        entity_type = self.validator._detect_entity_type(path)
+
+        # Curation files have their own format — skip schema validation
+        if entity_type in ("neighborhoods", "relation_types"):
+            try:
+                data = yaml.safe_load(path.read_text(encoding="utf-8"))
+            except yaml.YAMLError as e:
+                return [Diagnostic(
+                    file=str(path), line=1, col=1,
+                    end_line=1, end_col=1,
+                    severity="error", code="INVALID_YAML",
+                    message=f"YAML parse error: {e}",
+                )]
+            if data is None:
+                return []
+
+            with self.db.session_scope() as session:
+                if entity_type == "neighborhoods":
+                    self._import_neighborhoods(session, data)
+                else:
+                    self._import_relation_types(session, data)
+                session.commit()
+            return []
+
+        # Standard entity files — validate first
         diagnostics = self.validator.validate_file(path)
         errors = [d for d in diagnostics if d.severity == "error"]
         if errors:
             return diagnostics
 
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        entity_type = self.validator._detect_entity_type(path)
 
         if entity_type is None:
             return diagnostics
@@ -944,6 +1102,8 @@ class MetadataImporter:
             "chapters": self.input_dir / "manuscript" / "chapters",
             "characters": self.input_dir / "manuscript" / "characters",
             "scenes": self.input_dir / "manuscript" / "scenes",
+            "neighborhoods": self.input_dir / "neighborhoods.yaml",
+            "relation_types": self.input_dir / "relation_types.yaml",
         }
 
         for etype, path in type_paths.items():
@@ -1036,7 +1196,9 @@ class MetadataImporter:
         ).first()
         if not location:
             return
-        # Location has few editable fields beyond name/city
+
+        if "neighborhood" in data:
+            location.neighborhood = data.get("neighborhood") or None
 
     def _import_city(
         self, session: Session, data: Dict[str, Any]
@@ -1168,3 +1330,54 @@ class MetadataImporter:
                 ms_scene.chapter_id = chapter.id if chapter else None
             else:
                 ms_scene.chapter_id = None
+
+    def _import_neighborhoods(
+        self, session: Session, data: Dict[str, Any]
+    ) -> None:
+        """
+        Import neighborhoods from curation YAML.
+
+        Data format: {city_slug: {loc_slug: neighborhood_or_null}}.
+        Matches locations by slugifying their name and city name.
+
+        Args:
+            session: SQLAlchemy session
+            data: Nested dict of city_slug → loc_slug → neighborhood
+        """
+        # Build lookup: (city_slug, loc_slug) → Location
+        all_locations = session.query(Location).all()
+        loc_lookup: Dict[tuple, Location] = {}
+        for loc in all_locations:
+            key = (slugify(loc.city.name), slugify(loc.name))
+            loc_lookup[key] = loc
+
+        for city_slug, loc_map in data.items():
+            if not isinstance(loc_map, dict):
+                continue
+            for loc_slug, neighborhood in loc_map.items():
+                location = loc_lookup.get((city_slug, loc_slug))
+                if location:
+                    location.neighborhood = neighborhood or None
+
+    def _import_relation_types(
+        self, session: Session, data: Dict[str, Any]
+    ) -> None:
+        """
+        Import relation types from curation YAML.
+
+        Data format: {person_slug: relation_type_value_or_null}.
+
+        Args:
+            session: SQLAlchemy session
+            data: Dict of person_slug → relation_type string or null
+        """
+        for person_slug, relation_type in data.items():
+            person = session.query(Person).filter(
+                Person.slug == person_slug
+            ).first()
+            if not person:
+                continue
+            if relation_type:
+                person.relation_type = RelationType(relation_type)
+            else:
+                person.relation_type = None

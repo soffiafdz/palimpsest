@@ -108,6 +108,8 @@ PEOPLE_YAML_DIR = METADATA_DIR / "people"
 LOCATIONS_YAML_DIR = METADATA_DIR / "locations"
 CITIES_YAML_PATH = METADATA_DIR / "cities.yaml"
 ARCS_YAML_PATH = METADATA_DIR / "arcs.yaml"
+NEIGHBORHOODS_YAML_PATH = METADATA_DIR / "neighborhoods.yaml"
+RELATION_TYPES_YAML_PATH = METADATA_DIR / "relation_types.yaml"
 
 # ---- Manuscript Drafts ----
 MANUSCRIPT_DIR = DATA_DIR / "manuscript"

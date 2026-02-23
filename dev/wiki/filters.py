@@ -43,6 +43,8 @@ from dev.core.paths import (
     LOCATIONS_YAML_DIR,
     CITIES_YAML_PATH,
     ARCS_YAML_PATH,
+    NEIGHBORHOODS_YAML_PATH,
+    RELATION_TYPES_YAML_PATH,
     MANUSCRIPT_CHAPTERS_DIR,
     MANUSCRIPT_CHARACTERS_DIR,
     MANUSCRIPT_SCENES_DIR,
@@ -321,6 +323,7 @@ def source_path(entity_type: str, identifier: str) -> str:
     Args:
         entity_type: One of "journal_md", "metadata_yaml",
             "person_yaml", "location_yaml", "city_yaml", "arc_yaml",
+            "neighborhoods_yaml", "relation_types_yaml",
             "chapter_yaml", "character_yaml", "scene_yaml"
         identifier: Entity-specific identifier (date string, slug,
             or city_slug/loc_slug for locations)
@@ -349,6 +352,10 @@ def source_path(entity_type: str, identifier: str) -> str:
         return f"file:{MANUSCRIPT_CHARACTERS_DIR / f'{identifier}.yaml'}"
     elif entity_type == "scene_yaml":
         return f"file:{MANUSCRIPT_SCENES_DIR / f'{identifier}.yaml'}"
+    elif entity_type == "neighborhoods_yaml":
+        return f"file:{NEIGHBORHOODS_YAML_PATH}"
+    elif entity_type == "relation_types_yaml":
+        return f"file:{RELATION_TYPES_YAML_PATH}"
     return ""
 
 
