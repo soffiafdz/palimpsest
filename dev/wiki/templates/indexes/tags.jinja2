@@ -2,8 +2,7 @@
   Tags index page.
 
   Frequency-sorted tags with usage counts, grouped by frequency
-  bands for scannability. Only tags with 2+ uses are included.
-  Rare section (2-4 uses) is capped at 30 items.
+  bands for scannability.
 
   Context:
     tags: list of dicts (sorted by count descending):
@@ -16,7 +15,7 @@
 
 ---
 {% if tags %}
-{% set ns = namespace(band='', rare_count=0) %}
+{% set ns = namespace(band='') %}
 {% for tag in tags %}
 {% if tag.count >= 20 and ns.band != 'frequent' %}
 {% set ns.band = 'frequent' %}
@@ -33,17 +32,8 @@
 {% elif tag.count < 5 and ns.band != 'rare' %}
 {% set ns.band = 'rare' %}
 
-## Rare (2–4)
+## Rare (1–4)
 {% endif %}
-{% if ns.band == 'rare' %}
-{% set ns.rare_count = ns.rare_count + 1 %}
-{% if ns.rare_count <= 30 %}
 - {{ tag.count | zpad }} · {{ tag.name | wikilink }}
-{% elif ns.rare_count == 31 %}
-*...and {{ tags | selectattr("count", "lt", 5) | list | length - 30 }} more*
-{% endif %}
-{% else %}
-- {{ tag.count | zpad }} · {{ tag.name | wikilink }}
-{% endif %}
 {% endfor %}
 {% endif %}

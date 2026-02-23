@@ -1,7 +1,7 @@
 # {{ name }}
 {% if description %}
 
-{{ description }}
+> {{ description }}
 {% endif %}
 
 {{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
@@ -21,7 +21,7 @@
 
 ## Events
 {% for event in events %}
-- {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
+- {{ event.entry_count | zpad }}e · {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% if chapters %}

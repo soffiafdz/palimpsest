@@ -2,8 +2,7 @@
   Themes index page.
 
   Frequency-sorted themes with usage counts, grouped by frequency
-  bands for scannability. Only themes with 2+ uses are included.
-  Rare section (2-4 uses) is capped at 30 items.
+  bands for scannability.
 
   Context:
     themes: list of dicts (sorted by count descending):
@@ -16,7 +15,7 @@
 
 ---
 {% if themes %}
-{% set ns = namespace(band='', rare_count=0) %}
+{% set ns = namespace(band='') %}
 {% for theme in themes %}
 {% if theme.count >= 20 and ns.band != 'frequent' %}
 {% set ns.band = 'frequent' %}
@@ -33,17 +32,8 @@
 {% elif theme.count < 5 and ns.band != 'rare' %}
 {% set ns.band = 'rare' %}
 
-## Rare (2–4)
+## Rare (1–4)
 {% endif %}
-{% if ns.band == 'rare' %}
-{% set ns.rare_count = ns.rare_count + 1 %}
-{% if ns.rare_count <= 30 %}
 - {{ theme.count | zpad }} · {{ theme.name | wikilink }}
-{% elif ns.rare_count == 31 %}
-*...and {{ themes | selectattr("count", "lt", 5) | list | length - 30 }} more*
-{% endif %}
-{% else %}
-- {{ theme.count | zpad }} · {{ theme.name | wikilink }}
-{% endif %}
 {% endfor %}
 {% endif %}

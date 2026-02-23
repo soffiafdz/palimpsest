@@ -26,6 +26,6 @@
 ## {{ group.name | wikilink }}
 {% endif %}
 {% for event in group.events %}
-- {{ event.scene_count | zpad }}s · {{ event.entry_count | zpad }}e · {{ event.name | wikilink }}
+- {{ event.entry_count | zpad }}e · {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
 {% endfor %}
 {% endfor %}

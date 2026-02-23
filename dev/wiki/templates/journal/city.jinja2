@@ -15,7 +15,24 @@
 
 ---
 {% endif %}
+{% if any_neighborhoods %}
+
+## Locations
+{% for hood in neighborhoods %}
+
+### {{ hood.name }}
+{% for loc in hood.locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endfor %}
 {% if top_locations %}
+
+### Other
+{% for loc in top_locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% elif top_locations %}
 
 ## Top Locations
 {% for loc in top_locations %}

@@ -22,6 +22,7 @@
 ## {{ arc.name | wikilink }}
 {{ arc.entry_count | zpad }} entr{{ "y" if arc.entry_count == 1 else "ies" }}{{ " · " ~ arc.first_date | flexible_date ~ " – " ~ arc.last_date | flexible_date if arc.first_date and arc.last_date else "" }}
 {% if arc.description %}
-{{ arc.description }}
+
+> {{ arc.description }}
 {% endif %}
 {% endfor %}

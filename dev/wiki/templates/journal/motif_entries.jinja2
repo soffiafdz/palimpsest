@@ -3,7 +3,16 @@
 {{ instance_count | zpad }} instance{{ "s" if instance_count != 1 else "" }}
 
 ---
+{% if year_summary %}
+
+## Entries
+{% for y in year_summary %}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
+{% endfor %}
+{% endif %}
 {% if instances %}
+
+---
 
 ## Instances
 {% for instance in instances %}
@@ -15,14 +24,5 @@
 {% elif instance.description %}
 - {{ instance.description }}
 {% endif %}
-{% endfor %}
-{% endif %}
-{% if year_summary %}
-
----
-
-## Entries
-{% for y in year_summary %}
-- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
 {% endfor %}
 {% endif %}

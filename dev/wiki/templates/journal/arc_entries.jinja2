@@ -3,7 +3,16 @@
 {{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
 
 ---
+{% if year_summary %}
+
+## By Year
+{% for y in year_summary %}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
+{% endfor %}
+{% endif %}
 {% if arc_event_spine %}
+
+---
 
 ## Narrative Arcs
 {% for arc_group in arc_event_spine %}
@@ -16,14 +25,5 @@
 {% for event in arc_group.events %}
 - {{ event.name | wikilink }}
 {% endfor %}
-{% endfor %}
-{% endif %}
-{% if year_summary %}
-
----
-
-## By Year
-{% for y in year_summary %}
-- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
 {% endfor %}
 {% endif %}
