@@ -620,9 +620,7 @@ git commit + push
 ### Available Deck Commands
 
 Navigation (open pre-generated wiki files):
-- `:PalimpsestStats` - Statistics dashboard
 - `:PalimpsestIndex` - Wiki homepage
-- `:PalimpsestAnalysis` - Analysis report
 - `:PalimpsestManuscriptIndex` - Manuscript homepage
 - `:PalimpsestQuickAccess` - Quick access wiki pages
 
