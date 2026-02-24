@@ -55,6 +55,9 @@ function M.browse(entity_type)
 	local search_path = paths[entity_type] or palimpsest.paths.wiki
 	local prompt = "Palimpsest: " .. (entity_type or "all") .. "> "
 
+	-- Exclude subpages (e.g., person-entries-2024.md) from browse results
+	local fd_exclude = " -E '*-entries*'"
+
 	-- Multi-directory case (e.g., 'all' = wiki + journal)
 	if type(search_path) == "table" then
 		local valid_dirs = {}
@@ -75,7 +78,7 @@ function M.browse(entity_type)
 			end
 			picker.files({
 				prompt = prompt,
-				cmd = "fd -t f -e md . " .. table.concat(shellescape_dirs, " "),
+				cmd = "fd -t f -e md" .. fd_exclude .. " . " .. table.concat(shellescape_dirs, " "),
 				winopts = {
 					height = 0.85,
 					width = 0.80,
@@ -86,6 +89,7 @@ function M.browse(entity_type)
 			picker.files({
 				title = prompt,
 				dirs = valid_dirs,
+				exclude = { "*-entries*" },
 			})
 		end
 		return
@@ -101,7 +105,7 @@ function M.browse(entity_type)
 		picker.files({
 			prompt = prompt,
 			cwd = search_path,
-			cmd = "fd -t f -e md",
+			cmd = "fd -t f -e md" .. fd_exclude,
 			winopts = {
 				height = 0.85,
 				width = 0.80,
@@ -112,6 +116,7 @@ function M.browse(entity_type)
 		picker.files({
 			title = prompt,
 			cwd = search_path,
+			exclude = { "*-entries*" },
 		})
 	end
 end

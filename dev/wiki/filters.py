@@ -36,19 +36,6 @@ from typing import Any, Dict, List, Optional
 from jinja2 import Environment, pass_environment
 
 # --- Local imports ---
-from dev.core.paths import (
-    MD_DIR,
-    JOURNAL_YAML_DIR,
-    PEOPLE_YAML_DIR,
-    LOCATIONS_YAML_DIR,
-    CITIES_YAML_PATH,
-    ARCS_YAML_PATH,
-    NEIGHBORHOODS_YAML_PATH,
-    RELATION_TYPES_YAML_PATH,
-    MANUSCRIPT_CHAPTERS_DIR,
-    MANUSCRIPT_CHARACTERS_DIR,
-    MANUSCRIPT_SCENES_DIR,
-)
 
 
 @pass_environment
@@ -332,30 +319,34 @@ def source_path(entity_type: str, identifier: str) -> str:
         ``file:`` URI with absolute filesystem path, or empty string
         for unknown entity types
     """
+    # Use {{PROJECT_ROOT}} placeholder instead of absolute paths so links
+    # work across machines (macOS, Linux, writer deck). The palimpsest
+    # nvim plugin resolves the placeholder at runtime via VimwikiLinkHandler.
+    P = "{{PROJECT_ROOT}}"
     if entity_type == "journal_md":
         year = identifier[:4]
-        return f"file:{MD_DIR / year / f'{identifier}.md'}"
+        return f"file:{P}/data/journal/content/md/{year}/{identifier}.md"
     elif entity_type == "metadata_yaml":
         year = identifier[:4]
-        return f"file:{JOURNAL_YAML_DIR / year / f'{identifier}.yaml'}"
+        return f"file:{P}/data/metadata/journal/{year}/{identifier}.yaml"
     elif entity_type == "person_yaml":
-        return f"file:{PEOPLE_YAML_DIR / f'{identifier}.yaml'}"
+        return f"file:{P}/data/metadata/people/{identifier}.yaml"
     elif entity_type == "location_yaml":
-        return f"file:{LOCATIONS_YAML_DIR / f'{identifier}.yaml'}"
+        return f"file:{P}/data/metadata/locations/{identifier}.yaml"
     elif entity_type == "city_yaml":
-        return f"file:{CITIES_YAML_PATH}"
+        return f"file:{P}/data/metadata/cities.yaml"
     elif entity_type == "arc_yaml":
-        return f"file:{ARCS_YAML_PATH}"
+        return f"file:{P}/data/metadata/arcs.yaml"
     elif entity_type == "chapter_yaml":
-        return f"file:{MANUSCRIPT_CHAPTERS_DIR / f'{identifier}.yaml'}"
+        return f"file:{P}/data/metadata/manuscript/chapters/{identifier}.yaml"
     elif entity_type == "character_yaml":
-        return f"file:{MANUSCRIPT_CHARACTERS_DIR / f'{identifier}.yaml'}"
+        return f"file:{P}/data/metadata/manuscript/characters/{identifier}.yaml"
     elif entity_type == "scene_yaml":
-        return f"file:{MANUSCRIPT_SCENES_DIR / f'{identifier}.yaml'}"
+        return f"file:{P}/data/metadata/manuscript/scenes/{identifier}.yaml"
     elif entity_type == "neighborhoods_yaml":
-        return f"file:{NEIGHBORHOODS_YAML_PATH}"
+        return f"file:{P}/data/metadata/neighborhoods.yaml"
     elif entity_type == "relation_types_yaml":
-        return f"file:{RELATION_TYPES_YAML_PATH}"
+        return f"file:{P}/data/metadata/relation_types.yaml"
     return ""
 
 

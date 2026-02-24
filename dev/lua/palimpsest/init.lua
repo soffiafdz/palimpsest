@@ -18,10 +18,14 @@ function M.setup()
 
 	-- Override vimwiki's file: link handler to open in nvim
 	-- instead of delegating to the OS (which opens wrong apps).
+	-- Also resolves {{PROJECT_ROOT}} placeholder so links work across machines.
+	local root = require("palimpsest.config").get_root() or ""
+	vim.g._palimpsest_root = root
 	vim.cmd([[
 		function! VimwikiLinkHandler(link)
 			if a:link =~# '^file:'
 				let l:path = substitute(a:link, '^file:', '', '')
+				let l:path = substitute(l:path, '{{PROJECT_ROOT}}', g:_palimpsest_root, 'g')
 				execute 'edit ' . fnameescape(l:path)
 				return 1
 			endif

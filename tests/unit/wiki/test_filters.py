@@ -19,19 +19,6 @@ import pytest
 from jinja2 import Environment
 
 # --- Local imports ---
-from dev.core.paths import (
-    MD_DIR,
-    JOURNAL_YAML_DIR,
-    PEOPLE_YAML_DIR,
-    LOCATIONS_YAML_DIR,
-    CITIES_YAML_PATH,
-    ARCS_YAML_PATH,
-    NEIGHBORHOODS_YAML_PATH,
-    RELATION_TYPES_YAML_PATH,
-    MANUSCRIPT_CHAPTERS_DIR,
-    MANUSCRIPT_CHARACTERS_DIR,
-    MANUSCRIPT_SCENES_DIR,
-)
 from dev.wiki.filters import (
     wikilink,
     date_long,
@@ -286,75 +273,66 @@ class TestTimelineTable:
 class TestSourcePath:
     """Tests for source_path filter."""
 
+    P = "{{PROJECT_ROOT}}"
+
     def test_journal_md_path(self) -> None:
-        """Generates absolute file: path to journal markdown."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("journal_md", "2024-11-08")
-        expected = f"file:{MD_DIR / '2024' / '2024-11-08.md'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/journal/content/md/2024/2024-11-08.md"
 
     def test_metadata_yaml_path(self) -> None:
-        """Generates absolute file: path to metadata YAML."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("metadata_yaml", "2024-11-08")
-        expected = f"file:{JOURNAL_YAML_DIR / '2024' / '2024-11-08.yaml'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/journal/2024/2024-11-08.yaml"
 
     def test_unknown_type(self) -> None:
         """Unknown entity type returns empty string."""
         assert source_path("unknown", "anything") == ""
 
     def test_person_yaml_path(self) -> None:
-        """Generates absolute file: path to person YAML metadata."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("person_yaml", "clara_dupont")
-        expected = f"file:{PEOPLE_YAML_DIR / 'clara_dupont.yaml'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/people/clara_dupont.yaml"
 
     def test_location_yaml_path(self) -> None:
-        """Generates absolute file: path to location YAML metadata."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("location_yaml", "montreal/cafe-olimpico")
-        expected = f"file:{LOCATIONS_YAML_DIR / 'montreal' / 'cafe-olimpico.yaml'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/locations/montreal/cafe-olimpico.yaml"
 
     def test_city_yaml_path(self) -> None:
-        """Generates absolute file: path to cities YAML (shared file)."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("city_yaml", "")
-        expected = f"file:{CITIES_YAML_PATH}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/cities.yaml"
 
     def test_arc_yaml_path(self) -> None:
-        """Generates absolute file: path to arcs YAML (shared file)."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("arc_yaml", "")
-        expected = f"file:{ARCS_YAML_PATH}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/arcs.yaml"
 
     def test_chapter_yaml_path(self) -> None:
-        """Generates absolute file: path to chapter YAML metadata."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("chapter_yaml", "the-beginning")
-        expected = f"file:{MANUSCRIPT_CHAPTERS_DIR / 'the-beginning.yaml'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/manuscript/chapters/the-beginning.yaml"
 
     def test_character_yaml_path(self) -> None:
-        """Generates absolute file: path to character YAML metadata."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("character_yaml", "protagonist")
-        expected = f"file:{MANUSCRIPT_CHARACTERS_DIR / 'protagonist.yaml'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/manuscript/characters/protagonist.yaml"
 
     def test_scene_yaml_path(self) -> None:
-        """Generates absolute file: path to scene YAML metadata."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("scene_yaml", "opening-scene")
-        expected = f"file:{MANUSCRIPT_SCENES_DIR / 'opening-scene.yaml'}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/manuscript/scenes/opening-scene.yaml"
 
     def test_neighborhoods_yaml_path(self) -> None:
-        """Generates absolute file: path to neighborhoods curation YAML."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("neighborhoods_yaml", "")
-        expected = f"file:{NEIGHBORHOODS_YAML_PATH}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/neighborhoods.yaml"
 
     def test_relation_types_yaml_path(self) -> None:
-        """Generates absolute file: path to relation_types curation YAML."""
+        """Generates file: path with PROJECT_ROOT placeholder."""
         result = source_path("relation_types_yaml", "")
-        expected = f"file:{RELATION_TYPES_YAML_PATH}"
-        assert result == expected
+        assert result == f"file:{self.P}/data/metadata/relation_types.yaml"
 
 
 # ==================== flexible_date_display ====================

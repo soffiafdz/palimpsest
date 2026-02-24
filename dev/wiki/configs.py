@@ -157,17 +157,6 @@ def _part_filename(part: Any) -> str:
     return f"part-{part.number}.md"
 
 
-# ==================== Visibility Filters ====================
-
-def _tag_should_generate(tag: Any) -> bool:
-    """Tags with only 1 entry get no page."""
-    return tag.usage_count >= 2
-
-
-def _theme_should_generate(theme: Any) -> bool:
-    """Themes with only 1 entry get no page."""
-    return theme.usage_count >= 2
-
 
 # ==================== Configurations ====================
 
@@ -219,7 +208,6 @@ JOURNAL_CONFIGS: List[EntityConfig] = [
         output_subdir="journal/tags",
         filename_fn=_named_entity_filename,
         context_method="build_tag_context",
-        should_generate_fn=_tag_should_generate,
     ),
     EntityConfig(
         name="themes",
@@ -228,7 +216,6 @@ JOURNAL_CONFIGS: List[EntityConfig] = [
         output_subdir="journal/themes",
         filename_fn=_named_entity_filename,
         context_method="build_theme_context",
-        should_generate_fn=_theme_should_generate,
     ),
     EntityConfig(
         name="poems",

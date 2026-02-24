@@ -213,16 +213,16 @@ class TestVisibilityFilters:
         tag_page = wiki_output / "journal" / "tags" / "writing.md"
         assert tag_page.is_file()
 
-    def test_tag_with_one_entry_gets_no_page(
+    def test_tag_with_one_entry_gets_page(
         self, test_db, populated_wiki_db, wiki_output
     ):
-        """Tags used in only 1 entry don't get wiki pages."""
+        """All tags get wiki pages regardless of usage count."""
         exporter = WikiExporter(test_db, output_dir=wiki_output)
         exporter.generate_all(section="journal", entity_type="tags")
 
-        # 'therapy' appears only in entry4
+        # 'therapy' appears only in entry4 — still gets a page
         tag_page = wiki_output / "journal" / "tags" / "therapy.md"
-        assert not tag_page.exists()
+        assert tag_page.exists()
 
     def test_themes_visibility(
         self, test_db, populated_wiki_db, wiki_output
