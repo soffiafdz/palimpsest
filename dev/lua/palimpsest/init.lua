@@ -49,11 +49,12 @@ function M.setup()
 		end
 	end
 
-	-- Check if fzf-lua is available (optional dependency)
-	local has_fzf, _ = pcall(require, "fzf-lua")
-	if not has_fzf then
+	-- Check if a picker backend is available (fzf-lua or snacks.nvim)
+	local has_fzf = pcall(require, "fzf-lua")
+	local has_snacks, snacks = pcall(require, "snacks")
+	if not has_fzf and not (has_snacks and snacks.picker) then
 		vim.notify(
-			"fzf-lua not found - browse and search features disabled",
+			"No picker found (fzf-lua or snacks.nvim) — browse and search disabled",
 			vim.log.levels.INFO
 		)
 	end
