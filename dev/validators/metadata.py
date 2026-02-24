@@ -2,903 +2,474 @@
 """
 metadata.py
 -----------
-Metadata structure validation for Palimpsest journal entries.
+Validation module for metadata YAML files.
 
-Validates that YAML frontmatter structures match parser expectations.
-This is NOT semantic validation (checking if people/entries exist),
-but STRUCTURAL validation (checking if the parser can handle it).
+This module provides validation functions for metadata YAML files used in the
+jumpstart pipeline. It validates both structural integrity and entity references.
 
-Based on comprehensive parsing specification derived from:
-- dev/dataclasses/md_entry.py (all _parse_* methods)
-- dev/utils/parsers.py (parsing utilities)
-- docs/metadata-quick-reference.md
-- docs/example-yaml.md
+Key Features:
+    - Structural validation (required fields, types, references)
+    - Entity validation against curation (people, locations)
+    - Directory-level batch validation
+    - Detailed error and warning reporting
 
-Validates:
-- Field structure compatibility (list vs dict vs string)
-- Cross-field dependencies (city-locations)
-- Nested structure formats (dates with people/locations)
-- Special character usage (@, #, ~, -, ())
-- Required subfields in complex structures
-- Enum value compatibility
+Validation Levels:
+    - Structure: Required fields, field types, internal references
+    - Entities: People and locations exist in curation with suggestions for unknowns
 
 Usage:
-    validate metadata all
-    validate metadata people
-    validate metadata locations
-    validate metadata references
+    from dev.validators.metadata import validate_metadata_file, validate_metadata_directory
+
+    # Single file validation
+    result = validate_metadata_file(Path("2024-12-03.yaml"))
+
+    # Directory validation
+    results = validate_metadata_directory(Path("metadata/journal/2024"))
+
+    # With MD frontmatter consistency check
+    result = validate_metadata_file(path, check_consistency=True)
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# --- Third-party imports ---
+import yaml as pyyaml
+
 # --- Local imports ---
-from dev.utils.md import split_frontmatter
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from dev.core.paths import MD_DIR
+from dev.dataclasses.metadata_entry import MetadataEntry, MetadataValidationResult
+
+
+# =============================================================================
+# Batch Validation Results
+# =============================================================================
 
 
 @dataclass
-class MetadataIssue:
-    """Represents a metadata validation issue."""
+class DirectoryValidationResult:
+    """
+    Results from validating a directory of metadata YAML files.
 
-    file_path: Path
-    field_name: str
-    severity: str  # error, warning
-    message: str
-    suggestion: Optional[str] = None
-    yaml_value: Optional[Any] = None
+    Attributes:
+        directory: Path to the validated directory
+        files_processed: Number of files processed
+        valid_count: Number of files that passed validation
+        error_count: Number of files with structural errors
+        warning_count: Number of files with entity warnings
+        results: Per-file validation results
+    """
 
-
-@dataclass
-class MetadataValidationReport:
-    """Complete metadata validation report."""
-
-    files_checked: int = 0
-    files_with_errors: int = 0
-    files_with_warnings: int = 0
-    total_errors: int = 0
-    total_warnings: int = 0
-    issues: List[MetadataIssue] = field(default_factory=list)
-
-    def add_issue(self, issue: MetadataIssue) -> None:
-        """Add an issue to the report."""
-        self.issues.append(issue)
-        if issue.severity == "error":
-            self.total_errors += 1
-        elif issue.severity == "warning":
-            self.total_warnings += 1
+    directory: str = ""
+    files_processed: int = 0
+    valid_count: int = 0
+    error_count: int = 0
+    warning_count: int = 0
+    results: Dict[str, MetadataValidationResult] = field(default_factory=dict)
 
     @property
     def has_errors(self) -> bool:
-        """Check if any errors were found."""
-        return self.total_errors > 0
+        """Check if any files have errors."""
+        return self.error_count > 0
 
-    @property
-    def has_warnings(self) -> bool:
-        """Check if any warnings were found."""
-        return self.total_warnings > 0
-
-    @property
-    def is_healthy(self) -> bool:
-        """Check if all files are healthy (no errors)."""
-        return not self.has_errors
-
-
-class MetadataValidator:
-    """Validates metadata structure for parser compatibility."""
-
-    # Valid manuscript status values (from models_manuscript.py and validation)
-    VALID_MANUSCRIPT_STATUS = [
-        "unspecified",
-        "draft",
-        "reviewed",
-        "included",
-        "excluded",
-        "final",
-    ]
-
-    # Valid reference modes (from models.py)
-    VALID_REFERENCE_MODES = ["direct", "indirect", "paraphrase", "visual"]
-
-    # Valid reference types (from models.py)
-    VALID_REFERENCE_TYPES = [
-        "book",
-        "poem",
-        "article",
-        "film",
-        "song",
-        "podcast",
-        "interview",
-        "speech",
-        "tv_show",
-        "video",
-        "other",
-    ]
-
-    def __init__(
-        self,
-        md_dir: Path,
-        logger: Optional[PalimpsestLogger] = None,
-    ):
+    def summary(self) -> str:
         """
-        Initialize metadata validator.
-
-        Args:
-            md_dir: Directory containing markdown files
-            logger: Optional logger instance
-        """
-        self.md_dir = md_dir
-        self.logger = logger
-
-    def validate_people_field(
-        self, file_path: Path, people_data: Any
-    ) -> List[MetadataIssue]:
-        """
-        Validate people field structure.
-
-        Based on: md_entry.py:_parse_people_field()
-
-        Valid formats:
-        - Simple name: "John"
-        - Full name: "Jane Smith"
-        - Hyphenated: "María-José" (hyphen → space)
-        - With expansion: "Bob (Robert Johnson)"
-        - Alias: "@Johnny"
-        - Alias with name: "@Johnny (John)"
-        - Dict: {"name": "John", "full_name": "John Smith"}
-        - Dict with alias: {"alias": "Johnny", "name": "John"}
-        """
-        issues = []
-
-        if not isinstance(people_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="people",
-                    severity="error",
-                    message="People field must be a list",
-                    suggestion="Use: people: [name1, name2] or people:\n  - name1\n  - name2",
-                    yaml_value=type(people_data).__name__,
-                )
-            )
-            return issues
-
-        for idx, person in enumerate(people_data):
-            if isinstance(person, str):
-                # Check for unbalanced parentheses
-                if ")" in person and "(" not in person:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"people[{idx}]",
-                            severity="error",
-                            message=f"Unbalanced parenthesis in: '{person}'",
-                            suggestion="Check parentheses pairing",
-                            yaml_value=person,
-                        )
-                    )
-
-                # Check for parentheses format
-                if "(" in person:
-                    if not person.endswith(")"):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="error",
-                                message=f"Malformed parentheses in: '{person}'",
-                                suggestion="Use format: Name (Full Name) or @Alias (Name)",
-                                yaml_value=person,
-                            )
-                        )
-                    # Check for space before parenthesis
-                    # Allow @Alias (Name) but catch @Alias(Name) and Name(Full Name)
-                    elif not re.search(r'\s+\(', person):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="warning",
-                                message=f"Missing space before parenthesis in: '{person}'",
-                                suggestion="Use format: Name (Full Name) not Name(Full Name)",
-                                yaml_value=person,
-                            )
-                        )
-
-                # Check for alias format
-                if person.startswith("@"):
-                    # Alias should have format @Alias or @Alias (Name)
-                    if "(" not in person:
-                        # Just @Alias is valid but limited
-                        pass
-                    elif not person.endswith(")"):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"people[{idx}]",
-                                severity="error",
-                                message=f"Malformed alias format: '{person}'",
-                                suggestion="Use format: @Alias (Name) or @Alias (Full Name)",
-                                yaml_value=person,
-                            )
-                        )
-
-            elif isinstance(person, dict):
-                # Check dict has at least one required field
-                if not any(key in person for key in ["name", "full_name", "alias"]):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"people[{idx}]",
-                            severity="error",
-                            message="Person dict missing required field (name, full_name, or alias)",
-                            suggestion="Add at least one of: name, full_name, or alias",
-                            yaml_value=str(person),
-                        )
-                    )
-
-                # Check for unknown fields
-                known_fields = {"name", "full_name", "alias"}
-                unknown = set(person.keys()) - known_fields
-                if unknown:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"people[{idx}]",
-                            severity="warning",
-                            message=f"Unknown fields in person dict: {', '.join(unknown)}",
-                            suggestion="Valid fields: name, full_name, alias",
-                        )
-                    )
-            else:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"people[{idx}]",
-                        severity="error",
-                        message=f"Invalid people entry type: {type(person).__name__}",
-                        suggestion="Use string or dict format",
-                        yaml_value=str(person),
-                    )
-                )
-
-        return issues
-
-    def validate_locations_field(
-        self, file_path: Path, locations_data: Any, city_data: Any
-    ) -> List[MetadataIssue]:
-        """
-        Validate locations field structure and city dependency.
-
-        Based on: md_entry.py:_parse_locations_field()
-
-        CRITICAL RULE: Flat list requires exactly 1 city
-        """
-        issues = []
-
-        # Parse city count
-        city_count = 0
-        if isinstance(city_data, str):
-            city_count = 1
-        elif isinstance(city_data, list):
-            city_count = len([c for c in city_data if c])
-
-        # Check locations format
-        if isinstance(locations_data, list):
-            # Flat list format
-            if city_count == 0:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="locations",
-                        severity="error",
-                        message="Flat locations list requires city field",
-                        suggestion="Add: city: CityName",
-                    )
-                )
-            elif city_count > 1:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="locations",
-                        severity="error",
-                        message=f"Flat locations list with {city_count} cities (ambiguous)",
-                        suggestion="Use nested dict:\nlocations:\n  City1:\n    - Location1\n  City2:\n    - Location2",
-                        yaml_value=f"cities: {city_data}",
-                    )
-                )
-
-        elif isinstance(locations_data, dict):
-            # Nested dict format
-            city_list = city_data if isinstance(city_data, list) else [city_data] if city_data else []
-
-            # Check if dict keys match cities
-            for city_key in locations_data.keys():
-                if city_list and city_key not in city_list:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name="locations",
-                            severity="warning",
-                            message=f"Location city '{city_key}' not in city list: {city_list}",
-                            suggestion=f"Add '{city_key}' to city field or check for typos",
-                        )
-                    )
-
-            # Check dict values are lists or strings
-            for city_key, city_locs in locations_data.items():
-                if not isinstance(city_locs, (list, str)):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"locations.{city_key}",
-                            severity="error",
-                            message=f"Invalid locations type for {city_key}: {type(city_locs).__name__}",
-                            suggestion="Use list or string for location names",
-                        )
-                    )
-
-        else:
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="locations",
-                    severity="error",
-                    message=f"Invalid locations type: {type(locations_data).__name__}",
-                    suggestion="Use list (single city) or dict (multiple cities)",
-                )
-            )
-
-        return issues
-
-    def validate_dates_field(
-        self, file_path: Path, dates_data: Any
-    ) -> List[MetadataIssue]:
-        """
-        Validate dates field structure.
-
-        Based on: md_entry.py:_parse_dates_field()
-
-        Formats:
-        - Simple: "2024-01-15"
-        - With context: "2024-01-15 (context)"
-        - With refs: "2024-01-15 (meeting with @John at #Café)"
-        - Dict: {date: "2024-01-15", context: "...", people: [...], locations: [...]}
-        - Opt-out: "~"
-        """
-        issues = []
-
-        if not isinstance(dates_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="dates",
-                    severity="error",
-                    message="Dates field must be a list",
-                    suggestion="Use: dates: [date1, date2]",
-                )
-            )
-            return issues
-
-        # ISO date pattern
-        date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}')
-
-        for idx, date_entry in enumerate(dates_data):
-            if isinstance(date_entry, str):
-                # Check for opt-out marker
-                if date_entry.strip() == "~":
-                    continue
-
-                # Check for date format
-                if not date_pattern.match(date_entry.strip()):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}]",
-                            severity="error",
-                            message=f"Invalid date format: '{date_entry}'",
-                            suggestion="Use YYYY-MM-DD format, optionally with (context)",
-                            yaml_value=date_entry,
-                        )
-                    )
-
-                # Check parentheses balance
-                if "(" in date_entry:
-                    if not date_entry.rstrip().endswith(")"):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"dates[{idx}]",
-                                severity="error",
-                                message=f"Unclosed parenthesis in: '{date_entry}'",
-                                suggestion="Use format: YYYY-MM-DD (context)",
-                            )
-                        )
-
-            elif isinstance(date_entry, dict):
-                # Dict format requires 'date' key
-                if "date" not in date_entry:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}]",
-                            severity="error",
-                            message="Date dict missing required 'date' key",
-                            suggestion="Add: date: YYYY-MM-DD",
-                            yaml_value=str(date_entry),
-                        )
-                    )
-                else:
-                    # Validate date value
-                    if not date_pattern.match(str(date_entry["date"]).strip()):
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"dates[{idx}].date",
-                                severity="error",
-                                message=f"Invalid date value: '{date_entry['date']}'",
-                                suggestion="Use YYYY-MM-DD format",
-                            )
-                        )
-
-                # Check valid subfields
-                valid_keys = {"date", "context", "people", "locations"}
-                unknown = set(date_entry.keys()) - valid_keys
-                if unknown:
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}]",
-                            severity="warning",
-                            message=f"Unknown fields in date dict: {', '.join(unknown)}",
-                            suggestion="Valid fields: date, context, people, locations",
-                        )
-                    )
-
-                # Check types of subfields
-                if "people" in date_entry and not isinstance(date_entry["people"], list):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}].people",
-                            severity="warning",
-                            message="Date people should be a list",
-                            suggestion="Use: people: [name1, name2]",
-                        )
-                    )
-
-                if "locations" in date_entry and not isinstance(date_entry["locations"], list):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"dates[{idx}].locations",
-                            severity="warning",
-                            message="Date locations should be a list",
-                            suggestion="Use: locations: [loc1, loc2]",
-                        )
-                    )
-
-            else:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"dates[{idx}]",
-                        severity="error",
-                        message=f"Invalid date entry type: {type(date_entry).__name__}",
-                        suggestion="Use string (YYYY-MM-DD) or dict format",
-                    )
-                )
-
-        return issues
-
-    def validate_references_field(
-        self, file_path: Path, references_data: Any
-    ) -> List[MetadataIssue]:
-        """
-        Validate references field structure.
-
-        Based on: md_entry.py:_parse_references_field()
-
-        Required: At least one of 'content' or 'description'
-        Optional: mode, speaker, source
-        If source: requires title and type
-        """
-        issues = []
-
-        if not isinstance(references_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="references",
-                    severity="error",
-                    message="References field must be a list",
-                    suggestion="Use: references:\n  - content: \"...\"",
-                )
-            )
-            return issues
-
-        for idx, ref in enumerate(references_data):
-            if not isinstance(ref, dict):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"references[{idx}]",
-                        severity="error",
-                        message=f"Reference must be a dict, got {type(ref).__name__}",
-                        suggestion="Use dict format with content/description",
-                    )
-                )
-                continue
-
-            # Check for content or description
-            if "content" not in ref and "description" not in ref:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"references[{idx}]",
-                        severity="error",
-                        message="Reference missing both 'content' and 'description'",
-                        suggestion="Add at least one: content or description",
-                        yaml_value=str(ref),
-                    )
-                )
-
-            # Check mode enum
-            if "mode" in ref and ref["mode"] not in self.VALID_REFERENCE_MODES:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"references[{idx}].mode",
-                        severity="error",
-                        message=f"Invalid reference mode: '{ref['mode']}'",
-                        suggestion=f"Valid modes: {', '.join(self.VALID_REFERENCE_MODES)}",
-                        yaml_value=ref["mode"],
-                    )
-                )
-
-            # Check source structure
-            if "source" in ref:
-                if not isinstance(ref["source"], dict):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"references[{idx}].source",
-                            severity="error",
-                            message="Reference source must be a dict",
-                            suggestion="Use: source:\n  title: \"...\"\n  type: book",
-                        )
-                    )
-                else:
-                    source = ref["source"]
-
-                    # Check required fields
-                    if "title" not in source:
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"references[{idx}].source",
-                                severity="error",
-                                message="Reference source missing 'title'",
-                                suggestion="Add: title: \"Source Title\"",
-                            )
-                        )
-
-                    if "type" not in source:
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"references[{idx}].source",
-                                severity="error",
-                                message="Reference source missing 'type'",
-                                suggestion=f"Add: type: {self.VALID_REFERENCE_TYPES[0]}",
-                            )
-                        )
-                    elif source["type"] not in self.VALID_REFERENCE_TYPES:
-                        issues.append(
-                            MetadataIssue(
-                                file_path=file_path,
-                                field_name=f"references[{idx}].source.type",
-                                severity="error",
-                                message=f"Invalid source type: '{source['type']}'",
-                                suggestion=f"Valid types: {', '.join(self.VALID_REFERENCE_TYPES)}",
-                                yaml_value=source["type"],
-                            )
-                        )
-
-        return issues
-
-    def validate_poems_field(
-        self, file_path: Path, poems_data: Any
-    ) -> List[MetadataIssue]:
-        """
-        Validate poems field structure.
-
-        Based on: md_entry.py:_parse_poems_field()
-
-        Required: title, content
-        Optional: revision_date, notes
-        """
-        issues = []
-
-        if not isinstance(poems_data, list):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="poems",
-                    severity="error",
-                    message="Poems field must be a list",
-                    suggestion="Use: poems:\n  - title: \"...\"\n    content: |",
-                )
-            )
-            return issues
-
-        # ISO date pattern for revision_date
-        date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-
-        for idx, poem in enumerate(poems_data):
-            if not isinstance(poem, dict):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"poems[{idx}]",
-                        severity="error",
-                        message=f"Poem must be a dict, got {type(poem).__name__}",
-                        suggestion="Use dict format with title and content",
-                    )
-                )
-                continue
-
-            # Check required fields
-            if "title" not in poem:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"poems[{idx}]",
-                        severity="error",
-                        message="Poem missing required 'title' field",
-                        suggestion="Add: title: \"Poem Title\"",
-                    )
-                )
-
-            if "content" not in poem:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name=f"poems[{idx}]",
-                        severity="error",
-                        message="Poem missing required 'content' field",
-                        suggestion="Add: content: |\n  Line 1\n  Line 2",
-                    )
-                )
-
-            # Check revision_date format if present
-            if "revision_date" in poem:
-                if not date_pattern.match(str(poem["revision_date"]).strip()):
-                    issues.append(
-                        MetadataIssue(
-                            file_path=file_path,
-                            field_name=f"poems[{idx}].revision_date",
-                            severity="warning",
-                            message=f"Invalid revision_date format: '{poem['revision_date']}'",
-                            suggestion="Use YYYY-MM-DD format (will default to entry date)",
-                            yaml_value=poem["revision_date"],
-                        )
-                    )
-
-        return issues
-
-    def validate_manuscript_field(
-        self, file_path: Path, manuscript_data: Any
-    ) -> List[MetadataIssue]:
-        """
-        Validate manuscript field structure.
-
-        Based on: models_manuscript.py and validation constants
-
-        Required: status, edited
-        Optional: themes, notes
-        """
-        issues = []
-
-        if not isinstance(manuscript_data, dict):
-            issues.append(
-                MetadataIssue(
-                    file_path=file_path,
-                    field_name="manuscript",
-                    severity="error",
-                    message=f"Manuscript field must be a dict, got {type(manuscript_data).__name__}",
-                    suggestion="Use: manuscript:\n  status: draft\n  edited: false",
-                )
-            )
-            return issues
-
-        # Check status
-        if "status" in manuscript_data:
-            if manuscript_data["status"] not in self.VALID_MANUSCRIPT_STATUS:
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="manuscript.status",
-                        severity="error",
-                        message=f"Invalid manuscript status: '{manuscript_data['status']}'",
-                        suggestion=f"Valid statuses: {', '.join(self.VALID_MANUSCRIPT_STATUS)}",
-                        yaml_value=manuscript_data["status"],
-                    )
-                )
-
-        # Check edited field type
-        if "edited" in manuscript_data:
-            if not isinstance(manuscript_data["edited"], bool):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="manuscript.edited",
-                        severity="warning",
-                        message=f"Manuscript edited should be boolean, got {type(manuscript_data['edited']).__name__}",
-                        suggestion="Use: edited: true or edited: false",
-                        yaml_value=manuscript_data["edited"],
-                    )
-                )
-
-        # Check themes is list
-        if "themes" in manuscript_data:
-            if not isinstance(manuscript_data["themes"], list):
-                issues.append(
-                    MetadataIssue(
-                        file_path=file_path,
-                        field_name="manuscript.themes",
-                        severity="warning",
-                        message="Manuscript themes should be a list",
-                        suggestion="Use: themes:\n  - theme1\n  - theme2",
-                    )
-                )
-
-        return issues
-
-    def validate_file(self, file_path: Path) -> List[MetadataIssue]:
-        """
-        Validate metadata structure in a single file.
-
-        Args:
-            file_path: Path to markdown file
+        Get human-readable summary.
 
         Returns:
-            List of metadata issues found
+            Formatted summary string
         """
-        issues = []
-
-        # Read and parse file
-        try:
-            content = file_path.read_text(encoding="utf-8")
-            frontmatter_text, _ = split_frontmatter(content)
-
-            if not frontmatter_text:
-                return issues  # No frontmatter to validate
-
-            import yaml
-            metadata = yaml.safe_load(frontmatter_text)
-
-            if not isinstance(metadata, dict):
-                return issues  # Not valid YAML dict
-
-        except Exception:
-            return issues  # Let frontmatter validator handle syntax errors
-
-        # Validate each field
-        if "people" in metadata:
-            issues.extend(self.validate_people_field(file_path, metadata["people"]))
-
-        if "locations" in metadata:
-            city_data = metadata.get("city")
-            issues.extend(
-                self.validate_locations_field(file_path, metadata["locations"], city_data)
-            )
-
-        if "dates" in metadata:
-            issues.extend(self.validate_dates_field(file_path, metadata["dates"]))
-
-        if "references" in metadata:
-            issues.extend(self.validate_references_field(file_path, metadata["references"]))
-
-        if "poems" in metadata:
-            issues.extend(self.validate_poems_field(file_path, metadata["poems"]))
-
-        if "manuscript" in metadata:
-            issues.extend(self.validate_manuscript_field(file_path, metadata["manuscript"]))
-
-        return issues
-
-    def validate_all(self) -> MetadataValidationReport:
-        """
-        Validate all markdown files in directory.
-
-        Returns:
-            Complete validation report
-        """
-        report = MetadataValidationReport()
-        md_files = list(self.md_dir.glob("**/*.md"))
-
-        for md_file in md_files:
-            report.files_checked += 1
-            file_issues = self.validate_file(md_file)
-
-            for issue in file_issues:
-                report.add_issue(issue)
-
-            if any(i.severity == "error" for i in file_issues):
-                report.files_with_errors += 1
-            if any(i.severity == "warning" for i in file_issues):
-                report.files_with_warnings += 1
-
-        return report
+        return (
+            f"Processed: {self.files_processed} | "
+            f"Valid: {self.valid_count} | "
+            f"Errors: {self.error_count} | "
+            f"Warnings: {self.warning_count}"
+        )
 
 
-def format_metadata_report(report: MetadataValidationReport) -> str:
+# =============================================================================
+# Validation Functions
+# =============================================================================
+
+
+def _load_md_frontmatter(yaml_file: Path) -> Optional[Dict[str, Any]]:
     """
-    Format metadata validation report as readable text.
+    Load MD frontmatter for a metadata YAML file.
+
+    Finds the corresponding MD file and extracts its frontmatter.
 
     Args:
-        report: Validation report to format
+        yaml_file: Path to metadata YAML file (e.g., metadata/journal/2024/2024-12-03.yaml)
 
     Returns:
-        Formatted report string
+        Parsed frontmatter dict or None if MD file not found
     """
-    lines = []
-    lines.append("\n" + "=" * 60)
-    lines.append("METADATA VALIDATION REPORT")
-    lines.append("=" * 60)
-    lines.append("")
+    # Extract date from YAML filename (YYYY-MM-DD.yaml)
+    filename = yaml_file.stem  # Remove .yaml extension
+    year = yaml_file.parent.name  # Year directory
+
+    # Build MD file path (data/journal/content/md/YYYY/YYYY-MM-DD.md)
+    md_file = MD_DIR / year / f"{filename}.md"
+
+    if not md_file.exists():
+        return None
+
+    # Read and extract frontmatter
+    content = md_file.read_text(encoding="utf-8")
+    if not content.startswith("---"):
+        return None
+
+    # Find end of frontmatter
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return None
+
+    frontmatter_text = content[3:end_idx].strip()
+    try:
+        return pyyaml.safe_load(frontmatter_text)
+    except Exception:
+        return None
+
+
+def validate_metadata_file(
+    file_path: Path,
+    resolver: Optional[Any] = None,  # EntityResolver, avoid circular import
+    md_frontmatter: Optional[Dict[str, Any]] = None,  # For consistency checks
+    check_consistency: bool = False,  # Load MD frontmatter automatically
+    logger: Optional[PalimpsestLogger] = None,
+) -> MetadataValidationResult:
+    """
+    Validate a single metadata YAML file.
+
+    Performs structural validation and optionally entity validation if a
+    resolver is provided. Also validates consistency with MD frontmatter
+    if provided or requested.
+
+    Args:
+        file_path: Path to metadata YAML file
+        resolver: Optional EntityResolver for entity validation
+        md_frontmatter: Optional MD frontmatter dict for consistency checks
+        check_consistency: Auto-load MD frontmatter and check consistency
+        logger: Optional logger for operation tracking
+
+    Returns:
+        MetadataValidationResult with errors and warnings
+    """
+    log = safe_logger(logger)
+    result = MetadataValidationResult(file_path=str(file_path))
+
+    # Try to parse the file
+    try:
+        entry = MetadataEntry.from_file(file_path)
+    except FileNotFoundError:
+        result.add_error(f"File not found: {file_path}")
+        log.log_warning("Validation failed: file not found", {"file": str(file_path)})
+        return result
+    except Exception as e:
+        result.add_error(f"Failed to parse: {e}")
+        log.log_warning("Validation failed: parse error", {"file": str(file_path), "error": str(e)})
+        return result
+
+    # Structural validation
+    struct_result = entry.validate_structure()
+    result.errors.extend(struct_result.errors)
+    result.warnings.extend(struct_result.warnings)
+
+    # Entity validation (if resolver provided)
+    if resolver is not None:
+        entity_result = entry.validate_entities(resolver)
+        # Don't duplicate structural errors
+        result.warnings.extend(entity_result.warnings)
+
+    # Load MD frontmatter if consistency check requested
+    if check_consistency and md_frontmatter is None:
+        md_frontmatter = _load_md_frontmatter(file_path)
+        if md_frontmatter is None:
+            result.add_warning("MD frontmatter not found for consistency check")
+
+    # Consistency validation (if MD frontmatter available)
+    if md_frontmatter is not None:
+        # Validate people consistency between MD and YAML
+        people_result = entry.validate_people_consistency(md_frontmatter)
+        result.errors.extend(people_result.errors)
+        result.warnings.extend(people_result.warnings)
+
+        # Validate scene subsets
+        scene_result = entry.validate_scene_subsets(md_frontmatter)
+        result.errors.extend(scene_result.errors)
+        result.warnings.extend(scene_result.warnings)
+
+    if result.has_errors:
+        log.log_warning(
+            "Validation errors",
+            {"file": str(file_path), "errors": len(result.errors)},
+        )
+    elif result.warnings:
+        log.log_debug(
+            "Validation warnings",
+            {"file": str(file_path), "warnings": len(result.warnings)},
+        )
+    else:
+        log.log_debug("Validation passed", {"file": str(file_path)})
+
+    return result
+
+
+def validate_metadata_directory(
+    directory: Path,
+    resolver: Optional[Any] = None,  # EntityResolver
+    pattern: str = "*.yaml",
+    check_consistency: bool = False,  # Check MD frontmatter consistency
+    logger: Optional[PalimpsestLogger] = None,
+) -> DirectoryValidationResult:
+    """
+    Validate all metadata YAML files in a directory.
+
+    Processes all YAML files matching the pattern and aggregates results.
+
+    Args:
+        directory: Path to directory containing metadata YAML files
+        resolver: Optional EntityResolver for entity validation
+        pattern: Glob pattern for matching files (default: "*.yaml")
+        check_consistency: Auto-load MD frontmatter and check consistency
+        logger: Optional logger for operation tracking
+
+    Returns:
+        DirectoryValidationResult with per-file results and summary
+    """
+    log = safe_logger(logger)
+    result = DirectoryValidationResult(directory=str(directory))
+
+    if not directory.exists():
+        log.log_error(FileNotFoundError(f"Directory not found: {directory}"))
+        return result
+
+    # Find all matching files
+    yaml_files = sorted(directory.glob(pattern))
+
+    if not yaml_files:
+        log.log_info(f"No {pattern} files found in {directory}")
+        return result
+
+    log.log_operation(
+        "validation_start",
+        {"directory": str(directory), "files_found": len(yaml_files)},
+    )
+
+    # Validate each file
+    for yaml_file in yaml_files:
+        result.files_processed += 1
+        file_result = validate_metadata_file(
+            yaml_file,
+            resolver=resolver,
+            check_consistency=check_consistency,
+            logger=logger
+        )
+        result.results[str(yaml_file)] = file_result
+
+        if file_result.has_errors:
+            result.error_count += 1
+        elif file_result.warnings:
+            result.warning_count += 1
+            result.valid_count += 1  # Warnings don't fail validation
+        else:
+            result.valid_count += 1
+
+    log.log_operation("validation_complete", {"summary": result.summary()})
+
+    return result
+
+
+def validate_year_directory(
+    base_dir: Path,
+    year: str,
+    resolver: Optional[Any] = None,
+    logger: Optional[PalimpsestLogger] = None,
+) -> DirectoryValidationResult:
+    """
+    Validate metadata YAML files for a specific year.
+
+    Convenience function for validating a year subdirectory.
+
+    Args:
+        base_dir: Base metadata directory (e.g., metadata/journal/)
+        year: Year string (e.g., "2024")
+        resolver: Optional EntityResolver for entity validation
+        logger: Optional logger
+
+    Returns:
+        DirectoryValidationResult for the year's files
+    """
+    year_dir = base_dir / year
+    return validate_metadata_directory(year_dir, resolver, logger=logger)
+
+
+def validate_all_years(
+    base_dir: Path,
+    resolver: Optional[Any] = None,
+    years: Optional[List[str]] = None,
+    logger: Optional[PalimpsestLogger] = None,
+) -> Dict[str, DirectoryValidationResult]:
+    """
+    Validate metadata YAML files across multiple years.
+
+    Args:
+        base_dir: Base metadata directory (e.g., metadata/journal/)
+        resolver: Optional EntityResolver for entity validation
+        years: Optional list of years to validate (default: all year directories)
+        logger: Optional logger
+
+    Returns:
+        Dictionary mapping year -> DirectoryValidationResult
+    """
+    log = safe_logger(logger)
+    results: Dict[str, DirectoryValidationResult] = {}
+
+    # Find year directories if not specified
+    if years is None:
+        year_dirs = [
+            d for d in sorted(base_dir.iterdir())
+            if d.is_dir() and d.name.isdigit() and len(d.name) == 4
+        ]
+        years = [d.name for d in year_dirs]
+
+    if not years:
+        log.log_info(f"No year directories found in {base_dir}")
+        return results
+
+    log.log_operation(
+        "multi_year_validation_start",
+        {"base_dir": str(base_dir), "years": years},
+    )
+
+    for year in years:
+        year_result = validate_year_directory(base_dir, year, resolver, logger)
+        results[year] = year_result
 
     # Summary
-    lines.append(f"Files Checked: {report.files_checked}")
-    lines.append(
-        f"✅ Clean Files: {report.files_checked - report.files_with_errors - report.files_with_warnings}"
+    total_files = sum(r.files_processed for r in results.values())
+    total_errors = sum(r.error_count for r in results.values())
+    total_warnings = sum(r.warning_count for r in results.values())
+
+    log.log_operation(
+        "multi_year_validation_complete",
+        {
+            "years": len(results),
+            "total_files": total_files,
+            "total_errors": total_errors,
+            "total_warnings": total_warnings,
+        },
     )
-    lines.append(f"⚠️  Files with Warnings: {report.files_with_warnings}")
-    lines.append(f"❌ Files with Errors: {report.files_with_errors}")
-    lines.append("")
-    lines.append(f"Total Warnings: {report.total_warnings}")
-    lines.append(f"Total Errors: {report.total_errors}")
-    lines.append("")
 
-    # Overall status
-    if report.is_healthy:
-        lines.append("✅ ALL METADATA STRUCTURES VALID")
+    return results
+
+
+# =============================================================================
+# Entity Report Generation
+# =============================================================================
+
+
+def generate_entity_report(
+    directory: Path,
+    resolver: Any,  # EntityResolver
+    output_path: Optional[Path] = None,
+    logger: Optional[PalimpsestLogger] = None,
+) -> str:
+    """
+    Generate a report of all unknown entities in metadata files.
+
+    Useful for identifying entities that need to be added to curation files.
+
+    Args:
+        directory: Path to directory containing metadata YAML files
+        resolver: EntityResolver for entity validation
+        output_path: Optional path to write report to file
+        logger: Optional logger
+
+    Returns:
+        Report text as string
+    """
+    log = safe_logger(logger)
+
+    # Collect all unknown entities
+    unknown_people: Dict[str, List[str]] = {}  # name -> [files]
+    unknown_locations: Dict[str, List[str]] = {}  # name -> [files]
+
+    yaml_files = sorted(directory.rglob("*.yaml"))
+
+    for yaml_file in yaml_files:
+        try:
+            entry = MetadataEntry.from_file(yaml_file)
+        except Exception:
+            continue
+
+        # Check people
+        for person in entry.get_all_people():
+            lookup = resolver.validate_person(person)
+            if not lookup.found:
+                if person not in unknown_people:
+                    unknown_people[person] = []
+                unknown_people[person].append(str(yaml_file))
+
+        # Check locations
+        for location in entry.get_all_locations():
+            lookup = resolver.validate_location(location)
+            if not lookup.found:
+                if location not in unknown_locations:
+                    unknown_locations[location] = []
+                unknown_locations[location].append(str(yaml_file))
+
+    # Generate report
+    lines = [
+        "# Entity Validation Report",
+        "",
+        f"Directory: {directory}",
+        f"Files scanned: {len(yaml_files)}",
+        "",
+    ]
+
+    if unknown_people:
+        lines.append(f"## Unknown People ({len(unknown_people)})")
+        lines.append("")
+        for name in sorted(unknown_people.keys()):
+            files = unknown_people[name]
+            lines.append(f"- **{name}** ({len(files)} occurrences)")
+            # Show suggestions
+            lookup = resolver.validate_person(name)
+            if lookup.suggestions:
+                lines.append(f"  - Suggestions: {', '.join(lookup.suggestions[:3])}")
+        lines.append("")
     else:
-        lines.append("❌ METADATA VALIDATION FAILED")
-    lines.append("")
-
-    # Group issues by file
-    if report.issues:
-        issues_by_file: Dict[Path, List[MetadataIssue]] = {}
-        for issue in report.issues:
-            if issue.file_path not in issues_by_file:
-                issues_by_file[issue.file_path] = []
-            issues_by_file[issue.file_path].append(issue)
-
-        lines.append("ISSUES BY FILE:")
+        lines.append("## Unknown People: None")
         lines.append("")
 
-        for file_path in sorted(issues_by_file.keys()):
-            file_issues = issues_by_file[file_path]
-            errors = [i for i in file_issues if i.severity == "error"]
+    if unknown_locations:
+        lines.append(f"## Unknown Locations ({len(unknown_locations)})")
+        lines.append("")
+        for name in sorted(unknown_locations.keys()):
+            files = unknown_locations[name]
+            lines.append(f"- **{name}** ({len(files)} occurrences)")
+            lookup = resolver.validate_location(name)
+            if lookup.suggestions:
+                lines.append(f"  - Suggestions: {', '.join(lookup.suggestions[:3])}")
+        lines.append("")
+    else:
+        lines.append("## Unknown Locations: None")
+        lines.append("")
 
-            icon = "❌" if errors else "⚠️"
-            lines.append(f"{icon} {file_path.name}")
+    report = "\n".join(lines)
 
-            for issue in file_issues:
-                severity_icon = "❌" if issue.severity == "error" else "⚠️"
-                lines.append(f"   {severity_icon} [{issue.field_name}] {issue.message}")
-                if issue.suggestion:
-                    lines.append(f"      💡 {issue.suggestion}")
+    # Write to file if requested
+    if output_path:
+        output_path.write_text(report, encoding="utf-8")
+        log.log_operation(
+            "entity_report_written",
+            {"output": str(output_path)},
+        )
 
-            lines.append("")
-
-    lines.append("=" * 60)
-
-    return "\n".join(lines)
+    return report

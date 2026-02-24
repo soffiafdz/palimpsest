@@ -19,10 +19,10 @@ It supports construction from raw text and formatting for basic Markdown output.
 This class is used exclusively within the txt2md pipeline and handles ONLY
 basic text conversion - no complex YAML processing nor database integration.
 """
-# ---- Annotations ----
+# --- Annotations ---
 from __future__ import annotations
 
-# ---- Standard library imports ----
+# --- Standard library imports ---
 import re
 import logging
 from dataclasses import dataclass
@@ -31,10 +31,10 @@ from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional, Tuple
 
-# ---- Third party ----
+# --- Third party imports ---
 from ftfy import fix_text  # type: ignore
 
-# ---- Local imports ----
+# --- Local imports ---
 from dev.core.exceptions import EntryParseError
 from dev.utils import txt
 from dev.utils.txt import ENTRY_MARKERS

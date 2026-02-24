@@ -9,55 +9,46 @@ following the Single Responsibility Principle and inheriting from BaseManager.
 
 Available Managers:
     BaseManager: Abstract base class with common utilities
-    TagManager: Manages Tag entities and their relationships
-    EventManager: Manages Event entities
-    DateManager: Manages MentionedDate entities
+    SimpleManager: Config-driven manager for Tag, Theme, Arc, Event
+    TagManager: Factory for Tag SimpleManager
+    ThemeManager: Factory for Theme SimpleManager
+    ArcManager: Factory for Arc SimpleManager
+    EventManager: Factory for Event SimpleManager
     LocationManager: Manages City and Location entities
     ReferenceManager: Manages ReferenceSource and Reference entities
     PoemManager: Manages Poem and PoemVersion entities
-    PersonManager: Manages Person and Alias entities
-    ManuscriptManager: Manages manuscript-related entities
+    PersonManager: Manages Person entities
     EntryManager: Manages Entry entities (most complex)
 
 Usage:
-    from dev.database.managers import PersonManager, EntryManager
+    from dev.database.managers import PersonManager, TagManager, ThemeManager
 
     person_mgr = PersonManager(session, logger)
-    person = person_mgr.create({"name": "John Doe"})
+    tag_mgr = TagManager(session, logger)  # Returns SimpleManager
+    theme_mgr = ThemeManager(session, logger)  # Returns SimpleManager
 """
 from .base_manager import BaseManager
-from .tag_manager import TagManager
-from .event_manager import EventManager
-from .date_manager import DateManager
+from .simple_manager import SimpleManager, TagManager, ThemeManager, ArcManager, EventManager
 from .location_manager import LocationManager
 from .reference_manager import ReferenceManager
 from .poem_manager import PoemManager
 from .person_manager import PersonManager
-from .manuscript_manager import ManuscriptManager
 from .entry_manager import EntryManager
+from .chapter_manager import ChapterManager
+from .character_manager import CharacterManager
 
 __all__ = [
     "BaseManager",
+    "SimpleManager",
     "TagManager",
-    "EventManager",
-    "DateManager",
+    "ThemeManager",
+    "ArcManager",
     "LocationManager",
     "ReferenceManager",
     "PoemManager",
     "PersonManager",
-    "ManuscriptManager",
     "EntryManager",
+    "EventManager",
+    "ChapterManager",
+    "CharacterManager",
 ]
-
-# Phase 1: Core entity managers complete (8/8)! 🎉
-# Phase 2: Integration and cleanup complete! 🎉
-# Phase 3: EntryManager complete! 🎉
-#
-# All entity managers are now fully operational.
-# See REFACTORING_GUIDE.md for usage patterns and implementation details
-#
-# Refactoring Complete Summary:
-#   - 9 modular managers (Base + 8 entities + Entry)
-#   - manager.py reduced from 3,241 lines to ~1,500 lines (54% reduction)
-#   - Clean separation of concerns
-#   - All entity operations delegated to specialized managers

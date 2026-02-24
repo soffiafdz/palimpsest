@@ -1,0 +1,25 @@
+# Manuscript
+
+{{ character_count | zpad }} characters · {{ scene_count | zpad }} manuscript scenes
+
+---
+{% if parts %}
+{% for part in parts %}
+
+## {{ part.display_name | wikilink }}
+
+{{ part.chapter_count }} chapter{{ "s" if part.chapter_count != 1 else "" }}
+{% for ch in part.chapters %}
+- {{ ch.title | wikilink }}
+  {{ ch.type }} · {{ ch.status }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if unassigned_chapters %}
+
+## Unassigned Chapters
+{% for ch in unassigned_chapters %}
+- {{ ch.title | wikilink }}
+  {{ ch.type }} · {{ ch.status }}
+{% endfor %}
+{% endif %}

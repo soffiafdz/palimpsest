@@ -1,0 +1,53 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }}
+
+{{ instance_count | zpad }} instance{{ "s" if instance_count != 1 else "" }}{{ " · " ~ date_range if date_range else "" }}
+
+---
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+
+---
+{% endif %}
+{% if has_entries_subpage %}
+
+## Recent Instances
+
+[All instances ({{ instance_count | zpad }})]({{ slug }}-entries)
+{% for instance in recent_instances %}
+{% if instance.entry_date %}
+- {{ instance.entry_date | entry_date_display }}
+{% if instance.description %}
+  {{ instance.description }}
+{% endif %}
+{% elif instance.description %}
+- {{ instance.description }}
+{% endif %}
+{% endfor %}
+{% else %}
+{% if instances %}
+
+## Instances
+{% for instance in instances %}
+{% if instance.entry_date %}
+- {{ instance.entry_date | entry_date_display }}
+{% if instance.description %}
+  {{ instance.description }}
+{% endif %}
+{% elif instance.description %}
+- {{ instance.description }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if entries %}
+
+---
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}
+{% endif %}

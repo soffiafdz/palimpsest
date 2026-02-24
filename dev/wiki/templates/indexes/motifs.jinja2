@@ -1,0 +1,35 @@
+{#
+  Motifs index page.
+
+  Motifs are the 25 recurring thematic patterns that weave through the
+  journal — The Scroll, The Ghost, The Loop, etc. Unlike tags (what) or
+  themes (why), motifs track *how* the same narrative gestures repeat
+  across entries.
+
+  Sorted by instance count descending. Each motif shows its frequency
+  and the date range it spans. A sample description from the most recent
+  instance gives a taste of how the motif manifests.
+
+  Context:
+    motifs: list of dicts (sorted by instance_count descending):
+      - name: str
+      - instance_count: int
+      - first_date: str (ISO date) or None
+      - last_date: str (ISO date) or None
+      - latest_description: str or None
+    total_instances: int
+#}
+# Motifs
+
+{{ motifs | length | zpad }} motifs · {{ total_instances | zpad }} total instances
+
+---
+{% for motif in motifs %}
+
+## {{ motif.name | wikilink }}
+{{ motif.instance_count | zpad }} instance{{ "s" if motif.instance_count != 1 else "" }}{{ " · " ~ motif.first_date | flexible_date ~ " – " ~ motif.last_date | flexible_date if motif.first_date and motif.last_date else "" }}
+{% if motif.latest_description %}
+
+> {{ motif.latest_description }}
+{% endif %}
+{% endfor %}

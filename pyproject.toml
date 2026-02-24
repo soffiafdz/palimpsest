@@ -22,6 +22,9 @@ dependencies = [
   "markupsafe>=3.0.2",
   "mako>=1.3.10",
   "greenlet>=3.2.2",
+  "jinja2>=3.1.0",
+  "markdown-it-py>=3.0.0",
+  "ruamel.yaml>=0.18.0",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +33,6 @@ dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "ruff>=0.2.0"]
 [project.scripts]
 plm = "dev.pipeline.cli:cli"
 jsearch = "dev.search.cli:cli"
-nlp = "dev.nlp.cli:cli"
 metadb = "dev.database.cli:cli"
 validate = "dev.validators.cli:cli"
 

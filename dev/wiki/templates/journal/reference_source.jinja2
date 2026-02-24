@@ -1,0 +1,56 @@
+# {{ title }}
+{% if author %}
+
+**Author:** {{ author }}
+{% endif %}
+{% if type %}
+**Type:** {{ type }}
+{% endif %}
+{% if url %}
+**URL:**
+[{{ url }}]({{ url }})
+{% endif %}
+{{ reference_count | zpad }} reference{{ "s" if reference_count != 1 else "" }}{{ " · " ~ first_referenced | flexible_date ~ " – " ~ last_referenced | flexible_date if first_referenced and last_referenced else "" }}
+
+---
+{% if has_refs_subpage %}
+
+## Recent References
+
+[All references ({{ reference_count | zpad }})]({{ slug }}-refs)
+{% for ref in recent_references %}
+
+### {{ ref.entry_date | entry_date_display }}
+{% if ref.content %}
+{% if ref.mode == "direct" %}
+> *"{{ ref.content }}"*
+{% else %}
+> {{ ref.content }}
+{% endif %}
+{% endif %}
+> *({{ ref.mode }})*
+{% if ref.description %}
+
+{{ ref.description }}
+{% endif %}
+{% endfor %}
+{% elif references %}
+
+## References
+{% for ref in references %}
+
+### {{ ref.entry_date | entry_date_display }}
+{% if ref.content %}
+{% if ref.mode == "direct" %}
+> *"{{ ref.content }}"*
+{% else %}
+> {{ ref.content }}
+{% endif %}
+{% endif %}
+> *({{ ref.mode }})*
+{% if ref.description %}
+
+{{ ref.description }}
+{% endif %}
+{% endfor %}
+{% endif %}

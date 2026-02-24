@@ -1,0 +1,44 @@
+{#
+  Main portal index page.
+
+  Provides navigational links to all wiki sections with entity counts.
+
+  Context:
+    entry_count: int
+    person_count: int
+    location_count: int
+    city_count: int
+    event_count: int
+    arc_count: int
+    tag_count: int
+    theme_count: int
+    poem_count: int
+    reference_count: int
+    motif_count: int
+#}
+# Palimpsest
+
+---
+
+## Journal
+
+- [Entries](indexes/entry-index.md)
+  {{ entry_count | zpad }} entries
+- [People](indexes/people-index.md)
+  {{ person_count | zpad }} people
+- [Places](indexes/places-index.md)
+  {{ location_count | zpad }} locations in {{ city_count | zpad }} cities
+- [Events](indexes/event-index.md)
+  {{ event_count | zpad }} events
+- [Arcs](indexes/arc-index.md)
+  {{ arc_count | zpad }} arcs
+- [Tags](indexes/tags-index.md)
+  {{ tag_count | zpad }} tags
+- [Themes](indexes/themes-index.md)
+  {{ theme_count | zpad }} themes
+- [Poems](indexes/poems-index.md)
+  {{ poem_count | zpad }} poems
+- [References](indexes/references-index.md)
+  {{ reference_count | zpad }} sources
+- [Motifs](indexes/motifs-index.md)
+  {{ motif_count | zpad }} motifs

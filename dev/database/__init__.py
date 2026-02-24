@@ -2,7 +2,7 @@
 """
 Palimpsest Database Package
 ---------------------------
-Refactored database management system with modular architecture.
+Database management system with modular architecture.
 
 This package provides a comprehensive database management system for the
 Palimpsest personal journal archive system, with specialized modules for:
@@ -20,17 +20,11 @@ from dev.core.exceptions import (
     ValidationError,
     BackupError,
     HealthCheckError,
-    ExportError,
 )
 from .manager import PalimpsestDB
 from .health_monitor import HealthMonitor
-from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
-from .decorators import (
-    log_database_operation,
-    handle_db_errors,
-    validate_metadata,
-)
+from .decorators import DatabaseOperation
 
 __version__ = "2.0.0"
 __author__ = "Palimpsest Development Team"
@@ -43,13 +37,9 @@ __all__ = [
     "ValidationError",
     "BackupError",
     "HealthCheckError",
-    "ExportError",
     # Core modules
     "HealthMonitor",
-    "ExportManager",
     "QueryAnalytics",
-    # Decorators
-    "log_database_operation",
-    "handle_db_errors",
-    "validate_metadata",
+    # Context managers
+    "DatabaseOperation",
 ]

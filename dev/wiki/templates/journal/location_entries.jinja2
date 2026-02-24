@@ -1,0 +1,29 @@
+# {{ name }} — Entries
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
+
+---
+{% if year_summary %}
+
+## By Year
+{% for y in year_summary %}
+- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
+{% endfor %}
+{% endif %}
+{% if events_here %}
+
+---
+
+## Events Here
+{% for arc_group in events_here %}
+
+{% if arc_group.name == "Standalone events" %}
+### Standalone events
+{% else %}
+### {{ arc_group.name | wikilink }}
+{% endif %}
+{% for event in arc_group.events %}
+- {{ event.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}

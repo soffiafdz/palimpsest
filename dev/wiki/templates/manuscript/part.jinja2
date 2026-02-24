@@ -1,0 +1,13 @@
+# {{ display_name }}
+
+{{ chapter_count | zpad }} chapter{{ "s" if chapter_count != 1 else "" }} · {{ scene_count | zpad }} scene{{ "s" if scene_count != 1 else "" }}
+
+---
+{% if chapters %}
+
+## Chapters
+{% for ch in chapters %}
+- {{ ch.title | wikilink }}
+  {{ ch.type }} · {{ ch.status }}
+{% endfor %}
+{% endif %}

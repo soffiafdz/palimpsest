@@ -1,0 +1,60 @@
+# {{ name }}
+
+{% if arc %}
+{{ arc | wikilink }}
+{% else %}
+*Standalone*
+{% endif %}
+{{ entry_dates | length | zpad }} entr{{ "y" if entry_dates | length == 1 else "ies" }} · {{ scene_count | zpad }} scene{{ "s" if scene_count != 1 else "" }}
+
+---
+{% if entry_dates %}
+
+## Entries
+{% for d in entry_dates %}
+- {{ d | entry_date_display }}
+{% endfor %}
+{% endif %}
+{% if has_scenes_subpage %}
+
+---
+
+[All scenes ({{ scene_count | zpad }})]({{ slug }}-scenes)
+{% for scene in scenes[:5] %}
+
+## {{ scene.name }}
+{% if scene.description %}
+
+> {{ scene.description }}
+{% endif %}
+
+---
+{% endfor %}
+{% else %}
+{% for scene in scenes %}
+
+---
+
+## {{ scene.name }}
+{% if scene.description %}
+
+> {{ scene.description }}
+{% endif %}
+{% if scene.people %}
+
+**People**
+{% for person in scene.people %}
+- {{ person | wikilink }}
+{% endfor %}
+{% endif %}
+{% if scene.locations %}
+
+**Places**
+{% for loc_group in scene.locations %}
+- {{ loc_group.city | wikilink }}
+{% for name in loc_group.names %}  - {{ name | wikilink }}
+{% endfor %}
+{%- endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,26 @@
+{#
+  Reference index page.
+
+  Sources grouped by type (book, article, film, song, etc.)
+  with author and reference count. Sorted by frequency within
+  each group.
+
+  Context:
+    source_count: int
+    groups: dict of str (type) -> list of dicts:
+      - title: str
+      - author: str or None
+      - reference_count: int
+#}
+# References
+
+{{ source_count | zpad }} sources
+
+---
+{% for type_name, sources in groups.items() %}
+
+## {{ type_name | replace("_", " ") | title }}
+{% for source in sources %}
+- {{ source.reference_count | zpad }}{{ " · " ~ source.author if source.author else "" }} · {{ source.title | wikilink }}
+{% endfor %}
+{% endfor %}

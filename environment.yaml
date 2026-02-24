@@ -2,46 +2,52 @@ name: palimpsest
 channels:
   - conda-forge
 dependencies:
-  # Python and system tools
+  # Core Python
   - python=3.10
+
+  # Database & ORM
+  - sqlalchemy>=2.0
+  - alembic>=1.16
+  - greenlet>=3.2
+
+  # CLI
+  - click>=8.3
+
+  # Data processing
+  - pyyaml>=6.0
+  - jinja2>=3.1
+  - mako>=1.3
+  - markupsafe>=3.0
+
+  # Text processing
+  - ftfy>=6.3
+  - textstat>=0.7
+
+  # Document conversion
+  - pypandoc>=1.15
+  - pandoc>=2.19
+  - tectonic
+
+  # Development tools
+  - ruff>=0.2
+  - pyright
+  - pytest>=8.0
+  - pytest-cov>=4.1
+  - pytest-mock
+
+  # Version control
+  - git
+  - git-filter-repo
+  - git-lfs
+
+  # Prose linting (optional)
+  - vale
+  - write-good
+
+  # Neovim integration (optional)
+  - pynvim
+
+  # Build tools
   - pip
   - setuptools
   - wheel
-  - readline
-  - ncurses
-  - make
-  - git
-  - git-lfs
-  # Document processing tools
-  - pandoc
-  - pypandoc
-  - tectonic
-  - pyphen
-  - ftfy
-  - textstat
-  - cmudict
-  # System libraries (required by Python packages)
-  - cairo
-  - fontconfig
-  - freetype
-  - harfbuzz
-  - icu
-  - libpng
-  - libcurl
-  - openssl
-  - yaml
-  - zlib
-  - bzip2
-  - zstd
-  # Development tools
-  - alembic
-  - mako
-  - pyyaml
-  - pynvim
-  - sqlalchemy
-  - pip:
-      - ast-grep-cli
-      # Local package itself
-      - -e .
-
-prefix: "/home/soffiafdz/.local/share/micromamba/envs/palimpsest"

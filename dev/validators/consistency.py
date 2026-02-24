@@ -6,11 +6,11 @@ Cross-system consistency validation for Palimpsest.
 
 Validates consistency between:
 - Markdown files (MD)
+- Metadata YAML files
 - Database (DB)
-- Wiki pages (Wiki)
 
 Checks for:
-- Entry existence across systems (MD ↔ DB ↔ Wiki)
+- Entry existence across systems (MD ↔ DB)
 - Metadata synchronization
 - Referential integrity
 - File hash consistency
@@ -28,15 +28,17 @@ from __future__ import annotations
 # --- Standard library imports ---
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Set, Optional
+from typing import Any, Dict, List, Set, Optional
 from collections import defaultdict
+
+# --- Third-party imports ---
+import yaml
 
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
-from dev.dataclasses.md_entry import MdEntry
 from dev.database.models import Entry
 from dev.core.validators import DataValidator
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 @dataclass
@@ -45,7 +47,7 @@ class ConsistencyIssue:
 
     check_type: str  # existence, metadata, references, integrity
     severity: str  # error, warning
-    system: str  # md, db, wiki, md-db, db-wiki, md-db-wiki
+    system: str  # md, db, md-db
     entity_type: str  # entry, person, location, etc.
     entity_id: str  # name, etc.
     message: str
@@ -86,13 +88,12 @@ class ConsistencyValidationReport:
 
 
 class ConsistencyValidator:
-    """Validates consistency across MD, DB, and Wiki systems."""
+    """Validates consistency across MD and DB systems."""
 
     def __init__(
         self,
         db: PalimpsestDB,
         md_dir: Path,
-        wiki_dir: Path,
         logger: Optional[PalimpsestLogger] = None,
     ):
         """
@@ -101,12 +102,10 @@ class ConsistencyValidator:
         Args:
             db: Database manager instance
             md_dir: Directory containing markdown files
-            wiki_dir: Directory containing wiki files
             logger: Optional logger instance
         """
         self.db = db
         self.md_dir = md_dir
-        self.wiki_dir = wiki_dir
         self.logger = logger
         self.report = ConsistencyValidationReport()
 
@@ -129,7 +128,7 @@ class ConsistencyValidator:
 
     def check_entry_existence(self) -> List[ConsistencyIssue]:
         """
-        Check entry existence across MD ↔ DB ↔ Wiki.
+        Check entry existence across MD ↔ DB.
 
         Returns:
             List of existence issues
@@ -137,13 +136,11 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking entry existence across systems...")
+        safe_logger(self.logger).log_info("Checking entry existence across systems...")
 
         # Get entry dates from each system
         md_dates = self._get_md_dates()
         db_dates = self._get_db_dates()
-        wiki_dates = self._get_wiki_dates()
 
         # MD but not DB (parsing failed or sync not run)
         md_only = md_dates - db_dates
@@ -155,7 +152,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=date_str,
                 message="Entry exists in markdown but not in database",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)
@@ -178,38 +175,7 @@ class ConsistencyValidator:
                         issues.append(issue)
                         self.report.add_issue(issue)
 
-        # DB but not Wiki (export not run)
-        db_not_wiki = db_dates - wiki_dates
-        for date_str in db_not_wiki:
-            issue = ConsistencyIssue(
-                check_type="existence",
-                severity="warning",
-                system="db-wiki",
-                entity_type="entry",
-                entity_id=date_str,
-                message="Entry in database but not exported to wiki",
-                suggestion="Run: python -m dev.pipeline.cli sql2wiki",
-            )
-            issues.append(issue)
-            self.report.add_issue(issue)
-
-        # Wiki but not DB (orphaned wiki file)
-        wiki_only = wiki_dates - db_dates
-        for date_str in wiki_only:
-            issue = ConsistencyIssue(
-                check_type="existence",
-                severity="error",
-                system="wiki-db",
-                entity_type="entry",
-                entity_id=date_str,
-                message="Entry in wiki but not in database",
-                suggestion="Import entry or remove wiki file",
-            )
-            issues.append(issue)
-            self.report.add_issue(issue)
-
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} entry existence issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} entry existence issues")
 
         return issues
 
@@ -223,8 +189,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking entry metadata consistency...")
+        safe_logger(self.logger).log_info("Checking entry metadata consistency...")
 
         with self.db.session_scope() as session:
             for entry_db in session.query(Entry).all():
@@ -232,23 +197,31 @@ class ConsistencyValidator:
                     continue
 
                 try:
-                    entry_md = MdEntry.from_file(Path(entry_db.file_path))
+                    # Parse frontmatter directly from MD file
+                    content = Path(entry_db.file_path).read_text(encoding="utf-8")
+                    if not content.startswith("---"):
+                        continue
+                    parts = content.split("---", 2)
+                    if len(parts) < 3:
+                        continue
+                    frontmatter = yaml.safe_load(parts[1]) or {}
 
                     # Check core fields
-                    if entry_md.date != entry_db.date:
+                    md_date = DataValidator.normalize_date(frontmatter.get("date"))
+                    if md_date and md_date != entry_db.date:
                         issue = ConsistencyIssue(
                             check_type="metadata",
                             severity="error",
                             system="md-db",
                             entity_type="entry",
                             entity_id=entry_db.date.isoformat(),
-                            message=f"Date mismatch: MD={entry_md.date}, DB={entry_db.date}",
+                            message=f"Date mismatch: MD={md_date}, DB={entry_db.date}",
                         )
                         issues.append(issue)
                         self.report.add_issue(issue)
 
                     # Check word count
-                    md_word_count = entry_md.metadata.get("word_count", 0)
+                    md_word_count = frontmatter.get("word_count", 0)
                     if md_word_count and int(md_word_count) != entry_db.word_count:
                         issue = ConsistencyIssue(
                             check_type="metadata",
@@ -257,20 +230,20 @@ class ConsistencyValidator:
                             entity_type="entry",
                             entity_id=entry_db.date.isoformat(),
                             message=f"Word count mismatch: MD={md_word_count}, DB={entry_db.word_count}",
-                            suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                            suggestion="Run: python -m dev.pipeline.cli import-metadata",
                         )
                         issues.append(issue)
                         self.report.add_issue(issue)
 
                     # Check relationship counts
                     issues.extend(
-                        self._check_people_consistency(entry_md, entry_db, session)
+                        self._check_people_consistency(frontmatter, entry_db, session)
                     )
                     issues.extend(
-                        self._check_locations_consistency(entry_md, entry_db, session)
+                        self._check_locations_consistency(frontmatter, entry_db, session)
                     )
                     issues.extend(
-                        self._check_tags_consistency(entry_md, entry_db, session)
+                        self._check_tags_consistency(frontmatter, entry_db, session)
                     )
 
                 except Exception as e:
@@ -286,8 +259,7 @@ class ConsistencyValidator:
                     issues.append(issue)
                     self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} metadata consistency issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} metadata consistency issues")
 
         return issues
 
@@ -301,8 +273,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking referential integrity...")
+        safe_logger(self.logger).log_info("Checking referential integrity...")
 
         with self.db.session_scope() as session:
             for entry in session.query(Entry).all():
@@ -348,8 +319,7 @@ class ConsistencyValidator:
                         issues.append(issue)
                         self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} referential integrity issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} referential integrity issues")
 
         return issues
 
@@ -363,8 +333,7 @@ class ConsistencyValidator:
         issues = []
         self.report.checks_performed += 1
 
-        if self.logger:
-            self.logger.log_info("Checking file integrity...")
+        safe_logger(self.logger).log_info("Checking file integrity...")
 
         with self.db.session_scope() as session:
             for entry in session.query(Entry).all():
@@ -390,7 +359,7 @@ class ConsistencyValidator:
                                 entity_type="entry",
                                 entity_id=entry.date.isoformat(),
                                 message="File hash mismatch (file modified since last sync)",
-                                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                                suggestion="Run: python -m dev.pipeline.cli import-metadata",
                             )
                             issues.append(issue)
                             self.report.add_issue(issue)
@@ -406,8 +375,7 @@ class ConsistencyValidator:
                         issues.append(issue)
                         self.report.add_issue(issue)
 
-        if self.logger:
-            self.logger.log_info(f"Found {len(issues)} file integrity issues")
+        safe_logger(self.logger).log_info(f"Found {len(issues)} file integrity issues")
 
         return issues
 
@@ -430,28 +398,14 @@ class ConsistencyValidator:
         with self.db.session_scope() as session:
             return {e.date.isoformat() for e in session.query(Entry).all()}
 
-    def _get_wiki_dates(self) -> Set[str]:
-        """Get all date strings from wiki entries."""
-        dates = set()
-        entries_dir = self.wiki_dir / "entries"
-        if entries_dir.exists():
-            for wiki_file in entries_dir.glob("**/*.md"):
-                try:
-                    date_str = wiki_file.stem
-                    if DataValidator.validate_date_string(date_str):
-                        dates.add(date_str)
-                except Exception:
-                    pass
-        return dates
-
     def _check_people_consistency(
-        self, entry_md: MdEntry, entry_db: Entry, session
+        self, frontmatter: Dict[str, Any], entry_db: Entry, session: Any
     ) -> List[ConsistencyIssue]:
         """Check people field consistency between MD and DB."""
         issues = []
 
         # Get MD people count
-        md_people = entry_md.metadata.get("people", [])
+        md_people = frontmatter.get("people", [])
         md_people_count = len(md_people) if isinstance(md_people, list) else 0
 
         # Get DB people count
@@ -466,7 +420,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=entry_db.date.isoformat(),
                 message=f"People in MD ({md_people_count}) but none in DB",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)
@@ -474,13 +428,13 @@ class ConsistencyValidator:
         return issues
 
     def _check_locations_consistency(
-        self, entry_md: MdEntry, entry_db: Entry, session
+        self, frontmatter: Dict[str, Any], entry_db: Entry, session: Any
     ) -> List[ConsistencyIssue]:
         """Check locations field consistency between MD and DB."""
         issues = []
 
         # Get MD locations count
-        md_locations = entry_md.metadata.get("locations", [])
+        md_locations = frontmatter.get("locations", [])
         if isinstance(md_locations, list):
             md_loc_count = len(md_locations)
         elif isinstance(md_locations, dict):
@@ -500,7 +454,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=entry_db.date.isoformat(),
                 message=f"Locations in MD ({md_loc_count}) but none in DB",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)
@@ -508,16 +462,16 @@ class ConsistencyValidator:
         return issues
 
     def _check_tags_consistency(
-        self, entry_md: MdEntry, entry_db: Entry, session
+        self, frontmatter: Dict[str, Any], entry_db: Entry, session: Any
     ) -> List[ConsistencyIssue]:
         """Check tags field consistency between MD and DB."""
         issues = []
 
         # Get MD tags
-        md_tags = set(entry_md.metadata.get("tags", []))
+        md_tags = set(frontmatter.get("tags", []))
 
         # Get DB tags
-        db_tags = {tag.tag for tag in entry_db.tags}
+        db_tags = {tag.name for tag in entry_db.tags}
 
         # Check for missing tags
         missing_in_db = md_tags - db_tags
@@ -529,7 +483,7 @@ class ConsistencyValidator:
                 entity_type="entry",
                 entity_id=entry_db.date.isoformat(),
                 message=f"Tags in MD but not DB: {', '.join(missing_in_db)}",
-                suggestion="Run: python -m dev.pipeline.cli yaml2sql --force",
+                suggestion="Run: python -m dev.pipeline.cli import-metadata",
             )
             issues.append(issue)
             self.report.add_issue(issue)

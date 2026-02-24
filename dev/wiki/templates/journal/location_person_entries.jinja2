@@ -1,0 +1,8 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ location_name }} — {{ person_name }}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
+
+---
+
+{{ render_entries(entries) }}

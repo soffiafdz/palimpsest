@@ -1,21 +1,42 @@
+#!/usr/bin/env python3
 """
 txt.py
 -------------------
-Set of utilities for parsing, formatting, and modifying text documents.
+Text formatting and metrics utilities for 750words export processing.
 
-It is designed to work with the txt compilation documents
-exported by the 750words website and used in the Palimpsest project.
+Provides functions for text formatting, ordinal number conversion, paragraph
+reflowing, and word count metrics. Designed for txt2md workflow processing
+of 750words.com text exports.
 
-Intended to be imported by the txt2md workflow.
+Functions:
+    ordinal: Convert day of month to ordinal string (1st, 2nd, 3rd, etc.)
+    format_body: Format raw text lines with soft-break detection
+    reflow_paragraph: Wrap paragraph lines to specified width
+    compute_metrics: Calculate word count and reading time
+
+Constants:
+    ENTRY_MARKERS: Valid entry separator markers in 750words exports
+
+Usage:
+    from dev.utils.txt import ordinal, format_body, compute_metrics
+
+    # Format ordinal dates
+    day_str = ordinal(22)  # "22nd"
+
+    # Format text body
+    formatted = format_body(raw_lines)
+
+    # Get word count and reading time
+    wc, rt = compute_metrics(text_lines)
 """
-
+# --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
 from textwrap import TextWrapper
 from typing import List, Tuple
 
-# --- Third-party library imports ---
+# --- Third party imports ---
 from textstat import lexicon_count  # type: ignore
 
 

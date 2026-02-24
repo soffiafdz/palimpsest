@@ -1,0 +1,9 @@
+# {{ name }} — Entries
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
+
+---
+{% for y in year_summary %}
+
+- **{{ y.year }}** — [{{ y.count | zpad }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
+{% endfor %}

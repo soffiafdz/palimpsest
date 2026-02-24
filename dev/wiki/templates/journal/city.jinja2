@@ -1,0 +1,54 @@
+# {{ name }}
+{% if country %}
+
+**Country:** {{ country }}
+{% endif %}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }} · {{ location_count | zpad }} location{{ "s" if location_count != 1 else "" }}{{ " · " ~ date_range if date_range else "" }}
+
+---
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+
+---
+{% endif %}
+{% if any_neighborhoods %}
+
+## Locations
+{% for hood in neighborhoods %}
+
+### {{ hood.name }}
+{% for loc in hood.locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% if top_locations %}
+
+### Other
+{% for loc in top_locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% elif top_locations %}
+
+## Top Locations
+{% for loc in top_locations %}
+- {{ loc.entry_count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% if frequent_people %}
+
+---
+
+## Frequent people
+{% for person in frequent_people %}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
+{% endfor %}
+{% endif %}
+
+---
+
+- [Edit metadata]({{ "city_yaml" | source_path("") }})

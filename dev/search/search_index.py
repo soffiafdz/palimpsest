@@ -18,7 +18,7 @@ Usage:
     manager.setup_triggers()
 
     # Update index for specific entry
-    manager.update_entry(entry_id, body_text, epigraph, notes)
+    manager.update_entry_body(entry_id, body_text)
 
     # Rebuild entire index
     manager.rebuild_index(session)
@@ -32,7 +32,7 @@ from sqlalchemy import text, Engine
 from sqlalchemy.orm import Session
 
 # --- Local imports ---
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
 
 class SearchIndexManager:
@@ -50,8 +50,7 @@ class SearchIndexManager:
         - entry_id: Reference to entries.id (not indexed)
         - date: Entry date (not indexed)
         - body: Full entry text
-        - epigraph: Entry epigraph
-        - notes: Editorial notes
+        - summary: Entry summary
 
         Uses Porter stemming and Unicode tokenization.
         """
@@ -65,16 +64,14 @@ class SearchIndexManager:
                     entry_id UNINDEXED,
                     date UNINDEXED,
                     body,
-                    epigraph,
-                    notes,
+                    summary,
                     tokenize='porter unicode61'
                 )
             """))
 
             conn.commit()
 
-            if self.logger:
-                self.logger.log_info("Created FTS5 search index")
+            safe_logger(self.logger).log_info("Created FTS5 search index")
 
     def populate_index(self, session: Session) -> int:
         """
@@ -114,21 +111,19 @@ class SearchIndexManager:
                             else:
                                 body_text = content
                     except Exception as e:
-                        if self.logger:
-                            self.logger.log_warning(f"Could not read {entry.file_path}: {e}")
+                        safe_logger(self.logger).log_warning(f"Could not read {entry.file_path}: {e}")
 
                 # Insert into FTS index
                 conn.execute(
                     text("""
-                        INSERT INTO entries_fts (entry_id, date, body, epigraph, notes)
-                        VALUES (:entry_id, :date, :body, :epigraph, :notes)
+                        INSERT INTO entries_fts (entry_id, date, body, summary)
+                        VALUES (:entry_id, :date, :body, :summary)
                     """),
                     {
                         'entry_id': entry.id,
                         'date': entry.date.isoformat(),
                         'body': body_text,
-                        'epigraph': entry.epigraph or '',
-                        'notes': entry.notes or '',
+                        'summary': entry.summary or '',
                     }
                 )
 
@@ -136,8 +131,7 @@ class SearchIndexManager:
 
             conn.commit()
 
-        if self.logger:
-            self.logger.log_info(f"Indexed {indexed_count} entries")
+        safe_logger(self.logger).log_info(f"Indexed {indexed_count} entries")
 
         return indexed_count
 
@@ -159,13 +153,12 @@ class SearchIndexManager:
             # Trigger on INSERT
             conn.execute(text("""
                 CREATE TRIGGER entries_ai AFTER INSERT ON entries BEGIN
-                    INSERT INTO entries_fts(entry_id, date, body, epigraph, notes)
+                    INSERT INTO entries_fts(entry_id, date, body, summary)
                     VALUES (
                         new.id,
                         new.date,
                         '',  -- Body populated separately
-                        COALESCE(new.epigraph, ''),
-                        COALESCE(new.notes, '')
+                        COALESCE(new.summary, '')
                     );
                 END
             """))
@@ -176,8 +169,7 @@ class SearchIndexManager:
                     UPDATE entries_fts
                     SET
                         date = new.date,
-                        epigraph = COALESCE(new.epigraph, ''),
-                        notes = COALESCE(new.notes, '')
+                        summary = COALESCE(new.summary, '')
                     WHERE entry_id = new.id;
                 END
             """))
@@ -191,8 +183,7 @@ class SearchIndexManager:
 
             conn.commit()
 
-            if self.logger:
-                self.logger.log_info("Created FTS sync triggers")
+            safe_logger(self.logger).log_info("Created FTS sync triggers")
 
     def update_entry_body(self, entry_id: int, body_text: str) -> None:
         """
@@ -223,8 +214,7 @@ class SearchIndexManager:
         Returns:
             Number of entries indexed
         """
-        if self.logger:
-            self.logger.log_info("Rebuilding search index...")
+        safe_logger(self.logger).log_info("Rebuilding search index...")
 
         # Recreate table
         self.create_index()
@@ -235,8 +225,7 @@ class SearchIndexManager:
         # Setup triggers
         self.setup_triggers()
 
-        if self.logger:
-            self.logger.log_info(f"Index rebuild complete: {count} entries")
+        safe_logger(self.logger).log_info(f"Index rebuild complete: {count} entries")
 
         return count
 

@@ -23,11 +23,6 @@ class TestValidatorsCLIBasics:
         assert result.exit_code == 0
         assert "validate" in result.output.lower()
 
-    def test_wiki_help(self, runner):
-        """Test wiki validation command help."""
-        result = runner.invoke(cli, ["wiki", "--help"])
-        assert result.exit_code == 0
-
     def test_db_help(self, runner):
         """Test database validation command help."""
         result = runner.invoke(cli, ["db", "--help"])
@@ -46,12 +41,6 @@ class TestValidatorOperations:
     def runner(self):
         """Create Click test runner."""
         return CliRunner()
-
-    def test_wiki_stats(self, runner):
-        """Test wiki stats command."""
-        result = runner.invoke(cli, ["wiki", "stats"])
-        # May fail if wiki not set up, but shouldn't crash
-        assert result.exit_code in [0, 1]
 
     def test_db_schema(self, runner):
         """Test database schema validation."""

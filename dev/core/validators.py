@@ -9,6 +9,36 @@ used across database operations, conversion pipelines, and utilities.
 
 This module is format-agnostic and should not depend on specific file
 formats (Markdown, YAML, etc.). It provides pure data type conversions.
+
+Classes:
+    DataValidator: Centralized validation with static methods
+
+Key Methods:
+    validate_required_fields: Check required fields exist and are non-None
+    normalize_date: Convert various inputs to datetime.date
+    normalize_string: Strip whitespace, return None if empty
+    normalize_int/float: Safe numeric conversion
+    normalize_bool: Convert strings/ints to boolean
+    normalize_enum: Convert strings to enum instances
+    extract_number: Extract first numeric value from string
+    validate_date_string: Check ISO date format validity
+
+Usage:
+    from dev.core.validators import DataValidator
+
+    # Validate required fields
+    DataValidator.validate_required_fields(data, ["date", "content"])
+
+    # Normalize various types
+    date_obj = DataValidator.normalize_date("2024-01-15")
+    count = DataValidator.normalize_int("42")
+    is_active = DataValidator.normalize_bool("yes")
+
+    # Extract numbers from strings
+    word_count = DataValidator.extract_number("150 words")  # Returns 150.0
+
+    # Normalize enums
+    location_type = DataValidator.normalize_enum("venue", LocationType)
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -17,14 +47,10 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, Union
 
 # --- Local imports ---
 from .exceptions import ValidationError
-
-# Use TYPE_CHECKING to avoid circular imports
-if TYPE_CHECKING:
-    from dev.database.models import ReferenceMode, ReferenceType, RelationType
 
 
 class DataValidator:
@@ -367,53 +393,3 @@ class DataValidator:
             f"Cannot convert {type(value).__name__} to {enum_class.__name__}"
         )
 
-    @staticmethod
-    def normalize_reference_mode(value: Any) -> Optional["ReferenceMode"]:
-        """
-        Normalize value to ReferenceMode enum.
-
-        Note: Import ReferenceMode from dev.database.models when using this method.
-
-        Args:
-            value: Value to convert
-
-        Returns:
-            ReferenceMode instance or None
-        """
-        # Import here to avoid circular dependency
-        from dev.database.models import ReferenceMode
-        return DataValidator.normalize_enum(value, ReferenceMode, "reference_mode")  # type: ignore
-
-    @staticmethod
-    def normalize_reference_type(value: Any) -> Optional["ReferenceType"]:
-        """
-        Normalize value to ReferenceType enum.
-
-        Note: Import ReferenceType from dev.database.models when using this method.
-
-        Args:
-            value: Value to convert
-
-        Returns:
-            ReferenceType instance or None
-        """
-        # Import here to avoid circular dependency
-        from dev.database.models import ReferenceType
-        return DataValidator.normalize_enum(value, ReferenceType, "reference_type")  # type: ignore
-
-    @staticmethod
-    def normalize_relation_type(value: Any) -> Optional["RelationType"]:
-        """
-        Normalize value to RelationType enum.
-
-        Note: Import RelationType from dev.database.models when using this method.
-
-        Args:
-            value: Value to convert
-
-        Returns:
-            RelationType instance or None
-        """
-        # Import here to avoid circular dependency
-        from dev.database.models import RelationType
-        return DataValidator.normalize_enum(value, RelationType, "relation_type")  # type: ignore

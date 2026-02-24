@@ -1,50 +1,88 @@
-import pytest
-from unittest.mock import MagicMock, patch
-from sqlalchemy.exc import OperationalError, IntegrityError
+#!/usr/bin/env python3
+"""
+test_manager.py
+---------------
+Tests for dev/database/manager.py - PalimpsestDB main database manager.
 
-from dev.database.manager import PalimpsestDB, DatabaseError
-from dev.database.managers import TagManager # Example manager
-from dev.core.logging_manager import PalimpsestLogger # For __init__
+Tests cover:
+- Transaction management (session_scope, transaction context manager)
+- Manager initialization and cleanup within session scope
+- Database cleanup operations with Scene model
+- Error handling and rollback behavior
+"""
+import pytest
+from datetime import date
+from unittest.mock import MagicMock, patch
+
+from dev.database.manager import PalimpsestDB
+from dev.database.managers import (
+    PersonManager,
+    LocationManager,
+    ReferenceManager,
+    PoemManager,
+    EntryManager,
+    SimpleManager,
+    ChapterManager,
+    CharacterManager,
+)
+from dev.database.models import Tag, Location, Scene, Theme, Entry
+from dev.core.logging_manager import PalimpsestLogger
+
 
 # Mock object that satisfies SQLAlchemy's checks for session.add()
 class MockSQLAObject:
+    """Mock SQLAlchemy object for transaction tests."""
+
     def __init__(self, id=None, name="test"):
+        """
+        Initialize mock object.
+
+        Args:
+            id: Optional entity ID
+            name: Entity name
+        """
         self.id = id
         self.name = name
         # Mock specific SQLAlchemy attributes often accessed
         self._sa_instance_state = MagicMock()
         self._sa_instance_state.class_ = self.__class__
-        self._sa_instance_state.key = None # Not persisted yet
+        self._sa_instance_state.key = None  # Not persisted yet
         self._sa_instance_state.deleted = False
-    
-    # Required for the _get_or_create_lookup_item test (filter_by requires __tablename__)
+
     __tablename__ = "mock_table"
 
-class TestPalimpsestDBTransactionsAndRetries:
-    """Tests for transaction management and retry logic in PalimpsestDB."""
+
+class TestPalimpsestDBTransactions:
+    """
+    Tests for transaction management in PalimpsestDB.
+
+    These tests use mocking to verify transaction behavior without
+    requiring a real database connection. They verify commit, rollback,
+    and cleanup behavior.
+    """
 
     @pytest.fixture
     def mock_db_path(self, tmp_path):
-        """Mock database path."""
+        """Create temporary database path."""
         return tmp_path / "test.db"
 
     @pytest.fixture
     def mock_alembic_dir(self, tmp_path):
-        """Mock alembic directory."""
+        """Create mock alembic directory."""
         return tmp_path / "alembic"
 
     @pytest.fixture
     def mock_logger(self):
-        """Mock logger instance."""
+        """Create mock logger instance."""
         return MagicMock(spec=PalimpsestLogger)
 
     @pytest.fixture
-    def db_instance(self, mock_db_path, mock_alembic_dir, mock_logger):
-        """PalimpsestDB instance with mocked SQLAlchemy components."""
+    def db_instance(self, mock_db_path, mock_alembic_dir):
+        """Create PalimpsestDB instance with mocked SQLAlchemy components."""
         with patch("sqlalchemy.create_engine"), \
              patch.object(PalimpsestDB, "_setup_alembic", autospec=True), \
              patch.object(PalimpsestDB, "initialize_schema", autospec=True), \
-             patch("dev.core.backup_manager.BackupManager", autospec=True): # PATCH THE CLASS
+             patch("dev.core.backup_manager.BackupManager", autospec=True):
 
             db = PalimpsestDB(
                 db_path=mock_db_path,
@@ -53,36 +91,22 @@ class TestPalimpsestDBTransactionsAndRetries:
                 backup_dir=mock_db_path.parent / "backups",
                 enable_auto_backup=False,
             )
-            # Ensure managers are initialized for session_scope to work
-            db._tag_manager = MagicMock(autospec=TagManager)
-            db._person_manager = MagicMock(autospec=True)
-            db._event_manager = MagicMock(autospec=True)
-            db._date_manager = MagicMock(autospec=True)
-            db._location_manager = MagicMock(autospec=True)
-            db._reference_manager = MagicMock(autospec=True)
-            db._poem_manager = MagicMock(autospec=True)
-            db._manuscript_manager = MagicMock(autospec=True)
-            db._entry_manager = MagicMock(autospec=True)
-            return db
+            yield db
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_session_scope_commit_on_success(self, mock_sleep, db_instance):
+    def test_session_scope_commit_on_success(self, db_instance):
         """Verify session commits on successful execution within session_scope."""
-        # Mock the session returned by SessionLocal
         mock_session = MagicMock()
         db_instance.SessionLocal = MagicMock(return_value=mock_session)
-        
+
         with db_instance.session_scope() as session:
-            session.add(MockSQLAObject()) 
-        
+            session.add(MockSQLAObject())
+
         mock_session.commit.assert_called_once()
         mock_session.rollback.assert_not_called()
         mock_session.close.assert_called_once()
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_session_scope_rollback_on_exception(self, mock_sleep, db_instance):
+    def test_session_scope_rollback_on_exception(self, db_instance):
         """Verify session rolls back on exception within session_scope."""
-        # Mock the session returned by SessionLocal
         mock_session = MagicMock()
         db_instance.SessionLocal = MagicMock(return_value=mock_session)
 
@@ -90,145 +114,341 @@ class TestPalimpsestDBTransactionsAndRetries:
             with db_instance.session_scope() as session:
                 session.add(MockSQLAObject())
                 raise ValueError("Test error")
-        
+
         mock_session.rollback.assert_called_once()
         mock_session.commit.assert_not_called()
         mock_session.close.assert_called_once()
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_transaction_context_manager(self, mock_sleep, db_instance):
+    def test_transaction_context_manager(self, db_instance):
         """Verify transaction context manager delegates to session_scope."""
-        # Mock the session returned by SessionLocal
         mock_session = MagicMock()
         db_instance.SessionLocal = MagicMock(return_value=mock_session)
 
         with db_instance.transaction() as session:
             session.add(MockSQLAObject())
-            
+
         mock_session.commit.assert_called_once()
         mock_session.rollback.assert_not_called()
         mock_session.close.assert_called_once()
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_execute_with_retry_success_first_attempt(self, mock_sleep, db_instance):
-        """Verify _execute_with_retry succeeds on the first attempt."""
-        mock_operation = MagicMock(autospec=True, return_value="Success")
-        result = db_instance._execute_with_retry(mock_operation)
-        assert result == "Success"
-        mock_operation.assert_called_once()
-        mock_sleep.assert_not_called()
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_execute_with_retry_succeeds_after_retries(self, mock_sleep, db_instance):
-        """Verify _execute_with_retry retries on OperationalError (locked/busy) and succeeds."""
-        mock_operation = MagicMock(autospec=True, side_effect=[
-            OperationalError("mock conn", "mock cursor", "database is locked", "statement"),
-            OperationalError("mock conn", "mock cursor", "database is busy", "statement"),
-            "Success"
-        ])
-        result = db_instance._execute_with_retry(mock_operation, max_retries=3)
-        assert result == "Success"
-        assert mock_operation.call_count == 3
-        assert mock_sleep.call_count == 2 # Called after first two failures
+class TestPalimpsestDBManagerInitialization:
+    """Tests for manager initialization and cleanup in session_scope."""
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_execute_with_retry_exhausted_retries_raises_database_error(self, mock_sleep, db_instance):
-        """Verify _execute_with_retry raises DatabaseError after exhausting retries."""
-        mock_operation = MagicMock(autospec=True, side_effect=[
-            OperationalError("mock conn", "mock cursor", "database is locked", "statement"),
-            OperationalError("mock conn", "mock cursor", "database is locked", "statement"),
-            OperationalError("mock conn", "mock cursor", "database is locked", "statement")
-        ])
-        with pytest.raises(DatabaseError, match="Operation failed after 3 attempts due to database lock/busy conditions."):
-            db_instance._execute_with_retry(mock_operation, max_retries=3)
-        assert mock_operation.call_count == 3
-        assert mock_sleep.call_count == 2
+    @pytest.fixture
+    def test_db(self, test_db_path, test_alembic_dir):
+        """Create test database instance."""
+        db = PalimpsestDB(
+            db_path=test_db_path,
+            alembic_dir=test_alembic_dir,
+            enable_auto_backup=False,
+        )
+        yield db
+        if test_db_path.exists():
+            test_db_path.unlink()
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_execute_with_retry_non_lock_operational_error_no_retry(self, mock_sleep, db_instance):
-        """Verify _execute_with_retry raises non-lock OperationalError immediately."""
-        mock_operation = MagicMock(autospec=True, side_effect=OperationalError("mock conn", "mock cursor", "disk I/O error", "statement"))
-        with pytest.raises(OperationalError, match="disk I/O error"):
-            db_instance._execute_with_retry(mock_operation)
-        mock_operation.assert_called_once()
-        mock_sleep.assert_not_called()
+    def test_session_scope_initializes_all_managers(self, test_db):
+        """Verify session_scope initializes all required managers."""
+        with test_db.session_scope() as _:
+            # Check that all managers are initialized
+            assert test_db._tag_manager is not None
+            assert isinstance(test_db._tag_manager, SimpleManager)
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_execute_with_retry_other_exception_no_retry(self, mock_sleep, db_instance):
-        """Verify _execute_with_retry raises other exceptions immediately."""
-        mock_operation = MagicMock(autospec=True, side_effect=ValueError("Some other error"))
-        with pytest.raises(ValueError, match="Some other error"):
-            db_instance._execute_with_retry(mock_operation)
-        mock_operation.assert_called_once()
-        mock_sleep.assert_not_called()
+            assert test_db._person_manager is not None
+            assert isinstance(test_db._person_manager, PersonManager)
 
-    @patch("sqlalchemy.orm.sessionmaker")
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_get_or_create_lookup_item_returns_existing(self, mock_sleep, mock_sessionmaker, db_instance):
-        """Test _get_or_create_lookup_item returns existing item."""
-        mock_session_instance = MagicMock()
-        mock_sessionmaker.return_value = MagicMock(return_value=mock_session_instance)
-        mock_session_instance.query.return_value.filter_by.return_value.first.return_value = MagicMock(id=1, name="Existing")
-        
-        mock_model_class = MagicMock(name="MockModel", autospec=True)
-        result = db_instance._get_or_create_lookup_item(mock_session_instance, mock_model_class, {"name": "Existing"})
-        assert result.id == 1
-        mock_session_instance.query.assert_called_once_with(mock_model_class)
-        mock_session_instance.add.assert_not_called()
-        mock_session_instance.flush.assert_not_called()
+            assert test_db._location_manager is not None
+            assert isinstance(test_db._location_manager, LocationManager)
 
-    @patch("sqlalchemy.orm.sessionmaker")
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_get_or_create_lookup_item_creates_new(self, mock_sleep, mock_sessionmaker, db_instance):
-        """Test _get_or_create_lookup_item creates new item if not found."""
-        mock_session_instance = MagicMock()
-        mock_sessionmaker.return_value = MagicMock(return_value=mock_session_instance)
-        mock_session_instance.query.return_value.filter_by.return_value.first.return_value = None # No existing
-        
-        mock_model_class = MagicMock(name="MockModel", autospec=True)
-        # Mocking the constructor call to MockModel()
-        mock_model_instance = MockSQLAObject(name="New")
-        mock_model_class.return_value = mock_model_instance 
-        
-        result = db_instance._get_or_create_lookup_item(mock_session_instance, mock_model_class, {"name": "New"})
-        assert result.name == "New"
-        mock_session_instance.query.assert_called_once_with(mock_model_class)
-        mock_session_instance.add.assert_called_once_with(mock_model_instance)
-        mock_session_instance.flush.assert_called_once()
+            assert test_db._reference_manager is not None
+            assert isinstance(test_db._reference_manager, ReferenceManager)
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_get_or_create_lookup_item_handles_integrity_error_on_race(self, mock_sleep, db_instance):
-        """Test _get_or_create_lookup_item handles IntegrityError (race condition)."""
-        mock_session = MagicMock()
-        
-        mock_model_class = MagicMock(name="MockModel", autospec=True)
-        mock_existing_obj = MagicMock(id=1, name="Existing")
-        
-        # Simulate: first check finds nothing, creation fails with IntegrityError, second check finds it.
-        mock_session.query.return_value.filter_by.return_value.first.side_effect = [
-            None, # First check
-            mock_existing_obj # Second check after rollback
-        ]
-        mock_session.add.side_effect = IntegrityError("msg", {}, "orig")
-        
-        result = db_instance._get_or_create_lookup_item(mock_session, mock_model_class, {"name": "Race"})
-        assert result == mock_existing_obj
-        assert mock_session.query.call_count == 2
-        mock_session.rollback.assert_called_once()
+            assert test_db._poem_manager is not None
+            assert isinstance(test_db._poem_manager, PoemManager)
 
-    @patch("dev.database.manager.time.sleep", autospec=True)
-    def test_get_or_create_lookup_item_raises_if_integrity_error_and_not_found(self, mock_sleep, db_instance):
-        """Test _get_or_create_lookup_item re-raises if IntegrityError occurs and item still not found."""
-        mock_session = MagicMock()
-        
-        mock_model_class = MagicMock(name="MockModel", autospec=True)
-        
-        mock_session.query.return_value.filter_by.return_value.first.side_effect = [
-            None, # First check
-            None # Second check after rollback still finds nothing
-        ]
-        mock_session.add.side_effect = IntegrityError("msg", {}, "orig")
-        
-        with pytest.raises(DatabaseError, match="Data integrity violation"):
-            db_instance._get_or_create_lookup_item(mock_session, mock_model_class, {"name": "FailedRace"})
-        mock_session.rollback.assert_called_once()
+            assert test_db._entry_manager is not None
+            assert isinstance(test_db._entry_manager, EntryManager)
+
+            assert test_db._event_manager is not None
+            assert isinstance(test_db._event_manager, SimpleManager)
+
+            assert test_db._chapter_manager is not None
+            assert isinstance(test_db._chapter_manager, ChapterManager)
+
+            assert test_db._character_manager is not None
+            assert isinstance(test_db._character_manager, CharacterManager)
+
+        # After exiting context, managers should be cleaned up
+        assert test_db._tag_manager is None
+        assert test_db._event_manager is None
+        assert test_db._person_manager is None
+        assert test_db._location_manager is None
+        assert test_db._reference_manager is None
+        assert test_db._poem_manager is None
+        assert test_db._entry_manager is None
+        assert test_db._chapter_manager is None
+        assert test_db._character_manager is None
+
+    def test_session_scope_no_moment_manager(self, test_db):
+        """Verify session_scope does NOT initialize MomentManager (deprecated)."""
+        with test_db.session_scope() as _:
+            # Phase 13: MomentManager no longer exists
+            assert not hasattr(test_db, "_moment_manager")
+
+    def test_manager_properties_accessible_in_session(self, test_db):
+        """Verify manager properties are accessible within session_scope."""
+        with test_db.session_scope() as _:
+            # All manager properties should work
+            assert test_db.tags is not None
+            assert test_db.events is not None
+            assert test_db.people is not None
+            assert test_db.locations is not None
+            assert test_db.references is not None
+            assert test_db.poems is not None
+            assert test_db.entries is not None
+            assert test_db.chapters is not None
+            assert test_db.characters is not None
+
+    def test_manager_properties_raise_outside_session(self, test_db):
+        """Verify manager properties raise errors outside session_scope."""
+        from dev.core.exceptions import DatabaseError
+
+        # Outside session context, accessing managers should raise DatabaseError
+        with pytest.raises(DatabaseError, match="requires active session"):
+            _ = test_db.tags
+
+        with pytest.raises(DatabaseError, match="requires active session"):
+            _ = test_db.people
+
+        with pytest.raises(DatabaseError, match="requires active session"):
+            _ = test_db.entries
+
+    def test_managers_share_session(self, test_db):
+        """Verify all managers share the same session instance."""
+        with test_db.session_scope() as session:
+            # All managers should share the same session
+            assert test_db._tag_manager.session is session
+            assert test_db._event_manager.session is session
+            assert test_db._person_manager.session is session
+            assert test_db._location_manager.session is session
+            assert test_db._reference_manager.session is session
+            assert test_db._poem_manager.session is session
+            assert test_db._entry_manager.session is session
+
+
+class TestPalimpsestDBCleanup:
+    """Tests for cleanup_all_metadata with Scene model."""
+
+    @pytest.fixture
+    def test_db(self, test_db_path, test_alembic_dir):
+        """Create test database instance."""
+        db = PalimpsestDB(
+            db_path=test_db_path,
+            alembic_dir=test_alembic_dir,
+            enable_auto_backup=False,
+        )
+        yield db
+        if test_db_path.exists():
+            test_db_path.unlink()
+
+    def test_cleanup_all_metadata_removes_orphaned_tags(self, test_db):
+        """Verify cleanup removes tags not linked to any entries."""
+        with test_db.session_scope() as session:
+            # Create tag without entry
+            orphan_tag = Tag(name="orphan")
+            session.add(orphan_tag)
+            session.commit()
+
+        # Run cleanup
+        result = test_db.cleanup_all_metadata()
+
+        # Verify orphan was removed
+        assert result["tags"] == 1
+
+        # Verify tag is gone
+        with test_db.session_scope() as session:
+            assert session.query(Tag).filter_by(name="orphan").first() is None
+
+    def test_cleanup_all_metadata_removes_orphaned_locations(self, test_db):
+        """Verify cleanup removes locations not linked to any entries."""
+        with test_db.session_scope() as session:
+            # Create city (required for location)
+            from dev.database.models import City
+            city = City(name="Test City")
+            session.add(city)
+            session.flush()
+
+            # Create location with city but no entry links
+            orphan_loc = Location(name="Nowhere Cafe", city_id=city.id)
+            session.add(orphan_loc)
+            session.commit()
+
+        # Run cleanup
+        result = test_db.cleanup_all_metadata()
+
+        # Verify orphan was removed
+        assert result["locations"] == 1
+
+        # Verify location is gone
+        with test_db.session_scope() as session:
+            assert session.query(Location).filter_by(name="Nowhere Cafe").first() is None
+
+    @pytest.mark.skip(
+        reason="Scene has NOT NULL constraint on entry_id with CASCADE delete - no orphan scenario exists"
+    )
+    def test_cleanup_all_metadata_removes_orphaned_scenes(self, test_db):
+        """Verify cleanup removes scenes not linked to any entry."""
+        # Note: This test is invalid - Scene cannot exist without Entry due to NOT NULL FK
+        # with CASCADE delete. When Entry is deleted, Scene is automatically cascade-deleted.
+        pass
+
+    def test_cleanup_all_metadata_preserves_linked_entities(self, test_db):
+        """Verify cleanup preserves entities linked to entries."""
+        with test_db.session_scope() as session:
+            # Create entry with linked entities
+            entry = Entry(date=date(2024, 1, 15), file_path="/test/entry.md")
+            session.add(entry)
+            session.flush()
+
+            tag = Tag(name="preserved")
+            tag.entries.append(entry)
+            session.add(tag)
+
+            # Create city (required for location)
+            from dev.database.models import City
+            city = City(name="Test City")
+            session.add(city)
+            session.flush()
+
+            location = Location(name="Preserved Cafe", city_id=city.id)
+            location.entries.append(entry)
+            session.add(location)
+
+            scene = Scene(
+                name="Preserved Scene",
+                description="This scene has an entry",
+                entry_id=entry.id,
+            )
+            session.add(scene)
+            session.commit()
+
+        # Run cleanup
+        result = test_db.cleanup_all_metadata()
+
+        # Verify nothing was removed
+        assert result["tags"] == 0
+        assert result["locations"] == 0
+        assert result["scenes"] == 0
+
+        # Verify entities still exist
+        with test_db.session_scope() as session:
+            assert session.query(Tag).filter_by(name="preserved").first() is not None
+            assert session.query(Location).filter_by(name="Preserved Cafe").first() is not None
+            assert session.query(Scene).filter_by(name="Preserved Scene").first() is not None
+
+    def test_cleanup_all_metadata_removes_orphaned_themes(self, test_db):
+        """Verify cleanup removes themes not linked to any entries."""
+        with test_db.session_scope() as session:
+            orphan_theme = Theme(name="orphan-theme")
+            session.add(orphan_theme)
+            session.commit()
+
+        result = test_db.cleanup_all_metadata()
+
+        assert result["themes"] == 1
+
+        with test_db.session_scope() as session:
+            assert session.query(Theme).filter_by(name="orphan-theme").first() is None
+
+    @pytest.mark.skip(
+        reason="Reference has NOT NULL constraints on entry_id and source_id with CASCADE delete - no orphan scenario exists"
+    )
+    def test_cleanup_all_metadata_removes_orphaned_references(self, test_db):
+        """Verify cleanup removes references not linked to any entry."""
+        # Note: This test is invalid - Reference cannot exist without Entry and ReferenceSource
+        # due to NOT NULL FKs with CASCADE delete. When Entry or ReferenceSource is deleted,
+        # Reference is automatically cascade-deleted.
+        pass
+
+    @pytest.mark.skip(
+        reason="PoemVersion has NOT NULL constraints on both poem_id and entry_id with CASCADE delete - no orphan scenario exists"
+    )
+    def test_cleanup_all_metadata_removes_orphaned_poem_versions(self, test_db):
+        """Verify cleanup removes poem versions not linked to any entry."""
+        # Note: This test is invalid - PoemVersion cannot be orphaned due to NOT NULL FKs
+        # with CASCADE delete. When Entry or Poem is deleted, PoemVersion is automatically
+        # cascade-deleted by the database.
+        pass
+
+    def test_cleanup_all_metadata_combined(self, test_db):
+        """Verify cleanup handles multiple entity types simultaneously."""
+        with test_db.session_scope() as session:
+            # Create entry with some linked entities
+            entry = Entry(date=date(2024, 1, 15), file_path="/test/entry.md")
+            session.add(entry)
+            session.flush()
+
+            # Linked tag (preserved)
+            linked_tag = Tag(name="linked")
+            linked_tag.entries.append(entry)
+            session.add(linked_tag)
+
+            # Orphan tag (removed)
+            orphan_tag = Tag(name="orphan")
+            session.add(orphan_tag)
+
+            # Linked scene (preserved) - Scene cannot be orphaned due to NOT NULL FK
+            linked_scene = Scene(
+                name="Linked Scene",
+                description="Has entry",
+                entry_id=entry.id,
+            )
+            session.add(linked_scene)
+
+            session.commit()
+
+        # Run cleanup
+        result = test_db.cleanup_all_metadata()
+
+        # Verify correct counts (only orphan tag should be removed)
+        assert result["tags"] == 1
+        assert result["scenes"] == 0  # No orphan scenes possible
+
+        # Verify correct entities remain
+        with test_db.session_scope() as session:
+            assert session.query(Tag).filter_by(name="linked").first() is not None
+            assert session.query(Tag).filter_by(name="orphan").first() is None
+            assert session.query(Scene).filter_by(name="Linked Scene").first() is not None
+
+    def test_cleanup_all_metadata_no_orphans(self, test_db):
+        """Verify cleanup returns zero counts when no orphans exist."""
+        with test_db.session_scope() as session:
+            entry = Entry(date=date(2024, 1, 15), file_path="/test/entry.md")
+            session.add(entry)
+            session.flush()
+
+            tag = Tag(name="used")
+            tag.entries.append(entry)
+            session.add(tag)
+            session.commit()
+
+        result = test_db.cleanup_all_metadata()
+
+        # All counts should be zero
+        assert result["tags"] == 0
+        assert result["locations"] == 0
+        assert result["scenes"] == 0
+        assert result["themes"] == 0
+        assert result["references"] == 0
+        assert result["poem_versions"] == 0
+
+    def test_cleanup_all_metadata_error_handling(self, test_db):
+        """Verify cleanup handles errors gracefully."""
+        from dev.core.exceptions import DatabaseError
+
+        # Mock health_monitor to raise an error
+        with patch.object(test_db.health_monitor, "bulk_cleanup_unused") as mock_cleanup:
+            mock_cleanup.side_effect = Exception("Database error")
+
+            with pytest.raises(DatabaseError, match="Cleanup operation failed"):
+                test_db.cleanup_all_metadata()

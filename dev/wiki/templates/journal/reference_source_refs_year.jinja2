@@ -1,0 +1,19 @@
+# {{ entity_name }} — {{ year }}
+
+---
+{% for ref in references %}
+
+## {{ ref.entry_date | entry_date_display }}
+{% if ref.content %}
+{% if ref.mode == "direct" %}
+> *"{{ ref.content }}"*
+{% else %}
+> {{ ref.content }}
+{% endif %}
+{% endif %}
+> *({{ ref.mode }})*
+{% if ref.description %}
+
+{{ ref.description }}
+{% endif %}
+{% endfor %}

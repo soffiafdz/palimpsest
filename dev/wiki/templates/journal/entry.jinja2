@@ -1,0 +1,134 @@
+{% from "macros/thread_display.jinja2" import render_thread %}
+# {{ entry_date | date_long }}
+{% if summary %}
+
+{{ summary }}
+{% endif %}
+{% if rating %}
+
+**Rating:** [{{ rating }}/5]({{ date_str }}-rating.md)
+{% endif %}
+{% if word_count %}
+
+{{ word_count | string }} words · {{ reading_time }}
+{% endif %}
+{% if themes %}
+
+**Themes:**
+{% for t in themes %}
+- {{ t | wikilink }}
+{% endfor %}
+{% endif %}
+{% if tags %}
+
+**Tags:**
+{% for t in tags %}
+- {{ t | wikilink }}
+{% endfor %}
+{% endif %}
+{% if motifs %}
+
+**Motifs:**
+{% for m in motifs %}
+- {{ m | wikilink }}
+{% endfor %}
+{% endif %}
+
+---
+{% if people_groups %}
+
+## People
+{% for group in people_groups %}
+{% if group.relation %}
+
+**{{ group.relation }}**
+{% endif %}
+{% for name in group.names %}
+- {{ name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if places %}
+
+## Places
+{% for city in places %}
+
+### {{ city.name | wikilink }}
+{% if city.neighborhoods %}
+{% for nb in city.neighborhoods %}
+
+**{{ nb.name }}**
+{% for loc in nb.locations %}
+- {{ loc | wikilink }}
+{% endfor %}
+{% endfor %}
+{% else %}
+{% for loc in city.locations %}
+- {{ loc | wikilink }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if narrative %}
+
+---
+
+## Narrative
+{% for arc_group in narrative %}
+{% if arc_group.name %}
+
+### {{ arc_group.name | wikilink }}
+{% endif %}
+{% for event in arc_group.events %}
+{% if event.name %}
+
+**{{ event.name | wikilink }}**
+{% endif %}
+{% for scene in event.scenes %}
+- {{ scene.name }}{% if scene.dates %} · {% for d in scene.dates %}{{ d | flexible_date }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+
+{% endfor %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if threads %}
+
+---
+
+## Threads
+{% for thread in threads %}
+
+{{ render_thread(thread) }}
+{%- endfor %}
+{% endif %}
+{% if references %}
+
+---
+
+## References
+{% for ref in references %}
+
+{% if ref.content %}
+> *"{{ ref.content }}"*
+{% endif %}
+> — {{ ref.source_title | wikilink }}
+> {% if ref.author %}{{ ref.author }} · {% endif %}*({{ ref.mode }})*
+{% endfor %}
+{% endif %}
+{% if poems %}
+
+---
+
+## Poems
+{% for poem in poems %}
+- {{ poem.title | wikilink }}
+{% if poem.version %}
+  v{{ poem.version }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+---
+
+- [Read entry]({{ "journal_md" | source_path(date_str) }})
+- [Edit metadata]({{ "metadata_yaml" | source_path(date_str) }})

@@ -7,13 +7,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Detect platform
-if grep -qi microsoft /proc/version 2>/dev/null; then
-  PLATFORM="wsl"
-elif command -v sv >/dev/null 2>&1; then
-  PLATFORM="runit"
-else
-  PLATFORM="linux"
-fi
+case "$(uname -s)" in
+  Darwin)
+    PLATFORM="macos"
+    ;;
+  Linux)
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+      PLATFORM="wsl"
+    elif command -v sv >/dev/null 2>&1; then
+      PLATFORM="runit"
+    else
+      PLATFORM="linux"
+    fi
+    ;;
+  *)
+    PLATFORM="unknown"
+    ;;
+esac
 
 echo "📅 Setting up automated backups for Palimpsest"
 echo "Platform detected: $PLATFORM"
@@ -112,6 +122,19 @@ echo ""
 
 # Platform-specific instructions
 case "$PLATFORM" in
+macos)
+  echo "✅ macOS Setup:"
+  echo ""
+  echo "1. Add to crontab:"
+  echo "   crontab -e"
+  echo ""
+  echo "   Then paste:"
+  echo "   $CRON_CMD"
+  echo ""
+  echo "2. Or use launchd (recommended for macOS):"
+  echo "   Create ~/Library/LaunchAgents/com.palimpsest.backup.plist"
+  ;;
+
 wsl)
   echo "⚠️  WSL2 Setup Required:"
   echo ""

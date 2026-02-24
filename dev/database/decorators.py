@@ -2,127 +2,89 @@
 """
 decorators.py
 --------------------
-Shared decorators for database operations.
-"""
-# import inspect
-from functools import wraps
-from typing import Callable, List
-from datetime import datetime
+Context manager for database operations.
 
+Provides DatabaseOperation context manager that handles logging, timing,
+and error conversion for all database operations.
+
+Usage:
+    def create_person(self, metadata):
+        DataValidator.validate_required_fields(metadata, ["name"])
+        with DatabaseOperation(self.logger, "create_person"):
+            person = Person(name=metadata["name"])
+            self.session.add(person)
+            self.session.commit()
+            return person
+"""
+# --- Annotations ---
+from __future__ import annotations
+
+# --- Standard library imports ---
+from contextlib import contextmanager
+from datetime import datetime
+from typing import Generator, Optional, TYPE_CHECKING
+
+# --- Third party imports ---
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from dev.core.validators import DataValidator
+# --- Local imports ---
 from dev.core.exceptions import DatabaseError
+from dev.core.logging_manager import safe_logger
+
+if TYPE_CHECKING:
+    from dev.core.logging_manager import PalimpsestLogger
 
 
-def log_database_operation(operation_name: str):
+@contextmanager
+def DatabaseOperation(
+    logger: Optional["PalimpsestLogger"],
+    operation_name: str,
+    log_start: bool = False,
+) -> Generator[None, None, None]:
     """
-    Decorator to log database operations with timing and context.
+    Context manager for database operations with logging, timing, and error handling.
 
     Args:
-        operation_name: Name of the operation being logged
+        logger: Optional PalimpsestLogger instance (None-safe via safe_logger)
+        operation_name: Name of the operation for logging
+        log_start: If True, logs operation start (default False to reduce noise)
 
-    Returns:
-        Decorator function
+    Yields:
+        None
+
+    Raises:
+        DatabaseError: On SQLAlchemy integrity or general errors
+
+    Example:
+        def create_person(self, metadata):
+            DataValidator.validate_required_fields(metadata, ["name"])
+            with DatabaseOperation(self.logger, "create_person"):
+                person = Person(name=metadata["name"])
+                self.session.add(person)
+                return person
     """
+    start_time = datetime.now()
+    log = safe_logger(logger)
 
-    def decorator(function: Callable) -> Callable:
-        @wraps(function)
-        def wrapper(self, *args, **kwargs):
-            start_time = datetime.now()
-            operation_id = f"{operation_name}_{start_time.strftime('%Y%m%d_%H%M%S_%f')}"
+    if log_start:
+        log.log_debug(f"Starting {operation_name}")
 
-            if hasattr(self, "logger") and self.logger:
-                self.logger.log_debug(
-                    f"Starting {operation_name}",
-                    {
-                        "operation_id": operation_id,
-                        "args_count": len(args),
-                        "kwargs_keys": list(kwargs.keys()),
-                    },
-                )
-
-            try:
-                result = function(self, *args, **kwargs)
-
-                duration = (datetime.now() - start_time).total_seconds()
-                if hasattr(self, "logger") and self.logger:
-                    self.logger.log_operation(
-                        f"{operation_name}_completed",
-                        {
-                            "operation_id": operation_id,
-                            "duration_seconds": duration,
-                            "success": True,
-                        },
-                    )
-
-                return result
-
-            except Exception as e:
-                duration = (datetime.now() - start_time).total_seconds()
-                if hasattr(self, "logger") and self.logger:
-                    self.logger.log_error(
-                        e,
-                        {
-                            "operation": operation_name,
-                            "operation_id": operation_id,
-                            "duration_seconds": duration,
-                        },
-                    )
-                raise
-
-        return wrapper
-
-    return decorator
-
-
-def validate_metadata(required_fields: List[str]):
-    """
-    Decorator to validate metadata dictionaries before processing.
-
-    Args:
-        required_fields: List of required field names
-
-    Returns:
-        Decorator function
-    """
-
-    def decorator(function: Callable) -> Callable:
-        @wraps(function)
-        def wrapper(self, *args, **kwargs):
-            # Find metadata as first positional arg or in kwargs
-            # Manager methods have signature: create(self, metadata)
-            metadata = args[0] if args else kwargs.get("metadata", {})
-
-            DataValidator.validate_required_fields(metadata, required_fields)
-
-            return function(self, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def handle_db_errors(function: Callable) -> Callable:
-    """
-    Decorator to handle common database errors.
-
-    Args:
-        function: Function to wrap
-
-    Returns:
-        Wrapped function with error handling
-    """
-
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        try:
-            return function(*args, **kwargs)
-        except IntegrityError as e:
-            raise DatabaseError(f"Data integrity violation: {e}")
-        except SQLAlchemyError as e:
-            raise DatabaseError(f"Database operation failed: {e}")
-        except Exception:
-            raise
-
-    return wrapper
+    try:
+        yield
+        duration = (datetime.now() - start_time).total_seconds()
+        log.log_operation(
+            f"{operation_name}_completed",
+            {"duration_seconds": round(duration, 3), "success": True},
+        )
+    except IntegrityError as e:
+        duration = (datetime.now() - start_time).total_seconds()
+        log.log_error(e, {"operation": operation_name, "duration_seconds": round(duration, 3)})
+        raise DatabaseError(f"Data integrity violation: {e}")
+    except SQLAlchemyError as e:
+        duration = (datetime.now() - start_time).total_seconds()
+        log.log_error(e, {"operation": operation_name, "duration_seconds": round(duration, 3)})
+        raise DatabaseError(f"Database operation failed: {e}")
+    except Exception as e:
+        duration = (datetime.now() - start_time).total_seconds()
+        log.log_error(e, {"operation": operation_name, "duration_seconds": round(duration, 3)})
+        raise

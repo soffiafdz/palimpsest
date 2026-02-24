@@ -14,7 +14,6 @@ Handles:
     - Comprehensive logging system with rotation
     - Automated backup and recovery system
     - Database health monitoring and maintenance
-    - Data export functionality
     - Migration management via Alembic
 
 Key Features:
@@ -62,7 +61,6 @@ Core Operations:
     Database Maintenance:
         - cleanup_all_metadata: Remove orphaned records
         - health_monitor: Check database integrity
-        - export_manager: Export data to various formats
         - query_analytics: Generate statistics and reports
 
 Notes
@@ -77,17 +75,15 @@ Notes
 from __future__ import annotations
 
 # --- Standard library imports ---
-import time
 from contextlib import contextmanager
 from datetime import datetime
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, List, Type, TypeVar, Protocol
+from typing import Any, Dict, Optional, Union, List, Type, TypeVar, Protocol
 
 # --- Third party ---
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session, sessionmaker, Mapped
-from sqlalchemy.exc import IntegrityError, OperationalError
 
 from alembic.config import Config
 from alembic import command
@@ -97,39 +93,33 @@ from alembic.runtime.migration import MigrationContext
 from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import DatabaseError
 from dev.core.paths import ROOT
-from dev.core.validators import DataValidator
-from dev.core.logging_manager import PalimpsestLogger
+from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from .models import (
     Base,
-    Entry,
-    MentionedDate,
     Location,
-    Person,
     Reference,
     PoemVersion,
     Tag,
+    Theme,
+    Scene,
 )
-from .models_manuscript import Theme
 
-from .decorators import (
-    handle_db_errors,
-    log_database_operation,
-)
+from .decorators import DatabaseOperation
 from .health_monitor import HealthMonitor
-from .export_manager import ExportManager
 from .query_analytics import QueryAnalytics
 
-# Modular entity managers (Phase 2 & Phase 3)
+# Modular entity managers
 from .managers import (
+    SimpleManager,
     TagManager,
-    PersonManager,
     EventManager,
-    DateManager,
+    PersonManager,
     LocationManager,
     ReferenceManager,
     PoemManager,
-    ManuscriptManager,
     EntryManager,
+    ChapterManager,
+    CharacterManager,
 )
 
 
@@ -215,14 +205,14 @@ class PalimpsestDB:
 
     # Manager descriptors - automatically validate session context
     tags = ManagerProperty("_tag_manager", "TagManager")
-    people = ManagerProperty("_person_manager", "PersonManager")
     events = ManagerProperty("_event_manager", "EventManager")
-    dates = ManagerProperty("_date_manager", "DateManager")
+    people = ManagerProperty("_person_manager", "PersonManager")
     locations = ManagerProperty("_location_manager", "LocationManager")
     references = ManagerProperty("_reference_manager", "ReferenceManager")
     poems = ManagerProperty("_poem_manager", "PoemManager")
-    manuscripts = ManagerProperty("_manuscript_manager", "ManuscriptManager")
     entries = ManagerProperty("_entry_manager", "EntryManager")
+    chapters = ManagerProperty("_chapter_manager", "ChapterManager")
+    characters = ManagerProperty("_character_manager", "CharacterManager")
 
     # --- Initialization ---
     def __init__(
@@ -270,18 +260,19 @@ class PalimpsestDB:
 
         # Initialize service components
         self.health_monitor = HealthMonitor(self.logger)
-        self.export_manager = ExportManager(self.logger)
         self.query_analytics = QueryAnalytics(self.logger)
 
         # Initialize modular entity managers (lazy-loaded in session_scope)
-        self._tag_manager: Optional[TagManager] = None
+        # Note: TagManager/EventManager are factories that return SimpleManager
+        self._tag_manager: Optional[SimpleManager] = None
+        self._event_manager: Optional[SimpleManager] = None
         self._person_manager: Optional[PersonManager] = None
-        self._event_manager: Optional[EventManager] = None
-        self._date_manager: Optional[DateManager] = None
         self._location_manager: Optional[LocationManager] = None
         self._reference_manager: Optional[ReferenceManager] = None
         self._poem_manager: Optional[PoemManager] = None
-        self._manuscript_manager: Optional[ManuscriptManager] = None
+        self._entry_manager: Optional[EntryManager] = None
+        self._chapter_manager: Optional[ChapterManager] = None
+        self._character_manager: Optional[CharacterManager] = None
 
         # Initialize database
         self._setup_engine()
@@ -293,14 +284,13 @@ class PalimpsestDB:
     def _setup_engine(self) -> None:
         """Initialize database engine and session factory."""
         try:
-            if self.logger:
-                self.logger.log_operation(
-                    "database_init_start",
-                    {
-                        "db_path": str(self.db_path),
-                        "alembic_dir": str(self.alembic_dir),
-                    },
-                )
+            safe_logger(self.logger).log_operation(
+                "database_init_start",
+                {
+                    "db_path": str(self.db_path),
+                    "alembic_dir": str(self.alembic_dir),
+                },
+            )
 
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -323,12 +313,10 @@ class PalimpsestDB:
             if not self.db_path.exists():
                 self.initialize_schema()
 
-            if self.logger:
-                self.logger.log_operation("database_init_complete", {"success": True})
+            safe_logger(self.logger).log_operation("database_init_complete", {"success": True})
 
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "database_init"})
+            safe_logger(self.logger).log_error(e, {"operation": "database_init"})
             raise DatabaseError(f"Database initialization failed: {e}")
 
     # --- Session Management ---
@@ -354,45 +342,42 @@ class PalimpsestDB:
 
         # Initialize modular managers for this session
         self._tag_manager = TagManager(session, self.logger)
-        self._person_manager = PersonManager(session, self.logger)
         self._event_manager = EventManager(session, self.logger)
-        self._date_manager = DateManager(session, self.logger)
+        self._person_manager = PersonManager(session, self.logger)
         self._location_manager = LocationManager(session, self.logger)
         self._reference_manager = ReferenceManager(session, self.logger)
         self._poem_manager = PoemManager(session, self.logger)
-        self._manuscript_manager = ManuscriptManager(session, self.logger)
         self._entry_manager = EntryManager(session, self.logger)
+        self._chapter_manager = ChapterManager(session, self.logger)
+        self._character_manager = CharacterManager(session, self.logger)
 
-        if self.logger:
-            self.logger.log_debug("session_start", {"session_id": session_id})
+        safe_logger(self.logger).log_debug("session_start", {"session_id": session_id})
 
         try:
             yield session
             session.commit()
-            if self.logger:
-                self.logger.log_debug("session_commit", {"session_id": session_id})
+            safe_logger(self.logger).log_debug("session_commit", {"session_id": session_id})
 
         except Exception as e:
             session.rollback()
-            if self.logger:
-                self.logger.log_error(
-                    e, {"operation": "session_rollback", "session_id": session_id}
-                )
+            safe_logger(self.logger).log_error(
+                e, {"operation": "session_rollback", "session_id": session_id}
+            )
             raise
         finally:
             # Clean up managers
             self._tag_manager = None
-            self._person_manager = None
             self._event_manager = None
-            self._date_manager = None
+            self._person_manager = None
             self._location_manager = None
             self._reference_manager = None
             self._poem_manager = None
-            self._manuscript_manager = None
+            self._entry_manager = None
+            self._chapter_manager = None
+            self._character_manager = None
 
             session.close()
-            if self.logger:
-                self.logger.log_debug("session_close", {"session_id": session_id})
+            safe_logger(self.logger).log_debug("session_close", {"session_id": session_id})
 
     def get_session(self) -> Session:
         """Create and return a new SQLAlchemy session."""
@@ -410,8 +395,7 @@ class PalimpsestDB:
     def _setup_alembic(self) -> Config:
         """Setup Alembic configuration."""
         try:
-            if self.logger:
-                self.logger.log_debug("Setting up Alembic configuration...")
+            safe_logger(self.logger).log_debug("Setting up Alembic configuration...")
 
             alembic_cfg: Config = Config(str(ROOT / "alembic.ini"))
             alembic_cfg.set_main_option("script_location", str(self.alembic_dir))
@@ -421,16 +405,12 @@ class PalimpsestDB:
                 "%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d_%%(slug)s",
             )
 
-            if self.logger:
-                self.logger.log_debug("Alembic configuration setup complete")
+            safe_logger(self.logger).log_debug("Alembic configuration setup complete")
             return alembic_cfg
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "setup_alembic"})
+            safe_logger(self.logger).log_error(e, {"operation": "setup_alembic"})
             raise DatabaseError(f"Alembic configuration failed: {e}")
 
-    @handle_db_errors
-    @log_database_operation("init_alembic")
     def init_alembic(self) -> None:
         """
         Initialize Alembic in the project directory.
@@ -440,17 +420,17 @@ class PalimpsestDB:
             Updates alembic/env.py to import Palimpsest Base metadata
             Prints instructions for first migration
         """
-        try:
-            if self.alembic_dir is not None and not self.alembic_dir.is_dir():
-                command.init(self.alembic_cfg, str(self.alembic_dir))
-                self._update_alembic_env()
-            else:
-                if self.logger:
-                    self.logger.log_debug(
+        with DatabaseOperation(self.logger, "init_alembic"):
+            try:
+                if self.alembic_dir is not None and not self.alembic_dir.is_dir():
+                    command.init(self.alembic_cfg, str(self.alembic_dir))
+                    self._update_alembic_env()
+                else:
+                    safe_logger(self.logger).log_debug(
                         f"Alembic already initialized in {self.alembic_dir}"
                     )
-        except Exception as e:
-            raise DatabaseError(f"Alembic initialization failed: {e}")
+            except Exception as e:
+                raise DatabaseError(f"Alembic initialization failed: {e}")
 
     def _update_alembic_env(self) -> None:
         """Update the generated alembic/env.py to import Palimpsest models."""
@@ -472,17 +452,13 @@ class PalimpsestDB:
                         f"{import_line}\n{target_metadata_line}",
                     )
                     env_path.write_text(updated_content, encoding="utf-8")
-                    if self.logger:
-                        self.logger.log_operation(
-                            "alembic_env_updated", {"env_path": str(env_path)}
-                        )
+                    safe_logger(self.logger).log_operation(
+                        "alembic_env_updated", {"env_path": str(env_path)}
+                    )
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "update_alembic_env"})
+            safe_logger(self.logger).log_error(e, {"operation": "update_alembic_env"})
             raise DatabaseError(f"Could not update Alembic environment: {e}")
 
-    @handle_db_errors
-    @log_database_operation("initialize_schema")
     def initialize_schema(self) -> None:
         """
         Initialize database - create tables if needed and run migrations.
@@ -495,36 +471,32 @@ class PalimpsestDB:
             If not,
                 runs pending migrations to update schema
         """
-        try:
-            with self.engine.connect() as conn:
-                inspector = self.engine.dialect.get_table_names(conn)
-                is_fresh_db: bool = len(inspector) == 0
+        with DatabaseOperation(self.logger, "initialize_schema"):
+            try:
+                with self.engine.connect() as conn:
+                    inspector = self.engine.dialect.get_table_names(conn)
+                    is_fresh_db: bool = len(inspector) == 0
 
-            if is_fresh_db:
-                Base.metadata.create_all(bind=self.engine)
-                try:
-                    command.stamp(self.alembic_cfg, "head")
-                    if self.logger:
-                        self.logger.log_operation(
+                if is_fresh_db:
+                    Base.metadata.create_all(bind=self.engine)
+                    try:
+                        command.stamp(self.alembic_cfg, "head")
+                        safe_logger(self.logger).log_operation(
                             "fresh_database_created",
                             {"tables_created": len(Base.metadata.tables)},
                         )
-                except Exception as e:
-                    if self.logger:
-                        self.logger.log_error(e, {"operation": "stamp_database"})
-            else:
-                self.upgrade_database()
-                if self.logger:
-                    self.logger.log_operation(
+                    except Exception as e:
+                        safe_logger(self.logger).log_error(e, {"operation": "stamp_database"})
+                else:
+                    self.upgrade_database()
+                    safe_logger(self.logger).log_operation(
                         "existing_database_migrated",
                         {"table_count": len(inspector)},
                     )
 
-        except Exception as e:
-            raise DatabaseError(f"Could not initialize database: {e}")
+            except Exception as e:
+                raise DatabaseError(f"Could not initialize database: {e}")
 
-    @handle_db_errors
-    @log_database_operation("upgrade_database")
     def upgrade_database(self, revision: str = "head") -> None:
         """
         Upgrade the database schema to the specified Alembic revision.
@@ -534,13 +506,12 @@ class PalimpsestDB:
                 The target revision to upgrade to.
                 Defaults to 'head' (latest revision).
         """
-        try:
-            command.upgrade(self.alembic_cfg, revision)
-        except Exception as e:
-            raise DatabaseError(f"Database upgrade failed: {e}")
+        with DatabaseOperation(self.logger, "upgrade_database"):
+            try:
+                command.upgrade(self.alembic_cfg, revision)
+            except Exception as e:
+                raise DatabaseError(f"Database upgrade failed: {e}")
 
-    @handle_db_errors
-    @log_database_operation("create_migration")
     def create_migration(self, message: str) -> str:
         """
         Create a new Alembic migration.
@@ -550,35 +521,34 @@ class PalimpsestDB:
         Returns:
             revision
         """
-        try:
-            result = command.revision(
-                self.alembic_cfg, message=message, autogenerate=True
-            )
+        with DatabaseOperation(self.logger, "create_migration"):
+            try:
+                result = command.revision(
+                    self.alembic_cfg, message=message, autogenerate=True
+                )
 
-            # Handle both single Script and List[Script] return types
-            if isinstance(result, list):
-                if not result or result[0] is None:
-                    raise DatabaseError("Migration creation returned no scripts")
-                script = result[0]
-            else:
-                # Single Script object
-                if result is None:
-                    raise DatabaseError("Migration creation returned no script")
-                script = result
+                # Handle both single Script and List[Script] return types
+                if isinstance(result, list):
+                    if not result or result[0] is None:
+                        raise DatabaseError("Migration creation returned no scripts")
+                    script = result[0]
+                else:
+                    # Single Script object
+                    if result is None:
+                        raise DatabaseError("Migration creation returned no script")
+                    script = result
 
-            # Access revision attribute
-            if not hasattr(script, "revision") or script.revision is None:
-                raise DatabaseError("Migration script has no revision")
+                # Access revision attribute
+                if not hasattr(script, "revision") or script.revision is None:
+                    raise DatabaseError("Migration script has no revision")
 
-            return script.revision
+                return script.revision
 
-        except DatabaseError:
-            raise
-        except Exception as e:
-            raise DatabaseError(f"Migration creation failed: {e}")
+            except DatabaseError:
+                raise
+            except Exception as e:
+                raise DatabaseError(f"Migration creation failed: {e}")
 
-    @handle_db_errors
-    @log_database_operation("downgrade_database")
     def downgrade_database(self, revision: str) -> None:
         """
         Downgrade the database schema to a specified Alembic revision.
@@ -586,10 +556,11 @@ class PalimpsestDB:
         Args:
             revision (str): The target revision to downgrade to.
         """
-        try:
-            command.downgrade(self.alembic_cfg, revision)
-        except Exception as e:
-            raise DatabaseError(f"Database downgrade to {revision} failed: {e}")
+        with DatabaseOperation(self.logger, "downgrade_database"):
+            try:
+                command.downgrade(self.alembic_cfg, revision)
+            except Exception as e:
+                raise DatabaseError(f"Database downgrade to {revision} failed: {e}")
 
     def get_migration_history(self) -> Dict[str, Optional[str]]:
         """
@@ -614,363 +585,46 @@ class PalimpsestDB:
                 "status": "up_to_date" if current_rev else "needs_migration",
             }
         except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "get_migration_history"})
+            safe_logger(self.logger).log_error(e, {"operation": "get_migration_history"})
             return {"error": str(e)}
 
-    # --- Helper methods ---
-    def _execute_with_retry(
-        self,
-        operation: Callable,
-        max_retries: int = 3,
-        retry_delay: float = 0.1,
-    ) -> Any:
-        """
-        Execute database operation with retry on lock.
-
-        Args:
-            session: SQLAlchemy session
-            operation: Callable that performs the operation
-            max_retries: Maximum number of retry attempts
-            retry_delay: Base delay between retries (exponential backoff)
-
-        Returns:
-            Result of the operation
-
-        Raises:
-            OperationalError: If all retries exhausted
-        """
-        for attempt in range(max_retries):
-            try:
-                return operation()
-            except OperationalError as e:
-                error_msg = str(e).lower()
-
-                if "locked" in error_msg or "busy" in error_msg:
-                    if attempt < max_retries - 1:
-                        wait_time = retry_delay * (2**attempt)  # Exponential backoff
-
-                        if self.logger:
-                            self.logger.log_debug(
-                                f"Database locked, retrying in {wait_time}s",
-                                {"attempt": attempt + 1, "max_retries": max_retries},
-                            )
-
-                        time.sleep(wait_time)
-                        continue
-                    else:
-                        # Max retries exhausted for locked/busy error
-                        raise DatabaseError(f"Operation failed after {max_retries} attempts due to database lock/busy conditions: {e}") from e
-                else:
-                    # Non-lock OperationalError, re-raise immediately
-                    raise
-
-        # This line should ideally not be reached if exceptions are always raised
-        # However, it serves as a fail-safe to ensure an error is always propagated
-        raise DatabaseError("Unexpected termination of retry loop without success or specific error.")
-
-    def _resolve_object(
-        self, session: Session, item: Union[T, int], model_class: Type[T]
-    ) -> T:
-        """
-        Resolve an item to an ORM object.
-
-        Args:
-            session: SQLAlchemy session
-            item: Object instance or ID
-            model_class: Target model class
-
-        Returns:
-            Resolved ORM object
-
-        Raises:
-            ValueError: If object not found or not persisted
-            TypeError: If item type is invalid
-        """
-        if isinstance(item, model_class):
-            if item.id is None:
-                raise ValueError(f"{model_class.__name__} instance must be persisted")
-            return item
-        elif isinstance(item, int):
-            obj = session.get(model_class, item)
-            if obj is None:
-                raise ValueError(f"No {model_class.__name__} found with id: {item}")
-            return obj
-        else:
-            raise TypeError(
-                f"Expected {model_class.__name__} instance or int, got {type(item)}"
-            )
-
-    @handle_db_errors
-    def _get_or_create_lookup_item(
-        self,
-        session: Session,
-        model_class: Type[T],
-        lookup_fields: Dict[str, Any],
-        extra_fields: Optional[Dict[str, Any]] = None,
-    ) -> T:
-        """
-        Get an existing item from a lookup table,
-        or create it if it doesn't exist.
-
-        Args:
-            session (Session): SQLAlchemy session.
-            model_class (type[Base]): ORM models class to query or create.
-            lookup_fields: Dictionary of field_name: value to filter/create.
-            extra_fielts: Additional fields for new object creation.
-
-        Returns:
-            ORM instance of the same type of the one being queried
-
-        Notes:
-            For string-based columns, `value` should be a str
-            For dates or other types, pass the appropriate Python types
-            The new object is added to the session and flushed immediately
-        """
-        # Try to get existing first
-        obj = session.query(model_class).filter_by(**lookup_fields).first()
-        if obj:
-            return obj
-
-        # Create new object
-        fields = lookup_fields.copy()
-        if extra_fields:
-            fields.update(extra_fields)
-
-        try:
-            obj = model_class(**fields)
-            session.add(obj)
-            session.flush()
-            return obj
-        except IntegrityError:
-            # Handle race condition - another process might have created it
-            session.rollback()
-            obj = session.query(model_class).filter_by(**lookup_fields).first()
-            if obj:
-                return obj
-            raise
-
-    # --- Entry Operations - Delegated to EntryManager (Phase 3) ---
-    # All Entry CRUD and relationship operations are now handled by EntryManager.
-    #
-    # New recommended usage:
-    #   with db.session_scope() as session:
-    #       entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
-    #       entry = db.entries.get(entry_date="2024-01-15")
-    #       db.entries.update(entry, {"notes": "Updated"})
-    #       db.entries.delete(entry)
-    #
-    # Stable facade methods that delegate to EntryManager:
     # -------------------------------------------------------------------------
-    # --- Static Helper Methods for EntryManager ---
-    # These allow EntryManager to call back to modular managers without circular dependencies
-
-    @staticmethod
-    def get_person_static(
-        session: Session,
-        person_name: Optional[str] = None,
-        person_full_name: Optional[str] = None,
-    ) -> Optional[Person]:
-        """Static method for PersonManager access from EntryManager."""
-        from .managers import PersonManager
-        person_mgr = PersonManager(session, None)
-        return person_mgr.get(person_name=person_name, person_full_name=person_full_name)
-
-    @staticmethod
-    def update_entry_locations_static(
-        session: Session,
-        entry: Entry,
-        locations_data: List[Any],
-        incremental: bool = True,
-    ) -> None:
-        """Static method for location processing from EntryManager."""
-        from .managers import LocationManager
-        location_mgr = LocationManager(session, None)
-
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before linking locations")
-
-        if not incremental:
-            entry.locations.clear()
-            session.flush()
-
-        existing_location_ids = {loc.id for loc in entry.locations}
-
-        for loc_spec in locations_data:
-            # Handle different input formats
-            if isinstance(loc_spec, dict):
-                location_name = DataValidator.normalize_string(loc_spec.get("name"))
-                city_name = DataValidator.normalize_string(loc_spec.get("city"))
-
-                if not location_name or not city_name:
-                    continue
-
-                # Get or create location via manager
-                city = location_mgr.get_or_create_city(city_name)
-                location = location_mgr.get_or_create_location(location_name, city)
-
-            elif isinstance(loc_spec, str):
-                # Just a location name - need city context
-                location_name = DataValidator.normalize_string(loc_spec)
-                if not location_name:
-                    continue
-                # Try to find existing location by name only
-                # Type narrowing: LocationManager.get returns Optional[Location]
-                location_result = location_mgr.get_location(location_name=location_name)  # type: ignore[attr-defined]
-                if not location_result:
-                    continue
-                location = location_result
-            elif isinstance(loc_spec, Location):
-                location = loc_spec
-            else:
-                continue
-
-            if location and location.id not in existing_location_ids:
-                entry.locations.append(location)
-
-        session.flush()
-
-    @staticmethod
-    def process_references_static(
-        session: Session,
-        entry: Entry,
-        references_data: List[Dict[str, Any]],
-    ) -> None:
-        """Static method for reference processing from EntryManager."""
-        from .managers import ReferenceManager
-        reference_mgr = ReferenceManager(session, None)
-
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before adding references")
-
-        for ref_data in references_data:
-            content = DataValidator.normalize_string(ref_data.get("content"))
-            description = DataValidator.normalize_string(ref_data.get("description"))
-
-            if not content and not description:
-                continue
-
-            # Process source if provided
-            source = None
-            if "source" in ref_data and ref_data["source"]:
-                source_data = ref_data["source"]
-                if isinstance(source_data, dict):
-                    title = DataValidator.normalize_string(source_data.get("title"))
-                    if title:
-                        # Get or create source via manager
-                        source = reference_mgr.get_or_create_source(
-                            title=title,
-                            source_type=source_data.get("type"),
-                            author=source_data.get("author"),
-                        )
-
-            # Create reference via manager
-            ref_metadata = {
-                "content": content,
-                "description": description,
-                "mode": ref_data.get("mode", "direct"),
-                "speaker": ref_data.get("speaker"),
-                "entry": entry,
-                "source": source,
-            }
-            reference_mgr.create_reference(ref_metadata)
-
-    @staticmethod
-    def process_poems_static(
-        session: Session,
-        entry: Entry,
-        poems_data: List[Dict[str, Any]],
-    ) -> None:
-        """Static method for poem processing from EntryManager."""
-        from .managers import PoemManager
-        poem_mgr = PoemManager(session, None)
-
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before adding poems")
-
-        for poem_data in poems_data:
-            title = DataValidator.normalize_string(poem_data.get("title"))
-            content = DataValidator.normalize_string(poem_data.get("content"))
-
-            if not title or not content:
-                continue
-
-            # Parse revision date (default to entry date)
-            revision_date = DataValidator.normalize_date(
-                poem_data.get("revision_date") or entry.date
-            )
-
-            # Create poem version via manager
-            poem_mgr.create_version({
-                "title": title,
-                "content": content,
-                "revision_date": revision_date,
-                "notes": poem_data.get("notes"),
-                "entry": entry,
-            })
-
-    @staticmethod
-    def create_or_update_manuscript_entry_static(
-        session: Session,
-        entry: Entry,
-        manuscript_data: Dict[str, Any],
-    ) -> None:
-        """Static method for manuscript processing from EntryManager."""
-        from .managers import ManuscriptManager
-        manuscript_mgr = ManuscriptManager(session, None)
-
-        if entry.id is None:
-            raise ValueError("Entry must be persisted before adding manuscript data")
-
-        # Delegate to ManuscriptManager
-        manuscript_mgr.create_or_update_entry(entry, manuscript_data)
-
-    # --- Entity Operations Delegated to Modular Managers ---
-    # All entity-specific CRUD operations are now handled by specialized managers.
-    #
-    # Use the manager properties within session_scope:
-    #   - db.people: PersonManager
-    #   - db.events: EventManager
-    #   - db.locations: LocationManager
-    #   - db.references: ReferenceManager
-    #   - db.poems: PoemManager
-    #   - db.manuscripts: ManuscriptManager
-    #   - db.tags: TagManager
-    #   - db.dates: DateManager
+    # Entity operations use modular managers via properties:
+    #   db.entries, db.people, db.events, db.locations, db.references,
+    #   db.poems, db.tags
     #
     # Example:
     #   with db.session_scope() as session:
+    #       entry = db.entries.create({"date": "2024-01-15", "file_path": "/path.md"})
     #       person = db.people.create({"name": "Alice"})
-    #       event = db.events.create({"name": "PyCon 2024"})
     # -------------------------------------------------------------------------
 
     # --- Cleanup Operations ---
-    @handle_db_errors
     def bulk_cleanup_unused(
         self, session: Session, cleanup_config: Dict[str, tuple]
     ) -> Dict[str, int]:
         """Perform bulk cleanup operations more efficiently."""
-        return self.health_monitor.bulk_cleanup_unused(session, cleanup_config)
+        with DatabaseOperation(self.logger, "bulk_cleanup_unused"):
+            return self.health_monitor.bulk_cleanup_unused(session, cleanup_config)
 
-    @log_database_operation("cleanup_all_metadata")
     def cleanup_all_metadata(self) -> Dict[str, int]:
         """Run safe cleanup operations with proper transaction handling."""
-        cleanup_config = {
-            "tags": (Tag, "entries"),
-            "locations": (Location, "entries"),
-            "dates": (MentionedDate, "entries"),
-            "themes": (Theme, "entries"),
-            "references": (Reference, "entry"),
-            "poem_versions": (PoemVersion, "entry"),
-        }
+        with DatabaseOperation(self.logger, "cleanup_all_metadata"):
+            cleanup_config = {
+                "tags": (Tag, "entries"),
+                "locations": (Location, "entries"),
+                "scenes": (Scene, "entry"),
+                "themes": (Theme, "entries"),
+                "references": (Reference, "entry"),
+                "poem_versions": (PoemVersion, "entry"),
+            }
 
-        try:
-            with self.session_scope() as session:
-                return self.bulk_cleanup_unused(session, cleanup_config)
-        except Exception as e:
-            if self.logger:
-                self.logger.log_error(e, {"operation": "cleanup_all_metadata"})
-            raise DatabaseError(f"Cleanup operation failed: {e}")
+            try:
+                with self.session_scope() as session:
+                    return self.bulk_cleanup_unused(session, cleanup_config)
+            except Exception as e:
+                safe_logger(self.logger).log_error(e, {"operation": "cleanup_all_metadata"})
+                raise DatabaseError(f"Cleanup operation failed: {e}")
 
     # --- Backup Integration ---
     def create_backup(
@@ -1008,5 +662,4 @@ class PalimpsestDB:
             try:
                 self.backup_manager.auto_backup()
             except Exception as e:
-                if self.logger:
-                    self.logger.log_error(e, {"operation": "exit_auto_backup"})
+                safe_logger(self.logger).log_error(e, {"operation": "exit_auto_backup"})

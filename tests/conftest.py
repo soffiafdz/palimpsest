@@ -313,8 +313,8 @@ def location_manager(db_session):
 @pytest.fixture
 def tag_manager(db_session):
     """Create TagManager instance for testing."""
-    from dev.database.managers.tag_manager import TagManager
-    return TagManager(db_session)
+    from dev.database.managers import SimpleManager
+    return SimpleManager.for_tags(db_session)
 
 
 @pytest.fixture
@@ -334,19 +334,19 @@ def reference_manager(db_session):
 @pytest.fixture
 def event_manager(db_session):
     """Create EventManager instance for testing."""
-    from dev.database.managers.event_manager import EventManager
-    return EventManager(db_session)
+    from dev.database.managers import SimpleManager
+    return SimpleManager.for_events(db_session)
 
 
 @pytest.fixture
-def date_manager(db_session):
-    """Create DateManager instance for testing."""
-    from dev.database.managers.date_manager import DateManager
-    return DateManager(db_session)
+def chapter_manager(db_session):
+    """Create ChapterManager instance for testing."""
+    from dev.database.managers.chapter_manager import ChapterManager
+    return ChapterManager(db_session)
 
 
 @pytest.fixture
-def manuscript_manager(db_session):
-    """Create ManuscriptManager instance for testing."""
-    from dev.database.managers.manuscript_manager import ManuscriptManager
-    return ManuscriptManager(db_session)
+def character_manager(db_session):
+    """Create CharacterManager instance for testing."""
+    from dev.database.managers.character_manager import CharacterManager
+    return CharacterManager(db_session)

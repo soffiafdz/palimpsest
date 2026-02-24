@@ -1,203 +1,244 @@
--- fzf-lua integration for Palimpsest wiki
+-- Picker integration for Palimpsest wiki (fzf-lua with snacks.nvim fallback)
 local palimpsest = require("palimpsest.config")
 local M = {}
 
+--- Detect the available picker backend.
+--- Prefers fzf-lua; falls back to snacks.nvim picker.
+--- @return string|nil backend "fzf" or "snacks", or nil if none available
+--- @return table|nil picker the picker module
+local function get_picker()
+	local has_fzf, fzf = pcall(require, "fzf-lua")
+	if has_fzf then
+		return "fzf", fzf
+	end
+	local has_snacks, snacks = pcall(require, "snacks")
+	if has_snacks and snacks.picker then
+		return "snacks", snacks.picker
+	end
+	return nil, nil
+end
+
+-- Entity type to directory path mapping (shared by browse and search)
+local function entity_paths()
+	local wiki_dir = palimpsest.paths.wiki
+	local journal_dir = palimpsest.paths.journal
+	return {
+		all = { journal_dir, wiki_dir },
+		journal = journal_dir,
+		wiki = wiki_dir,
+		people = wiki_dir .. "/journal/people",
+		entries = wiki_dir .. "/journal/entries",
+		locations = wiki_dir .. "/journal/locations",
+		cities = wiki_dir .. "/journal/cities",
+		events = wiki_dir .. "/journal/events",
+		themes = wiki_dir .. "/journal/themes",
+		tags = wiki_dir .. "/journal/tags",
+		poems = wiki_dir .. "/journal/poems",
+		references = wiki_dir .. "/journal/references",
+		motifs = wiki_dir .. "/journal/motifs",
+		manuscript = wiki_dir .. "/manuscript",
+		["manuscript-chapters"] = wiki_dir .. "/manuscript/chapters",
+		["manuscript-characters"] = wiki_dir .. "/manuscript/characters",
+		["manuscript-scenes"] = wiki_dir .. "/manuscript/scenes",
+	}
+end
+
 -- Browse wiki entities by type
 function M.browse(entity_type)
-	local has_fzf, fzf = pcall(require, "fzf-lua")
-	if not has_fzf then
-		vim.notify("fzf-lua is not installed", vim.log.levels.ERROR)
+	local backend, picker = get_picker()
+	if not backend then
+		vim.notify("No picker available (install fzf-lua or snacks.nvim)", vim.log.levels.ERROR)
 		return
 	end
 
-	local wiki_dir = palimpsest.paths.wiki
-	local journal_dir = palimpsest.paths.journal
+	local paths = entity_paths()
+	local search_path = paths[entity_type] or palimpsest.paths.wiki
+	local prompt = "Palimpsest: " .. (entity_type or "all") .. "> "
 
-	-- Define search paths for each entity type
-	local entity_paths = {
-		all = wiki_dir,
-		journal = journal_dir,
-		people = wiki_dir .. "/people",
-		entries = wiki_dir .. "/entries",
-		locations = wiki_dir .. "/locations",
-		cities = wiki_dir .. "/cities",
-		events = wiki_dir .. "/events",
-		themes = wiki_dir .. "/themes",
-		tags = wiki_dir .. "/tags",
-		poems = wiki_dir .. "/poems",
-		references = wiki_dir .. "/references",
-	}
+	-- Multi-directory case (e.g., 'all' = wiki + journal)
+	if type(search_path) == "table" then
+		local valid_dirs = {}
+		for _, dir in ipairs(search_path) do
+			if vim.fn.isdirectory(dir) == 1 then
+				table.insert(valid_dirs, dir)
+			end
+		end
+		if #valid_dirs == 0 then
+			vim.notify("No wiki directories found", vim.log.levels.ERROR)
+			return
+		end
 
-	local search_path = entity_paths[entity_type] or wiki_dir
+		if backend == "fzf" then
+			local shellescape_dirs = {}
+			for _, dir in ipairs(valid_dirs) do
+				table.insert(shellescape_dirs, vim.fn.shellescape(dir))
+			end
+			picker.files({
+				prompt = prompt,
+				cmd = "fd -t f -e md . " .. table.concat(shellescape_dirs, " "),
+				winopts = {
+					height = 0.85,
+					width = 0.80,
+					preview = { layout = "vertical", vertical = "down:60%" },
+				},
+			})
+		else
+			picker.files({
+				title = prompt,
+				dirs = valid_dirs,
+			})
+		end
+		return
+	end
 
-	-- Check if path exists
+	-- Single directory case
 	if vim.fn.isdirectory(search_path) == 0 then
 		vim.notify("Directory not found: " .. search_path, vim.log.levels.ERROR)
 		return
 	end
 
-	-- Use fzf-lua files with the specific directory
-	fzf.files({
-		prompt = "Palimpsest: " .. (entity_type or "all") .. "> ",
-		cwd = search_path,
-		cmd = "fd -t f -e md",
-		winopts = {
-			height = 0.85,
-			width = 0.80,
-			preview = {
-				layout = "vertical",
-				vertical = "down:60%",
+	if backend == "fzf" then
+		picker.files({
+			prompt = prompt,
+			cwd = search_path,
+			cmd = "fd -t f -e md",
+			winopts = {
+				height = 0.85,
+				width = 0.80,
+				preview = { layout = "vertical", vertical = "down:60%" },
 			},
-		},
-	})
+		})
+	else
+		picker.files({
+			title = prompt,
+			cwd = search_path,
+		})
+	end
 end
 
 -- Search wiki content by entity type
 function M.search(entity_type)
-	local has_fzf, fzf = pcall(require, "fzf-lua")
-	if not has_fzf then
-		vim.notify("fzf-lua is not installed", vim.log.levels.ERROR)
+	local backend, picker = get_picker()
+	if not backend then
+		vim.notify("No picker available (install fzf-lua or snacks.nvim)", vim.log.levels.ERROR)
 		return
 	end
 
-	local wiki_dir = palimpsest.paths.wiki
-	local journal_dir = palimpsest.paths.journal
+	local paths = entity_paths()
+	local search_path = paths[entity_type]
 
-	-- Define search paths for each entity type
-	local entity_paths = {
-		all = { wiki_dir, journal_dir },
-		wiki = wiki_dir,
-		journal = journal_dir,
-		people = wiki_dir .. "/people",
-		entries = wiki_dir .. "/entries",
-		locations = wiki_dir .. "/locations",
-		cities = wiki_dir .. "/cities",
-		events = wiki_dir .. "/events",
-		themes = wiki_dir .. "/themes",
-		tags = wiki_dir .. "/tags",
-		poems = wiki_dir .. "/poems",
-		references = wiki_dir .. "/references",
-	}
-
-	local search_paths = entity_paths[entity_type]
-
-	-- Handle both single path and multiple paths
-	if type(search_paths) == "string" then
-		search_paths = { search_paths }
-	elseif not search_paths then
-		search_paths = { wiki_dir }
+	if not search_path then
+		vim.notify("Invalid search type: " .. (entity_type or "nil"), vim.log.levels.ERROR)
+		return
 	end
 
-	-- Verify all paths exist
-	for _, path in ipairs(search_paths) do
-		if vim.fn.isdirectory(path) == 0 then
-			vim.notify("Directory not found: " .. path, vim.log.levels.WARN)
-		end
+	if type(search_path) == "table" then
+		search_path = search_path[1]
 	end
 
-	-- For multiple paths, use glob pattern to search both
-	if #search_paths > 1 then
-		-- Create a glob pattern that matches both directories
-		local search_pattern = ""
-		for i, path in ipairs(search_paths) do
-			if i > 1 then
-				search_pattern = search_pattern .. " "
-			end
-			search_pattern = search_pattern .. path
-		end
+	if vim.fn.isdirectory(search_path) == 0 then
+		vim.notify("Directory not found: " .. search_path, vim.log.levels.WARN)
+		return
+	end
 
-		fzf.live_grep({
-			prompt = "Search All Content: " .. (entity_type or "all") .. "> ",
-			cmd = "rg --column --line-number --no-heading --color=always --smart-case -- ",
-			-- fzf-lua will search in all specified directories
-			cwd = search_paths[1], -- Use first as base
-			rg_opts = "--hidden --follow -g '!.git' -- " .. table.concat(search_paths, " "),
-			winopts = {
-				height = 0.85,
-				width = 0.80,
-			},
+	if backend == "fzf" then
+		picker.live_grep({
+			prompt = "Search " .. entity_type .. "> ",
+			cwd = search_path,
+			winopts = { height = 0.85, width = 0.80 },
 		})
 	else
-		-- Single path, simpler
-		fzf.live_grep({
-			prompt = "Search: " .. (entity_type or "all") .. "> ",
-			cwd = search_paths[1],
-			winopts = {
-				height = 0.85,
-				width = 0.80,
-			},
+		picker.grep({
+			title = "Search " .. entity_type,
+			cwd = search_path,
 		})
 	end
 end
 
 -- Quick access to specific wiki pages
 function M.quick_access()
-	local has_fzf, fzf = pcall(require, "fzf-lua")
-	if not has_fzf then
-		vim.notify("fzf-lua is not installed", vim.log.levels.ERROR)
+	local backend, picker = get_picker()
+	if not backend then
+		vim.notify("No picker available (install fzf-lua or snacks.nvim)", vim.log.levels.ERROR)
 		return
 	end
 
 	local wiki_dir = palimpsest.paths.wiki
 
-	-- Define quick access pages
 	local pages = {
 		{ name = "Wiki Homepage", path = wiki_dir .. "/index.md" },
-		{ name = "Statistics Dashboard", path = wiki_dir .. "/stats.md" },
-		{ name = "Timeline", path = wiki_dir .. "/timeline.md" },
-		{ name = "People Index", path = wiki_dir .. "/people.md" },
-		{ name = "Entries Index", path = wiki_dir .. "/entries.md" },
-		{ name = "Locations Index", path = wiki_dir .. "/locations.md" },
-		{ name = "Cities Index", path = wiki_dir .. "/cities.md" },
-		{ name = "Events Index", path = wiki_dir .. "/events.md" },
-		{ name = "Themes Index", path = wiki_dir .. "/themes.md" },
-		{ name = "Tags Index", path = wiki_dir .. "/tags.md" },
-		{ name = "Poems Index", path = wiki_dir .. "/poems.md" },
-		{ name = "References Index", path = wiki_dir .. "/references.md" },
+		{ name = "People Index", path = wiki_dir .. "/indexes/people-index.md" },
+		{ name = "Entries Index", path = wiki_dir .. "/indexes/entry-index.md" },
+		{ name = "Places Index", path = wiki_dir .. "/indexes/places-index.md" },
+		{ name = "Events Index", path = wiki_dir .. "/indexes/event-index.md" },
+		{ name = "Arcs Index", path = wiki_dir .. "/indexes/arc-index.md" },
+		{ name = "Tags Index", path = wiki_dir .. "/indexes/tags-index.md" },
+		{ name = "Themes Index", path = wiki_dir .. "/indexes/themes-index.md" },
+		{ name = "Poems Index", path = wiki_dir .. "/indexes/poems-index.md" },
+		{ name = "References Index", path = wiki_dir .. "/indexes/references-index.md" },
+		{ name = "Manuscript Index", path = wiki_dir .. "/indexes/manuscript-index.md" },
 	}
 
-	-- Filter to only existing pages and format for fzf
-	local entries = {}
+	-- Filter to existing pages
+	local existing = {}
 	for _, page in ipairs(pages) do
 		if vim.fn.filereadable(page.path) == 1 then
-			-- Format: "Name :: /path/to/file"
-			table.insert(entries, page.name .. " :: " .. page.path)
+			table.insert(existing, page)
 		end
 	end
 
-	if #entries == 0 then
-		vim.notify("No wiki pages found. Generate them first with :PalimpsestExport", vim.log.levels.WARN)
+	if #existing == 0 then
+		vim.notify("No wiki pages found. Generate them first with :PalimpsestGenerate", vim.log.levels.WARN)
 		return
 	end
 
-	-- Use fzf_exec for custom entries
-	fzf.fzf_exec(entries, {
-		prompt = "Palimpsest Wiki Pages> ",
-		actions = {
-			["default"] = function(selected)
-				if not selected or #selected == 0 then
-					return
-				end
-				-- Extract path from "Name :: /path/to/file" format
-				local path = selected[1]:match(":: (.+)$")
-				if path then
-					vim.cmd("edit " .. path)
+	if backend == "fzf" then
+		local entries = {}
+		for _, page in ipairs(existing) do
+			table.insert(entries, page.name .. " :: " .. page.path)
+		end
+
+		picker.fzf_exec(entries, {
+			prompt = "Palimpsest Wiki Pages> ",
+			actions = {
+				["default"] = function(selected)
+					if not selected or #selected == 0 then
+						return
+					end
+					local path = selected[1]:match(":: (.+)$")
+					if path then
+						vim.cmd("edit " .. path)
+					end
+				end,
+			},
+			winopts = {
+				height = 0.50,
+				width = 0.60,
+				preview = { layout = "vertical", vertical = "down:60%" },
+			},
+			fzf_opts = {
+				["--delimiter"] = "::",
+				["--with-nth"] = "1",
+			},
+		})
+	else
+		local items = {}
+		for _, page in ipairs(existing) do
+			table.insert(items, { text = page.name, file = page.path })
+		end
+
+		picker.pick({
+			title = "Palimpsest Wiki Pages",
+			items = items,
+			format = "text",
+			confirm = function(p, item)
+				p:close()
+				if item and item.file then
+					vim.cmd("edit " .. item.file)
 				end
 			end,
-		},
-		winopts = {
-			height = 0.50,
-			width = 0.60,
-			preview = {
-				layout = "vertical",
-				vertical = "down:60%",
-			},
-		},
-		fzf_opts = {
-			["--delimiter"] = "::",
-			["--with-nth"] = "1", -- Only show the name part in fzf
-		},
-	})
+		})
+	end
 end
 
 return M

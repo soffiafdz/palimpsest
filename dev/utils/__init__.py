@@ -5,14 +5,14 @@ This package provides commonly-used utilities organized by domain:
 - md: Markdown manipulation (sections, links, YAML, frontmatter)
 - fs: Filesystem operations and date parsing
 - parsers: Name, location, and context extraction
-- wiki: Wiki file parsing for database import
 - txt: Text formatting and metrics
+- narrative: Scene matching, event parsing, arc formatting
 
 Import commonly-used utilities directly from this package:
     from dev.utils import split_frontmatter, get_file_hash, extract_context_refs
 
 Or import specific modules:
-    from dev.utils import md, fs, parsers, wiki, txt
+    from dev.utils import md, fs, parsers, txt, narrative
 """
 
 # Markdown and YAML utilities
@@ -54,9 +54,6 @@ from .parsers import (
     spaces_to_hyphenated,
 )
 
-# Wiki parsing utilities (for wiki→database import)
-# Note: Section extraction functions moved to md.py
-
 # Text processing utilities
 from .txt import (
     ordinal,
@@ -64,6 +61,25 @@ from .txt import (
     reflow_paragraph,
     compute_metrics,
 )
+
+# Narrative analysis utilities
+from .narrative import (
+    normalize_scene_title,
+    fuzzy_match_scene,
+    parse_events_file,
+    parse_events_file_full,
+    build_scene_event_mapping,
+    parse_scenes,
+    extract_thematic_arcs,
+    format_arc,
+    CORE_RANGE,
+    FLASHBACK_RANGE,
+    CORE_MONTHS,
+    FLASHBACK_MONTHS,
+)
+
+# YAML formatting utilities
+from .yaml_formatter import YAMLFormatter
 
 __all__ = [
     # Markdown/YAML
@@ -74,6 +90,14 @@ __all__ = [
     "get_text_hash",
     "read_entry_body",
     "generate_placeholder_body",
+    "extract_section",
+    "get_all_headers",
+    "parse_bullets",
+    "extract_yaml_front_matter",
+    "relative_link",
+    "resolve_relative_link",
+    "find_section_line_indexes",
+    "update_section",
     # Filesystem
     "find_markdown_files",
     "should_skip_file",
@@ -88,18 +112,24 @@ __all__ = [
     "parse_date_context",
     "split_hyphenated_to_spaces",
     "spaces_to_hyphenated",
-    # Wiki
-    "extract_section",
-    "get_all_headers",
-    "parse_bullets",
-    "extract_yaml_front_matter",
-    "relative_link",
-    "resolve_relative_link",
-    "find_section_line_indexes",
-    "update_section",
     # Text
     "ordinal",
     "format_body",
     "reflow_paragraph",
     "compute_metrics",
+    # Narrative
+    "normalize_scene_title",
+    "fuzzy_match_scene",
+    "parse_events_file",
+    "parse_events_file_full",
+    "build_scene_event_mapping",
+    "parse_scenes",
+    "extract_thematic_arcs",
+    "format_arc",
+    "CORE_RANGE",
+    "FLASHBACK_RANGE",
+    "CORE_MONTHS",
+    "FLASHBACK_MONTHS",
+    # YAML formatting
+    "YAMLFormatter",
 ]

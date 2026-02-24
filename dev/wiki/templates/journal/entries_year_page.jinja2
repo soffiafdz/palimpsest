@@ -1,0 +1,8 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ entity_name }} — {{ year }}
+
+{{ count | zpad }} entr{{ "y" if count == 1 else "ies" }}
+
+---
+
+{{ render_entries(entries) }}

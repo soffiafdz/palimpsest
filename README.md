@@ -20,13 +20,11 @@ Originally built for managing my decade+ archive from [750words.com](https://750
 - **Multi-stage processing pipeline**: Raw exports → Formatted text → Markdown → Database → Wiki → PDFs
 - **Rich metadata extraction**: Track people, locations, events, themes, dates, and references
 - **Database-backed queries**: SQLAlchemy ORM with relationship mapping and analytics
-- **Wiki system**: Bidirectional sync between database and Markdown wiki for editing and curation
+- **Wiki system**: Primary editable workspace with database sync and YAML exports for git
 - **Full-text search**: SQLite FTS5 with advanced filtering (people, dates, themes, word count, etc.)
-- **Automated metadata extraction** (optional): NLP-based tagging, named entity recognition, and pattern matching for organizational purposes
 - **Manuscript subwiki**: Dedicated wiki for curating journal entries into literary material
 - **PDF generation**: Create clean reading copies and annotated review versions
 - **Vim/Neovim integration**: Vimwiki templates and automation (optional)
-- **Makefile orchestration**: Simple commands for batch processing and year-based builds
 
 ---
 
@@ -64,31 +62,14 @@ plm inbox
 # Convert to markdown
 plm convert
 
-# Sync database
-plm sync-db
+# Import metadata to database
+plm import-metadata
 
 # Build PDFs for a year
 plm build-pdf 2024
 
 # Or run complete pipeline
 plm run-all 2024
-```
-
-### Using Make
-
-```bash
-# Process everything
-make all
-
-# Year-specific
-make 2024
-make 2024-md   # Markdown only
-make 2024-pdf  # PDFs only
-
-# Database operations
-make init-db
-make backup
-make stats
 ```
 
 ---
@@ -100,26 +81,26 @@ inbox/ (raw exports) → src2txt → txt/     (formatted text)
                                    ↓
                                  txt2md
                                    ↓
-                                 md/      (markdown + YAML)
-                                   ↓            ↑
-                                yaml2sql   sql2yaml
-                                   ↓            ↑
-                                database (SQLite + metadata + FTS5)
-                                   ↓            ↑
-                                sql2wiki   wiki2sql
-                                   ↓            ↑
-                                 wiki/    (editable wiki pages)
-                                   ├── entries/
-                                   ├── people/
-                                   ├── events/
-                                   └── manuscript/
+                                 md/      (markdown prose + minimal frontmatter)
+                                   +
+                          metadata YAML/   (narrative analysis - human-authored)
+                                   ↓
+                            import-metadata (one-time import)
+                                   ↓
+                                database  (LOCAL ONLY - not in git)
+                                   ↓
+                              export-json
+                                   ↓
+                              JSON export  (git-tracked for version control)
 
+                                  md/
+                                   ↓
                                  md2pdf
                                    ↓
                                  pdf/     (annotated PDFs)
 ```
 
-### Pipeline Scripts (X2Y Pattern)
+### Pipeline Scripts
 
 Each pipeline step is implemented as a standalone script with both CLI and programmatic API:
 
@@ -129,27 +110,26 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 
 - **`txt2md.py`**: Convert formatted text → Markdown with YAML frontmatter
   - Parses entries, computes metadata (word count, reading time)
+  - Generates YAML metadata skeletons with commented instructions
 
-- **`yaml2sql.py`**: Sync Markdown YAML → Database
+- **`metadata_importer.py`**: Import metadata YAML → Database
   - Parses complex metadata, manages relationships
+  - One-time import for narrative analysis
 
-- **`sql2yaml.py`**: Export Database → Markdown YAML
-  - Regenerates frontmatter while preserving body content
+- **`export_json.py`**: Export Database → JSON
+  - Exports entities for version control
 
 - **`md2pdf.py`**: Build Markdown → PDFs (clean & notes versions)
   - Uses Pandoc + LaTeX for professional typography
 
-- **Wiki scripts**: Bidirectional sync between database and wiki
-  - `sql2wiki.py`: Database → Wiki pages
-  - `wiki2sql.py`: Wiki edits → Database
-
 ### Data Flow Paths
 
-1. **Journal → Database**: `inbox → txt → md → database` (via YAML frontmatter)
-2. **Database → Wiki**: `database → wiki` (for editing and curation)
-3. **Wiki → Database**: `wiki → database` (import edits back)
-4. **Search & Analysis**: Query database with FTS5, extract metadata with NLP tools
-5. **Export**: `database → pdf` (annotated reading copies)
+1. **Initial Import**: `inbox → txt → md + metadata YAML → database` (one-time)
+2. **Version Control**: `database → JSON export` (git-tracked)
+3. **Search & Analysis**: Query database with FTS5
+4. **Export**: `md → pdf` (annotated reading copies)
+
+**Note**: Database is LOCAL ONLY (not version controlled). JSON exports provide git tracking.
 
 ---
 
@@ -158,12 +138,6 @@ Each pipeline step is implemented as a standalone script with both CLI and progr
 ```
 palimpsest/
 ├── dev/                        # Source code
-│   ├── nlp/                    # NLP analysis (optional)
-│   │   ├── extractors.py      # spaCy NER, theme extraction
-│   │   ├── semantic_search.py # Sentence transformers
-│   │   ├── claude_assistant.py # Claude API integration
-│   │   └── openai_assistant.py # OpenAI API integration
-│   ├── bin/                    # CLI wrappers (journal, metadb)
 │   ├── builders/               # PDF and text builders
 │   ├── core/                   # Logging, validation, paths
 │   ├── database/               # SQLAlchemy ORM and managers
@@ -172,43 +146,35 @@ palimpsest/
 │   │   ├── search.py          # Search query engine
 │   │   └── search_index.py    # FTS5 index manager
 │   ├── dataclasses/            # Entry data structures
-│   │   ├── md_entry.py        # YAML frontmatter
-│   │   ├── wiki_*.py          # Wiki page classes
-│   │   └── manuscript_*.py    # Manuscript wiki classes
+│   │   ├── txt_entry.py       # TXT file conversion
+│   │   └── metadata_entry.py  # Metadata YAML structures
 │   ├── pipeline/               # Processing scripts
-│   │   ├── yaml2sql.py        # YAML → Database
-│   │   ├── sql2yaml.py        # Database → YAML
-│   │   ├── sql2wiki.py        # Database → Wiki
-│   │   ├── wiki2sql.py        # Wiki → Database
+│   │   ├── src2txt.py         # Raw → TXT
+│   │   ├── txt2md.py          # TXT → Markdown
+│   │   ├── metadata_importer.py # Metadata → Database
+│   │   ├── export_json.py     # Database → JSON
 │   │   ├── search.py          # Search CLI
-│   │   └── nlp_assist.py      # NLP analysis CLI
 │   └── utils/                  # Utilities (fs, md, parsers)
 ├── templates/                  # LaTeX preambles, wiki templates
 ├── tests/                      # Integration tests
 │   └── integration/
-│       ├── test_search.py     # Search tests
-│       ├── test_nlp_extraction.py # NLP tests
-│       ├── test_sql_to_wiki.py # Wiki export tests
-│       └── test_wiki_to_sql.py # Wiki import tests
+│       └── test_search.py     # Search tests
 ├── data/                       # Personal content (git submodule)
 │   ├── journal/
 │   │   ├── inbox/
 │   │   ├── sources/txt/
 │   │   ├── content/md/
 │   │   └── annotations/
-│   ├── manuscript/
-│   ├── wiki/                   # Generated wiki
-│   │   ├── entries/
-│   │   ├── people/
-│   │   ├── events/
-│   │   ├── cities/
-│   │   └── manuscript/
 │   └── metadata/
 │       └── palimpsest.db
-├── docs/
-│   └── BIDIRECTIONAL_SYNC_GUIDE.md # Wiki sync documentation
+├── docs/                       # Documentation
+│   ├── README.md              # Documentation index
+│   ├── getting-started.md     # New user onboarding
+│   ├── reference/             # Command and field references
+│   ├── guides/                # User guides and workflows
+│   ├── integrations/          # Editor integrations
+│   └── development/           # Developer documentation
 ├── environment.yaml
-├── Makefile
 └── README.md
 ```
 
@@ -220,26 +186,27 @@ palimpsest/
 
 ```bash
 # Process inbox (raw exports → formatted text)
-plm inbox [-i INBOX] [-o OUTPUT]
+plm inbox
 
 # Convert text to markdown
-plm convert [-i INPUT] [-o OUTPUT] [-f]
+plm convert
 
-# Sync database from markdown
-plm sync-db [-i INPUT] [-f]
+# Import metadata to database
+plm import-metadata
 
-# Export database to markdown
-plm export-db [-o OUTPUT] [-f]
+# Export database to JSON
+plm export-json
 
 # Build PDFs
-plm build-pdf YEAR [-i INPUT] [-o OUTPUT] [-f]
+plm build-pdf YEAR
 
 # Complete pipeline
-plm run-all [--year YEAR] [--skip-inbox] [--skip-pdf]
+plm run-all --year YEAR
 
-# Status
+# Status and validation
 plm status
-plm validate
+plm validate pipeline
+plm validate entry
 ```
 
 ### Database Commands
@@ -297,108 +264,6 @@ jsearch index --status
 # sort:relevance|date|word_count, limit:N
 ```
 
-### Text Analysis Commands
-
-```bash
-# Check analysis capabilities
-nlp status
-
-# Analyze single entry (Level 2: spaCy NER)
-nlp analyze 2024-11-01 --level 2
-
-# Analyze with LLM API (Level 4)
-nlp analyze 2024-11-01 --level 4 --manuscript
-
-# Batch analyze entries
-nlp batch --level 2 --limit 10
-
-# Find semantically similar entries (Level 3)
-nlp similar 2024-11-01 --limit 10
-
-# Cluster entries by theme
-nlp cluster --num-clusters 10
-```
-
-**Analysis Processing Levels:**
-
-- **Level 2**: spaCy NER (free) - Entity extraction, theme detection
-- **Level 3**: Sentence Transformers (free) - Semantic similarity search
-- **Level 4**: LLM APIs (paid) - Advanced analysis, manuscript curation (Claude or OpenAI)
-
-See [Search & Analysis Documentation](#search--analysis-features) for details.
-
----
-
-## Wiki System
-
-The wiki provides an editable interface for curating and annotating your journal:
-
-### Export Database to Wiki
-
-```bash
-# Export everything
-plm export-wiki all
-
-# Export specific entity types
-plm export-wiki people
-plm export-wiki entries
-plm export-wiki manuscript
-
-# Force overwrite existing files
-plm export-wiki all --force
-```
-
-### Import Wiki Edits to Database
-
-```bash
-# Import all wiki edits
-plm import-wiki all
-
-# Import specific entity type
-plm import-wiki people
-plm import-wiki entries
-plm import-wiki manuscript
-```
-
-### Wiki Structure
-
-```
-wiki/
-├── index.md                    # Main index
-├── people/
-│   ├── index.md               # People index
-│   └── alice.md               # Person page (editable notes)
-├── entries/
-│   ├── index.md               # Entries index
-│   └── 2024-11-01.md          # Entry page (editable notes)
-├── events/
-│   └── therapy-session.md     # Event page
-├── cities/
-│   └── montreal.md            # City page
-└── manuscript/
-    ├── index.md               # Manuscript index
-    ├── entries/
-    │   └── 2024-11-01.md      # Manuscript entry (adaptation notes)
-    └── characters/
-        └── alexandra.md        # Character page (voice, arc, description)
-```
-
-### Editable Fields
-
-**Main Wiki** (only `notes` fields are editable):
-
-- Person pages: Add biographical notes, relationship context
-- Entry pages: Add editorial notes, manuscript potential
-- Event/City pages: Add context notes
-
-**Manuscript Wiki** (detailed curation fields):
-
-- Manuscript entries: Entry type, narrative arc, character notes, adaptation notes
-- Characters: Character description, arc, voice notes, appearance notes
-- Themes, arcs, and other manuscript-specific metadata
-
-See [docs/bidirectional-sync-guide.md](docs/bidirectional-sync-guide.md) for complete documentation.
-
 ---
 
 ## Search & Analysis Features
@@ -430,114 +295,6 @@ jsearch "reflection" city:montreal words:500-1000 has:manuscript
 ```bash
 jsearch index --create
 ```
-
-### Automated Text Analysis (Optional)
-
-Progressive intelligence levels - use what you need:
-
-#### Level 2: spaCy NER (Free) ⭐⭐⭐⭐☆
-
-**Entity extraction using ML:**
-
-- Detects people, locations, cities, organizations, events
-- Theme identification
-- Confidence scoring
-
-**Install:**
-
-```bash
-pip install spacy
-python -m spacy download en_core_web_sm
-```
-
-**Usage:**
-
-```bash
-nlp analyze 2024-11-01 --level 2
-```
-
-#### Level 3: Sentence Transformers (Free) ⭐⭐⭐⭐☆
-
-**Semantic similarity search:**
-
-- Find similar entries by meaning (not just keywords)
-- Theme clustering
-- Understanding context
-
-**Install:**
-
-```bash
-pip install sentence-transformers
-pip install faiss-cpu  # optional, for faster search
-```
-
-**Usage:**
-
-```bash
-# Find similar entries
-nlp similar 2024-11-01 --limit 10
-
-# Cluster by theme
-nlp cluster --num-clusters 10
-```
-
-#### Level 4: LLM APIs (Paid) ⭐⭐⭐⭐⭐
-
-**Most accurate analysis:**
-
-- Advanced entity extraction
-- Theme identification with context
-
-**Two providers supported:**
-
-**Claude (Anthropic):**
-
-- Cost: ~$0.007/entry (Haiku), ~$0.075/entry (Sonnet)
-- Install: `pip install anthropic`
-- API Key: `export ANTHROPIC_API_KEY='your-key'`
-
-**OpenAI (GPT-4):**
-
-- Cost: ~$0.003/entry (GPT-4o mini), ~$0.025/entry (GPT-4o)
-- Install: `pip install openai`
-- API Key: `export OPENAI_API_KEY='your-key'`
-
-**Usage:**
-
-```bash
-# Analyze with Claude (default)
-nlp analyze 2024-11-01 --level 4 --manuscript
-
-# Analyze with OpenAI
-nlp analyze 2024-11-01 --level 4 --provider openai --manuscript
-
-# Batch analyze with OpenAI
-nlp batch --level 4 --provider openai --limit 10
-```
-
-**Check what's installed:**
-
-```bash
-nlp status
-```
-
-#### Disclaimer About Automated Analysis Tools
-
-**The optional text analysis tools in this project (`dev/nlp/` and `nlp` command) use standard computational linguistics techniques**—specifically named entity recognition (NER), keyword extraction, and pattern matching to assist with metadata organization of existing journal content.
-
-**Technical approach:**
-- Uses spaCy for named entity recognition (local, open-source)
-- Employs regex and keyword matching for theme detection
-- Optional: sentence transformers for semantic similarity search
-
-**Important clarifications:**
-- ✅ Extracts entities, themes, and tags from already-written text
-- ✅ Suggests organizational structures based on text analysis
-- ✅ Assists with cataloging and searchability through pattern matching
-- ❌ **Does NOT generate, write, or modify any content**
-- ❌ **All journal entries are human-written and human-edited**
-
-These are standard text processing techniques used in digital humanities, archives, and library science for organizing large text corpora.
 
 ---
 
@@ -582,7 +339,7 @@ manuscript:
 Entry content here...
 ```
 
-See `example_yaml.md` for complete examples.
+See [Metadata Examples](docs/reference/metadata-examples.md) for complete examples.
 
 ---
 
@@ -676,34 +433,6 @@ Uses Ruff for linting. Code follows:
 
 See `environment.yaml` for complete list.
 
-### Optional NLP Dependencies
-
-**Level 2 (spaCy NER):**
-
-```bash
-pip install spacy
-python -m spacy download en_core_web_sm
-```
-
-**Level 3 (Semantic Search):**
-
-```bash
-pip install sentence-transformers
-pip install faiss-cpu  # optional, faster search
-```
-
-**Level 4 (LLM APIs):**
-
-```bash
-# Claude (Anthropic)
-pip install anthropic
-export ANTHROPIC_API_KEY='your-key'
-
-# OpenAI (GPT-4)
-pip install openai
-export OPENAI_API_KEY='your-key'
-```
-
 ---
 
 ## Configuration
@@ -714,6 +443,35 @@ Edit `dev/core/paths.py` to customize:
 - Database path
 - Output directories
 - Template paths
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+### Getting Started
+- **[Getting Started Guide](docs/getting-started.md)** - New user onboarding with core concepts and first workflow
+
+### Reference
+- **[Command Reference](docs/reference/commands.md)** - Complete CLI command documentation
+- **[Metadata Field Reference](docs/reference/metadata-field-reference.md)** - All YAML frontmatter fields with examples
+- **[Metadata Examples](docs/reference/metadata-examples.md)** - Template entries and patterns
+
+### Guides
+- **[Migration Guide](docs/guides/migration.md)** - Upgrading between versions
+
+### Integrations
+- **[Neovim Integration](docs/integrations/neovim.md)** - Editor integration features
+
+### Development
+- **[Development Overview](docs/development/README.md)** - Contributing and architecture
+- **[Architecture](docs/development/architecture.md)** - System design and modular organization
+- **[Database Managers](docs/development/database-managers.md)** - Entity manager patterns
+- **[Validators](docs/development/validators.md)** - Validation system architecture
+- **[Type Checking](docs/development/type-checking.md)** - Pyright configuration and patterns
+- **[Testing](docs/development/testing.md)** - Comprehensive testing guide
+- **[Neovim Plugin Development](docs/development/neovim-plugin-dev.md)** - Extending the Neovim integration
 
 ---
 

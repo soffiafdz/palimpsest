@@ -39,6 +39,18 @@ import click
 from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.cli import setup_logger
+from dev.database.manager import PalimpsestDB
+
+
+def _get_db() -> PalimpsestDB:
+    """Get database instance with standard configuration."""
+    return PalimpsestDB(
+        db_path=DB_PATH,
+        alembic_dir=ALEMBIC_DIR,
+        log_dir=LOG_DIR,
+        backup_dir=BACKUP_DIR,
+        enable_auto_backup=False,
+    )
 
 
 @click.group()
@@ -101,7 +113,6 @@ def search_query(ctx: click.Context, query: tuple, limit: Optional[int], sort: O
         # Verbose output with metadata
         plm-search query "creative writing" --verbose --limit 20
     """
-    from dev.database.manager import PalimpsestDB
     from dev.search.search_engine import SearchQueryParser, SearchEngine
 
     # Parse query
@@ -114,14 +125,7 @@ def search_query(ctx: click.Context, query: tuple, limit: Optional[int], sort: O
     if sort:
         parsed_query.sort_by = sort
 
-    # Initialize database
-    db = PalimpsestDB(
-        db_path=DB_PATH,
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=LOG_DIR,
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
+    db = _get_db()
 
     # Execute search
     session = db.get_session()
@@ -219,19 +223,10 @@ def index_create(ctx: click.Context) -> None:
     - First-time search functionality setup
     - After database restore without index
     """
-    from dev.database.manager import PalimpsestDB
     from dev.search.search_index import SearchIndexManager
 
     logger: PalimpsestLogger = ctx.obj["logger"]
-
-    db = PalimpsestDB(
-        db_path=DB_PATH,
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=LOG_DIR,
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
-
+    db = _get_db()
     mgr = SearchIndexManager(db.engine, logger)
 
     if mgr.index_exists():
@@ -275,19 +270,10 @@ def index_rebuild(ctx: click.Context) -> None:
     - Regular maintenance schedule
     - Troubleshooting search issues
     """
-    from dev.database.manager import PalimpsestDB
     from dev.search.search_index import SearchIndexManager
 
     logger: PalimpsestLogger = ctx.obj["logger"]
-
-    db = PalimpsestDB(
-        db_path=DB_PATH,
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=LOG_DIR,
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
-
+    db = _get_db()
     mgr = SearchIndexManager(db.engine, logger)
     session = db.get_session()
     count = mgr.rebuild_index(session)
@@ -317,20 +303,11 @@ def index_status(ctx: click.Context) -> None:
     - Check index before running queries
     - Pipeline validation checks
     """
-    from dev.database.manager import PalimpsestDB
     from dev.search.search_index import SearchIndexManager
     from sqlalchemy import text
 
     logger: PalimpsestLogger = ctx.obj["logger"]
-
-    db = PalimpsestDB(
-        db_path=DB_PATH,
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=LOG_DIR,
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
-
+    db = _get_db()
     mgr = SearchIndexManager(db.engine, logger)
 
     if mgr.index_exists():

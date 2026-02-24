@@ -1,0 +1,31 @@
+{#
+  Event index page.
+
+  Events nested under arc headings with scene and entry counts.
+  Standalone events grouped in a separate section at the end.
+
+  Context:
+    event_count: int
+    arc_groups: list of dicts:
+      - name: str (arc name, or "Standalone")
+      - events: list of dicts:
+          - name: str
+          - scene_count: int
+          - entry_count: int
+#}
+# Events
+
+{{ event_count | zpad }} events
+
+---
+{% for group in arc_groups %}
+
+{% if group.name == "Standalone" %}
+## Standalone
+{% else %}
+## {{ group.name | wikilink }}
+{% endif %}
+{% for event in group.events %}
+- {{ event.entry_count | zpad }}e · {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
+{% endfor %}
+{% endfor %}

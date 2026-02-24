@@ -1,133 +1,177 @@
+#!/usr/bin/env python3
 """
-Entity Models
---------------
+entities.py
+-----------
+Entity models for the Palimpsest database.
 
-Models for people, aliases, and tags in the journal.
+This module contains person and metadata entity models:
 
 Models:
     - Person: People mentioned in journal entries
-    - Alias: Alternative names for people
-    - Tag: Simple keyword tags for categorizing entries
+    - Tag: Keyword tags for categorization
+    - Theme: Thematic elements across entries
 
-These models track who appears in the journal and how entries are categorized.
+These entities are linked to entries via many-to-many relationships
+and may also be linked to scenes, threads, and other analysis elements.
+
+Design:
+    - Person: alias is nullable indexed field (unique)
+    - Tag: simple name field (no category hierarchy)
+    - Theme: standalone entity for thematic analysis
 """
-
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
+import unicodedata
 from datetime import date
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # --- Local imports ---
 from .associations import (
-    entry_aliases,
     entry_people,
     entry_tags,
-    event_people,
-    people_dates,
+    entry_themes,
+    scene_people,
+    thread_people,
 )
 from .base import Base, SoftDeleteMixin
 from .enums import RelationType
 
 if TYPE_CHECKING:
+    from .analysis import Scene, Thread
     from .core import Entry
-    from .creative import Event
-    from .geography import MentionedDate
-    from ..models_manuscript import ManuscriptPerson
+    from .manuscript import PersonCharacterMap
 
 
 class Person(Base, SoftDeleteMixin):
     """
-    Represents a person mentioned in journal entries.
+    A person mentioned in journal entries.
 
-    Tracks individuals referenced across entries with support for:
-    - Multiple names (name vs full_name)
-    - Name disambiguation (name_fellow flag)
-    - Relationship categorization
-    - Aliases
-    - Soft deletion
+    Represents real people who appear in journal entries, scenes,
+    and threads. Supports multiple aliases for flexible naming.
 
     Attributes:
         id: Primary key
-        name: Primary name (usually first name or nickname)
-        full_name: Full legal name (unique, optional)
-        name_fellow: Flag indicating multiple people share this name
-        relation_type: Category of relationship (enum)
-        notes: Editorial notes about this person (for wiki curation)
+        name: First/given name
+        lastname: Last/family name (optional)
+        disambiguator: Context tag for same-name people with unknown lastnames
+        slug: Unique identifier for exports (name_lastname or name_disambiguator)
+        relation_type: Type of relationship (family, friend, romantic, etc.)
 
     Relationships:
-        aliases: One-to-many with Alias (alternative names)
-        events: Many-to-many with Event (events person is involved in)
-        entries: Many-to-many with Entry (entries mentioning person)
-        manuscript: One-to-one with ManuscriptPerson (manuscript character mapping)
+        aliases: O2M with PersonAlias (lookup names)
+        entries: M2M with Entry (entries where person is mentioned)
+        scenes: M2M with Scene (scenes where person appears)
+        threads: M2M with Thread (threads involving person)
+        character_mappings: O2M with PersonCharacterMap (manuscript)
 
-    Computed Properties:
-        display_name: Best name for display (full_name or name)
-        all_names: List of all names including aliases
-        entry_count: Number of entries mentioning person
-        event_count: Number of events person is involved in
-        first_appearance: Date of first journal mention
-        last_appearance: Date of most recent mention
-        relationship_display: Human-readable relationship type
-        is_close_relationship: Whether relationship is close (family/friend/romantic)
-        privacy_sensitivity: Privacy level for manuscript adaptation (0-5)
-        mention_frequency: Monthly mention frequency statistics
+    Notes:
+        - slug is a URL-safe unique identifier for filenames and lookups
+        - Format: words separated by `-`, fields separated by `_`
+        - Examples: `louis_collins`, `sophie_the-accountant`, `maria-jose_castro`
     """
 
     __tablename__ = "people"
-    __table_args__ = (CheckConstraint("name != ''", name="ck_person_non_empty_name"),)
-
-    # ---- Primary fields ----
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    full_name: Mapped[Optional[str]] = mapped_column(
-        String(255), unique=True, index=True
+    __table_args__ = (
+        CheckConstraint("name != ''", name="ck_person_non_empty_name"),
+        Index("ix_people_name", "name"),
     )
-    name_fellow: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # --- Primary fields ---
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    lastname: Mapped[Optional[str]] = mapped_column(String(100))
+    disambiguator: Mapped[Optional[str]] = mapped_column(String(100))
+    slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
     relation_type: Mapped[Optional[RelationType]] = mapped_column(
         SQLEnum(RelationType, values_callable=lambda x: [e.value for e in x]),
         nullable=True,
-        index=True,
     )
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # ---- Relationships ----
-    aliases: Mapped[List["Alias"]] = relationship(
-        "Alias", back_populates="person", cascade="all, delete-orphan"
-    )
-    dates: Mapped[List["MentionedDate"]] = relationship(
-        "MentionedDate", secondary=people_dates, back_populates="people"
-    )
-    events: Mapped[List["Event"]] = relationship(
-        "Event", secondary=event_people, back_populates="people"
+    # --- Static methods ---
+    @staticmethod
+    def generate_slug(
+        name: str,
+        lastname: Optional[str] = None,
+        disambiguator: Optional[str] = None,
+    ) -> str:
+        """
+        Generate a unique slug from name components.
+
+        Format: words separated by `-`, fields separated by `_`
+        Priority: lastname over disambiguator (lastname wins if both present)
+
+        Args:
+            name: First/given name (required)
+            lastname: Last/family name (optional)
+            disambiguator: Context tag (optional, used if no lastname)
+
+        Returns:
+            Slug string, e.g., 'maria-jose_castro', 'sophie_the-accountant'
+        """
+        def slugify(text: str) -> str:
+            """Convert text to slug format (lowercase, accents removed, spaces to hyphens)."""
+            text = text.lower().strip()
+            # Normalize accents/diacritics
+            normalized = unicodedata.normalize("NFD", text)
+            without_accents = "".join(
+                c for c in normalized if unicodedata.category(c)[0] != "M"
+            )
+            # Replace spaces with hyphens
+            return without_accents.replace(" ", "-")
+
+        name_slug = slugify(name)
+
+        if lastname:
+            return f"{name_slug}_{slugify(lastname)}"
+        elif disambiguator:
+            return f"{name_slug}_{slugify(disambiguator)}"
+        else:
+            return name_slug
+
+    # --- Relationships ---
+    aliases: Mapped[List["PersonAlias"]] = relationship(
+        "PersonAlias", back_populates="person", cascade="all, delete-orphan"
     )
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_people, back_populates="people"
     )
-    manuscript: Mapped[Optional["ManuscriptPerson"]] = relationship(
-        "ManuscriptPerson", uselist=False, back_populates="person"
+    scenes: Mapped[List["Scene"]] = relationship(
+        "Scene", secondary=scene_people, back_populates="people"
+    )
+    threads: Mapped[List["Thread"]] = relationship(
+        "Thread", secondary=thread_people, back_populates="people"
+    )
+    character_mappings: Mapped[List["PersonCharacterMap"]] = relationship(
+        "PersonCharacterMap", back_populates="person"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def display_name(self) -> str:
-        """Get the best display name for this person."""
-        return self.full_name if self.full_name else self.name
+        """Get display name for human readability.
+
+        Returns:
+            - "Name Lastname" if lastname exists
+            - "Name (disambiguator)" if no lastname but disambiguator exists
+            - "Name" otherwise
+        """
+        if self.lastname:
+            return f"{self.name} {self.lastname}"
+        if self.disambiguator:
+            return f"{self.name} ({self.disambiguator})"
+        return self.name
 
     @property
-    def all_names(self) -> List[str]:
-        """Get all names and aliases for this person."""
-        names = [self.name]
-        if self.full_name:
-            names.append(self.full_name)
-        names.extend([alias.alias for alias in self.aliases])
-        return list(set(names))  # Remove duplicates
+    def lookup_key(self) -> str:
+        """Get the key used for lookups (the slug)."""
+        return self.slug
 
     @property
     def entry_count(self) -> int:
@@ -135,77 +179,23 @@ class Person(Base, SoftDeleteMixin):
         return len(self.entries)
 
     @property
-    def appearances_count(self) -> int:
-        """Total number of appearances (explicit dates)."""
-        return len(self.dates)
-
-    @property
-    def event_count(self) -> int:
-        """Number of events this person is involved in."""
-        return len(self.events)
+    def scene_count(self) -> int:
+        """Number of scenes where person appears."""
+        return len(self.scenes)
 
     @property
     def first_appearance(self) -> Optional[date]:
-        """Earliest date this person was mentioned."""
-        dates = [md.date for md in self.dates]
-        return min(dates) if dates else None
+        """Earliest entry date where person was mentioned."""
+        if not self.entries:
+            return None
+        return min(entry.date for entry in self.entries)
 
     @property
     def last_appearance(self) -> Optional[date]:
-        """Most recent date this person was mentioned."""
-        dates = [md.date for md in self.dates]
-        return max(dates) if dates else None
-
-    @property
-    def mention_timeline(self) -> List[Dict[str, Any]]:
-        """
-        Complete timeline of mentions with context.
-
-        Returns:
-            List of dicts with keys: date, source ('entry'|'mentioned'), context
-        """
-        timeline = []
-
-        # Add entry dates
-        for entry in self.entries:
-            timeline.append(
-                {
-                    "date": entry.date,
-                    "source": "entry",
-                    "entry_id": entry.id,
-                    "context": None,
-                }
-            )
-
-        # Add explicit mentioned dates
-        for md in self.dates:
-            timeline.append(
-                {
-                    "date": md.date,
-                    "source": "date",
-                    "context": md.context,
-                    "mentioned_date_id": md.id,
-                }
-            )
-
-        # Sort by date
-        timeline.sort(key=lambda x: x["date"])
-        return timeline
-
-    @property
-    def mention_frequency(self) -> Dict[str, int]:
-        """
-        Calculate mention frequency by year-month.
-        Uses all mentions (entries + mentioned dates).
-
-        Returns:
-            Dictionary mapping YYYY-MM strings to mention counts
-        """
-        frequency: Dict[str, int] = {}
-        for md in self.dates:
-            year_month = md.date.strftime("%Y-%m")
-            frequency[year_month] = frequency.get(year_month, 0) + 1
-        return frequency
+        """Most recent entry date where person was mentioned."""
+        if not self.entries:
+            return None
+        return max(entry.date for entry in self.entries)
 
     @property
     def relationship_display(self) -> str:
@@ -221,7 +211,7 @@ class Person(Base, SoftDeleteMixin):
 
     @property
     def privacy_sensitivity(self) -> int:
-        """Get privacy sensitivity level for manuscript purposes."""
+        """Get privacy sensitivity level for manuscript purposes (0-5)."""
         return self.relation_type.privacy_level if self.relation_type else 0
 
     def is_known_as(self, name: str) -> bool:
@@ -235,110 +225,90 @@ class Person(Base, SoftDeleteMixin):
             True if this is a known name for the person
         """
         search_name = name.lower()
-        return search_name in [n.lower() for n in self.all_names]
+        known_names = [self.name.lower()]
+        if self.lastname:
+            known_names.append(self.lastname.lower())
+            known_names.append(f"{self.name} {self.lastname}".lower())
+        for alias_obj in self.aliases:
+            known_names.append(alias_obj.alias.lower())
+        return search_name in known_names
 
     def __repr__(self) -> str:
-        return f"<Person(id={self.id}, name='{self.name}')>"
+        return f"<Person(id={self.id}, name='{self.display_name}', slug='{self.slug}')>"
 
     def __str__(self) -> str:
-        return f"Person {self.display_name} ({self.appearances_count} mentions)"
+        return self.display_name
 
 
-class Alias(Base):
-    """Represents the multiple aliases for people."""
+class PersonAlias(Base):
+    """
+    An alias for a person.
 
-    __tablename__ = "aliases"
-    __table_args__ = (CheckConstraint("alias != ''", name="ck_non_empty_alias"),)
+    Stores alternative names/nicknames for a person, enabling lookup
+    by any known name. Aliases are NOT globally unique - multiple people
+    can share the same alias (e.g., "Therapist" for different therapists).
 
-    # ---- Primary fields ----
+    Attributes:
+        id: Primary key
+        person_id: Foreign key to Person
+        alias: The alias string
+
+    Relationships:
+        person: The Person this alias belongs to
+    """
+
+    __tablename__ = "person_aliases"
+    __table_args__ = (
+        Index("ix_person_aliases_alias", "alias"),
+    )
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    alias: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    person_id: Mapped[int] = mapped_column(ForeignKey("people.id"), nullable=False)
+    alias: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    # ---- Foreign key ----
-    person_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("people.id", ondelete="CASCADE")
-    )
-
-    # ---- Relationship ----
+    # --- Relationships ---
     person: Mapped["Person"] = relationship("Person", back_populates="aliases")
-    entries: Mapped[List["Entry"]] = relationship(
-        "Entry", secondary=entry_aliases, back_populates="aliases_used"
-    )
-
-    # ---- Computed properties ----
-    @property
-    def first_used(self) -> Optional[date]:
-        """Date when alias was first used."""
-        if not self.entries:
-            return None
-        return min(entry.date for entry in self.entries)
-
-    @property
-    def last_used(self) -> Optional[date]:
-        """Date when alias was last used."""
-        if not self.entries:
-            return None
-        return max(entry.date for entry in self.entries)
-
-    @property
-    def usage_count(self) -> int:
-        """Number of entries using this alias."""
-        return len(self.entries)
 
     def __repr__(self) -> str:
-        return f"<Alias(id={self.id}, alias={self.alias})>"
+        return f"<PersonAlias(id={self.id}, alias='{self.alias}', person_id={self.person_id})>"
 
     def __str__(self) -> str:
-        count = self.usage_count
-        if count == 0:
-            return f"Alias '{self.alias}' for {self.person.display_name} (unused)"
-        elif count == 1:
-            return f"Alias '{self.alias}' for {self.person.display_name} (1 entry)"
-        else:
-            return (
-                f"Alias '{self.alias}' for {self.person.display_name} ({count} entries)"
-            )
+        return self.alias
 
 
 class Tag(Base):
     """
-    Simple keyword tags for entries.
+    Keyword tag for categorizing entries.
 
-    Provides a flexible tagging system for categorizing and
-    searching journal entries.
+    Tags are simple labels applied to journal entries for
+    organization and filtering.
 
     Attributes:
         id: Primary key
-        tag: The tag text (unique)
+        name: Tag name (unique)
+
+    Relationships:
+        entries: M2M with Entry (entries with this tag)
     """
 
     __tablename__ = "tags"
-    __table_args__ = (CheckConstraint("tag != ''", name="ck_non_empty_tag"),)
+    __table_args__ = (CheckConstraint("name != ''", name="ck_tag_non_empty_name"),)
 
-    # ---- Primary fields ----
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    tag: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
     )
 
-    # ---- Relationship ----
+    # --- Relationships ---
     entries: Mapped[List["Entry"]] = relationship(
         "Entry", secondary=entry_tags, back_populates="tags"
     )
 
-    # ---- Computed properties ----
+    # --- Computed properties ---
     @property
     def usage_count(self) -> int:
         """Number of entries using this tag."""
         return len(self.entries)
-
-    @property
-    def usage_span_days(self) -> int:
-        """Number of days between first and last use."""
-        if not self.entries or len(self.entries) < 2:
-            return 0
-        dates = [entry.date for entry in self.entries]
-        return (max(dates) - min(dates)).days
 
     @property
     def first_used(self) -> Optional[date]:
@@ -354,20 +324,63 @@ class Tag(Base):
             return None
         return max(entry.date for entry in self.entries)
 
-    @property
-    def chronological_entries(self) -> List["Entry"]:
-        """Get entries for this tag in chronological order."""
-        return sorted(self.entries, key=lambda e: e.date)
-
-    # Call
     def __repr__(self) -> str:
-        return f"<Tag(id={self.id}, tag={self.tag})>"
+        return f"<Tag(id={self.id}, name='{self.name}')>"
 
     def __str__(self) -> str:
-        count = self.usage_count
-        if count == 0:
-            return f"Tag '{self.tag}' (no entries)"
-        elif count == 1:
-            return f"Tag '{self.tag}' (1 entry)"
-        else:
-            return f"Tag '{self.tag}' ({count} entries)"
+        return self.name
+
+
+class Theme(Base):
+    """
+    Thematic element across entries.
+
+    Themes represent recurring thematic patterns or concepts
+    that span multiple journal entries.
+
+    Attributes:
+        id: Primary key
+        name: Theme name (unique)
+
+    Relationships:
+        entries: M2M with Entry (entries containing this theme)
+    """
+
+    __tablename__ = "themes"
+    __table_args__ = (CheckConstraint("name != ''", name="ck_theme_non_empty_name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(200), unique=True, nullable=False, index=True
+    )
+
+    # --- Relationships ---
+    entries: Mapped[List["Entry"]] = relationship(
+        "Entry", secondary=entry_themes, back_populates="themes"
+    )
+
+    # --- Computed properties ---
+    @property
+    def usage_count(self) -> int:
+        """Number of entries with this theme."""
+        return len(self.entries)
+
+    @property
+    def first_used(self) -> Optional[date]:
+        """Date when theme first appeared."""
+        if not self.entries:
+            return None
+        return min(entry.date for entry in self.entries)
+
+    @property
+    def last_used(self) -> Optional[date]:
+        """Date when theme last appeared."""
+        if not self.entries:
+            return None
+        return max(entry.date for entry in self.entries)
+
+    def __repr__(self) -> str:
+        return f"<Theme(id={self.id}, name='{self.name}')>"
+
+    def __str__(self) -> str:
+        return self.name

@@ -148,8 +148,9 @@ def run_all(
     Orchestrates the entire journal processing pipeline in the correct order,
     ensuring data flows correctly from raw exports to final PDFs.
     """
-    from .yaml2sql import inbox, convert, sync_db
-    from .sql2wiki import build_pdf
+    from .sources import inbox
+    from .text import convert
+    from .pdf import build_pdf
 
     click.echo("🚀 Starting complete pipeline...\n")
 
@@ -167,18 +168,13 @@ def run_all(
         ctx.invoke(convert, force=False)
         click.echo()
 
-        # Step 3: Sync database
-        click.echo("=" * 60)
-        ctx.invoke(sync_db, input=str(MD_DIR), force=False)
-        click.echo()
-
-        # Step 4: Build PDFs (if year specified)
+        # Step 3: Build PDFs (if year specified)
         if not skip_pdf and year:
             click.echo("=" * 60)
             ctx.invoke(build_pdf, year=year, input=str(MD_DIR), output=str(PDF_DIR), force=False, debug=False)
             click.echo()
 
-        # Step 5: Full backup (if requested)
+        # Step 4: Full backup (if requested)
         if backup:
             click.echo("=" * 60)
             ctx.invoke(backup_full, suffix="pipeline")
@@ -237,10 +233,15 @@ def status(ctx: click.Context) -> None:
         handle_cli_error(ctx, e, "status")
 
 
-@click.command()
+@click.group()
 def validate() -> None:
-    """Validate pipeline integrity."""
+    """Validate pipeline and journal entries."""
+    pass
 
+
+@validate.command("pipeline")
+def validate_pipeline() -> None:
+    """Validate pipeline directory structure and dependencies."""
     click.echo("🔍 Validating pipeline...\n")
 
     issues = []
@@ -272,6 +273,171 @@ def validate() -> None:
         sys.exit(1)
     else:
         click.echo("✅ Pipeline validation passed!")
+
+
+@validate.command("entry")
+@click.argument("date", required=False)
+@click.option("--file", "-f", "file_path", type=click.Path(exists=True), help="Validate specific file")
+@click.option("--year", "-y", help="Validate all entries in year (e.g., 2024)")
+@click.option("--years", help="Validate year range (e.g., 2021-2025)")
+@click.option("--all", "validate_all", is_flag=True, help="Validate all entries")
+@click.option("--quickfix", "-q", is_flag=True, help="Output in quickfix format for nvim")
+def validate_entry(
+    date: Optional[str],
+    file_path: Optional[str],
+    year: Optional[str],
+    years: Optional[str],
+    validate_all: bool,
+    quickfix: bool,
+) -> None:
+    """
+    Validate journal entries (MD + YAML).
+
+    Validates MD frontmatter, metadata YAML structure, and consistency
+    between them. Output is suitable for nvim quickfix integration.
+
+    Examples:
+
+        plm validate entry 2024-12-03
+
+        plm validate entry --file data/metadata/journal/2024/2024-12-03.yaml
+
+        plm validate entry --year 2024
+
+        plm validate entry --quickfix 2024-12-03
+    """
+    from pathlib import Path
+    from dev.core.paths import JOURNAL_YAML_DIR
+    from dev.validators.entry import (
+        validate_entry as do_validate_entry,
+        validate_file as do_validate_file,
+        validate_directory,
+        ValidationResult,
+    )
+
+    def print_result(result: ValidationResult, quickfix: bool = False) -> int:
+        """Print validation result and return exit code."""
+        if quickfix:
+            for issue in result.all_issues:
+                click.echo(issue.quickfix_line())
+        else:
+            if result.errors:
+                click.secho(f"\nErrors ({len(result.errors)}):", fg="red", bold=True)
+                for error in result.errors:
+                    click.echo(f"  {error.message}")
+                    if error.field:
+                        click.echo(f"    Field: {error.field}")
+
+            if result.warnings:
+                click.secho(f"\nWarnings ({len(result.warnings)}):", fg="yellow")
+                for warning in result.warnings:
+                    click.echo(f"  {warning.message}")
+
+            if result.is_valid:
+                click.secho("\n✓ Valid", fg="green")
+            else:
+                click.secho(f"\n✗ {len(result.errors)} error(s)", fg="red")
+
+        return 0 if result.is_valid else 1
+
+    exit_code = 0
+
+    if file_path:
+        result = do_validate_file(Path(file_path))
+        exit_code = print_result(result, quickfix)
+
+    elif date:
+        result = do_validate_entry(date)
+        exit_code = print_result(result, quickfix)
+
+    elif year:
+        year_dir = JOURNAL_YAML_DIR / year
+        if not year_dir.exists():
+            click.secho(f"Year directory not found: {year_dir}", fg="red")
+            raise SystemExit(1)
+
+        results = validate_directory(year_dir)
+        total_errors = 0
+        total_warnings = 0
+
+        for path, result in results.items():
+            if result.errors or result.warnings:
+                if not quickfix:
+                    click.echo(f"\n{Path(path).stem}:")
+                exit_code = max(exit_code, print_result(result, quickfix))
+            total_errors += len(result.errors)
+            total_warnings += len(result.warnings)
+
+        if not quickfix:
+            click.echo(f"\n{'='*50}")
+            click.echo(f"Total: {len(results)} files, {total_errors} errors, {total_warnings} warnings")
+
+    elif years:
+        if "-" in years:
+            start, end = years.split("-")
+            year_list = [str(y) for y in range(int(start), int(end) + 1)]
+        else:
+            year_list = [years]
+
+        total_errors = 0
+        total_warnings = 0
+        total_files = 0
+
+        for yr in year_list:
+            year_dir = JOURNAL_YAML_DIR / yr
+            if not year_dir.exists():
+                continue
+
+            if not quickfix:
+                click.echo(f"\n{yr}:")
+
+            results = validate_directory(year_dir)
+            total_files += len(results)
+
+            for path, result in results.items():
+                if result.errors or result.warnings:
+                    if not quickfix:
+                        click.echo(f"  {Path(path).stem}:")
+                    exit_code = max(exit_code, print_result(result, quickfix))
+                total_errors += len(result.errors)
+                total_warnings += len(result.warnings)
+
+        if not quickfix:
+            click.echo(f"\n{'='*50}")
+            click.echo(f"Total: {total_files} files, {total_errors} errors, {total_warnings} warnings")
+
+    elif validate_all:
+        total_errors = 0
+        total_warnings = 0
+        total_files = 0
+
+        for year_dir in sorted(JOURNAL_YAML_DIR.iterdir()):
+            if not year_dir.is_dir() or not year_dir.name.isdigit():
+                continue
+
+            if not quickfix:
+                click.echo(f"\n{year_dir.name}:")
+
+            results = validate_directory(year_dir)
+            total_files += len(results)
+
+            for path, result in results.items():
+                if result.errors or result.warnings:
+                    if not quickfix:
+                        click.echo(f"  {Path(path).stem}:")
+                    exit_code = max(exit_code, print_result(result, quickfix))
+                total_errors += len(result.errors)
+                total_warnings += len(result.warnings)
+
+        if not quickfix:
+            click.echo(f"\n{'='*50}")
+            click.echo(f"Total: {total_files} files, {total_errors} errors, {total_warnings} warnings")
+
+    else:
+        click.echo("Please specify: DATE, --file, --year, --years, or --all")
+        raise SystemExit(1)
+
+    raise SystemExit(exit_code)
 
 
 __all__ = ["backup_full", "backup_list_full", "run_all", "status", "validate"]

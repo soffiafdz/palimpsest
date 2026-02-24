@@ -1,0 +1,39 @@
+{#
+  Tags index page.
+
+  Frequency-sorted tags with usage counts, grouped by frequency
+  bands for scannability.
+
+  Context:
+    tags: list of dicts (sorted by count descending):
+      - name: str
+      - count: int
+#}
+# Tags
+
+{{ tags | length | zpad }} tags
+
+---
+{% if tags %}
+{% set ns = namespace(band='') %}
+{% for tag in tags %}
+{% if tag.count >= 20 and ns.band != 'frequent' %}
+{% set ns.band = 'frequent' %}
+
+## Frequent (20+)
+{% elif tag.count >= 10 and tag.count < 20 and ns.band != 'common' %}
+{% set ns.band = 'common' %}
+
+## Common (10–19)
+{% elif tag.count >= 5 and tag.count < 10 and ns.band != 'occasional' %}
+{% set ns.band = 'occasional' %}
+
+## Occasional (5–9)
+{% elif tag.count < 5 and ns.band != 'rare' %}
+{% set ns.band = 'rare' %}
+
+## Rare (1–4)
+{% endif %}
+- {{ tag.count | zpad }} · {{ tag.name | wikilink }}
+{% endfor %}
+{% endif %}

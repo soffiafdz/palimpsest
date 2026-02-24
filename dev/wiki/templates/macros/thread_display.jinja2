@@ -1,0 +1,41 @@
+{#
+  Thread display macro.
+
+  Renders a single thread with date range, optional entry link,
+  content description, people, and locations grouped by city.
+
+  Parameters:
+    thread: dict with keys:
+      - name: str
+      - from_date: str (flexible format)
+      - to_date: str (flexible format)
+      - referenced_entry_date: str or None (YYYY-MM-DD)
+      - content: str
+      - people: list of str (display names)
+      - locations: list of dict with keys: city (str), names (list of str)
+#}
+{% macro render_thread(thread) %}
+### {{ thread.name | wikilink }}
+*{{ thread.from_date | flexible_date }} → {{ thread.to_date | flexible_date }}*
+{% if thread.referenced_entry_date %}
+see {{ thread.referenced_entry_date | wikilink }}
+{% endif %}
+
+{{ thread.content }}
+{% if thread.people %}
+
+**People**
+{% for person in thread.people %}
+- {{ person | wikilink }}
+{% endfor %}
+{% endif %}
+{% if thread.locations %}
+
+**Places**
+{% for loc_group in thread.locations %}
+- {{ loc_group.city | wikilink }}
+{% for name in loc_group.names %}  - {{ name | wikilink }}
+{% endfor %}
+{%- endfor %}
+{% endif %}
+{% endmacro %}

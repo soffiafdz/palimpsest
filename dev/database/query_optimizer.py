@@ -170,19 +170,13 @@ from sqlalchemy.orm import Session, selectinload
 
 from .models import (
     Entry,
-    Person,
-    # Alias,
     Location,
-    # City,
     Event,
-    # Tag,
-    # MentionedDate,
+    Scene,
+    Thread,
     Reference,
-    # ReferenceSource,
     PoemVersion,
-    # Poem,
 )
-from .models_manuscript import ManuscriptEntry
 
 
 class QueryOptimizer:
@@ -205,12 +199,15 @@ class QueryOptimizer:
         to access all metadata and relationships.
 
         Loads:
-            - People with aliases and manuscript info
+            - People
             - Locations with parent cities
             - Cities
-            - Events with manuscript info
-            - Tags, dates, references, poems
-            - Manuscript metadata with themes
+            - Scenes with people and locations
+            - Events with scenes
+            - Tags, themes, arcs
+            - Threads
+            - References with sources
+            - Poems
 
         Args:
             session: Active SQLAlchemy session
@@ -232,24 +229,31 @@ class QueryOptimizer:
             session.query(Entry)
             .filter(Entry.id.in_(entry_ids))
             .options(
-                # People with their details
-                selectinload(Entry.people).selectinload(Person.aliases),
-                selectinload(Entry.people).selectinload(Person.manuscript),
+                # People
+                selectinload(Entry.people),
                 # Locations with parent cities
                 selectinload(Entry.locations).selectinload(Location.city),
                 # Cities
                 selectinload(Entry.cities),
-                # Events with manuscript info
-                selectinload(Entry.events).selectinload(Event.manuscript),
+                # Scenes with their relationships
+                selectinload(Entry.scenes).selectinload(Scene.people),
+                selectinload(Entry.scenes).selectinload(Scene.locations),
+                selectinload(Entry.scenes).selectinload(Scene.dates),
+                # Events with scenes
+                selectinload(Entry.events).selectinload(Event.scenes),
                 # Simple collections
                 selectinload(Entry.tags),
-                selectinload(Entry.dates),
+                selectinload(Entry.themes),
+                selectinload(Entry.arcs),
+                # Threads
+                selectinload(Entry.threads).selectinload(Thread.people),
+                selectinload(Entry.threads).selectinload(Thread.locations),
                 # References with sources
                 selectinload(Entry.references).selectinload(Reference.source),
                 # Poems with parent poem
                 selectinload(Entry.poems).selectinload(PoemVersion.poem),
-                # Manuscript with themes
-                selectinload(Entry.manuscript).selectinload(ManuscriptEntry.themes),
+                # Motifs
+                selectinload(Entry.motif_instances),
             )
             .all()
         )
@@ -315,12 +319,12 @@ class QueryOptimizer:
             .filter(extract("year", Entry.date) == year)
             .order_by(Entry.date)
             .options(
-                selectinload(Entry.people).selectinload(Person.aliases),
+                selectinload(Entry.people),
                 selectinload(Entry.locations).selectinload(Location.city),
                 selectinload(Entry.cities),
                 selectinload(Entry.events),
                 selectinload(Entry.tags),
-                selectinload(Entry.dates),
+                selectinload(Entry.narrated_dates),
                 selectinload(Entry.references).selectinload(Reference.source),
                 selectinload(Entry.poems).selectinload(PoemVersion.poem),
             )
@@ -351,12 +355,12 @@ class QueryOptimizer:
             )
             .order_by(Entry.date)
             .options(
-                selectinload(Entry.people).selectinload(Person.aliases),
+                selectinload(Entry.people),
                 selectinload(Entry.locations).selectinload(Location.city),
                 selectinload(Entry.cities),
                 selectinload(Entry.events),
                 selectinload(Entry.tags),
-                selectinload(Entry.dates),
+                selectinload(Entry.narrated_dates),
                 selectinload(Entry.references).selectinload(Reference.source),
                 selectinload(Entry.poems).selectinload(PoemVersion.poem),
             )
@@ -406,12 +410,12 @@ class RelationshipLoader:
         # Execute one query per relationship type
         # SQLAlchemy matches results back to our existing entry objects
         session.query(Entry).filter(Entry.id.in_(entry_ids)).options(
-            selectinload(Entry.people).selectinload(Person.aliases),
+            selectinload(Entry.people),
             selectinload(Entry.locations).selectinload(Location.city),
             selectinload(Entry.cities),
             selectinload(Entry.events),
             selectinload(Entry.tags),
-            selectinload(Entry.dates),
+            selectinload(Entry.narrated_dates),
             selectinload(Entry.references).selectinload(Reference.source),
             selectinload(Entry.poems).selectinload(PoemVersion.poem),
         ).all()

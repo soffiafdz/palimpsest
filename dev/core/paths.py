@@ -8,13 +8,26 @@ This module defines all project paths as Path objects for consistent path handli
 across the codebase. Paths are organized by category (journal, database, dev tools, etc.)
 and relative to the project root directory.
 
-The project structure:
+Project Structure:
     ROOT/
-    ├── dev/           # Development code and scripts
-    ├── data/          # User data (journal, metadata, wiki)
-    ├── logs/          # Application logs
-    ├── backups/       # Database backups
-    └── tmp/           # Temporary files
+    ├── dev/                          # Development code and scripts
+    ├── data/
+    │   ├── metadata/
+    │   │   ├── palimpsest.db         # SQLite database
+    │   │   └── journal/{YYYY}/       # Journal metadata YAML
+    │   ├── journal/
+    │   │   └── content/md/           # Journal entries (ground truth prose)
+    │   ├── wiki/                     # VimWiki output
+    │   ├── manuscript/drafts/        # Prose drafts for longer chapters
+    │   └── legacy/                   # Archived data (extracted notes, etc.)
+    ├── logs/                         # Application logs
+    ├── backups/                      # Database backups
+    └── tmp/                          # Temporary files
+
+Ground Truth Sources:
+    - Journal prose: MD files (data/journal/content/md/)
+    - Journal metadata: Wiki (editable) → DB → YAML export
+    - Manuscript content: Wiki + drafts → DB → YAML export
 
 All paths are resolved at import time and validated to ensure the project
 structure is intact.
@@ -81,19 +94,45 @@ TXT_DIR = JOURNAL_DIR / "sources" / "txt"
 MD_DIR = JOURNAL_DIR / "content" / "md"
 PDF_DIR = JOURNAL_DIR / "content" / "pdf"
 
+# ---- Metadata YAML Exports ----
+# Machine-generated exports for git version control
+METADATA_DIR = DATA_DIR / "metadata"
+JOURNAL_YAML_DIR = METADATA_DIR / "journal"      # Journal YAML exports by year
+MANUSCRIPT_YAML_DIR = METADATA_DIR / "manuscript"  # Manuscript YAML exports
+MANUSCRIPT_CHAPTERS_DIR = MANUSCRIPT_YAML_DIR / "chapters"
+MANUSCRIPT_CHARACTERS_DIR = MANUSCRIPT_YAML_DIR / "characters"
+MANUSCRIPT_SCENES_DIR = MANUSCRIPT_YAML_DIR / "scenes"
+
+# ---- Entity Metadata YAML (for nvim float editing) ----
+PEOPLE_YAML_DIR = METADATA_DIR / "people"
+LOCATIONS_YAML_DIR = METADATA_DIR / "locations"
+CITIES_YAML_PATH = METADATA_DIR / "cities.yaml"
+ARCS_YAML_PATH = METADATA_DIR / "arcs.yaml"
+NEIGHBORHOODS_YAML_PATH = METADATA_DIR / "neighborhoods.yaml"
+RELATION_TYPES_YAML_PATH = METADATA_DIR / "relation_types.yaml"
+
+# ---- Manuscript Drafts ----
+MANUSCRIPT_DIR = DATA_DIR / "manuscript"
+DRAFTS_DIR = MANUSCRIPT_DIR / "drafts"           # Prose drafts for longer chapters
+
+# ---- Legacy Archive ----
+LEGACY_DIR = DATA_DIR / "legacy"
+NOTES_ARCHIVE = LEGACY_DIR / "notes_archive.yaml"  # Extracted notes from MD frontmatter
+
 # ---- Logs & Temp & Backups----
 LOG_DIR = ROOT / "logs"
 TMP_DIR = ROOT / "tmp"
 BACKUP_DIR = ROOT / "backups"
 
+# ---- Wiki ----
+WIKI_DIR = DATA_DIR / "wiki"
+WIKI_JOURNAL_DIR = WIKI_DIR / "journal"
+WIKI_MANUSCRIPT_DIR = WIKI_DIR / "manuscript"
+WIKI_INDEXES_DIR = WIKI_DIR / "indexes"
+WIKI_TEMPLATES_DIR = DEV_DIR / "wiki" / "templates"
+
 # ---- Vignettes ----
 VIGNETTES_DIR = DATA_DIR / "vignettes"
-
-# ---- Vimwiki ----
-WIKI_DIR = DATA_DIR / "wiki"
-INVENTORY_DIR = WIKI_DIR / "inventory"
-PEOPLE_DIR = WIKI_DIR / "people"
-SNIPPETS_DIR = WIKI_DIR / "snippets"
 
 
 # ----- Path Validation -----

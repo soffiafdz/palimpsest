@@ -11,7 +11,7 @@ Query Syntax Examples:
     "alice AND therapy"                # Boolean AND
     "person:alice tag:reflection"      # With filters
     "therapy in:2024 words:100-500"    # Year and word count
-    "alice city:montreal has:manuscript"  # Complex filters
+    "alice city:montreal"                 # Complex filters
 
 Usage:
     # Parse query
@@ -36,8 +36,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, joinedload
 
 # --- Local imports ---
-from dev.database.models import Entry, Person, Tag, Event, City
-from dev.database.models_manuscript import ManuscriptEntry, ManuscriptStatus, Theme
+from dev.database.models import Entry, Person, Tag, Event, City, Theme
 from dev.search.search_index import SearchIndexManager
 
 
@@ -67,10 +66,6 @@ class SearchQuery:
     min_reading_time: Optional[float] = None
     max_reading_time: Optional[float] = None
 
-    # Manuscript filters
-    manuscript_status: Optional[str] = None
-    has_manuscript: Optional[bool] = None
-
     # Sorting
     sort_by: str = "relevance"  # relevance, date, word_count
     sort_order: str = "desc"
@@ -93,7 +88,7 @@ class SearchQueryParser:
             "person:alice tag:reflection" → filters
             "alice in:2024 words:100-500" → mixed
             "therapy year:2024 month:11" → date filters
-            "alice city:montreal has:manuscript" → complex
+            "alice city:montreal" → complex
 
         Returns:
             SearchQuery object
@@ -188,15 +183,6 @@ class SearchQueryParser:
                         query.min_reading_time = float(value)
                     except ValueError:
                         pass
-
-            # Manuscript status filter
-            elif key == 'status':
-                query.manuscript_status = value
-
-            # Has manuscript filter
-            elif key == 'has':
-                if value == 'manuscript':
-                    query.has_manuscript = True
 
             # Sort filter
             elif key == 'sort':
@@ -322,19 +308,6 @@ class SearchEngine:
         if query.max_reading_time:
             conditions.append(Entry.reading_time <= query.max_reading_time)
 
-        # Manuscript filters
-        if query.has_manuscript:
-            stmt = stmt.join(ManuscriptEntry, Entry.id == ManuscriptEntry.entry_id)
-
-        if query.manuscript_status:
-            stmt = stmt.join(ManuscriptEntry, Entry.id == ManuscriptEntry.entry_id)
-            try:
-                status_enum = ManuscriptStatus[query.manuscript_status.upper()]
-                conditions.append(ManuscriptEntry.status == status_enum)
-            except KeyError:
-                # Invalid status, will return no results
-                conditions.append(False)
-
         # Apply basic conditions
         if conditions:
             stmt = stmt.where(and_(*conditions))
@@ -346,22 +319,20 @@ class SearchEngine:
 
         if query.tags:
             stmt = stmt.join(Entry.tags)
-            stmt = stmt.where(Tag.tag.in_(query.tags))
+            stmt = stmt.where(Tag.name.in_(query.tags))
 
         if query.events:
             stmt = stmt.join(Entry.events)
-            stmt = stmt.where(Event.event.in_(query.events))
+            stmt = stmt.where(Event.name.in_(query.events))
 
         if query.cities:
             stmt = stmt.join(Entry.cities)
-            stmt = stmt.where(City.city.in_(query.cities))
+            stmt = stmt.where(City.name.in_(query.cities))
 
         if query.themes:
-            # Themes are in manuscript
-            if not query.has_manuscript:
-                stmt = stmt.join(ManuscriptEntry, Entry.id == ManuscriptEntry.entry_id)
-            stmt = stmt.join(ManuscriptEntry.themes)
-            stmt = stmt.where(Theme.theme.in_(query.themes))
+            # Themes are M2M with entries
+            stmt = stmt.join(Entry.themes)
+            stmt = stmt.where(Theme.name.in_(query.themes))
 
         # Execute query
         entries = self.session.execute(stmt).unique().scalars().all()

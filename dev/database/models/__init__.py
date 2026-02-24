@@ -1,101 +1,173 @@
+#!/usr/bin/env python3
 """
 Database Models Package
-------------------------
+-----------------------
 
 SQLAlchemy ORM models for the Palimpsest metadata database.
 
 This package provides a modular organization of database models:
-- base: Base class and mixins
-- associations: Many-to-many relationship tables
-- enums: Enumeration types
-- core: Entry model and schema info
-- entities: Person, Alias, Tag
-- geography: MentionedDate, City, Location
-- creative: Poem, Reference, Event
-- sync: Tombstone, SyncState, EntitySnapshot
 
-For backward compatibility, all models are re-exported from the root package.
+Base:
+    - base: Base class and SoftDeleteMixin
+
+Enumerations:
+    - enums: All enumeration types (ReferenceMode, ChapterType, etc.)
+
+Association Tables:
+    - associations: Many-to-many relationship tables
+
+Journal Domain - Core:
+    - core: Entry, NarratedDate, SchemaInfo
+
+Journal Domain - Geography:
+    - geography: City, Location
+
+Journal Domain - Entities:
+    - entities: Person, Tag, Theme
+
+Journal Domain - Analysis:
+    - analysis: Scene, SceneDate, Event, Arc, Thread
+
+Journal Domain - Creative:
+    - creative: ReferenceSource, Reference, Poem, PoemVersion
+
+Journal Domain - Metadata:
+    - metadata: Motif, MotifInstance
+
+Manuscript Domain:
+    - manuscript: Part, Chapter, Character, PersonCharacterMap,
+                  ManuscriptScene, ManuscriptSource, ManuscriptReference
 
 Usage:
-    from dev.database.models import Entry, Person, Tag
-    # All imports work as before
+    from dev.database.models import Entry, Scene, Person, Chapter
 """
-# Base classes
+# --- Base classes ---
 from .base import Base, SoftDeleteMixin
 
-# Enumerations
-from .enums import ReferenceMode, ReferenceType, RelationType
-
-# Association tables (for direct usage if needed)
-from .associations import (
-    entry_aliases,
-    entry_cities,
-    entry_dates,
-    entry_events,
-    entry_locations,
-    entry_people,
-    entry_related,
-    entry_tags,
-    event_people,
-    location_dates,
-    people_dates,
+# --- Enumerations ---
+from .enums import (
+    ChapterStatus,
+    ChapterType,
+    ContributionType,
+    ReferenceMode,
+    ReferenceType,
+    RelationType,
+    SceneOrigin,
+    SceneStatus,
+    SourceType,
 )
 
-# Core models
-from .core import Entry, SchemaInfo
+# --- Association tables ---
+from .associations import (
+    arc_entries,
+    chapter_arcs,
+    chapter_characters,
+    chapter_poems,
+    entry_cities,
+    entry_locations,
+    entry_people,
+    entry_tags,
+    entry_themes,
+    event_entries,
+    event_scenes,
+    scene_locations,
+    scene_people,
+    thread_locations,
+    thread_people,
+)
 
-# Geography models
-from .geography import City, Location, MentionedDate
+# --- Core models ---
+from .core import Entry, NarratedDate, SchemaInfo
 
-# Entity models
-from .entities import Alias, Person, Tag
+# --- Geography models ---
+from .geography import City, Location
 
-# Creative works
-from .creative import Event, Poem, PoemVersion, Reference, ReferenceSource
+# --- Entity models ---
+from .entities import Person, PersonAlias, Tag, Theme
 
-# Sync models
-from .sync import AssociationTombstone, EntitySnapshot, SyncState
+# --- Analysis models ---
+from .analysis import Arc, Event, Scene, SceneDate, Thread
+
+# --- Creative models ---
+from .creative import Poem, PoemVersion, Reference, ReferenceSource
+
+# --- Metadata models ---
+from .metadata import CONTROLLED_MOTIFS, Motif, MotifInstance
+
+# --- Manuscript models ---
+from .manuscript import (
+    Chapter,
+    Character,
+    ManuscriptReference,
+    ManuscriptScene,
+    ManuscriptSource,
+    Part,
+    PersonCharacterMap,
+)
 
 __all__ = [
     # Base
     "Base",
     "SoftDeleteMixin",
     # Enums
+    "ChapterStatus",
+    "ChapterType",
+    "ContributionType",
     "ReferenceMode",
     "ReferenceType",
     "RelationType",
+    "SceneOrigin",
+    "SceneStatus",
+    "SourceType",
     # Association tables
-    "entry_aliases",
+    "arc_entries",
+    "chapter_arcs",
+    "chapter_characters",
+    "chapter_poems",
     "entry_cities",
-    "entry_dates",
-    "entry_events",
     "entry_locations",
     "entry_people",
-    "entry_related",
     "entry_tags",
-    "event_people",
-    "location_dates",
-    "people_dates",
+    "entry_themes",
+    "event_entries",
+    "event_scenes",
+    "scene_locations",
+    "scene_people",
+    "thread_locations",
+    "thread_people",
     # Core
-    "SchemaInfo",
     "Entry",
+    "NarratedDate",
+    "SchemaInfo",
     # Geography
-    "MentionedDate",
     "City",
     "Location",
-    # People
+    # Entities
     "Person",
-    "Alias",
-    # Creative
-    "Reference",
-    "ReferenceSource",
+    "PersonAlias",
+    "Tag",
+    "Theme",
+    # Analysis
+    "Arc",
     "Event",
+    "Scene",
+    "SceneDate",
+    "Thread",
+    # Creative
     "Poem",
     "PoemVersion",
-    # Tags
-    "Tag",
-    # Sync
-    "AssociationTombstone",
-    "SyncState",
-    "EntitySnapshot",
+    "Reference",
+    "ReferenceSource",
+    # Metadata
+    "CONTROLLED_MOTIFS",
+    "Motif",
+    "MotifInstance",
+    # Manuscript
+    "Chapter",
+    "Character",
+    "ManuscriptReference",
+    "ManuscriptScene",
+    "ManuscriptSource",
+    "Part",
+    "PersonCharacterMap",
 ]

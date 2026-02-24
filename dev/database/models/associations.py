@@ -1,35 +1,49 @@
+#!/usr/bin/env python3
 """
-Association Tables
--------------------
-
+associations.py
+---------------
 Many-to-many relationship tables for the Palimpsest database.
 
-This module contains all association tables that connect:
-- Entries with dates, cities, locations, people, events, tags
-- Events with people
-- Locations and people with dates
-- Entries with related entries (self-referential)
+This module contains all association tables organized by domain:
 
-These are pure association tables with no additional metadata.
+Journal Domain - Core:
+    - entry_cities: Entries ↔ Cities
+    - entry_locations: Entries ↔ Locations
+    - entry_people: Entries ↔ People
+    - narrated_dates: Dates narrated within entries
+
+Journal Domain - Analysis:
+    - scene_dates: Scenes ↔ Dates
+    - scene_people: Scenes ↔ People
+    - scene_locations: Scenes ↔ Locations
+    - event_scenes: Events ↔ Scenes
+    - event_entries: Events ↔ Entries
+    - arc_entries: Arcs ↔ Entries
+    - thread_people: Threads ↔ People
+    - thread_locations: Threads ↔ Locations
+
+Journal Domain - Metadata:
+    - entry_tags: Entries ↔ Tags
+    - entry_themes: Entries ↔ Themes
+    - motif_instances: Motifs → Entries (with description)
+
+Manuscript Domain:
+    - chapter_poems: Chapters ↔ Poems
+    - chapter_characters: Chapters ↔ Characters
+    - chapter_arcs: Chapters ↔ Arcs
+
+These are pure association tables with no additional metadata (except where noted).
 """
 # --- Third party imports ---
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Table
+from sqlalchemy import Column, ForeignKey, Integer, Table
 
 # --- Local imports ---
 from .base import Base
 
-# Entry associations
-entry_dates = Table(
-    "entry_dates",
-    Base.metadata,
-    Column(
-        "entry_id",
-        Integer,
-        ForeignKey("entries.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column("date_id", Integer, ForeignKey("dates.id", ondelete="CASCADE"), primary_key=True),
-)
+
+# =============================================================================
+# JOURNAL DOMAIN - CORE ASSOCIATIONS
+# =============================================================================
 
 entry_cities = Table(
     "entry_cities",
@@ -40,7 +54,12 @@ entry_cities = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("city_id", Integer, ForeignKey("cities.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "city_id",
+        Integer,
+        ForeignKey("cities.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 entry_locations = Table(
@@ -52,7 +71,12 @@ entry_locations = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("location_id", Integer, ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "location_id",
+        Integer,
+        ForeignKey("locations.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 entry_people = Table(
@@ -64,42 +88,142 @@ entry_people = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("people_id", Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True),
-)
-
-entry_aliases = Table(
-    "entry_aliases",
-    Base.metadata,
     Column(
-        "entry_id",
+        "person_id",
         Integer,
-        ForeignKey("entries.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "alias_id",
-        Integer,
-        ForeignKey("aliases.id", ondelete="CASCADE"),
+        ForeignKey("people.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
 
-entry_events = Table(
-    "entry_events",
+
+# =============================================================================
+# JOURNAL DOMAIN - ANALYSIS ASSOCIATIONS
+# =============================================================================
+
+scene_people = Table(
+    "scene_people",
     Base.metadata,
     Column(
-        "entry_id",
+        "scene_id",
         Integer,
-        ForeignKey("entries.id", ondelete="CASCADE"),
+        ForeignKey("scenes.id", ondelete="CASCADE"),
         primary_key=True,
     ),
+    Column(
+        "person_id",
+        Integer,
+        ForeignKey("people.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+scene_locations = Table(
+    "scene_locations",
+    Base.metadata,
+    Column(
+        "scene_id",
+        Integer,
+        ForeignKey("scenes.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "location_id",
+        Integer,
+        ForeignKey("locations.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+event_scenes = Table(
+    "event_scenes",
+    Base.metadata,
     Column(
         "event_id",
         Integer,
         ForeignKey("events.id", ondelete="CASCADE"),
         primary_key=True,
     ),
+    Column(
+        "scene_id",
+        Integer,
+        ForeignKey("scenes.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
+
+arc_entries = Table(
+    "arc_entries",
+    Base.metadata,
+    Column(
+        "arc_id",
+        Integer,
+        ForeignKey("arcs.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+event_entries = Table(
+    "event_entries",
+    Base.metadata,
+    Column(
+        "event_id",
+        Integer,
+        ForeignKey("events.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "entry_id",
+        Integer,
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+thread_people = Table(
+    "thread_people",
+    Base.metadata,
+    Column(
+        "thread_id",
+        Integer,
+        ForeignKey("threads.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "person_id",
+        Integer,
+        ForeignKey("people.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+thread_locations = Table(
+    "thread_locations",
+    Base.metadata,
+    Column(
+        "thread_id",
+        Integer,
+        ForeignKey("threads.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "location_id",
+        Integer,
+        ForeignKey("locations.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+
+# =============================================================================
+# JOURNAL DOMAIN - METADATA ASSOCIATIONS
+# =============================================================================
 
 entry_tags = Table(
     "entry_tags",
@@ -110,12 +234,16 @@ entry_tags = Table(
         ForeignKey("entries.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "tag_id",
+        Integer,
+        ForeignKey("tags.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
-# Self-referential entry relationships
-entry_related = Table(
-    "entry_related",
+entry_themes = Table(
+    "entry_themes",
     Base.metadata,
     Column(
         "entry_id",
@@ -124,64 +252,65 @@ entry_related = Table(
         primary_key=True,
     ),
     Column(
-        "related_entry_id",
+        "theme_id",
         Integer,
-        ForeignKey("entries.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    # No self-references || duplicate pairs
-    CheckConstraint("entry_id != related_entry_id", name="no_self_reference"),
-)
-
-# Event associations
-event_people = Table(
-    "event_people",
-    Base.metadata,
-    Column(
-        "event_id",
-        Integer,
-        ForeignKey("events.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "person_id",
-        Integer,
-        ForeignKey("people.id", ondelete="CASCADE"),
+        ForeignKey("themes.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
 
-# Geography and people date associations
-location_dates = Table(
-    "location_dates",
+
+# =============================================================================
+# MANUSCRIPT DOMAIN ASSOCIATIONS
+# =============================================================================
+
+chapter_poems = Table(
+    "chapter_poems",
     Base.metadata,
     Column(
-        "location_id",
+        "chapter_id",
         Integer,
-        ForeignKey("locations.id", ondelete="CASCADE"),
+        ForeignKey("chapters.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
-        "date_id",
+        "poem_id",
         Integer,
-        ForeignKey("dates.id", ondelete="CASCADE"),
+        ForeignKey("poems.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
 
-people_dates = Table(
-    "people_dates",
+chapter_characters = Table(
+    "chapter_characters",
     Base.metadata,
     Column(
-        "person_id",
+        "chapter_id",
         Integer,
-        ForeignKey("people.id", ondelete="CASCADE"),
+        ForeignKey("chapters.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
-        "date_id",
+        "character_id",
         Integer,
-        ForeignKey("dates.id", ondelete="CASCADE"),
+        ForeignKey("characters.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+chapter_arcs = Table(
+    "chapter_arcs",
+    Base.metadata,
+    Column(
+        "chapter_id",
+        Integer,
+        ForeignKey("chapters.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "arc_id",
+        Integer,
+        ForeignKey("arcs.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )

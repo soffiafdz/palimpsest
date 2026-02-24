@@ -1,0 +1,36 @@
+# {{ name }} — All Scenes
+
+{% if arc %}
+**Arc:**
+{{ arc | wikilink }}
+{% else %}
+*Standalone*
+{% endif %}
+{{ scene_count | zpad }} scene{{ "s" if scene_count != 1 else "" }}
+
+---
+{% for scene in scenes %}
+
+## {{ scene.name }}
+{% if scene.description %}
+{{ scene.description }}
+{% endif %}
+{% if scene.people %}
+
+**People**
+{% for person in scene.people %}
+- {{ person | wikilink }}
+{% endfor %}
+{% endif %}
+{% if scene.locations %}
+
+**Places**
+{% for loc_group in scene.locations %}
+- {{ loc_group.city | wikilink }}
+{% for name in loc_group.names %}  - {{ name | wikilink }}
+{% endfor %}
+{%- endfor %}
+{% endif %}
+
+---
+{% endfor %}

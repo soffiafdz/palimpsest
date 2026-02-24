@@ -1,0 +1,127 @@
+{% from "macros/thread_display.jinja2" import render_thread %}
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ display_name }}
+{% if aliases %}
+
+*Also known as: {{ aliases | mid_dot_join }}*
+{% endif %}
+{% if relation %}
+
+**Relation:** {{ relation }}{{ " | **Narrator**" if tier == "narrator" else "" }}
+{% endif %}
+{% if tier == "narrator" %}
+
+*Appears in all entries.* [Browse entries](/indexes/entry-index)
+{% elif tier == "frequent" %}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
+{% else %}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
+{% endif %}
+
+---
+{% if tier == "narrator" %}
+{% if top_companions %}
+
+## Top Companions
+{% for group in top_companions %}
+
+{% if group.relation %}
+**{{ group.relation }}:**
+{% endif %}
+{% for companion in group.companions %}
+- {{ companion.count | zpad }} · {{ companion.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if top_places %}
+
+## Top Places
+{% for city in top_places %}
+
+### {{ city.name | wikilink }}
+{% if city.neighborhoods %}
+{% for nb in city.neighborhoods %}
+
+**{{ nb.name }}**
+{% for loc in nb.locations %}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% else %}
+{% for loc in city.locations %}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% elif tier == "frequent" %}
+
+[All entries ({{ entry_count | zpad }})]({{ slug }}-entries)
+{% if places %}
+
+---
+
+## Places
+{% for city in places[:5] %}
+
+### {{ city.name | wikilink }}
+{% if city.neighborhoods %}
+{% for nb in city.neighborhoods %}
+
+**{{ nb.name }}**
+{% for loc in nb.locations %}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% else %}
+{% for loc in city.locations %}
+- {{ loc.count | zpad }} · {{ loc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if companions %}
+
+---
+
+## Companions
+{% for companion in companions[:10] %}
+- {{ companion.count | zpad }} · {{ companion.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% elif tier == "infrequent" %}
+{% if entries %}
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}
+{% if places %}
+
+---
+
+## Places
+{% for city in places %}
+
+### {{ city.name | wikilink }}
+{% for loc in city.locations %}
+- {{ loc | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if characters %}
+
+---
+
+## Characters
+{% for character in characters %}
+- {{ "*" ~ character.contribution ~ "* · " if character.contribution else "" }}{{ character.name | wikilink }}
+{% endfor %}
+{% endif %}
+
+---
+
+- [Edit metadata]({{ "person_yaml" | source_path(slug) }})

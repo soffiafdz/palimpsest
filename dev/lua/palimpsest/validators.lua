@@ -1,27 +1,11 @@
 -- Validator integration for Palimpsest
 -- Runs Python validators and displays results as Neovim diagnostics
 local palimpsest = require("palimpsest.config")
+local get_project_root = require("palimpsest.utils").get_project_root
 local M = {}
 
 -- Namespace for diagnostics
 local ns = vim.api.nvim_create_namespace("palimpsest_validators")
-
--- Get project root
-local function get_project_root()
-	local markers = { "pyproject.toml", ".git", "palimpsest.db" }
-	local path = vim.fn.expand("%:p:h")
-
-	while path ~= "/" do
-		for _, marker in ipairs(markers) do
-			if vim.fn.filereadable(path .. "/" .. marker) == 1 or vim.fn.isdirectory(path .. "/" .. marker) == 1 then
-				return path
-			end
-		end
-		path = vim.fn.fnamemodify(path, ":h")
-	end
-
-	return vim.fn.getcwd()
-end
 
 -- Parse validator output and convert to diagnostics
 local function parse_validation_output(output, bufnr)
@@ -139,7 +123,7 @@ function M.validate_frontmatter(bufnr)
 	})
 end
 
--- Run metadata validation
+-- Run frontmatter structure validation (people, locations, dates, references, poems)
 function M.validate_metadata(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 	local filepath = vim.api.nvim_buf_get_name(bufnr)
@@ -152,9 +136,8 @@ function M.validate_metadata(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && validate metadata all %s 2>&1",
-		vim.fn.shellescape(root),
-		vim.fn.shellescape(filepath))
+	local cmd = string.format("cd %s && validate frontmatter all 2>&1",
+		vim.fn.shellescape(root))
 
 	-- Run asynchronously
 	local diagnostics = {}
@@ -239,6 +222,68 @@ function M.validate_links(bufnr)
 	})
 end
 
+-- Run wiki page lint validation
+function M.validate_wiki_page(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	local filepath = vim.api.nvim_buf_get_name(bufnr)
+
+	if filepath == "" then
+		return
+	end
+
+	-- Clear existing diagnostics
+	vim.diagnostic.reset(ns, bufnr)
+
+	local root = get_project_root()
+	local cmd = string.format("cd %s && plm wiki lint %s --format json 2>&1",
+		vim.fn.shellescape(root),
+		vim.fn.shellescape(filepath))
+
+	local output_lines = {}
+	vim.fn.jobstart(cmd, {
+		stdout_buffered = true,
+		on_stdout = function(_, data)
+			if data then
+				for _, line in ipairs(data) do
+					if line ~= "" then
+						table.insert(output_lines, line)
+					end
+				end
+			end
+		end,
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code == 0 then
+					vim.diagnostic.reset(ns, bufnr)
+					return
+				end
+
+				-- Parse JSON diagnostics
+				local json_str = table.concat(output_lines, "")
+				local ok, parsed = pcall(vim.fn.json_decode, json_str)
+				if ok and type(parsed) == "table" then
+					local diagnostics = {}
+					for _, diag in ipairs(parsed) do
+						table.insert(diagnostics, {
+							bufnr = bufnr,
+							lnum = (diag.line or 1) - 1,
+							col = (diag.col or 1) - 1,
+							severity = diag.severity == "error"
+								and vim.diagnostic.severity.ERROR
+								or vim.diagnostic.severity.WARN,
+							source = "palimpsest",
+							message = diag.message or "Lint error",
+						})
+					end
+					if #diagnostics > 0 then
+						vim.diagnostic.set(ns, bufnr, diagnostics, {})
+					end
+				end
+			end)
+		end,
+	})
+end
+
 -- Setup function
 function M.setup()
 	-- User commands for manual validation
@@ -251,7 +296,7 @@ function M.setup()
 	vim.api.nvim_create_user_command("PalimpsestValidateMetadata", function()
 		M.validate_metadata()
 	end, {
-		desc = "Validate metadata fields",
+		desc = "Validate all frontmatter structure",
 	})
 
 	vim.api.nvim_create_user_command("PalimpsestValidateLinks", function()

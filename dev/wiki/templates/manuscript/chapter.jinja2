@@ -1,0 +1,71 @@
+# {{ title }}
+
+**Type:** {{ type }} · **Status:** {{ status }}
+{% if part %}
+**Part:** {{ part | wikilink }}
+{% endif %}
+{{ scene_count | zpad }} scene{{ "s" if scene_count != 1 else "" }}
+
+---
+{% if characters %}
+
+## Characters
+{% for char in characters %}
+- {{ "*" ~ char.role ~ "* · " if char.role else "" }}{{ char.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% if arcs %}
+
+## Arcs
+{% for arc in arcs %}
+- {{ arc.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% if scenes %}
+
+---
+
+## Scenes
+{% for scene in scenes %}
+
+### {{ scene.name }}
+{% if scene.description %}
+{{ scene.description }}
+{% endif %}
+
+*{{ scene.origin }}* · {{ scene.status }}
+{% if scene.sources %}
+{% for src in scene.sources %}
+- *{{ src.type }}*
+{% if src.reference_name %}  {{ src.reference_name }}
+{% endif %}
+{% if src.entry_date %}  {{ src.entry_date | entry_date_short }}
+{% endif %}
+{% if src.external_note %}  {{ src.external_note }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if references %}
+
+---
+
+## References
+{% for ref in references %}
+- *{{ ref.mode }}* · {{ ref.source_title | wikilink }}
+{% if ref.content %}  {{ ref.content }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if poems %}
+
+## Poems
+{% for poem in poems %}
+- {{ poem.title | wikilink }}
+{% endfor %}
+{% endif %}
+
+---
+
+- [Edit metadata]({{ "chapter_yaml" | source_path(slug) }})

@@ -1,0 +1,58 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }}
+{% if tier == "dashboard" %}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
+
+---
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+
+---
+{% endif %}
+
+[All entries ({{ entry_count | zpad }})]({{ slug }}-entries)
+{% if patterns %}
+
+---
+
+## Patterns
+{% if patterns.tags %}
+
+**Tags:**
+{% for tag in patterns.tags %}
+- {{ tag.count | zpad }} · {{ tag.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% if patterns.themes %}
+
+**Themes:**
+{% for theme in patterns.themes %}
+- {{ theme.count | zpad }} · {{ theme.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if frequent_people %}
+
+---
+
+## Frequent people
+{% for person in frequent_people %}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
+{% endfor %}
+{% endif %}
+{% elif tier == "minimal" %}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
+
+---
+{% if entries %}
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}
+{% endif %}

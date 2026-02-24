@@ -1,0 +1,105 @@
+{% from "macros/entry_listing.jinja2" import render_entries %}
+# {{ name }}
+
+**City:** {{ city | wikilink }}
+{% if neighborhood %}
+**Neighborhood:** {{ neighborhood }}
+{% endif %}
+
+{{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}{{ " · " ~ date_range if date_range else "" }}
+
+---
+{% if tier == "dashboard" %}
+{% if timeline %}
+
+## Timeline
+
+{{ timeline | timeline_table }}
+{% endif %}
+
+[All entries ({{ entry_count | zpad }})]({{ slug }}-entries)
+{% if events_here %}
+
+---
+
+## Events Here
+{% for arc_group in events_here %}
+
+{% if arc_group.name == "Standalone events" %}
+### Standalone events
+{% else %}
+### {{ arc_group.name | wikilink }}
+{% endif %}
+{% for event in arc_group.events %}
+- {{ event.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if frequent_people %}
+
+---
+
+## Frequent People
+{% for person in frequent_people %}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
+{% if person.count <= 5 %}
+{% for d in person.entry_dates %}
+  - {{ d | entry_date_short }}
+{% endfor %}
+{% else %}
+  - [all entries]({{ slug }}-people-{{ person.slug }})
+{% endif %}
+{% endfor %}
+{% endif %}
+{% elif tier == "mid" %}
+{% if entries %}
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}
+{% if events_here %}
+
+---
+
+## Events Here
+{% for arc_group in events_here %}
+
+{% if arc_group.name == "Standalone events" %}
+### Standalone events
+{% else %}
+### {{ arc_group.name | wikilink }}
+{% endif %}
+{% for event in arc_group.events %}
+- {{ event.name | wikilink }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if frequent_people %}
+
+---
+
+## Frequent People
+{% for person in frequent_people %}
+- {{ person.count | zpad }} · {{ person.name | wikilink }}
+{% if person.count <= 5 %}
+{% for d in person.entry_dates %}
+  - {{ d | entry_date_short }}
+{% endfor %}
+{% else %}
+  - [all entries]({{ slug }}-people-{{ person.slug }})
+{% endif %}
+{% endfor %}
+{% endif %}
+{% elif tier == "minimal" %}
+{% if entries %}
+
+## Entries
+
+{{ render_entries(entries) }}
+{% endif %}
+{% endif %}
+
+---
+
+- [Edit metadata]({{ "location_yaml" | source_path(metadata_id) }})

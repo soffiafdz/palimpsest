@@ -7,6 +7,32 @@ Temporal file management for safe operations across all pipelines.
 Provides secure temporary file creation with automatic tracking and cleanup.
 Used by database operations, conversion pipelines, and any process requiring
 temporary file management.
+
+Features:
+    - Context manager pattern for automatic cleanup
+    - Secure temporary file creation (mkstemp for sensitive data)
+    - Tracking of all created files and directories
+    - Cleanup statistics for monitoring
+    - Configurable base directory
+
+Classes:
+    TemporalFileManager: Main manager with context manager support
+
+Usage:
+    from dev.core.temporal_files import TemporalFileManager
+
+    # Context manager (recommended) - automatic cleanup
+    with TemporalFileManager() as temp_manager:
+        temp_file = temp_manager.create_temp_file(suffix=".txt")
+        temp_dir = temp_manager.create_temp_dir()
+        # ... use temp_file and temp_dir ...
+    # Automatic cleanup on context exit
+
+    # Secure file creation for sensitive data
+    with TemporalFileManager() as temp_manager:
+        fd, secure_path = temp_manager.create_secure_temp_file()
+        os.write(fd, b"sensitive data")
+        os.close(fd)
 """
 # --- Annotations ---
 from __future__ import annotations

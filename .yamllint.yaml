@@ -1,0 +1,108 @@
+# yamllint configuration for Palimpsest project
+#
+# This config handles two types of YAML:
+# 1. Narrative analysis files (data/narrative_analysis/**/*.yaml)
+#    - Standalone YAML files without document markers
+#    - Very long lines in summary/description fields
+#    - Uses |- block scalars
+# 2. Journal frontmatter (data/journal/content/md/**/*.md)
+#    - YAML embedded between --- delimiters
+#    - Mixed quote styles
+#    - Uses both block and flow styles
+#
+# Parsing code uses yaml.safe_load() with no strict assumptions.
+
+extends: default
+
+rules:
+  # LINE LENGTH: Enforce ~100 char limit
+  # Use >- folded scalars for paragraphs, breaking lines at ~100 chars.
+  # allow-non-breakable-words: permits long URLs/paths that can't be broken.
+  line-length:
+    max: 100
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: false
+
+  # INDENTATION: Enforce 2-space indentation
+  # All files use consistent 2-space indents.
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # DOCUMENT MARKERS: Don't require them
+  # Narrative analysis files don't have ---
+  # Journal frontmatters have --- but are embedded in markdown.
+  document-start: disable
+  document-end: disable
+
+  # QUOTED STRINGS: Allow any quote style
+  # Files use both 'single' and "double" quotes inconsistently.
+  quoted-strings:
+    quote-type: any
+    required: false
+
+  # TRUTHY: Disable to allow unquoted string values
+  # Values like "Healthcare Crisis" could trigger false positives.
+  truthy: disable
+
+  # KEY FORMATTING
+  key-duplicates: enable
+  key-ordering: disable
+
+  # TRAILING SPACES: Catch these
+  trailing-spaces: enable
+
+  # EMPTY VALUES: Allow them
+  # Some fields intentionally have empty arrays: []
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: false
+
+  # BRACKETS & BRACES: Relaxed
+  # Files use both flow [a, b] and block style lists.
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+
+  # COLONS & COMMAS: Standard spacing
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: 1
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+    max-spaces-after: 1
+
+  # HYPHENS: Standard list formatting
+  hyphens:
+    max-spaces-after: 1
+
+  # NEW LINES: Allow flexibility
+  new-line-at-end-of-file: enable
+  new-lines:
+    type: unix
+
+  # COMMENTS: Allow inline comments, don't enforce indentation
+  comments:
+    require-starting-space: true
+    ignore-shebangs: true
+    min-spaces-from-content: 1
+  comments-indentation: disable
+
+  # OCTAL VALUES: Disable to avoid false positives on dates
+  # Dates like 2025-01-08 shouldn't trigger octal warnings.
+  octal-values: disable
+
+# Ignore files that aren't pure YAML
+ignore:
+  # Markdown files with frontmatter - yamllint can't parse partial YAML
+  - "*.md"
+  - "**/*.md"
