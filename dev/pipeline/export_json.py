@@ -84,6 +84,7 @@ from dev.database.models import (
     Scene,
     Tag,
     Theme,
+    ThemeInstance,
     Thread,
 )
 from dev.utils.slugify import (
@@ -272,6 +273,7 @@ class JSONExporter:
             exports["themes"] = self._export_themes(session)
             exports["motifs"] = self._export_motifs(session)
             exports["motif_instances"] = self._export_motif_instances(session)
+            exports["theme_instances"] = self._export_theme_instances(session)
 
             # Manuscript entities
             exports["parts"] = self._export_parts(session)
@@ -323,7 +325,9 @@ class JSONExporter:
                 "cities": [c.name for c in entry.cities],
                 "arcs": [a.name for a in entry.arcs],
                 "tags": [t.name for t in entry.tags],
-                "themes": [th.name for th in entry.themes],
+                "theme_instances": [
+                    self._theme_names[ti.theme_id] for ti in entry.theme_instances
+                ],
                 "scenes": [s.name for s in entry.scenes],
                 "events": [e.name for e in entry.events],
                 "threads": [th.name for th in entry.threads],
@@ -758,6 +762,38 @@ class JSONExporter:
         self.stats["motif_instances"] = len(result)
         return result
 
+    def _export_theme_instances(self, session: Session) -> Dict[str, Dict[str, Any]]:
+        """
+        Export all theme instances.
+
+        Dict key is "theme_name::entry_date" (e.g. "identity::2024-01-15").
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict mapping theme instance key to theme instance data
+        """
+        instances = session.query(ThemeInstance).all()
+        result = {}
+        total = len(instances)
+
+        for i, ti in enumerate(instances, 1):
+            theme_name = self._theme_names[ti.theme_id]
+            entry_date = self._entry_dates[ti.entry_id]
+            key = f"{theme_name}::{entry_date}"
+            result[key] = {
+                "description": ti.description,
+                "theme": theme_name,
+                "entry_date": entry_date,
+            }
+
+            if i % 100 == 0 or i == total:
+                safe_logger(self.logger).log_debug(f"   Exporting theme instances: {i}/{total}")
+
+        self.stats["theme_instances"] = len(result)
+        return result
+
     # =========================================================================
     # MANUSCRIPT ENTITY EXPORT METHODS
     # =========================================================================
@@ -1006,7 +1042,8 @@ class JSONExporter:
         # Initialize all entity type dicts
         for entity_type in ["entries", "people", "locations", "cities", "scenes",
                            "events", "threads", "arcs", "poems", "references",
-                           "reference_sources", "tags", "themes", "motifs", "motif_instances",
+                           "reference_sources", "tags", "themes", "motifs",
+                           "motif_instances", "theme_instances",
                            "parts", "chapters", "characters", "person_character_maps",
                            "manuscript_scenes", "manuscript_sources", "manuscript_references"]:
             old_exports[entity_type] = {}
@@ -1093,11 +1130,11 @@ class JSONExporter:
             if source and mode and entry_date:
                 return f"{source}::{mode}::{entry_date}"
             return None
-        elif entity_type == "motif_instances":
-            motif = data.get("motif")
+        elif entity_type in ("motif_instances", "theme_instances"):
+            parent = data.get("motif") or data.get("theme")
             entry_date = data.get("entry_date")
-            if motif and entry_date:
-                return f"{motif}::{entry_date}"
+            if parent and entry_date:
+                return f"{parent}::{entry_date}"
             return None
         elif entity_type == "person_character_maps":
             person = data.get("person")
@@ -1307,6 +1344,7 @@ class JSONExporter:
         self._write_simple_entities("references", exports.get("references", {}))
         self._write_simple_entities("reference_sources", exports.get("reference_sources", {}))
         self._write_simple_entities("motif_instances", exports.get("motif_instances", {}))
+        self._write_simple_entities("theme_instances", exports.get("theme_instances", {}))
         self._write_simple_entities("cities", exports.get("cities", {}))
 
         # Manuscript entities

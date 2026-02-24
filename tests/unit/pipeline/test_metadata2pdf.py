@@ -30,6 +30,7 @@ from dev.builders.metadata_pdfbuilder import (
 from dev.dataclasses.metadata_entry import (
     MetadataEntry,
     SceneSpec,
+    ThemeSpec,
     ThreadSpec,
     EventSpec,
     MotifSpec,
@@ -288,8 +289,12 @@ def test_format_entry_metadata_with_events():
 
 def test_format_entry_metadata_with_themes():
     """Test entry with themes."""
+    themes: List[ThemeSpec] = [
+        cast(ThemeSpec, {"name": "Loneliness", "description": "Alone at home."}),
+        cast(ThemeSpec, {"name": "Hope", "description": "A glimmer of something."}),
+    ]
     entry = MetadataEntry(
-        date=date(2025, 2, 28), summary="Day", themes=["Loneliness", "Hope"]
+        date=date(2025, 2, 28), summary="Day", themes=themes
     )
     result = format_entry_metadata(entry)
 
@@ -339,7 +344,7 @@ def test_format_entry_metadata_with_tags():
     """Test entry with tags (tags render inside multicol with themes)."""
     entry = MetadataEntry(
         date=date(2025, 2, 28), summary="Day",
-        themes=["Hope"],
+        themes=[cast(ThemeSpec, {"name": "Hope", "description": "A glimmer."})],
         tags=["Introspection", "City", "Clara"],
     )
     result = format_entry_metadata(entry)
@@ -356,7 +361,7 @@ def test_format_entry_metadata_single_column():
         date=date(2025, 2, 28),
         summary="Day",
         rating=4.5,
-        themes=["Theme"],
+        themes=[cast(ThemeSpec, {"name": "Theme", "description": "A theme."})],
     )
     result = format_entry_metadata(entry)
 

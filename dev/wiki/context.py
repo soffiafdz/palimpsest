@@ -136,7 +136,11 @@ class WikiContextBuilder:
                 entry.scenes, entry.events, entry.arcs
             ),
             "threads": [self._build_thread_display(t) for t in entry.threads],
-            "themes": [t.name for t in entry.themes],
+            "themes": [
+                {"name": ti.theme.name, "description": ti.description}
+                for ti in entry.theme_instances
+                if ti.theme
+            ],
             "tags": [t.name for t in entry.tags],
             "references": self._build_entry_references(entry.references),
             "poems": self._build_entry_poems(entry.poems),
@@ -1370,24 +1374,43 @@ class WikiContextBuilder:
         """
         Build context dict for a Theme wiki page.
 
-        Same tier logic as tags but with separate thresholds.
+        Includes per-entry instance descriptions (like motif pages).
+        Themes with 5+ entries get full dashboard. Themes with 2-4
+        get minimal page.
 
         Args:
             theme: Theme model instance
 
         Returns:
-            Dict with tier-appropriate context
+            Dict with tier-appropriate context including instances
         """
-        entry_count = theme.usage_count
-        entries = sorted(
-            theme.entries, key=lambda e: e.date, reverse=True
+        instances = sorted(
+            theme.instances,
+            key=lambda i: i.entry.date if i.entry else date.min,
+            reverse=True,
         )
+        entries = [i.entry for i in instances if i.entry]
+        entry_count = len(instances)
+
+        all_instances = [
+            {
+                "entry_date": (
+                    i.entry.date.isoformat() if i.entry else None
+                ),
+                "description": i.description,
+            }
+            for i in instances
+        ]
 
         base: Dict[str, Any] = {
             "name": theme.name,
             "slug": slugify(theme.name),
             "entry_count": entry_count,
-            "entries": self._build_entry_listing(entries),
+            "instance_count": entry_count,
+            "instances": all_instances,
+            "entries": self._build_entry_listing(
+                sorted(entries, key=lambda e: e.date, reverse=True)
+            ),
         }
 
         if entry_count >= TAG_DASHBOARD_THRESHOLD:
@@ -1403,6 +1426,9 @@ class WikiContextBuilder:
             base["timeline"] = self._compute_monthly_counts(entries)
             base["patterns"] = self._compute_co_occurrences(entries)
             base["frequent_people"] = self._compute_frequent_people(entries)
+
+            if len(all_instances) >= MOTIF_SUBPAGE_THRESHOLD:
+                base["recent_instances"] = all_instances[:10]
         else:
             base["tier"] = "minimal"
 
@@ -1822,8 +1848,9 @@ class WikiContextBuilder:
         for entry in entries:
             for tag in entry.tags:
                 tag_counts[tag.name] += 1
-            for theme in entry.themes:
-                theme_counts[theme.name] += 1
+            for ti in entry.theme_instances:
+                if ti.theme:
+                    theme_counts[ti.theme.name] += 1
 
         result: Dict[str, List[Dict[str, Any]]] = {}
 

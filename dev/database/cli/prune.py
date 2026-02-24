@@ -163,7 +163,7 @@ def _prune_entity_type(
         "locations": (Location, ["entries", "scenes", "threads"]),
         "cities": (City, ["entries", "locations"]),
         "tags": (Tag, ["entries"]),
-        "themes": (Theme, ["entries"]),
+        "themes": (Theme, ["instances"]),
         "arcs": (Arc, ["entries", "chapters"]),
         "events": (Event, ["entries", "scenes"]),
         "reference_sources": (ReferenceSource, ["references"]),

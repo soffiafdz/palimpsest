@@ -52,6 +52,7 @@ from dev.database.models import (
     SceneDate,
     Tag,
     Theme,
+    ThemeInstance,
     Thread,
 )
 from dev.database.decorators import DatabaseOperation
@@ -1211,24 +1212,43 @@ class EntryManager(BaseManager):
     def _process_themes(
         self,
         entry: Entry,
-        themes_data: List[str],
+        themes_data: List[Dict[str, Any]],
         incremental: bool = True,
     ) -> None:
         """
-        Link themes to an entry (M2M).
+        Create theme instances for an entry.
+
+        Each theme instance links a free-form theme to an entry with
+        an entry-specific description, following the motif instance pattern.
 
         Args:
-            entry: Entry to link themes to
-            themes_data: List of theme name strings
-            incremental: If True, add themes; if False, clear and replace
+            entry: Entry to create theme instances for
+            themes_data: List of dicts with name and description
+            incremental: If True, add instances; if False, clear and replace
+
+        Notes:
+            - Both name and description are required; items missing either
+              are silently skipped
         """
         if not incremental:
-            entry.themes.clear()
+            entry.theme_instances.clear()
+            self.session.flush()
 
-        for theme_name in themes_data or []:
+        for theme_data in themes_data or []:
+            theme_name = theme_data.get("name")
+            description = theme_data.get("description", "")
+
+            if not theme_name or not description:
+                continue
+
             theme = self._get_or_create(Theme, {"name": theme_name})
-            if theme not in entry.themes:
-                entry.themes.append(theme)
+
+            instance = ThemeInstance(
+                theme_id=theme.id,
+                entry_id=entry.id,
+                description=description,
+            )
+            self.session.add(instance)
 
         self.session.flush()
 

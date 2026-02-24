@@ -646,6 +646,7 @@ class TestWriteExports:
             "themes": {},
             "motifs": {},
             "motif_instances": {},
+            "theme_instances": {},
         }
 
         exporter._write_exports(exports)
@@ -676,6 +677,7 @@ class TestWriteExports:
             "themes": {},
             "motifs": {},
             "motif_instances": {},
+            "theme_instances": {},
         }
 
         exporter._write_exports(exports)
@@ -708,6 +710,7 @@ class TestWriteExports:
             "themes": {},
             "motifs": {},
             "motif_instances": {},
+            "theme_instances": {},
         }
 
         exporter._write_exports(exports)
@@ -736,6 +739,7 @@ class TestWriteExports:
             "themes": {},
             "motifs": {},
             "motif_instances": {},
+            "theme_instances": {},
         }
 
         exporter._write_exports(exports)
@@ -768,6 +772,7 @@ class TestWriteExports:
             "themes": {},
             "motifs": {},
             "motif_instances": {},
+            "theme_instances": {},
         }
 
         exporter._write_exports(exports)

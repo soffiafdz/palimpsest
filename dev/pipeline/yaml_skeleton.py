@@ -103,16 +103,24 @@ date: {date}
 #   - ...
 
 ##
-## themes (list of strings, optional):
-##   Thematic elements present in the entry.
+## themes (list of objects, optional):
+##   Thematic elements present in the entry. Each theme has a name
+##   and a description explaining how it manifests in this entry.
 ##
 ##   Example:
 ##     themes:
-##       - Loneliness
-##       - Self-Discovery
+##       - name: Loneliness
+##         description: >-
+##           The narrator sits alone at the kitchen table, aware
+##           of the silence where conversation used to be.
+##       - name: Self-Discovery
+##         description: >-
+##           A moment of clarity about who they are becoming.
 ##
 # themes:
-#   - ...
+#   - name: ...
+#     description: >-
+#       ...
 
 ##
 ## motifs (list of objects, optional):

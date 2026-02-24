@@ -2,7 +2,7 @@
 """
 simple_manager.py
 -----------------
-Config-driven manager for simple entities: Tag, Theme, Arc, Event.
+Config-driven manager for simple entities: Tag, Arc, Event.
 
 This module provides a generic manager for simple lookup entities
 that share common patterns: get_or_create, link to entries, etc.
@@ -16,13 +16,11 @@ Each entity type is defined by a SimpleManagerConfig that specifies:
 Usage:
     # Get pre-configured managers
     tag_mgr = SimpleManager.for_tags(session, logger)
-    theme_mgr = SimpleManager.for_themes(session, logger)
     arc_mgr = SimpleManager.for_arcs(session, logger)
     event_mgr = SimpleManager.for_events(session, logger)
 
     # Common operations
     tag = tag_mgr.get_or_create("python")
-    theme = theme_mgr.get_or_create("identity")
     arc = arc_mgr.get_or_create("The Long Wanting")
     event = event_mgr.get_or_create("Birthday Party")
 
@@ -41,7 +39,7 @@ from dev.core.exceptions import DatabaseError, ValidationError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
-from dev.database.models import Arc, Entry, Event, Scene, Tag, Theme
+from dev.database.models import Arc, Entry, Event, Scene, Tag
 from .base_manager import BaseManager
 
 
@@ -87,16 +85,6 @@ TAG_CONFIG = SimpleManagerConfig(
     model_class=Tag,
     name_field="name",
     display_name="tag",
-    normalizer=_normalize_string,
-    supports_soft_delete=False,
-    extra_fields=[],
-    relationships=[RelationshipConfig("entries", Entry)],
-)
-
-THEME_CONFIG = SimpleManagerConfig(
-    model_class=Theme,
-    name_field="name",
-    display_name="theme",
     normalizer=_normalize_string,
     supports_soft_delete=False,
     extra_fields=[],
@@ -162,13 +150,6 @@ class SimpleManager(BaseManager):
     ) -> "SimpleManager":
         """Create a manager for Tag entities."""
         return cls(session, logger, TAG_CONFIG)
-
-    @classmethod
-    def for_themes(
-        cls, session: Session, logger: Optional[PalimpsestLogger] = None
-    ) -> "SimpleManager":
-        """Create a manager for Theme entities."""
-        return cls(session, logger, THEME_CONFIG)
 
     @classmethod
     def for_arcs(
@@ -870,6 +851,5 @@ class SimpleManager(BaseManager):
 
 # Convenience factory functions
 TagManager = SimpleManager.for_tags
-ThemeManager = SimpleManager.for_themes
 ArcManager = SimpleManager.for_arcs
 EventManager = SimpleManager.for_events

@@ -227,7 +227,7 @@ ENTITY_CONFIGS: Dict[str, EntityTypeConfig] = {
         top_level_lists=["tags"],
     ),
     "theme": EntityTypeConfig(
-        top_level_lists=["themes"],
+        nested_name_lists=["themes"],
     ),
     "arc": EntityTypeConfig(
         top_level_lists=["arcs"],

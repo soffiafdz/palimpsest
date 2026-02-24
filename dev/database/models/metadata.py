@@ -4,14 +4,17 @@ metadata.py
 -----------
 Metadata models for the Palimpsest database.
 
-This module contains models for controlled vocabularies and metadata:
+This module contains models for controlled vocabularies and per-entry
+instance metadata:
 
 Models:
     - Motif: Controlled vocabulary of 26 motifs
     - MotifInstance: Motif as it appears in a specific entry
+    - ThemeInstance: Theme as it appears in a specific entry
 
 Motifs are recurring thematic patterns with a fixed vocabulary.
-Each entry can have multiple motif instances with entry-specific descriptions.
+Themes are free-form named patterns with per-entry descriptions.
+Each entry can have multiple motif/theme instances with descriptions.
 
 Controlled Vocabulary (26 Motifs):
     The Anchor, The Bed, The Body, The Bottle, The Cavalry, The Chaser,
@@ -171,3 +174,64 @@ class MotifInstance(Base):
 
     def __str__(self) -> str:
         return f"{self.motif_name}: {self.description_preview}"
+
+
+class ThemeInstance(Base):
+    """
+    Theme as it appears in a specific entry.
+
+    Tracks how a free-form theme manifests in a particular journal entry
+    with an entry-specific description. Themes are the middle ground
+    between tags (keyword-only) and motifs (controlled vocabulary):
+    free-form names with per-entry descriptions.
+
+    Attributes:
+        id: Primary key
+        description: Entry-specific description of how the theme appears
+        theme_id: Foreign key to Theme
+        entry_id: Foreign key to Entry
+
+    Relationships:
+        theme: Many-to-one with Theme
+        entry: Many-to-one with Entry
+    """
+
+    __tablename__ = "theme_instances"
+    __table_args__ = (
+        CheckConstraint("description != ''", name="ck_theme_instance_non_empty_desc"),
+        UniqueConstraint("theme_id", "entry_id", name="uq_theme_instance_theme_entry"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # --- Foreign keys ---
+    theme_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("themes.id", ondelete="CASCADE"), nullable=False
+    )
+    entry_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("entries.id", ondelete="CASCADE"), nullable=False
+    )
+
+    # --- Relationships ---
+    theme: Mapped["Theme"] = relationship("Theme", back_populates="instances")
+    entry: Mapped["Entry"] = relationship("Entry", back_populates="theme_instances")
+
+    # --- Computed properties ---
+    @property
+    def theme_name(self) -> str:
+        """Get the name of the theme."""
+        return self.theme.name if self.theme else ""
+
+    @property
+    def description_preview(self) -> str:
+        """Get truncated description for display (max 100 chars)."""
+        if len(self.description) <= 100:
+            return self.description
+        return f"{self.description[:97]}..."
+
+    def __repr__(self) -> str:
+        return f"<ThemeInstance(id={self.id}, theme_id={self.theme_id}, entry_id={self.entry_id})>"
+
+    def __str__(self) -> str:
+        return f"{self.theme_name}: {self.description_preview}"

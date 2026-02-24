@@ -614,7 +614,7 @@ class PalimpsestDB:
                 "tags": (Tag, "entries"),
                 "locations": (Location, "entries"),
                 "scenes": (Scene, "entry"),
-                "themes": (Theme, "entries"),
+                "themes": (Theme, "instances"),
                 "references": (Reference, "entry"),
                 "poem_versions": (PoemVersion, "entry"),
             }

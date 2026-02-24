@@ -138,11 +138,17 @@ def tag_loneliness(db_session, entry_nov8):
 
 @pytest.fixture
 def theme_identity(db_session, entry_nov8):
-    """Create a theme linked to entry."""
+    """Create a theme linked to entry via ThemeInstance."""
+    from dev.database.models import ThemeInstance
+
     theme = Theme(name="identity")
     db_session.add(theme)
     db_session.flush()
-    entry_nov8.themes.append(theme)
+    ti = ThemeInstance(
+        theme_id=theme.id, entry_id=entry_nov8.id,
+        description="Exploring identity through daily encounters.",
+    )
+    db_session.add(ti)
     db_session.flush()
     return theme
 
@@ -370,10 +376,11 @@ class TestBuildEntryContext:
     def test_tags_and_themes(
         self, builder, entry_nov8, tag_loneliness, theme_identity
     ):
-        """Tags and themes as simple name lists."""
+        """Tags as name lists, themes as dicts with name and description."""
         ctx = builder.build_entry_context(entry_nov8)
         assert "loneliness" in ctx["tags"]
-        assert "identity" in ctx["themes"]
+        theme_names = [t["name"] for t in ctx["themes"]]
+        assert "identity" in theme_names
 
     def test_references(self, builder, entry_nov8, reference, ref_source):
         """References include source title and mode."""
@@ -662,10 +669,12 @@ class TestBuildThemeContext:
     """Tests for build_theme_context."""
 
     def test_minimal_theme(self, builder, theme_identity, entry_nov8):
-        """Theme with few entries gets minimal tier."""
+        """Theme with few entries includes instance data."""
         ctx = builder.build_theme_context(theme_identity)
         assert ctx["name"] == "identity"
-        assert ctx["tier"] == "minimal"
+        assert ctx["instance_count"] == 1
+        assert len(ctx["instances"]) == 1
+        assert ctx["instances"][0]["description"] == "Exploring identity through daily encounters."
 
 
 # ==================== Poem Context ====================

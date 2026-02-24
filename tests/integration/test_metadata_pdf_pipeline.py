@@ -52,7 +52,8 @@ arcs:
 tags:
   - Introspection
 themes:
-  - Loneliness
+  - name: Loneliness
+    description: The weight of empty rooms.
 scenes:
   - name: Morning Walk
     description: Through the park
@@ -79,7 +80,8 @@ arcs:
 tags:
   - City
 themes:
-  - Hope
+  - name: Hope
+    description: A glimmer of possibility.
 scenes:
   - name: Café Meeting
     description: Discussion over coffee

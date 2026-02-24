@@ -16,7 +16,7 @@
 
 **Themes:**
 {% for t in themes %}
-- {{ t | wikilink }}
+- {{ t.name | wikilink }}
 {% endfor %}
 {% endif %}
 {% if tags %}

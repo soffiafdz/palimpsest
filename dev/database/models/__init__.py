@@ -32,7 +32,7 @@ Journal Domain - Creative:
     - creative: ReferenceSource, Reference, Poem, PoemVersion
 
 Journal Domain - Metadata:
-    - metadata: Motif, MotifInstance
+    - metadata: Motif, MotifInstance, ThemeInstance
 
 Manuscript Domain:
     - manuscript: Part, Chapter, Character, PersonCharacterMap,
@@ -67,7 +67,6 @@ from .associations import (
     entry_locations,
     entry_people,
     entry_tags,
-    entry_themes,
     event_entries,
     event_scenes,
     scene_locations,
@@ -92,7 +91,7 @@ from .analysis import Arc, Event, Scene, SceneDate, Thread
 from .creative import Poem, PoemVersion, Reference, ReferenceSource
 
 # --- Metadata models ---
-from .metadata import CONTROLLED_MOTIFS, Motif, MotifInstance
+from .metadata import CONTROLLED_MOTIFS, Motif, MotifInstance, ThemeInstance
 
 # --- Manuscript models ---
 from .manuscript import (
@@ -128,7 +127,6 @@ __all__ = [
     "entry_locations",
     "entry_people",
     "entry_tags",
-    "entry_themes",
     "event_entries",
     "event_scenes",
     "scene_locations",
@@ -162,6 +160,7 @@ __all__ = [
     "CONTROLLED_MOTIFS",
     "Motif",
     "MotifInstance",
+    "ThemeInstance",
     # Manuscript
     "Chapter",
     "Character",

@@ -60,6 +60,13 @@ if TYPE_CHECKING:
 # =============================================================================
 
 
+class ThemeSpec(TypedDict, total=False):
+    """Type specification for theme metadata."""
+
+    name: str
+    description: str
+
+
 class MotifSpec(TypedDict, total=False):
     """Type specification for motif metadata."""
 
@@ -235,9 +242,9 @@ class MetadataEntry:
     # Controlled vocabulary
     arcs: List[str] = field(default_factory=list)
     tags: List[str] = field(default_factory=list)
-    themes: List[str] = field(default_factory=list)
 
     # Complex fields
+    themes: List[ThemeSpec] = field(default_factory=list)
     motifs: List[MotifSpec] = field(default_factory=list)
     scenes: List[SceneSpec] = field(default_factory=list)
     events: List[EventSpec] = field(default_factory=list)
@@ -334,7 +341,7 @@ class MetadataEntry:
             rating_justification=data.get("rating_justification", "") or "",
             arcs=cls._parse_string_list(data.get("arcs")),
             tags=cls._parse_string_list(data.get("tags")),
-            themes=cls._parse_string_list(data.get("themes")),
+            themes=cls._parse_themes(data.get("themes")),
             motifs=cls._parse_motifs(data.get("motifs")),
             scenes=cls._parse_scenes(data.get("scenes")),
             events=cls._parse_events(data.get("events")),
@@ -369,6 +376,36 @@ class MetadataEntry:
         if isinstance(value, list):
             return [str(item) for item in value if item is not None]
         return []
+
+    @staticmethod
+    def _parse_themes(value: Any) -> List[ThemeSpec]:
+        """
+        Parse themes list.
+
+        Accepts both new format (list of dicts with name/description)
+        and legacy format (list of strings, stored without description).
+
+        Args:
+            value: Raw YAML value for themes field
+
+        Returns:
+            List of ThemeSpec dicts with name and description
+        """
+        if not value or not isinstance(value, list):
+            return []
+
+        themes = []
+        for item in value:
+            if isinstance(item, dict):
+                theme: ThemeSpec = {
+                    "name": item.get("name", ""),
+                    "description": item.get("description", ""),
+                }
+                if theme["name"]:
+                    themes.append(theme)
+            elif isinstance(item, str) and item.strip():
+                themes.append({"name": item.strip(), "description": ""})
+        return themes
 
     @staticmethod
     def _parse_motifs(value: Any) -> List[MotifSpec]:

@@ -135,13 +135,15 @@ class TestListMerge:
         assert len(report.entry_changes) == 0
 
     def test_theme_rename(self, renamer, journal_dir):
-        """Theme rename works on themes list."""
+        """Theme rename works on themes list of dicts."""
         entry_path = journal_dir / "2022" / "2022-01-04.yaml"
         write_yaml(entry_path, """\
             date: 2022-01-04
             themes:
-              - Loneliness
-              - Desire
+              - name: Loneliness
+                description: The weight of empty rooms.
+              - name: Desire
+                description: Wanting what cannot be named.
         """)
 
         report = renamer.rename(
@@ -149,8 +151,9 @@ class TestListMerge:
         )
 
         data = read_yaml(entry_path)
-        assert "Solitude" in data["themes"]
-        assert "Loneliness" not in data["themes"]
+        theme_names = [t["name"] for t in data["themes"]]
+        assert "Solitude" in theme_names
+        assert "Loneliness" not in theme_names
 
     def test_arc_rename_in_entry(self, renamer, journal_dir):
         """Arc rename works on arcs list in entry."""

@@ -97,12 +97,20 @@ def populated_db(db_session):
     entry.tags.append(tag)
     entry2.tags.append(tag)
 
-    # Theme
+    # Theme (via ThemeInstance)
+    from dev.database.models import ThemeInstance
+
     theme = Theme(name="identity")
     db_session.add(theme)
     db_session.flush()
-    entry.themes.append(theme)
-    entry2.themes.append(theme)
+    db_session.add(ThemeInstance(
+        theme_id=theme.id, entry_id=entry.id,
+        description="Exploring identity in conversation.",
+    ))
+    db_session.add(ThemeInstance(
+        theme_id=theme.id, entry_id=entry2.id,
+        description="Identity through writing.",
+    ))
 
     # Scene
     scene = Scene(

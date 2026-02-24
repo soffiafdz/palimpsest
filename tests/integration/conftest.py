@@ -212,11 +212,20 @@ def populated_wiki_db(db_session):
     db_session.add_all(themes)
     db_session.flush()
 
-    entry1.themes.extend([theme_identity, theme_distance])
-    entry2.themes.extend([theme_identity])
-    entry3.themes.extend([theme_memory, theme_distance])
-    entry4.themes.extend([theme_memory])
-    entry5.themes.extend([theme_identity, theme_memory])
+    # Theme instances (ThemeInstance with descriptions)
+    from dev.database.models import ThemeInstance
+
+    theme_instances = [
+        ThemeInstance(theme_id=theme_identity.id, entry_id=entry1.id, description="Exploring who she is through encounters."),
+        ThemeInstance(theme_id=theme_distance.id, entry_id=entry1.id, description="The gap between closeness and solitude."),
+        ThemeInstance(theme_id=theme_identity.id, entry_id=entry2.id, description="Writing as self-definition."),
+        ThemeInstance(theme_id=theme_memory.id, entry_id=entry3.id, description="The park triggers old memories."),
+        ThemeInstance(theme_id=theme_distance.id, entry_id=entry3.id, description="Walking away from what was familiar."),
+        ThemeInstance(theme_id=theme_memory.id, entry_id=entry4.id, description="Therapy session revisiting the past."),
+        ThemeInstance(theme_id=theme_identity.id, entry_id=entry5.id, description="A chance meeting redefines boundaries."),
+        ThemeInstance(theme_id=theme_memory.id, entry_id=entry5.id, description="The library as archive of selves."),
+    ]
+    db_session.add_all(theme_instances)
 
     # ---- Scenes ----
     scene1 = Scene(

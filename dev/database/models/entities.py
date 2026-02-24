@@ -36,7 +36,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .associations import (
     entry_people,
     entry_tags,
-    entry_themes,
     scene_people,
     thread_people,
 )
@@ -47,6 +46,7 @@ if TYPE_CHECKING:
     from .analysis import Scene, Thread
     from .core import Entry
     from .manuscript import PersonCharacterMap
+    from .metadata import ThemeInstance
 
 
 class Person(Base, SoftDeleteMixin):
@@ -335,15 +335,16 @@ class Theme(Base):
     """
     Thematic element across entries.
 
-    Themes represent recurring thematic patterns or concepts
-    that span multiple journal entries.
+    Themes represent recurring thematic patterns or concepts that span
+    multiple journal entries. Each theme instance carries a per-entry
+    description explaining how the theme manifests in that entry.
 
     Attributes:
         id: Primary key
         name: Theme name (unique)
 
     Relationships:
-        entries: M2M with Entry (entries containing this theme)
+        instances: O2M with ThemeInstance (occurrences in entries)
     """
 
     __tablename__ = "themes"
@@ -355,15 +356,25 @@ class Theme(Base):
     )
 
     # --- Relationships ---
-    entries: Mapped[List["Entry"]] = relationship(
-        "Entry", secondary=entry_themes, back_populates="themes"
+    instances: Mapped[List["ThemeInstance"]] = relationship(
+        "ThemeInstance", back_populates="theme", cascade="all, delete-orphan"
     )
 
     # --- Computed properties ---
     @property
+    def entries(self) -> List["Entry"]:
+        """Get all entries with this theme."""
+        return [i.entry for i in self.instances if i.entry]
+
+    @property
+    def instance_count(self) -> int:
+        """Number of entries with this theme."""
+        return len(self.instances)
+
+    @property
     def usage_count(self) -> int:
         """Number of entries with this theme."""
-        return len(self.entries)
+        return len(self.instances)
 
     @property
     def first_used(self) -> Optional[date]:

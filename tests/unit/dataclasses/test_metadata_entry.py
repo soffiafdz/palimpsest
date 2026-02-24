@@ -57,8 +57,10 @@ tags:
   - alcohol
 
 themes:
-  - Cyclical Behavior
-  - Self-Medication
+  - name: Cyclical Behavior
+    description: The repeating pattern of crisis and recovery.
+  - name: Self-Medication
+    description: Breaking sobriety as coping mechanism.
 
 motifs:
   - name: The Spiral
@@ -185,9 +187,10 @@ class TestMetadataEntryConstruction:
         assert len(entry.tags) == 3
         assert "depression" in entry.tags
 
-        # Themes
+        # Themes (parsed as list of dicts from legacy string format)
         assert len(entry.themes) == 2
-        assert "Self-Medication" in entry.themes
+        theme_names = [t["name"] for t in entry.themes]
+        assert "Self-Medication" in theme_names
 
         # Motifs
         assert len(entry.motifs) == 2

@@ -47,7 +47,6 @@ from .associations import (
     entry_locations,
     entry_people,
     entry_tags,
-    entry_themes,
     event_entries,
 )
 from .base import Base, SoftDeleteMixin
@@ -55,9 +54,9 @@ from .base import Base, SoftDeleteMixin
 if TYPE_CHECKING:
     from .analysis import Arc, Event, Scene, Thread
     from .creative import PoemVersion, Reference
-    from .entities import Person, Tag, Theme
+    from .entities import Person, Tag
     from .geography import City, Location
-    from .metadata import MotifInstance
+    from .metadata import MotifInstance, ThemeInstance
 
 
 class SchemaInfo(Base):
@@ -120,7 +119,6 @@ class Entry(Base, SoftDeleteMixin):
         locations: M2M with Location (specific venues mentioned)
         people: M2M with Person (people mentioned)
         tags: M2M with Tag (keyword tags)
-        themes: M2M with Theme (thematic elements)
         arcs: M2M with Arc (story arcs this entry belongs to)
         scenes: One-to-many with Scene (granular narrative moments)
         events: One-to-many with Event (scene groupings)
@@ -178,9 +176,6 @@ class Entry(Base, SoftDeleteMixin):
     tags: Mapped[List["Tag"]] = relationship(
         "Tag", secondary=entry_tags, back_populates="entries"
     )
-    themes: Mapped[List["Theme"]] = relationship(
-        "Theme", secondary=entry_themes, back_populates="entries"
-    )
     arcs: Mapped[List["Arc"]] = relationship(
         "Arc", secondary=arc_entries, back_populates="entries"
     )
@@ -207,9 +202,12 @@ class Entry(Base, SoftDeleteMixin):
         "PoemVersion", back_populates="entry", cascade="all, delete-orphan"
     )
 
-    # --- One-to-many Relationships (motifs) ---
+    # --- One-to-many Relationships (metadata instances) ---
     motif_instances: Mapped[List["MotifInstance"]] = relationship(
         "MotifInstance", back_populates="entry", cascade="all, delete-orphan"
+    )
+    theme_instances: Mapped[List["ThemeInstance"]] = relationship(
+        "ThemeInstance", back_populates="entry", cascade="all, delete-orphan"
     )
 
     # --- Computed properties ---

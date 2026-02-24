@@ -583,7 +583,8 @@ def format_entry_metadata(entry: MetadataEntry) -> str:
             lines.append("```")
             lines.append("")
             for theme in entry.themes:
-                lines.append(f"• {escape_latex(theme)}")
+                theme_name = theme.get("name", "") if isinstance(theme, dict) else str(theme)
+                lines.append(f"• {escape_latex(theme_name)}")
                 lines.append("")
 
         # Tags in same column as themes

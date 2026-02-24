@@ -24,8 +24,8 @@ Journal Domain - Analysis:
 
 Journal Domain - Metadata:
     - entry_tags: Entries ↔ Tags
-    - entry_themes: Entries ↔ Themes
     - motif_instances: Motifs → Entries (with description)
+    - theme_instances: Themes → Entries (with description)
 
 Manuscript Domain:
     - chapter_poems: Chapters ↔ Poems
@@ -238,23 +238,6 @@ entry_tags = Table(
         "tag_id",
         Integer,
         ForeignKey("tags.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-)
-
-entry_themes = Table(
-    "entry_themes",
-    Base.metadata,
-    Column(
-        "entry_id",
-        Integer,
-        ForeignKey("entries.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "theme_id",
-        Integer,
-        ForeignKey("themes.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
