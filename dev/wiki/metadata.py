@@ -1246,11 +1246,11 @@ class MetadataImporter:
         self, session: Session, data: Dict[str, Any]
     ) -> None:
         """
-        Update a chapter entity from YAML data.
+        Import a chapter entity from YAML data, creating if it doesn't exist.
 
         Args:
             session: SQLAlchemy session
-            data: Chapter data dict
+            data: Chapter data dict with title, type, status, number
         """
         title = data.get("title")
         if not title:
@@ -1260,7 +1260,9 @@ class MetadataImporter:
             Chapter.title == title
         ).first()
         if not chapter:
-            return
+            chapter = Chapter(title=title)
+            session.add(chapter)
+            session.flush()
 
         if "type" in data:
             chapter.type = ChapterType(data["type"])
@@ -1273,11 +1275,11 @@ class MetadataImporter:
         self, session: Session, data: Dict[str, Any]
     ) -> None:
         """
-        Update a character entity from YAML data.
+        Import a character entity from YAML data, creating if it doesn't exist.
 
         Args:
             session: SQLAlchemy session
-            data: Character data dict
+            data: Character data dict with name, role, is_narrator, description
         """
         name = data.get("name")
         if not name:
@@ -1287,7 +1289,9 @@ class MetadataImporter:
             Character.name == name
         ).first()
         if not character:
-            return
+            character = Character(name=name)
+            session.add(character)
+            session.flush()
 
         if "role" in data:
             character.role = data["role"]
@@ -1300,11 +1304,11 @@ class MetadataImporter:
         self, session: Session, data: Dict[str, Any]
     ) -> None:
         """
-        Update a manuscript scene entity from YAML data.
+        Import a manuscript scene entity from YAML data, creating if it doesn't exist.
 
         Args:
             session: SQLAlchemy session
-            data: Scene data dict
+            data: Scene data dict with name, origin, status, description, chapter
         """
         name = data.get("name")
         if not name:
@@ -1314,7 +1318,9 @@ class MetadataImporter:
             ManuscriptScene.name == name
         ).first()
         if not ms_scene:
-            return
+            ms_scene = ManuscriptScene(name=name)
+            session.add(ms_scene)
+            session.flush()
 
         if "origin" in data:
             ms_scene.origin = SceneOrigin(data["origin"])

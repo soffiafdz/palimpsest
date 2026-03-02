@@ -482,6 +482,93 @@ class TestMetadataImporter:
             assert chapter.type == ChapterType.VIGNETTE
             assert chapter.status == ChapterStatus.REVISED
 
+    def test_import_chapter_creates_new(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import creates a new chapter when title doesn't exist in DB."""
+        chapter_dir = metadata_output / "manuscript" / "chapters"
+        chapter_dir.mkdir(parents=True)
+        new_file = chapter_dir / "new-chapter.yaml"
+        new_file.write_text(yaml.dump({
+            "title": "A New Dawn",
+            "type": "vignette",
+            "status": "draft",
+            "number": 5,
+        }))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(new_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "A New Dawn"
+            ).first()
+            assert chapter is not None
+            assert chapter.type == ChapterType.VIGNETTE
+            assert chapter.status == ChapterStatus.DRAFT
+            assert chapter.number == 5
+
+    def test_import_character_creates_new(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import creates a new character when name doesn't exist in DB."""
+        char_dir = metadata_output / "manuscript" / "characters"
+        char_dir.mkdir(parents=True)
+        new_file = char_dir / "new-character.yaml"
+        new_file.write_text(yaml.dump({
+            "name": "Lena",
+            "role": "Deuteragonist",
+            "is_narrator": False,
+            "description": "Quiet and deliberate.",
+        }))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(new_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            character = session.query(Character).filter(
+                Character.name == "Lena"
+            ).first()
+            assert character is not None
+            assert character.role == "Deuteragonist"
+            assert character.is_narrator is False
+            assert character.description == "Quiet and deliberate."
+
+    def test_import_scene_creates_new(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import creates a new scene with chapter FK when name doesn't exist."""
+        scene_dir = metadata_output / "manuscript" / "scenes"
+        scene_dir.mkdir(parents=True)
+        new_file = scene_dir / "new-scene.yaml"
+        new_file.write_text(yaml.dump({
+            "name": "The Morning After",
+            "origin": "journaled",
+            "status": "fragment",
+            "description": "A slow morning unfolds.",
+            "chapter": "Espresso and Silence",
+        }))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(new_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            scene = session.query(ManuscriptScene).filter(
+                ManuscriptScene.name == "The Morning After"
+            ).first()
+            assert scene is not None
+            assert scene.origin == SceneOrigin.JOURNALED
+            assert scene.status == SceneStatus.FRAGMENT
+            assert scene.description == "A slow morning unfolds."
+            # Verify chapter FK
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            assert scene.chapter_id == chapter.id
+
     def test_import_invalid_file_returns_diagnostics(
         self, test_db, tmp_path
     ):
