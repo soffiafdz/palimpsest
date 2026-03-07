@@ -569,6 +569,123 @@ class TestMetadataImporter:
             ).first()
             assert scene.chapter_id == chapter.id
 
+    def test_import_character_based_on(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import updates character based_on PersonCharacterMap records."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="characters")
+
+        # Modify YAML to change contribution and add a second person
+        char_file = list(
+            (metadata_output / "manuscript" / "characters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(char_file.read_text())
+        data["based_on"] = [
+            {"person": "Sofia Fernandez", "contribution": "composite"},
+            {"person": "Clara Dupont", "contribution": "inspiration"},
+        ]
+        char_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(char_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            character = session.query(Character).filter(
+                Character.name == "Valeria"
+            ).first()
+            mappings = session.query(PersonCharacterMap).filter(
+                PersonCharacterMap.character_id == character.id
+            ).all()
+            assert len(mappings) == 2
+            contrib_map = {m.person_id: m.contribution for m in mappings}
+            sofia = session.query(Person).filter(
+                Person.slug == "sofia_fernandez"
+            ).first()
+            clara = session.query(Person).filter(
+                Person.slug == "clara_dupont"
+            ).first()
+            assert contrib_map[sofia.id] == ContributionType.COMPOSITE
+            assert contrib_map[clara.id] == ContributionType.INSPIRATION
+
+    def test_import_character_based_on_removes_old(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import removes PersonCharacterMap entries not in YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="characters")
+
+        # Remove all based_on entries
+        char_file = list(
+            (metadata_output / "manuscript" / "characters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(char_file.read_text())
+        data["based_on"] = []
+        char_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(char_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            character = session.query(Character).filter(
+                Character.name == "Valeria"
+            ).first()
+            mappings = session.query(PersonCharacterMap).filter(
+                PersonCharacterMap.character_id == character.id
+            ).all()
+            assert len(mappings) == 0
+
+    def test_import_chapter_part(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import updates chapter part_id from part display_name."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        # Verify the exported chapter has a part
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        assert data["part"] is not None
+
+        # Import unchanged (part should stay)
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(chapter_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            assert chapter.part_id is not None
+
+    def test_import_chapter_clear_part(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import clears chapter part_id when part is null."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        data["part"] = None
+        chapter_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(chapter_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            assert chapter.part_id is None
+
     def test_import_invalid_file_returns_diagnostics(
         self, test_db, tmp_path
     ):

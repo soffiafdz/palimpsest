@@ -33,6 +33,7 @@ from sqlalchemy.orm import Session
 
 # --- Local imports ---
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from dev.core.paths import JOURNAL_DIR
 
 
 class SearchIndexManager:
@@ -96,7 +97,7 @@ class SearchIndexManager:
                 body_text = ""
                 if entry.file_path:
                     try:
-                        file_path = Path(entry.file_path)
+                        file_path = JOURNAL_DIR / entry.file_path
                         if file_path.exists():
                             # Read markdown content
                             content = file_path.read_text(encoding='utf-8')

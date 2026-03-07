@@ -95,6 +95,7 @@ from sqlalchemy.orm import Session
 # --- Local imports ---
 from dev.core.exceptions import HealthCheckError
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
+from dev.core.paths import JOURNAL_DIR
 from .decorators import DatabaseOperation
 from .query_optimizer import QueryOptimizer
 
@@ -407,7 +408,7 @@ class HealthMonitor:
         file_checks["total_checked"] = len(entries)
 
         for entry in entries:
-            if entry.file_path and not Path(entry.file_path).exists():
+            if entry.file_path and not (JOURNAL_DIR / entry.file_path).exists():
                 file_checks["missing_files"].append(
                     {
                         "entry_id": entry.id,

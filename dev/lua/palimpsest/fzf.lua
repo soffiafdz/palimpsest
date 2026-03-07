@@ -137,8 +137,34 @@ function M.search(entity_type)
 		return
 	end
 
+	-- Multi-directory case
 	if type(search_path) == "table" then
-		search_path = search_path[1]
+		local valid_dirs = {}
+		for _, dir in ipairs(search_path) do
+			if vim.fn.isdirectory(dir) == 1 then
+				table.insert(valid_dirs, dir)
+			end
+		end
+		if #valid_dirs == 0 then
+			vim.notify("No search directories found", vim.log.levels.ERROR)
+			return
+		end
+
+		if backend == "fzf" then
+			local shellescape_dirs = {}
+			for _, dir in ipairs(valid_dirs) do
+				table.insert(shellescape_dirs, vim.fn.shellescape(dir))
+			end
+			picker.live_grep({
+				prompt = "Search " .. entity_type .. "> ",
+				cmd = "rg --column --line-number --no-heading --color=always --smart-case -- {q} "
+					.. table.concat(shellescape_dirs, " "),
+				winopts = { height = 0.85, width = 0.80 },
+			})
+		else
+			picker.grep({ title = "Search " .. entity_type, dirs = valid_dirs })
+		end
+		return
 	end
 
 	if vim.fn.isdirectory(search_path) == 0 then

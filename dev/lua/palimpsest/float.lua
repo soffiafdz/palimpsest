@@ -38,11 +38,10 @@ function M.open(filepath, opts)
 	local col = math.floor((vim.o.columns - width) / 2)
 	local row = math.floor((vim.o.lines - height) / 2)
 
-	-- Create buffer and load file
-	local buf = vim.api.nvim_create_buf(false, false)
-	vim.api.nvim_buf_call(buf, function()
-		vim.cmd("edit " .. vim.fn.fnameescape(filepath))
-	end)
+	-- Create a scratch buffer for the float, then load the file into it.
+	-- Using :edit inside nvim_buf_call would create a second buffer and
+	-- orphan the scratch one, so we open the window first and :edit there.
+	local buf = vim.api.nvim_create_buf(false, true)
 
 	-- Open floating window
 	local win = vim.api.nvim_open_win(buf, true, {
@@ -56,6 +55,18 @@ function M.open(filepath, opts)
 		title = opts.title,
 		title_pos = opts.title_pos,
 	})
+
+	-- Load the file into the floating window; :edit replaces the scratch
+	-- buffer with a proper file buffer, so update buf to the actual one.
+	vim.cmd("edit " .. vim.fn.fnameescape(filepath))
+	local file_buf = vim.api.nvim_get_current_buf()
+	if file_buf ~= buf then
+		-- The scratch buffer is now orphaned; wipe it
+		if vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+		buf = file_buf
+	end
 
 	-- Set window-local options
 	vim.api.nvim_set_option_value("winblend", 0, { win = win })

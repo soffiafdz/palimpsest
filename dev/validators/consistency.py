@@ -37,6 +37,7 @@ import yaml
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Entry
+from dev.core.paths import JOURNAL_DIR
 from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 
@@ -161,7 +162,7 @@ class ConsistencyValidator:
         with self.db.session_scope() as session:
             for entry in session.query(Entry).all():
                 if entry.file_path:
-                    file_path = Path(entry.file_path)
+                    file_path = JOURNAL_DIR / entry.file_path
                     if not file_path.exists():
                         issue = ConsistencyIssue(
                             check_type="existence",
@@ -193,12 +194,12 @@ class ConsistencyValidator:
 
         with self.db.session_scope() as session:
             for entry_db in session.query(Entry).all():
-                if not entry_db.file_path or not Path(entry_db.file_path).exists():
+                if not entry_db.file_path or not (JOURNAL_DIR / entry_db.file_path).exists():
                     continue
 
                 try:
                     # Parse frontmatter directly from MD file
-                    content = Path(entry_db.file_path).read_text(encoding="utf-8")
+                    content = (JOURNAL_DIR / entry_db.file_path).read_text(encoding="utf-8")
                     if not content.startswith("---"):
                         continue
                     parts = content.split("---", 2)
@@ -340,7 +341,7 @@ class ConsistencyValidator:
                 if not entry.file_path:
                     continue
 
-                file_path = Path(entry.file_path)
+                file_path = JOURNAL_DIR / entry.file_path
                 if not file_path.exists():
                     # Already caught by existence check
                     continue

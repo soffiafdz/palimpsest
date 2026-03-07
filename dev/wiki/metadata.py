@@ -45,9 +45,9 @@ Dependencies:
 from __future__ import annotations
 
 # --- Standard library imports ---
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any, Dict, List, Optional
 
 # --- Third-party imports ---
 import yaml
@@ -81,6 +81,7 @@ from dev.database.models.manuscript import (
     Character,
     ManuscriptScene,
     Part,
+    PersonCharacterMap,
 )
 from dev.utils.slugify import slugify
 from dev.wiki.validator import Diagnostic
@@ -147,6 +148,11 @@ class MetadataSchema:
         FieldSpec("description", str),
     ]
 
+    PART_FIELDS: List[FieldSpec] = [
+        FieldSpec("number", int),
+        FieldSpec("title", str),
+    ]
+
     CHAPTER_FIELDS: List[FieldSpec] = [
         FieldSpec("title", str, required=True),
         FieldSpec("number", int),
@@ -195,6 +201,7 @@ class MetadataSchema:
             "locations": cls.LOCATION_FIELDS,
             "cities": cls.CITY_FIELDS,
             "arcs": cls.ARC_FIELDS,
+            "parts": cls.PART_FIELDS,
             "chapters": cls.CHAPTER_FIELDS,
             "characters": cls.CHARACTER_FIELDS,
             "scenes": cls.SCENE_FIELDS,
@@ -598,14 +605,13 @@ class MetadataExporter:
                 _export(sess)
 
     def list_entities(
-        self, entity_type: str, format: str = "names"
+        self, entity_type: str
     ) -> List[str]:
         """
         List entity names for autocomplete support.
 
         Args:
             entity_type: Entity type key
-            format: Output format ("names" or "json")
 
         Returns:
             List of entity names/titles
@@ -976,7 +982,7 @@ class MetadataValidator:
         elif "/scenes/" in path_str:
             return "scenes"
         elif path_str.endswith("parts.yaml"):
-            return "chapters"  # Parts use similar schema
+            return "parts"
         elif path_str.endswith("neighborhoods.yaml"):
             return "neighborhoods"
         elif path_str.endswith("relation_types.yaml"):
@@ -1270,6 +1276,21 @@ class MetadataImporter:
             chapter.status = ChapterStatus(data["status"])
         if "number" in data:
             chapter.number = data["number"]
+        if "part" in data:
+            if data["part"]:
+                part = session.query(Part).filter(
+                    Part.title == data["part"]
+                ).first()
+                if not part:
+                    # Try matching display_name format "Part N: Title"
+                    for p in session.query(Part).all():
+                        if p.display_name == data["part"]:
+                            part = p
+                            break
+                if part:
+                    chapter.part_id = part.id
+            else:
+                chapter.part_id = None
 
     def _import_character(
         self, session: Session, data: Dict[str, Any]
@@ -1299,6 +1320,43 @@ class MetadataImporter:
             character.is_narrator = data["is_narrator"]
         if "description" in data:
             character.description = data["description"]
+        if "based_on" in data and isinstance(data["based_on"], list):
+            # Collect desired person_id -> contribution mappings
+            desired_mappings: Dict[int, ContributionType] = {}
+            for entry in data["based_on"]:
+                person_name = entry.get("person", "")
+                contribution_str = entry.get("contribution", "primary")
+                # Look up person by display_name (name + lastname or just name)
+                person = None
+                for p in session.query(Person).all():
+                    if p.display_name == person_name:
+                        person = p
+                        break
+                if person:
+                    desired_mappings[person.id] = ContributionType(
+                        contribution_str
+                    )
+
+            # Update existing mappings and add new ones
+            existing = session.query(PersonCharacterMap).filter(
+                PersonCharacterMap.character_id == character.id
+            ).all()
+            existing_person_ids = set()
+            for mapping in existing:
+                existing_person_ids.add(mapping.person_id)
+                if mapping.person_id in desired_mappings:
+                    mapping.contribution = desired_mappings[mapping.person_id]
+                else:
+                    session.delete(mapping)
+
+            for person_id, contribution in desired_mappings.items():
+                if person_id not in existing_person_ids:
+                    session.add(PersonCharacterMap(
+                        person_id=person_id,
+                        character_id=character.id,
+                        contribution=contribution,
+                    ))
+            session.flush()
 
     def _import_scene(
         self, session: Session, data: Dict[str, Any]

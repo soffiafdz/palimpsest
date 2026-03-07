@@ -11,6 +11,28 @@ local float = require("palimpsest.float")
 local cache = require("palimpsest.cache")
 local get_project_root = require("palimpsest.utils").get_project_root
 
+--- Strip accents from UTF-8 text, replacing with ASCII base characters.
+---
+--- @param text string UTF-8 input
+--- @return string ASCII-normalized text
+local function strip_accents(text)
+	local map = {
+		a = "àáâãäåÀÁÂÃÄÅ",
+		e = "èéêëÈÉÊË",
+		i = "ìíîïÌÍÎÏ",
+		o = "òóôõöÒÓÔÕÖ",
+		u = "ùúûüÙÚÛÜ",
+		n = "ñÑ",
+		c = "çÇ",
+	}
+	for plain, accented in pairs(map) do
+		for char in accented:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+			text = text:gsub(char, plain)
+		end
+	end
+	return text
+end
+
 -- Map entity type to YAML directory relative to data/metadata/
 local YAML_PATHS = {
 	person = "people",
@@ -164,23 +186,23 @@ function M.new(entity_type)
 			return
 		end
 
-		-- Generate slug from name
-		local slug = name:lower():gsub("%s+", "-"):gsub("[^%w%-]", "")
+		-- Generate slug: normalize accents, then ASCII-safe
+		local slug = strip_accents(name):lower():gsub("%s+", "-"):gsub("[^%w%-]", ""):gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
 
-		-- Determine file path
-		local dir_map = {
-			people = "people",
-			chapters = "manuscript/chapters",
-			characters = "manuscript/characters",
-			scenes = "manuscript/scenes",
+		-- Determine file path (reuse YAML_PATHS with plural→singular key mapping)
+		local type_to_path = {
+			people = YAML_PATHS.person,
+			chapters = YAML_PATHS.chapter,
+			characters = YAML_PATHS.character,
+			scenes = YAML_PATHS.scene,
 		}
-		local dir = base .. (dir_map[entity_type] or entity_type)
+		local dir = base .. (type_to_path[entity_type] or entity_type)
 		local filepath = dir .. "/" .. slug .. ".yaml"
 
 		-- Create directory and write template
 		vim.fn.mkdir(dir, "p")
-		local content = template:gsub("^name: ", "name: " .. name, 1)
-			:gsub("^title: ", "title: " .. name, 1)
+		local content = template:gsub("name: \n", "name: " .. name .. "\n", 1)
+			:gsub("title: \n", "title: " .. name .. "\n", 1)
 		local f = io.open(filepath, "w")
 		if f then
 			f:write(content)
@@ -213,14 +235,66 @@ function M.add_source()
 				return
 			end
 
+			local ref_prompt = source_type == "entry" and "Entry date (YYYY-MM-DD): " or "Reference: "
 			vim.ui.input(
-				{ prompt = "Reference: " },
+				{ prompt = ref_prompt },
 				function(reference)
-					if not reference then
+					if not reference or reference == "" then
 						return
 					end
+
+					local yaml_path = resolve_yaml_path(ctx)
+					if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+						vim.notify("Scene YAML not found", vim.log.levels.ERROR)
+						return
+					end
+
+					-- Build source entry lines
+					local source_lines = { "  - source_type: " .. source_type }
+					if source_type == "entry" then
+						table.insert(source_lines, "    entry_date: " .. reference)
+					elseif source_type == "external" then
+						table.insert(source_lines, "    note: " .. reference)
+					else
+						table.insert(source_lines, "    reference: " .. reference)
+					end
+
+					-- Read existing YAML, append source entry
+					local lines = vim.fn.readfile(yaml_path)
+					local found_sources = false
+					for i, line in ipairs(lines) do
+						if line:match("^sources:") then
+							found_sources = true
+							if line:match("^sources: *$") or line:match("^sources: *null") then
+								lines[i] = "sources:"
+								local insert_at = i + 1
+								for _, sl in ipairs(source_lines) do
+									table.insert(lines, insert_at, sl)
+									insert_at = insert_at + 1
+								end
+							else
+								local insert_at = i + 1
+								while insert_at <= #lines and lines[insert_at]:match("^%s") do
+									insert_at = insert_at + 1
+								end
+								for j, sl in ipairs(source_lines) do
+									table.insert(lines, insert_at + j - 1, sl)
+								end
+							end
+							break
+						end
+					end
+
+					if not found_sources then
+						table.insert(lines, "sources:")
+						for _, sl in ipairs(source_lines) do
+							table.insert(lines, sl)
+						end
+					end
+
+					vim.fn.writefile(lines, yaml_path)
 					vim.notify(
-						string.format("Add source: %s — %s (manual edit needed)", source_type, reference),
+						string.format("Added source: %s — %s", source_type, reference),
 						vim.log.levels.INFO
 					)
 				end
@@ -257,8 +331,49 @@ function M.add_based_on()
 				if not contribution then
 					return
 				end
+
+				local yaml_path = resolve_yaml_path(ctx)
+				if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+					vim.notify("Character YAML not found", vim.log.levels.ERROR)
+					return
+				end
+
+				-- Read existing YAML, append based_on entry
+				local lines = vim.fn.readfile(yaml_path)
+				local new_entry = string.format("  - person: %s\n    contribution: %s", person, contribution)
+
+				-- Find existing based_on section or add one
+				local found_based_on = false
+				for i, line in ipairs(lines) do
+					if line:match("^based_on:") then
+						found_based_on = true
+						if line:match("^based_on: *$") or line:match("^based_on: *null") then
+							-- Replace null/empty with list
+							lines[i] = "based_on:"
+							table.insert(lines, i + 1, "  - person: " .. person)
+							table.insert(lines, i + 2, "    contribution: " .. contribution)
+						else
+							-- Append after last based_on entry
+							local insert_at = i + 1
+							while insert_at <= #lines and lines[insert_at]:match("^%s") do
+								insert_at = insert_at + 1
+							end
+							table.insert(lines, insert_at, "  - person: " .. person)
+							table.insert(lines, insert_at + 1, "    contribution: " .. contribution)
+						end
+						break
+					end
+				end
+
+				if not found_based_on then
+					table.insert(lines, "based_on:")
+					table.insert(lines, "  - person: " .. person)
+					table.insert(lines, "    contribution: " .. contribution)
+				end
+
+				vim.fn.writefile(lines, yaml_path)
 				vim.notify(
-					string.format("Add based_on: %s (%s) — edit YAML to apply", person, contribution),
+					string.format("Added based_on: %s (%s)", person, contribution),
 					vim.log.levels.INFO
 				)
 			end
@@ -299,12 +414,67 @@ function M.link_to_manuscript()
 		end
 
 		vim.ui.select(names, { prompt = "Select " .. entity_type .. ":" }, function(name)
-			if name then
-				vim.notify(
-					string.format("Link to %s: %s (apply via wiki sync)", entity_type, name),
-					vim.log.levels.INFO
-				)
+			if not name then
+				return
 			end
+
+			-- Get the entry date from context
+			local entry_date = ctx.slug  -- slug is YYYY-MM-DD for entries
+
+			-- Resolve the target entity's YAML path
+			local root = get_project_root()
+			local target_slug = strip_accents(name):lower():gsub("%s+", "-"):gsub("[^%w%-]", ""):gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+			local yaml_subdir = entity_type == "chapters" and "manuscript/chapters" or "manuscript/scenes"
+			local yaml_path = root .. "/data/metadata/" .. yaml_subdir .. "/" .. target_slug .. ".yaml"
+
+			if vim.fn.filereadable(yaml_path) == 0 then
+				vim.notify("YAML not found: " .. yaml_path, vim.log.levels.ERROR)
+				return
+			end
+
+			if entity_type == "scenes" then
+				-- Add entry as source to the scene YAML
+				local lines = vim.fn.readfile(yaml_path)
+				local source_lines = {
+					"  - source_type: entry",
+					"    entry_date: " .. entry_date,
+				}
+				local found_sources = false
+				for i, line in ipairs(lines) do
+					if line:match("^sources:") then
+						found_sources = true
+						if line:match("^sources: *$") or line:match("^sources: *null") then
+							lines[i] = "sources:"
+							local insert_at = i + 1
+							for _, sl in ipairs(source_lines) do
+								table.insert(lines, insert_at, sl)
+								insert_at = insert_at + 1
+							end
+						else
+							local insert_at = i + 1
+							while insert_at <= #lines and lines[insert_at]:match("^%s") do
+								insert_at = insert_at + 1
+							end
+							for j, sl in ipairs(source_lines) do
+								table.insert(lines, insert_at + j - 1, sl)
+							end
+						end
+						break
+					end
+				end
+				if not found_sources then
+					table.insert(lines, "sources:")
+					for _, sl in ipairs(source_lines) do
+						table.insert(lines, sl)
+					end
+				end
+				vim.fn.writefile(lines, yaml_path)
+			end
+
+			vim.notify(
+				string.format("Linked entry %s to %s: %s", entry_date, entity_type, name),
+				vim.log.levels.INFO
+			)
 		end)
 	end)
 end
