@@ -319,10 +319,11 @@ def source_path(entity_type: str, identifier: str) -> str:
         ``file:`` URI with absolute filesystem path, or empty string
         for unknown entity types
     """
-    # Use {{PROJECT_ROOT}} placeholder instead of absolute paths so links
+    # Use __PALIMPSEST__ placeholder instead of absolute paths so links
     # work across machines (macOS, Linux, writer deck). The palimpsest
     # nvim plugin resolves the placeholder at runtime via VimwikiLinkHandler.
-    P = "{{PROJECT_ROOT}}"
+    # Avoid curly braces — they break vimwiki's markdown link regex.
+    P = "__PALIMPSEST__"
     if entity_type == "journal_md":
         year = identifier[:4]
         return f"file:{P}/data/journal/content/md/{year}/{identifier}.md"

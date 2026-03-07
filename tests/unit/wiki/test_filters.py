@@ -273,7 +273,7 @@ class TestTimelineTable:
 class TestSourcePath:
     """Tests for source_path filter."""
 
-    P = "{{PROJECT_ROOT}}"
+    P = "__PALIMPSEST__"
 
     def test_journal_md_path(self) -> None:
         """Generates file: path with PROJECT_ROOT placeholder."""

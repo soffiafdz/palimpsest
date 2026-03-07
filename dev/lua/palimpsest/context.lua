@@ -50,6 +50,7 @@ function M.detect(filepath)
 			-- Extract slug from filename (without extension)
 			local after_pattern = filepath:sub(idx + #pat.pattern)
 			local slug = after_pattern:match("([^/]+)%.md$")
+				or after_pattern:match("([^/]+)%.yaml$")
 			return {
 				type = pat.type,
 				section = pat.section,
