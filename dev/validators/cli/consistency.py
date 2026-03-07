@@ -8,7 +8,7 @@ Check consistency between markdown files and the database.
 Detects orphaned entries, metadata mismatches, and referential integrity issues.
 
 Commands:
-    - existence: Check entry existence across MD ↔ DB
+    - existence: Check entry existence across MD <-> DB
     - metadata: Check metadata synchronization between MD and DB
     - references: Check referential integrity constraints
     - integrity: Check file hash integrity
@@ -39,6 +39,10 @@ from dev.core.paths import MD_DIR, DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 @click.option(
     "--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files"
 )
+@click.option(
+    "--format", "output_format", type=click.Choice(["text", "json"]),
+    default="text", help="Output format",
+)
 @click.pass_context
 def consistency(
     ctx: click.Context,
@@ -46,6 +50,7 @@ def consistency(
     db_path: str,
     alembic_dir: str,
     log_dir: str,
+    output_format: str,
 ) -> None:
     """
     Validate cross-system consistency.
@@ -62,6 +67,7 @@ def consistency(
     ctx.obj["alembic_dir"] = Path(alembic_dir)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["logger"] = setup_logger(Path(log_dir), "validators")
+    ctx.obj["output_format"] = output_format
 
     # Initialize database
     ctx.obj["db"] = PalimpsestDB(
@@ -73,39 +79,36 @@ def consistency(
     )
 
 
+def _print_diagnostics(ctx: click.Context, diagnostics: list, check_name: str) -> None:
+    """Print diagnostics using the configured output format."""
+    from dev.validators.diagnostic import format_diagnostics
+
+    fmt = ctx.obj.get("output_format", "text")
+    if diagnostics:
+        click.echo(format_diagnostics(diagnostics, fmt))
+    elif fmt != "json":
+        click.echo(f"✅ {check_name}: passed")
+
+
 @consistency.command()
 @click.pass_context
 def existence(ctx: click.Context) -> None:
     """
-    Check entry existence across MD ↔ DB.
+    Check entry existence across MD <-> DB.
 
     Validates that entries exist consistently across both systems.
     Detects orphaned entries and missing files.
     """
     from dev.validators.consistency import ConsistencyValidator
 
-    db = ctx.obj["db"]
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
+    validator = ConsistencyValidator(ctx.obj["db"], ctx.obj["md_dir"], ctx.obj["logger"])
+    diagnostics = validator.check_entry_existence()
 
-    click.echo("🔍 Checking entry existence across systems...\n")
+    _print_diagnostics(ctx, diagnostics, "Entry existence")
 
-    validator = ConsistencyValidator(db, md_dir, logger)
-    issues = validator.check_entry_existence()
-
-    if issues:
-        for issue in issues:
-            icon = "❌" if issue.severity == "error" else "⚠️"
-            click.echo(f"{icon} [{issue.system}] {issue.entity_id}: {issue.message}")
-            if issue.suggestion:
-                click.echo(f"   💡 {issue.suggestion}")
-        click.echo()
-
-        error_count = sum(1 for i in issues if i.severity == "error")
-        if error_count > 0:
-            raise click.ClickException(f"Found {error_count} existence error(s)")
-    else:
-        click.echo("✅ All entries exist consistently across systems")
+    if any(d.severity == "error" for d in diagnostics):
+        error_count = sum(1 for d in diagnostics if d.severity == "error")
+        raise click.ClickException(f"Found {error_count} existence error(s)")
 
 
 @consistency.command()
@@ -119,28 +122,14 @@ def metadata(ctx: click.Context) -> None:
     """
     from dev.validators.consistency import ConsistencyValidator
 
-    db = ctx.obj["db"]
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
+    validator = ConsistencyValidator(ctx.obj["db"], ctx.obj["md_dir"], ctx.obj["logger"])
+    diagnostics = validator.check_entry_metadata()
 
-    click.echo("🔍 Checking metadata consistency...\n")
+    _print_diagnostics(ctx, diagnostics, "Metadata consistency")
 
-    validator = ConsistencyValidator(db, md_dir, logger)
-    issues = validator.check_entry_metadata()
-
-    if issues:
-        for issue in issues:
-            icon = "❌" if issue.severity == "error" else "⚠️"
-            click.echo(f"{icon} [{issue.system}] {issue.entity_id}: {issue.message}")
-            if issue.suggestion:
-                click.echo(f"   💡 {issue.suggestion}")
-        click.echo()
-
-        error_count = sum(1 for i in issues if i.severity == "error")
-        if error_count > 0:
-            raise click.ClickException(f"Found {error_count} metadata error(s)")
-    else:
-        click.echo("✅ All metadata is synchronized")
+    if any(d.severity == "error" for d in diagnostics):
+        error_count = sum(1 for d in diagnostics if d.severity == "error")
+        raise click.ClickException(f"Found {error_count} metadata error(s)")
 
 
 @consistency.command()
@@ -154,30 +143,16 @@ def references(ctx: click.Context) -> None:
     """
     from dev.validators.consistency import ConsistencyValidator
 
-    db = ctx.obj["db"]
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
+    validator = ConsistencyValidator(ctx.obj["db"], ctx.obj["md_dir"], ctx.obj["logger"])
+    diagnostics = validator.check_referential_integrity()
 
-    click.echo("🔍 Checking referential integrity...\n")
+    _print_diagnostics(ctx, diagnostics, "Referential integrity")
 
-    validator = ConsistencyValidator(db, md_dir, logger)
-    issues = validator.check_referential_integrity()
-
-    if issues:
-        for issue in issues:
-            icon = "❌" if issue.severity == "error" else "⚠️"
-            click.echo(f"{icon} [{issue.system}] {issue.entity_id}: {issue.message}")
-            if issue.suggestion:
-                click.echo(f"   💡 {issue.suggestion}")
-        click.echo()
-
-        error_count = sum(1 for i in issues if i.severity == "error")
-        if error_count > 0:
-            raise click.ClickException(
-                f"Found {error_count} referential integrity error(s)"
-            )
-    else:
-        click.echo("✅ All references are valid")
+    if any(d.severity == "error" for d in diagnostics):
+        error_count = sum(1 for d in diagnostics if d.severity == "error")
+        raise click.ClickException(
+            f"Found {error_count} referential integrity error(s)"
+        )
 
 
 @consistency.command()
@@ -191,28 +166,14 @@ def integrity(ctx: click.Context) -> None:
     """
     from dev.validators.consistency import ConsistencyValidator
 
-    db = ctx.obj["db"]
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
+    validator = ConsistencyValidator(ctx.obj["db"], ctx.obj["md_dir"], ctx.obj["logger"])
+    diagnostics = validator.check_file_integrity()
 
-    click.echo("🔍 Checking file integrity...\n")
+    _print_diagnostics(ctx, diagnostics, "File integrity")
 
-    validator = ConsistencyValidator(db, md_dir, logger)
-    issues = validator.check_file_integrity()
-
-    if issues:
-        for issue in issues:
-            icon = "❌" if issue.severity == "error" else "⚠️"
-            click.echo(f"{icon} [{issue.system}] {issue.entity_id}: {issue.message}")
-            if issue.suggestion:
-                click.echo(f"   💡 {issue.suggestion}")
-        click.echo()
-
-        error_count = sum(1 for i in issues if i.severity == "error")
-        if error_count > 0:
-            raise click.ClickException(f"Found {error_count} file integrity error(s)")
-    else:
-        click.echo("✅ All files are synchronized")
+    if any(d.severity == "error" for d in diagnostics):
+        error_count = sum(1 for d in diagnostics if d.severity == "error")
+        raise click.ClickException(f"Found {error_count} file integrity error(s)")
 
 
 @consistency.command()
@@ -224,21 +185,19 @@ def all(ctx: click.Context) -> None:
     Comprehensive validation including existence, metadata, references,
     and file integrity. Provides a complete health report across all systems.
     """
-    from dev.validators.consistency import ConsistencyValidator, format_consistency_report
+    from dev.validators.consistency import ConsistencyValidator
+    from dev.validators.diagnostic import format_diagnostics
 
-    db = ctx.obj["db"]
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo("🔍 Running comprehensive consistency validation...\n")
-
-    validator = ConsistencyValidator(db, md_dir, logger)
+    validator = ConsistencyValidator(ctx.obj["db"], ctx.obj["md_dir"], ctx.obj["logger"])
     report = validator.validate_all()
 
-    # Print formatted report
-    click.echo(format_consistency_report(report))
+    fmt = ctx.obj.get("output_format", "text")
+    if report.diagnostics:
+        click.echo(format_diagnostics(report.diagnostics, fmt))
+    elif fmt != "json":
+        click.echo("✅ ALL SYSTEMS CONSISTENT")
 
-    if not report.is_healthy:
+    if not report.is_valid:
         raise click.ClickException(
-            f"Consistency validation failed with {report.total_errors} error(s)"
+            f"Consistency validation failed with {report.error_count} error(s)"
         )

@@ -33,8 +33,12 @@ from dev.core.paths import MD_DIR, LOG_DIR
 @click.option(
     "--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files"
 )
+@click.option(
+    "--format", "output_format", type=click.Choice(["text", "json"]),
+    default="text", help="Output format",
+)
 @click.pass_context
-def frontmatter(ctx: click.Context, md_dir: str, log_dir: str) -> None:
+def frontmatter(ctx: click.Context, md_dir: str, log_dir: str, output_format: str) -> None:
     """
     Validate YAML frontmatter structure and compatibility.
 
@@ -47,6 +51,26 @@ def frontmatter(ctx: click.Context, md_dir: str, log_dir: str) -> None:
     ctx.obj["md_dir"] = Path(md_dir)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["logger"] = setup_logger(Path(log_dir), "validators")
+    ctx.obj["output_format"] = output_format
+
+
+def _filter_by_code_prefix(diagnostics: list, prefix: str) -> list:
+    """Filter diagnostics by code prefix."""
+    return [d for d in diagnostics if d.code.startswith(prefix)]
+
+
+def _print_filtered(ctx: click.Context, diagnostics: list, label: str) -> None:
+    """Print filtered diagnostics using configured format."""
+    from dev.validators.diagnostic import format_diagnostics
+
+    fmt = ctx.obj.get("output_format", "text")
+    if diagnostics:
+        click.echo(format_diagnostics(diagnostics, fmt))
+        error_count = sum(1 for d in diagnostics if d.severity == "error")
+        if error_count > 0:
+            raise click.ClickException(f"Found {error_count} {label} error(s)")
+    elif fmt != "json":
+        click.echo(f"✅ No {label} issues found")
 
 
 @frontmatter.command()
@@ -62,43 +86,18 @@ def people(ctx: click.Context, file_path: Optional[str]) -> None:
     - Hyphenated name handling
     - Dict structure (name/full_name/alias fields)
     """
-    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
+    from dev.validators.frontmatter import FrontmatterValidator
 
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Validating people metadata in {md_dir}\n")
-
-    validator = FrontmatterValidator(md_dir, logger)
+    validator = FrontmatterValidator(ctx.obj["md_dir"], ctx.obj["logger"])
 
     if file_path:
-        # Validate single file
         issues = validator.validate_file(Path(file_path))
-        people_issues = [i for i in issues if i.field_name.startswith("people")]
-        if people_issues:
-            for issue in people_issues:
-                icon = "❌" if issue.severity == "error" else "⚠️"
-                click.echo(f"{icon} {issue.message}")
-                if issue.suggestion:
-                    click.echo(f"   💡 {issue.suggestion}")
-        else:
-            click.echo("✅ No people metadata issues found")
     else:
-        # Validate all files
         report = validator.validate_all()
+        issues = report.diagnostics
 
-        # Filter to only people issues
-        people_issues = [i for i in (report.issues or []) if i.field_name.startswith("people")]
-        report.issues = people_issues
-        report.total_errors = sum(1 for i in people_issues if i.severity == "error")
-        report.total_warnings = sum(1 for i in people_issues if i.severity == "warning")
-
-        click.echo(format_frontmatter_report(report))
-
-        if report.has_errors:
-            raise click.ClickException(
-                f"Found {report.total_errors} people metadata error(s)"
-            )
+    people_issues = _filter_by_code_prefix(issues, "PEOPLE")
+    _print_filtered(ctx, people_issues, "people metadata")
 
 
 @frontmatter.command()
@@ -114,51 +113,18 @@ def locations(ctx: click.Context, file_path: Optional[str]) -> None:
     - Dict keys match city list
     - Location name references (#prefix in context)
     """
-    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
+    from dev.validators.frontmatter import FrontmatterValidator
 
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Validating locations metadata in {md_dir}\n")
-
-    validator = FrontmatterValidator(md_dir, logger)
+    validator = FrontmatterValidator(ctx.obj["md_dir"], ctx.obj["logger"])
 
     if file_path:
-        # Validate single file
         issues = validator.validate_file(Path(file_path))
-        location_issues = [
-            i
-            for i in issues
-            if i.field_name.startswith("locations") or i.field_name.startswith("city")
-        ]
-        if location_issues:
-            for issue in location_issues:
-                icon = "❌" if issue.severity == "error" else "⚠️"
-                click.echo(f"{icon} {issue.message}")
-                if issue.suggestion:
-                    click.echo(f"   💡 {issue.suggestion}")
-        else:
-            click.echo("✅ No locations metadata issues found")
     else:
-        # Validate all files
         report = validator.validate_all()
+        issues = report.diagnostics
 
-        # Filter to only locations issues
-        location_issues = [
-            i
-            for i in (report.issues or [])
-            if i.field_name.startswith("locations") or i.field_name.startswith("city")
-        ]
-        report.issues = location_issues
-        report.total_errors = sum(1 for i in location_issues if i.severity == "error")
-        report.total_warnings = sum(1 for i in location_issues if i.severity == "warning")
-
-        click.echo(format_frontmatter_report(report))
-
-        if report.has_errors:
-            raise click.ClickException(
-                f"Found {report.total_errors} locations metadata error(s)"
-            )
+    location_issues = _filter_by_code_prefix(issues, "LOCATION")
+    _print_filtered(ctx, location_issues, "locations metadata")
 
 
 @frontmatter.command()
@@ -175,43 +141,18 @@ def dates(ctx: click.Context, file_path: Optional[str]) -> None:
     - Opt-out marker (~)
     - Parentheses balance in context
     """
-    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
+    from dev.validators.frontmatter import FrontmatterValidator
 
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Validating dates metadata in {md_dir}\n")
-
-    validator = FrontmatterValidator(md_dir, logger)
+    validator = FrontmatterValidator(ctx.obj["md_dir"], ctx.obj["logger"])
 
     if file_path:
-        # Validate single file
         issues = validator.validate_file(Path(file_path))
-        date_issues = [i for i in issues if i.field_name.startswith("dates")]
-        if date_issues:
-            for issue in date_issues:
-                icon = "❌" if issue.severity == "error" else "⚠️"
-                click.echo(f"{icon} {issue.message}")
-                if issue.suggestion:
-                    click.echo(f"   💡 {issue.suggestion}")
-        else:
-            click.echo("✅ No dates metadata issues found")
     else:
-        # Validate all files
         report = validator.validate_all()
+        issues = report.diagnostics
 
-        # Filter to only dates issues
-        date_issues = [i for i in (report.issues or []) if i.field_name.startswith("dates")]
-        report.issues = date_issues
-        report.total_errors = sum(1 for i in date_issues if i.severity == "error")
-        report.total_warnings = sum(1 for i in date_issues if i.severity == "warning")
-
-        click.echo(format_frontmatter_report(report))
-
-        if report.has_errors:
-            raise click.ClickException(
-                f"Found {report.total_errors} dates metadata error(s)"
-            )
+    date_issues = _filter_by_code_prefix(issues, "DATE")
+    _print_filtered(ctx, date_issues, "dates metadata")
 
 
 @frontmatter.command()
@@ -227,43 +168,18 @@ def references(ctx: click.Context, file_path: Optional[str]) -> None:
     - Valid source type enum (book, article, film, etc.)
     - Source structure
     """
-    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
+    from dev.validators.frontmatter import FrontmatterValidator
 
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Validating references metadata in {md_dir}\n")
-
-    validator = FrontmatterValidator(md_dir, logger)
+    validator = FrontmatterValidator(ctx.obj["md_dir"], ctx.obj["logger"])
 
     if file_path:
-        # Validate single file
         issues = validator.validate_file(Path(file_path))
-        ref_issues = [i for i in issues if i.field_name.startswith("references")]
-        if ref_issues:
-            for issue in ref_issues:
-                icon = "❌" if issue.severity == "error" else "⚠️"
-                click.echo(f"{icon} {issue.message}")
-                if issue.suggestion:
-                    click.echo(f"   💡 {issue.suggestion}")
-        else:
-            click.echo("✅ No references metadata issues found")
     else:
-        # Validate all files
         report = validator.validate_all()
+        issues = report.diagnostics
 
-        # Filter to only references issues
-        ref_issues = [i for i in (report.issues or []) if i.field_name.startswith("references")]
-        report.issues = ref_issues
-        report.total_errors = sum(1 for i in ref_issues if i.severity == "error")
-        report.total_warnings = sum(1 for i in ref_issues if i.severity == "warning")
-
-        click.echo(format_frontmatter_report(report))
-
-        if report.has_errors:
-            raise click.ClickException(
-                f"Found {report.total_errors} references metadata error(s)"
-            )
+    ref_issues = _filter_by_code_prefix(issues, "REFERENCE")
+    _print_filtered(ctx, ref_issues, "references metadata")
 
 
 @frontmatter.command()
@@ -278,43 +194,18 @@ def poems(ctx: click.Context, file_path: Optional[str]) -> None:
     - Required content field
     - Optional revision_date in ISO format
     """
-    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
+    from dev.validators.frontmatter import FrontmatterValidator
 
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Validating poems metadata in {md_dir}\n")
-
-    validator = FrontmatterValidator(md_dir, logger)
+    validator = FrontmatterValidator(ctx.obj["md_dir"], ctx.obj["logger"])
 
     if file_path:
-        # Validate single file
         issues = validator.validate_file(Path(file_path))
-        poem_issues = [i for i in issues if i.field_name.startswith("poems")]
-        if poem_issues:
-            for issue in poem_issues:
-                icon = "❌" if issue.severity == "error" else "⚠️"
-                click.echo(f"{icon} {issue.message}")
-                if issue.suggestion:
-                    click.echo(f"   💡 {issue.suggestion}")
-        else:
-            click.echo("✅ No poems metadata issues found")
     else:
-        # Validate all files
         report = validator.validate_all()
+        issues = report.diagnostics
 
-        # Filter to only poems issues
-        poem_issues = [i for i in (report.issues or []) if i.field_name.startswith("poems")]
-        report.issues = poem_issues
-        report.total_errors = sum(1 for i in poem_issues if i.severity == "error")
-        report.total_warnings = sum(1 for i in poem_issues if i.severity == "warning")
-
-        click.echo(format_frontmatter_report(report))
-
-        if report.has_errors:
-            raise click.ClickException(
-                f"Found {report.total_errors} poems metadata error(s)"
-            )
+    poem_issues = _filter_by_code_prefix(issues, "POEM")
+    _print_filtered(ctx, poem_issues, "poems metadata")
 
 
 @frontmatter.command()
@@ -326,20 +217,19 @@ def all(ctx: click.Context) -> None:
     Comprehensive validation of all metadata fields for parser compatibility.
     Checks people, locations, dates, references, poems, and manuscript structures.
     """
-    from dev.validators.frontmatter import FrontmatterValidator, format_frontmatter_report
+    from dev.validators.frontmatter import FrontmatterValidator
+    from dev.validators.diagnostic import format_diagnostics
 
-    md_dir = ctx.obj["md_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Running comprehensive metadata validation on {md_dir}\n")
-
-    validator = FrontmatterValidator(md_dir, logger)
+    validator = FrontmatterValidator(ctx.obj["md_dir"], ctx.obj["logger"])
     report = validator.validate_all()
 
-    # Print formatted report
-    click.echo(format_frontmatter_report(report))
+    fmt = ctx.obj.get("output_format", "text")
+    if report.diagnostics:
+        click.echo(format_diagnostics(report.diagnostics, fmt))
+    elif fmt != "json":
+        click.echo("✅ ALL FRONTMATTER VALID")
 
-    if not report.is_healthy:
+    if not report.is_valid:
         raise click.ClickException(
-            f"Metadata validation failed with {report.total_errors} error(s)"
+            f"Metadata validation failed with {report.error_count} error(s)"
         )

@@ -7,73 +7,37 @@ local M = {}
 -- Namespace for diagnostics
 local ns = vim.api.nvim_create_namespace("palimpsest_validators")
 
--- Parse validator output and convert to diagnostics
-local function parse_validation_output(output, bufnr)
+-- Parse JSON diagnostics from plm CLI output
+local function parse_json_diagnostics(json_str, bufnr)
+	local ok, parsed = pcall(vim.fn.json_decode, json_str)
+	if not ok or type(parsed) ~= "table" then
+		return {}
+	end
+
 	local diagnostics = {}
-
-	-- The Python validator outputs in a structured format
-	-- We need to parse it and create diagnostic entries
-	-- Expected format: file:line:severity:category:message
-
-	for line in output:gmatch("[^\r\n]+") do
-		-- Look for error/warning indicators
-		local severity, category, line_num, message
-
-		-- Try to match various output patterns
-		-- Pattern 1: "❌ [category]:line message" or "⚠️  [category]:line message"
-		severity, category, line_num, message = line:match("([❌⚠️]+)%s*%[([^%]]+)%]:(%d+)%s+(.+)")
-
-		if severity then
-			local diag_severity = vim.diagnostic.severity.ERROR
-			if severity:find("⚠") then
-				diag_severity = vim.diagnostic.severity.WARN
-			end
-
-			local lnum = tonumber(line_num) or 1
-			table.insert(diagnostics, {
-				bufnr = bufnr,
-				lnum = lnum - 1, -- 0-indexed
-				col = 0,
-				severity = diag_severity,
-				source = "palimpsest",
-				message = string.format("[%s] %s", category, message),
-			})
+	for _, diag in ipairs(parsed) do
+		local severity = vim.diagnostic.severity.ERROR
+		if diag.severity == "warning" then
+			severity = vim.diagnostic.severity.WARN
+		elseif diag.severity == "info" then
+			severity = vim.diagnostic.severity.INFO
 		end
 
-		-- Pattern 2: Look for suggestion lines "💡 suggestion"
-		local suggestion = line:match("💡%s+(.+)")
-		if suggestion and #diagnostics > 0 then
-			-- Append suggestion to last diagnostic
-			diagnostics[#diagnostics].message = diagnostics[#diagnostics].message .. "\n💡 " .. suggestion
-		end
-
-		-- Pattern 3: Generic error/warning messages
-		if not severity and (line:find("error", 1, true) or line:find("Error", 1, true)) then
-			table.insert(diagnostics, {
-				bufnr = bufnr,
-				lnum = 0,
-				col = 0,
-				severity = vim.diagnostic.severity.ERROR,
-				source = "palimpsest",
-				message = line,
-			})
-		elseif not severity and (line:find("warning", 1, true) or line:find("Warning", 1, true)) then
-			table.insert(diagnostics, {
-				bufnr = bufnr,
-				lnum = 0,
-				col = 0,
-				severity = vim.diagnostic.severity.WARN,
-				source = "palimpsest",
-				message = line,
-			})
-		end
+		table.insert(diagnostics, {
+			bufnr = bufnr,
+			lnum = (diag.line or 1) - 1,
+			col = (diag.col or 1) - 1,
+			severity = severity,
+			source = "palimpsest",
+			message = diag.message or "Validation error",
+		})
 	end
 
 	return diagnostics
 end
 
--- Run markdown frontmatter validation
-function M.validate_frontmatter(bufnr)
+-- Generic validator runner: shell command with --format json, parsed into diagnostics
+local function run_validator(bufnr, cmd_suffix, success_msg)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
 	local filepath = vim.api.nvim_buf_get_name(bufnr)
 
@@ -85,159 +49,8 @@ function M.validate_frontmatter(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && plm validate md frontmatter %s 2>&1",
-		vim.fn.shellescape(root),
-		vim.fn.shellescape(filepath))
-
-	-- Run asynchronously
-	local diagnostics = {}
-	vim.fn.jobstart(cmd, {
-		stdout_buffered = true,
-		stderr_buffered = true,
-		on_stdout = function(_, data)
-			if data then
-				local output = table.concat(data, "\n")
-				local parsed = parse_validation_output(output, bufnr)
-				vim.list_extend(diagnostics, parsed)
-			end
-		end,
-		on_stderr = function(_, data)
-			if data and #data > 0 and data[1] ~= "" then
-				local output = table.concat(data, "\n")
-				local parsed = parse_validation_output(output, bufnr)
-				vim.list_extend(diagnostics, parsed)
-			end
-		end,
-		on_exit = function(_, exit_code)
-			if exit_code == 0 then
-				-- Validation passed - clear diagnostics and notify
-				vim.diagnostic.reset(ns, bufnr)
-				vim.notify("Frontmatter validation passed ✓", vim.log.levels.INFO)
-			else
-				-- Validation failed - set diagnostics
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
-			end
-		end,
-	})
-end
-
--- Run frontmatter structure validation (people, locations, dates, references, poems)
-function M.validate_metadata(bufnr)
-	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	local filepath = vim.api.nvim_buf_get_name(bufnr)
-
-	if filepath == "" then
-		return
-	end
-
-	-- Clear existing diagnostics
-	vim.diagnostic.reset(ns, bufnr)
-
-	local root = get_project_root()
-	local cmd = string.format("cd %s && plm validate frontmatter all 2>&1",
-		vim.fn.shellescape(root))
-
-	-- Run asynchronously
-	local diagnostics = {}
-	vim.fn.jobstart(cmd, {
-		stdout_buffered = true,
-		stderr_buffered = true,
-		on_stdout = function(_, data)
-			if data then
-				local output = table.concat(data, "\n")
-				local parsed = parse_validation_output(output, bufnr)
-				vim.list_extend(diagnostics, parsed)
-			end
-		end,
-		on_stderr = function(_, data)
-			if data and #data > 0 and data[1] ~= "" then
-				local output = table.concat(data, "\n")
-				local parsed = parse_validation_output(output, bufnr)
-				vim.list_extend(diagnostics, parsed)
-			end
-		end,
-		on_exit = function(_, exit_code)
-			if exit_code == 0 then
-				-- Validation passed - clear diagnostics and notify
-				vim.diagnostic.reset(ns, bufnr)
-				vim.notify("Metadata validation passed ✓", vim.log.levels.INFO)
-			else
-				-- Validation failed - set diagnostics
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
-			end
-		end,
-	})
-end
-
--- Validate markdown links
-function M.validate_links(bufnr)
-	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	local filepath = vim.api.nvim_buf_get_name(bufnr)
-
-	if filepath == "" then
-		return
-	end
-
-	-- Clear existing diagnostics
-	vim.diagnostic.reset(ns, bufnr)
-
-	local root = get_project_root()
-	local cmd = string.format("cd %s && plm validate md links 2>&1",
-		vim.fn.shellescape(root))
-
-	-- Run asynchronously
-	local diagnostics = {}
-	vim.fn.jobstart(cmd, {
-		stdout_buffered = true,
-		stderr_buffered = true,
-		on_stdout = function(_, data)
-			if data then
-				local output = table.concat(data, "\n")
-				local parsed = parse_validation_output(output, bufnr)
-				vim.list_extend(diagnostics, parsed)
-			end
-		end,
-		on_stderr = function(_, data)
-			if data and #data > 0 and data[1] ~= "" then
-				local output = table.concat(data, "\n")
-				local parsed = parse_validation_output(output, bufnr)
-				vim.list_extend(diagnostics, parsed)
-			end
-		end,
-		on_exit = function(_, exit_code)
-			if exit_code == 0 then
-				-- Validation passed - clear diagnostics
-				vim.diagnostic.reset(ns, bufnr)
-			else
-				-- Validation failed - set diagnostics
-				if #diagnostics > 0 then
-					vim.diagnostic.set(ns, bufnr, diagnostics, {})
-				end
-			end
-		end,
-	})
-end
-
--- Run wiki page lint validation
-function M.validate_wiki_page(bufnr)
-	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	local filepath = vim.api.nvim_buf_get_name(bufnr)
-
-	if filepath == "" then
-		return
-	end
-
-	-- Clear existing diagnostics
-	vim.diagnostic.reset(ns, bufnr)
-
-	local root = get_project_root()
-	local cmd = string.format("cd %s && plm wiki lint %s --format json 2>&1",
-		vim.fn.shellescape(root),
-		vim.fn.shellescape(filepath))
+	local cmd = string.format("cd %s && %s 2>&1",
+		vim.fn.shellescape(root), cmd_suffix)
 
 	local output_lines = {}
 	vim.fn.jobstart(cmd, {
@@ -255,33 +68,57 @@ function M.validate_wiki_page(bufnr)
 			vim.schedule(function()
 				if exit_code == 0 then
 					vim.diagnostic.reset(ns, bufnr)
+					if success_msg then
+						vim.notify(success_msg, vim.log.levels.INFO)
+					end
 					return
 				end
 
 				-- Parse JSON diagnostics
 				local json_str = table.concat(output_lines, "")
-				local ok, parsed = pcall(vim.fn.json_decode, json_str)
-				if ok and type(parsed) == "table" then
-					local diagnostics = {}
-					for _, diag in ipairs(parsed) do
-						table.insert(diagnostics, {
-							bufnr = bufnr,
-							lnum = (diag.line or 1) - 1,
-							col = (diag.col or 1) - 1,
-							severity = diag.severity == "error"
-								and vim.diagnostic.severity.ERROR
-								or vim.diagnostic.severity.WARN,
-							source = "palimpsest",
-							message = diag.message or "Lint error",
-						})
-					end
-					if #diagnostics > 0 then
-						vim.diagnostic.set(ns, bufnr, diagnostics, {})
-					end
+				local diagnostics = parse_json_diagnostics(json_str, bufnr)
+				if #diagnostics > 0 then
+					vim.diagnostic.set(ns, bufnr, diagnostics, {})
 				end
 			end)
 		end,
 	})
+end
+
+-- Run markdown frontmatter validation
+function M.validate_frontmatter(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	local filepath = vim.api.nvim_buf_get_name(bufnr)
+
+	run_validator(bufnr,
+		string.format("plm validate md frontmatter %s --format json",
+			vim.fn.shellescape(filepath)),
+		"Frontmatter validation passed ✓")
+end
+
+-- Run frontmatter structure validation (people, locations, dates, references, poems)
+function M.validate_metadata(bufnr)
+	run_validator(bufnr,
+		"plm validate frontmatter all --format json",
+		"Metadata validation passed ✓")
+end
+
+-- Validate markdown links
+function M.validate_links(bufnr)
+	run_validator(bufnr,
+		"plm validate md links --format json",
+		nil)
+end
+
+-- Run wiki page lint validation
+function M.validate_wiki_page(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	local filepath = vim.api.nvim_buf_get_name(bufnr)
+
+	run_validator(bufnr,
+		string.format("plm wiki lint %s --format json",
+			vim.fn.shellescape(filepath)),
+		nil)
 end
 
 -- Setup function

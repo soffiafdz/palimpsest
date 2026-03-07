@@ -34,7 +34,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -42,53 +41,7 @@ from typing import Any, Dict, List, Optional
 from dev.utils.md import split_frontmatter
 from dev.core.logging_manager import PalimpsestLogger
 from dev.validators.schema import SchemaValidator
-
-
-@dataclass
-class FrontmatterIssue:
-    """Represents a frontmatter validation issue."""
-
-    file_path: Path
-    field_name: str
-    severity: str  # error, warning
-    message: str
-    suggestion: Optional[str] = None
-    yaml_value: Optional[Any] = None
-
-
-@dataclass
-class FrontmatterValidationReport:
-    """Complete frontmatter validation report."""
-
-    files_checked: int = 0
-    files_with_errors: int = 0
-    files_with_warnings: int = 0
-    total_errors: int = 0
-    total_warnings: int = 0
-    issues: List[FrontmatterIssue] = field(default_factory=list)
-
-    def add_issue(self, issue: FrontmatterIssue) -> None:
-        """Add an issue to the report."""
-        self.issues.append(issue)
-        if issue.severity == "error":
-            self.total_errors += 1
-        elif issue.severity == "warning":
-            self.total_warnings += 1
-
-    @property
-    def has_errors(self) -> bool:
-        """Check if any errors were found."""
-        return self.total_errors > 0
-
-    @property
-    def has_warnings(self) -> bool:
-        """Check if any warnings were found."""
-        return self.total_warnings > 0
-
-    @property
-    def is_healthy(self) -> bool:
-        """Check if all files are healthy (no errors)."""
-        return not self.has_errors
+from dev.validators.diagnostic import Diagnostic, ValidationReport
 
 
 class FrontmatterValidator:
@@ -125,7 +78,7 @@ class FrontmatterValidator:
         value: Any,
         expected_type: type,
         suggestion: str,
-    ) -> Optional[FrontmatterIssue]:
+    ) -> Optional[Diagnostic]:
         """
         Create type validation error if value doesn't match expected type.
 
@@ -137,16 +90,14 @@ class FrontmatterValidator:
             suggestion: User-friendly suggestion
 
         Returns:
-            FrontmatterIssue if type mismatch, None otherwise
+            Diagnostic if type mismatch, None otherwise
         """
         if not isinstance(value, expected_type):
-            return FrontmatterIssue(
-                file_path=file_path,
-                field_name=field_name,
-                severity="error",
-                message=f"{field_name.capitalize()} field must be a {expected_type.__name__}",
-                suggestion=suggestion,
-                yaml_value=type(value).__name__,
+            code = self._field_to_code(field_name)
+            return Diagnostic(
+                file=str(file_path), line=0, col=0, end_line=0, end_col=0,
+                severity="error", code=code,
+                message=f"[{field_name}] {field_name.capitalize()} field must be a {expected_type.__name__}. {suggestion}",
             )
         return None
 
@@ -157,9 +108,9 @@ class FrontmatterValidator:
         message: str,
         suggestion: Optional[str] = None,
         yaml_value: Optional[Any] = None,
-    ) -> FrontmatterIssue:
+    ) -> Diagnostic:
         """
-        Create an error-level FrontmatterIssue.
+        Create an error-level Diagnostic.
 
         Args:
             file_path: File being validated
@@ -169,15 +120,15 @@ class FrontmatterValidator:
             yaml_value: Optional YAML value that caused issue
 
         Returns:
-            FrontmatterIssue with severity="error"
+            Diagnostic with severity="error"
         """
-        return FrontmatterIssue(
-            file_path=file_path,
-            field_name=field_name,
-            severity="error",
-            message=message,
-            suggestion=suggestion,
-            yaml_value=yaml_value,
+        code = self._field_to_code(field_name)
+        full_msg = f"[{field_name}] {message}"
+        if suggestion:
+            full_msg += f" ({suggestion})"
+        return Diagnostic(
+            file=str(file_path), line=0, col=0, end_line=0, end_col=0,
+            severity="error", code=code, message=full_msg,
         )
 
     def _warning(
@@ -187,9 +138,9 @@ class FrontmatterValidator:
         message: str,
         suggestion: Optional[str] = None,
         yaml_value: Optional[Any] = None,
-    ) -> FrontmatterIssue:
+    ) -> Diagnostic:
         """
-        Create a warning-level FrontmatterIssue.
+        Create a warning-level Diagnostic.
 
         Args:
             file_path: File being validated
@@ -199,16 +150,39 @@ class FrontmatterValidator:
             yaml_value: Optional YAML value that caused issue
 
         Returns:
-            FrontmatterIssue with severity="warning"
+            Diagnostic with severity="warning"
         """
-        return FrontmatterIssue(
-            file_path=file_path,
-            field_name=field_name,
-            severity="warning",
-            message=message,
-            suggestion=suggestion,
-            yaml_value=yaml_value,
+        code = self._field_to_code(field_name)
+        full_msg = f"[{field_name}] {message}"
+        if suggestion:
+            full_msg += f" ({suggestion})"
+        return Diagnostic(
+            file=str(file_path), line=0, col=0, end_line=0, end_col=0,
+            severity="warning", code=code, message=full_msg,
         )
+
+    @staticmethod
+    def _field_to_code(field_name: str) -> str:
+        """
+        Map a field name to a diagnostic code prefix.
+
+        Args:
+            field_name: Field name (e.g., "people[0]", "locations", "city")
+
+        Returns:
+            Diagnostic code string
+        """
+        base = field_name.split("[")[0].split(".")[0].upper()
+        code_map = {
+            "PEOPLE": "PEOPLE_FORMAT",
+            "LOCATIONS": "LOCATION_DEPENDENCY",
+            "CITY": "LOCATION_DEPENDENCY",
+            "DATES": "DATE_FORMAT",
+            "REFERENCES": "REFERENCE_FORMAT",
+            "POEMS": "POEM_FORMAT",
+            "MANUSCRIPT": "MANUSCRIPT_FORMAT",
+        }
+        return code_map.get(base, "UNKNOWN_FIELD")
 
     def _check_duplicate_person(
         self,
@@ -219,7 +193,7 @@ class FrontmatterValidator:
         person_full_name: Optional[str],
         referenced_people: List[tuple],
         people_data: List[Any],
-    ) -> Optional[FrontmatterIssue]:
+    ) -> Optional[Diagnostic]:
         """
         Check if a person has already been referenced in the people list.
 
@@ -233,7 +207,7 @@ class FrontmatterValidator:
             people_data: Full people list for comparison
 
         Returns:
-            FrontmatterIssue if duplicate found, None otherwise
+            Diagnostic if duplicate found, None otherwise
         """
         if not (person_name or person_full_name):
             return None
@@ -283,7 +257,7 @@ class FrontmatterValidator:
 
     def validate_people_field(
         self, file_path: Path, people_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate people field structure.
 
@@ -444,7 +418,7 @@ class FrontmatterValidator:
 
     def validate_locations_field(
         self, file_path: Path, locations_data: Any, city_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate locations field structure and city dependency.
 
@@ -514,7 +488,7 @@ class FrontmatterValidator:
 
     def validate_dates_field(
         self, file_path: Path, dates_data: Any, people_data: Optional[List[Any]] = None
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate dates field structure.
 
@@ -735,7 +709,7 @@ class FrontmatterValidator:
 
     def validate_references_field(
         self, file_path: Path, references_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate references field structure.
 
@@ -838,7 +812,7 @@ class FrontmatterValidator:
 
     def validate_poems_field(
         self, file_path: Path, poems_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate poems field structure.
 
@@ -903,7 +877,7 @@ class FrontmatterValidator:
 
     def validate_manuscript_field(
         self, file_path: Path, manuscript_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate manuscript field structure.
 
@@ -961,7 +935,7 @@ class FrontmatterValidator:
 
     def validate_events_field(
         self, file_path: Path, events_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate events field structure.
 
@@ -997,7 +971,7 @@ class FrontmatterValidator:
 
     def validate_tags_field(
         self, file_path: Path, tags_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate tags field structure.
 
@@ -1033,7 +1007,7 @@ class FrontmatterValidator:
 
     def validate_related_entries_field(
         self, file_path: Path, related_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate related_entries field structure.
 
@@ -1077,7 +1051,7 @@ class FrontmatterValidator:
 
     def validate_city_field(
         self, file_path: Path, city_data: Any
-    ) -> List[FrontmatterIssue]:
+    ) -> List[Diagnostic]:
         """
         Validate city field structure.
 
@@ -1117,7 +1091,7 @@ class FrontmatterValidator:
 
         return issues
 
-    def validate_file(self, file_path: Path) -> List[FrontmatterIssue]:
+    def validate_file(self, file_path: Path) -> List[Diagnostic]:
         """
         Validate metadata structure in a single file.
 
@@ -1184,92 +1158,18 @@ class FrontmatterValidator:
 
         return issues
 
-    def validate_all(self) -> FrontmatterValidationReport:
+    def validate_all(self) -> ValidationReport:
         """
         Validate all markdown files in directory.
 
         Returns:
-            Complete validation report
+            ValidationReport with all diagnostics
         """
-        report = FrontmatterValidationReport()
+        report = ValidationReport()
         md_files = list(self.md_dir.glob("**/*.md"))
 
         for md_file in md_files:
-            report.files_checked += 1
             file_issues = self.validate_file(md_file)
-
-            for issue in file_issues:
-                report.add_issue(issue)
-
-            if any(i.severity == "error" for i in file_issues):
-                report.files_with_errors += 1
-            if any(i.severity == "warning" for i in file_issues):
-                report.files_with_warnings += 1
+            report.diagnostics.extend(file_issues)
 
         return report
-
-
-def format_frontmatter_report(report: FrontmatterValidationReport) -> str:
-    """
-    Format frontmatter validation report as readable text.
-
-    Args:
-        report: Validation report to format
-
-    Returns:
-        Formatted report string
-    """
-    lines = []
-    lines.append("\n" + "=" * 60)
-    lines.append("FRONTMATTER VALIDATION REPORT")
-    lines.append("=" * 60)
-    lines.append("")
-
-    # Summary
-    lines.append(f"Files Checked: {report.files_checked}")
-    lines.append(
-        f"✅ Clean Files: {report.files_checked - report.files_with_errors - report.files_with_warnings}"
-    )
-    lines.append(f"⚠️  Files with Warnings: {report.files_with_warnings}")
-    lines.append(f"❌ Files with Errors: {report.files_with_errors}")
-    lines.append("")
-    lines.append(f"Total Warnings: {report.total_warnings}")
-    lines.append(f"Total Errors: {report.total_errors}")
-    lines.append("")
-
-    # Overall status
-    if report.is_healthy:
-        lines.append("✅ ALL FRONTMATTER VALID")
-    else:
-        lines.append("❌ FRONTMATTER VALIDATION FAILED")
-    lines.append("")
-
-    # Group issues by file
-    if report.issues:
-        issues_by_file: Dict[Path, List[FrontmatterIssue]] = {}
-        for issue in report.issues:
-            if issue.file_path not in issues_by_file:
-                issues_by_file[issue.file_path] = []
-            issues_by_file[issue.file_path].append(issue)
-
-        lines.append("ISSUES BY FILE:")
-        lines.append("")
-
-        for file_path in sorted(issues_by_file.keys()):
-            file_issues = issues_by_file[file_path]
-            errors = [i for i in file_issues if i.severity == "error"]
-
-            icon = "❌" if errors else "⚠️"
-            lines.append(f"{icon} {file_path.name}")
-
-            for issue in file_issues:
-                severity_icon = "❌" if issue.severity == "error" else "⚠️"
-                lines.append(f"   {severity_icon} [{issue.field_name}] {issue.message}")
-                if issue.suggestion:
-                    lines.append(f"      💡 {issue.suggestion}")
-
-            lines.append("")
-
-    lines.append("=" * 60)
-
-    return "\n".join(lines)

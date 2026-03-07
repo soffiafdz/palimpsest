@@ -84,7 +84,7 @@ from dev.database.models.manuscript import (
     PersonCharacterMap,
 )
 from dev.utils.slugify import slugify
-from dev.wiki.validator import Diagnostic
+from dev.validators.diagnostic import Diagnostic
 
 
 # ==================== Path Constants ====================

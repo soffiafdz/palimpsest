@@ -26,9 +26,9 @@ This is a valid entry content.
         
         issues = validator.validate_file(file_path)
         assert not issues
-        assert validator.report.files_checked == 1
-        assert validator.report.total_errors == 0
-        assert validator.report.total_warnings == 0
+        assert validator._files_checked == 1
+        assert validator._files_with_errors == 0
+        assert validator._files_with_warnings == 0
 
     def test_validate_missing_required_field(self, validator, tmp_path):
         """Test validation detects missing required 'date' field."""

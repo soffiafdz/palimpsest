@@ -18,7 +18,8 @@ from pathlib import Path
 import pytest
 
 # --- Local imports ---
-from dev.wiki.validator import Diagnostic, WikiValidator
+from dev.validators.diagnostic import Diagnostic
+from dev.wiki.validator import WikiValidator
 
 
 # ==================== Diagnostic Tests ====================

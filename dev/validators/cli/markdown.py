@@ -26,8 +26,12 @@ from dev.core.paths import MD_DIR, LOG_DIR
 @click.option(
     "--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files"
 )
+@click.option(
+    "--format", "output_format", type=click.Choice(["text", "json"]),
+    default="text", help="Output format",
+)
 @click.pass_context
-def md(ctx: click.Context, md_dir: str, log_dir: str) -> None:
+def md(ctx: click.Context, md_dir: str, log_dir: str, output_format: str) -> None:
     """
     Validate markdown journal entry files.
 
@@ -40,6 +44,7 @@ def md(ctx: click.Context, md_dir: str, log_dir: str) -> None:
     ctx.obj["md_dir"] = Path(md_dir)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["logger"] = setup_logger(Path(log_dir), "validators")
+    ctx.obj["output_format"] = output_format
 
 
 @md.command()
@@ -56,62 +61,36 @@ def frontmatter(ctx: click.Context, file_path: Optional[str]) -> None:
     - Valid enum values (manuscript status, reference modes/types)
     - Unknown fields
     """
-    from dev.validators.md import MarkdownValidator, format_markdown_report
+    from dev.validators.md import MarkdownValidator
+    from dev.validators.diagnostic import format_diagnostics
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Validating markdown frontmatter in {md_dir}\n")
+    fmt = ctx.obj.get("output_format", "text")
 
     validator = MarkdownValidator(md_dir, logger)
 
     if file_path:
-        # Validate single file
-        issues = validator.validate_file(Path(file_path))
-        frontmatter_issues = [i for i in issues if i.category == "frontmatter"]
-        has_errors = any(i.severity == "error" for i in frontmatter_issues)
-
-        if frontmatter_issues:
-            for issue in frontmatter_issues:
-                icon = "❌" if issue.severity == "error" else "⚠️"
-                line_info = f":{issue.line_number}" if issue.line_number else ":1"
-                click.echo(f"{icon} [{issue.category}]{line_info} {issue.message}")
-                if issue.suggestion:
-                    click.echo(f"   💡 {issue.suggestion}")
-
-            if has_errors:
-                error_count = sum(1 for i in frontmatter_issues if i.severity == "error")
+        diagnostics = validator.validate_file(Path(file_path))
+        fm_diagnostics = [d for d in diagnostics if d.code.startswith("FRONTMATTER")]
+        if fm_diagnostics:
+            click.echo(format_diagnostics(fm_diagnostics, fmt))
+            error_count = sum(1 for d in fm_diagnostics if d.severity == "error")
+            if error_count > 0:
                 raise click.ClickException(f"Found {error_count} frontmatter error(s)")
-        else:
+        elif fmt != "json":
             click.echo("✅ No frontmatter issues found")
     else:
-        # Validate all files
         report = validator.validate_all()
+        fm_diagnostics = [d for d in report.diagnostics if d.code.startswith("FRONTMATTER")]
 
-        # Filter to only frontmatter issues
-        frontmatter_issues = [i for i in (report.issues or []) if i.category == "frontmatter"]
-        report.issues = frontmatter_issues
-        report.total_errors = sum(1 for i in frontmatter_issues if i.severity == "error")
-        report.total_warnings = sum(
-            1 for i in frontmatter_issues if i.severity == "warning"
-        )
-
-        # Recalculate file counts based on filtered issues
-        files_with_errors = set()
-        files_with_warnings = set()
-        for issue in frontmatter_issues:
-            if issue.severity == "error":
-                files_with_errors.add(issue.file_path)
-            elif issue.severity == "warning":
-                files_with_warnings.add(issue.file_path)
-
-        report.files_with_errors = len(files_with_errors)
-        report.files_with_warnings = len(files_with_warnings)
-
-        click.echo(format_markdown_report(report))
-
-        if report.has_errors:
-            raise click.ClickException(f"Found {report.total_errors} frontmatter error(s)")
+        if fm_diagnostics:
+            click.echo(format_diagnostics(fm_diagnostics, fmt))
+            error_count = sum(1 for d in fm_diagnostics if d.severity == "error")
+            if error_count > 0:
+                raise click.ClickException(f"Found {error_count} frontmatter error(s)")
+        elif fmt != "json":
+            click.echo("✅ No frontmatter issues found")
 
 
 @md.command()
@@ -124,25 +103,19 @@ def links(ctx: click.Context) -> None:
     External links (http://, https://) are skipped.
     """
     from dev.validators.md import MarkdownValidator
+    from dev.validators.diagnostic import format_diagnostics
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Checking markdown links in {md_dir}\n")
+    fmt = ctx.obj.get("output_format", "text")
 
     validator = MarkdownValidator(md_dir, logger)
-    issues = validator.validate_links()
+    diagnostics = validator.validate_links()
 
-    if issues:
-        for issue in issues:
-            click.echo(f"❌ {issue.file_path.name}:{issue.line_number}")
-            click.echo(f"   {issue.message}")
-            if issue.suggestion:
-                click.echo(f"   💡 {issue.suggestion}")
-            click.echo()
-
-        raise click.ClickException(f"Found {len(issues)} broken link(s)")
-    else:
+    if diagnostics:
+        click.echo(format_diagnostics(diagnostics, fmt))
+        raise click.ClickException(f"Found {len(diagnostics)} broken link(s)")
+    elif fmt != "json":
         click.echo("✅ All markdown links are valid")
 
 
@@ -155,25 +128,26 @@ def all(ctx: click.Context) -> None:
     Comprehensive validation including frontmatter, links, structure,
     and content. Provides a complete health report.
     """
-    from dev.validators.md import MarkdownValidator, format_markdown_report
+    from dev.validators.md import MarkdownValidator
+    from dev.validators.diagnostic import format_diagnostics
 
     md_dir = ctx.obj["md_dir"]
     logger = ctx.obj["logger"]
-
-    click.echo(f"🔍 Running comprehensive markdown validation on {md_dir}\n")
+    fmt = ctx.obj.get("output_format", "text")
 
     validator = MarkdownValidator(md_dir, logger)
     report = validator.validate_all()
 
     # Also check links
-    link_issues = validator.validate_links()
-    for issue in link_issues:
-        report.add_issue(issue)
+    link_diagnostics = validator.validate_links()
+    report.diagnostics.extend(link_diagnostics)
 
-    # Print formatted report
-    click.echo(format_markdown_report(report))
+    if report.diagnostics:
+        click.echo(format_diagnostics(report.diagnostics, fmt))
+    elif fmt != "json":
+        click.echo("✅ ALL FILES VALID")
 
-    if not report.is_healthy:
+    if not report.is_valid:
         raise click.ClickException(
-            f"Markdown validation failed with {report.total_errors} error(s)"
+            f"Markdown validation failed with {report.error_count} error(s)"
         )

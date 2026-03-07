@@ -30,9 +30,10 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
+
+# --- Third-party imports ---
 
 # --- Local imports ---
 from dev.database.manager import PalimpsestDB
@@ -56,6 +57,7 @@ from dev.database.models.manuscript import (
     Part,
 )
 from dev.utils.slugify import slugify
+from dev.validators.diagnostic import Diagnostic
 
 
 # ==================== Constants ====================
@@ -64,60 +66,6 @@ WIKILINK_PATTERN = re.compile(r'\[\[([^\]|]+)(?:\|[^\]]+)?\]\]')
 WIKILINK1_PATTERN = re.compile(r'\[([^\]]*)\]\[([^\]]*)\]')
 H1_PATTERN = re.compile(r'^# .+', re.MULTILINE)
 HEADING_PATTERN = re.compile(r'^(#{1,6}) (.+)', re.MULTILINE)
-
-
-# ==================== Diagnostic ====================
-
-@dataclass
-class Diagnostic:
-    """
-    A single diagnostic finding from wiki validation.
-
-    Represents a structural issue, broken link, or style violation
-    found in a wiki markdown file. Designed for JSON serialization
-    and compatibility with vim.diagnostic.
-
-    Attributes:
-        file: Path to the file containing the diagnostic
-        line: 1-based line number where the issue starts
-        col: 1-based column number where the issue starts
-        end_line: 1-based end line (same as line for single-line issues)
-        end_col: 1-based end column
-        severity: Diagnostic severity: "error", "warning", or "info"
-        code: Machine-readable diagnostic code (e.g., UNRESOLVED_WIKILINK)
-        message: Human-readable description of the issue
-        source: Diagnostic source identifier, always "palimpsest"
-    """
-
-    file: str
-    line: int
-    col: int
-    end_line: int
-    end_col: int
-    severity: str
-    code: str
-    message: str
-    source: str = "palimpsest"
-
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Serialize diagnostic to dict for JSON output.
-
-        Returns:
-            Dict with all diagnostic fields, suitable for
-            json.dumps() and vim.diagnostic integration
-        """
-        return {
-            "file": self.file,
-            "line": self.line,
-            "col": self.col,
-            "end_line": self.end_line,
-            "end_col": self.end_col,
-            "severity": self.severity,
-            "code": self.code,
-            "message": self.message,
-            "source": self.source,
-        }
 
 
 # ==================== WikiValidator ====================

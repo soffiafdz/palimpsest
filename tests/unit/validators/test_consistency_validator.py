@@ -52,9 +52,10 @@ class TestConsistencyValidator:
         issues = validator.check_entry_existence()
 
         assert len(issues) >= 1
-        md_db_issue = next((i for i in issues if i.system == "md-db" and i.entity_id == "2024-01-01"), None)
+        md_db_issue = next((i for i in issues if "[md-db]" in i.message and "2024-01-01" in i.message), None)
         assert md_db_issue
         assert md_db_issue.severity == "error"
+        assert md_db_issue.code == "ENTRY_EXISTENCE"
         assert "Entry exists in markdown but not in database" in md_db_issue.message
 
     def test_check_entry_existence_db_only_file_missing(self, validator):
@@ -66,9 +67,10 @@ class TestConsistencyValidator:
 
         issues = validator.check_entry_existence()
 
-        db_md_issue = next((i for i in issues if i.system == "db-md" and i.entity_id == "2024-01-01"), None)
+        db_md_issue = next((i for i in issues if "[db-md]" in i.message and "2024-01-01" in i.message), None)
         assert db_md_issue
         assert db_md_issue.severity == "error"
+        assert db_md_issue.code == "ENTRY_EXISTENCE"
         assert "Entry in database but file missing" in db_md_issue.message
 
     def test_check_referential_integrity_location_no_city(self, validator):
@@ -87,7 +89,7 @@ class TestConsistencyValidator:
         issues = validator.check_referential_integrity()
 
         assert len(issues) == 1
-        assert issues[0].check_type == "references"
+        assert issues[0].code == "FK_VIOLATION"
         assert "has no parent city" in issues[0].message
 
     def test_check_entry_metadata_date_mismatch(self, validator):

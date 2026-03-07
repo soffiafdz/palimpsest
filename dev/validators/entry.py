@@ -13,7 +13,7 @@ Validation Scope:
     - Consistency: MD ↔ YAML people matching, scene subsets
 
 Output Format:
-    Returns ValidationResult with errors in quickfix-compatible format:
+    Returns ValidationReport with errors in quickfix-compatible format:
     {file}:{line}:{col}: {severity}: {message}
 
 Usage:
@@ -39,7 +39,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
-from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -55,115 +54,7 @@ from dev.utils.name_matching import (
     normalize_name,
     person_in_set,
 )
-
-
-# =============================================================================
-# Data Classes
-# =============================================================================
-
-
-@dataclass
-class ValidationIssue:
-    """
-    A single validation issue.
-
-    Attributes:
-        file_path: Path to the file with the issue
-        line: Line number (1-indexed, 0 if unknown)
-        col: Column number (1-indexed, 0 if unknown)
-        severity: 'error' or 'warning'
-        message: Description of the issue
-        field: Optional field name where issue was found
-    """
-
-    file_path: str
-    line: int
-    col: int
-    severity: str  # 'error' or 'warning'
-    message: str
-    field: Optional[str] = None
-
-    def quickfix_line(self) -> str:
-        """Format for nvim quickfix list."""
-        return f"{self.file_path}:{self.line}:{self.col}: {self.severity}: {self.message}"
-
-    def __str__(self) -> str:
-        return self.quickfix_line()
-
-
-@dataclass
-class ValidationResult:
-    """
-    Result of validation.
-
-    Attributes:
-        errors: List of error issues (block import)
-        warnings: List of warning issues (informational)
-        file_path: Primary file that was validated
-    """
-
-    errors: List[ValidationIssue] = field(default_factory=list)
-    warnings: List[ValidationIssue] = field(default_factory=list)
-    file_path: str = ""
-
-    @property
-    def is_valid(self) -> bool:
-        """True if no errors (warnings are OK)."""
-        return len(self.errors) == 0
-
-    @property
-    def all_issues(self) -> List[ValidationIssue]:
-        """All issues (errors + warnings)."""
-        return self.errors + self.warnings
-
-    def add_error(
-        self,
-        message: str,
-        line: int = 0,
-        col: int = 0,
-        field: Optional[str] = None,
-        file_path: Optional[str] = None,
-    ) -> None:
-        """Add an error issue."""
-        self.errors.append(
-            ValidationIssue(
-                file_path=file_path or self.file_path,
-                line=line,
-                col=col,
-                severity="error",
-                message=message,
-                field=field,
-            )
-        )
-
-    def add_warning(
-        self,
-        message: str,
-        line: int = 0,
-        col: int = 0,
-        field: Optional[str] = None,
-        file_path: Optional[str] = None,
-    ) -> None:
-        """Add a warning issue."""
-        self.warnings.append(
-            ValidationIssue(
-                file_path=file_path or self.file_path,
-                line=line,
-                col=col,
-                severity="warning",
-                message=message,
-                field=field,
-            )
-        )
-
-    def merge(self, other: "ValidationResult") -> None:
-        """Merge another result into this one."""
-        self.errors.extend(other.errors)
-        self.warnings.extend(other.warnings)
-
-    def quickfix_output(self) -> str:
-        """Get all issues in quickfix format."""
-        return "\n".join(issue.quickfix_line() for issue in self.all_issues)
+from dev.validators.diagnostic import ValidationReport
 
 
 # =============================================================================
@@ -231,7 +122,7 @@ def parse_metadata_yaml(yaml_path: Path) -> Tuple[Optional[Dict[str, Any]], Opti
 def validate_md_frontmatter(
     md_path: Path,
     frontmatter: Dict[str, Any],
-) -> ValidationResult:
+) -> ValidationReport:
     """
     Validate MD frontmatter structure.
 
@@ -245,23 +136,23 @@ def validate_md_frontmatter(
         frontmatter: Parsed frontmatter dict
 
     Returns:
-        ValidationResult with errors/warnings
+        ValidationReport with errors/warnings
     """
-    result = ValidationResult(file_path=str(md_path))
+    result = ValidationReport(file_path=str(md_path))
 
     # Required: date
     if "date" not in frontmatter:
-        result.add_error("Missing required field: date", field="date")
+        result.add_error("Missing required field: date")
     else:
         entry_date = frontmatter["date"]
         if not isinstance(entry_date, (str, date)):
-            result.add_error(f"date must be string or date, got {type(entry_date).__name__}", field="date")
+            result.add_error(f"date must be string or date, got {type(entry_date).__name__}")
 
     # Optional: people (list)
     if "people" in frontmatter:
         people = frontmatter["people"]
         if not isinstance(people, list):
-            result.add_error(f"people must be list, got {type(people).__name__}", field="people")
+            result.add_error(f"people must be list, got {type(people).__name__}")
 
     # Optional: locations (dict grouped by city)
     if "locations" in frontmatter:
@@ -269,14 +160,12 @@ def validate_md_frontmatter(
         if not isinstance(locations, dict):
             result.add_error(
                 f"locations must be dict (city: [locations]), got {type(locations).__name__}",
-                field="locations",
             )
         else:
             for city, locs in locations.items():
                 if not isinstance(locs, list):
                     result.add_error(
                         f"locations[{city}] must be list, got {type(locs).__name__}",
-                        field="locations",
                     )
 
     # Optional: narrated_dates (list)
@@ -285,7 +174,6 @@ def validate_md_frontmatter(
         if not isinstance(dates, list):
             result.add_error(
                 f"narrated_dates must be list, got {type(dates).__name__}",
-                field="narrated_dates",
             )
 
     return result
@@ -299,7 +187,7 @@ def validate_md_frontmatter(
 def validate_metadata_yaml(
     yaml_path: Path,
     metadata: Dict[str, Any],
-) -> ValidationResult:
+) -> ValidationReport:
     """
     Validate metadata YAML structure.
 
@@ -316,58 +204,55 @@ def validate_metadata_yaml(
         metadata: Parsed YAML dict
 
     Returns:
-        ValidationResult with errors/warnings
+        ValidationReport with errors/warnings
     """
-    result = ValidationResult(file_path=str(yaml_path))
+    result = ValidationReport(file_path=str(yaml_path))
 
     # Required: date
     if "date" not in metadata:
-        result.add_error("Missing required field: date", field="date")
+        result.add_error("Missing required field: date")
 
     # Validate scenes
     scene_names: Set[str] = set()
     for i, scene in enumerate(metadata.get("scenes", []) or []):
         if not isinstance(scene, dict):
-            result.add_error(f"scenes[{i}] must be dict", field="scenes")
+            result.add_error(f"scenes[{i}] must be dict")
             continue
 
         # Required scene fields
         scene_name = scene.get("name")
         if not scene_name:
-            result.add_error(f"scenes[{i}] missing required field: name", field="scenes")
+            result.add_error(f"scenes[{i}] missing required field: name")
         else:
             # Check uniqueness
             if scene_name in scene_names:
-                result.add_error(f"Duplicate scene name: '{scene_name}'", field="scenes")
+                result.add_error(f"Duplicate scene name: '{scene_name}'")
             scene_names.add(scene_name)
 
         if not scene.get("description"):
             result.add_error(
                 f"Scene '{scene_name or i}' missing required field: description",
-                field="scenes",
             )
 
         if not scene.get("date"):
             result.add_error(
                 f"Scene '{scene_name or i}' missing required field: date",
-                field="scenes",
             )
 
     # Validate events
     for i, event in enumerate(metadata.get("events", []) or []):
         if not isinstance(event, dict):
-            result.add_error(f"events[{i}] must be dict", field="events")
+            result.add_error(f"events[{i}] must be dict")
             continue
 
         event_name = event.get("name")
         if not event_name:
-            result.add_error(f"events[{i}] missing required field: name", field="events")
+            result.add_error(f"events[{i}] missing required field: name")
 
         event_scenes = event.get("scenes", [])
         if not event_scenes:
             result.add_error(
                 f"Event '{event_name or i}' missing required field: scenes",
-                field="events",
             )
         else:
             # Check scene references
@@ -375,53 +260,48 @@ def validate_metadata_yaml(
                 if scene_ref not in scene_names:
                     result.add_error(
                         f"Event '{event_name}' references unknown scene: '{scene_ref}'",
-                        field="events",
                     )
 
     # Validate threads
     for i, thread in enumerate(metadata.get("threads", []) or []):
         if not isinstance(thread, dict):
-            result.add_error(f"threads[{i}] must be dict", field="threads")
+            result.add_error(f"threads[{i}] must be dict")
             continue
 
         thread_name = thread.get("name")
         if not thread_name:
-            result.add_error(f"threads[{i}] missing required field: name", field="threads")
+            result.add_error(f"threads[{i}] missing required field: name")
 
         if not thread.get("from"):
             result.add_error(
                 f"Thread '{thread_name or i}' missing required field: from",
-                field="threads",
             )
 
         if not thread.get("to"):
             result.add_error(
                 f"Thread '{thread_name or i}' missing required field: to",
-                field="threads",
             )
 
         if not thread.get("content"):
             result.add_error(
                 f"Thread '{thread_name or i}' missing required field: content",
-                field="threads",
             )
 
     # Validate people section
     for i, person in enumerate(metadata.get("people", []) or []):
         if not isinstance(person, dict):
-            result.add_error(f"people[{i}] must be dict", field="people")
+            result.add_error(f"people[{i}] must be dict")
             continue
 
         name = person.get("name")
         if not name:
-            result.add_error(f"people[{i}] missing required field: name", field="people")
+            result.add_error(f"people[{i}] missing required field: name")
             continue
 
         # Data quality: must have lastname OR disambiguator
         if not person.get("lastname") and not person.get("disambiguator"):
             result.add_error(
                 f"Person '{name}' missing both lastname and disambiguator",
-                field="people",
             )
 
     return result
@@ -437,7 +317,7 @@ def validate_consistency(
     yaml_path: Path,
     md_frontmatter: Dict[str, Any],
     metadata: Dict[str, Any],
-) -> ValidationResult:
+) -> ValidationReport:
     """
     Validate consistency between MD frontmatter and metadata YAML.
 
@@ -455,9 +335,9 @@ def validate_consistency(
         metadata: Parsed metadata YAML
 
     Returns:
-        ValidationResult with errors/warnings
+        ValidationReport with errors/warnings
     """
-    result = ValidationResult(file_path=str(yaml_path))
+    result = ValidationReport(file_path=str(yaml_path))
 
     # Build people key sets
     md_people = md_frontmatter.get("people", []) or []
@@ -473,8 +353,7 @@ def validate_consistency(
             name = person if isinstance(person, str) else person.get("name", str(person))
             result.add_error(
                 f"MD person '{name}' not found in metadata YAML people section",
-                file_path=str(md_path),
-                field="people",
+                file=str(md_path),
             )
 
     # Check YAML people exist in MD
@@ -486,7 +365,6 @@ def validate_consistency(
         if not (person_keys & md_people_keys):
             result.add_error(
                 f"YAML person '{name}' not found in MD frontmatter people",
-                field="people",
             )
 
     # Build locations set from MD
@@ -511,7 +389,6 @@ def validate_consistency(
             if not person_in_set(str(person_name), yaml_people_keys):
                 result.add_error(
                     f"Scene '{scene_name}' person '{person_name}' not in YAML people section",
-                    field="scenes",
                 )
 
         # Scene locations must be in MD locations
@@ -519,7 +396,6 @@ def validate_consistency(
             if normalize_name(str(loc_name)) not in md_locations:
                 result.add_error(
                     f"Scene '{scene_name}' location '{loc_name}' not in MD frontmatter locations",
-                    field="scenes",
                 )
 
     # Validate thread subsets
@@ -534,7 +410,6 @@ def validate_consistency(
             if not person_in_set(str(person_name), yaml_people_keys):
                 result.add_error(
                     f"Thread '{thread_name}' person '{person_name}' not in YAML people section",
-                    field="threads",
                 )
 
         # Thread locations must be in MD locations
@@ -542,7 +417,6 @@ def validate_consistency(
             if normalize_name(str(loc_name)) not in md_locations:
                 result.add_error(
                     f"Thread '{thread_name}' location '{loc_name}' not in MD frontmatter locations",
-                    field="threads",
                 )
 
     return result
@@ -569,7 +443,7 @@ def get_entry_paths(entry_date: str) -> Tuple[Path, Path]:
     return md_path, yaml_path
 
 
-def validate_entry(entry_date: str) -> ValidationResult:
+def validate_entry(entry_date: str) -> ValidationReport:
     """
     Validate a journal entry by date.
 
@@ -579,21 +453,21 @@ def validate_entry(entry_date: str) -> ValidationResult:
         entry_date: Date string (YYYY-MM-DD)
 
     Returns:
-        ValidationResult with all issues
+        ValidationReport with all issues
     """
     md_path, yaml_path = get_entry_paths(entry_date)
-    result = ValidationResult(file_path=str(yaml_path))
+    result = ValidationReport(file_path=str(yaml_path))
 
     # Parse MD frontmatter
     md_frontmatter, md_error = parse_md_frontmatter(md_path)
     if md_error:
-        result.add_error(md_error, file_path=str(md_path))
+        result.add_error(md_error, file=str(md_path))
         md_frontmatter = {}
 
     # Parse metadata YAML
     metadata, yaml_error = parse_metadata_yaml(yaml_path)
     if yaml_error:
-        result.add_error(yaml_error, file_path=str(yaml_path))
+        result.add_error(yaml_error, file=str(yaml_path))
         return result  # Can't continue without YAML
 
     # Validate MD frontmatter
@@ -616,7 +490,7 @@ def validate_entry(entry_date: str) -> ValidationResult:
     return result
 
 
-def validate_file(file_path: Path) -> ValidationResult:
+def validate_file(file_path: Path) -> ValidationReport:
     """
     Validate a single file (auto-detects MD or YAML).
 
@@ -627,10 +501,10 @@ def validate_file(file_path: Path) -> ValidationResult:
         file_path: Path to file
 
     Returns:
-        ValidationResult with all issues
+        ValidationReport with all issues
     """
     file_path = Path(file_path)
-    result = ValidationResult(file_path=str(file_path))
+    result = ValidationReport(file_path=str(file_path))
 
     if not file_path.exists():
         result.add_error(f"File not found: {file_path}")
@@ -693,7 +567,7 @@ def validate_file(file_path: Path) -> ValidationResult:
 def validate_directory(
     directory: Path,
     pattern: str = "*.yaml",
-) -> Dict[str, ValidationResult]:
+) -> Dict[str, ValidationReport]:
     """
     Validate all files in a directory.
 
@@ -702,9 +576,9 @@ def validate_directory(
         pattern: Glob pattern for files
 
     Returns:
-        Dict mapping file paths to their ValidationResult
+        Dict mapping file paths to their ValidationReport
     """
-    results: Dict[str, ValidationResult] = {}
+    results: Dict[str, ValidationReport] = {}
 
     for file_path in sorted(directory.glob(pattern)):
         results[str(file_path)] = validate_file(file_path)

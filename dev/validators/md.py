@@ -29,7 +29,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -42,53 +41,19 @@ from dev.core.validators import DataValidator
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.validators.schema import SchemaValidator
 from dev.validators.frontmatter import FrontmatterValidator
+from dev.validators.diagnostic import Diagnostic, ValidationReport
 
 
-@dataclass
-class MarkdownIssue:
-    """Represents a validation issue in a markdown file."""
-
-    file_path: Path
-    line_number: Optional[int]
-    severity: str  # error, warning, info
-    category: str  # frontmatter, link, structure, content, metadata
-    message: str
-    suggestion: Optional[str] = None
-
-
-@dataclass
-class MarkdownValidationReport:
-    """Complete markdown validation report."""
-
-    files_checked: int = 0
-    files_with_errors: int = 0
-    files_with_warnings: int = 0
-    total_errors: int = 0
-    total_warnings: int = 0
-    issues: List[MarkdownIssue] = field(default_factory=list)
-
-    def add_issue(self, issue: MarkdownIssue) -> None:
-        """Add an issue to the report."""
-        self.issues.append(issue)
-        if issue.severity == "error":
-            self.total_errors += 1
-        elif issue.severity == "warning":
-            self.total_warnings += 1
-
-    @property
-    def has_errors(self) -> bool:
-        """Check if any errors were found."""
-        return self.total_errors > 0
-
-    @property
-    def has_warnings(self) -> bool:
-        """Check if any warnings were found."""
-        return self.total_warnings > 0
-
-    @property
-    def is_healthy(self) -> bool:
-        """Check if all files are healthy (no errors)."""
-        return not self.has_errors
+# Map diagnostic code prefixes to frontmatter field names for line lookup
+_CODE_FIELD_MAP = {
+    "PEOPLE": "people",
+    "LOCATION": "locations",
+    "DATE": "dates",
+    "REFERENCE": "references",
+    "POEM": "poems",
+    "MANUSCRIPT": "manuscript",
+    "UNKNOWN": None,
+}
 
 
 class MarkdownValidator:
@@ -119,10 +84,6 @@ class MarkdownValidator:
         "manuscript": dict,
     }
 
-    # Note: Enum values are now imported from schema validator
-    # which gets them from the authoritative source (models/enums.py).
-    # No more hardcoded enum lists!
-
     def __init__(
         self,
         md_dir: Path,
@@ -137,9 +98,12 @@ class MarkdownValidator:
         """
         self.md_dir = md_dir
         self.logger = logger
-        self.report = MarkdownValidationReport()
+        self._files_checked = 0
+        self._files_with_errors = 0
+        self._files_with_warnings = 0
+        self._all_diagnostics: List[Diagnostic] = []
 
-    def validate_file(self, file_path: Path) -> List[MarkdownIssue]:
+    def validate_file(self, file_path: Path) -> List[Diagnostic]:
         """
         Validate a single markdown file.
 
@@ -147,65 +111,54 @@ class MarkdownValidator:
             file_path: Path to markdown file
 
         Returns:
-            List of issues found in the file
+            List of Diagnostic instances found
         """
-        issues = []
-        self.report.files_checked += 1
+        diagnostics: List[Diagnostic] = []
+        self._files_checked += 1
 
         try:
             content = file_path.read_text(encoding="utf-8")
         except UnicodeDecodeError as e:
-            issue = MarkdownIssue(
-                file_path=file_path,
-                line_number=None,
-                severity="error",
-                category="structure",
+            diagnostics.append(Diagnostic(
+                file=str(file_path), line=0, col=0, end_line=0, end_col=0,
+                severity="error", code="FRONTMATTER_SYNTAX",
                 message=f"File encoding error: {e}",
-                suggestion="Ensure file is UTF-8 encoded",
-            )
-            issues.append(issue)
-            self.report.add_issue(issue)
-            return issues
+            ))
+            self._all_diagnostics.extend(diagnostics)
+            return diagnostics
 
         # Split frontmatter and body
         try:
             frontmatter_text, body_lines = split_frontmatter(content)
             body = "\n".join(body_lines) if isinstance(body_lines, list) else body_lines
         except Exception as e:
-            issue = MarkdownIssue(
-                file_path=file_path,
-                line_number=1,
-                severity="error",
-                category="frontmatter",
+            diagnostics.append(Diagnostic(
+                file=str(file_path), line=1, col=0, end_line=1, end_col=0,
+                severity="error", code="FRONTMATTER_SYNTAX",
                 message=f"Failed to parse frontmatter: {e}",
-                suggestion="Check that frontmatter is enclosed in ---",
-            )
-            issues.append(issue)
-            self.report.add_issue(issue)
-            return issues
+            ))
+            self._all_diagnostics.extend(diagnostics)
+            return diagnostics
 
         # Validate frontmatter if present
         if frontmatter_text:
             frontmatter_issues = self._validate_frontmatter(
                 file_path, frontmatter_text
             )
-            issues.extend(frontmatter_issues)
-            for issue in frontmatter_issues:
-                self.report.add_issue(issue)
+            diagnostics.extend(frontmatter_issues)
 
         # Validate body
         body_issues = self._validate_body(file_path, body, len(frontmatter_text.split('\n')) if frontmatter_text else 0)
-        issues.extend(body_issues)
-        for issue in body_issues:
-            self.report.add_issue(issue)
+        diagnostics.extend(body_issues)
 
         # Track files with issues
-        if any(i.severity == "error" for i in issues):
-            self.report.files_with_errors += 1
-        if any(i.severity == "warning" for i in issues):
-            self.report.files_with_warnings += 1
+        if any(d.severity == "error" for d in diagnostics):
+            self._files_with_errors += 1
+        if any(d.severity == "warning" for d in diagnostics):
+            self._files_with_warnings += 1
 
-        return issues
+        self._all_diagnostics.extend(diagnostics)
+        return diagnostics
 
     def _find_field_line_number(self, frontmatter_text: str, field_name: str) -> int:
         """
@@ -229,227 +182,168 @@ class MarkdownValidator:
 
     def _validate_frontmatter(
         self, file_path: Path, frontmatter_text: str
-    ) -> List[MarkdownIssue]:
+    ) -> List[Diagnostic]:
         """Validate YAML frontmatter structure and content."""
-        issues = []
+        diagnostics: List[Diagnostic] = []
 
         # Parse YAML
         try:
-            frontmatter = yaml.safe_load(frontmatter_text)
+            frontmatter_data = yaml.safe_load(frontmatter_text)
         except yaml.YAMLError as e:
             problem_mark = getattr(e, 'problem_mark', None)
-            line_num = problem_mark.line + 1 if problem_mark else None
-            issues.append(
-                MarkdownIssue(
-                    file_path=file_path,
-                    line_number=line_num,
-                    severity="error",
-                    category="frontmatter",
-                    message=f"Invalid YAML syntax: {e}",
-                    suggestion="Check YAML formatting (indentation, colons, quotes)",
-                )
-            )
-            return issues
+            line_num = problem_mark.line + 1 if problem_mark else 0
+            diagnostics.append(Diagnostic(
+                file=str(file_path), line=line_num, col=0, end_line=line_num, end_col=0,
+                severity="error", code="FRONTMATTER_SYNTAX",
+                message=f"Invalid YAML syntax: {e}",
+            ))
+            return diagnostics
 
-        if not isinstance(frontmatter, dict):
-            issues.append(
-                MarkdownIssue(
-                    file_path=file_path,
-                    line_number=1,
-                    severity="error",
-                    category="frontmatter",
-                    message="Frontmatter must be a dictionary/object",
-                )
-            )
-            return issues
+        if not isinstance(frontmatter_data, dict):
+            diagnostics.append(Diagnostic(
+                file=str(file_path), line=1, col=0, end_line=1, end_col=0,
+                severity="error", code="FRONTMATTER_SYNTAX",
+                message="Frontmatter must be a dictionary/object",
+            ))
+            return diagnostics
 
         # Check required fields
         for field_name in self.REQUIRED_FIELDS:
-            if field_name not in frontmatter:
-                issues.append(
-                    MarkdownIssue(
-                        file_path=file_path,
-                        line_number=1,
-                        severity="error",
-                        category="frontmatter",
-                        message=f"Required field '{field_name}' missing",
-                        suggestion=f"Add '{field_name}: <value>' to frontmatter",
-                    )
-                )
-            elif frontmatter[field_name] is None or frontmatter[field_name] == "":
-                issues.append(
-                    MarkdownIssue(
-                        file_path=file_path,
-                        line_number=1,
-                        severity="error",
-                        category="frontmatter",
-                        message=f"Required field '{field_name}' is empty",
-                    )
-                )
+            if field_name not in frontmatter_data:
+                diagnostics.append(Diagnostic(
+                    file=str(file_path), line=1, col=0, end_line=1, end_col=0,
+                    severity="error", code="FRONTMATTER_FIELD",
+                    message=f"Required field '{field_name}' missing",
+                ))
+            elif frontmatter_data[field_name] is None or frontmatter_data[field_name] == "":
+                diagnostics.append(Diagnostic(
+                    file=str(file_path), line=1, col=0, end_line=1, end_col=0,
+                    severity="error", code="FRONTMATTER_FIELD",
+                    message=f"Required field '{field_name}' is empty",
+                ))
 
         # Validate date format
-        if "date" in frontmatter:
-            date_value = frontmatter["date"]
+        if "date" in frontmatter_data:
+            date_value = frontmatter_data["date"]
             if not DataValidator.normalize_date(date_value):
-                issues.append(
-                    MarkdownIssue(
-                        file_path=file_path,
-                        line_number=1,
-                        severity="error",
-                        category="frontmatter",
-                        message=f"Invalid date format: '{date_value}'",
-                        suggestion="Use YYYY-MM-DD format (e.g., 2024-01-15)",
-                    )
-                )
+                diagnostics.append(Diagnostic(
+                    file=str(file_path), line=1, col=0, end_line=1, end_col=0,
+                    severity="error", code="FRONTMATTER_FIELD",
+                    message=f"Invalid date format: '{date_value}'",
+                ))
 
         # Check field types
         for field_key, expected_type in self.OPTIONAL_FIELDS.items():
-            if field_key in frontmatter and frontmatter[field_key] is not None:
-                value = frontmatter[field_key]
+            if field_key in frontmatter_data and frontmatter_data[field_key] is not None:
+                value = frontmatter_data[field_key]
                 if not isinstance(value, expected_type):
-                    # Fields that cause data loss if wrong type should be errors
-                    # Fields that are just formatting issues can be warnings
                     data_loss_fields = {"locations", "people", "events", "tags", "references", "poems", "dates", "related_entries"}
                     severity = "error" if field_key in data_loss_fields else "warning"
-
-                    # Find the actual line number for this field
                     line_num = self._find_field_line_number(frontmatter_text, field_key)
 
-                    issues.append(
-                        MarkdownIssue(
-                            file_path=file_path,
-                            line_number=line_num,
-                            severity=severity,
-                            category="frontmatter",
-                            message=f"Field '{field_key}' has unexpected type: {type(value).__name__}",
-                            suggestion=f"Expected: {expected_type if isinstance(expected_type, type) else ' or '.join(t.__name__ for t in expected_type)}. Data will be lost if not fixed.",
-                        )
-                    )
+                    diagnostics.append(Diagnostic(
+                        file=str(file_path), line=line_num, col=0,
+                        end_line=line_num, end_col=0,
+                        severity=severity, code="FRONTMATTER_FIELD",
+                        message=f"Field '{field_key}' has unexpected type: {type(value).__name__}",
+                    ))
 
         # Validate manuscript section using schema validator
-        if "manuscript" in frontmatter and isinstance(frontmatter["manuscript"], dict):
+        if "manuscript" in frontmatter_data and isinstance(frontmatter_data["manuscript"], dict):
             schema_issues = self.schema_validator.validate_manuscript_schema(
-                frontmatter["manuscript"]
+                frontmatter_data["manuscript"]
             )
             for schema_issue in schema_issues:
-                # Find line number for manuscript or status field
                 line_num = self._find_field_line_number(frontmatter_text, "status")
-                if line_num == 1:  # If status not found, try manuscript
+                if line_num == 1:
                     line_num = self._find_field_line_number(frontmatter_text, "manuscript")
-
-                issues.append(
-                    MarkdownIssue(
-                        file_path=file_path,
-                        line_number=line_num,
-                        severity=schema_issue.severity,
-                        category="frontmatter",
-                        message=schema_issue.message,
-                        suggestion=schema_issue.suggestion,
-                    )
-                )
+                diagnostics.append(Diagnostic(
+                    file=str(file_path), line=line_num, col=0,
+                    end_line=line_num, end_col=0,
+                    severity=schema_issue.severity, code="FRONTMATTER_FIELD",
+                    message=schema_issue.message,
+                ))
 
         # Validate references using schema validator
-        if "references" in frontmatter and isinstance(frontmatter["references"], list):
-            # Find line number for references field
+        if "references" in frontmatter_data and isinstance(frontmatter_data["references"], list):
             ref_line_num = self._find_field_line_number(frontmatter_text, "references")
-
             schema_issues = self.schema_validator.validate_references_schema(
-                frontmatter["references"]
+                frontmatter_data["references"]
             )
             for schema_issue in schema_issues:
-                issues.append(
-                    MarkdownIssue(
-                        file_path=file_path,
-                        line_number=ref_line_num,
-                        severity=schema_issue.severity,
-                        category="frontmatter",
-                        message=schema_issue.message,
-                        suggestion=schema_issue.suggestion,
-                    )
-                )
+                diagnostics.append(Diagnostic(
+                    file=str(file_path), line=ref_line_num, col=0,
+                    end_line=ref_line_num, end_col=0,
+                    severity=schema_issue.severity, code="FRONTMATTER_FIELD",
+                    message=schema_issue.message,
+                ))
 
         # --- Delegate detailed structure validation to FrontmatterValidator ---
         frontmatter_validator = FrontmatterValidator(self.md_dir, self.logger)
-        # Use validate_file directly which takes care of parsing frontmatter again,
-        # but since we already have frontmatter, it might be slightly inefficient.
-        # However, FrontmatterValidator logic is cleaner to keep separate.
-        # We catch the issues and convert them.
-        frontmatter_issues = frontmatter_validator.validate_file(file_path)
-        for fm_issue in frontmatter_issues:
-            # Find line number for the field
-            line_num = self._find_field_line_number(frontmatter_text, fm_issue.field_name.split('[')[0].split('.')[0])
-
-            issues.append(
-                MarkdownIssue(
-                    file_path=file_path,
-                    line_number=line_num,
-                    severity=fm_issue.severity,
-                    category="frontmatter",
-                    message=fm_issue.message,
-                    suggestion=fm_issue.suggestion,
-                )
-            )
+        frontmatter_diagnostics = frontmatter_validator.validate_file(file_path)
+        for diag in frontmatter_diagnostics:
+            # Try to look up line number from the code prefix
+            prefix = diag.code.split("_")[0] if diag.code else ""
+            field = _CODE_FIELD_MAP.get(prefix, "")
+            if field:
+                line_num = self._find_field_line_number(frontmatter_text, field)
+                diagnostics.append(Diagnostic(
+                    file=diag.file, line=line_num, col=0,
+                    end_line=line_num, end_col=0,
+                    severity=diag.severity, code=diag.code,
+                    message=diag.message,
+                ))
+            else:
+                diagnostics.append(diag)
 
         # Warn about unknown fields
         known_fields = set(self.REQUIRED_FIELDS) | set(self.OPTIONAL_FIELDS.keys())
-        unknown_fields = set(frontmatter.keys()) - known_fields
+        unknown_fields = set(frontmatter_data.keys()) - known_fields
         if unknown_fields:
-            issues.append(
-                MarkdownIssue(
-                    file_path=file_path,
-                    line_number=1,
-                    severity="warning",
-                    category="frontmatter",
-                    message=f"Unknown fields: {', '.join(unknown_fields)}",
-                    suggestion="These fields will be ignored during processing",
-                )
-            )
+            diagnostics.append(Diagnostic(
+                file=str(file_path), line=1, col=0, end_line=1, end_col=0,
+                severity="warning", code="UNKNOWN_FIELD",
+                message=f"Unknown fields: {', '.join(unknown_fields)}",
+            ))
 
-        return issues
+        return diagnostics
 
     def _validate_body(
         self, file_path: Path, body: str, frontmatter_lines: int
-    ) -> List[MarkdownIssue]:
+    ) -> List[Diagnostic]:
         """Validate markdown body content."""
-        issues = []
+        diagnostics: List[Diagnostic] = []
 
         # Check if body is empty
         if not body or not body.strip():
-            issues.append(
-                MarkdownIssue(
-                    file_path=file_path,
-                    line_number=frontmatter_lines + 3,
-                    severity="warning",
-                    category="content",
-                    message="Entry body is empty",
-                    suggestion="Add content after the frontmatter",
-                )
-            )
+            diagnostics.append(Diagnostic(
+                file=str(file_path),
+                line=frontmatter_lines + 3, col=0,
+                end_line=frontmatter_lines + 3, end_col=0,
+                severity="warning", code="EMPTY_BODY",
+                message="Entry body is empty",
+            ))
 
         # Check for placeholder text
         placeholders = ["TODO", "FIXME", "XXX", "PLACEHOLDER"]
         for placeholder in placeholders:
             if placeholder in body:
                 line_no = body[:body.index(placeholder)].count('\n') + frontmatter_lines + 3
-                issues.append(
-                    MarkdownIssue(
-                        file_path=file_path,
-                        line_number=line_no,
-                        severity="warning",
-                        category="content",
-                        message=f"Placeholder text found: {placeholder}",
-                        suggestion="Replace placeholder with actual content",
-                    )
-                )
+                diagnostics.append(Diagnostic(
+                    file=str(file_path),
+                    line=line_no, col=0, end_line=line_no, end_col=0,
+                    severity="warning", code="PLACEHOLDER",
+                    message=f"Placeholder text found: {placeholder}",
+                ))
 
-        return issues
+        return diagnostics
 
-    def validate_all(self) -> MarkdownValidationReport:
+    def validate_all(self) -> ValidationReport:
         """
         Validate all markdown files in the directory.
 
         Returns:
-            Complete validation report
+            ValidationReport with all diagnostics
         """
         md_files = list(self.md_dir.glob("**/*.md"))
 
@@ -459,16 +353,18 @@ class MarkdownValidator:
         for md_file in md_files:
             self.validate_file(md_file)
 
-        return self.report
+        report = ValidationReport()
+        report.diagnostics = list(self._all_diagnostics)
+        return report
 
-    def validate_links(self) -> List[MarkdownIssue]:
+    def validate_links(self) -> List[Diagnostic]:
         """
         Validate internal markdown links between files.
 
         Returns:
-            List of broken link issues
+            List of BROKEN_LINK diagnostics
         """
-        issues = []
+        diagnostics: List[Diagnostic] = []
 
         # Pattern for markdown links: [text](path)
         link_pattern = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
@@ -488,102 +384,25 @@ class MarkdownValidator:
                         target_path = (md_file.parent / link_path).resolve()
                         if not target_path.exists():
                             line_no = content[:match.start()].count('\n') + 1
-                            issues.append(
-                                MarkdownIssue(
-                                    file_path=md_file,
-                                    line_number=line_no,
-                                    severity="error",
-                                    category="link",
-                                    message=f"Broken link: [{link_text}]({link_path})",
-                                    suggestion=f"Target file not found: {target_path}",
-                                )
-                            )
+                            diagnostics.append(Diagnostic(
+                                file=str(md_file),
+                                line=line_no, col=0, end_line=line_no, end_col=0,
+                                severity="error", code="BROKEN_LINK",
+                                message=f"Broken link: [{link_text}]({link_path})",
+                            ))
                     except (ValueError, OSError) as e:
                         line_no = content[:match.start()].count('\n') + 1
-                        issues.append(
-                            MarkdownIssue(
-                                file_path=md_file,
-                                line_number=line_no,
-                                severity="error",
-                                category="link",
-                                message=f"Invalid link path: {link_path}",
-                                suggestion=str(e),
-                            )
-                        )
+                        diagnostics.append(Diagnostic(
+                            file=str(md_file),
+                            line=line_no, col=0, end_line=line_no, end_col=0,
+                            severity="error", code="BROKEN_LINK",
+                            message=f"Invalid link path: {link_path} ({e})",
+                        ))
             except Exception as e:
-                issues.append(
-                    MarkdownIssue(
-                        file_path=md_file,
-                        line_number=None,
-                        severity="error",
-                        category="link",
-                        message=f"Error checking links: {e}",
-                    )
-                )
+                diagnostics.append(Diagnostic(
+                    file=str(md_file), line=0, col=0, end_line=0, end_col=0,
+                    severity="error", code="BROKEN_LINK",
+                    message=f"Error checking links: {e}",
+                ))
 
-        return issues
-
-
-def format_markdown_report(report: MarkdownValidationReport) -> str:
-    """
-    Format markdown validation report as readable text.
-
-    Args:
-        report: Validation report to format
-
-    Returns:
-        Formatted report string
-    """
-    lines = []
-    lines.append("\n" + "=" * 60)
-    lines.append("MARKDOWN VALIDATION REPORT")
-    lines.append("=" * 60)
-    lines.append("")
-
-    # Summary
-    lines.append(f"Files Checked: {report.files_checked}")
-    lines.append(f"✅ Clean Files: {report.files_checked - report.files_with_errors - report.files_with_warnings}")
-    lines.append(f"⚠️  Files with Warnings: {report.files_with_warnings}")
-    lines.append(f"❌ Files with Errors: {report.files_with_errors}")
-    lines.append("")
-    lines.append(f"Total Warnings: {report.total_warnings}")
-    lines.append(f"Total Errors: {report.total_errors}")
-    lines.append("")
-
-    # Overall status
-    if report.is_healthy:
-        lines.append("✅ ALL FILES VALID")
-    else:
-        lines.append("❌ VALIDATION FAILED")
-    lines.append("")
-
-    # Group issues by file
-    if report.issues:
-        issues_by_file: Dict[Path, List[MarkdownIssue]] = {}
-        for issue in report.issues:
-            if issue.file_path not in issues_by_file:
-                issues_by_file[issue.file_path] = []
-            issues_by_file[issue.file_path].append(issue)
-
-        lines.append("ISSUES BY FILE:")
-        lines.append("")
-
-        for file_path in sorted(issues_by_file.keys()):
-            file_issues = issues_by_file[file_path]
-            errors = [i for i in file_issues if i.severity == "error"]
-
-            icon = "❌" if errors else "⚠️"
-            lines.append(f"{icon} {file_path.name}")
-
-            for issue in file_issues:
-                severity_icon = "❌" if issue.severity == "error" else "⚠️"
-                line_info = f":{issue.line_number}" if issue.line_number else ""
-                lines.append(f"   {severity_icon} [{issue.category}]{line_info} {issue.message}")
-                if issue.suggestion:
-                    lines.append(f"      💡 {issue.suggestion}")
-
-            lines.append("")
-
-    lines.append("=" * 60)
-
-    return "\n".join(lines)
+        return diagnostics

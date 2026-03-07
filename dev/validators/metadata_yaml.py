@@ -46,7 +46,6 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections import defaultdict
-from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -56,122 +55,83 @@ import yaml
 
 # --- Local imports ---
 from dev.core.paths import JOURNAL_YAML_DIR, MD_DIR
+from dev.validators.diagnostic import Diagnostic, ValidationReport as _SharedReport
 
 
-# =============================================================================
-# Validation Result Classes
-# =============================================================================
+class ValidationReport(_SharedReport):
+    """
+    Metadata YAML validation report.
 
+    Extends the shared ValidationReport with convenience methods
+    that accept ``category`` and ``field`` parameters used throughout
+    the metadata YAML validation logic.
+    """
 
-@dataclass
-class ValidationError:
-    """A single validation error."""
-
-    file_path: str
-    category: str  # scene_name, event_name, structure, date
-    field: str  # e.g., "scenes[0].name", "events[1].name"
-    message: str
-    value: Optional[str] = None
-    suggestion: Optional[str] = None
-
-    def format(self) -> str:
-        """Format error for display."""
-        parts = [f"[{self.category}] {self.field}: {self.message}"]
-        if self.value:
-            parts.append(f"  Value: {self.value}")
-        if self.suggestion:
-            parts.append(f"  Suggestion: {self.suggestion}")
-        return "\n".join(parts)
-
-
-@dataclass
-class ValidationReport:
-    """Validation report for a single file or collection."""
-
-    file_path: Optional[str] = None
-    errors: List[ValidationError] = field(default_factory=list)
-    warnings: List[ValidationError] = field(default_factory=list)
-
-    @property
-    def is_valid(self) -> bool:
-        """Check if validation passed (no errors)."""
-        return len(self.errors) == 0
-
-    @property
-    def error_count(self) -> int:
-        """Count of errors."""
-        return len(self.errors)
-
-    @property
-    def warning_count(self) -> int:
-        """Count of warnings."""
-        return len(self.warnings)
-
-    def add_error(
+    def add_error(  # type: ignore[override]
         self,
-        category: str,
-        field: str,
-        message: str,
+        category: str = "",
+        field: str = "",
+        message: str = "",
         value: Optional[str] = None,
         suggestion: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
-        """Add an error to the report."""
-        self.errors.append(
-            ValidationError(
-                file_path=self.file_path or "",
-                category=category,
-                field=field,
-                message=message,
-                value=value,
-                suggestion=suggestion,
-            )
-        )
+        """Add an error diagnostic from category/field/message."""
+        code = self._category_to_code(category)
+        full_msg = f"[{category}] {field}: {message}"
+        if value:
+            full_msg += f" (value: {value})"
+        if suggestion:
+            full_msg += f" ({suggestion})"
+        self.diagnostics.append(Diagnostic(
+            file=self.file_path or "",
+            line=0, col=0, end_line=0, end_col=0,
+            severity="error", code=code, message=full_msg,
+        ))
 
-    def add_warning(
+    def add_warning(  # type: ignore[override]
         self,
-        category: str,
-        field: str,
-        message: str,
+        category: str = "",
+        field: str = "",
+        message: str = "",
         value: Optional[str] = None,
         suggestion: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
-        """Add a warning to the report."""
-        self.warnings.append(
-            ValidationError(
-                file_path=self.file_path or "",
-                category=category,
-                field=field,
-                message=message,
-                value=value,
-                suggestion=suggestion,
-            )
-        )
+        """Add a warning diagnostic from category/field/message."""
+        code = self._category_to_code(category)
+        full_msg = f"[{category}] {field}: {message}"
+        if value:
+            full_msg += f" (value: {value})"
+        if suggestion:
+            full_msg += f" ({suggestion})"
+        self.diagnostics.append(Diagnostic(
+            file=self.file_path or "",
+            line=0, col=0, end_line=0, end_col=0,
+            severity="warning", code=code, message=full_msg,
+        ))
 
     def format(self) -> str:
         """Format report for display."""
-        lines = []
-        if self.file_path:
-            lines.append(f"=== {self.file_path} ===")
+        from dev.validators.diagnostic import format_diagnostics
+        if not self.diagnostics:
+            prefix = f"=== {self.file_path} ===\n" if self.file_path else ""
+            return prefix + "  OK - No issues found"
+        return format_diagnostics(self.diagnostics)
 
-        if self.errors:
-            lines.append(f"\nERRORS ({len(self.errors)}):")
-            for err in self.errors:
-                lines.append(f"  {err.format()}")
-
-        if self.warnings:
-            lines.append(f"\nWARNINGS ({len(self.warnings)}):")
-            for warn in self.warnings:
-                lines.append(f"  {warn.format()}")
-
-        if self.is_valid and not self.warnings:
-            lines.append("  OK - No issues found")
-
-        return "\n".join(lines)
-
-    def merge(self, other: "ValidationReport") -> None:
-        """Merge another report into this one."""
-        self.errors.extend(other.errors)
-        self.warnings.extend(other.warnings)
+    @staticmethod
+    def _category_to_code(category: str) -> str:
+        """Map validation category to diagnostic code."""
+        code_map = {
+            "scene_name": "SCENE_NAME_FORMAT",
+            "event_name": "EVENT_NAME_FORMAT",
+            "structure": "STRUCTURE",
+            "date": "INVALID_DATE",
+            "entity": "ENTITY_NOT_FOUND",
+            "disambiguation": "DISAMBIGUATION_REQUIRED",
+            "subset": "ENTITY_SUBSET",
+        }
+        return code_map.get(category, category.upper())
 
 
 # =============================================================================

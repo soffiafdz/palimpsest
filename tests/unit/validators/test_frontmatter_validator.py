@@ -73,7 +73,7 @@ class TestFrontmatterValidator:
         # Should be an ERROR for multiple aliases
         assert any(i.severity == "error" for i in issues)
         assert any("Multiple aliases for" in i.message for i in issues)
-        assert any("Combine into single entry" in i.suggestion for i in issues)
+        assert any("Combine into single entry" in i.message for i in issues)
 
     def test_validate_people_field_same_person_different_formats(self, validator, tmp_path):
         """Test validation detects same person in different formats (not both aliases)."""

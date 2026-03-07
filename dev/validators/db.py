@@ -28,7 +28,6 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
@@ -41,57 +40,7 @@ from alembic.script import ScriptDirectory
 from dev.database.manager import PalimpsestDB
 from dev.database.models import Base
 from dev.core.logging_manager import PalimpsestLogger
-
-
-@dataclass
-class ValidationResult:
-    """Result of a validation check."""
-
-    check_name: str
-    passed: bool
-    message: str
-    details: Optional[List[str]] = None
-    severity: str = "info"  # info, warning, error
-
-
-@dataclass
-class DatabaseValidationReport:
-    """Complete database validation report."""
-
-    results: List[ValidationResult]
-    total_checks: int = 0
-    passed_checks: int = 0
-    failed_checks: int = 0
-    warnings: int = 0
-    errors: int = 0
-
-    def add_result(self, result: ValidationResult) -> None:
-        """Add a validation result."""
-        self.results.append(result)
-        self.total_checks += 1
-        if result.passed:
-            self.passed_checks += 1
-        else:
-            self.failed_checks += 1
-            if result.severity == "warning":
-                self.warnings += 1
-            elif result.severity == "error":
-                self.errors += 1
-
-    @property
-    def has_errors(self) -> bool:
-        """Check if any errors were found."""
-        return self.errors > 0
-
-    @property
-    def has_warnings(self) -> bool:
-        """Check if any warnings were found."""
-        return self.warnings > 0
-
-    @property
-    def is_healthy(self) -> bool:
-        """Check if database is healthy (no errors)."""
-        return not self.has_errors
+from dev.validators.diagnostic import Diagnostic, ValidationReport
 
 
 class DatabaseValidator:
@@ -117,7 +66,7 @@ class DatabaseValidator:
         self.engine = db.engine
         self.inspector = inspect(self.engine)
 
-    def validate_schema(self) -> ValidationResult:
+    def validate_schema(self) -> List[Diagnostic]:
         """
         Validate that database schema matches SQLAlchemy models.
 
@@ -128,9 +77,9 @@ class DatabaseValidator:
         - Type mismatches
 
         Returns:
-            ValidationResult with schema drift details
+            List of SCHEMA_DRIFT diagnostics
         """
-        issues: List[str] = []
+        diagnostics: List[Diagnostic] = []
 
         # Get all model tables
         model_tables = Base.metadata.tables
@@ -138,7 +87,11 @@ class DatabaseValidator:
         for table_name, table in model_tables.items():
             # Check if table exists in database
             if not self.inspector.has_table(table_name):
-                issues.append(f"❌ Table '{table_name}' missing from database")
+                diagnostics.append(Diagnostic(
+                    file="", line=0, col=0, end_line=0, end_col=0,
+                    severity="error", code="SCHEMA_DRIFT",
+                    message=f"Table '{table_name}' missing from database",
+                ))
                 continue
 
             # Get actual columns from database
@@ -148,39 +101,29 @@ class DatabaseValidator:
             # Check for missing columns
             for col_name in model_columns:
                 if col_name not in db_columns:
-                    issues.append(
-                        f"❌ Column '{table_name}.{col_name}' missing from database"
-                    )
+                    diagnostics.append(Diagnostic(
+                        file="", line=0, col=0, end_line=0, end_col=0,
+                        severity="error", code="SCHEMA_DRIFT",
+                        message=f"Column '{table_name}.{col_name}' missing from database",
+                    ))
 
             # Check for extra columns (may indicate old schema)
             for col_name in db_columns:
                 if col_name not in model_columns:
-                    issues.append(
-                        f"⚠️  Column '{table_name}.{col_name}' exists in database but not in model"
-                    )
+                    diagnostics.append(Diagnostic(
+                        file="", line=0, col=0, end_line=0, end_col=0,
+                        severity="warning", code="SCHEMA_DRIFT",
+                        message=f"Column '{table_name}.{col_name}' exists in database but not in model",
+                    ))
 
-        if issues:
-            return ValidationResult(
-                check_name="Schema Validation",
-                passed=False,
-                message=f"Found {len(issues)} schema drift issue(s)",
-                details=issues,
-                severity="error",
-            )
-        else:
-            return ValidationResult(
-                check_name="Schema Validation",
-                passed=True,
-                message="Database schema matches models",
-                severity="info",
-            )
+        return diagnostics
 
-    def validate_migrations(self) -> ValidationResult:
+    def validate_migrations(self) -> List[Diagnostic]:
         """
         Check if all migrations have been applied.
 
         Returns:
-            ValidationResult indicating if migrations are up to date
+            List of MIGRATION_PENDING diagnostics
         """
         try:
             # Get current database revision
@@ -193,13 +136,11 @@ class DatabaseValidator:
             head_rev = script_dir.get_current_head()
 
             if current_rev is None:
-                return ValidationResult(
-                    check_name="Migration Status",
-                    passed=False,
-                    message="Database has no migration history",
-                    details=["Run: metadb migration upgrade"],
-                    severity="error",
-                )
+                return [Diagnostic(
+                    file="", line=0, col=0, end_line=0, end_col=0,
+                    severity="error", code="MIGRATION_PENDING",
+                    message="Database has no migration history. Run: metadb migration upgrade",
+                )]
 
             if current_rev != head_rev:
                 # Get pending migrations
@@ -211,41 +152,37 @@ class DatabaseValidator:
                 ):
                     if script.revision != current_rev:
                         rev_id = script.revision[:8] if script.revision else "unknown"
-                        pending.append(f"  • {rev_id}: {script.doc}")
+                        pending.append(f"{rev_id}: {script.doc}")
 
                 current_short = current_rev[:8] if current_rev else "none"
                 head_short = head_rev[:8] if head_rev else "none"
-                return ValidationResult(
-                    check_name="Migration Status",
-                    passed=False,
-                    message=f"Database needs migration (current: {current_short}, head: {head_short})",
-                    details=[f"Pending migrations ({len(pending)}):"] + pending + ["", "Run: metadb migration upgrade"],
-                    severity="error",
-                )
-            else:
-                return ValidationResult(
-                    check_name="Migration Status",
-                    passed=True,
-                    message=f"Database is up to date (revision: {current_rev[:8]})",
-                    severity="info",
-                )
+                pending_list = "; ".join(pending) if pending else ""
+                return [Diagnostic(
+                    file="", line=0, col=0, end_line=0, end_col=0,
+                    severity="error", code="MIGRATION_PENDING",
+                    message=(
+                        f"Database needs migration (current: {current_short}, "
+                        f"head: {head_short}). Pending: {pending_list}"
+                    ),
+                )]
+
+            return []
 
         except Exception as e:
-            return ValidationResult(
-                check_name="Migration Status",
-                passed=False,
+            return [Diagnostic(
+                file="", line=0, col=0, end_line=0, end_col=0,
+                severity="error", code="MIGRATION_PENDING",
                 message=f"Failed to check migration status: {e}",
-                severity="error",
-            )
+            )]
 
-    def validate_foreign_keys(self) -> ValidationResult:
+    def validate_foreign_keys(self) -> List[Diagnostic]:
         """
         Check for orphaned records (foreign key violations).
 
         Returns:
-            ValidationResult with orphaned record details
+            List of FK_ORPHAN diagnostics
         """
-        issues: List[str] = []
+        diagnostics: List[Diagnostic] = []
 
         # Get all tables with foreign keys
         for table_name in self.inspector.get_table_names():
@@ -269,35 +206,26 @@ class DatabaseValidator:
                     orphaned_count = result[0] if result else 0
 
                 if orphaned_count > 0:
-                    issues.append(
-                        f"❌ {orphaned_count} orphaned record(s) in '{table_name}.{local_col}' "
-                        f"(references '{remote_table}.{remote_col}')"
-                    )
+                    diagnostics.append(Diagnostic(
+                        file="", line=0, col=0, end_line=0, end_col=0,
+                        severity="error", code="FK_ORPHAN",
+                        message=(
+                            f"{orphaned_count} orphaned record(s) in "
+                            f"'{table_name}.{local_col}' "
+                            f"(references '{remote_table}.{remote_col}')"
+                        ),
+                    ))
 
-        if issues:
-            return ValidationResult(
-                check_name="Foreign Key Integrity",
-                passed=False,
-                message=f"Found {len(issues)} foreign key violation(s)",
-                details=issues,
-                severity="error",
-            )
-        else:
-            return ValidationResult(
-                check_name="Foreign Key Integrity",
-                passed=True,
-                message="All foreign key constraints satisfied",
-                severity="info",
-            )
+        return diagnostics
 
-    def validate_unique_constraints(self) -> ValidationResult:
+    def validate_unique_constraints(self) -> List[Diagnostic]:
         """
         Check for unique constraint violations.
 
         Returns:
-            ValidationResult with duplicate record details
+            List of UNIQUE_VIOLATION diagnostics
         """
-        issues: List[str] = []
+        diagnostics: List[Diagnostic] = []
 
         for table_name in self.inspector.get_table_names():
             unique_constraints = self.inspector.get_unique_constraints(table_name)
@@ -326,89 +254,29 @@ class DatabaseValidator:
                     for dup in duplicates:
                         values = ", ".join(str(v) for v in dup[:-1])
                         count = dup[-1]
-                        issues.append(
-                            f"❌ {count} duplicate records in '{table_name}' "
-                            f"for unique constraint ({col_list}): {values}"
-                        )
+                        diagnostics.append(Diagnostic(
+                            file="", line=0, col=0, end_line=0, end_col=0,
+                            severity="error", code="UNIQUE_VIOLATION",
+                            message=(
+                                f"{count} duplicate records in '{table_name}' "
+                                f"for unique constraint ({col_list}): {values}"
+                            ),
+                        ))
 
-        if issues:
-            return ValidationResult(
-                check_name="Unique Constraints",
-                passed=False,
-                message=f"Found {len(issues)} constraint violation(s)",
-                details=issues,
-                severity="error",
-            )
-        else:
-            return ValidationResult(
-                check_name="Unique Constraints",
-                passed=True,
-                message="All unique constraints satisfied",
-                severity="info",
-            )
+        return diagnostics
 
-    def validate_all(self) -> DatabaseValidationReport:
+    def validate_all(self) -> ValidationReport:
         """
         Run all validation checks.
 
         Returns:
-            Complete validation report
+            ValidationReport with all diagnostics
         """
-        report = DatabaseValidationReport(results=[])
+        report = ValidationReport()
 
-        # Run all checks
-        report.add_result(self.validate_migrations())
-        report.add_result(self.validate_schema())
-        report.add_result(self.validate_foreign_keys())
-        report.add_result(self.validate_unique_constraints())
+        report.diagnostics.extend(self.validate_migrations())
+        report.diagnostics.extend(self.validate_schema())
+        report.diagnostics.extend(self.validate_foreign_keys())
+        report.diagnostics.extend(self.validate_unique_constraints())
 
         return report
-
-
-def format_validation_report(report: DatabaseValidationReport) -> str:
-    """
-    Format validation report as readable text.
-
-    Args:
-        report: Validation report to format
-
-    Returns:
-        Formatted report string
-    """
-    lines = []
-    lines.append("\n" + "=" * 60)
-    lines.append("DATABASE VALIDATION REPORT")
-    lines.append("=" * 60)
-    lines.append("")
-
-    # Summary
-    lines.append(f"Total Checks: {report.total_checks}")
-    lines.append(f"✅ Passed: {report.passed_checks}")
-    lines.append(f"❌ Failed: {report.failed_checks}")
-    if report.warnings > 0:
-        lines.append(f"⚠️  Warnings: {report.warnings}")
-    if report.errors > 0:
-        lines.append(f"🚨 Errors: {report.errors}")
-    lines.append("")
-
-    # Overall status
-    if report.is_healthy:
-        lines.append("✅ DATABASE IS HEALTHY")
-    else:
-        lines.append("❌ DATABASE HAS ISSUES")
-    lines.append("")
-
-    # Detailed results
-    for result in report.results:
-        icon = "✅" if result.passed else "❌"
-        lines.append(f"{icon} {result.check_name}")
-        lines.append(f"   {result.message}")
-
-        if result.details:
-            for detail in result.details:
-                lines.append(f"   {detail}")
-        lines.append("")
-
-    lines.append("=" * 60)
-
-    return "\n".join(lines)

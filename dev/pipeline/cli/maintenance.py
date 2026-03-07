@@ -316,31 +316,28 @@ def validate_entry(
         validate_entry as do_validate_entry,
         validate_file as do_validate_file,
         validate_directory,
-        ValidationResult,
     )
+    from dev.validators.diagnostic import ValidationReport
 
-    def print_result(result: ValidationResult, quickfix: bool = False) -> int:
+    def print_result(result: ValidationReport, quickfix: bool = False) -> int:
         """Print validation result and return exit code."""
         if quickfix:
-            for issue in result.all_issues:
-                click.echo(issue.quickfix_line())
+            click.echo(result.quickfix_output())
         else:
             if result.errors:
-                click.secho(f"\nErrors ({len(result.errors)}):", fg="red", bold=True)
+                click.secho(f"\nErrors ({result.error_count}):", fg="red", bold=True)
                 for error in result.errors:
                     click.echo(f"  {error.message}")
-                    if error.field:
-                        click.echo(f"    Field: {error.field}")
 
             if result.warnings:
-                click.secho(f"\nWarnings ({len(result.warnings)}):", fg="yellow")
+                click.secho(f"\nWarnings ({result.warning_count}):", fg="yellow")
                 for warning in result.warnings:
                     click.echo(f"  {warning.message}")
 
             if result.is_valid:
                 click.secho("\n✓ Valid", fg="green")
             else:
-                click.secho(f"\n✗ {len(result.errors)} error(s)", fg="red")
+                click.secho(f"\n✗ {result.error_count} error(s)", fg="red")
 
         return 0 if result.is_valid else 1
 

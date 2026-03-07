@@ -30,8 +30,12 @@ from dev.core.paths import DB_PATH, ALEMBIC_DIR, LOG_DIR, BACKUP_DIR
 @click.option(
     "--log-dir", type=click.Path(), default=str(LOG_DIR), help="Directory for log files"
 )
+@click.option(
+    "--format", "output_format", type=click.Choice(["text", "json"]),
+    default="text", help="Output format",
+)
 @click.pass_context
-def db(ctx: click.Context, db_path: str, alembic_dir: str, log_dir: str) -> None:
+def db(ctx: click.Context, db_path: str, alembic_dir: str, log_dir: str, output_format: str) -> None:
     """
     Validate database integrity and constraints.
 
@@ -46,6 +50,7 @@ def db(ctx: click.Context, db_path: str, alembic_dir: str, log_dir: str) -> None
     ctx.obj["alembic_dir"] = Path(alembic_dir)
     ctx.obj["log_dir"] = Path(log_dir)
     ctx.obj["logger"] = setup_logger(Path(log_dir), "validators")
+    ctx.obj["output_format"] = output_format
 
     # Initialize database
     ctx.obj["db"] = PalimpsestDB(
@@ -55,6 +60,17 @@ def db(ctx: click.Context, db_path: str, alembic_dir: str, log_dir: str) -> None
         backup_dir=BACKUP_DIR,
         enable_auto_backup=False,
     )
+
+
+def _print_diagnostics(ctx: click.Context, diagnostics: list, check_name: str) -> None:
+    """Print diagnostics using the configured output format."""
+    from dev.validators.diagnostic import format_diagnostics
+
+    fmt = ctx.obj.get("output_format", "text")
+    if diagnostics:
+        click.echo(format_diagnostics(diagnostics, fmt))
+    elif fmt != "json":
+        click.echo(f"✅ {check_name}: passed")
 
 
 @db.command()
@@ -69,25 +85,12 @@ def schema(ctx: click.Context) -> None:
     """
     from dev.validators.db import DatabaseValidator
 
-    db = ctx.obj["db"]
-    alembic_dir = ctx.obj["alembic_dir"]
-    logger = ctx.obj["logger"]
+    validator = DatabaseValidator(ctx.obj["db"], ctx.obj["alembic_dir"], ctx.obj["logger"])
+    diagnostics = validator.validate_schema()
 
-    click.echo("🔍 Checking database schema...\n")
+    _print_diagnostics(ctx, diagnostics, "Schema Validation")
 
-    validator = DatabaseValidator(db, alembic_dir, logger)
-    result = validator.validate_schema()
-
-    icon = "✅" if result.passed else "❌"
-    click.echo(f"{icon} {result.check_name}")
-    click.echo(f"   {result.message}\n")
-
-    if result.details:
-        for detail in result.details:
-            click.echo(f"   {detail}")
-        click.echo()
-
-    if not result.passed:
+    if any(d.severity == "error" for d in diagnostics):
         raise click.ClickException("Schema validation failed")
 
 
@@ -102,25 +105,12 @@ def migrations(ctx: click.Context) -> None:
     """
     from dev.validators.db import DatabaseValidator
 
-    db = ctx.obj["db"]
-    alembic_dir = ctx.obj["alembic_dir"]
-    logger = ctx.obj["logger"]
+    validator = DatabaseValidator(ctx.obj["db"], ctx.obj["alembic_dir"], ctx.obj["logger"])
+    diagnostics = validator.validate_migrations()
 
-    click.echo("🔍 Checking migration status...\n")
+    _print_diagnostics(ctx, diagnostics, "Migration Status")
 
-    validator = DatabaseValidator(db, alembic_dir, logger)
-    result = validator.validate_migrations()
-
-    icon = "✅" if result.passed else "❌"
-    click.echo(f"{icon} {result.check_name}")
-    click.echo(f"   {result.message}\n")
-
-    if result.details:
-        for detail in result.details:
-            click.echo(f"   {detail}")
-        click.echo()
-
-    if not result.passed:
+    if any(d.severity == "error" for d in diagnostics):
         raise click.ClickException("Migration check failed")
 
 
@@ -135,25 +125,12 @@ def integrity(ctx: click.Context) -> None:
     """
     from dev.validators.db import DatabaseValidator
 
-    db = ctx.obj["db"]
-    alembic_dir = ctx.obj["alembic_dir"]
-    logger = ctx.obj["logger"]
+    validator = DatabaseValidator(ctx.obj["db"], ctx.obj["alembic_dir"], ctx.obj["logger"])
+    diagnostics = validator.validate_foreign_keys()
 
-    click.echo("🔍 Checking foreign key integrity...\n")
+    _print_diagnostics(ctx, diagnostics, "Foreign Key Integrity")
 
-    validator = DatabaseValidator(db, alembic_dir, logger)
-    result = validator.validate_foreign_keys()
-
-    icon = "✅" if result.passed else "❌"
-    click.echo(f"{icon} {result.check_name}")
-    click.echo(f"   {result.message}\n")
-
-    if result.details:
-        for detail in result.details:
-            click.echo(f"   {detail}")
-        click.echo()
-
-    if not result.passed:
+    if any(d.severity == "error" for d in diagnostics):
         raise click.ClickException("Foreign key validation failed")
 
 
@@ -167,25 +144,12 @@ def constraints(ctx: click.Context) -> None:
     """
     from dev.validators.db import DatabaseValidator
 
-    db = ctx.obj["db"]
-    alembic_dir = ctx.obj["alembic_dir"]
-    logger = ctx.obj["logger"]
+    validator = DatabaseValidator(ctx.obj["db"], ctx.obj["alembic_dir"], ctx.obj["logger"])
+    diagnostics = validator.validate_unique_constraints()
 
-    click.echo("🔍 Checking unique constraints...\n")
+    _print_diagnostics(ctx, diagnostics, "Unique Constraints")
 
-    validator = DatabaseValidator(db, alembic_dir, logger)
-    result = validator.validate_unique_constraints()
-
-    icon = "✅" if result.passed else "❌"
-    click.echo(f"{icon} {result.check_name}")
-    click.echo(f"   {result.message}\n")
-
-    if result.details:
-        for detail in result.details:
-            click.echo(f"   {detail}")
-        click.echo()
-
-    if not result.passed:
+    if any(d.severity == "error" for d in diagnostics):
         raise click.ClickException("Constraint validation failed")
 
 
@@ -198,21 +162,19 @@ def all(ctx: click.Context) -> None:
     Comprehensive validation including schema, migrations, foreign keys,
     and constraints. Provides a complete health report.
     """
-    from dev.validators.db import DatabaseValidator, format_validation_report
+    from dev.validators.db import DatabaseValidator
+    from dev.validators.diagnostic import format_diagnostics
 
-    db = ctx.obj["db"]
-    alembic_dir = ctx.obj["alembic_dir"]
-    logger = ctx.obj["logger"]
-
-    click.echo("🔍 Running comprehensive database validation...\n")
-
-    validator = DatabaseValidator(db, alembic_dir, logger)
+    validator = DatabaseValidator(ctx.obj["db"], ctx.obj["alembic_dir"], ctx.obj["logger"])
     report = validator.validate_all()
 
-    # Print formatted report
-    click.echo(format_validation_report(report))
+    fmt = ctx.obj.get("output_format", "text")
+    if report.diagnostics:
+        click.echo(format_diagnostics(report.diagnostics, fmt))
+    elif fmt != "json":
+        click.echo("✅ DATABASE IS HEALTHY")
 
-    if not report.is_healthy:
+    if not report.is_valid:
         raise click.ClickException(
-            f"Database validation failed with {report.errors} error(s)"
+            f"Database validation failed with {report.error_count} error(s)"
         )
