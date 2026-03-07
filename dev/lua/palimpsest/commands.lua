@@ -410,6 +410,13 @@ function M.setup()
 		desc = "Add based_on person mapping to character",
 	})
 
+	-- Set chapter for manuscript scene
+	vim.api.nvim_create_user_command("PalimpsestSetChapter", function()
+		require("palimpsest.entity").set_chapter()
+	end, {
+		desc = "Set or change chapter for manuscript scene",
+	})
+
 	-- Link journal entry to manuscript
 	vim.api.nvim_create_user_command("PalimpsestLinkToManuscript", function()
 		require("palimpsest.entity").link_to_manuscript()

@@ -212,6 +212,37 @@ function M.new(entity_type)
 		float.open(filepath, {
 			title = string.format(" New %s ", entity_type),
 		})
+
+		-- For scenes, prompt to select a chapter after the float opens
+		if entity_type == "scenes" then
+			vim.defer_fn(function()
+				local chapters = cache.get("chapters")
+				if #chapters == 0 then
+					return
+				end
+				vim.ui.select(chapters, { prompt = "Chapter (Esc to skip):" }, function(chapter)
+					if not chapter then
+						return
+					end
+					-- Replace the empty chapter field in the file
+					local lines = vim.fn.readfile(filepath)
+					for i, line in ipairs(lines) do
+						if line:match("^chapter: *$") then
+							lines[i] = "chapter: " .. chapter
+							vim.fn.writefile(lines, filepath)
+							-- Reload the buffer if it's still open
+							local buf = vim.fn.bufnr(filepath)
+							if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+								vim.api.nvim_buf_call(buf, function()
+									vim.cmd("edit!")
+								end)
+							end
+							break
+						end
+					end
+				end)
+			end, 100)
+		end
 	end)
 end
 
@@ -378,6 +409,64 @@ function M.add_based_on()
 				)
 			end
 		)
+	end)
+end
+
+--- Set or change the chapter for a manuscript scene YAML.
+---
+--- Provides a picker for chapter selection from cached chapters.
+--- Works from scene wiki pages or scene YAML files.
+function M.set_chapter()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "scene" then
+		vim.notify("Must be on a scene page", vim.log.levels.WARN)
+		return
+	end
+
+	local chapters = cache.get("chapters")
+	if #chapters == 0 then
+		vim.notify("No chapters cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		return
+	end
+
+	vim.ui.select(chapters, { prompt = "Chapter:" }, function(chapter)
+		if not chapter then
+			return
+		end
+
+		local yaml_path = resolve_yaml_path(ctx)
+		if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+			vim.notify("Scene YAML not found", vim.log.levels.ERROR)
+			return
+		end
+
+		local lines = vim.fn.readfile(yaml_path)
+		local found = false
+		for i, line in ipairs(lines) do
+			if line:match("^chapter:") then
+				lines[i] = "chapter: " .. chapter
+				found = true
+				break
+			end
+		end
+
+		if not found then
+			table.insert(lines, 2, "chapter: " .. chapter)
+		end
+
+		vim.fn.writefile(lines, yaml_path)
+		vim.notify(
+			string.format("Set chapter: %s", chapter),
+			vim.log.levels.INFO
+		)
+
+		-- Reload buffer if open
+		local buf = vim.fn.bufnr(yaml_path)
+		if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_call(buf, function()
+				vim.cmd("edit!")
+			end)
+		end
 	end)
 end
 
