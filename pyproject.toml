@@ -34,7 +34,6 @@ dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "ruff>=0.2.0"]
 plm = "dev.pipeline.cli:cli"
 jsearch = "dev.search.cli:cli"
 metadb = "dev.database.cli:cli"
-validate = "dev.validators.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

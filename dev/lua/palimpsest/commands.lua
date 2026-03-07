@@ -245,9 +245,28 @@ function M.validate_entry(entry_date)
 	})
 end
 
--- Deck mode: navigation-only commands (no Python dependency)
-function M.setup_deck()
-	-- Navigation commands (open pre-generated wiki files)
+-- Browse entity type completion list (shared by browse/search)
+local browse_types = {
+	"all",
+	"journal",
+	"people",
+	"entries",
+	"locations",
+	"cities",
+	"events",
+	"themes",
+	"tags",
+	"poems",
+	"references",
+	"motifs",
+	"manuscript",
+	"manuscript-chapters",
+	"manuscript-characters",
+	"manuscript-scenes",
+}
+
+-- Register navigation-only commands (no Python dependency)
+local function setup_navigation()
 	vim.api.nvim_create_user_command("PalimpsestIndex", function()
 		M.index()
 	end, {
@@ -260,7 +279,6 @@ function M.setup_deck()
 		desc = "Open manuscript wiki index/homepage",
 	})
 
-	-- fzf-lua commands (optional — gracefully handled if missing)
 	vim.api.nvim_create_user_command("PalimpsestBrowse", function(opts)
 		local entity_type = opts.args ~= "" and opts.args or "all"
 		require("palimpsest.fzf").browse(entity_type)
@@ -268,24 +286,7 @@ function M.setup_deck()
 		nargs = "?",
 		desc = "Browse wiki entities with fzf-lua",
 		complete = function()
-			return {
-				"all",
-				"journal",
-				"people",
-				"entries",
-				"locations",
-				"cities",
-				"events",
-				"themes",
-				"tags",
-				"poems",
-				"references",
-				"motifs",
-				"manuscript",
-				"manuscript-chapters",
-				"manuscript-characters",
-				"manuscript-scenes",
-			}
+			return browse_types
 		end,
 	})
 
@@ -296,24 +297,7 @@ function M.setup_deck()
 		nargs = "?",
 		desc = "Search wiki content with fzf-lua",
 		complete = function()
-			return {
-				"wiki",
-				"journal",
-				"people",
-				"entries",
-				"locations",
-				"cities",
-				"events",
-				"themes",
-				"tags",
-				"poems",
-				"references",
-				"motifs",
-				"manuscript",
-				"manuscript-chapters",
-				"manuscript-characters",
-				"manuscript-scenes",
-			}
+			return browse_types
 		end,
 	})
 
@@ -324,86 +308,14 @@ function M.setup_deck()
 	})
 end
 
+-- Deck mode: navigation-only commands (no Python dependency)
+function M.setup_deck()
+	setup_navigation()
+end
+
 -- Full setup: all commands including Python-dependent operations
 function M.setup()
-	-- Index command
-	vim.api.nvim_create_user_command("PalimpsestIndex", function()
-		M.index()
-	end, {
-		desc = "Open wiki index/homepage",
-	})
-
-	-- Manuscript index command
-	vim.api.nvim_create_user_command("PalimpsestManuscriptIndex", function()
-		M.manuscript_index()
-	end, {
-		desc = "Open manuscript wiki index/homepage",
-	})
-
-	-- fzf-lua browse commands
-	vim.api.nvim_create_user_command("PalimpsestBrowse", function(opts)
-		local entity_type = opts.args ~= "" and opts.args or "all"
-		require("palimpsest.fzf").browse(entity_type)
-	end, {
-		nargs = "?",
-		desc = "Browse wiki entities with fzf-lua",
-		complete = function()
-			return {
-				"all",
-				"journal",
-				"people",
-				"entries",
-				"locations",
-				"cities",
-				"events",
-				"themes",
-				"tags",
-				"poems",
-				"references",
-				"motifs",
-				"manuscript",
-				"manuscript-chapters",
-				"manuscript-characters",
-				"manuscript-scenes",
-			}
-		end,
-	})
-
-	-- fzf-lua search command
-	vim.api.nvim_create_user_command("PalimpsestSearch", function(opts)
-		local entity_type = opts.args ~= "" and opts.args or "wiki"
-		require("palimpsest.fzf").search(entity_type)
-	end, {
-		nargs = "?",
-		desc = "Search wiki content with fzf-lua",
-		complete = function()
-			return {
-				"wiki",
-				"journal",
-				"people",
-				"entries",
-				"locations",
-				"cities",
-				"events",
-				"themes",
-				"tags",
-				"poems",
-				"references",
-				"motifs",
-				"manuscript",
-				"manuscript-chapters",
-				"manuscript-characters",
-				"manuscript-scenes",
-			}
-		end,
-	})
-
-	-- fzf-lua quick access command
-	vim.api.nvim_create_user_command("PalimpsestQuickAccess", function()
-		require("palimpsest.fzf").quick_access()
-	end, {
-		desc = "Quick access to wiki index pages",
-	})
+	setup_navigation()
 
 	-- Wiki sync command
 	vim.api.nvim_create_user_command("PalimpsestSync", function(opts)

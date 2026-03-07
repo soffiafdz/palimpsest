@@ -37,6 +37,10 @@ from dev.core.backup_manager import BackupManager
 from dev.core.exceptions import BackupError
 from dev.database.manager import PalimpsestDB
 from dev.database.query_analytics import QueryAnalytics
+from dev.validators.cli.database import db as validate_db
+from dev.validators.cli.markdown import md as validate_md
+from dev.validators.cli.frontmatter import frontmatter as validate_frontmatter
+from dev.validators.cli.consistency import consistency as validate_consistency
 
 
 @click.command("backup-full")
@@ -235,7 +239,7 @@ def status(ctx: click.Context) -> None:
 
 @click.group()
 def validate() -> None:
-    """Validate pipeline and journal entries."""
+    """Validate pipeline, entries, database, markdown, frontmatter, and consistency."""
     pass
 
 
@@ -438,6 +442,13 @@ def validate_entry(
         raise SystemExit(1)
 
     raise SystemExit(exit_code)
+
+
+# Register validator command groups from dev.validators.cli
+validate.add_command(validate_db, "db")
+validate.add_command(validate_md, "md")
+validate.add_command(validate_frontmatter, "frontmatter")
+validate.add_command(validate_consistency, "consistency")
 
 
 __all__ = ["backup_full", "backup_list_full", "run_all", "status", "validate"]

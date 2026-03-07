@@ -2,11 +2,11 @@
 """
 Integration tests for validators CLI.
 
-Tests the validation CLI commands.
+Tests the validation CLI commands via ``plm validate``.
 """
 import pytest
 from click.testing import CliRunner
-from dev.validators.cli import cli
+from dev.pipeline.cli import cli
 
 
 class TestValidatorsCLIBasics:
@@ -17,20 +17,34 @@ class TestValidatorsCLIBasics:
         """Create Click test runner."""
         return CliRunner()
 
-    def test_cli_help(self, runner):
-        """Test that CLI help message works."""
-        result = runner.invoke(cli, ["--help"])
+    def test_validate_help(self, runner):
+        """Test that validate help message shows all subgroups."""
+        result = runner.invoke(cli, ["validate", "--help"])
         assert result.exit_code == 0
-        assert "validate" in result.output.lower()
+        assert "pipeline" in result.output.lower()
+        assert "db" in result.output
+        assert "md" in result.output
+        assert "frontmatter" in result.output
+        assert "consistency" in result.output
 
     def test_db_help(self, runner):
         """Test database validation command help."""
-        result = runner.invoke(cli, ["db", "--help"])
+        result = runner.invoke(cli, ["validate", "db", "--help"])
         assert result.exit_code == 0
 
     def test_md_help(self, runner):
         """Test markdown validation command help."""
-        result = runner.invoke(cli, ["md", "--help"])
+        result = runner.invoke(cli, ["validate", "md", "--help"])
+        assert result.exit_code == 0
+
+    def test_frontmatter_help(self, runner):
+        """Test frontmatter validation command help."""
+        result = runner.invoke(cli, ["validate", "frontmatter", "--help"])
+        assert result.exit_code == 0
+
+    def test_consistency_help(self, runner):
+        """Test consistency validation command help."""
+        result = runner.invoke(cli, ["validate", "consistency", "--help"])
         assert result.exit_code == 0
 
 
@@ -44,7 +58,7 @@ class TestValidatorOperations:
 
     def test_db_schema(self, runner):
         """Test database schema validation."""
-        result = runner.invoke(cli, ["db", "schema"])
+        result = runner.invoke(cli, ["validate", "db", "schema"])
         # May fail if DB not set up, but shouldn't crash
         assert result.exit_code in [0, 1]
 

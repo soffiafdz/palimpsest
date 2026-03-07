@@ -2,42 +2,32 @@
 Validators CLI Package
 ----------------------
 
-Unified CLI for Palimpsest validators.
+Command groups for Palimpsest validation, registered under ``plm validate``.
 
-Provides a single entry point for running various validation checks across
-the Palimpsest system. Each validator checks a specific aspect of data
-integrity or quality.
+Each validator checks a specific aspect of data integrity or quality.
+The command groups defined here are imported and registered on the
+``plm validate`` command group in ``dev.pipeline.cli.maintenance``.
 
 Available validators:
     - db: Database referential integrity, constraint violations
     - md: Markdown file validation, broken links, malformed frontmatter
     - frontmatter: YAML frontmatter structure and parser compatibility
-    - consistency: Cross-system consistency (md ↔ db)
-
-Note: The 'metadata' command has been renamed to 'frontmatter' for clarity.
-
-Architecture:
-    This CLI aggregates validators from individual modules (db.py, etc.)
-    Each validator module has its own command group and subcommands.
+    - consistency: Cross-system consistency (md <-> db)
 
 Usage:
-    validate db schema          # Check database schema
-    validate db migrations      # Check migration status
-    validate db all             # Run all database checks
+    plm validate db schema          # Check database schema
+    plm validate db migrations      # Check migration status
+    plm validate db all             # Run all database checks
 
-    validate md frontmatter     # Validate YAML frontmatter
-    validate md links           # Check markdown links
-    validate md all             # Run all markdown checks
+    plm validate md frontmatter     # Validate YAML frontmatter
+    plm validate md links           # Check markdown links
+    plm validate md all             # Run all markdown checks
 
-    validate frontmatter people # Validate people metadata
-    validate frontmatter all    # Run all frontmatter checks
+    plm validate frontmatter people # Validate people metadata
+    plm validate frontmatter all    # Run all frontmatter checks
 
-    validate consistency existence   # Check entry existence
-    validate consistency all         # Run all consistency checks
-
-Note: Simple validators remain in their respective CLIs:
-    - `plm validate` - Pipeline structure validation
-    - `metadb health` - Database health check
+    plm validate consistency existence   # Check entry existence
+    plm validate consistency all         # Run all consistency checks
 """
 import click
 

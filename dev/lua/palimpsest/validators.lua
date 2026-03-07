@@ -85,7 +85,7 @@ function M.validate_frontmatter(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && validate md frontmatter %s 2>&1",
+	local cmd = string.format("cd %s && plm validate md frontmatter %s 2>&1",
 		vim.fn.shellescape(root),
 		vim.fn.shellescape(filepath))
 
@@ -136,7 +136,7 @@ function M.validate_metadata(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && validate frontmatter all 2>&1",
+	local cmd = string.format("cd %s && plm validate frontmatter all 2>&1",
 		vim.fn.shellescape(root))
 
 	-- Run asynchronously
@@ -186,7 +186,7 @@ function M.validate_links(bufnr)
 	vim.diagnostic.reset(ns, bufnr)
 
 	local root = get_project_root()
-	local cmd = string.format("cd %s && validate md links 2>&1",
+	local cmd = string.format("cd %s && plm validate md links 2>&1",
 		vim.fn.shellescape(root))
 
 	-- Run asynchronously
