@@ -493,7 +493,7 @@ class TestBuildPersonContext:
 
         ctx = builder.build_person_context(clara)
         assert ctx["tier"] == "frequent"
-        assert "arc_event_spine" in ctx
+        assert "chronological_events" in ctx
         assert "companions" in ctx
         assert ctx["entry_count"] >= 20
 
@@ -548,7 +548,7 @@ class TestBuildLocationContext:
 
         ctx = builder.build_location_context(cafe)
         assert ctx["tier"] == "mid"
-        assert "events_here" in ctx
+        assert "chronological_events" in ctx
         assert "frequent_people" in ctx
 
 
@@ -1017,11 +1017,11 @@ class TestPartContext:
 class TestStandaloneRename:
     """Tests that 'Unlinked' is replaced with 'Standalone'."""
 
-    def test_arc_event_spine_standalone(
+    def test_chronological_events_person(
         self, builder, db_session, clara, montreal, cafe
     ):
-        """Unlinked events in arc_event_spine labeled 'Standalone events'."""
-        # Create entries and events for clara without arcs
+        """Person chronological_events groups events by year/month."""
+        # Create entries and events for clara
         for i in range(20):
             entry = Entry(
                 date=date(2024, 1, i + 1),
@@ -1040,8 +1040,8 @@ class TestStandaloneRename:
             scene.people.append(clara)
             scene.locations.append(cafe)
 
-        # Add an event without arc on first entry
-        event = Event(name="Orphan Event")
+        # Add an event on first entry
+        event = Event(name="January Event")
         db_session.add(event)
         db_session.flush()
         first_entry = db_session.query(Entry).filter(
@@ -1053,18 +1053,17 @@ class TestStandaloneRename:
         db_session.flush()
 
         ctx = builder.build_person_context(clara)
-        spine = ctx["arc_event_spine"]
-        standalone = [
-            g for g in spine if g["name"] == "Standalone events"
-        ]
-        assert len(standalone) == 1
-        unlinked = [g for g in spine if "Unlinked" in g["name"]]
-        assert len(unlinked) == 0
+        chrono = ctx["chronological_events"]
+        assert len(chrono) == 1
+        assert chrono[0]["year"] == 2024
+        jan = chrono[0]["months"][0]
+        assert jan["name"] == "January"
+        assert any(e["name"] == "January Event" for e in jan["events"])
 
-    def test_location_events_standalone(
+    def test_chronological_events_location(
         self, builder, db_session, cafe, montreal
     ):
-        """Location events use 'Standalone events' for arcless events."""
+        """Location chronological_events groups events by year/month."""
         # Create entries at location
         for i in range(3):
             entry = Entry(
@@ -1084,8 +1083,8 @@ class TestStandaloneRename:
             db_session.flush()
             scene.locations.append(cafe)
 
-        # Add arcless event
-        event = Event(name="Loc Event")
+        # Add event
+        event = Event(name="Feb Event")
         db_session.add(event)
         db_session.flush()
         first_entry = db_session.query(Entry).filter(
@@ -1096,11 +1095,12 @@ class TestStandaloneRename:
         db_session.flush()
 
         ctx = builder.build_location_context(cafe)
-        events_here = ctx.get("events_here", [])
-        standalone = [
-            g for g in events_here if g["name"] == "Standalone events"
-        ]
-        assert len(standalone) == 1
+        chrono = ctx.get("chronological_events", [])
+        assert len(chrono) == 1
+        assert chrono[0]["year"] == 2024
+        feb = chrono[0]["months"][0]
+        assert feb["name"] == "February"
+        assert any(e["name"] == "Feb Event" for e in feb["events"])
 
 
 # ==================== Event Chronological Sorting ====================

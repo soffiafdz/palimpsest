@@ -509,7 +509,13 @@ class WikiContextBuilder:
             base["date_range"] = self._date_range_str(
                 person.first_appearance, person.last_appearance
             )
-            base["arc_event_spine"] = self._build_arc_event_spine(person)
+            person_events: Dict[int, Event] = {}
+            for scene in person.scenes:
+                for event in scene.events:
+                    person_events[event.id] = event
+            base["chronological_events"] = self._build_chronological_events(
+                person_events
+            )
             base["entries"] = self._build_entry_listing(
                 sorted(person.entries, key=lambda e: e.date, reverse=True)
             )
@@ -676,100 +682,61 @@ class WikiContextBuilder:
             for city, locs in sorted(city_locs.items())
         ]
 
-    def _build_arc_event_spine(
-        self, person: Person
+    def _build_chronological_events(
+        self, events: Dict[int, Event]
     ) -> List[Dict[str, Any]]:
         """
-        Build Arc → Event → Entry hierarchy for frequent people.
+        Build year → month → event hierarchy sorted chronologically.
 
-        Traverses: Person → Scene → Event → Entry → Arc to build
-        the narrative spine showing how this person weaves through arcs.
+        Groups events by the year/month of their earliest entry date,
+        producing a structure suitable for timeline-style display.
 
         Args:
-            person: Person entity
+            events: Dict of {event_id: Event} (already deduplicated)
 
         Returns:
-            List of arc dicts, each with nested event dicts
+            List of year dicts, each with nested month dicts containing
+            event lists. Years ascending, months ascending, events
+            sorted by earliest date within each month.
         """
-        # Collect events involving this person
-        person_events: Dict[int, Event] = {}
-        for scene in person.scenes:
-            for event in scene.events:
-                person_events[event.id] = event
+        if not events:
+            return []
 
-        # Group events by arc
-        arc_events: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-        unlinked_events: List[Dict[str, Any]] = []
+        # Compute earliest date for each event
+        dated_events: List[tuple] = []
+        for event in events.values():
+            if not event.entries:
+                continue
+            earliest = min(e.date for e in event.entries)
+            dated_events.append((earliest, event))
 
-        for event in person_events.values():
-            # Find arc for this event
-            event_arc = None
-            for entry in event.entries:
-                for arc in entry.arcs:
-                    arc_entry_ids = {e.id for e in arc.entries}
-                    event_entry_ids = {e.id for e in event.entries}
-                    if arc_entry_ids & event_entry_ids:
-                        event_arc = arc
-                        break
-                if event_arc:
-                    break
+        dated_events.sort(key=lambda t: t[0])
 
-            # Get entries where this person appears with this event
-            person_entry_ids = {e.id for e in person.entries}
-            event_entries = sorted(
-                [e for e in event.entries if e.id in person_entry_ids],
-                key=lambda e: e.date,
-            )
-            entry_dates = [e.date.isoformat() for e in event_entries]
-
-            event_dict = {
+        # Group by year → month
+        year_months: Dict[int, Dict[int, List[Dict[str, Any]]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        for earliest_date, event in dated_events:
+            year_months[earliest_date.year][earliest_date.month].append({
                 "name": event.name,
                 "description": (
-                    event.scenes[0].description
-                    if event.scenes else ""
+                    event.scenes[0].description if event.scenes else ""
                 ),
-                "entry_dates": entry_dates,
+            })
+
+        return [
+            {
+                "year": year,
+                "months": [
+                    {
+                        "name": calendar.month_name[month],
+                        "events": year_months[year][month],
+                    }
+                    for month in sorted(year_months[year].keys())
+                ],
             }
-
-            if event_arc:
-                arc_events[event_arc.name].append(event_dict)
-            else:
-                unlinked_events.append(event_dict)
-
-        # Sort helper: earliest entry_date
-        def _event_sort_key(ev: Dict[str, Any]) -> str:
-            return ev["entry_dates"][0] if ev["entry_dates"] else "9999"
-
-        # Build result
-        result = []
-        for arc_name, events in sorted(arc_events.items()):
-            # Get arc details
-            arc = self.session.query(Arc).filter(
-                Arc.name == arc_name
-            ).first()
-            arc_entries = [
-                e for e in (arc.entries if arc else [])
-                if e.id in {e.id for e in person.entries}
-            ]
-            result.append({
-                "name": arc_name,
-                "entry_count": len(arc_entries),
-                "date_range": self._date_range_str(
-                    min((e.date for e in arc_entries), default=None),
-                    max((e.date for e in arc_entries), default=None),
-                ) if arc_entries else "",
-                "events": sorted(events, key=_event_sort_key),
-            })
-
-        if unlinked_events:
-            result.append({
-                "name": "Standalone events",
-                "entry_count": None,
-                "date_range": None,
-                "events": sorted(unlinked_events, key=_event_sort_key),
-            })
-
-        return result
+            for year in sorted(year_months.keys())
+        ]
 
     def _build_entries_outside_events(
         self, person: Person
@@ -903,7 +870,13 @@ class WikiContextBuilder:
             base["timeline"] = self._compute_monthly_counts(
                 location.entries
             )
-            base["events_here"] = self._build_location_events(location)
+            loc_events: Dict[int, Event] = {}
+            for scene in location.scenes:
+                for event in scene.events:
+                    loc_events[event.id] = event
+            base["chronological_events"] = self._build_chronological_events(
+                loc_events
+            )
             base["entries"] = self._build_entry_listing(
                 sorted(
                     location.entries, key=lambda e: e.date, reverse=True
@@ -921,7 +894,13 @@ class WikiContextBuilder:
             base["date_range"] = self._date_range_str(
                 location.first_visit, location.last_visit
             )
-            base["events_here"] = self._build_location_events(location)
+            loc_events: Dict[int, Event] = {}
+            for scene in location.scenes:
+                for event in scene.events:
+                    loc_events[event.id] = event
+            base["chronological_events"] = self._build_chronological_events(
+                loc_events
+            )
             base["entries"] = self._build_entry_listing(
                 sorted(
                     location.entries, key=lambda e: e.date, reverse=True
@@ -937,60 +916,6 @@ class WikiContextBuilder:
             )
 
         return base
-
-    def _build_location_events(
-        self, location: Location
-    ) -> List[Dict[str, Any]]:
-        """
-        Build events-at-this-location structure, nested under arcs.
-
-        Args:
-            location: Location entity
-
-        Returns:
-            List of arc dicts with nested event dicts
-        """
-        # Find events via scenes at this location
-        loc_events: Dict[int, Event] = {}
-        for scene in location.scenes:
-            for event in scene.events:
-                loc_events[event.id] = event
-
-        arc_events: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-        unlinked: List[Dict[str, Any]] = []
-
-        for event in loc_events.values():
-            event_arc = self._find_event_arc(event)
-            entry_dates = sorted(
-                [e.date.isoformat() for e in event.entries]
-            )
-            event_dict = {
-                "name": event.name,
-                "description": (
-                    event.scenes[0].description if event.scenes else ""
-                ),
-                "entry_dates": entry_dates,
-            }
-            if event_arc:
-                arc_events[event_arc].append(event_dict)
-            else:
-                unlinked.append(event_dict)
-
-        def _event_sort_key(ev: Dict[str, Any]) -> str:
-            return ev["entry_dates"][0] if ev["entry_dates"] else "9999"
-
-        result = []
-        for arc_name, events in sorted(arc_events.items()):
-            result.append({
-                "name": arc_name,
-                "events": sorted(events, key=_event_sort_key),
-            })
-        if unlinked:
-            result.append({
-                "name": "Standalone events",
-                "events": sorted(unlinked, key=_event_sort_key),
-            })
-        return result
 
     def _build_location_people(
         self, location: Location, limit: int = 10
@@ -1279,6 +1204,9 @@ class WikiContextBuilder:
             ).all()
         } if top_people_ids else {}
 
+        # Chronological events for entries subpage
+        arc_events_dict = {e.id: e for e in arc_events}
+
         return {
             "name": arc.name,
             "slug": slugify(arc.name),
@@ -1306,6 +1234,9 @@ class WikiContextBuilder:
                     for e in arc_events
                 ],
                 key=lambda ev: ev["entry_dates"][0] if ev["entry_dates"] else "9999",
+            ),
+            "chronological_events": self._build_chronological_events(
+                arc_events_dict
             ),
             "frequent_people": [
                 {

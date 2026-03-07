@@ -10,20 +10,20 @@
 - **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
 {% endfor %}
 {% endif %}
-{% if arc_event_spine %}
+{% if chronological_events %}
 
 ---
 
-## Narrative Arcs
-{% for arc_group in arc_event_spine %}
+## Events
+{% for year_group in chronological_events %}
 
-{% if arc_group.name == "Standalone events" %}
-### Standalone events
-{% else %}
-### {{ arc_group.name | wikilink }}
-{% endif %}
-{% for event in arc_group.events %}
+### {{ year_group.year }}
+{% for month in year_group.months %}
+
+**{{ month.name }}**
+{% for event in month.events %}
 - {{ event.name | wikilink }}
+{% endfor %}
 {% endfor %}
 {% endfor %}
 {% endif %}
