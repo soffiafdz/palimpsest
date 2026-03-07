@@ -1,15 +1,6 @@
 # {{ name }} — Entries
 
 {{ entry_count | zpad }} entr{{ "y" if entry_count == 1 else "ies" }}
-
----
-{% if year_summary %}
-
-## By Year
-{% for y in year_summary %}
-- **{{ y.year }}** — [{{ y.count }} entr{{ "y" if y.count == 1 else "ies" }}]({{ slug }}-entries-{{ y.year }})
-{% endfor %}
-{% endif %}
 {% if chronological_events %}
 
 ---
@@ -18,6 +9,10 @@
 {% for year_group in chronological_events %}
 
 ### {{ year_group.year }}
+{% if year_group.entry_count is defined %}
+
+[{{ year_group.entry_count }} entr{{ "y" if year_group.entry_count == 1 else "ies" }}]({{ slug }}-entries-{{ year_group.year }})
+{% endif %}
 {% for month in year_group.months %}
 
 **{{ month.name }}**

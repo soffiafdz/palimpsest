@@ -472,6 +472,9 @@ class WikiExporter:
                 base_dir, file_prefix,
             )
             ctx["year_summary"] = year_summary
+            year_counts = {y["year"]: y["count"] for y in year_summary}
+            for yg in ctx.get("chronological_events", []):
+                yg["entry_count"] = year_counts.get(yg["year"], 0)
 
             # Render year-index subpage
             output_path = base_dir / f"{file_prefix}.md"
@@ -515,6 +518,9 @@ class WikiExporter:
                 base_dir, file_prefix,
             )
             ctx["year_summary"] = year_summary
+            year_counts = {y["year"]: y["count"] for y in year_summary}
+            for yg in ctx.get("chronological_events", []):
+                yg["entry_count"] = year_counts.get(yg["year"], 0)
 
             # Render year-index subpage
             output_path = base_dir / f"{file_prefix}.md"
@@ -649,6 +655,9 @@ class WikiExporter:
                 base_dir, file_prefix,
             )
             ctx["year_summary"] = year_summary
+            year_counts = {y["year"]: y["count"] for y in year_summary}
+            for yg in ctx.get("chronological_events", []):
+                yg["entry_count"] = year_counts.get(yg["year"], 0)
 
             output_path = base_dir / f"{file_prefix}.md"
             self.renderer.render_to_file(
