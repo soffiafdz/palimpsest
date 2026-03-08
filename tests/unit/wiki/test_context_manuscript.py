@@ -425,7 +425,7 @@ class TestBuildChapterContext:
     def test_scenes_with_sources(
         self, builder, chapter, ms_scene, ms_source_scene
     ):
-        """Scenes include source details."""
+        """Scenes include grouped source details."""
         ctx = builder.build_chapter_context(chapter)
         assert len(ctx["scenes"]) == 1
         scene = ctx["scenes"][0]
@@ -434,7 +434,11 @@ class TestBuildChapterContext:
         assert scene["origin"] == "Journaled"
         assert scene["status"] == "Draft"
         assert len(scene["sources"]) == 1
-        assert scene["sources"][0]["type"] == "Scene"
+        group = scene["sources"][0]
+        assert group["entry_date"] == "2024-11-08"
+        assert len(group["references"]) == 1
+        assert group["references"][0]["type"] == "scene"
+        assert group["references"][0]["ref_name"] == "Morning at the Cafe"
 
     def test_references(self, builder, chapter, manuscript_reference):
         """References include source title, mode, content."""
@@ -534,52 +538,69 @@ class TestBuildManuscriptSceneContext:
     def test_scene_source(
         self, builder, ms_scene, ms_source_scene
     ):
-        """Source with journal scene shows name and entry date."""
+        """Scene source grouped under its entry date with name."""
         ctx = builder.build_manuscript_scene_context(ms_scene)
         assert len(ctx["sources"]) == 1
-        src = ctx["sources"][0]
-        assert src["type"] == "Scene"
-        assert src["reference_name"] == "Morning at the Cafe"
-        assert src["entry_date"] == "2024-11-08"
+        group = ctx["sources"][0]
+        assert group["entry_date"] == "2024-11-08"
+        assert len(group["references"]) == 1
+        assert group["references"][0]["type"] == "scene"
+        assert group["references"][0]["ref_name"] == "Morning at the Cafe"
 
     def test_entry_source(
         self, builder, ms_scene, ms_source_entry, entry_nov8
     ):
-        """Source with entry shows entry date."""
+        """Bare entry source has entry date with no items."""
         ctx = builder.build_manuscript_scene_context(ms_scene)
-        src = next(
-            s for s in ctx["sources"] if s["type"] == "Entry"
+        group = next(
+            g for g in ctx["sources"]
+            if g.get("entry_date") == "2024-11-08"
         )
-        assert src["entry_date"] == "2024-11-08"
-        assert src["reference_name"] is None
+        assert group["references"] == []
 
     def test_thread_source(
         self, builder, ms_scene, ms_source_thread
     ):
-        """Source with thread shows name and entry date."""
+        """Thread source grouped under its entry date with name."""
         ctx = builder.build_manuscript_scene_context(ms_scene)
-        src = next(
-            s for s in ctx["sources"] if s["type"] == "Thread"
-        )
-        assert src["reference_name"] == "The Bookend Kiss"
-        assert src["entry_date"] == "2024-11-08"
+        group = ctx["sources"][0]
+        assert group["entry_date"] == "2024-11-08"
+        assert len(group["references"]) == 1
+        assert group["references"][0]["type"] == "thread"
+        assert group["references"][0]["ref_name"] == "The Bookend Kiss"
 
     def test_external_source(
         self, builder, ms_scene, ms_source_external
     ):
-        """External source shows external note."""
+        """External source stands alone with note."""
         ctx = builder.build_manuscript_scene_context(ms_scene)
-        src = next(
-            s for s in ctx["sources"] if s["type"] == "External"
+        ext = next(
+            g for g in ctx["sources"]
+            if "external_note" in g
         )
-        assert src["reference_name"] == "Memory of a childhood event"
-        assert src["entry_date"] is None
-        assert src["external_note"] == "Memory of a childhood event"
+        assert ext["external_note"] == "Memory of a childhood event"
 
     def test_no_sources(self, builder, ms_scene_unassigned):
         """Scene without sources has empty list."""
         ctx = builder.build_manuscript_scene_context(ms_scene_unassigned)
         assert ctx["sources"] == []
+
+    def test_sources_grouped_by_entry(
+        self, builder, db_session, ms_scene,
+        ms_source_scene, ms_source_entry
+    ):
+        """Scene and entry sources from same entry are grouped together."""
+        ctx = builder.build_manuscript_scene_context(ms_scene)
+        # Both sources reference 2024-11-08 — should be one group
+        entry_groups = [
+            g for g in ctx["sources"] if "entry_date" in g
+        ]
+        assert len(entry_groups) == 1
+        group = entry_groups[0]
+        assert group["entry_date"] == "2024-11-08"
+        # Scene adds an item, bare entry does not
+        assert len(group["references"]) == 1
+        assert group["references"][0]["ref_name"] == "Morning at the Cafe"
 
 
 # ==================== Part Context ====================

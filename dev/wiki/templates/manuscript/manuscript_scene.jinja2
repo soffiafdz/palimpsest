@@ -27,11 +27,14 @@
 {% if sources %}
 
 ## Sources
-{% for src in sources %}
-- *{{ src.type }}*
-{% if src.reference_name %}  {{ src.reference_name }}
-{% endif %}
-{% if src.entry_date %}  {{ src.entry_date | entry_date_short }}
+{% for group in sources %}
+{% if group.entry_date %}
+- {{ group.entry_date | entry_date_short }}
+{% for ref in group.references %}
+  {{ ref.ref_name }} · *{{ ref.type }}*
+{% endfor %}
+{% elif group.external_note %}
+- *external* · {{ group.external_note }}
 {% endif %}
 {% endfor %}
 {% endif %}

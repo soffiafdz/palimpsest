@@ -1563,10 +1563,9 @@ class WikiContextBuilder:
                         {"name": c.name, "role": c.role}
                         for c in ms.characters
                     ],
-                    "sources": [
-                        self._build_manuscript_source(src)
-                        for src in ms.sources
-                    ],
+                    "sources": self._build_manuscript_source_groups(
+                        ms.sources
+                    ),
                 }
                 for ms in chapter.scenes
             ],
@@ -1665,10 +1664,9 @@ class WikiContextBuilder:
                 {"name": c.name, "role": c.role}
                 for c in ms_scene.characters
             ],
-            "sources": [
-                self._build_manuscript_source(src)
-                for src in ms_scene.sources
-            ],
+            "sources": self._build_manuscript_source_groups(
+                ms_scene.sources
+            ),
         }
 
     # ==============================================================
@@ -1767,42 +1765,67 @@ class WikiContextBuilder:
 
         return sorted(result, key=lambda x: x["name"])
 
-    def _build_manuscript_source(self, src: Any) -> Dict[str, Any]:
+    def _build_manuscript_source_groups(
+        self, sources: List[Any]
+    ) -> List[Dict[str, Any]]:
         """
-        Build context dict for a single ManuscriptSource.
+        Group manuscript sources by entry for hierarchical display.
 
-        Breaks the source reference into linkable components
-        so templates can wikilink scene names, entry dates,
-        and thread names instead of rendering plain text.
+        Sources are hierarchical: scenes and threads belong to entries.
+        When multiple sources reference the same entry, they are grouped
+        under a single entry link. External sources stand alone.
 
         Args:
-            src: ManuscriptSource model instance
+            sources: List of ManuscriptSource model instances
 
         Returns:
-            Dict with type, reference_name, entry_date, external_note
+            List of source group dicts. Entry-based groups have:
+              - entry_date: str (ISO date, wikilink-ready)
+              - items: list of dicts with type and name
+            External groups have:
+              - external_note: str
         """
+        from collections import OrderedDict
         from dev.database.models.enums import SourceType
 
-        entry_date = None
-        reference_name = None
+        entry_groups: OrderedDict[str, List[Dict[str, str]]] = OrderedDict()
+        externals: List[Dict[str, Any]] = []
 
-        if src.source_type == SourceType.SCENE and src.scene:
-            reference_name = src.scene.name
-            entry_date = src.scene.entry.date.isoformat()
-        elif src.source_type == SourceType.ENTRY and src.entry:
-            entry_date = src.entry.date.isoformat()
-        elif src.source_type == SourceType.THREAD and src.thread:
-            reference_name = src.thread.name
-            entry_date = src.thread.entry.date.isoformat()
-        elif src.source_type == SourceType.EXTERNAL:
-            reference_name = src.external_note or ""
+        for src in sources:
+            if src.source_type == SourceType.ENTRY and src.entry:
+                date_str = src.entry.date.isoformat()
+                entry_groups.setdefault(date_str, [])
 
-        return {
-            "type": src.source_type_display,
-            "reference_name": reference_name,
-            "entry_date": entry_date,
-            "external_note": src.external_note if src.source_type == SourceType.EXTERNAL else None,
-        }
+            elif src.source_type == SourceType.SCENE and src.scene:
+                date_str = src.scene.entry.date.isoformat()
+                entry_groups.setdefault(date_str, [])
+                entry_groups[date_str].append({
+                    "type": "scene",
+                    "ref_name": src.scene.name,
+                })
+
+            elif src.source_type == SourceType.THREAD and src.thread:
+                date_str = src.thread.entry.date.isoformat()
+                entry_groups.setdefault(date_str, [])
+                entry_groups[date_str].append({
+                    "type": "thread",
+                    "ref_name": src.thread.name,
+                })
+
+            elif src.source_type == SourceType.EXTERNAL:
+                externals.append({
+                    "external_note": src.external_note or "",
+                })
+
+        result: List[Dict[str, Any]] = []
+        for date_str, refs in entry_groups.items():
+            result.append({
+                "entry_date": date_str,
+                "references": refs,
+            })
+        result.extend(externals)
+
+        return result
 
     # ==============================================================
     #  SHARED HELPERS

@@ -38,13 +38,14 @@
 {% for char in scene.characters %}{{ char.name | wikilink }}{{ ", " if not loop.last else "" }}{% endfor %}
 {% endif %}
 {% if scene.sources %}
-{% for src in scene.sources %}
-- *{{ src.type }}*
-{% if src.reference_name %}  {{ src.reference_name }}
-{% endif %}
-{% if src.entry_date %}  {{ src.entry_date | entry_date_short }}
-{% endif %}
-{% if src.external_note %}  {{ src.external_note }}
+{% for group in scene.sources %}
+{% if group.entry_date %}
+- {{ group.entry_date | entry_date_short }}
+{% for ref in group.references %}
+  {{ ref.ref_name }} · *{{ ref.type }}*
+{% endfor %}
+{% elif group.external_note %}
+- *external* · {{ group.external_note }}
 {% endif %}
 {% endfor %}
 {% endif %}
