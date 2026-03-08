@@ -56,8 +56,6 @@ from sqlalchemy.orm import Session
 # --- Local imports ---
 from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.paths import (
-    MANUSCRIPT_CHAPTERS_DIR,
-    MANUSCRIPT_CHARACTERS_DIR,
     MANUSCRIPT_YAML_DIR,
     METADATA_DIR,
 )
@@ -65,24 +63,32 @@ from dev.database.manager import PalimpsestDB
 from dev.database.models import (
     Arc,
     City,
+    Entry,
     Location,
     Person,
+    Poem,
+    ReferenceSource,
 )
 from dev.database.models.enums import (
     ChapterStatus,
     ChapterType,
     ContributionType,
+    ReferenceMode,
     RelationType,
     SceneOrigin,
     SceneStatus,
+    SourceType,
 )
 from dev.database.models.manuscript import (
     Chapter,
     Character,
+    ManuscriptReference,
     ManuscriptScene,
+    ManuscriptSource,
     Part,
     PersonCharacterMap,
 )
+from dev.database.models.analysis import Scene as JournalScene, Thread
 from dev.utils.slugify import slugify
 from dev.validators.diagnostic import Diagnostic
 
@@ -163,6 +169,8 @@ class MetadataSchema:
                   enum_values=ChapterStatus.choices()),
         FieldSpec("part", str),
         FieldSpec("draft_path", str),
+        FieldSpec("poems", list),
+        FieldSpec("references", list),
     ]
 
     CHARACTER_FIELDS: List[FieldSpec] = [
@@ -183,6 +191,7 @@ class MetadataSchema:
         FieldSpec("description", str),
         FieldSpec("characters", list),
         FieldSpec("notes", str),
+        FieldSpec("sources", list),
     ]
 
     @classmethod
@@ -437,6 +446,11 @@ class MetadataExporter:
                         if chapter.part else None
                     ),
                     "draft_path": chapter.draft_path,
+                    "poems": [p.title for p in chapter.poems] if chapter.poems else None,
+                    "references": [
+                        {"source": ref.source.title, "mode": ref.mode.value, "content": ref.content}
+                        for ref in chapter.references
+                    ] if chapter.references else None,
                 }
                 filename = f"{slugify(chapter.title)}.yaml"
                 if self._write_yaml(chapters_dir / filename, data):
@@ -518,6 +532,7 @@ class MetadataExporter:
                         if ms_scene.characters else None
                     ),
                     "notes": ms_scene.notes,
+                    "sources": [self._build_source_dict(src) for src in ms_scene.sources] if ms_scene.sources else None,
                 }
                 filename = f"{slugify(ms_scene.name)}.yaml"
                 if self._write_yaml(scenes_dir / filename, data):
@@ -618,6 +633,37 @@ class MetadataExporter:
             with self.db.session_scope() as sess:
                 _export(sess)
 
+    def _build_source_dict(self, source: ManuscriptSource) -> Dict[str, Any]:
+        """
+        Build a natural-key dict for a manuscript source.
+
+        Uses entry_date + entity name composites for source types
+        that reference journal entities.
+
+        Args:
+            source: ManuscriptSource instance
+
+        Returns:
+            Dict with source_type and natural key fields
+        """
+        result: Dict[str, Any] = {"source_type": source.source_type.value}
+
+        if source.source_type == SourceType.EXTERNAL:
+            result["note"] = source.external_note
+        elif source.source_type == SourceType.ENTRY:
+            if source.entry:
+                result["entry_date"] = source.entry.date.isoformat()
+        elif source.source_type == SourceType.SCENE:
+            if source.scene:
+                result["entry_date"] = source.scene.entry.date.isoformat()
+                result["scene_name"] = source.scene.name
+        elif source.source_type == SourceType.THREAD:
+            if source.thread:
+                result["entry_date"] = source.thread.entry.date.isoformat()
+                result["thread_name"] = source.thread.name
+
+        return result
+
     def list_entities(
         self, entity_type: str
     ) -> List[str]:
@@ -639,6 +685,49 @@ class MetadataExporter:
             "characters": (Character, "name"),
             "scenes": (ManuscriptScene, "name"),
         }
+
+        # Special types with custom logic
+        if entity_type == "entries":
+            names = []
+            with self.db.session_scope() as session:
+                entries = session.query(Entry).all()
+                for entry in entries:
+                    names.append(entry.date.isoformat())
+            return sorted(names)
+
+        if entity_type == "journal_scenes":
+            names = []
+            with self.db.session_scope() as session:
+                from dev.database.models.analysis import Scene as JScene
+                scenes = session.query(JScene).all()
+                for scene in scenes:
+                    names.append(f"{scene.name}::{scene.entry.date.isoformat()}")
+            return sorted(names)
+
+        if entity_type == "threads":
+            names = []
+            with self.db.session_scope() as session:
+                from dev.database.models.analysis import Thread as JThread
+                threads = session.query(JThread).all()
+                for thread in threads:
+                    names.append(f"{thread.name}::{thread.entry.date.isoformat()}")
+            return sorted(names)
+
+        if entity_type == "poems":
+            names = []
+            with self.db.session_scope() as session:
+                poems = session.query(Poem).all()
+                for poem in poems:
+                    names.append(poem.title)
+            return sorted(names)
+
+        if entity_type == "reference_sources":
+            names = []
+            with self.db.session_scope() as session:
+                sources = session.query(ReferenceSource).all()
+                for source in sources:
+                    names.append(source.title)
+            return sorted(names)
 
         if entity_type not in model_map:
             raise ValueError(f"Unknown entity type: {entity_type}")
@@ -1317,6 +1406,36 @@ class MetadataImporter:
         if "draft_path" in data:
             chapter.draft_path = data["draft_path"]
 
+        # Update poems M2M
+        if "poems" in data and isinstance(data["poems"], list):
+            chapter.poems = []
+            for poem_title in data["poems"]:
+                poem = session.query(Poem).filter(
+                    Poem.title == poem_title
+                ).first()
+                if poem:
+                    chapter.poems.append(poem)
+
+        # Update references (delete + recreate)
+        if "references" in data and isinstance(data["references"], list):
+            for ref in chapter.references[:]:
+                session.delete(ref)
+            session.flush()
+            for ref_data in data["references"]:
+                source_title = ref_data.get("source", "")
+                source = session.query(ReferenceSource).filter(
+                    ReferenceSource.title == source_title
+                ).first()
+                if source:
+                    mode = ReferenceMode(ref_data.get("mode", "thematic"))
+                    manuscript_ref = ManuscriptReference(
+                        chapter_id=chapter.id,
+                        source_id=source.id,
+                        mode=mode,
+                        content=ref_data.get("content"),
+                    )
+                    session.add(manuscript_ref)
+
     def _import_character(
         self, session: Session, data: Dict[str, Any]
     ) -> None:
@@ -1429,6 +1548,66 @@ class MetadataImporter:
                     ms_scene.characters.append(char)
         if "notes" in data:
             ms_scene.notes = data["notes"]
+
+        # Update sources (delete + recreate)
+        if "sources" in data and isinstance(data["sources"], list):
+            for src in ms_scene.sources[:]:
+                session.delete(src)
+            session.flush()
+            for src_data in data["sources"]:
+                source_type_str = src_data.get("source_type", "")
+                try:
+                    source_type = SourceType(source_type_str)
+                except ValueError:
+                    continue
+
+                new_source = ManuscriptSource(
+                    manuscript_scene_id=ms_scene.id,
+                    source_type=source_type,
+                )
+
+                if source_type == SourceType.EXTERNAL:
+                    new_source.external_note = src_data.get("note")
+                elif source_type == SourceType.ENTRY:
+                    entry_date = src_data.get("entry_date")
+                    if entry_date:
+                        entry = session.query(Entry).filter(
+                            Entry.date == entry_date
+                        ).first()
+                        if entry:
+                            new_source.entry_id = entry.id
+                elif source_type == SourceType.SCENE:
+                    entry_date = src_data.get("entry_date")
+                    scene_name = src_data.get("scene_name")
+                    if entry_date and scene_name:
+                        entry = session.query(Entry).filter(
+                            Entry.date == entry_date
+                        ).first()
+                        if entry:
+                            scene = session.query(JournalScene).filter(
+                                JournalScene.entry_id == entry.id,
+                                JournalScene.name == scene_name,
+                            ).first()
+                            if scene:
+                                new_source.scene_id = scene.id
+                                new_source.entry_id = entry.id
+                elif source_type == SourceType.THREAD:
+                    entry_date = src_data.get("entry_date")
+                    thread_name = src_data.get("thread_name")
+                    if entry_date and thread_name:
+                        entry = session.query(Entry).filter(
+                            Entry.date == entry_date
+                        ).first()
+                        if entry:
+                            thread = session.query(Thread).filter(
+                                Thread.entry_id == entry.id,
+                                Thread.name == thread_name,
+                            ).first()
+                            if thread:
+                                new_source.thread_id = thread.id
+                                new_source.entry_id = entry.id
+
+                session.add(new_source)
 
     def _import_neighborhoods(
         self, session: Session, data: Dict[str, Any]

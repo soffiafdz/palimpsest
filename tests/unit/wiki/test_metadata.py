@@ -23,19 +23,26 @@ import yaml
 from dev.database.models.analysis import Arc
 from dev.database.models.core import Entry
 from dev.database.models.entities import Person
+from dev.database.models.analysis import Scene as JournalScene
+from dev.database.models.creative import Poem, ReferenceSource
 from dev.database.models.enums import (
     ChapterStatus,
     ChapterType,
     ContributionType,
+    ReferenceMode,
+    ReferenceType,
     RelationType,
     SceneOrigin,
     SceneStatus,
+    SourceType,
 )
 from dev.database.models.geography import City, Location
 from dev.database.models.manuscript import (
     Chapter,
     Character,
+    ManuscriptReference,
     ManuscriptScene,
+    ManuscriptSource,
     Part,
     PersonCharacterMap,
 )
@@ -132,6 +139,35 @@ def populated_metadata_db(db_session):
     )
     db_session.add(pcm)
 
+    # Poem (linked to chapter)
+    poem = Poem(title="The Gray Fence")
+    db_session.add(poem)
+    db_session.flush()
+    chapter.poems.append(poem)
+
+    # ReferenceSource + ManuscriptReference (linked to chapter)
+    ref_source = ReferenceSource(
+        title="Nocturnes", author="Ishiguro", type=ReferenceType.BOOK,
+    )
+    db_session.add(ref_source)
+    db_session.flush()
+    ms_ref = ManuscriptReference(
+        chapter_id=chapter.id,
+        source_id=ref_source.id,
+        mode=ReferenceMode.THEMATIC,
+        content="memory and loss",
+    )
+    db_session.add(ms_ref)
+
+    # Journal scene (source material for manuscript scene)
+    journal_scene = JournalScene(
+        name="Morning at the Café",
+        description="A conversation over espresso.",
+        entry_id=entry.id,
+    )
+    db_session.add(journal_scene)
+    db_session.flush()
+
     # ManuscriptScene with character linked
     ms_scene = ManuscriptScene(
         name="The Espresso Pause",
@@ -143,6 +179,14 @@ def populated_metadata_db(db_session):
     db_session.add(ms_scene)
     db_session.flush()
     ms_scene.characters.append(character)
+
+    # ManuscriptSource (scene source linked to manuscript scene)
+    ms_source = ManuscriptSource(
+        manuscript_scene_id=ms_scene.id,
+        source_type=SourceType.SCENE,
+        scene_id=journal_scene.id,
+    )
+    db_session.add(ms_source)
 
     db_session.commit()
     return db_session
@@ -780,6 +824,303 @@ class TestMetadataImporter:
         stats = importer.import_all(entity_type="people")
         assert stats["imported"] == 2
         assert stats["errors"] == 0
+
+
+# ==================== Poems/References/Sources Tests ====================
+
+class TestChapterPoemsExportImport:
+    """Tests for chapter poems export and import."""
+
+    def test_export_chapter_includes_poems(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export includes poem titles in chapter YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        assert "poems" in data
+        assert "The Gray Fence" in data["poems"]
+
+    def test_import_chapter_poems(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import updates chapter poems M2M from YAML list."""
+        # Add a second poem
+        with test_db.session_scope() as session:
+            poem2 = Poem(title="November Nocturne")
+            session.add(poem2)
+            session.commit()
+
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        data["poems"] = ["The Gray Fence", "November Nocturne"]
+        chapter_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(chapter_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            poem_titles = [p.title for p in chapter.poems]
+            assert "The Gray Fence" in poem_titles
+            assert "November Nocturne" in poem_titles
+
+    def test_import_chapter_clears_poems(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import removes poems when YAML has empty list."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        data["poems"] = []
+        chapter_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        importer.import_file(chapter_file)
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            assert len(chapter.poems) == 0
+
+
+class TestChapterReferencesExportImport:
+    """Tests for chapter references export and import."""
+
+    def test_export_chapter_includes_references(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export includes reference dicts in chapter YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        assert "references" in data
+        assert len(data["references"]) == 1
+        ref = data["references"][0]
+        assert ref["source"] == "Nocturnes"
+        assert ref["mode"] == "thematic"
+        assert ref["content"] == "memory and loss"
+
+    def test_import_chapter_references(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import recreates chapter references from YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        data["references"] = [
+            {"source": "Nocturnes", "mode": "direct", "content": "the view from the window"},
+        ]
+        chapter_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(chapter_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            refs = session.query(ManuscriptReference).filter(
+                ManuscriptReference.chapter_id == chapter.id
+            ).all()
+            assert len(refs) == 1
+            assert refs[0].mode == ReferenceMode.DIRECT
+            assert refs[0].content == "the view from the window"
+
+    def test_import_chapter_clears_references(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import removes references when YAML has empty list."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="chapters")
+
+        chapter_file = list(
+            (metadata_output / "manuscript" / "chapters").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(chapter_file.read_text())
+        data["references"] = []
+        chapter_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        importer.import_file(chapter_file)
+
+        with test_db.session_scope() as session:
+            chapter = session.query(Chapter).filter(
+                Chapter.title == "Espresso and Silence"
+            ).first()
+            refs = session.query(ManuscriptReference).filter(
+                ManuscriptReference.chapter_id == chapter.id
+            ).all()
+            assert len(refs) == 0
+
+
+class TestSceneSourcesExportImport:
+    """Tests for manuscript scene sources export and import."""
+
+    def test_export_scene_includes_sources(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export includes source dicts in scene YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="scenes")
+
+        scene_file = list(
+            (metadata_output / "manuscript" / "scenes").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(scene_file.read_text())
+        assert "sources" in data
+        assert len(data["sources"]) == 1
+        src = data["sources"][0]
+        assert src["source_type"] == "scene"
+        assert src["entry_date"] == "2024-11-08"
+        assert src["scene_name"] == "Morning at the Café"
+
+    def test_import_scene_sources(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import recreates scene sources from YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="scenes")
+
+        # Reimport unchanged
+        scene_file = list(
+            (metadata_output / "manuscript" / "scenes").glob("*.yaml")
+        )[0]
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(scene_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            ms_scene = session.query(ManuscriptScene).filter(
+                ManuscriptScene.name == "The Espresso Pause"
+            ).first()
+            sources = session.query(ManuscriptSource).filter(
+                ManuscriptSource.manuscript_scene_id == ms_scene.id
+            ).all()
+            assert len(sources) == 1
+            assert sources[0].source_type == SourceType.SCENE
+
+    def test_import_scene_entry_source(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import creates entry-type source from YAML."""
+        scene_dir = metadata_output / "manuscript" / "scenes"
+        scene_dir.mkdir(parents=True)
+        scene_file = scene_dir / "the-espresso-pause.yaml"
+        scene_file.write_text(yaml.dump({
+            "name": "The Espresso Pause",
+            "origin": "journaled",
+            "status": "draft",
+            "sources": [
+                {"source_type": "entry", "entry_date": "2024-11-08"},
+            ],
+        }))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(scene_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            ms_scene = session.query(ManuscriptScene).filter(
+                ManuscriptScene.name == "The Espresso Pause"
+            ).first()
+            sources = session.query(ManuscriptSource).filter(
+                ManuscriptSource.manuscript_scene_id == ms_scene.id
+            ).all()
+            assert len(sources) == 1
+            assert sources[0].source_type == SourceType.ENTRY
+            assert sources[0].entry_id is not None
+
+    def test_import_scene_clears_sources(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import removes sources when YAML has empty list."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="scenes")
+
+        scene_file = list(
+            (metadata_output / "manuscript" / "scenes").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(scene_file.read_text())
+        data["sources"] = []
+        scene_file.write_text(yaml.dump(data, allow_unicode=True))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        importer.import_file(scene_file)
+
+        with test_db.session_scope() as session:
+            ms_scene = session.query(ManuscriptScene).filter(
+                ManuscriptScene.name == "The Espresso Pause"
+            ).first()
+            sources = session.query(ManuscriptSource).filter(
+                ManuscriptSource.manuscript_scene_id == ms_scene.id
+            ).all()
+            assert len(sources) == 0
+
+
+class TestListEntitiesExtended:
+    """Tests for extended entity types in list_entities."""
+
+    def test_list_entries(
+        self, test_db, populated_metadata_db
+    ):
+        """list_entities returns entry date strings."""
+        exporter = MetadataExporter(test_db)
+        names = exporter.list_entities("entries")
+        assert "2024-11-08" in names
+
+    def test_list_journal_scenes(
+        self, test_db, populated_metadata_db
+    ):
+        """list_entities returns journal scene composites."""
+        exporter = MetadataExporter(test_db)
+        names = exporter.list_entities("journal_scenes")
+        assert any("Morning at the Café" in n for n in names)
+        # Should include entry date
+        assert any("2024-11-08" in n for n in names)
+
+    def test_list_poems(
+        self, test_db, populated_metadata_db
+    ):
+        """list_entities returns poem titles."""
+        exporter = MetadataExporter(test_db)
+        names = exporter.list_entities("poems")
+        assert "The Gray Fence" in names
+
+    def test_list_reference_sources(
+        self, test_db, populated_metadata_db
+    ):
+        """list_entities returns reference source titles."""
+        exporter = MetadataExporter(test_db)
+        names = exporter.list_entities("reference_sources")
+        assert "Nocturnes" in names
 
 
 # ==================== Curation File Tests ====================
