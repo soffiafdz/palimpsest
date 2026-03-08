@@ -35,7 +35,7 @@ def export_json(ctx: click.Context) -> None:
 
     Exports all entities (entries, people, locations, scenes, events, etc.)
     to individual JSON files organized by entity type. These JSON exports
-    are machine-generated files using IDs for relationships, designed for
+    are machine-generated files using natural keys for relationships, designed for
     git version control and cross-machine database synchronization.
 
     Unlike metadata YAML files (human-authored ground truth), these JSON

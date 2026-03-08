@@ -77,6 +77,7 @@ from .metadata_pdf import build_metadata_pdf  # noqa: E402
 from .maintenance import backup_full, backup_list_full, run_all, status, validate  # noqa: E402
 from .wiki import wiki  # noqa: E402
 from .metadata_yaml import metadata  # noqa: E402
+from .import_json import import_json  # noqa: E402
 
 # Register commands
 cli.add_command(inbox)
@@ -93,6 +94,7 @@ cli.add_command(status)
 cli.add_command(validate)
 cli.add_command(wiki)
 cli.add_command(metadata)
+cli.add_command(import_json)
 
 
 if __name__ == "__main__":

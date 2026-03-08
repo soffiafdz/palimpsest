@@ -41,6 +41,8 @@ ENTITY_TYPES = [
     "people", "locations", "cities", "arcs",
     "chapters", "characters", "scenes",
     "neighborhoods", "relation_types",
+    "entries", "journal_scenes", "threads",
+    "poems", "reference_sources",
 ]
 
 RENAME_TYPES = [
@@ -121,10 +123,8 @@ def import_cmd(
 
     logger = ctx.obj.get("logger")
 
-    if not path and not entity_type:
-        raise click.UsageError(
-            "Provide a file path or --type to specify what to import"
-        )
+    # No path and no type → import everything
+
 
     try:
         db = PalimpsestDB(DB_PATH)

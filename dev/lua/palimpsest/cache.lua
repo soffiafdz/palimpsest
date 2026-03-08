@@ -58,6 +58,8 @@ function M.refresh_all()
 	local types = {
 		"people", "locations", "cities", "arcs",
 		"chapters", "characters", "scenes",
+		"entries", "journal_scenes", "threads",
+		"poems", "reference_sources",
 	}
 	for _, entity_type in ipairs(types) do
 		M.refresh(entity_type)
