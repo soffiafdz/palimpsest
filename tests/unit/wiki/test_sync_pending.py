@@ -22,7 +22,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # --- Third-party imports ---
@@ -207,20 +206,13 @@ class TestMarkerClearAfterIngest:
         """
         sync = WikiSync(mock_db, wiki_dir=wiki_dir, logger=MagicMock())
 
-        # Mock session_scope to simulate successful commit
-        mock_session = MagicMock()
-        mock_db.session_scope.return_value.__enter__ = MagicMock(
-            return_value=mock_session
-        )
-        mock_db.session_scope.return_value.__exit__ = MagicMock(
-            return_value=False
-        )
-
         from dev.wiki.sync import SyncResult
         result = SyncResult()
-        manuscript_dir = wiki_dir / "manuscript"
 
-        sync._ingest(manuscript_dir, result)
+        with patch("dev.wiki.metadata.MetadataImporter") as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.return_value = {"imported": 0, "errors": 0}
+            sync._ingest(result)
 
         assert not sync_pending_marker.exists()
 
@@ -230,20 +222,14 @@ class TestMarkerClearAfterIngest:
         """
         sync = WikiSync(mock_db, wiki_dir=wiki_dir, logger=MagicMock())
 
-        mock_session = MagicMock()
-        mock_db.session_scope.return_value.__enter__ = MagicMock(
-            return_value=mock_session
-        )
-        mock_db.session_scope.return_value.__exit__ = MagicMock(
-            return_value=False
-        )
-
         from dev.wiki.sync import SyncResult
         result = SyncResult()
-        manuscript_dir = wiki_dir / "manuscript"
 
-        # Should not raise
-        sync._ingest(manuscript_dir, result)
+        with patch("dev.wiki.metadata.MetadataImporter") as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.return_value = {"imported": 0, "errors": 0}
+            # Should not raise
+            sync._ingest(result)
 
     def test_full_sync_clears_marker(
         self, wiki_dir, mock_db, sync_pending_marker
@@ -253,18 +239,11 @@ class TestMarkerClearAfterIngest:
         """
         sync = WikiSync(mock_db, wiki_dir=wiki_dir, logger=MagicMock())
 
-        # Mock validator to pass, session for ingest, and regenerate
-        with patch.object(sync, "_validate") as mock_validate, \
+        with patch.object(sync, "_validate"), \
              patch.object(sync, "_regenerate"), \
-             patch.object(sync.parser, "clear_cache"):
-
-            mock_session = MagicMock()
-            mock_db.session_scope.return_value.__enter__ = MagicMock(
-                return_value=mock_session
-            )
-            mock_db.session_scope.return_value.__exit__ = MagicMock(
-                return_value=False
-            )
+             patch("dev.wiki.metadata.MetadataImporter") as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.return_value = {"imported": 0, "errors": 0}
 
             sync.sync_manuscript()
 
@@ -278,14 +257,10 @@ class TestMarkerClearAfterIngest:
         """
         sync = WikiSync(mock_db, wiki_dir=wiki_dir, logger=MagicMock())
 
-        with patch.object(sync, "_validate"):
-            mock_session = MagicMock()
-            mock_db.session_scope.return_value.__enter__ = MagicMock(
-                return_value=mock_session
-            )
-            mock_db.session_scope.return_value.__exit__ = MagicMock(
-                return_value=False
-            )
+        with patch.object(sync, "_validate"), \
+             patch("dev.wiki.metadata.MetadataImporter") as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.return_value = {"imported": 0, "errors": 0}
 
             sync.sync_manuscript(ingest_only=True)
 

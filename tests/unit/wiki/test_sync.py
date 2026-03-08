@@ -11,16 +11,13 @@ and temporary wiki file structures.
 Key Test Areas:
     - SyncResult data tracking and success semantics
     - Validation gate (errors block ingestion)
-    - Per-entity-type ingestion (chapters, characters, scenes)
+    - YAML-based ingestion via MetadataImporter
     - Full and partial sync cycle orchestration
 """
 # --- Annotations ---
 from __future__ import annotations
 
 # --- Standard library imports ---
-from datetime import date
-from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 # --- Third-party imports ---
@@ -28,29 +25,8 @@ import pytest
 
 # --- Local imports ---
 from dev.database.models.analysis import Arc
-from dev.database.models.core import Entry
 from dev.database.models.creative import Poem, ReferenceSource
-from dev.database.models.entities import Person, Tag
-from dev.database.models.enums import (
-    ChapterStatus,
-    ChapterType,
-    ContributionType,
-    ReferenceMode,
-    ReferenceType,
-    RelationType,
-    SceneOrigin,
-    SceneStatus,
-    SourceType,
-)
-from dev.database.models.manuscript import (
-    Chapter,
-    Character,
-    ManuscriptReference,
-    ManuscriptScene,
-    ManuscriptSource,
-    Part,
-    PersonCharacterMap,
-)
+from dev.database.models.enums import ReferenceType
 from dev.wiki.sync import SyncResult, WikiSync
 
 
@@ -68,230 +44,31 @@ def mock_logger():
 
 
 @pytest.fixture
-def populated_wiki(tmp_path, test_db, db_session):
+def sync_wiki_dir(tmp_path):
     """
-    Create a wiki directory structure with manuscript files and DB entities.
-
-    Populates the database with chapters, characters, manuscript scenes,
-    people, arcs, poems, reference sources, entries, and a part. Writes
-    corresponding markdown files to a temporary wiki directory tree.
-
-    The markdown files follow the exact format produced by the Jinja2
-    templates in dev/wiki/templates/manuscript/.
+    Create a minimal wiki directory structure for sync tests.
 
     Returns:
-        Tuple of (wiki_dir Path, db_session, dict of created entities)
+        Path to the temporary wiki directory with manuscript subdirs
     """
     wiki_dir = tmp_path / "wiki"
     manuscript_dir = wiki_dir / "manuscript"
-    chapters_dir = manuscript_dir / "chapters"
-    characters_dir = manuscript_dir / "characters"
-    scenes_dir = manuscript_dir / "scenes"
-    chapters_dir.mkdir(parents=True)
-    characters_dir.mkdir(parents=True)
-    scenes_dir.mkdir(parents=True)
-
-    # --- DB entities ---
-
-    # Part
-    part = Part(number=1, title="The Beginning")
-    db_session.add(part)
-    db_session.flush()
-
-    # Chapter
-    chapter = Chapter(
-        title="The Gray Fence",
-        type=ChapterType.PROSE,
-        status=ChapterStatus.DRAFT,
-        part_id=part.id,
-    )
-    db_session.add(chapter)
-    db_session.flush()
-
-    # Second chapter (for scene reassignment tests)
-    chapter2 = Chapter(
-        title="Warm Pavement",
-        type=ChapterType.VIGNETTE,
-        status=ChapterStatus.DRAFT,
-    )
-    db_session.add(chapter2)
-    db_session.flush()
-
-    # Character
-    character = Character(
-        name="Lucia",
-        role="Protagonist",
-        is_narrator=True,
-        description="The one who remembers.",
-    )
-    db_session.add(character)
-    db_session.flush()
-
-    second_char = Character(
-        name="Emilio",
-        role="Love interest",
-        is_narrator=False,
-        description="The one who forgets.",
-    )
-    db_session.add(second_char)
-    db_session.flush()
-
-    # People
-    sofia = Person(
-        name="Sofia", lastname="Fernandez",
-        slug="sofia_fernandez", relation_type=RelationType.SELF,
-    )
-    clara = Person(
-        name="Clara", lastname="Dupont",
-        slug="clara_dupont", relation_type=RelationType.ROMANTIC,
-    )
-    db_session.add_all([sofia, clara])
-    db_session.flush()
-
-    # Arc
-    arc = Arc(name="The Long Wanting", description="A story of longing.")
-    db_session.add(arc)
-    db_session.flush()
-
-    # Poem
-    poem = Poem(title="The Loop")
-    db_session.add(poem)
-    db_session.flush()
-
-    # Reference source
-    ref_source = ReferenceSource(
-        title="Nocturnes", author="Kazuo Ishiguro",
-        type=ReferenceType.BOOK,
-    )
-    db_session.add(ref_source)
-    db_session.flush()
-
-    # Tag (used for validatable wikilink files)
-    tag = Tag(name="loneliness")
-    db_session.add(tag)
-    db_session.flush()
-
-    # Entry (for manuscript scene sources)
-    entry = Entry(
-        date=date(2024, 11, 8),
-        file_path="2024/2024-11-08.md",
-        word_count=1247,
-    )
-    db_session.add(entry)
-    db_session.flush()
-
-    # Manuscript scene
-    ms_scene = ManuscriptScene(
-        name="Station Jarry Kiss",
-        description="First kiss at the metro station.",
-        chapter_id=chapter.id,
-        origin=SceneOrigin.JOURNALED,
-        status=SceneStatus.FRAGMENT,
-    )
-    db_session.add(ms_scene)
-    db_session.flush()
-
-    # Initial person-character mapping
-    pcm = PersonCharacterMap(
-        person_id=sofia.id,
-        character_id=character.id,
-        contribution=ContributionType.PRIMARY,
-    )
-    db_session.add(pcm)
-
-    # Link character to scene (not chapter)
-    ms_scene.characters.append(character)
-
-    db_session.commit()
-
-    # --- Wiki files ---
-
-    # Chapter markdown follows the template format from chapter.jinja2.
-    # Type/Status metadata line, optional Part, scene count, then ---
-    # followed by H2 sections for Characters, Arcs, Scenes, References, Poems.
-    chapter_md = (
-        "# The Gray Fence\n\n"
-        "**Type:** Vignette · **Status:** Revised\n"
-        "**Part:** [[Part 1: The Beginning]]\n"
-        "1 scenes\n\n"
-        "---\n\n"
-        "## Characters\n\n"
-        "- [[Lucia]] · Protagonist\n"
-        "- [[Emilio]] · Love interest\n\n"
-        "---\n\n"
-        "## Scenes\n\n"
-        "### Station Jarry Kiss\n"
-        "First kiss at the metro.\n\n"
-        "*journaled* · draft\n"
-        "- Entry: 2024-11-08\n\n"
-        "---\n\n"
-        "## References\n\n"
-        "- [[Nocturnes]] *(thematic)* — the mood of waiting\n\n"
-        "## Poems\n\n"
-        "- [[The Loop]]\n"
-    )
-    (chapters_dir / "the-gray-fence.md").write_text(chapter_md)
-
-    # Character markdown follows character.jinja2.
-    # Note: ROLE_RE only matches when role line is the last line of preamble.
-    # With a description present, role is not extracted by the parser.
-    character_md = (
-        "# Lucia\n\n"
-        "**Role:** Narrator · **Narrator**\n\n"
-        "The woman who chose to remember everything.\n\n"
-        "1 chapter\n\n"
-        "---\n\n"
-        "## Based On\n\n"
-        "- [[Sofia Fernandez]] *(primary)*\n"
-        "- [[Clara Dupont]] *(inspiration)*\n\n"
-        "## Chapters\n\n"
-        "- [[The Gray Fence]] · Prose · Draft\n"
-    )
-    (characters_dir / "lucia.md").write_text(character_md)
-
-    # Manuscript scene markdown follows manuscript_scene.jinja2.
-    scene_md = (
-        "# Station Jarry Kiss\n\n"
-        "**Chapter:** [[The Gray Fence]]\n\n"
-        "*composite* · draft\n\n"
-        "The greeting kiss that bookends the goodbye.\n\n"
-        "---\n\n"
-        "## Sources\n\n"
-        "- **Entry:** Morning encounter · [[2024-11-08]]\n"
-        "- **External:** Overheard conversation\n"
-    )
-    (scenes_dir / "station-jarry-kiss.md").write_text(scene_md)
-
-    entities = {
-        "part": part,
-        "chapter": chapter,
-        "chapter2": chapter2,
-        "character": character,
-        "second_char": second_char,
-        "sofia": sofia,
-        "clara": clara,
-        "arc": arc,
-        "poem": poem,
-        "ref_source": ref_source,
-        "tag": tag,
-        "entry": entry,
-        "ms_scene": ms_scene,
-    }
-
-    return wiki_dir, db_session, entities
+    (manuscript_dir / "chapters").mkdir(parents=True)
+    (manuscript_dir / "characters").mkdir(parents=True)
+    (manuscript_dir / "scenes").mkdir(parents=True)
+    return wiki_dir
 
 
 @pytest.fixture
-def sync_instance(test_db, populated_wiki, mock_logger):
+def sync_instance(test_db, sync_wiki_dir, mock_logger):
     """
     Create a WikiSync instance wired to the test database and temp wiki dir.
 
     Returns:
-        Tuple of (WikiSync instance, wiki_dir, db_session, entities dict)
+        Tuple of (WikiSync instance, wiki_dir)
     """
-    wiki_dir, db_session, entities = populated_wiki
-    sync = WikiSync(test_db, wiki_dir=wiki_dir, logger=mock_logger)
-    return sync, wiki_dir, db_session, entities
+    sync = WikiSync(test_db, wiki_dir=sync_wiki_dir, logger=mock_logger)
+    return sync, sync_wiki_dir
 
 
 # ==================== TestSyncResult ====================
@@ -437,197 +214,109 @@ class TestSyncValidation:
 # ==================== TestSyncIngestion ====================
 
 class TestSyncIngestion:
-    """Tests for wiki-to-DB ingestion of manuscript entities.
+    """Tests for YAML metadata ingestion via MetadataImporter.
 
-    All ingestion tests call _ingest directly, bypassing validation.
-    The _ingest method opens its own DB session via db.session_scope(),
-    parses wiki files, updates entities, and commits. The test then
-    refreshes entities on the original db_session to verify changes.
+    The sync orchestrator delegates to MetadataImporter for each
+    manuscript entity type. These tests verify the coordination
+    logic, not the importer itself (tested in test_metadata.py).
     """
 
-    def test_ingest_chapter_updates_type_and_status(
-        self, sync_instance
-    ):
-        """Ingesting a chapter updates its type and status from wiki."""
-        sync, wiki_dir, db_session, entities = sync_instance
-        chapter = entities["chapter"]
-
-        # Chapter wiki says Vignette/Revised, DB has Prose/Draft
-        assert chapter.type == ChapterType.PROSE
-        assert chapter.status == ChapterStatus.DRAFT
-
+    def test_ingest_calls_importer_for_all_types(self, sync_instance):
+        """Ingestion calls MetadataImporter.import_all for chapters, characters, scenes."""
+        sync, wiki_dir = sync_instance
         result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
 
-        db_session.refresh(chapter)
-        assert chapter.type == ChapterType.VIGNETTE
-        assert chapter.status == ChapterStatus.REVISED
-        assert result.updates["chapters"] >= 1
+        mock_stats = {"imported": 2, "errors": 0}
+        with patch(
+            "dev.wiki.metadata.MetadataImporter"
+        ) as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.return_value = mock_stats
+            sync._ingest(result)
 
-    def test_ingest_chapter_updates_poems(
-        self, sync_instance
-    ):
-        """Ingesting a chapter updates poem M2M relationships."""
-        sync, wiki_dir, db_session, entities = sync_instance
-        chapter = entities["chapter"]
+        # Should be called once for each entity type
+        calls = mock_importer.import_all.call_args_list
+        assert len(calls) == 3
+        called_types = [c.kwargs.get("entity_type") for c in calls]
+        assert "chapters" in called_types
+        assert "characters" in called_types
+        assert "scenes" in called_types
 
-        # Initially no poems
-        assert len(chapter.poems) == 0
-
+    def test_ingest_accumulates_stats(self, sync_instance):
+        """Ingestion accumulates file counts from importer stats."""
+        sync, wiki_dir = sync_instance
         result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
 
-        db_session.refresh(chapter)
-        assert len(chapter.poems) == 1
-        assert chapter.poems[0].title == "The Loop"
+        with patch(
+            "dev.wiki.metadata.MetadataImporter"
+        ) as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.side_effect = [
+                {"imported": 3, "errors": 0},  # chapters
+                {"imported": 2, "errors": 0},  # characters
+                {"imported": 5, "errors": 0},  # scenes
+            ]
+            sync._ingest(result)
 
-    def test_ingest_chapter_updates_references(
-        self, sync_instance
-    ):
-        """Ingesting a chapter creates ManuscriptReference records."""
-        sync, wiki_dir, db_session, entities = sync_instance
-        chapter = entities["chapter"]
+        assert result.files_ingested == 10
+        assert result.updates["chapters"] == 3
+        assert result.updates["characters"] == 2
+        assert result.updates["scenes"] == 5
 
-        # No references initially
-        assert len(chapter.references) == 0
-
+    def test_ingest_reports_import_errors_as_warnings(self, sync_instance):
+        """Import errors within a type are reported as warnings."""
+        sync, wiki_dir = sync_instance
         result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
 
-        db_session.refresh(chapter)
-        assert len(chapter.references) == 1
-        ref = chapter.references[0]
-        assert ref.source.title == "Nocturnes"
-        assert ref.mode == ReferenceMode.THEMATIC
-        assert ref.content == "the mood of waiting"
+        with patch(
+            "dev.wiki.metadata.MetadataImporter"
+        ) as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.side_effect = [
+                {"imported": 1, "errors": 2},  # chapters with errors
+                {"imported": 1, "errors": 0},  # characters
+                {"imported": 1, "errors": 0},  # scenes
+            ]
+            sync._ingest(result)
 
-    def test_ingest_character_updates_narrator_and_description(
-        self, sync_instance
-    ):
-        """Ingesting a character updates is_narrator flag and description.
+        assert result.success is True  # warnings don't block
+        assert any("chapters" in w and "2 import errors" in w for w in result.warnings)
 
-        The parser's ROLE_RE uses $ without re.MULTILINE, so the role
-        field is only extracted when the Role line is the last line of
-        the preamble. When a description follows the Role line, role
-        is parsed as None. This is a known parser limitation.
-        """
-        sync, wiki_dir, db_session, entities = sync_instance
-        character = entities["character"]
-
-        assert character.description == "The one who remembers."
-        assert character.is_narrator is True
-
+    def test_ingest_exception_becomes_error(self, sync_instance):
+        """An exception during import becomes a sync error."""
+        sync, wiki_dir = sync_instance
         result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
 
-        db_session.refresh(character)
-        # is_narrator is detected via NARRATOR_RE (separate from ROLE_RE)
-        assert character.is_narrator is True
-        # Description is updated from wiki
-        assert "chose to remember" in character.description
-        assert result.updates["characters"] >= 1
+        with patch(
+            "dev.wiki.metadata.MetadataImporter"
+        ) as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.side_effect = [
+                RuntimeError("DB connection lost"),  # chapters fails
+                {"imported": 1, "errors": 0},  # characters OK
+                {"imported": 1, "errors": 0},  # scenes OK
+            ]
+            sync._ingest(result)
 
-    def test_ingest_character_role_from_minimal_page(
-        self, sync_instance
-    ):
-        """Ingesting a minimal character page (no description) extracts role.
+        assert any("Failed to import chapters" in e for e in result.errors)
+        # Other types still imported
+        assert result.files_ingested == 2
 
-        The ROLE_RE regex matches when the Role line is at the end of
-        the preamble (no description or chapter count lines following).
-        """
-        sync, wiki_dir, db_session, entities = sync_instance
-
-        # Create a character with a minimal page (role as last preamble line)
-        minimal_char = Character(
-            name="Thomas", role=None, is_narrator=False,
-        )
-        db_session.add(minimal_char)
-        db_session.commit()
-
-        minimal_md = "# Thomas\n\n**Role:** sidekick"
-        chars_dir = wiki_dir / "manuscript" / "characters"
-        (chars_dir / "thomas.md").write_text(minimal_md)
-
+    def test_ingest_clears_sync_pending_marker(self, sync_instance):
+        """Successful ingest clears the .sync-pending marker file."""
+        sync, wiki_dir = sync_instance
+        marker = wiki_dir / ".sync-pending"
+        marker.write_text("pending")
         result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
 
-        db_session.refresh(minimal_char)
-        assert minimal_char.role == "sidekick"
-        assert minimal_char.is_narrator is False
+        with patch(
+            "dev.wiki.metadata.MetadataImporter"
+        ) as MockImporter:
+            mock_importer = MockImporter.return_value
+            mock_importer.import_all.return_value = {"imported": 0, "errors": 0}
+            sync._ingest(result)
 
-    def test_ingest_manuscript_scene_updates_origin_status_chapter(
-        self, sync_instance
-    ):
-        """Ingesting a manuscript scene updates origin, status, and chapter."""
-        sync, wiki_dir, db_session, entities = sync_instance
-        ms_scene = entities["ms_scene"]
-
-        # DB has journaled/fragment
-        assert ms_scene.origin == SceneOrigin.JOURNALED
-        assert ms_scene.status == SceneStatus.FRAGMENT
-
-        result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
-
-        db_session.refresh(ms_scene)
-        # Wiki says composite/draft
-        assert ms_scene.origin == SceneOrigin.COMPOSITE
-        assert ms_scene.status == SceneStatus.DRAFT
-        assert ms_scene.description == (
-            "The greeting kiss that bookends the goodbye."
-        )
-        assert ms_scene.chapter_id == entities["chapter"].id
-        assert result.updates["scenes"] >= 1
-
-    def test_ingest_manuscript_scene_updates_sources(
-        self, sync_instance
-    ):
-        """Ingesting a manuscript scene replaces source records."""
-        sync, wiki_dir, db_session, entities = sync_instance
-        ms_scene = entities["ms_scene"]
-
-        # Initially no sources
-        assert len(ms_scene.sources) == 0
-
-        result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
-
-        db_session.refresh(ms_scene)
-        sources = ms_scene.sources
-        assert len(sources) == 2
-
-        source_types = {s.source_type for s in sources}
-        assert SourceType.ENTRY in source_types
-        assert SourceType.EXTERNAL in source_types
-
-        ext_source = next(
-            s for s in sources if s.source_type == SourceType.EXTERNAL
-        )
-        assert ext_source.external_note == "Overheard conversation"
-
-    def test_ingest_parse_error_does_not_block_other_files(
-        self, sync_instance
-    ):
-        """A parse error in one file does not prevent ingestion of others."""
-        sync, wiki_dir, db_session, entities = sync_instance
-
-        # Write a malformed chapter file (no Type/Status metadata)
-        bad_chapter = (
-            wiki_dir / "manuscript" / "chapters" / "broken-chapter.md"
-        )
-        bad_chapter.write_text(
-            "# Broken Chapter\n\nNo type or status metadata here.\n"
-        )
-
-        result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
-
-        # The good files should still have been ingested
-        # (the-gray-fence.md chapter, lucia.md character,
-        # station-jarry-kiss.md scene)
-        assert result.files_ingested >= 2
-        # The broken file should produce an error
-        assert any("broken-chapter.md" in e for e in result.errors)
+        assert not marker.exists()
 
 
 # ==================== TestSyncCycle ====================
@@ -638,40 +327,37 @@ class TestSyncCycle:
     def test_full_sync_runs_validate_ingest_regenerate(
         self, sync_instance
     ):
-        """Full sync runs all three stages: validate, ingest, regenerate.
-
-        The validator is mocked to return no diagnostics so that
-        ingestion proceeds without being blocked by wikilinks to
-        entity types the validator does not resolve (Characters, Parts).
-        """
-        sync, wiki_dir, db_session, entities = sync_instance
+        """Full sync runs all three stages: validate, ingest, regenerate."""
+        sync, wiki_dir = sync_instance
 
         with patch.object(
             sync.validator, "validate_directory", return_value={}
-        ), patch.object(sync, "_regenerate") as mock_regen:
+        ), patch.object(sync, "_ingest") as mock_ingest, \
+             patch.object(sync, "_regenerate") as mock_regen:
             result = sync.sync_manuscript()
 
         assert result.files_validated == 0  # mock returns empty dict
-        assert result.files_ingested > 0
+        mock_ingest.assert_called_once()
         mock_regen.assert_called_once()
 
     def test_ingest_only_skips_regeneration(self, sync_instance):
         """Ingest-only mode skips the regeneration step."""
-        sync, wiki_dir, db_session, entities = sync_instance
+        sync, wiki_dir = sync_instance
 
         with patch.object(
             sync.validator, "validate_directory", return_value={}
-        ), patch.object(sync, "_regenerate") as mock_regen:
+        ), patch.object(sync, "_ingest") as mock_ingest, \
+             patch.object(sync, "_regenerate") as mock_regen:
             result = sync.sync_manuscript(ingest_only=True)
 
-        assert result.files_ingested > 0
+        mock_ingest.assert_called_once()
         mock_regen.assert_not_called()
 
     def test_generate_only_skips_validation_and_ingestion(
         self, sync_instance
     ):
         """Generate-only mode skips validation and ingestion entirely."""
-        sync, wiki_dir, db_session, entities = sync_instance
+        sync, wiki_dir = sync_instance
 
         with patch.object(sync, "_validate") as mock_validate, \
              patch.object(sync, "_ingest") as mock_ingest, \
@@ -684,7 +370,7 @@ class TestSyncCycle:
 
     def test_validation_errors_block_ingestion(self, sync_instance):
         """Validation errors prevent the ingestion step from running."""
-        sync, wiki_dir, db_session, entities = sync_instance
+        sync, wiki_dir = sync_instance
 
         # Write a file with an unresolved wikilink to trigger error
         bad_file = wiki_dir / "manuscript" / "chapters" / "invalid.md"

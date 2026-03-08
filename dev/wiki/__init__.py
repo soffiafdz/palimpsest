@@ -14,8 +14,7 @@ Key Components:
     - WikiContextBuilder: DB queries → template context dicts
     - WikiExporter: Orchestrates generation of all wiki pages
     - WikiValidator: Structured diagnostics for wiki linting
-    - WikiParser: Markdown → DB ingestion for manuscript pages
-    - WikiSync: Validate → ingest → regenerate cycle
+    - WikiSync: Validate → YAML import → regenerate cycle
     - WikiPublisher: Copy wiki to Quartz with frontmatter injection
 
 Usage:
