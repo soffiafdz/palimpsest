@@ -1,6 +1,6 @@
 # Palimpsest Modular Architecture
 
-**Last Updated**: 2026-02-13
+**Last Updated**: 2026-03-08
 
 ---
 
@@ -32,10 +32,9 @@ dev/database/cli/
 ├── migration.py         # Alembic migration commands
 ├── backup.py            # Backup and restore operations
 ├── query.py             # Data query commands
-├── maintenance.py       # Cleanup, optimize, validate
-├── export.py            # CSV/JSON export commands
-├── tombstone.py         # Tombstone management
-└── sync.py              # Sync state management
+├── maintenance.py       # Stats, health, optimize, cleanup, validate, analyze
+├── prune.py             # Orphan entity detection and removal
+└── manuscript.py        # Manuscript browsing (chapters, characters, parts, stats)
 ```
 
 **Key Pattern**: Shared context via Click's `@click.pass_context`
@@ -71,8 +70,8 @@ dev/database/models/
 ├── entities.py          # Person, PersonAlias, Tag, Theme
 ├── creative.py          # Reference, ReferenceSource, Poem, PoemVersion
 ├── analysis.py          # Scene, SceneDate, Event, Arc, Thread
-├── manuscript.py        # Chapter, PersonCharacterMap, etc.
-└── metadata.py          # NarratedDate, Motif
+├── manuscript.py        # Chapter, Character, ManuscriptScene, ManuscriptSource, etc.
+└── metadata.py          # NarratedDate, Motif, ThemeInstance, MotifInstance
 ```
 
 **Key Patterns**:
@@ -101,9 +100,10 @@ from dev.database.models.enums import ReferenceMode
 - **core.py**: Entry model (most important, most relationships)
 - **geography.py**: Location-related models with temporal tracking
 - **entities.py**: People and tags with soft delete support
-- **creative.py**: References, events, poems with versioning
+- **creative.py**: References, poems with versioning
+- **analysis.py**: Scenes, events, arcs, threads for narrative analysis
 - **manuscript.py**: Chapters, characters, scenes, sources, references for manuscript
-- **sync.py**: Multi-machine synchronization support
+- **metadata.py**: Narrated dates, motifs, theme/motif instances
 
 ---
 
@@ -115,14 +115,16 @@ from dev.database.models.enums import ReferenceMode
 ```
 dev/pipeline/cli/
 ├── __init__.py          # Main pipeline CLI group
-├── inbox.py             # Process 750words exports
-├── convert.py           # TXT → Markdown conversion
-├── import_metadata.py   # Metadata YAML → SQL (import journal metadata)
-├── export_json.py       # SQL → JSON export
-├── build_pdf.py         # PDF generation
-├── maintenance.py       # Backup, status, validation
+├── sources.py           # Process 750words inbox exports
+├── text.py              # TXT → Markdown conversion
+├── database.py          # import-metadata, prune-orphans
+├── export.py            # SQL → JSON export (export-json)
+├── import_json.py       # JSON → SQL import (upsert from exports)
+├── pdf.py               # PDF generation (build-pdf)
+├── metadata_pdf.py      # Metadata YAML → PDF (build-metadata-pdf)
+├── maintenance.py       # Backup, status, run-all, validation
 ├── wiki.py              # Wiki generation, linting, sync, publishing
-└── metadata_yaml.py     # YAML metadata export, import, validation
+└── metadata_yaml.py     # YAML metadata export, import, validation, rename
 ```
 
 **Key Pattern**: Data flow organization
@@ -139,6 +141,7 @@ plm inbox                      # Process 750words inbox
 plm convert                    # TXT → Markdown + skeleton metadata YAML
 plm import-metadata            # Metadata YAML → Database
 plm export-json                # Database → JSON export
+plm import-json                # JSON export → Database (upsert)
 plm build-pdf 2024             # Generate PDFs for a year
 ```
 
@@ -152,10 +155,9 @@ plm build-pdf 2024             # Generate PDFs for a year
 ```
 dev/validators/cli/
 ├── __init__.py          # Main validation CLI group
-├── wiki.py              # Wiki link validation (check, orphans, stats)
 ├── database.py          # Database integrity (schema, migrations, constraints)
 ├── markdown.py          # Markdown file validation (frontmatter, links)
-├── metadata.py          # Metadata parser compatibility (people, locations, dates)
+├── frontmatter.py       # Metadata parser compatibility (people, locations, dates, poems, references)
 └── consistency.py       # Cross-system consistency (existence, metadata, integrity)
 ```
 
@@ -164,15 +166,15 @@ dev/validators/cli/
 - Comprehensive `all` command in each module
 - Consistent error reporting across all validators
 
-**Entry Point**: `validate` → `dev.validators.cli:cli`
+**Entry Point**: `plm validate` → registered as subcommand of `plm` CLI, delegates to `dev.validators.cli`
 
 **Example Usage**:
 ```bash
-validate db schema             # Check database schema
-validate db all                # All database checks
-validate md frontmatter        # Validate YAML frontmatter
-validate metadata people       # Validate people metadata
-validate consistency all       # Cross-system consistency
+plm validate db schema             # Check database schema
+plm validate db all                # All database checks
+plm validate md frontmatter        # Validate YAML frontmatter
+plm validate frontmatter people    # Validate people metadata
+plm validate consistency all       # Cross-system consistency
 ```
 
 ---
@@ -223,9 +225,8 @@ dev/wiki/
 ├── __init__.py          # Public API
 ├── renderer.py          # Jinja2 template rendering engine
 ├── exporter.py          # Database → wiki page generation orchestrator
-├── parser.py            # Wiki → database ingestion (manuscript)
 ├── validator.py         # Wiki page validation and linting
-├── sync.py              # Bidirectional manuscript sync cycle
+├── sync.py              # Manuscript sync cycle (validate → YAML import → regenerate)
 ├── publisher.py         # Wiki → Quartz publishing with frontmatter injection
 ├── metadata.py          # YAML metadata export/import/validation
 ├── context.py           # Context builder for template rendering
@@ -303,13 +304,13 @@ def specific_command(ctx):
 # models/__init__.py - Backward compatibility layer
 from .base import Base, SoftDeleteMixin
 from .core import Entry, SchemaInfo
-from .entities import Person, Alias, Tag
+from .entities import Person, PersonAlias, Tag
 # ... all other imports
 
 __all__ = [
     "Base", "SoftDeleteMixin",
     "Entry", "SchemaInfo",
-    "Person", "Alias", "Tag",
+    "Person", "PersonAlias", "Tag",
     # ... all other exports
 ]
 
@@ -345,7 +346,7 @@ class WikiRenderer:
 class WikiExporter:
     def export_person(self, person: Person) -> None:
         content = self.renderer.render("person.jinja2", {"person": person})
-        self._write_page(self.wiki_dir / "people" / f"{person.slug}.wiki", content)
+        self._write_page(self.wiki_dir / "people" / f"{person.slug}.md", content)
 ```
 
 **Benefits**:
@@ -365,7 +366,7 @@ class WikiExporter:
 [project.scripts]
 metadb = "dev.database.cli:cli"
 plm = "dev.pipeline.cli:cli"
-validate = "dev.validators.cli:cli"
+jsearch = "dev.search.cli:cli"
 ```
 
 **Benefits**:
@@ -379,7 +380,7 @@ validate = "dev.validators.cli:cli"
 ## Dependency Graph
 
 ```
-Entry Points (metadb, plm, validate)
+Entry Points (metadb, plm, jsearch)
     ↓
 CLI Modules (dev/*/cli/)
     ↓
@@ -537,7 +538,7 @@ class NewEntity(Base):
     # ... fields
 
 # dev/database/models/__init__.py
-from .entities import Person, Alias, Tag, NewEntity
+from .entities import Person, PersonAlias, Tag, NewEntity
 
 __all__ = [
     # ...
@@ -619,5 +620,5 @@ The Palimpsest refactoring created a clean, modular architecture:
 
 ---
 
-**Last Updated**: 2026-02-13
+**Last Updated**: 2026-03-08
 **Maintained By**: Palimpsest Development Team

@@ -4,14 +4,11 @@ test_wiki_sync_roundtrip.py
 ---------------------------
 Integration tests for the wiki sync round-trip cycle.
 
-Tests the full workflow: generate → user edits wiki → sync → verify DB.
+Tests the full workflow: YAML export → user edits YAML → import → verify DB.
 Covers validation gates, partial operations, and error propagation.
 """
 # --- Annotations ---
 from __future__ import annotations
-
-# --- Standard library imports ---
-import re
 
 # --- Third-party imports ---
 import pytest
@@ -20,49 +17,46 @@ import pytest
 from dev.database.models.enums import ChapterStatus, ChapterType
 from dev.database.models.manuscript import Chapter
 from dev.wiki.exporter import WikiExporter
+from dev.wiki.metadata import MetadataExporter, MetadataImporter
 from dev.wiki.sync import WikiSync
 
 
 class TestSyncRoundTrip:
-    """Full generate → edit → sync → verify cycle."""
+    """Full YAML export → edit → import → verify cycle."""
 
     def test_modify_chapter_type_roundtrip(
         self, test_db, populated_wiki_db, wiki_output
     ):
         """
-        Generate chapter page → change type in wiki → sync → verify DB.
+        Export chapter YAML → change type → import → verify DB.
 
         Steps:
-            1. Generate wiki with exporter
-            2. Read generated chapter file
-            3. Replace type from 'Prose' to 'Vignette'
-            4. Run sync
-            5. Verify DB chapter type updated
+            1. Export chapter YAML with MetadataExporter
+            2. Read and modify type from 'prose' to 'vignette'
+            3. Import modified YAML with MetadataImporter
+            4. Verify DB chapter type updated
         """
-        # Step 1: Generate
-        exporter = WikiExporter(test_db, output_dir=wiki_output)
-        exporter.generate_all(section="manuscript")
+        yaml_dir = wiki_output / "metadata"
 
-        # Step 2: Read chapter file
-        chapter_file = (
-            wiki_output / "manuscript" / "chapters" / "espresso-and-silence.md"
+        # Step 1: Export chapter YAML
+        exporter = MetadataExporter(test_db, output_dir=yaml_dir)
+        exporter.export_all(entity_type="chapters")
+
+        # Step 2: Find and edit the chapter YAML
+        chapter_yaml = (
+            yaml_dir / "manuscript" / "chapters" / "espresso-and-silence.yaml"
         )
-        assert chapter_file.is_file()
-        content = chapter_file.read_text()
+        assert chapter_yaml.is_file()
+        content = chapter_yaml.read_text()
 
-        # Step 3: Modify type from Prose to Vignette
-        modified = content.replace(
-            "**Type:** Prose",
-            "**Type:** Vignette",
-        )
-        assert modified != content, "Expected to find **Type:** Prose in file"
-        chapter_file.write_text(modified)
+        # Step 3: Modify type from prose to vignette
+        modified = content.replace("type: prose", "type: vignette")
+        assert modified != content, "Expected to find 'type: prose' in YAML"
+        chapter_yaml.write_text(modified)
 
-        # Step 4: Sync
-        sync = WikiSync(test_db, wiki_dir=wiki_output)
-        result = sync.sync_manuscript()
-
-        assert result.success, f"Sync failed: {result.errors}"
+        # Step 4: Import
+        importer = MetadataImporter(test_db, input_dir=yaml_dir)
+        importer.import_all(entity_type="chapters")
 
         # Step 5: Verify DB
         with test_db.session_scope() as session:
@@ -76,30 +70,29 @@ class TestSyncRoundTrip:
         self, test_db, populated_wiki_db, wiki_output
     ):
         """
-        Modify chapter status and verify sync updates DB.
+        Modify chapter status via YAML and verify import updates DB.
         """
-        exporter = WikiExporter(test_db, output_dir=wiki_output)
-        exporter.generate_all(section="manuscript")
+        yaml_dir = wiki_output / "metadata"
 
-        # Modify the revised chapter to final
-        chapter_file = (
-            wiki_output / "manuscript" / "chapters" / "november-nocturne.md"
-        )
-        content = chapter_file.read_text()
-        modified = content.replace(
-            "**Status:** Revised",
-            "**Status:** Final",
-        )
-        chapter_file.write_text(modified)
+        exporter = MetadataExporter(test_db, output_dir=yaml_dir)
+        exporter.export_all(entity_type="chapters")
 
-        sync = WikiSync(test_db, wiki_dir=wiki_output)
-        result = sync.sync_manuscript()
-        assert result.success
+        chapter_yaml = (
+            yaml_dir / "manuscript" / "chapters" / "november-nocturne.yaml"
+        )
+        content = chapter_yaml.read_text()
+        modified = content.replace("status: revised", "status: final")
+        assert modified != content, "Expected to find 'status: revised' in YAML"
+        chapter_yaml.write_text(modified)
+
+        importer = MetadataImporter(test_db, input_dir=yaml_dir)
+        importer.import_all(entity_type="chapters")
 
         with test_db.session_scope() as session:
             chapter = session.query(Chapter).filter(
                 Chapter.title == "November Nocturne"
             ).first()
+            assert chapter is not None
             assert chapter.status == ChapterStatus.FINAL
 
 

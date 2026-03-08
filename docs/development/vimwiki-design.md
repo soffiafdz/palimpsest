@@ -101,7 +101,7 @@ Two editing paths feed back into the database:
 
 Sync only writes pages where DB state diverges from what is on disk:
 
-1. Parse edited wiki pages, update DB
+1. Import YAML metadata files, update DB entities
 2. Render all pages from DB into memory
 3. Compare rendered output against existing files
 4. Only overwrite pages that actually differ
@@ -120,7 +120,7 @@ Outputs structured diagnostics rendered as:
 - Gutter signs
 - Quickfix list population
 
-Backed by `plm lint <filepath>`, which outputs JSON diagnostics
+Backed by `plm wiki lint <filepath>`, which outputs JSON diagnostics
 (file, line, column, severity, message).
 
 Example diagnostics:
@@ -136,12 +136,12 @@ same rules, different output format (pass/fail vs. diagnostics).
 
 ### 3. Sync (CLI, on demand)
 
-Parses validated wiki pages into DB, then regenerates. Never runs
+Imports YAML metadata into DB, then regenerates wiki pages. Never runs
 silently or automatically — always triggered explicitly by the user.
 
 ```bash
 plm wiki sync                    # Full: ingest + regenerate
-plm wiki sync --ingest           # Wiki → DB only
+plm wiki sync --ingest           # YAML metadata → DB only
 plm wiki sync --generate         # DB → Wiki only
 ```
 
@@ -164,11 +164,11 @@ The linter routes to the appropriate validator based on file type:
 | File location | Validator | Existing code |
 |---------------|-----------|---------------|
 | `data/journal/content/md/` | Frontmatter + markdown validators | `dev/validators/frontmatter.py`, `dev/validators/md.py` |
-| `data/narrative_analysis/` | Metadata YAML validator | `dev/validators/metadata_yaml.py` |
+| `data/metadata/` | Metadata YAML validator | `dev/wiki/metadata.py` |
 | `data/wiki/manuscript/` | Manuscript wiki validator | New — `dev/wiki/validator.py` |
 
 All validators are accessible through a single CLI entry point:
-`plm lint <filepath>`. The Neovim plugin calls this and renders
+`plm wiki lint <filepath>`. The Neovim plugin calls this and renders
 the output as native diagnostics. The existing validators need
 adaptation to emit structured diagnostics (file, line, column,
 severity, message) rather than just pass/fail results.
@@ -202,9 +202,6 @@ User writes a brief summary here.
 - [[Sofia]] — protagonist, narrator
 - [[Léa]] — mentioned
 
-## Arcs
-- [[The Long Wanting]]
-
 ## Sources
 Journal entries that feed this chapter.
 - [[2024-11-08]] — Scene 3 (the fence encounter)
@@ -217,8 +214,9 @@ Free-form user notes about this chapter.
 - *Important Book* by Author (thematic)
 ```
 
-Parsing relies on heading conventions (`## Scenes`, `## Characters`, etc.)
-and link patterns (`[[...]]`) rather than frontmatter or special syntax.
+Wiki pages use heading conventions (`## Scenes`, `## Characters`, etc.)
+and link patterns (`[[...]]`) for readability. Structural metadata is
+managed via YAML files, not parsed from the wiki markdown.
 
 ## Static Site Generation (Quartz)
 
@@ -264,33 +262,52 @@ list rendering.
 
 ```
 dev/wiki/
-├── __init__.py          # Public API (WikiRenderer, WikiExporter)
+├── __init__.py          # Public API
 ├── renderer.py          # Jinja2 template rendering engine
-├── exporter.py          # Database -> wiki generation orchestrator
-├── parser.py            # Wiki -> database ingestion (manuscript)
+├── exporter.py          # Database → wiki generation orchestrator
 ├── validator.py         # Wiki page validation / linting
+├── sync.py              # Manuscript sync (validate → YAML import → regenerate)
+├── publisher.py         # Wiki → Quartz publishing with frontmatter injection
+├── metadata.py          # YAML metadata export/import/validation
+├── context.py           # Context builder for template rendering
 ├── configs.py           # Entity export configurations
 ├── filters.py           # Custom Jinja2 filters
+├── rename.py            # Entity rename across DB and files
+├── mdit_wikilink.py     # markdown-it-py wikilink plugin
 └── templates/
     ├── journal/
     │   ├── entry.jinja2
     │   ├── person.jinja2
     │   ├── location.jinja2
+    │   ├── city.jinja2
     │   ├── event.jinja2
+    │   ├── arc.jinja2
     │   ├── tag.jinja2
     │   ├── theme.jinja2
+    │   ├── motif.jinja2
     │   ├── poem.jinja2
-    │   └── reference.jinja2
+    │   └── reference_source.jinja2
     ├── manuscript/
     │   ├── chapter.jinja2
     │   ├── character.jinja2
-    │   ├── scene.jinja2
+    │   ├── manuscript_scene.jinja2
     │   └── part.jinja2
-    └── indexes/
-        ├── main.jinja2
-        ├── people.jinja2
-        ├── locations.jinja2
-        └── entries.jinja2
+    ├── indexes/
+    │   ├── main.jinja2
+    │   ├── manuscript.jinja2
+    │   ├── entries.jinja2
+    │   ├── people.jinja2
+    │   ├── places.jinja2
+    │   ├── events.jinja2
+    │   ├── arcs.jinja2
+    │   ├── tags.jinja2
+    │   ├── themes.jinja2
+    │   ├── motifs.jinja2
+    │   ├── poems.jinja2
+    │   └── references.jinja2
+    └── macros/
+        ├── entry_listing.jinja2
+        └── thread_display.jinja2
 ```
 
 ## Entity Types
@@ -390,13 +407,34 @@ The Neovim plugin (`palimpsest.nvim` or similar) provides:
 
 - `:PalimpsestSync` — Sync manuscript wiki edits back to DB, regenerate
 - `:PalimpsestGenerate` — Regenerate wiki pages from DB
-- `:PalimpsestStatus` — Show dirty files, lint errors, last sync time
 - `:PalimpsestLint` — Run linter on current buffer
+- `:PalimpsestPublish` — Publish wiki to Quartz
+- `:PalimpsestEdit` — Open entity metadata YAML in floating window
+- `:PalimpsestEditCuration` — Open curation YAML in floating window
+- `:PalimpsestNew` — Create a new entity from template
+- `:PalimpsestAddSource` — Add source to manuscript scene (guided)
+- `:PalimpsestAddBasedOn` — Add person mapping to character (guided)
+- `:PalimpsestSetChapter` — Assign scene to chapter (guided)
+- `:PalimpsestAddCharacter` — Add character to scene (guided)
+- `:PalimpsestOpenSources` — Open draft file or journal entries in splits
+- `:PalimpsestLinkToManuscript` — Link journal entity to manuscript
+- `:PalimpsestRename` — Rename an entity across DB and files
+- `:PalimpsestIndex` — Open wiki main index
+- `:PalimpsestManuscriptIndex` — Open manuscript index
+- `:PalimpsestBrowse` — Browse wiki pages via fzf
+- `:PalimpsestSearch` — Search journal entries
+- `:PalimpsestQuickAccess` — Quick access to common pages
+- `:PalimpsestMetadataExport` — Export metadata for current entity
+- `:PalimpsestCacheRefresh` — Refresh entity name cache
+- `:PalimpsestValidateEntry` — Validate current journal entry
+- `:PalimpsestValidateFrontmatter` — Validate frontmatter
+- `:PalimpsestValidateMetadata` — Validate metadata YAML
+- `:PalimpsestValidateLinks` — Validate wikilinks
 
 ### Linter Integration
 
 Hooks into Neovim's diagnostic system (via `nvim-lint`, ALE, or custom
-`vim.diagnostic` provider). Runs `plm lint` asynchronously on `BufWritePost`.
+`vim.diagnostic` provider). Runs `plm wiki lint` asynchronously on `BufWritePost`.
 Diagnostics appear as inline virtual text and gutter signs.
 
 File type routing:
@@ -435,7 +473,7 @@ entity type. Key architectural decisions:
 - **Sources and Based On** managed via guided nvim plugin commands
 - **Journal entity metadata** in per-entity YAML files (People, Locations)
   or single files (Cities, Arcs)
-- **11 Palimpsest nvim commands** with DB-backed autocomplete
+- **22 Palimpsest nvim commands** with DB-backed autocomplete
 
 ### Template Design — RESOLVED
 
@@ -452,10 +490,7 @@ entity type. Key architectural decisions:
 3. **Reusable macros:** Shared patterns as Jinja2 macros in
    `templates/macros/`:
    - `entry_listing.jinja2` — Year → month → week hierarchy
-   - `timeline_table.jinja2` — Month-by-month density table
-   - `frequent_people.jinja2` — Bulleted wikilinked list with counts
    - `thread_display.jinja2` — Thread heading + dates + content + people
-   - `patterns_section.jinja2` — Co-occurring tags/themes list
 
 4. **Custom Jinja2 filters** (`dev/wiki/filters.py`):
    - `wikilink(name, display)` — `[[name]]` or `[[name|display]]`
@@ -465,6 +500,13 @@ entity type. Key architectural decisions:
    - `adaptive_list(items, threshold)` — inline or bulleted by count
    - `timeline_table(monthly_counts)` — full markdown table
    - `source_path(entity, wiki_root)` — relative path to source file
+   - `entry_date_short(d)` — short date format for entry references
+   - `entry_date_display(d)` — display format for entry dates
+   - `month_display(d)` — month name display
+   - `flexible_date_display(d)` — flexible date formatting
+   - `thread_date_range(thread)` — thread date span display
+   - `chunked_list(items, size)` — split list into chunks
+   - `zpad(n)` — zero-padded number
 
 5. **Empty section suppression:** Per-section `{% if data %}` blocks.
    No wrapping macro — explicit conditionals are more readable.
@@ -479,61 +521,41 @@ entity type. Key architectural decisions:
    tags) injected by a separate post-processing step during
    `plm wiki publish`, not by templates. Keeps editing experience clean.
 
-### Parser Implementation — RESOLVED
+### Metadata Ingestion — RESOLVED
 
-**Approach:** Markdown AST via `markdown-it-py` with custom wikilink plugin.
+**Approach:** YAML metadata files imported via `MetadataImporter`.
 
 **Rationale:**
-- Most robust handling of markdown variations (code blocks, nested
-  formatting, blockquotes inside prose sections)
-- `markdown-it-py` is the Python port of `markdown-it`, which Quartz
-  uses internally — same parsing rules guarantee round-trip consistency
-- Natively understands heading levels, blockquotes, lists — the exact
-  structures our wiki sections use
-- Additional dependency is trivial (project already uses SQLAlchemy,
-  Jinja2, Click, PyYAML)
-- Custom plugin for `[[wikilink]]` inline syntax
+- Manuscript metadata is edited via per-entity YAML files (floating
+  window in Neovim), not by parsing wiki markdown
+- YAML provides a structured, validated format that maps directly to
+  DB fields without ambiguous parsing
+- Same `MetadataImporter` handles both standalone `plm metadata import`
+  and the sync cycle's ingest step
+- Wiki pages are read-only generated dashboards — structural truth
+  lives in YAML metadata and the database
 
 **Architecture:**
 
 ```
-Wiki file → markdown-it-py AST
-         → Section splitter (walk tree, group nodes by ## headings)
-         → Per-section extractors:
-             Prose sections (Synopsis, Description, Notes):
-               Reassemble raw text from AST nodes, preserve verbatim
-             List sections (Scenes, Characters, Arcs, Poems):
-               Extract list item nodes, parse [[wikilinks]] from text
-             Structured sections (Sources, Based On):
-               Extract patterns from text nodes (type + wikilink + metadata)
-             Blockquote sections (References):
-               Extract blockquote content, parse attribution + mode
+YAML metadata files → MetadataImporter
+                    → Schema validation
+                    → Entity resolution (name → DB ID)
+                    → Upsert into database
+                    → WikiExporter regenerates wiki pages
 ```
 
-**What gets parsed (manuscript pages only):**
+**What gets ingested (manuscript entity types):**
 
-| Page | Heading | Content Extractor | DB Target |
-|------|---------|-------------------|-----------|
-| Chapter | `#` | Title text | `chapter.title` |
-| Chapter | metadata line | Number, part, type, status | scalar fields |
-| Chapter | `## Synopsis` | Prose (verbatim) | `chapter.content` |
-| Chapter | `## Scenes` | Wikilink list (ordered) | `chapter_scenes` M2M |
-| Chapter | `## Characters` | Wikilink list | `chapter_characters` M2M |
-| Chapter | `## Arcs` | Wikilink list | `chapter.arcs` M2M |
-| Chapter | `## Notes` | Prose (verbatim) | `chapter.notes` |
-| Chapter | `## References` | Blockquotes + attribution | `manuscript_references` |
-| Chapter | `## Poems` | Wikilink list | `chapter_poems` M2M |
-| Character | `#` | Name text (strip " (character)") | `character.name` |
-| Character | `## Description` | Prose (verbatim) | `character.description` |
-| Character | `## Based On` | Structured: wikilink + contribution + notes | `person_character_map` |
-| ManuscriptScene | `#` | Name text | `manuscript_scene.name` |
-| ManuscriptScene | `## Description` | Prose (verbatim) | `manuscript_scene.description` |
-| ManuscriptScene | `## Sources` | Structured: type + wikilink + name | `manuscript_sources` |
-| ManuscriptScene | `## Notes` | Prose (verbatim) | `manuscript_scene.notes` |
+| Entity Type | YAML Location | Key Fields |
+|-------------|---------------|------------|
+| Chapter | `data/metadata/chapters/{slug}.yaml` | title, part, type, status, synopsis, scenes, notes |
+| Character | `data/metadata/characters/{slug}.yaml` | name, description, person mappings (based_on) |
+| ManuscriptScene | `data/metadata/scenes/{slug}.yaml` | name, origin, status, description, sources, notes |
 
-**Wikilink resolution:** Parser extracts `[[Display Name]]` from AST,
-resolves to entity ID via DB lookup (slug or display_name match).
-Unresolved links flagged as lint errors.
+**Entity resolution:** Importer resolves entity references by name
+(slug or display_name match via DB lookup). Unresolved references
+produce import errors.
 
 ### Neovim Plugin Architecture — RESOLVED
 
@@ -553,27 +575,24 @@ The plugin already provides:
 operations. No direct SQLite access from Lua. fzf-lua provides
 fuzzy-finder UI. which-key.nvim provides discoverable keybindings.
 
-**New modules needed for wiki design commands:**
+**Plugin modules:**
 
 ```
 dev/lua/palimpsest/
-├── (existing modules)
-├── float.lua          # Floating window management
-│                      #   Open YAML in popup, save/close flow
-│                      #   Configurable size (60% default, larger for big files)
-├── context.lua        # Page type detection
-│                      #   Detect current wiki page entity type
-│                      #   Resolve entity slug from file path/heading
-│                      #   Determine available commands per context
-├── entity.lua         # Entity editing commands
-│                      #   PalimpsestEdit: open metadata YAML via float.lua
-│                      #   PalimpsestNew: create entity from template
-│                      #   PalimpsestAdd*: guided insertion with autocomplete
-│                      #   PalimpsestLinkTo*: bidirectional linking
-└── cache.lua          # Entity list caching for autocomplete
-                       #   On buffer enter / sync: call plm to dump entity lists
-                       #   Cache as Lua tables (people names, scene names, etc.)
-                       #   Provide completion source for nvim-cmp or native
+├── init.lua           # Plugin entry point and setup
+├── commands.lua       # All :Palimpsest* command registration
+├── keymaps.lua        # which-key.nvim bindings
+├── config.lua         # Project root detection, path configuration
+├── autocmds.lua       # Validation on save, template population
+├── float.lua          # Floating window management (YAML popup editing)
+├── context.lua        # Page type detection (entity type, slug resolution)
+├── entity.lua         # Entity editing (edit, new, add source/based_on/character)
+├── cache.lua          # Entity list caching for autocomplete
+├── fzf.lua            # fzf-lua integration for browse/search
+├── validators.lua     # Async Python validator → Neovim diagnostics
+├── templates.lua      # Template system for diary entries
+├── vimwiki.lua        # VimWiki instance registration
+└── utils.lua          # Shared utility functions
 ```
 
 **Autocomplete strategy:** Cache + async CLI. On sync or buffer enter,
@@ -587,7 +606,7 @@ commands. Add keybindings to `keymaps.lua` under new groups:
 - `<leader>pn` / `<leader>vn` — New entity (`:PalimpsestNew`)
 - Context-sensitive add commands available in manuscript buffers
 
-### `plm lint` Output Format — RESOLVED
+### `plm wiki lint` Output Format — RESOLVED
 
 **JSON diagnostic schema** consumed by both the Neovim plugin
 (`validators.lua`) and the pre-sync validator.
@@ -629,7 +648,7 @@ commands. Add keybindings to `keymaps.lua` under new groups:
    - Warnings: `EMPTY_SECTION`, `ORPHAN_SCENE`, `MISSING_SOURCES`
    - Info: `LONG_SYNOPSIS`, `UNLINKED_CHARACTER`
 
-4. **Batch mode:** `plm lint <path>` accepts files or directories,
+4. **Batch mode:** `plm wiki lint <path>` accepts files or directories,
    returns array of file results.
 
 5. **Output format:** `--format json|text`, auto-detect based on TTY.

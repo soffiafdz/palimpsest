@@ -11,10 +11,9 @@ Complete reference for all Palimpsest CLI commands.
 pip install -e .
 ```
 
-This installs four CLI entry points:
-- `plm` - Pipeline management
+This installs three CLI entry points:
+- `plm` - Pipeline management (includes validation via `plm validate`)
 - `metadb` - Database management
-- `validate` - Validation suite
 - `jsearch` - Full-text search
 
 ---
@@ -69,10 +68,10 @@ metadb stats --verbose
 
 ```bash
 # Validate database
-validate db all
+plm validate db all
 
 # Validate consistency
-validate consistency all
+plm validate consistency all
 ```
 
 ---
@@ -88,81 +87,116 @@ Pipeline processing for journal entries.
 Process inbox text files.
 
 ```bash
-plm inbox [--inbox-dir PATH] [--batch-dir PATH]
+plm inbox [--inbox PATH] [--output PATH]
 ```
 
 **What it does:**
-- Scans inbox directory for `.txt` files
+- Scans inbox directory for raw 750words exports
 - Groups entries by date
-- Creates batch directories
+- Creates formatted text files
 - Prepares entries for conversion
 
 **Options:**
-- `--inbox-dir PATH` - Custom inbox directory
-- `--batch-dir PATH` - Custom batch output directory
+- `--inbox PATH` - Inbox directory with raw exports (defaults to `data/journal/sources/inbox`)
+- `--output PATH` - Output directory for formatted text (defaults to `data/journal/sources/txt`)
 
 #### `plm convert`
 
 Convert formatted text to Markdown entries.
 
 ```bash
-plm convert [--batch-dir PATH] [--md-dir PATH]
+plm convert [-i PATH] [-o PATH] [-f] [--dry-run] [--yaml-dir PATH] [--no-yaml]
 ```
 
 **What it does:**
-- Processes batch directories
+- Processes formatted text files
 - Converts text to markdown format
-- Extracts basic metadata (word count, reading time)
+- Generates YAML metadata skeletons
 - Outputs to `data/journal/content/md/YYYY/YYYY-MM-DD.md`
 
 **Options:**
-- `--batch-dir PATH` - Custom batch directory
-- `--md-dir PATH` - Custom markdown output directory
+- `-i/--input PATH` - Input directory with formatted text files (defaults to `data/journal/sources/txt`)
+- `-o/--output PATH` - Output directory for Markdown files (defaults to `data/journal/content/md`)
+- `-f/--force` - Force overwrite existing files
+- `--dry-run` - Preview changes without modifying files
+- `--yaml-dir PATH` - Output directory for YAML metadata skeletons
+- `--no-yaml` - Disable YAML skeleton generation
 
 #### `plm import-metadata`
 
 Import metadata YAML files into database.
 
 ```bash
-plm import-metadata [--metadata-dir PATH] [--skip-validation]
+plm import-metadata [--dry-run] [-y YEAR] [--years RANGE]
 ```
 
 **What it does:**
-- Parses metadata YAML files
+- Parses journal markdown and analysis YAML files
 - Updates database with entry metadata
 - Extracts people, locations, events, themes, etc.
 - Handles tombstone tracking for deletions
 
 **Options:**
-- `--metadata-dir PATH` - Custom metadata directory
-- `--skip-validation` - Skip YAML validation (faster, use with caution)
+- `--dry-run` - Don't commit changes to database
+- `-y/--year YEAR` - Import only a specific year (e.g., `2024`)
+- `--years RANGE` - Import a year range (e.g., `2021-2025`)
 
-**Note:** This is a one-time import command for human-authored narrative analysis.
+**Note:** This imports human-authored narrative analysis. Only post-2020 entries are supported.
 
 #### `plm export-json`
 
 Export database entities to JSON files.
 
 ```bash
-plm export-json [--output-dir PATH]
+plm export-json
 ```
 
 **What it does:**
-- Exports all database entities to JSON format
+- Exports all database entities to JSON format using natural keys
 - Creates structured export for version control
-- Outputs to `data/exports/`
+- Outputs to `data/exports/journal/`
 
 **Use cases:**
 - Version control of database state
 - Backup in human-readable format
-- Data migration
+- Cross-machine database synchronization (pair with `plm import-json`)
+
+#### `plm import-json`
+
+Import database entities from JSON export files.
+
+```bash
+plm import-json [--input-dir PATH]
+```
+
+**What it does:**
+- Reads JSON files produced by `plm export-json`
+- Imports entities into database using upsert semantics (idempotent)
+- Safe to run multiple times on the same data
+
+**Options:**
+- `--input-dir PATH` - Input directory (defaults to `data/exports`)
+
+**Examples:**
+```bash
+# Import from default exports directory
+plm import-json
+
+# Import from a specific directory
+plm import-json --input-dir path/to/exports
+```
+
+**Use cases:**
+- Rebuild database from version-controlled JSON exports
+- Restore database state without a binary backup
+- Share database content across machines
 
 #### `plm prune-orphans`
 
 Remove orphaned entities from database.
 
 ```bash
-plm prune-orphans [--dry-run]
+plm prune-orphans [--type TYPE] [--list] [--dry-run]
 ```
 
 **What it does:**
@@ -171,6 +205,8 @@ plm prune-orphans [--dry-run]
 - Cleans up unused data
 
 **Options:**
+- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `all` (default: `all`)
+- `--list` - Only list orphans, don't delete
 - `--dry-run` - Show what would be deleted without deleting
 
 ### Build Commands
@@ -180,7 +216,7 @@ plm prune-orphans [--dry-run]
 Build PDFs for a year's entries.
 
 ```bash
-plm build-pdf YEAR [--output-dir PATH]
+plm build-pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
 ```
 
 **Arguments:**
@@ -190,6 +226,12 @@ plm build-pdf YEAR [--output-dir PATH]
 - Generates clean and annotated PDF versions
 - Uses Pandoc + LaTeX for typography
 - Outputs to `data/journal/content/pdf/`
+
+**Options:**
+- `-i/--input PATH` - Input directory with Markdown files
+- `-o/--output PATH` - Output directory for PDFs
+- `-f/--force` - Force overwrite existing PDFs
+- `--debug` - Keep temp files on error for debugging
 
 **Requirements:**
 - Pandoc 2.19+
@@ -203,20 +245,20 @@ plm build-pdf YEAR [--output-dir PATH]
 Run the complete pipeline end-to-end.
 
 ```bash
-plm run-all --year YEAR [--skip-inbox] [--skip-pdf]
+plm run-all [--year YEAR] [--skip-inbox] [--skip-pdf] [--backup]
 ```
 
 **Options:**
-- `--year YEAR` - Year to process (required)
+- `--year YEAR` - Specific year to process (optional)
 - `--skip-inbox` - Skip inbox processing
 - `--skip-pdf` - Skip PDF generation
+- `--backup` - Create full data backup after completion
 
 **What it runs:**
 1. `plm inbox` (unless `--skip-inbox`)
 2. `plm convert`
-3. `plm import-metadata`
-4. `plm export-json`
-5. `plm build-pdf` (unless `--skip-pdf`)
+3. `plm build-pdf` (unless `--skip-pdf`)
+4. `plm backup-full` (only with `--backup`)
 
 ### Backup Operations
 
@@ -225,13 +267,16 @@ plm run-all --year YEAR [--skip-inbox] [--skip-pdf]
 Create complete system backup.
 
 ```bash
-plm backup-full [--output-dir PATH]
+plm backup-full [--suffix TEXT]
 ```
 
 **What it backs up:**
 - SQLite database
 - All markdown files
 - Configuration files
+
+**Options:**
+- `--suffix TEXT` - Optional suffix for backup filename
 
 **Output:**
 - Timestamped compressed archive in `data/backups/`
@@ -266,15 +311,56 @@ plm status
 
 #### `plm validate`
 
-Run validation checks.
+Run validation checks across all subsystems.
 
 ```bash
 plm validate COMMAND
 ```
 
 **Commands:**
-- `pipeline` - Validate pipeline directory structure
+- `pipeline` - Validate pipeline directory structure and dependencies
 - `entry` - Validate journal entries (MD + YAML)
+- `db` - Database integrity checks (schema, migrations, constraints)
+- `md` - Markdown file validation (frontmatter, links)
+- `frontmatter` - Metadata parser compatibility (people, locations, dates, poems, references)
+- `consistency` - Cross-system consistency (existence, metadata, references, integrity)
+
+See the [Validation Suite](#plm-validate---validation-suite) section for full details on each subcommand.
+
+#### `plm validate entry`
+
+Validate journal entry files.
+
+```bash
+plm validate entry [DATE] [-f FILE] [-y YEAR] [--years RANGE] [--all] [-q]
+```
+
+**Arguments:**
+- `DATE` - Specific entry date to validate (optional)
+
+**Options:**
+- `-f/--file PATH` - Validate a specific file
+- `-y/--year YEAR` - Validate all entries in a year (e.g., `2024`)
+- `--years RANGE` - Validate a year range (e.g., `2021-2025`)
+- `--all` - Validate all entries
+- `-q/--quickfix` - Output in quickfix format for Neovim integration
+
+#### `plm build-metadata-pdf`
+
+Build PDF from metadata YAML files for a year.
+
+```bash
+plm build-metadata-pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
+```
+
+**Arguments:**
+- `YEAR` - Year to build (required)
+
+**Options:**
+- `-i/--input PATH` - Input directory with YAML files
+- `-o/--output PATH` - Output directory for PDF
+- `-f/--force` - Force overwrite existing PDF
+- `--debug` - Keep temp files on error for debugging
 
 ### Wiki Commands
 
@@ -347,7 +433,7 @@ plm wiki lint data/wiki/ --format json
 
 #### `plm wiki sync`
 
-Sync manuscript wiki pages with database.
+Sync manuscript metadata and wiki pages with database.
 
 ```bash
 plm wiki sync [--ingest] [--generate]
@@ -355,12 +441,17 @@ plm wiki sync [--ingest] [--generate]
 
 **What it does:**
 - Validates manuscript wiki pages (errors block sync)
-- Parses validated pages into database (ingest)
+- Imports YAML metadata files into database (ingest)
 - Regenerates wiki pages from updated database (generate)
 - Only overwrites pages where DB state diverges from disk
 
+**Sync cycle:**
+1. **Validate**: Run validator on all manuscript wiki files
+2. **Ingest**: Import YAML metadata for chapters, characters, and scenes via MetadataImporter
+3. **Regenerate**: Render all manuscript pages from DB
+
 **Options:**
-- `--ingest` - Only ingest wiki → DB (skip regeneration)
+- `--ingest` - Only import YAML metadata → DB (skip regeneration)
 - `--generate` - Only regenerate DB → wiki (skip ingestion)
 
 **Note:** `--ingest` and `--generate` are mutually exclusive. Without either flag, runs the full cycle: ingest + regenerate.
@@ -370,7 +461,7 @@ plm wiki sync [--ingest] [--generate]
 # Full sync cycle
 plm wiki sync
 
-# Ingest only (wiki → DB)
+# Ingest only (YAML metadata → DB)
 plm wiki sync --ingest
 
 # Regenerate only (DB → wiki)
@@ -411,7 +502,7 @@ plm metadata export [--type TYPE] [--output-dir PATH]
 - Outputs to `data/metadata/` directory
 
 **Options:**
-- `--type` - Export only a specific type: `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`
+- `--type` - Export only a specific type: `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`, `neighborhoods`, `relation_types`, `entries`, `journal_scenes`, `threads`, `poems`, `reference_sources`
 - `--output-dir PATH` - Custom output directory (defaults to `data/metadata`)
 
 **Examples:**
@@ -485,8 +576,13 @@ plm metadata list-entities --type TYPE [--format FORMAT]
 - Used by the Neovim plugin for entity name caching
 
 **Options:**
-- `--type` - Entity type (required): `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`
+- `--type` - Entity type (required): `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`, `neighborhoods`, `relation_types`, `entries`, `journal_scenes`, `threads`, `poems`, `reference_sources`
 - `--format` - Output format: `text` (default) or `json`
+
+**Output formats by entity type:**
+- Most types return plain names/titles
+- `entries` returns ISO dates (`2024-11-26`)
+- `journal_scenes` and `threads` return `name::date` composites (`Morning Walk::2024-11-26`)
 
 **Examples:**
 ```bash
@@ -495,6 +591,41 @@ plm metadata list-entities --type people
 
 # JSON output for programmatic consumption
 plm metadata list-entities --type chapters --format json
+
+# List journal scenes with entry dates
+plm metadata list-entities --type journal_scenes
+
+# List reference sources
+plm metadata list-entities --type reference_sources --format json
+```
+
+#### `plm metadata rename`
+
+Rename an entity across the database and all YAML/wiki files.
+
+```bash
+plm metadata rename ENTITY_TYPE OLD_NAME NEW_NAME [--city CITY] [--apply]
+```
+
+**Arguments:**
+- `ENTITY_TYPE` - Entity type: `location`, `tag`, `theme`, `arc`, `person`, `city`, `motif`, `event`
+- `OLD_NAME` - Current entity name
+- `NEW_NAME` - New entity name
+
+**Options:**
+- `--city CITY` - City for location disambiguation (when multiple locations share a name)
+- `--apply` - Execute the rename (default is dry-run preview)
+
+**Examples:**
+```bash
+# Preview rename
+plm metadata rename person "Alice Smith" "Alice Johnson"
+
+# Execute rename
+plm metadata rename person "Alice Smith" "Alice Johnson" --apply
+
+# Rename location with city disambiguation
+plm metadata rename location "Main Street" "High Street" --city montreal --apply
 ```
 
 ---
@@ -683,7 +814,7 @@ metadb optimize [--yes]
 Detect and remove orphaned entities.
 
 ```bash
-metadb prune-orphans [--dry-run]
+metadb prune-orphans [--type TYPE] [--list] [--dry-run]
 ```
 
 **What it does:**
@@ -692,6 +823,8 @@ metadb prune-orphans [--dry-run]
 - Optionally removes them
 
 **Options:**
+- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `all` (default: `all`)
+- `--list` - Only list orphans, don't delete
 - `--dry-run` - Show what would be deleted without deleting
 
 ### Migration Management
@@ -856,8 +989,11 @@ metadb query show 2024-11-26
 Show how entries would be batched for export.
 
 ```bash
-metadb query batches [--year YYYY]
+metadb query batches [--threshold N]
 ```
+
+**Options:**
+- `--threshold N` - Batch size threshold (default: 500)
 
 **Use cases:**
 - Preview batch processing
@@ -895,7 +1031,7 @@ metadb maintenance validate
 Clean up orphaned records.
 
 ```bash
-metadb maintenance cleanup [--dry-run]
+metadb maintenance cleanup
 ```
 
 **What it removes:**
@@ -903,15 +1039,14 @@ metadb maintenance cleanup [--dry-run]
 - Dangling foreign keys
 - Empty/null records
 
-**Options:**
-- `--dry-run` - Show what would be deleted without deleting
+Prompts for confirmation before proceeding.
 
 ##### `analyze`
 
 Generate detailed analytics report.
 
 ```bash
-metadb maintenance analyze [--output PATH]
+metadb maintenance analyze
 ```
 
 **Report includes:**
@@ -920,77 +1055,85 @@ metadb maintenance analyze [--output PATH]
 - Query performance metrics
 - Growth trends
 
-### Export Commands
+### Manuscript Commands
 
-#### `metadb export`
+#### `metadb manuscript`
 
-Export database to various formats.
+Browse and manage manuscript entities.
 
 ```bash
-metadb export COMMAND
+metadb manuscript COMMAND
 ```
 
 **Commands:**
 
-##### `csv`
+##### `chapters`
 
-Export all tables to CSV files.
-
-```bash
-metadb export csv [--output-dir PATH]
-```
-
-**Output:**
-```
-exports/
-  entries.csv
-  people.csv
-  locations.csv
-  ...
-```
-
-**Use cases:**
-- Data analysis in Excel/pandas
-- Backup in human-readable format
-- Migration to other systems
-
-##### `json`
-
-Export complete database to JSON.
+List all chapters.
 
 ```bash
-metadb export json [--output PATH]
+metadb manuscript chapters [--status STATUS] [--type TYPE]
 ```
 
-**Output format:**
-```json
-{
-  "entries": [...],
-  "people": [...],
-  "locations": [...],
-  ...
-}
+**Options:**
+- `--status STATUS` - Filter by status: `draft`, `revised`, `final`
+- `--type TYPE` - Filter by type: `prose`, `vignette`, `poem`
+
+##### `chapter`
+
+Show details for a specific chapter.
+
+```bash
+metadb manuscript chapter TITLE
 ```
 
-**Use cases:**
-- Complete data export
-- System migration
-- API integration
+##### `characters`
+
+List all characters.
+
+```bash
+metadb manuscript characters
+```
+
+##### `character`
+
+Show details for a specific character.
+
+```bash
+metadb manuscript character NAME
+```
+
+##### `parts`
+
+List all manuscript parts.
+
+```bash
+metadb manuscript parts
+```
+
+##### `stats`
+
+Show manuscript statistics.
+
+```bash
+metadb manuscript stats
+```
 
 ---
 
-## VALIDATE - Validation Suite
+## PLM VALIDATE - Validation Suite
 
 Comprehensive validation for database, markdown, and consistency.
+Accessed via `plm validate` (registered as a subcommand of the pipeline CLI).
 
 ### Database Validation
 
-#### `validate db`
+#### `plm validate db`
 
 Validate database integrity and constraints.
 
 ```bash
-validate db COMMAND
+plm validate db COMMAND
 ```
 
 **Commands:**
@@ -1000,7 +1143,7 @@ validate db COMMAND
 Check for schema drift between models and database.
 
 ```bash
-validate db schema [--db-path PATH]
+plm validate db schema [--db-path PATH]
 ```
 
 **What it checks:**
@@ -1019,7 +1162,7 @@ validate db schema [--db-path PATH]
 Check if all migrations have been applied.
 
 ```bash
-validate db migrations [--db-path PATH] [--alembic-dir PATH]
+plm validate db migrations [--db-path PATH] [--alembic-dir PATH]
 ```
 
 **Checks:**
@@ -1032,7 +1175,7 @@ validate db migrations [--db-path PATH] [--alembic-dir PATH]
 Check for orphaned records and foreign key violations.
 
 ```bash
-validate db integrity [--db-path PATH]
+plm validate db integrity [--db-path PATH]
 ```
 
 **What it checks:**
@@ -1046,7 +1189,7 @@ validate db integrity [--db-path PATH]
 Check for unique constraint violations.
 
 ```bash
-validate db constraints [--db-path PATH]
+plm validate db constraints [--db-path PATH]
 ```
 
 **Checks:**
@@ -1059,7 +1202,7 @@ validate db constraints [--db-path PATH]
 Run all database validation checks.
 
 ```bash
-validate db all [--db-path PATH]
+plm validate db all [--db-path PATH]
 ```
 
 **Runs:**
@@ -1070,12 +1213,12 @@ validate db all [--db-path PATH]
 
 ### Markdown Validation
 
-#### `validate md`
+#### `plm validate md`
 
 Validate markdown journal entry files.
 
 ```bash
-validate md COMMAND
+plm validate md COMMAND
 ```
 
 **Commands:**
@@ -1085,7 +1228,7 @@ validate md COMMAND
 Validate YAML frontmatter in markdown files.
 
 ```bash
-validate md frontmatter [--md-dir PATH]
+plm validate md frontmatter [--md-dir PATH]
 ```
 
 **What it validates:**
@@ -1105,7 +1248,7 @@ validate md frontmatter [--md-dir PATH]
 Check for broken internal markdown links.
 
 ```bash
-validate md links [--md-dir PATH]
+plm validate md links [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1118,17 +1261,17 @@ validate md links [--md-dir PATH]
 Run all markdown validation checks.
 
 ```bash
-validate md all [--md-dir PATH]
+plm validate md all [--md-dir PATH]
 ```
 
 ### Frontmatter Validation
 
-#### `validate frontmatter`
+#### `plm validate frontmatter`
 
 Validate frontmatter structures for parser compatibility.
 
 ```bash
-validate frontmatter COMMAND
+plm validate frontmatter COMMAND
 ```
 
 **Commands:**
@@ -1138,7 +1281,7 @@ validate frontmatter COMMAND
 Validate people field structures.
 
 ```bash
-validate frontmatter people [--md-dir PATH]
+plm validate frontmatter people [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1152,7 +1295,7 @@ validate frontmatter people [--md-dir PATH]
 Validate locations-city dependency.
 
 ```bash
-validate frontmatter locations [--md-dir PATH]
+plm validate frontmatter locations [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1165,7 +1308,7 @@ validate frontmatter locations [--md-dir PATH]
 Validate dates field structures.
 
 ```bash
-validate frontmatter dates [--md-dir PATH]
+plm validate frontmatter dates [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1178,7 +1321,7 @@ validate frontmatter dates [--md-dir PATH]
 Validate poems field structures.
 
 ```bash
-validate frontmatter poems [--md-dir PATH]
+plm validate frontmatter poems [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1191,7 +1334,7 @@ validate frontmatter poems [--md-dir PATH]
 Validate references field structures.
 
 ```bash
-validate frontmatter references [--md-dir PATH]
+plm validate frontmatter references [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1204,17 +1347,17 @@ validate frontmatter references [--md-dir PATH]
 Run all frontmatter validation checks.
 
 ```bash
-validate frontmatter all [--md-dir PATH]
+plm validate frontmatter all [--md-dir PATH]
 ```
 
 ### Cross-System Consistency
 
-#### `validate consistency`
+#### `plm validate consistency`
 
 Validate consistency across systems.
 
 ```bash
-validate consistency COMMAND
+plm validate consistency COMMAND
 ```
 
 **Commands:**
@@ -1224,7 +1367,7 @@ validate consistency COMMAND
 Check entry existence across MD ↔ DB.
 
 ```bash
-validate consistency existence [--md-dir PATH] [--db-path PATH]
+plm validate consistency existence [--md-dir PATH] [--db-path PATH]
 ```
 
 **Checks:**
@@ -1240,7 +1383,7 @@ validate consistency existence [--md-dir PATH] [--db-path PATH]
 Check metadata synchronization between MD and DB.
 
 ```bash
-validate consistency metadata [--md-dir PATH] [--db-path PATH]
+plm validate consistency metadata [--md-dir PATH] [--db-path PATH]
 ```
 
 **Compares:**
@@ -1259,7 +1402,7 @@ validate consistency metadata [--md-dir PATH] [--db-path PATH]
 Check referential integrity constraints.
 
 ```bash
-validate consistency references [--md-dir PATH] [--db-path PATH]
+plm validate consistency references [--md-dir PATH] [--db-path PATH]
 ```
 
 **Validates:**
@@ -1272,7 +1415,7 @@ validate consistency references [--md-dir PATH] [--db-path PATH]
 Check file hash integrity.
 
 ```bash
-validate consistency integrity [--md-dir PATH]
+plm validate consistency integrity [--md-dir PATH]
 ```
 
 **Checks:**
@@ -1285,7 +1428,7 @@ validate consistency integrity [--md-dir PATH]
 Run all consistency validation checks.
 
 ```bash
-validate consistency all [--md-dir PATH] [--db-path PATH]
+plm validate consistency all [--md-dir PATH] [--db-path PATH]
 ```
 
 ---
@@ -1465,8 +1608,8 @@ metadb backup
 
 ```bash
 # Validate everything
-validate db all
-validate consistency all
+plm validate db all
+plm validate consistency all
 
 # Optimize database
 metadb optimize
@@ -1515,12 +1658,12 @@ plm wiki publish
 metadb backup --suffix "before-major-change"
 
 # Validate current state
-validate consistency all
+plm validate consistency all
 
 # [Make your changes]
 
 # Validate again
-validate consistency all
+plm validate consistency all
 
 # If something breaks, restore:
 metadb restore data/backups/palimpsest_..._before-major-change.db
@@ -1542,7 +1685,7 @@ jsearch index create
 
 ### "Metadata out of sync"
 ```bash
-validate consistency metadata
+plm validate consistency metadata
 # If drift detected:
 plm import-metadata  # Re-import from metadata
 ```
@@ -1561,12 +1704,11 @@ jsearch index rebuild
 ```bash
 plm --help
 metadb --help
-validate --help
 jsearch --help
 
 # Subcommand help
 metadb backup --help
-validate db check --help
+plm validate db --help
 jsearch query --help
 ```
 
@@ -1578,4 +1720,4 @@ metadb health
 
 ---
 
-**Last Updated:** 2026-02-13
+**Last Updated:** 2026-03-08
