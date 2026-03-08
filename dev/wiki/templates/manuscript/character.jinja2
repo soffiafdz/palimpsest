@@ -8,7 +8,7 @@
 {{ description }}
 {% endif %}
 
-{{ chapter_count }} chapter{{ "s" if chapter_count != 1 else "" }}
+{{ scene_count }} scene{{ "s" if scene_count != 1 else "" }} · {{ chapter_count }} chapter{{ "s" if chapter_count != 1 else "" }}
 
 ---
 {% if based_on %}
@@ -16,6 +16,13 @@
 ## Based On
 {% for person in based_on %}
 - *{{ person.contribution }}* · {{ person.person_name | wikilink }}
+{% endfor %}
+{% endif %}
+{% if scenes %}
+
+## Scenes
+{% for s in scenes %}
+- {{ s.name | wikilink }}{{ " (" ~ s.chapter ~ ")" if s.chapter else "" }}
 {% endfor %}
 {% endif %}
 {% if chapters %}

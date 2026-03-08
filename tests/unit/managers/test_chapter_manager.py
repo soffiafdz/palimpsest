@@ -187,41 +187,52 @@ class TestChapterPart:
             chapter_manager.assign_part(sample_chapter, 9999)
 
 
-class TestChapterRelationships:
-    """Test linking/unlinking characters and arcs."""
+class TestSceneCharacterRelationships:
+    """Test linking/unlinking characters to manuscript scenes."""
 
-    def test_link_character(self, chapter_manager, sample_chapter, sample_character):
-        """Link character to chapter."""
-        chapter_manager.link_character(sample_chapter, sample_character.id)
-        assert sample_character in sample_chapter.characters
+    def test_link_scene_character(self, chapter_manager, sample_chapter, sample_character):
+        """Link character to manuscript scene."""
+        scene = chapter_manager.create_manuscript_scene(
+            sample_chapter, {"name": "Test Scene"}
+        )
+        chapter_manager.link_scene_character(scene, sample_character.id)
+        assert sample_character in scene.characters
 
-    def test_unlink_character(self, chapter_manager, sample_chapter, sample_character):
-        """Unlink character from chapter."""
-        chapter_manager.link_character(sample_chapter, sample_character.id)
-        chapter_manager.unlink_character(sample_chapter, sample_character.id)
-        assert sample_character not in sample_chapter.characters
-
-    def test_link_arc(self, chapter_manager, sample_chapter, sample_arc):
-        """Link arc to chapter."""
-        chapter_manager.link_arc(sample_chapter, sample_arc.id)
-        assert sample_arc in sample_chapter.arcs
-
-    def test_unlink_arc(self, chapter_manager, sample_chapter, sample_arc):
-        """Unlink arc from chapter."""
-        chapter_manager.link_arc(sample_chapter, sample_arc.id)
-        chapter_manager.unlink_arc(sample_chapter, sample_arc.id)
-        assert sample_arc not in sample_chapter.arcs
+    def test_unlink_scene_character(self, chapter_manager, sample_chapter, sample_character):
+        """Unlink character from manuscript scene."""
+        scene = chapter_manager.create_manuscript_scene(
+            sample_chapter, {"name": "Test Scene"}
+        )
+        chapter_manager.link_scene_character(scene, sample_character.id)
+        chapter_manager.unlink_scene_character(scene, sample_character.id)
+        assert sample_character not in scene.characters
 
     def test_link_nonexistent_character_raises(self, chapter_manager, sample_chapter):
         """Linking nonexistent character raises error."""
+        scene = chapter_manager.create_manuscript_scene(
+            sample_chapter, {"name": "Test Scene"}
+        )
         with pytest.raises(Exception):
-            chapter_manager.link_character(sample_chapter, 9999)
+            chapter_manager.link_scene_character(scene, 9999)
 
     def test_duplicate_link_is_idempotent(self, chapter_manager, sample_chapter, sample_character):
         """Linking same character twice doesn't duplicate."""
-        chapter_manager.link_character(sample_chapter, sample_character.id)
-        chapter_manager.link_character(sample_chapter, sample_character.id)
-        assert len([c for c in sample_chapter.characters if c.id == sample_character.id]) == 1
+        scene = chapter_manager.create_manuscript_scene(
+            sample_chapter, {"name": "Test Scene"}
+        )
+        chapter_manager.link_scene_character(scene, sample_character.id)
+        chapter_manager.link_scene_character(scene, sample_character.id)
+        assert len([c for c in scene.characters if c.id == sample_character.id]) == 1
+
+    def test_chapter_characters_aggregates_from_scenes(
+        self, chapter_manager, sample_chapter, sample_character
+    ):
+        """Chapter.characters aggregates characters from all its scenes."""
+        scene = chapter_manager.create_manuscript_scene(
+            sample_chapter, {"name": "Test Scene"}
+        )
+        chapter_manager.link_scene_character(scene, sample_character.id)
+        assert sample_character in sample_chapter.characters
 
 
 class TestManuscriptScene:

@@ -1217,10 +1217,6 @@ class WikiContextBuilder:
                 arc.first_entry_date, arc.last_entry_date
             ),
             "timeline": self._compute_monthly_counts(arc.entries),
-            "chapters": [
-                {"title": ch.title, "type": ch.type_display}
-                for ch in arc.chapters
-            ],
             "events": sorted(
                 [
                     {
@@ -1525,23 +1521,25 @@ class WikiContextBuilder:
         """
         Build context dict for a Chapter wiki page.
 
-        Computes characters, arcs, poems, scenes with sources,
+        Computes poems, scenes with sources and characters,
         and manuscript references for the chapter.
 
         Args:
             chapter: Chapter model instance with relationships loaded
 
         Returns:
-            Dict with keys: title, number, type, status, part,
-            scene_count, characters, arcs, poems, scenes, references
+            Dict with keys: title, number, date, type, status, part,
+            scene_count, characters, poems, scenes, references
         """
         return {
             "title": chapter.title,
             "slug": slugify(chapter.title),
             "number": chapter.number,
+            "date": chapter.date.isoformat() if chapter.date else None,
             "type": chapter.type_display,
             "status": chapter.status_display,
             "part": chapter.part.display_name if chapter.part else None,
+            "draft_path": chapter.draft_path,
             "scene_count": chapter.scene_count,
             "characters": [
                 {
@@ -1550,7 +1548,6 @@ class WikiContextBuilder:
                 }
                 for c in chapter.characters
             ],
-            "arcs": [{"name": a.name} for a in chapter.arcs],
             "poems": [{"title": p.title} for p in chapter.poems],
             "scenes": [
                 {
@@ -1558,6 +1555,10 @@ class WikiContextBuilder:
                     "description": ms.description,
                     "origin": ms.origin_display,
                     "status": ms.status_display,
+                    "characters": [
+                        {"name": c.name, "role": c.role}
+                        for c in ms.characters
+                    ],
                     "sources": [
                         self._build_manuscript_source(src)
                         for src in ms.sources
@@ -1585,15 +1586,15 @@ class WikiContextBuilder:
         """
         Build context dict for a Character wiki page.
 
-        Includes chapters where the character appears and
-        the real people the character is based on.
+        Includes scenes and chapters where the character appears
+        and the real people the character is based on.
 
         Args:
             character: Character model instance with relationships loaded
 
         Returns:
             Dict with keys: name, description, role, is_narrator,
-            chapter_count, chapters, based_on
+            scene_count, chapter_count, scenes, chapters, based_on
         """
         return {
             "name": character.name,
@@ -1601,7 +1602,15 @@ class WikiContextBuilder:
             "description": character.description,
             "role": character.role,
             "is_narrator": character.is_narrator,
+            "scene_count": character.scene_count,
             "chapter_count": character.chapter_count,
+            "scenes": [
+                {
+                    "name": s.name,
+                    "chapter": s.chapter.title if s.chapter else None,
+                }
+                for s in character.scenes
+            ],
             "chapters": [
                 {
                     "title": ch.title,
@@ -1637,16 +1646,21 @@ class WikiContextBuilder:
             ms_scene: ManuscriptScene model instance with relationships loaded
 
         Returns:
-            Dict with keys: name, description, chapter, origin,
-            status, sources
+            Dict with keys: name, description, notes, chapter, origin,
+            status, characters, sources
         """
         return {
             "name": ms_scene.name,
             "slug": slugify(ms_scene.name),
             "description": ms_scene.description,
+            "notes": ms_scene.notes,
             "chapter": ms_scene.chapter.title if ms_scene.chapter else None,
             "origin": ms_scene.origin_display,
             "status": ms_scene.status_display,
+            "characters": [
+                {"name": c.name, "role": c.role}
+                for c in ms_scene.characters
+            ],
             "sources": [
                 self._build_manuscript_source(src)
                 for src in ms_scene.sources

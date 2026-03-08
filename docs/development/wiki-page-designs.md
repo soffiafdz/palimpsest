@@ -36,7 +36,10 @@ through YAML files via the `:PalimpsestEdit` floating window.
 - **Journal pages** = fully generated (read-only wiki output)
 - **Journal entity metadata** = edited via YAML files (per-entity YAML
   for People/Locations; single file for Cities/Arcs)
-- **Manuscript pages** = round-trip editable (wiki parser + sync)
+- **Manuscript pages** = generated structural dashboards (read-only wiki)
+- **Manuscript metadata** = edited via YAML files (per-entity YAML
+  for Chapters, Characters, Scenes)
+- **Manuscript prose** = external draft files at `data/manuscript/drafts/`
 
 Metadata fields managed via YAML:
 
@@ -46,44 +49,39 @@ Metadata fields managed via YAML:
 | Location | `neighborhood`, name, city, etc. | Per-entity YAML via `:PalimpsestEdit` |
 | City | `country`, name | Single YAML file via `:PalimpsestEdit` |
 | Arc | `description`, name | Single YAML file via `:PalimpsestEdit` |
+| Chapter | `title`, type, status, number, part, draft_path | Per-entity YAML via `:PalimpsestEdit` |
+| Character | `name`, role, is_narrator, description, based_on | Per-entity YAML via `:PalimpsestEdit` |
+| ManuscriptScene | `name`, chapter, origin, status, description | Per-entity YAML via `:PalimpsestEdit` |
 
 **Full name is NOT editable on the wiki** — it is computed from
 `name + lastname` (both sourced from YAML). Disambiguator is also
 YAML-sourced. The Person wiki page displays these as read-only
 generated content.
 
-### Manuscript Metadata Architecture
+### Manuscript Architecture
 
-**Journal metadata via YAML:**
-Journal entity metadata is stored in YAML files:
-- Per-entity YAML for People and Locations
-- Single YAML file for Cities and Arcs
+**All manuscript metadata via YAML:**
+Manuscript entities use per-entity YAML files, edited via the Palimpsest
+nvim plugin floating window (`:PalimpsestEdit`):
+- Per-entity YAML for Chapters, Characters, and Scenes
+- Guided insertion commands for relationships (`:PalimpsestAddSource`,
+  `:PalimpsestAddBasedOn`, `:PalimpsestSetChapter`)
 
-**Manuscript prose via wiki editing:**
-Manuscript pages (Chapter, Character, ManuscriptScene) contain editable
-prose sections (synopsis, description, notes) alongside generated sections.
-The wiki parser reads these prose sections; `plm wiki sync` updates the DB
-and regenerates the pages.
+**Chapter prose in external draft files:**
+Actual prose lives in external files at `data/manuscript/drafts/{slug}.md`.
+Chapter wiki pages are structural dashboards showing scenes, characters,
+arcs, and a link to open the draft file. Short-form content (vignettes,
+poems) uses the Chapter `content` DB field instead.
 
-**Fully generated pages:** Part, Index pages, all Journal pages — no
-user-editable content on the wiki page itself.
+**Fully generated pages:** Part, Index pages, all Journal pages, all
+Manuscript wiki pages — no user-editable content on wiki pages.
 
 **Floating window editing (Palimpsest nvim plugin):**
 Structured metadata is edited via floating window popup:
-- Keybinding: `<leader>em` or command `:PalimpsestEditMeta`
+- Command: `:PalimpsestEdit` (keybind: `<leader>pee`)
 - Opens YAML file in floating window overlay
-- User edits, saves, closes → back to wiki seamlessly
+- Auto-validates on save, auto-imports on close
 - No navigation friction, feels like metadata panel
-
-**Parser behavior:**
-- Reads editable prose sections from wiki (synopsis, descriptions, notes)
-- Ignores generated sections (sources, chapter lists, aggregations)
-- YAML files parsed separately for structured metadata
-- Sync updates DB from both sources, regenerates wiki pages
-
-This avoids the "ugly split" of editable-above-line, generated-below-line
-within single pages. Structured data lives in YAML (edited via popup),
-prose lives in wiki sections, generated content feels unified.
 
 ### Palimpsest Plugin Commands
 
@@ -2055,51 +2053,58 @@ and don't have enough data density for a month-by-month table.
 
 ### Page 14: Chapter
 
-**Purpose:** The central manuscript editing page.
-**Pure wiki editing.** No YAML metadata files.
+**Purpose:** Structural dashboard for a manuscript chapter.
+**Generated from DB.** Metadata edited via YAML floating window.
+**Prose written in external draft file** at `data/manuscript/drafts/{slug}.md`.
 
 **Mockup:**
 
 ```markdown
 # The Gray Fence
 
-**Number:** 3 | **Part:** [[Part I — Arrival]]
-**Type:** prose | **Status:** draft
+**Type:** prose · **Status:** draft
+**Part:** [[Part I — Arrival]]
+03 scenes
+
+[Open draft](file:__PALIMPSEST__/data/manuscript/drafts/the-gray-fence.md)
 
 ---
 
-## Synopsis
-
-Sofia watches Léa from the balcony, tracking the slow
-accumulation of near-misses that define their early
-non-relationship. The chapter interleaves three November
-mornings with the same view of the same fence.
-
-## Scenes
-
-- [[Morning at the Fence]]
-- [[The Dog Walker]]
-- [[Plateau Drift]]
-
 ## Characters
 
-- [[Sofia (character)]]
-- [[Léa (character)]]
+- *protagonist* · [[Sofía]]
+- [[Céline]]
 
 ## Arcs
 
 - [[The Long Wanting]]
 
-## Notes
+---
 
-The fence is both literal and metaphorical — it separates
-Sofia's balcony world from Léa's street-level life. Need
-to work on the transition between scenes 1 and 3.
+## Scenes
+
+### [[Morning at the Fence]]
+Sofia watches from the balcony as Céline walks past.
+
+*journaled* · included
+- *Scene*  2024-11-08
+
+### [[The Dog Walker]]
+
+*invented* · draft
+
+### [[Plateau Drift]]
+The accumulation of near-misses.
+
+*journaled* · draft
+- *Scene*  2024-11-22
+
+---
 
 ## References
 
-> *"The body keeps the score"*
-> — **The Body Keeps the Score**, van der Kolk *(thematic)*
+- *thematic* · [[The Body Keeps the Score]]
+  Trauma memory and the body
 
 ## Poems
 
@@ -2107,185 +2112,94 @@ to work on the transition between scenes 1 and 3.
 
 ---
 
-## Sources
-
-**From journal scenes:**
-- [[2024-11-08]] — The Gray Fence (scene)
-- [[2024-11-22]] — Plateau Drift (scene)
-
-**From entries:**
-- [[2024-11-15]] — whole entry
-
-**From threads:**
-- [[The Bookend Kiss]] ([[2024-12-15]])
+- [Edit metadata](file:__PALIMPSEST__/data/metadata/manuscript/chapters/the-gray-fence.yaml)
 ```
 
-**No YAML metadata.** Chapter defined entirely by wiki page content.
+**YAML metadata:** `data/metadata/manuscript/chapters/{slug}.yaml` with
+title, number, type, status, part, draft_path. Edited via `:PalimpsestEdit`.
 
 **Zone breakdown:**
-- **Header:** Title from `#` heading. Metadata line: number, part (wikilink),
-  type, status. All parsed from wiki.
-- **Synopsis (editable):** Free prose describing chapter's narrative arc
-- **Scenes (editable):** Ordered list of manuscript scenes. Added via
-  `:PalimpsestAddScene` or manual editing
-- **Characters (editable):** List of characters appearing. Added via
-  `:PalimpsestAddCharacter` or manual editing
-- **Arcs (editable):** List of narrative arcs this chapter belongs to. Added
-  via `:PalimpsestAddArc` or manual editing
-- **Notes (editable):** Free-form author notes, craft observations, TODOs
-- **References (editable):** Blockquoted content with source attribution + mode.
-  Added via `:PalimpsestAddReference` or manual editing
-- **Poems (editable):** List of poems appearing in chapter. Added via
-  `:PalimpsestAddPoem` or manual editing
-- **Sources (generated):** Aggregated from ManuscriptScene → ManuscriptSource.
-  Grouped by source type. Read-only, regenerated from DB
+- **Header (generated):** Title, type, status, part (wikilink), scene count
+- **Draft link (generated):** Opens external draft file in nvim. Only
+  shown when `draft_path` is set in YAML metadata.
+- **Characters (generated):** From chapter_characters M2M. Role + wikilink.
+- **Arcs (generated):** From chapter_arcs M2M.
+- **Scenes (generated):** ManuscriptScenes in chapter with description,
+  origin/status, and source details.
+- **References (generated):** ManuscriptReferences with source + mode.
+- **Poems (generated):** From chapter_poems M2M.
+- **Edit metadata link:** Opens chapter YAML in floating window.
 
-**Parser behavior:**
-- Extracts title from `#` heading
-- Parses metadata line: number (integer), part (wikilink → part ID),
-  type (validates against ChapterType enum), status (validates against ChapterStatus enum)
-- Reads Synopsis and Notes section content (prose)
-- Parses Scenes list → manuscript_scene IDs
-- Parses Characters list → character IDs
-- Parses Arcs list → arc IDs
-- Parses References (blockquote format)
-- Parses Poems list → poem IDs
-- Ignores Sources section (generated)
+**Creation:** `:PalimpsestNew chapters` creates YAML metadata + draft file
+stub at `data/manuscript/drafts/{slug}.md`.
 
-**Creation:** `:PalimpsestNew chapter` creates wiki page template, user edits directly.
-No `:PalimpsestEdit` needed (direct wiki editing).
+### Chapter Architecture Decisions
 
-### Chapter Review Decisions
+1. **YAML metadata + external drafts:** Chapter structural metadata (title,
+   type, status, number, part) in YAML. Prose in external draft files.
+   Wiki page is a generated dashboard.
 
-1. **No YAML metadata files:** All chapter metadata (title, number, part, type,
-   status) is parseable from wiki header. No separate YAML files needed.
-   Consistent with Character (pure wiki editing).
+2. **Draft at chapter level:** Prose lives at the chapter level, not the
+   scene level. Scenes are structural metadata tracking source material.
+   The chapter draft is where scenes are braided into narrative prose.
 
-2. **Metadata from header line:** Parser extracts number (integer), part
-   (resolves wikilink to part ID), type and status (validates against enums)
-   from header metadata line. Format: `**Number:** 3 | **Part:** [[Part I]]`
+3. **Short-form inline content:** Vignettes and poems use the `content`
+   DB field (Text) instead of an external draft file. The `draft_path`
+   field is for longer prose chapters.
 
-3. **All relationships in wiki:** Scenes, Characters, Arcs, References, Poems
-   stored as structured lists in wiki sections. Parser extracts entity IDs/slugs
-   via wikilink resolution and DB lookup.
-
-4. **Guided relationship insertion:** Special commands for adding relationships:
-   - `:PalimpsestAddScene` (autocomplete manuscript scenes)
-   - `:PalimpsestAddCharacter` (autocomplete characters)
-   - `:PalimpsestAddArc` (autocomplete arcs)
-   - `:PalimpsestAddReference` (autocomplete reference sources, prompts for quote/mode)
-   - `:PalimpsestAddPoem` (autocomplete poems)
-
-5. **Parser boundary:** Everything above final `---` is editable (title, metadata,
-   synopsis, all relationship lists, notes). Sources section below `---` is
-   generated (aggregated from scene sources).
-
-6. **Scene ordering matters:** Scenes list order determines chapter structure.
-   Parser preserves order (uses list position for scene sequence in chapter).
-
-7. **Complex but unified:** Chapter is the most complex page (most editable
-   sections), but keeping everything in wiki avoids context switching. All
-   chapter planning happens in one document.
+4. **Relationships via YAML + DB:** Characters, arcs, scenes, references,
+   poems managed through the database. Added via `:PalimpsestNew` for
+   the entities themselves, relationships managed at the entity level.
 
 ---
 
 ### Page 15: Character
 
 **Purpose:** Manuscript character definition and mapping.
-**Pure wiki editing.** No YAML metadata files.
+**Generated from DB.** Metadata edited via YAML floating window.
 
 **Mockup:**
 
 ```markdown
-# Léa (character)
+# Céline
+
+**Role:** love interest · **Narrator**
+
+A woman who arrives in fragments — a voice note, a shared
+playlist, a cigarette left on the balcony rail.
+
+02 chapters
 
 ---
 
-## Description
-
-Léa exists mostly in absence — glimpsed through windows,
-mentioned in conversations, present in the spaces between
-scenes. She is less a character than a gravitational pull.
-
-## Based On
-
-**[[Léa Fournier]]** · primary
-The central inspiration. Most scenes are drawn directly
-from journal observations.
-
-**[[Inès Cabrera]]** · composite
-Some of Léa's dialogue borrows Inès's speech patterns.
-
 ---
 
-## Chapters
-
-- [[The Gray Fence]] · Part I, draft
-- [[The Goodbye]] · Part II, draft
-
-## Scenes
-
-**[[The Gray Fence]]:**
-- [[Morning at the Fence]] (journaled, included)
-- [[Plateau Drift]] (journaled, draft)
-
-**[[The Goodbye]]:**
-- [[Station Kiss]] (journaled, included)
+- [Edit metadata](file:__PALIMPSEST__/data/metadata/manuscript/characters/celine.yaml)
 ```
 
-**No YAML metadata.** Character defined entirely by wiki page content.
+**YAML metadata:** `data/metadata/manuscript/characters/{slug}.yaml` with
+name, role, is_narrator, description, based_on. Edited via `:PalimpsestEdit`.
 
 **Zone breakdown:**
-- **Header:** Character name extracted from `#` heading. Format: `# {Name} (character)`
-- **Description (editable):** Free prose describing character's narrative function
-- **Based On (editable):** Person-character mappings. Added via `:PalimpsestAddBasedOn`
-  or manual editing. Format: `**[[Person]]** · {contribution_type}` + optional notes
-- **Chapters (generated):** From chapter_characters M2M. Chapter wikilink + part + status
-- **Scenes (generated):** ManuscriptScenes where character appears, grouped by chapter
+- **Header (generated):** Character name, role, narrator flag
+- **Description (generated):** From `description` YAML field
+- **Chapter count (generated):** From chapter_characters M2M
+- **Edit metadata link:** Opens character YAML in floating window
 
-**Parser behavior:**
-- Extracts character name from `#` heading
-- Reads Description section content → `description` DB field
-- Parses Based On section → creates PersonCharacterMap entries
-- Ignores Chapters and Scenes sections (generated)
+**Based_on management:** `:PalimpsestAddBasedOn` command provides
+DB-backed autocomplete for person names and contribution type picker.
+Writes directly to the character YAML file.
 
-**Creation:** `:PalimpsestNew character` creates wiki page template, user edits directly.
-No `:PalimpsestEdit` needed (or opens current wiki page in place).
-
-### Character Review Decisions
-
-1. **No YAML metadata files:** Character has no structured metadata fields beyond
-   name. Role and is_narrator fields deemed redundant (all non-narrator characters
-   are obviously not narrators; role categorization is reductive). Character
-   defined entirely by wiki page content.
-
-2. **Pure wiki editing:** Character pages edited directly in wiki, no floating
-   window YAML editing. Name extracted from heading, description from prose
-   section, person mappings from structured Based On section.
-
-3. **Guided person mapping:** `:PalimpsestAddBasedOn` command provides DB-backed
-   autocomplete for adding person-character mappings. Ensures data integrity
-   (no typos, only actual journal people). Autocomplete shows display_name,
-   entry count, relation type.
-
-4. **Bidirectional linking:** `:PalimpsestLinkToCharacter` from Person pages
-   creates character mappings. While reviewing journal people, mark character
-   inspirations without leaving context.
-
-5. **Parser extracts from wiki:** Character name from `#` heading (format:
-   `# {Name} (character)`), description from prose section, person mappings
-   from structured format (`**[[Person]]** · {contribution}`).
-
-6. **Creation workflow:** `:PalimpsestNew character` creates wiki page template
-   with editable sections. User fills name, description, adds person mappings,
-   saves. Parser extracts → DB updates → page regenerates with Chapters/Scenes.
+**Creation:** `:PalimpsestNew characters` creates YAML with template fields.
+User fills in name, role, description. `:PalimpsestAddBasedOn` to map to
+journal people.
 
 ---
 
 ### Page 16: ManuscriptScene
 
-**Purpose:** A narrative unit in the manuscript with source tracking.
-**Fully editable.**
+**Purpose:** Structural metadata for a narrative unit with source tracking.
+**Generated from DB.** Metadata edited via YAML floating window.
 
 **Mockup:**
 
@@ -2293,54 +2207,37 @@ No `:PalimpsestEdit` needed (or opens current wiki page in place).
 # Morning at the Fence
 
 **Chapter:** [[The Gray Fence]]
-**Origin:** journaled | **Status:** included
+
+*journaled* · included
+
+Sofia watches from the balcony as Céline walks past the gray
+fence, establishing the motif of watching from above.
 
 ---
-
-## Description
-
-Sofia watches from the balcony as Léa walks past the gray
-fence. The scene captures the first of three November mornings
-with the same view — establishing the motif of watching from
-above.
 
 ## Sources
 
-**Scene:** [[2024-11-08]] — The Gray Fence
-**Entry:** [[2024-11-15]]
-**Thread:** The Bookend Kiss ([[2024-12-15]])
-
-## Notes
-
-This scene sets up the fence motif. The physical separation
-(balcony above, street below) mirrors the emotional distance.
-Consider adding sensory detail — what does the November air
-smell like?
+- *Scene*  2024-11-08
 
 ---
 
-## Context
-
-**The Gray Fence** (journal scene, [[2024-11-08]])
-Sofia watches Léa from the balcony as she walks past
-without looking up.
-**People:** [[Sofia]], [[Léa]]
-**[[Montreal]]:** [[Home]]
+- [Edit metadata](file:__PALIMPSEST__/data/metadata/manuscript/scenes/morning-at-the-fence.yaml)
 ```
 
-**Zone breakdown:**
-- **Header (editable):** Name, chapter (wikilink or "Unassigned"), origin +
-  status.
-- **Description (editable):** Free text → `description` DB field.
-- **Sources (editable):** Source materials. Format depends on source_type:
-  scene, entry, thread, or external.
-- **Notes (editable):** Free text → `notes` DB field.
-- **Context (generated):** If sourced from journal scenes, shows the
-  original scene's description, people, and locations for reference.
-  Read-only, regenerated from DB.
+**YAML metadata:** `data/metadata/manuscript/scenes/{slug}.yaml` with
+name, chapter, origin, status, description. Edited via `:PalimpsestEdit`.
 
-**Parser boundary:** Header through Notes are editable (above `---`).
-Context is generated (below `---`).
+**Zone breakdown:**
+- **Header (generated):** Scene name, chapter (wikilink), origin/status
+- **Description (generated):** From `description` YAML field
+- **Sources (generated):** ManuscriptSource records for this scene
+- **Edit metadata link:** Opens scene YAML in floating window
+
+**Source management:** `:PalimpsestAddSource` command for guided source
+insertion. `:PalimpsestSetChapter` for chapter assignment with picker.
+
+**Creation:** `:PalimpsestNew scenes` creates YAML with template fields,
+then prompts with chapter picker (skippable for unassigned scenes).
 
 ---
 

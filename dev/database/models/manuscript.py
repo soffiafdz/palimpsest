@@ -26,15 +26,16 @@ Design:
 from __future__ import annotations
 
 # --- Standard library imports ---
+from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 
 # --- Third party imports ---
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Date, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # --- Local imports ---
-from .associations import chapter_arcs, chapter_characters, chapter_poems
+from .associations import chapter_poems, scene_characters
 from .base import Base
 from .enums import (
     ChapterStatus,
@@ -47,7 +48,7 @@ from .enums import (
 )
 
 if TYPE_CHECKING:
-    from .analysis import Arc, Scene, Thread
+    from .analysis import Scene, Thread
     from .core import Entry
     from .creative import Poem, ReferenceSource
     from .entities import Person
@@ -117,6 +118,7 @@ class Chapter(Base):
         id: Primary key
         title: Chapter title
         number: Chapter number (nullable until ordered, editable)
+        date: Temporal anchor for when the chapter is set (optional)
         part_id: Foreign key to Part (optional)
         type: Chapter type (prose, vignette, poem)
         status: Chapter status (draft, revised, final)
@@ -126,8 +128,6 @@ class Chapter(Base):
     Relationships:
         part: Many-to-one with Part (optional)
         poems: M2M with Poem (poems included/referenced)
-        characters: M2M with Character
-        arcs: M2M with Arc
         scenes: One-to-many with ManuscriptScene (source material)
         references: One-to-many with ManuscriptReference
     """
@@ -140,6 +140,7 @@ class Chapter(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     number: Mapped[Optional[int]] = mapped_column(Integer)
+    date: Mapped[Optional[date]] = mapped_column(Date)
     part_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("parts.id", ondelete="SET NULL")
     )
@@ -163,12 +164,6 @@ class Chapter(Base):
     poems: Mapped[List["Poem"]] = relationship(
         "Poem", secondary=chapter_poems, backref="chapters"
     )
-    characters: Mapped[List["Character"]] = relationship(
-        "Character", secondary=chapter_characters, back_populates="chapters"
-    )
-    arcs: Mapped[List["Arc"]] = relationship(
-        "Arc", secondary=chapter_arcs, backref="chapters"
-    )
     scenes: Mapped[List["ManuscriptScene"]] = relationship(
         "ManuscriptScene", back_populates="chapter"
     )
@@ -191,6 +186,18 @@ class Chapter(Base):
     def scene_count(self) -> int:
         """Number of manuscript scenes in this chapter."""
         return len(self.scenes)
+
+    @property
+    def characters(self) -> List["Character"]:
+        """Get deduplicated characters from all scenes in this chapter."""
+        seen: set = set()
+        result: List["Character"] = []
+        for scene in self.scenes:
+            for c in scene.characters:
+                if c.id not in seen:
+                    seen.add(c.id)
+                    result.append(c)
+        return result
 
     @property
     def character_names(self) -> List[str]:
@@ -229,7 +236,7 @@ class Character(Base):
         is_narrator: Whether this character is the narrator
 
     Relationships:
-        chapters: M2M with Chapter
+        scenes: M2M with ManuscriptScene
         person_mappings: One-to-many with PersonCharacterMap
     """
 
@@ -245,14 +252,30 @@ class Character(Base):
     is_narrator: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # --- Relationships ---
-    chapters: Mapped[List["Chapter"]] = relationship(
-        "Chapter", secondary=chapter_characters, back_populates="characters"
+    scenes: Mapped[List["ManuscriptScene"]] = relationship(
+        "ManuscriptScene", secondary=scene_characters, back_populates="characters"
     )
     person_mappings: Mapped[List["PersonCharacterMap"]] = relationship(
         "PersonCharacterMap", back_populates="character", cascade="all, delete-orphan"
     )
 
     # --- Computed properties ---
+    @property
+    def scene_count(self) -> int:
+        """Number of manuscript scenes featuring this character."""
+        return len(self.scenes)
+
+    @property
+    def chapters(self) -> List["Chapter"]:
+        """Get deduplicated chapters from all scenes this character appears in."""
+        seen: set = set()
+        result: List["Chapter"] = []
+        for scene in self.scenes:
+            if scene.chapter and scene.chapter.id not in seen:
+                seen.add(scene.chapter.id)
+                result.append(scene.chapter)
+        return result
+
     @property
     def chapter_count(self) -> int:
         """Number of chapters featuring this character."""
@@ -386,6 +409,9 @@ class ManuscriptScene(Base):
     # --- Relationships ---
     chapter: Mapped[Optional["Chapter"]] = relationship(
         "Chapter", back_populates="scenes"
+    )
+    characters: Mapped[List["Character"]] = relationship(
+        "Character", secondary=scene_characters, back_populates="scenes"
     )
     sources: Mapped[List["ManuscriptSource"]] = relationship(
         "ManuscriptSource", back_populates="manuscript_scene", cascade="all, delete-orphan"

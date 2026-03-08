@@ -2,23 +2,29 @@
 """
 parser.py
 ---------
-Wiki page parser for bidirectional manuscript sync.
+Wiki page parser for manuscript sync.
 
-Parses manuscript wiki markdown pages back into structured dataclasses
-that can be compared against or written to the database. Uses regex-based
-section splitting and extraction patterns matched to the template output.
+Parses generated manuscript wiki pages back into structured dataclasses
+for comparison against DB state. Wiki pages are generated dashboards
+(not user-edited), so the parser primarily supports the sync validation
+cycle and round-trip consistency checks.
 
 Key Features:
     - Parses Chapter, Character, and ManuscriptScene wiki pages
     - Extracts wikilinks, metadata lines, lists, and prose sections
     - Resolves wikilinks against database entities (cached)
-    - Returns structured dataclasses ready for DB ingestion
+    - Returns structured dataclasses for DB comparison
 
 Supported Page Types:
-    - Chapter: title, type, status, part, characters, arcs, scenes,
+    - Chapter: title, type, status, part, scenes,
       references, poems
     - Character: name, role, is_narrator, description, based_on mappings
     - ManuscriptScene: name, chapter, origin, status, description, sources
+
+Note:
+    Manuscript metadata is edited via YAML files (floating window),
+    not by editing wiki pages directly. Chapter prose lives in external
+    draft files at data/manuscript/drafts/{slug}.md.
 
 Usage:
     from dev.wiki.parser import WikiParser
@@ -192,8 +198,6 @@ class ChapterData:
         chapter_type: Chapter type string (prose, vignette, poem)
         status: Chapter status string (draft, revised, final)
         part_name: Part display name from wikilink (or None)
-        characters: List of (name, role) tuples
-        arcs: List of arc names
         scenes: List of parsed scene data
         references: List of parsed references
         poems: List of poem titles
@@ -203,8 +207,6 @@ class ChapterData:
     chapter_type: str
     status: str
     part_name: Optional[str] = None
-    characters: List[Tuple[str, Optional[str]]] = field(default_factory=list)
-    arcs: List[str] = field(default_factory=list)
     scenes: List[ParsedChapterScene] = field(default_factory=list)
     references: List[ParsedReference] = field(default_factory=list)
     poems: List[str] = field(default_factory=list)
@@ -338,7 +340,7 @@ class WikiParser:
         """
         Parse a chapter wiki page into structured data.
 
-        Extracts title, metadata (type/status/part), characters, arcs,
+        Extracts title, metadata (type/status/part),
         scenes with sources, references, and poems.
 
         Args:
@@ -377,20 +379,6 @@ class WikiParser:
         part_match = PART_RE.search(preamble)
         part_name = part_match.group(1).strip() if part_match else None
 
-        # Characters section
-        characters: List[Tuple[str, Optional[str]]] = []
-        if "characters" in sections:
-            for match in CHAR_LIST_RE.finditer(sections["characters"]):
-                name = match.group(1).strip()
-                role = match.group(2).strip() if match.group(2) else None
-                characters.append((name, role))
-
-        # Arcs section
-        arcs: List[str] = []
-        if "arcs" in sections:
-            for match in SIMPLE_WIKILINK_LIST_RE.finditer(sections["arcs"]):
-                arcs.append(match.group(1).strip())
-
         # Scenes section
         scenes = self._parse_chapter_scenes(sections.get("scenes", ""))
 
@@ -415,8 +403,6 @@ class WikiParser:
             chapter_type=chapter_type,
             status=status,
             part_name=part_name,
-            characters=characters,
-            arcs=arcs,
             scenes=scenes,
             references=references,
             poems=poems,

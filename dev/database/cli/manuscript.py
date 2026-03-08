@@ -86,6 +86,8 @@ def show_chapter(ctx, title):
             click.echo(f"\nChapter: {chapter.title}")
             if chapter.number:
                 click.echo(f"  Number: {chapter.number}")
+            if chapter.date:
+                click.echo(f"  Date: {chapter.date.isoformat()}")
             click.echo(f"  Type: {chapter.type.value}")
             click.echo(f"  Status: {chapter.status.value}")
 
@@ -102,10 +104,6 @@ def show_chapter(ctx, title):
             if chapter.characters:
                 names = [c.name for c in chapter.characters]
                 click.echo(f"  Characters: {', '.join(names)}")
-
-            if chapter.arcs:
-                arc_names = [a.name for a in chapter.arcs]
-                click.echo(f"  Arcs: {', '.join(arc_names)}")
 
             if chapter.scenes:
                 click.echo(f"\n  Scenes ({len(chapter.scenes)}):")
@@ -145,10 +143,10 @@ def list_characters(ctx):
             for char in characters:
                 role = f" ({char.role})" if char.role else ""
                 narrator = " [narrator]" if char.is_narrator else ""
-                chapters_count = char.chapter_count
+                scenes_count = char.scene_count
                 click.echo(
                     f"  {char.name}{role}{narrator} "
-                    f"- {chapters_count} chapter(s)"
+                    f"- {scenes_count} scene(s)"
                 )
 
     except Exception as e:
@@ -185,6 +183,12 @@ def show_character(ctx, name):
                         f"    - {mapping.person.display_name} "
                         f"({mapping.contribution.value})"
                     )
+
+            if character.scenes:
+                click.echo(f"\n  Scenes ({character.scene_count}):")
+                for s in character.scenes:
+                    ch_info = f" ({s.chapter.title})" if s.chapter else ""
+                    click.echo(f"    - {s.name}{ch_info}")
 
             if character.chapters:
                 click.echo(f"\n  Chapters ({character.chapter_count}):")

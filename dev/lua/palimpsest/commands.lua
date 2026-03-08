@@ -417,11 +417,32 @@ function M.setup()
 		desc = "Set or change chapter for manuscript scene",
 	})
 
+	-- Add character to chapter
+	vim.api.nvim_create_user_command("PalimpsestAddCharacter", function()
+		require("palimpsest.entity").add_character()
+	end, {
+		desc = "Add character to scene",
+	})
+
+	-- Open source materials (draft for chapters, journal entries for scenes)
+	vim.api.nvim_create_user_command("PalimpsestOpenSources", function()
+		require("palimpsest.entity").open_sources()
+	end, {
+		desc = "Open source materials for manuscript entity",
+	})
+
 	-- Link journal entry to manuscript
 	vim.api.nvim_create_user_command("PalimpsestLinkToManuscript", function()
 		require("palimpsest.entity").link_to_manuscript()
 	end, {
 		desc = "Link current entry to manuscript scene or chapter",
+	})
+
+	-- Rename manuscript entity (chapter or scene)
+	vim.api.nvim_create_user_command("PalimpsestRename", function()
+		require("palimpsest.entity").rename()
+	end, {
+		desc = "Rename manuscript chapter or scene",
 	})
 
 	-- Metadata export command

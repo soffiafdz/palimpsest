@@ -96,15 +96,6 @@ FULL_CHAPTER_MD = """\
 
 ---
 
-## Characters
-- [[Sofia]] · protagonist
-- [[Clara]]
-
-## Arcs
-- [[The Long Wanting]]
-
----
-
 ## Scenes
 
 ### Morning at the Fence
@@ -310,8 +301,6 @@ class TestParseChapter:
         assert result.chapter_type == "prose"
         assert result.status == "draft"
         assert result.part_name == "Part 1: Arrival"
-        assert len(result.characters) == 2
-        assert len(result.arcs) == 1
         assert len(result.scenes) == 2
         assert len(result.references) == 2
         assert len(result.poems) == 2
@@ -325,19 +314,9 @@ class TestParseChapter:
         assert result.chapter_type == "vignette"
         assert result.status == "revised"
         assert result.part_name is None
-        assert result.characters == []
-        assert result.arcs == []
         assert result.scenes == []
         assert result.references == []
         assert result.poems == []
-
-    def test_parse_characters_with_roles(self, tmp_path: Path) -> None:
-        """Characters are extracted with optional roles."""
-        f = _write_md(tmp_path, FULL_CHAPTER_MD)
-        result = self.parser.parse_chapter(f)
-
-        assert ("Sofia", "protagonist") in result.characters
-        assert ("Clara", None) in result.characters
 
     def test_parse_scenes(self, tmp_path: Path) -> None:
         """Scenes within the chapter are parsed with name, description,
@@ -418,12 +397,6 @@ class TestParseChapter:
         f = _write_md(tmp_path, content)
         result = self.parser.parse_chapter(f)
         assert result.part_name is None
-
-    def test_parse_arcs(self, tmp_path: Path) -> None:
-        """Arcs section wikilinks are extracted as list of names."""
-        f = _write_md(tmp_path, FULL_CHAPTER_MD)
-        result = self.parser.parse_chapter(f)
-        assert result.arcs == ["The Long Wanting"]
 
 
 # ==================== Character Parsing Tests ====================

@@ -161,18 +161,28 @@ end
 ---
 --- @param entity_type string Entity type (people, chapters, etc.)
 function M.new(entity_type)
-	entity_type = entity_type or "people"
-
 	local root = get_project_root()
 	local base = root .. "/data/metadata/"
 
 	-- Generate template based on type
 	local templates = {
 		people = "name: \nlastname: \nrelation_type: friend\n",
-		chapters = "title: \nnumber: \ntype: prose\nstatus: draft\n",
+		chapters = "title: \nnumber: \ndate:   # YYYY-MM-DD (when the chapter is set)\ntype: prose  # prose | vignette | poem\nstatus: draft  # draft | revised | final\ndraft_path: \n",
 		characters = "name: \nrole: \nis_narrator: false\ndescription: \n",
-		scenes = "name: \nchapter: \norigin: journaled\nstatus: fragment\ndescription: \n",
+		scenes = "name: \nchapter: \norigin: journaled  # journaled | inferred | invented | composite\nstatus: fragment  # fragment | draft | included | cut\ndescription: \ncharacters:\nnotes: |\n",
 	}
+
+	-- Prompt for type if not provided
+	if not entity_type then
+		local types = vim.tbl_keys(templates)
+		table.sort(types)
+		vim.ui.select(types, { prompt = "Entity type:" }, function(choice)
+			if choice then
+				M.new(choice)
+			end
+		end)
+		return
+	end
 
 	local template = templates[entity_type]
 	if not template then
@@ -203,6 +213,23 @@ function M.new(entity_type)
 		vim.fn.mkdir(dir, "p")
 		local content = template:gsub("name: \n", "name: " .. name .. "\n", 1)
 			:gsub("title: \n", "title: " .. name .. "\n", 1)
+
+		-- For chapters, create draft file and set draft_path
+		if entity_type == "chapters" then
+			local draft_rel = "data/manuscript/drafts/" .. slug .. ".md"
+			content = content:gsub("draft_path: \n", "draft_path: " .. draft_rel .. "\n", 1)
+			local draft_dir = root .. "/data/manuscript/drafts"
+			vim.fn.mkdir(draft_dir, "p")
+			local draft_path = draft_dir .. "/" .. slug .. ".md"
+			if vim.fn.filereadable(draft_path) == 0 then
+				local df = io.open(draft_path, "w")
+				if df then
+					df:write("# " .. name .. "\n\n")
+					df:close()
+				end
+			end
+		end
+
 		local f = io.open(filepath, "w")
 		if f then
 			f:write(content)
@@ -467,6 +494,314 @@ function M.set_chapter()
 				vim.cmd("edit!")
 			end)
 		end
+	end)
+end
+
+--- Add a character to a scene YAML.
+---
+--- Provides a picker for character selection from cached characters.
+--- Works from scene wiki pages or scene YAML files.
+function M.add_character()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "scene" then
+		vim.notify("Must be on a scene page", vim.log.levels.WARN)
+		return
+	end
+
+	local characters = cache.get("characters")
+	if #characters == 0 then
+		vim.notify("No characters cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		return
+	end
+
+	vim.ui.select(characters, { prompt = "Character:" }, function(character)
+		if not character then
+			return
+		end
+
+		local yaml_path = resolve_yaml_path(ctx)
+		if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+			vim.notify("Scene YAML not found", vim.log.levels.ERROR)
+			return
+		end
+
+		local lines = vim.fn.readfile(yaml_path)
+		local found_characters = false
+		for i, line in ipairs(lines) do
+			if line:match("^characters:") then
+				found_characters = true
+				if line:match("^characters: *$") or line:match("^characters: *null") then
+					lines[i] = "characters:"
+					table.insert(lines, i + 1, "  - " .. character)
+				else
+					-- Append after last characters entry
+					local insert_at = i + 1
+					while insert_at <= #lines and lines[insert_at]:match("^%s+%-") do
+						-- Check for duplicate
+						if lines[insert_at]:match("^%s+%-%s+" .. vim.pesc(character) .. "$") then
+							vim.notify("Character already in scene", vim.log.levels.WARN)
+							return
+						end
+						insert_at = insert_at + 1
+					end
+					table.insert(lines, insert_at, "  - " .. character)
+				end
+				break
+			end
+		end
+
+		if not found_characters then
+			table.insert(lines, "characters:")
+			table.insert(lines, "  - " .. character)
+		end
+
+		vim.fn.writefile(lines, yaml_path)
+		vim.notify(
+			string.format("Added character: %s", character),
+			vim.log.levels.INFO
+		)
+
+		-- Reload buffer if open
+		local buf = vim.fn.bufnr(yaml_path)
+		if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_call(buf, function()
+				vim.cmd("edit!")
+			end)
+		end
+	end)
+end
+
+--- Open source materials related to current manuscript entity.
+---
+--- For chapters: opens the draft file in a vertical split.
+--- For scenes: opens linked journal entries from YAML sources.
+function M.open_sources()
+	local ctx = context_mod.detect()
+	if not ctx then
+		vim.notify("Not on a manuscript page", vim.log.levels.WARN)
+		return
+	end
+
+	local root = get_project_root()
+	local yaml_path = resolve_yaml_path(ctx)
+	if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+		vim.notify("YAML not found for this entity", vim.log.levels.WARN)
+		return
+	end
+
+	local lines = vim.fn.readfile(yaml_path)
+
+	if ctx.type == "chapter" then
+		-- Open draft file
+		for _, line in ipairs(lines) do
+			local draft = line:match("^draft_path:%s*(.+)$")
+			if draft and draft ~= "" then
+				local draft_abs = root .. "/" .. draft
+				if vim.fn.filereadable(draft_abs) == 1 then
+					vim.cmd("vsplit " .. draft_abs)
+				else
+					vim.notify("Draft file not found: " .. draft, vim.log.levels.WARN)
+				end
+				return
+			end
+		end
+		vim.notify("No draft_path set in chapter YAML", vim.log.levels.WARN)
+
+	elseif ctx.type == "scene" then
+		-- Collect entry dates from sources section
+		local dates = {}
+		local in_sources = false
+		for _, line in ipairs(lines) do
+			if line:match("^sources:") then
+				in_sources = true
+			elseif in_sources then
+				if not line:match("^%s") then
+					break -- Left sources section
+				end
+				local entry_date = line:match("entry_date:%s*(%d%d%d%d%-%d%d%-%d%d)")
+				if entry_date then
+					table.insert(dates, entry_date)
+				end
+			end
+		end
+
+		if #dates == 0 then
+			vim.notify("No journal sources in scene YAML", vim.log.levels.WARN)
+			return
+		end
+
+		-- Open each entry in a split
+		for i, d in ipairs(dates) do
+			local year = d:sub(1, 4)
+			local md_path = root .. "/data/journal/content/md/" .. year .. "/" .. d .. ".md"
+			if vim.fn.filereadable(md_path) == 1 then
+				if i == 1 then
+					vim.cmd("vsplit " .. md_path)
+				else
+					vim.cmd("split " .. md_path)
+				end
+			else
+				vim.notify("Entry not found: " .. d, vim.log.levels.WARN)
+			end
+		end
+	else
+		vim.notify("Open sources only works on chapter/scene pages", vim.log.levels.WARN)
+	end
+end
+
+--- Rename current entity (any per-file YAML type).
+---
+--- Renames the YAML file and updates the name/title field.
+--- Type-specific propagation:
+---   chapter: renames draft file, updates draft_path, updates scene chapter refs
+---   character: updates chapter characters lists
+---   person/location/scene: file + field only
+function M.rename()
+	local ctx = context_mod.detect()
+	if not ctx then
+		vim.notify("Not on an entity page", vim.log.levels.WARN)
+		return
+	end
+
+	-- Only per-file entity types can be renamed
+	if not YAML_PATHS[ctx.type] then
+		vim.notify("Rename not available for " .. (ctx.type or "unknown"), vim.log.levels.WARN)
+		return
+	end
+
+	local root = get_project_root()
+	local old_yaml = resolve_yaml_path(ctx)
+	if not old_yaml or vim.fn.filereadable(old_yaml) == 0 then
+		vim.notify("YAML not found for this entity", vim.log.levels.WARN)
+		return
+	end
+
+	-- Read current name for the prompt
+	local lines = vim.fn.readfile(old_yaml)
+	local current_name = ""
+	local name_field = ctx.type == "chapter" and "title" or "name"
+	for _, line in ipairs(lines) do
+		local val = line:match("^" .. name_field .. ":%s*(.+)$")
+		if val then
+			current_name = val
+			break
+		end
+	end
+
+	vim.ui.input({ prompt = "New name: ", default = current_name }, function(new_name)
+		if not new_name or new_name == "" or new_name == current_name then
+			return
+		end
+
+		local new_slug = strip_accents(new_name):lower()
+			:gsub("%s+", "-"):gsub("[^%w%-]", "")
+			:gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+		local old_slug = vim.fn.fnamemodify(old_yaml, ":t:r")
+
+		if new_slug == old_slug then
+			-- Only name changed, not slug — just update the field
+			for i, line in ipairs(lines) do
+				if line:match("^" .. name_field .. ":") then
+					lines[i] = name_field .. ": " .. new_name
+					break
+				end
+			end
+			vim.fn.writefile(lines, old_yaml)
+			vim.notify("Name updated (slug unchanged)", vim.log.levels.INFO)
+			vim.cmd("edit!")
+			return
+		end
+
+		-- Build new paths
+		local yaml_dir = vim.fn.fnamemodify(old_yaml, ":h")
+		local new_yaml = yaml_dir .. "/" .. new_slug .. ".yaml"
+
+		if vim.fn.filereadable(new_yaml) == 1 then
+			vim.notify("Target already exists: " .. new_slug .. ".yaml", vim.log.levels.ERROR)
+			return
+		end
+
+		-- Update name/title field
+		for i, line in ipairs(lines) do
+			if line:match("^" .. name_field .. ":") then
+				lines[i] = name_field .. ": " .. new_name
+				break
+			end
+		end
+
+		-- Chapter: rename draft file, update draft_path, update scene refs
+		if ctx.type == "chapter" then
+			for i, line in ipairs(lines) do
+				local old_draft = line:match("^draft_path:%s*(.+)$")
+				if old_draft and old_draft ~= "" then
+					local new_draft_rel = "data/manuscript/drafts/" .. new_slug .. ".md"
+					local old_draft_abs = root .. "/" .. old_draft
+					local new_draft_abs = root .. "/" .. new_draft_rel
+					if vim.fn.filereadable(old_draft_abs) == 1 then
+						vim.fn.rename(old_draft_abs, new_draft_abs)
+					end
+					lines[i] = "draft_path: " .. new_draft_rel
+					break
+				end
+			end
+
+			local scene_dir = root .. "/data/metadata/manuscript/scenes"
+			if vim.fn.isdirectory(scene_dir) == 1 then
+				local scene_files = vim.fn.glob(scene_dir .. "/*.yaml", false, true)
+				for _, sf in ipairs(scene_files) do
+					local slines = vim.fn.readfile(sf)
+					local changed = false
+					for si, sline in ipairs(slines) do
+						local ch = sline:match("^chapter:%s*(.+)$")
+						if ch and ch == current_name then
+							slines[si] = "chapter: " .. new_name
+							changed = true
+							break
+						end
+					end
+					if changed then
+						vim.fn.writefile(slines, sf)
+					end
+				end
+			end
+		end
+
+		-- Character: update scene characters lists
+		if ctx.type == "character" then
+			local sc_dir = root .. "/data/metadata/manuscript/scenes"
+			if vim.fn.isdirectory(sc_dir) == 1 then
+				local sc_files = vim.fn.glob(sc_dir .. "/*.yaml", false, true)
+				for _, sf in ipairs(sc_files) do
+					local slines = vim.fn.readfile(sf)
+					local changed = false
+					for si, sline in ipairs(slines) do
+						if sline:match("^%s*%-%s*" .. vim.pesc(current_name) .. "%s*$") then
+							slines[si] = sline:gsub(vim.pesc(current_name), new_name)
+							changed = true
+						end
+					end
+					if changed then
+						vim.fn.writefile(slines, sf)
+					end
+				end
+			end
+		end
+
+		-- Write updated YAML and rename file
+		vim.fn.writefile(lines, old_yaml)
+		vim.fn.rename(old_yaml, new_yaml)
+
+		-- Close old buffer and open new file
+		local old_buf = vim.fn.bufnr(old_yaml)
+		if old_buf ~= -1 then
+			vim.api.nvim_buf_delete(old_buf, { force = true })
+		end
+		vim.cmd("edit " .. new_yaml)
+
+		vim.notify(
+			string.format("Renamed: %s → %s", old_slug, new_slug),
+			vim.log.levels.INFO
+		)
 	end)
 end
 

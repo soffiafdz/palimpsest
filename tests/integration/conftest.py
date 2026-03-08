@@ -387,7 +387,6 @@ def populated_wiki_db(db_session):
     db_session.add_all([chapter1, chapter2])
     db_session.flush()
 
-    chapter1.arcs.append(arc1)
     chapter1.poems.append(poem1)
     chapter2.poems.append(poem2)
 
@@ -405,9 +404,6 @@ def populated_wiki_db(db_session):
     )
     db_session.add_all([char_sofia, char_clara])
     db_session.flush()
-
-    chapter1.characters.extend([char_sofia, char_clara])
-    chapter2.characters.append(char_sofia)
 
     # Person-Character mappings
     pcm1 = PersonCharacterMap(
@@ -437,6 +433,9 @@ def populated_wiki_db(db_session):
     )
     db_session.add_all([ms_scene1, ms_scene2])
     db_session.flush()
+
+    ms_scene1.characters.extend([char_sofia, char_clara])
+    ms_scene2.characters.append(char_sofia)
 
     # Manuscript sources
     ms_src1 = ManuscriptSource(

@@ -842,6 +842,7 @@ class JSONExporter:
             result[chapter.title] = {
                 "title": chapter.title,
                 "number": chapter.number,
+                "date": chapter.date.isoformat() if chapter.date else None,
                 "part": self._part_numbers.get(chapter.part_id) if chapter.part_id else None,
                 "type": chapter.type.value if chapter.type else None,
                 "status": chapter.status.value if chapter.status else None,
@@ -849,7 +850,6 @@ class JSONExporter:
                 "draft_path": chapter.draft_path,
                 "poems": [self._poem_titles[p.id] for p in chapter.poems],
                 "characters": [c.name for c in chapter.characters],
-                "arcs": [a.name for a in chapter.arcs],
             }
 
         self.stats["chapters"] = len(result)
@@ -933,6 +933,7 @@ class JSONExporter:
                 "chapter": self._chapter_titles.get(scene.chapter_id) if scene.chapter_id else None,
                 "origin": scene.origin.value if scene.origin else None,
                 "status": scene.status.value if scene.status else None,
+                "characters": [c.name for c in scene.characters],
                 "notes": scene.notes,
             }
 

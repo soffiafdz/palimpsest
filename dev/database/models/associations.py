@@ -29,8 +29,8 @@ Journal Domain - Metadata:
 
 Manuscript Domain:
     - chapter_poems: Chapters ↔ Poems
-    - chapter_characters: Chapters ↔ Characters
-    - chapter_arcs: Chapters ↔ Arcs
+    - scene_characters: ManuscriptScenes ↔ Characters
+    - scene_characters: ManuscriptScenes ↔ Characters (added above)
 
 These are pure association tables with no additional metadata (except where noted).
 """
@@ -264,36 +264,19 @@ chapter_poems = Table(
     ),
 )
 
-chapter_characters = Table(
-    "chapter_characters",
+scene_characters = Table(
+    "scene_characters",
     Base.metadata,
     Column(
-        "chapter_id",
+        "manuscript_scene_id",
         Integer,
-        ForeignKey("chapters.id", ondelete="CASCADE"),
+        ForeignKey("manuscript_scenes.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
         "character_id",
         Integer,
         ForeignKey("characters.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-)
-
-chapter_arcs = Table(
-    "chapter_arcs",
-    Base.metadata,
-    Column(
-        "chapter_id",
-        Integer,
-        ForeignKey("chapters.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "arc_id",
-        Integer,
-        ForeignKey("arcs.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )

@@ -132,7 +132,7 @@ def populated_metadata_db(db_session):
     )
     db_session.add(pcm)
 
-    # ManuscriptScene
+    # ManuscriptScene with character linked
     ms_scene = ManuscriptScene(
         name="The Espresso Pause",
         description="Valeria watches Lena across the table.",
@@ -141,6 +141,8 @@ def populated_metadata_db(db_session):
         status=SceneStatus.DRAFT,
     )
     db_session.add(ms_scene)
+    db_session.flush()
+    ms_scene.characters.append(character)
 
     db_session.commit()
     return db_session
@@ -685,6 +687,52 @@ class TestMetadataImporter:
                 Chapter.title == "Espresso and Silence"
             ).first()
             assert chapter.part_id is None
+
+    def test_export_scene_includes_characters(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export includes character names in scene YAML."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="scenes")
+
+        scene_file = list(
+            (metadata_output / "manuscript" / "scenes").glob("*.yaml")
+        )[0]
+        data = yaml.safe_load(scene_file.read_text())
+        assert "characters" in data
+        assert "Valeria" in data["characters"]
+
+    def test_import_scene_characters(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import updates scene character M2M from YAML list."""
+        # Create a second character to add
+        with test_db.session_scope() as session:
+            char2 = Character(name="Lena", role="love interest")
+            session.add(char2)
+            session.commit()
+
+        scene_dir = metadata_output / "manuscript" / "scenes"
+        scene_dir.mkdir(parents=True)
+        scene_file = scene_dir / "the-espresso-pause.yaml"
+        scene_file.write_text(yaml.dump({
+            "name": "The Espresso Pause",
+            "origin": "journaled",
+            "status": "draft",
+            "characters": ["Valeria", "Lena"],
+        }))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(scene_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            ms_scene = session.query(ManuscriptScene).filter(
+                ManuscriptScene.name == "The Espresso Pause"
+            ).first()
+            char_names = [c.name for c in ms_scene.characters]
+            assert "Valeria" in char_names
+            assert "Lena" in char_names
 
     def test_import_invalid_file_returns_diagnostics(
         self, test_db, tmp_path

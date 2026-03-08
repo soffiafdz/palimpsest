@@ -11,7 +11,7 @@ between people and characters with contribution type metadata.
 Key Features:
     - CRUD for Character with role and narrator flag
     - PersonCharacterMap management (link/unlink person to character)
-    - Query characters by chapter or by person
+    - Query characters by scene, chapter, or person
     - Contribution type tracking (primary, composite, inspiration)
 
 Usage:
@@ -44,6 +44,7 @@ from dev.database.decorators import DatabaseOperation
 from dev.database.models import (
     Chapter,
     Character,
+    ManuscriptScene,
     Person,
     PersonCharacterMap,
 )
@@ -247,15 +248,31 @@ class CharacterManager(EntityManager):
     # Query Operations
     # =========================================================================
 
+    def get_by_scene(self, scene_id: int) -> List[Character]:
+        """
+        Get all characters in a manuscript scene.
+
+        Args:
+            scene_id: ManuscriptScene ID
+
+        Returns:
+            List of Character instances
+        """
+        with DatabaseOperation(self.logger, "get_characters_by_scene"):
+            scene = self._get_by_id(ManuscriptScene, scene_id)
+            if not scene:
+                return []
+            return list(scene.characters)
+
     def get_by_chapter(self, chapter_id: int) -> List[Character]:
         """
-        Get all characters in a chapter.
+        Get all characters in a chapter (aggregated from scenes).
 
         Args:
             chapter_id: Chapter ID
 
         Returns:
-            List of Character instances
+            Deduplicated list of Character instances from all chapter scenes
         """
         with DatabaseOperation(self.logger, "get_characters_by_chapter"):
             chapter = self._get_by_id(Chapter, chapter_id)

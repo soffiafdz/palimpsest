@@ -156,11 +156,13 @@ class MetadataSchema:
     CHAPTER_FIELDS: List[FieldSpec] = [
         FieldSpec("title", str, required=True),
         FieldSpec("number", int),
+        FieldSpec("date", str),
         FieldSpec("type", str, required=True,
                   enum_values=ChapterType.choices()),
         FieldSpec("status", str, required=True,
                   enum_values=ChapterStatus.choices()),
         FieldSpec("part", str),
+        FieldSpec("draft_path", str),
     ]
 
     CHARACTER_FIELDS: List[FieldSpec] = [
@@ -179,6 +181,8 @@ class MetadataSchema:
         FieldSpec("status", str, required=True,
                   enum_values=SceneStatus.choices()),
         FieldSpec("description", str),
+        FieldSpec("characters", list),
+        FieldSpec("notes", str),
     ]
 
     @classmethod
@@ -422,12 +426,17 @@ class MetadataExporter:
                 data = {
                     "title": chapter.title,
                     "number": chapter.number,
+                    "date": (
+                        chapter.date.isoformat()
+                        if chapter.date else None
+                    ),
                     "type": chapter.type.value,
                     "status": chapter.status.value,
                     "part": (
                         chapter.part.display_name
                         if chapter.part else None
                     ),
+                    "draft_path": chapter.draft_path,
                 }
                 filename = f"{slugify(chapter.title)}.yaml"
                 if self._write_yaml(chapters_dir / filename, data):
@@ -504,6 +513,11 @@ class MetadataExporter:
                     "origin": ms_scene.origin.value,
                     "status": ms_scene.status.value,
                     "description": ms_scene.description,
+                    "characters": (
+                        [c.name for c in ms_scene.characters]
+                        if ms_scene.characters else None
+                    ),
+                    "notes": ms_scene.notes,
                 }
                 filename = f"{slugify(ms_scene.name)}.yaml"
                 if self._write_yaml(scenes_dir / filename, data):
@@ -1276,6 +1290,15 @@ class MetadataImporter:
             chapter.status = ChapterStatus(data["status"])
         if "number" in data:
             chapter.number = data["number"]
+        if "date" in data:
+            if data["date"]:
+                from datetime import date as date_type
+                if isinstance(data["date"], str):
+                    chapter.date = date_type.fromisoformat(data["date"])
+                else:
+                    chapter.date = data["date"]
+            else:
+                chapter.date = None
         if "part" in data:
             if data["part"]:
                 part = session.query(Part).filter(
@@ -1291,6 +1314,8 @@ class MetadataImporter:
                     chapter.part_id = part.id
             else:
                 chapter.part_id = None
+        if "draft_path" in data:
+            chapter.draft_path = data["draft_path"]
 
     def _import_character(
         self, session: Session, data: Dict[str, Any]
@@ -1394,6 +1419,16 @@ class MetadataImporter:
                 ms_scene.chapter_id = chapter.id if chapter else None
             else:
                 ms_scene.chapter_id = None
+        if "characters" in data and isinstance(data["characters"], list):
+            ms_scene.characters = []
+            for char_name in data["characters"]:
+                char = session.query(Character).filter(
+                    Character.name == char_name
+                ).first()
+                if char:
+                    ms_scene.characters.append(char)
+        if "notes" in data:
+            ms_scene.notes = data["notes"]
 
     def _import_neighborhoods(
         self, session: Session, data: Dict[str, Any]

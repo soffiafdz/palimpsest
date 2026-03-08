@@ -68,8 +68,10 @@ Three content paths:
 - **Journal wiki** (generated): DB → Jinja2 → wiki pages (read-only)
 - **YAML metadata** (per-entity): DB → YAML files ↔ Palimpsest nvim
   plugin (floating window editing) → DB
-- **Manuscript wiki** (mixed): DB → wiki pages → user edits prose
-  (Character, Chapter) → validate → sync → DB → regenerate
+- **Manuscript wiki** (generated dashboards): DB → Jinja2 → structural
+  wiki pages (scenes, characters, arcs) with links to external draft files
+- **Manuscript drafts** (external files): Prose lives at
+  `data/manuscript/drafts/{slug}.md`, linked from chapter wiki pages
 - **Browser**: wiki → `plm wiki publish` (copy + frontmatter injection)
   → Quartz build → static site
 
@@ -77,26 +79,23 @@ Three content paths:
 
 Two editing paths feed back into the database:
 
-**YAML metadata path** (Part, ManuscriptScene metadata, journal entities):
+**YAML metadata path** (all manuscript entities + journal entities):
 
 1. **Generate**: DB exports YAML metadata files
 2. **Edit**: User opens `:PalimpsestEdit` → floating window with YAML
 3. **Save**: YAML validated and ingested into DB on window close
 4. **Regenerate**: DB re-renders wiki pages with updated metadata
 
-**Wiki prose path** (Chapter, Character, ManuscriptScene prose):
+**Draft prose path** (Chapter prose):
 
-1. **Generate**: DB renders wiki pages via Jinja2 templates
-2. **Edit**: User modifies wiki pages directly in Neovim
-3. **Validate**: Linter checks edits on save (async, advisory)
-4. **Sync**: On explicit user command, validated pages are parsed and
-   ingested into DB
-5. **Regenerate**: DB re-renders pages, normalizing content and adding
-   computed data (backlinks, cross-references, status badges)
-
-Every piece of user-written content maps to a DB field. Nothing is
-lost in the round-trip — the user's text passes through ingest before
-generation overwrites the file.
+1. **Generate**: `:PalimpsestNew chapters` creates YAML metadata + draft
+   file stub at `data/manuscript/drafts/{slug}.md`
+2. **Edit**: User writes prose in the draft file (opened from chapter
+   wiki page link or directly)
+3. **Structural metadata**: Scenes, characters, arcs managed via YAML
+   metadata (floating window editing)
+4. **Regenerate**: Wiki pages regenerated from DB to reflect metadata
+   changes (scene assignments, character additions, etc.)
 
 ### Regeneration Safety
 
@@ -430,10 +429,10 @@ Detailed designs for all 27 page types documented in
 conventions, parsing rules, zone breakdowns, and mockups for every
 entity type. Key architectural decisions:
 
-- **YAML + floating window** for manuscript structural metadata (Part,
-  ManuscriptScene metadata)
-- **Pure wiki editing** for Character and Chapter (no YAML files)
-- **Sources and Based On** in wiki with guided insertion commands
+- **YAML + floating window** for all manuscript entities (Chapter,
+  Character, ManuscriptScene, Part)
+- **External draft files** for chapter prose at `data/manuscript/drafts/`
+- **Sources and Based On** managed via guided nvim plugin commands
 - **Journal entity metadata** in per-entity YAML files (People, Locations)
   or single files (Cities, Arcs)
 - **11 Palimpsest nvim commands** with DB-backed autocomplete
@@ -470,10 +469,10 @@ entity type. Key architectural decisions:
 5. **Empty section suppression:** Per-section `{% if data %}` blocks.
    No wrapping macro — explicit conditionals are more readable.
 
-6. **User prose verbatim:** DB stores exact text from wiki sections
-   (synopsis, description, notes). Templates output `{{ chapter.synopsis }}`
-   with no transformation, trimming, or normalization. Parser captures
-   raw text between section headings.
+6. **Prose in external drafts:** Chapter prose lives in external draft
+   files (`data/manuscript/drafts/{slug}.md`), linked from wiki pages.
+   Short-form content (vignettes, poems) uses the Chapter `content` DB
+   field. Scene descriptions stored in DB via YAML metadata.
 
 7. **Quartz frontmatter as post-processing:** Templates always output
    clean markdown (no YAML frontmatter). Quartz metadata (title, aliases,

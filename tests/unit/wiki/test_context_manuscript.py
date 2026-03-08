@@ -374,8 +374,7 @@ def chapter_with_relations(
     arc, poem, ms_scene, manuscript_reference,
 ):
     """Chapter with all relationships populated."""
-    chapter.characters.extend([character, character_secondary])
-    chapter.arcs.append(arc)
+    ms_scene.characters.extend([character, character_secondary])
     chapter.poems.append(poem)
     db_session.flush()
     return chapter
@@ -417,12 +416,6 @@ class TestBuildChapterContext:
         elise = next(c for c in ctx["characters"] if c["name"] == "Elise")
         assert elise["role"] == "protagonist"
 
-    def test_arcs(self, builder, chapter_with_relations):
-        """Arcs list includes arc names."""
-        ctx = builder.build_chapter_context(chapter_with_relations)
-        assert len(ctx["arcs"]) == 1
-        assert ctx["arcs"][0]["name"] == "The Long Wanting"
-
     def test_poems(self, builder, chapter_with_relations):
         """Poems list includes poem titles."""
         ctx = builder.build_chapter_context(chapter_with_relations)
@@ -456,7 +449,6 @@ class TestBuildChapterContext:
         """Chapter with no relationships has empty lists."""
         ctx = builder.build_chapter_context(chapter_no_part)
         assert ctx["characters"] == []
-        assert ctx["arcs"] == []
         assert ctx["poems"] == []
         assert ctx["scenes"] == []
         assert ctx["references"] == []

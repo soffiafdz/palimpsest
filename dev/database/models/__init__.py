@@ -60,8 +60,7 @@ from .enums import (
 # --- Association tables ---
 from .associations import (
     arc_entries,
-    chapter_arcs,
-    chapter_characters,
+    scene_characters,
     chapter_poems,
     entry_cities,
     entry_locations,
@@ -120,8 +119,7 @@ __all__ = [
     "SourceType",
     # Association tables
     "arc_entries",
-    "chapter_arcs",
-    "chapter_characters",
+    "scene_characters",
     "chapter_poems",
     "entry_cities",
     "entry_locations",

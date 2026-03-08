@@ -18,6 +18,7 @@ from dev.database.managers.character_manager import CharacterManager
 from dev.database.models import (
     Character,
     Chapter,
+    ManuscriptScene,
     Person,
     PersonCharacterMap,
 )
@@ -254,10 +255,16 @@ class TestCharacterQuery:
     """Test character query operations."""
 
     def test_get_by_chapter(
-        self, character_manager, sample_character, sample_chapter
+        self, character_manager, sample_character, sample_chapter, db_session
     ):
-        """Get characters by chapter."""
-        sample_chapter.characters.append(sample_character)
+        """Get characters by chapter (aggregated from scenes)."""
+        scene = ManuscriptScene(
+            name="Test Scene", chapter_id=sample_chapter.id
+        )
+        db_session.add(scene)
+        db_session.flush()
+        scene.characters.append(sample_character)
+        db_session.flush()
         results = character_manager.get_by_chapter(sample_chapter.id)
         assert len(results) == 1
         assert results[0].name == "Sofia"

@@ -1038,14 +1038,17 @@ class TestExportChapters:
         assert result["First Chapter"]["part"] == 1
 
     def test_export_chapter_relationship_natural_keys(self, db_session, test_db, tmp_dir):
-        """Chapter export includes character names and arc names."""
+        """Chapter export includes character names (aggregated from scenes)."""
         chapter = Chapter(title="Test Chapter")
         char = Character(name="Sofia", is_narrator=True)
-        arc = Arc(name="The Long Wanting")
-        db_session.add_all([chapter, char, arc])
+        db_session.add_all([chapter, char])
         db_session.flush()
-        chapter.characters.append(char)
-        chapter.arcs.append(arc)
+        ms_scene = ManuscriptScene(
+            name="Test Scene", chapter_id=chapter.id,
+        )
+        db_session.add(ms_scene)
+        db_session.flush()
+        ms_scene.characters.append(char)
         db_session.commit()
 
         exporter = JSONExporter(test_db, output_dir=tmp_dir)
@@ -1054,7 +1057,6 @@ class TestExportChapters:
 
         data = result["Test Chapter"]
         assert "Sofia" in data["characters"]
-        assert "The Long Wanting" in data["arcs"]
 
     def test_export_chapter_empty_relationships(self, db_session, test_db, tmp_dir):
         """Chapter with no relationships exports empty lists."""
@@ -1069,7 +1071,6 @@ class TestExportChapters:
         data = result["Empty Chapter"]
         assert data["poems"] == []
         assert data["characters"] == []
-        assert data["arcs"] == []
 
 
 class TestExportCharacters:

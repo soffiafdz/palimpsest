@@ -609,28 +609,6 @@ class TestBuildArcContext:
         assert ctx["description"] == "A story of longing."
         assert ctx["entry_count"] == 1
 
-    def test_arc_chapters(self, builder, db_session, arc_wanting, entry_nov8):
-        """Arc context includes chapters linked via chapter_arcs."""
-        from dev.database.models.manuscript import Chapter
-        from dev.database.models.enums import ChapterType, ChapterStatus
-        ch = Chapter(
-            title="Wanting Chapter", number=1,
-            type=ChapterType.PROSE, status=ChapterStatus.DRAFT,
-        )
-        db_session.add(ch)
-        db_session.flush()
-        ch.arcs.append(arc_wanting)
-        db_session.flush()
-
-        ctx = builder.build_arc_context(arc_wanting)
-        assert len(ctx["chapters"]) == 1
-        assert ctx["chapters"][0]["title"] == "Wanting Chapter"
-        assert ctx["chapters"][0]["type"] == "Prose"
-
-    def test_arc_no_chapters(self, builder, arc_wanting, entry_nov8):
-        """Arc without chapters has empty chapters list."""
-        ctx = builder.build_arc_context(arc_wanting)
-        assert ctx["chapters"] == []
 
 
 # ==================== Tag Context ====================

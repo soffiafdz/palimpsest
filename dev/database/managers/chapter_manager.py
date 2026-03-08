@@ -12,7 +12,7 @@ journal material. ManuscriptReferences track intertextual references per chapter
 Key Features:
     - CRUD for Chapter with type/status validation
     - Part management (assign/clear)
-    - M2M management: poems, characters, arcs
+    - M2M management: poems, arcs
     - ManuscriptScene CRUD within chapters
     - ManuscriptSource linking (journal scene/entry/thread/external)
     - ManuscriptReference CRUD within chapters
@@ -54,7 +54,6 @@ from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.validators import DataValidator
 from dev.database.decorators import DatabaseOperation
 from dev.database.models import (
-    Arc,
     Chapter,
     Character,
     ManuscriptReference,
@@ -90,8 +89,6 @@ CHAPTER_CONFIG = EntityManagerConfig(
     ],
     relationships=[
         ("poems", "poems", None),
-        ("characters", "characters", Character),
-        ("arcs", "arcs", Arc),
     ],
 )
 
@@ -161,31 +158,6 @@ class ChapterManager(EntityManager):
             draft_path=metadata.get("draft_path"),
         )
 
-    def _post_create(self, entity: Any, metadata: Dict[str, Any]) -> None:
-        """
-        Handle post-creation relationships for chapter.
-
-        Args:
-            entity: Created chapter
-            metadata: Creation metadata with optional relationship IDs
-        """
-        # Link characters by ID
-        character_ids = metadata.get("character_ids", [])
-        for cid in character_ids:
-            character = self._get_by_id(Character, cid)
-            if character:
-                entity.characters.append(character)
-
-        # Link arcs by ID
-        arc_ids = metadata.get("arc_ids", [])
-        for aid in arc_ids:
-            arc = self._get_by_id(Arc, aid)
-            if arc:
-                entity.arcs.append(arc)
-
-        if character_ids or arc_ids:
-            self.session.flush()
-
     # =========================================================================
     # Chapter Operations
     # =========================================================================
@@ -248,72 +220,6 @@ class ChapterManager(EntityManager):
             chapter.part_id = None
             self.session.flush()
             return chapter
-
-    def link_character(self, chapter: Chapter, character_id: int) -> None:
-        """
-        Link a character to a chapter.
-
-        Args:
-            chapter: Target chapter
-            character_id: Character to link
-
-        Raises:
-            DatabaseError: If character not found
-        """
-        with DatabaseOperation(self.logger, "link_chapter_character"):
-            character = self._get_by_id(Character, character_id)
-            if not character:
-                raise DatabaseError(f"Character with id={character_id} not found")
-            if character not in chapter.characters:
-                chapter.characters.append(character)
-                self.session.flush()
-
-    def unlink_character(self, chapter: Chapter, character_id: int) -> None:
-        """
-        Unlink a character from a chapter.
-
-        Args:
-            chapter: Target chapter
-            character_id: Character to unlink
-        """
-        with DatabaseOperation(self.logger, "unlink_chapter_character"):
-            character = self._get_by_id(Character, character_id)
-            if character and character in chapter.characters:
-                chapter.characters.remove(character)
-                self.session.flush()
-
-    def link_arc(self, chapter: Chapter, arc_id: int) -> None:
-        """
-        Link an arc to a chapter.
-
-        Args:
-            chapter: Target chapter
-            arc_id: Arc to link
-
-        Raises:
-            DatabaseError: If arc not found
-        """
-        with DatabaseOperation(self.logger, "link_chapter_arc"):
-            arc = self._get_by_id(Arc, arc_id)
-            if not arc:
-                raise DatabaseError(f"Arc with id={arc_id} not found")
-            if arc not in chapter.arcs:
-                chapter.arcs.append(arc)
-                self.session.flush()
-
-    def unlink_arc(self, chapter: Chapter, arc_id: int) -> None:
-        """
-        Unlink an arc from a chapter.
-
-        Args:
-            chapter: Target chapter
-            arc_id: Arc to unlink
-        """
-        with DatabaseOperation(self.logger, "unlink_chapter_arc"):
-            arc = self._get_by_id(Arc, arc_id)
-            if arc and arc in chapter.arcs:
-                chapter.arcs.remove(arc)
-                self.session.flush()
 
     # =========================================================================
     # ManuscriptScene Operations
@@ -486,6 +392,45 @@ class ChapterManager(EntityManager):
         with DatabaseOperation(self.logger, "remove_scene_source"):
             self.session.delete(source)
             self.session.flush()
+
+    def link_scene_character(
+        self, scene: ManuscriptScene, character_id: int
+    ) -> None:
+        """
+        Link a character to a manuscript scene.
+
+        Args:
+            scene: Target manuscript scene
+            character_id: Character to link
+
+        Raises:
+            DatabaseError: If character not found
+        """
+        with DatabaseOperation(self.logger, "link_scene_character"):
+            character = self._get_by_id(Character, character_id)
+            if not character:
+                raise DatabaseError(
+                    f"Character with id={character_id} not found"
+                )
+            if character not in scene.characters:
+                scene.characters.append(character)
+                self.session.flush()
+
+    def unlink_scene_character(
+        self, scene: ManuscriptScene, character_id: int
+    ) -> None:
+        """
+        Unlink a character from a manuscript scene.
+
+        Args:
+            scene: Target manuscript scene
+            character_id: Character to unlink
+        """
+        with DatabaseOperation(self.logger, "unlink_scene_character"):
+            character = self._get_by_id(Character, character_id)
+            if character and character in scene.characters:
+                scene.characters.remove(character)
+                self.session.flush()
 
     # =========================================================================
     # ManuscriptReference Operations

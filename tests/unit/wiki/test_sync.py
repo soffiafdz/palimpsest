@@ -199,9 +199,8 @@ def populated_wiki(tmp_path, test_db, db_session):
     )
     db_session.add(pcm)
 
-    # Initial chapter relationships
-    chapter.characters.append(character)
-    chapter.arcs.append(arc)
+    # Link character to scene (not chapter)
+    ms_scene.characters.append(character)
 
     db_session.commit()
 
@@ -219,8 +218,6 @@ def populated_wiki(tmp_path, test_db, db_session):
         "## Characters\n\n"
         "- [[Lucia]] · Protagonist\n"
         "- [[Emilio]] · Love interest\n\n"
-        "## Arcs\n\n"
-        "- [[The Long Wanting]]\n\n"
         "---\n\n"
         "## Scenes\n\n"
         "### Station Jarry Kiss\n"
@@ -467,41 +464,20 @@ class TestSyncIngestion:
         assert chapter.status == ChapterStatus.REVISED
         assert result.updates["chapters"] >= 1
 
-    def test_ingest_chapter_updates_m2m_characters(
+    def test_ingest_chapter_updates_poems(
         self, sync_instance
     ):
-        """Ingesting a chapter updates its character M2M relationships."""
+        """Ingesting a chapter updates poem M2M relationships."""
         sync, wiki_dir, db_session, entities = sync_instance
         chapter = entities["chapter"]
 
-        # Initially has only Lucia
-        assert len(chapter.characters) == 1
-        assert chapter.characters[0].name == "Lucia"
-
-        result = SyncResult()
-        sync._ingest(wiki_dir / "manuscript", result)
-
-        db_session.refresh(chapter)
-        char_names = sorted([c.name for c in chapter.characters])
-        assert char_names == ["Emilio", "Lucia"]
-
-    def test_ingest_chapter_updates_arcs_and_poems(
-        self, sync_instance
-    ):
-        """Ingesting a chapter updates arc and poem M2M relationships."""
-        sync, wiki_dir, db_session, entities = sync_instance
-        chapter = entities["chapter"]
-
-        # Initially has arc but no poems
-        assert len(chapter.arcs) == 1
+        # Initially no poems
         assert len(chapter.poems) == 0
 
         result = SyncResult()
         sync._ingest(wiki_dir / "manuscript", result)
 
         db_session.refresh(chapter)
-        assert len(chapter.arcs) == 1
-        assert chapter.arcs[0].name == "The Long Wanting"
         assert len(chapter.poems) == 1
         assert chapter.poems[0].title == "The Loop"
 

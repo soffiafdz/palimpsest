@@ -2,22 +2,21 @@
 """
 sync.py
 -------
-Bidirectional manuscript wiki sync orchestrator.
+Manuscript wiki sync orchestrator.
 
-Manages the validate → ingest → regenerate cycle for manuscript
-wiki pages. User edits wiki files in Neovim, sync validates them,
-parses changes into the database, and regenerates all manuscript
-pages with computed data.
+Manages the validate → regenerate cycle for manuscript wiki pages.
+Manuscript metadata is edited via YAML files (floating window in nvim),
+and wiki pages are regenerated from DB state.
 
 Key Features:
     - Pre-sync validation gate (errors block sync)
-    - Per-file transaction during ingestion
+    - YAML metadata import (via MetadataImporter)
     - Change detection during regeneration (only overwrites if different)
     - Supports partial operations (ingest-only, generate-only)
 
 Sync Cycle:
     1. Validate: Run validator on all manuscript wiki files
-    2. Ingest: Parse validated wiki → update DB entities
+    2. Ingest: Import YAML metadata → update DB entities
     3. Regenerate: Render all manuscript pages from DB
 
 Usage:
@@ -25,11 +24,11 @@ Usage:
 
     sync = WikiSync(db)
     sync.sync_manuscript()                    # Full cycle
-    sync.sync_manuscript(ingest_only=True)    # Wiki → DB only
+    sync.sync_manuscript(ingest_only=True)    # YAML → DB only
     sync.sync_manuscript(generate_only=True)  # DB → Wiki only
 
 Dependencies:
-    - WikiParser for markdown → dataclass conversion
+    - WikiParser for wiki page validation
     - WikiValidator for pre-sync validation
     - WikiExporter for DB → wiki generation
     - PalimpsestDB for database operations
@@ -391,22 +390,6 @@ class WikiSync:
             chapter.part_id = part_id
         else:
             chapter.part_id = None
-
-        # Update characters M2M
-        chapter.characters.clear()
-        for char_name, _ in data.characters:
-            char = session.query(Character).filter(
-                Character.name == char_name
-            ).first()
-            if char:
-                chapter.characters.append(char)
-
-        # Update arcs M2M
-        chapter.arcs.clear()
-        for arc_name in data.arcs:
-            arc = session.query(Arc).filter(Arc.name == arc_name).first()
-            if arc:
-                chapter.arcs.append(arc)
 
         # Update poems M2M
         chapter.poems.clear()

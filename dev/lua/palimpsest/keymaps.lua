@@ -33,7 +33,10 @@ function M.setup()
 				{ "<leader>pes", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene", icon = "󰁅" },
 				{ "<leader>peb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character", icon = "󰌹" },
 				{ "<leader>peh", "<cmd>PalimpsestSetChapter<cr>", desc = "Set chapter for scene", icon = "󰉋" },
+				{ "<leader>pea", "<cmd>PalimpsestAddCharacter<cr>", desc = "Add character to scene", icon = "󰙃" },
+				{ "<leader>peo", "<cmd>PalimpsestOpenSources<cr>", desc = "Open source materials", icon = "󰈔" },
 				{ "<leader>pel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
+				{ "<leader>peR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene", icon = "󰑕" },
 				{ "<leader>pex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML", icon = "󰈔" },
 				{ "<leader>per", "<cmd>PalimpsestCacheRefresh<cr>", desc = "Refresh entity cache", icon = "󰑓" },
 				-- Wiki operations
@@ -100,7 +103,10 @@ function M.setup()
 				{ "<leader>ves", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene", icon = "󰁅" },
 				{ "<leader>veb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character", icon = "󰌹" },
 				{ "<leader>veh", "<cmd>PalimpsestSetChapter<cr>", desc = "Set chapter for scene", icon = "󰉋" },
+				{ "<leader>vea", "<cmd>PalimpsestAddCharacter<cr>", desc = "Add character to scene", icon = "󰙃" },
+				{ "<leader>veo", "<cmd>PalimpsestOpenSources<cr>", desc = "Open source materials", icon = "󰈔" },
 				{ "<leader>vel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
+				{ "<leader>veR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene", icon = "󰑕" },
 				{ "<leader>vex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML", icon = "󰈔" },
 				{ "<leader>ver", "<cmd>PalimpsestCacheRefresh<cr>", desc = "Refresh entity cache", icon = "󰑓" },
 				-- Wiki operations

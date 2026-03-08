@@ -9,6 +9,19 @@
 
 {{ description }}
 {% endif %}
+{% if notes %}
+
+## Notes
+
+{{ notes }}
+{% endif %}
+{% if characters %}
+
+## Characters
+{% for char in characters %}
+- {{ "*" ~ char.role ~ "* · " if char.role else "" }}{{ char.name | wikilink }}
+{% endfor %}
+{% endif %}
 
 ---
 {% if sources %}

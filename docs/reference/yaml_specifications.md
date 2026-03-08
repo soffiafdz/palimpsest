@@ -214,44 +214,19 @@ data/metadata/manuscript/
 # chapters/the_gray_fence.yaml
 title: The Gray Fence
 type: prose
-
-scenes:
-  - name: First Sight
-    description: Sofia sees Léa at the fence.
-    source_entries: ['2024-11-08']
+status: draft
+draft_path: data/manuscript/drafts/the-gray-fence.md
 ```
 
-**Complete Export:**
+**Complete Example:**
 
 ```yaml
 title: The Gray Fence
-slug: the_gray_fence
+number: 3
 type: prose
 status: draft
-order: 1
-word_count: 3420
-reading_time: 13.5
-created_at: '2024-12-20T15:30:00Z'
-updated_at: '2025-01-15T09:45:00Z'
-
-notes: >-
-  First chapter introducing Léa.
-
-themes:
-  - name: Longing
-    description: Unfulfilled desire and anticipation.
-
-scenes:
-  - id: 42
-    name: First Sight
-    origin: journaled
-    status: included
-    description: >-
-      Sofia sees Léa for the first time.
-    source_entries: ['2024-11-08']
-    notes: Primary scene from Nov 8.
-
-draft_file: data/manuscript/drafts/the_gray_fence.md
+part: Part 1: Arrival
+draft_path: data/manuscript/drafts/the-gray-fence.md
 ```
 
 **Field Rules:**
@@ -260,15 +235,13 @@ draft_file: data/manuscript/drafts/the_gray_fence.md
 
 **Optional (with defaults):**
 - `status`: defaults to "draft"
-- `scenes.origin`: defaults to "invented"
-- `scenes.status`: defaults to "draft"
-- `scenes.source_entries`: omit if no journal sources
+- `number`: chapter ordering (nullable until ordered)
+- `part`: part display name (nullable)
+- `draft_path`: relative path to external draft file for prose chapters
 
 **Enums:**
 - `type`: prose, vignette, poem
 - `status`: draft, revised, final
-- `origin`: journaled, inferred, invented, composite
-- `scene.status`: fragment, draft, included, cut
 
 ---
 
