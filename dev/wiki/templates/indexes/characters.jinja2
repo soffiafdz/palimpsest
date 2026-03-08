@@ -1,0 +1,24 @@
+{#
+  Characters index page.
+
+  Lists all manuscript characters alphabetically with role,
+  scene count, and chapter count.
+
+  Context:
+    characters: list of dicts with name, role, is_narrator, scene_count, chapter_count
+    character_count: int
+#}
+# Characters
+
+{{ character_count | zpad }} characters
+
+---
+{% if characters %}
+{% for char in characters %}
+- {{ char.name | wikilink }}{{ " · **Narrator**" if char.is_narrator else "" }}
+  {{ char.scene_count | zpad }} scene{{ "s" if char.scene_count != 1 else "" }} · {{ char.chapter_count | zpad }} chapter{{ "s" if char.chapter_count != 1 else "" }}{{ " · *" ~ char.role ~ "*" if char.role else "" }}
+{% endfor %}
+{% else %}
+
+*No characters yet.*
+{% endif %}

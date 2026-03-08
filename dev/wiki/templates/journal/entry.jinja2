@@ -128,6 +128,17 @@
 {% endfor %}
 {% endif %}
 
+{% if manuscript_scenes %}
+
+---
+
+## Manuscript
+{% for ms in manuscript_scenes %}
+- {{ ms.name | wikilink }}{{ " (" ~ ms.chapter ~ ")" if ms.chapter else "" }}
+  *{{ ms.origin }}* · {{ ms.status }}
+{% endfor %}
+{% endif %}
+
 ---
 
 - [Read entry]({{ "journal_md" | source_path(date_str) }})

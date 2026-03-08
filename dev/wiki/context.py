@@ -64,6 +64,7 @@ from dev.database.models.manuscript import (
     Chapter,
     Character,
     ManuscriptScene,
+    ManuscriptSource,
     Part,
 )
 from dev.utils.slugify import slugify
@@ -149,6 +150,9 @@ class WikiContextBuilder:
                 for mi in entry.motif_instances
                 if mi.motif
             ],
+            "manuscript_scenes": self._build_entry_manuscript_backlinks(
+                entry
+            ),
         }
 
     def _build_people_groups(
@@ -1705,10 +1709,63 @@ class WikiContextBuilder:
                     "number": ch.number,
                     "type": ch.type_display,
                     "status": ch.status_display,
+                    "scene_count": ch.scene_count,
                 }
                 for ch in part.chapters
             ],
         }
+
+    def _build_entry_manuscript_backlinks(
+        self, entry: Entry
+    ) -> List[Dict[str, Any]]:
+        """
+        Find manuscript scenes that cite this entry as source material.
+
+        Queries ManuscriptSource for any references to this entry
+        (either as direct entry source or via its journal scenes),
+        returning manuscript scene names with chapter assignments.
+
+        Args:
+            entry: Entry model instance
+
+        Returns:
+            List of dicts with keys: name, chapter, origin, status
+        """
+        from dev.database.models.enums import SourceType
+
+        sources = (
+            self.session.query(ManuscriptSource)
+            .filter(
+                (
+                    (ManuscriptSource.source_type == SourceType.ENTRY)
+                    & (ManuscriptSource.entry_id == entry.id)
+                )
+                | (
+                    (ManuscriptSource.source_type == SourceType.SCENE)
+                    & (ManuscriptSource.scene_id.in_(
+                        [s.id for s in entry.scenes]
+                    ))
+                )
+            )
+            .all()
+        )
+
+        # Deduplicate by manuscript scene id
+        seen: Set[int] = set()
+        result: List[Dict[str, Any]] = []
+        for src in sources:
+            ms = src.manuscript_scene
+            if ms.id in seen:
+                continue
+            seen.add(ms.id)
+            result.append({
+                "name": ms.name,
+                "chapter": ms.chapter.title if ms.chapter else None,
+                "origin": ms.origin_display,
+                "status": ms.status_display,
+            })
+
+        return sorted(result, key=lambda x: x["name"])
 
     def _build_manuscript_source(self, src: Any) -> Dict[str, Any]:
         """

@@ -59,6 +59,7 @@ from dev.database.models import (
     Theme,
 )
 from dev.database.models.enums import RelationType
+from dev.database.models.enums import ChapterStatus, SceneStatus
 from dev.database.models.manuscript import Chapter, Character, ManuscriptScene, Part
 from dev.utils.slugify import slugify
 from dev.wiki.configs import JOURNAL_CONFIGS, MANUSCRIPT_CONFIGS, INDEX_CONFIGS
@@ -1065,6 +1066,9 @@ class WikiExporter:
             "poem_count": session.query(Poem).count(),
             "reference_count": session.query(ReferenceSource).count(),
             "motif_count": session.query(Motif).count(),
+            "chapter_count": session.query(Chapter).count(),
+            "character_count": session.query(Character).count(),
+            "manuscript_scene_count": session.query(ManuscriptScene).count(),
         }
 
     def _build_people_index_context(
@@ -1477,18 +1481,21 @@ class WikiExporter:
         Build context for Manuscript index page.
 
         Includes parts with their chapters, unassigned chapters,
-        and total counts for characters and manuscript scenes.
+        unassigned scenes, progress counts, and total counts for
+        characters and manuscript scenes.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with parts, unassigned_chapters, character_count,
-            scene_count
+            Dict with parts, unassigned_chapters, unassigned_scenes,
+            character_count, scene_count, chapter_status_counts,
+            scene_status_counts
         """
         builder = WikiContextBuilder(session)
         parts = session.query(Part).all()
         all_chapters = session.query(Chapter).all()
+        all_scenes = session.query(ManuscriptScene).all()
 
         # Find chapters not assigned to any part
         assigned_ids = set()
@@ -1496,7 +1503,29 @@ class WikiExporter:
             for ch in part.chapters:
                 assigned_ids.add(ch.id)
 
-        unassigned = [ch for ch in all_chapters if ch.id not in assigned_ids]
+        unassigned_chapters = [
+            ch for ch in all_chapters if ch.id not in assigned_ids
+        ]
+
+        # Find scenes not assigned to any chapter
+        unassigned_scenes = [s for s in all_scenes if not s.chapter_id]
+
+        # Progress counts
+        chapter_status_counts = {}
+        for status in ChapterStatus:
+            count = sum(
+                1 for ch in all_chapters if ch.status == status
+            )
+            if count:
+                chapter_status_counts[status.display_name] = count
+
+        scene_status_counts = {}
+        for status in SceneStatus:
+            count = sum(
+                1 for s in all_scenes if s.status == status
+            )
+            if count:
+                scene_status_counts[status.display_name] = count
 
         return {
             "parts": [builder.build_part_context(p) for p in parts],
@@ -1507,8 +1536,99 @@ class WikiExporter:
                     "type": ch.type_display,
                     "status": ch.status_display,
                 }
-                for ch in unassigned
+                for ch in unassigned_chapters
+            ],
+            "unassigned_scenes": [
+                {
+                    "name": s.name,
+                    "origin": s.origin_display,
+                    "status": s.status_display,
+                }
+                for s in unassigned_scenes
             ],
             "character_count": session.query(Character).count(),
-            "scene_count": session.query(ManuscriptScene).count(),
+            "scene_count": len(all_scenes),
+            "chapter_status_counts": chapter_status_counts,
+            "scene_status_counts": scene_status_counts,
+        }
+
+    def _build_characters_index_context(
+        self, session: Session
+    ) -> Dict[str, Any]:
+        """
+        Build context for Characters index page.
+
+        Lists all characters alphabetically with role, scene count,
+        chapter count, and based-on person links.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict with characters list and total count
+        """
+        characters = session.query(Character).all()
+        return {
+            "characters": sorted(
+                [
+                    {
+                        "name": c.name,
+                        "role": c.role,
+                        "is_narrator": c.is_narrator,
+                        "scene_count": c.scene_count,
+                        "chapter_count": c.chapter_count,
+                    }
+                    for c in characters
+                ],
+                key=lambda x: str(x["name"]),
+            ),
+            "character_count": len(characters),
+        }
+
+    def _build_manuscript_scenes_index_context(
+        self, session: Session
+    ) -> Dict[str, Any]:
+        """
+        Build context for Manuscript Scenes index page.
+
+        Groups scenes by chapter with an Unassigned section for
+        orphan scenes. Each scene shows origin and status.
+
+        Args:
+            session: Active SQLAlchemy session
+
+        Returns:
+            Dict with chapter_groups, unassigned_scenes, scene_count
+        """
+        all_scenes = session.query(ManuscriptScene).all()
+        chapters = session.query(Chapter).all()
+
+        # Group scenes by chapter
+        chapter_groups: Dict[str, List[Dict[str, Any]]] = {}
+        for ch in chapters:
+            ch_scenes = [s for s in all_scenes if s.chapter_id == ch.id]
+            if ch_scenes:
+                chapter_groups[ch.title] = [
+                    {
+                        "name": s.name,
+                        "origin": s.origin_display,
+                        "status": s.status_display,
+                    }
+                    for s in ch_scenes
+                ]
+
+        unassigned = [
+            {
+                "name": s.name,
+                "origin": s.origin_display,
+                "status": s.status_display,
+            }
+            for s in all_scenes
+            if not s.chapter_id
+        ]
+
+        return {
+            "chapter_groups": chapter_groups,
+            "unassigned_scenes": unassigned,
+            "scene_count": len(all_scenes),
         }

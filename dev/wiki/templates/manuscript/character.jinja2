@@ -25,13 +25,6 @@
 - {{ s.name | wikilink }}{{ " (" ~ s.chapter ~ ")" if s.chapter else "" }}
 {% endfor %}
 {% endif %}
-{% if chapters %}
-
-## Chapters
-{% for ch in chapters %}
-- {{ ch.type }} · {{ ch.status }} · {{ ch.title | wikilink }}
-{% endfor %}
-{% endif %}
 
 ---
 

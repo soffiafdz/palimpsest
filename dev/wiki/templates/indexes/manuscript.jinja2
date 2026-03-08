@@ -1,6 +1,22 @@
 # Manuscript
 
-{{ character_count | zpad }} characters · {{ scene_count | zpad }} manuscript scenes
+- [Characters](indexes/characters-index.md)
+  {{ character_count | zpad }} characters
+- [Scenes](indexes/manuscript-scenes-index.md)
+  {{ scene_count | zpad }} scenes
+{% if chapter_status_counts or scene_status_counts %}
+
+### Progress
+{% if chapter_status_counts %}
+
+**Chapters:** {% for status, count in chapter_status_counts.items() %}{{ count }} {{ status | lower }}{{ ", " if not loop.last else "" }}{% endfor %}
+
+{% endif %}
+{% if scene_status_counts %}
+**Scenes:** {% for status, count in scene_status_counts.items() %}{{ count }} {{ status | lower }}{{ ", " if not loop.last else "" }}{% endfor %}
+
+{% endif %}
+{% endif %}
 
 ---
 {% if parts %}
@@ -8,7 +24,7 @@
 
 ## {{ part.display_name | wikilink }}
 
-{{ part.chapter_count }} chapter{{ "s" if part.chapter_count != 1 else "" }}
+{{ part.chapter_count }} chapter{{ "s" if part.chapter_count != 1 else "" }} · {{ part.scene_count }} scene{{ "s" if part.scene_count != 1 else "" }}
 {% for ch in part.chapters %}
 - {{ ch.title | wikilink }}
   {{ ch.type }} · {{ ch.status }}
@@ -21,5 +37,13 @@
 {% for ch in unassigned_chapters %}
 - {{ ch.title | wikilink }}
   {{ ch.type }} · {{ ch.status }}
+{% endfor %}
+{% endif %}
+{% if unassigned_scenes %}
+
+## Unassigned Scenes
+{% for scene in unassigned_scenes %}
+- {{ scene.name | wikilink }}
+  *{{ scene.origin }}* · {{ scene.status }}
 {% endfor %}
 {% endif %}

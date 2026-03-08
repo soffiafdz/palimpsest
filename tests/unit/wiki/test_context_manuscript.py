@@ -638,3 +638,64 @@ class TestBuildPartContext:
         ctx = builder.build_part_context(p)
         assert ctx["display_name"] == "Part 3"
         assert ctx["title"] is None
+
+    def test_chapter_scene_count(self, builder, part, chapter, ms_scene):
+        """Chapters list in part context includes scene_count."""
+        ctx = builder.build_part_context(part)
+        ch = ctx["chapters"][0]
+        assert ch["scene_count"] == 1
+
+
+# ==================== Entry Manuscript Backlinks ====================
+
+class TestEntryManuscriptBacklinks:
+    """Tests for _build_entry_manuscript_backlinks."""
+
+    def test_entry_source_backlink(
+        self, builder, entry_nov8, ms_scene, ms_source_entry
+    ):
+        """Entry with direct manuscript source appears in backlinks."""
+        ctx = builder.build_entry_context(entry_nov8)
+        assert len(ctx["manuscript_scenes"]) == 1
+        ms = ctx["manuscript_scenes"][0]
+        assert ms["name"] == "The Cafe Encounter"
+        assert ms["chapter"] == "First Light"
+        assert ms["origin"] == "Journaled"
+        assert ms["status"] == "Draft"
+
+    def test_scene_source_backlink(
+        self, builder, entry_nov8, ms_scene, ms_source_scene
+    ):
+        """Entry with journal scene cited as manuscript source appears in backlinks."""
+        ctx = builder.build_entry_context(entry_nov8)
+        assert len(ctx["manuscript_scenes"]) == 1
+        assert ctx["manuscript_scenes"][0]["name"] == "The Cafe Encounter"
+
+    def test_no_backlinks(self, builder, entry_nov8):
+        """Entry with no manuscript sources has empty list."""
+        ctx = builder.build_entry_context(entry_nov8)
+        assert ctx["manuscript_scenes"] == []
+
+    def test_deduplicated_backlinks(
+        self, builder, entry_nov8, ms_scene,
+        ms_source_entry, ms_source_scene
+    ):
+        """Same manuscript scene cited via both entry and scene is deduplicated."""
+        ctx = builder.build_entry_context(entry_nov8)
+        assert len(ctx["manuscript_scenes"]) == 1
+
+    def test_unassigned_scene_backlink(
+        self, builder, db_session, entry_nov8, ms_scene_unassigned
+    ):
+        """Unassigned manuscript scene shows None chapter in backlink."""
+        src = ManuscriptSource(
+            manuscript_scene_id=ms_scene_unassigned.id,
+            source_type=SourceType.ENTRY,
+            entry_id=entry_nov8.id,
+        )
+        db_session.add(src)
+        db_session.flush()
+
+        ctx = builder.build_entry_context(entry_nov8)
+        assert len(ctx["manuscript_scenes"]) == 1
+        assert ctx["manuscript_scenes"][0]["chapter"] is None

@@ -8,6 +8,6 @@
 ## Chapters
 {% for ch in chapters %}
 - {{ ch.title | wikilink }}
-  {{ ch.type }} · {{ ch.status }}
+  {{ ch.type }} · {{ ch.status }} · {{ ch.scene_count | zpad }} scene{{ "s" if ch.scene_count != 1 else "" }}
 {% endfor %}
 {% endif %}

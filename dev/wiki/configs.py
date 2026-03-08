@@ -353,4 +353,16 @@ INDEX_CONFIGS: List[IndexConfig] = [
         output_path="indexes/manuscript-index.md",
         context_method="_build_manuscript_index_context",
     ),
+    IndexConfig(
+        name="characters",
+        template="indexes/characters.jinja2",
+        output_path="indexes/characters-index.md",
+        context_method="_build_characters_index_context",
+    ),
+    IndexConfig(
+        name="manuscript_scenes",
+        template="indexes/manuscript-scenes.jinja2",
+        output_path="indexes/manuscript-scenes-index.md",
+        context_method="_build_manuscript_scenes_index_context",
+    ),
 ]

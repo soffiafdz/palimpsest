@@ -15,6 +15,9 @@
     poem_count: int
     reference_count: int
     motif_count: int
+    chapter_count: int
+    character_count: int
+    manuscript_scene_count: int
 #}
 # Palimpsest
 
@@ -42,3 +45,8 @@
   {{ reference_count | zpad }} sources
 - [Motifs](indexes/motifs-index.md)
   {{ motif_count | zpad }} motifs
+
+## Manuscript
+
+- [Manuscript](indexes/manuscript-index.md)
+  {{ chapter_count | zpad }} chapters · {{ manuscript_scene_count | zpad }} scenes · {{ character_count | zpad }} characters

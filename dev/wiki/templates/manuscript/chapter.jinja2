@@ -28,7 +28,7 @@
 ## Scenes
 {% for scene in scenes %}
 
-### {{ scene.name | wikilink }}
+### {{ loop.index }}. {{ scene.name | wikilink }}
 {% if scene.description %}
 {{ scene.description }}
 {% endif %}

@@ -169,7 +169,7 @@ function M.new(entity_type)
 		people = "name: \nlastname: \nrelation_type: friend\n",
 		chapters = "title: \nnumber: \ndate:   # YYYY-MM-DD (when the chapter is set)\ntype: prose  # prose | vignette | poem\nstatus: draft  # draft | revised | final\ndraft_path: \n",
 		characters = "name: \nrole: \nis_narrator: false\ndescription: \n",
-		scenes = "name: \nchapter: \norigin: journaled  # journaled | inferred | invented | composite\nstatus: fragment  # fragment | draft | included | cut\ndescription: \ncharacters:\nnotes: |\n",
+		scenes = "name: \nchapter: \norigin: journaled  # journaled | inferred | invented | composite\nstatus: fragment  # fragment | draft | included | cut\ndescription: \ncharacters:\nnotes:\n",
 	}
 
 	-- Prompt for type if not provided
@@ -273,10 +273,59 @@ function M.new(entity_type)
 	end)
 end
 
+--- Write source lines into a scene YAML file.
+---
+--- Handles finding or creating the sources: section and appending
+--- the new source entry.
+---
+--- @param yaml_path string Path to the scene YAML file
+--- @param source_lines table List of YAML lines to insert
+--- @param source_type string Source type name for notification
+--- @param label string Display label for notification
+local function write_source_to_yaml(yaml_path, source_lines, source_type, label)
+	local lines = vim.fn.readfile(yaml_path)
+	local found_sources = false
+	for i, line in ipairs(lines) do
+		if line:match("^sources:") then
+			found_sources = true
+			if line:match("^sources: *$") or line:match("^sources: *null") then
+				lines[i] = "sources:"
+				local insert_at = i + 1
+				for _, sl in ipairs(source_lines) do
+					table.insert(lines, insert_at, sl)
+					insert_at = insert_at + 1
+				end
+			else
+				local insert_at = i + 1
+				while insert_at <= #lines and lines[insert_at]:match("^%s") do
+					insert_at = insert_at + 1
+				end
+				for j, sl in ipairs(source_lines) do
+					table.insert(lines, insert_at + j - 1, sl)
+				end
+			end
+			break
+		end
+	end
+
+	if not found_sources then
+		table.insert(lines, "sources:")
+		for _, sl in ipairs(source_lines) do
+			table.insert(lines, sl)
+		end
+	end
+
+	vim.fn.writefile(lines, yaml_path)
+	vim.notify(
+		string.format("Added source: %s — %s", source_type, label),
+		vim.log.levels.INFO
+	)
+end
+
 --- Add a source entry to a manuscript scene YAML.
 ---
---- Provides guided insertion with autocomplete for entry dates
---- and scene names.
+--- Provides guided insertion with cache-backed pickers for
+--- entries, scenes, and threads. External sources use free-text input.
 function M.add_source()
 	local ctx = context_mod.detect()
 	if not ctx or ctx.type ~= "scene" then
@@ -286,77 +335,92 @@ function M.add_source()
 
 	-- Select source type
 	vim.ui.select(
-		{ "scene", "entry", "thread", "external" },
+		{ "entry", "scene", "thread", "external" },
 		{ prompt = "Source type:" },
 		function(source_type)
 			if not source_type then
 				return
 			end
 
-			local ref_prompt = source_type == "entry" and "Entry date (YYYY-MM-DD): " or "Reference: "
-			vim.ui.input(
-				{ prompt = ref_prompt },
-				function(reference)
-					if not reference or reference == "" then
-						return
-					end
+			local yaml_path = resolve_yaml_path(ctx)
+			if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+				vim.notify("Scene YAML not found", vim.log.levels.ERROR)
+				return
+			end
 
-					local yaml_path = resolve_yaml_path(ctx)
-					if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
-						vim.notify("Scene YAML not found", vim.log.levels.ERROR)
-						return
-					end
-
-					-- Build source entry lines
-					local source_lines = { "  - source_type: " .. source_type }
-					if source_type == "entry" then
-						table.insert(source_lines, "    entry_date: " .. reference)
-					elseif source_type == "external" then
-						table.insert(source_lines, "    note: " .. reference)
-					else
-						table.insert(source_lines, "    reference: " .. reference)
-					end
-
-					-- Read existing YAML, append source entry
-					local lines = vim.fn.readfile(yaml_path)
-					local found_sources = false
-					for i, line in ipairs(lines) do
-						if line:match("^sources:") then
-							found_sources = true
-							if line:match("^sources: *$") or line:match("^sources: *null") then
-								lines[i] = "sources:"
-								local insert_at = i + 1
-								for _, sl in ipairs(source_lines) do
-									table.insert(lines, insert_at, sl)
-									insert_at = insert_at + 1
-								end
-							else
-								local insert_at = i + 1
-								while insert_at <= #lines and lines[insert_at]:match("^%s") do
-									insert_at = insert_at + 1
-								end
-								for j, sl in ipairs(source_lines) do
-									table.insert(lines, insert_at + j - 1, sl)
-								end
-							end
-							break
-						end
-					end
-
-					if not found_sources then
-						table.insert(lines, "sources:")
-						for _, sl in ipairs(source_lines) do
-							table.insert(lines, sl)
-						end
-					end
-
-					vim.fn.writefile(lines, yaml_path)
-					vim.notify(
-						string.format("Added source: %s — %s", source_type, reference),
-						vim.log.levels.INFO
-					)
+			if source_type == "entry" then
+				local entries = cache.get("entries")
+				if #entries == 0 then
+					vim.notify("No entries cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+					return
 				end
-			)
+				vim.ui.select(entries, { prompt = "Entry date:" }, function(entry_date)
+					if not entry_date then
+						return
+					end
+					write_source_to_yaml(yaml_path, {
+						"  - source_type: entry",
+						"    entry_date: " .. entry_date,
+					}, "entry", entry_date)
+				end)
+
+			elseif source_type == "scene" then
+				local scenes = cache.get("journal_scenes")
+				if #scenes == 0 then
+					vim.notify("No journal scenes cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+					return
+				end
+				vim.ui.select(scenes, { prompt = "Journal scene:" }, function(choice)
+					if not choice then
+						return
+					end
+					-- Parse "Name::YYYY-MM-DD"
+					local name, entry_date = choice:match("^(.+)::(%d%d%d%d%-%d%d%-%d%d)$")
+					if not name or not entry_date then
+						vim.notify("Invalid scene format: " .. choice, vim.log.levels.ERROR)
+						return
+					end
+					write_source_to_yaml(yaml_path, {
+						"  - source_type: scene",
+						"    entry_date: " .. entry_date,
+						"    scene_name: " .. name,
+					}, "scene", choice)
+				end)
+
+			elseif source_type == "thread" then
+				local threads = cache.get("threads")
+				if #threads == 0 then
+					vim.notify("No threads cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+					return
+				end
+				vim.ui.select(threads, { prompt = "Thread:" }, function(choice)
+					if not choice then
+						return
+					end
+					-- Parse "Name::YYYY-MM-DD"
+					local name, entry_date = choice:match("^(.+)::(%d%d%d%d%-%d%d%-%d%d)$")
+					if not name or not entry_date then
+						vim.notify("Invalid thread format: " .. choice, vim.log.levels.ERROR)
+						return
+					end
+					write_source_to_yaml(yaml_path, {
+						"  - source_type: thread",
+						"    entry_date: " .. entry_date,
+						"    thread_name: " .. name,
+					}, "thread", choice)
+				end)
+
+			elseif source_type == "external" then
+				vim.ui.input({ prompt = "External note: " }, function(note)
+					if not note or note == "" then
+						return
+					end
+					write_source_to_yaml(yaml_path, {
+						"  - source_type: external",
+						"    note: " .. note,
+					}, "external", note)
+				end)
+			end
 		end
 	)
 end
@@ -568,6 +632,85 @@ function M.add_character()
 				vim.cmd("edit!")
 			end)
 		end
+	end)
+end
+
+--- Add a scene to the current chapter.
+---
+--- From a chapter context, presents a picker of manuscript scenes
+--- and sets the selected scene's chapter field to this chapter.
+function M.add_scene()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "chapter" then
+		vim.notify("Must be on a chapter page", vim.log.levels.WARN)
+		return
+	end
+
+	local scenes = cache.get("scenes")
+	if #scenes == 0 then
+		vim.notify("No scenes cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		return
+	end
+
+	vim.ui.select(scenes, { prompt = "Scene to add:" }, function(scene_name)
+		if not scene_name then
+			return
+		end
+
+		-- Resolve scene YAML path
+		local root = get_project_root()
+		local scene_slug = strip_accents(scene_name):lower()
+			:gsub("%s+", "-"):gsub("[^%w%-]", "")
+			:gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+		local scene_yaml = root .. "/data/metadata/manuscript/scenes/" .. scene_slug .. ".yaml"
+
+		if vim.fn.filereadable(scene_yaml) == 0 then
+			vim.notify("Scene YAML not found: " .. scene_yaml, vim.log.levels.ERROR)
+			return
+		end
+
+		-- Get chapter title from current page YAML
+		local chapter_yaml = resolve_yaml_path(ctx)
+		if not chapter_yaml or vim.fn.filereadable(chapter_yaml) == 0 then
+			vim.notify("Chapter YAML not found", vim.log.levels.ERROR)
+			return
+		end
+
+		local ch_lines = vim.fn.readfile(chapter_yaml)
+		local chapter_title = nil
+		for _, line in ipairs(ch_lines) do
+			local val = line:match("^title:%s*(.+)$")
+			if val then
+				chapter_title = val
+				break
+			end
+		end
+
+		if not chapter_title then
+			vim.notify("Could not read chapter title", vim.log.levels.ERROR)
+			return
+		end
+
+		-- Update scene YAML's chapter field
+		local lines = vim.fn.readfile(scene_yaml)
+		local found = false
+		for i, line in ipairs(lines) do
+			if line:match("^chapter:") then
+				lines[i] = "chapter: " .. chapter_title
+				found = true
+				break
+			end
+		end
+
+		if not found then
+			table.insert(lines, 2, "chapter: " .. chapter_title)
+		end
+
+		vim.fn.writefile(lines, scene_yaml)
+		vim.notify(
+			string.format("Added scene: %s → %s", scene_name, chapter_title),
+			vim.log.levels.INFO
+		)
 	end)
 end
 

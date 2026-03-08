@@ -434,3 +434,117 @@ class TestWikiExporterParts:
         assert part_page.exists()
         content = part_page.read_text()
         assert "The Beginning" in content
+
+
+class TestManuscriptIndexContexts:
+    """Tests for manuscript index context builders."""
+
+    @pytest.fixture
+    def manuscript_db(self, test_db, populated_db):
+        """Add manuscript entities to populated DB."""
+        from dev.database.models.manuscript import (
+            Chapter, Character, ManuscriptScene, Part,
+        )
+        from dev.database.models.enums import (
+            ChapterStatus, ChapterType, SceneOrigin, SceneStatus,
+        )
+
+        with test_db.session_scope() as session:
+            part = Part(number=1, title="Act One")
+            session.add(part)
+            session.flush()
+
+            ch1 = Chapter(
+                title="Dawn", number=1, part_id=part.id,
+                type=ChapterType.PROSE, status=ChapterStatus.DRAFT,
+            )
+            ch2 = Chapter(
+                title="Twilight", number=2, part_id=part.id,
+                type=ChapterType.PROSE, status=ChapterStatus.REVISED,
+            )
+            ch_unassigned = Chapter(
+                title="Loose Chapter",
+                type=ChapterType.VIGNETTE, status=ChapterStatus.DRAFT,
+            )
+            session.add_all([ch1, ch2, ch_unassigned])
+            session.flush()
+
+            char1 = Character(name="Elise", role="protagonist", is_narrator=True)
+            char2 = Character(name="Lena", role="love interest")
+            session.add_all([char1, char2])
+            session.flush()
+
+            sc1 = ManuscriptScene(
+                name="Morning Light", chapter_id=ch1.id,
+                origin=SceneOrigin.JOURNALED, status=SceneStatus.DRAFT,
+            )
+            sc2 = ManuscriptScene(
+                name="Dusk Walk", chapter_id=ch2.id,
+                origin=SceneOrigin.INFERRED, status=SceneStatus.INCLUDED,
+            )
+            sc_orphan = ManuscriptScene(
+                name="Lost Fragment",
+                origin=SceneOrigin.INVENTED, status=SceneStatus.FRAGMENT,
+            )
+            session.add_all([sc1, sc2, sc_orphan])
+            session.flush()
+
+            sc1.characters.append(char1)
+            sc1.characters.append(char2)
+            sc2.characters.append(char1)
+            session.commit()
+
+        return test_db
+
+    def test_main_index_includes_manuscript(self, manuscript_db):
+        """Main index context includes manuscript counts."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_main_index_context(session)
+            assert ctx["chapter_count"] >= 3
+            assert ctx["character_count"] >= 2
+            assert ctx["manuscript_scene_count"] >= 3
+
+    def test_manuscript_index_progress(self, manuscript_db):
+        """Manuscript index includes chapter and scene status counts."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_manuscript_index_context(session)
+            assert "chapter_status_counts" in ctx
+            assert "scene_status_counts" in ctx
+            assert ctx["chapter_status_counts"]["Draft"] >= 2
+            assert ctx["chapter_status_counts"]["Revised"] >= 1
+            assert ctx["scene_status_counts"]["Draft"] >= 1
+            assert ctx["scene_status_counts"]["Fragment"] >= 1
+
+    def test_manuscript_index_unassigned_scenes(self, manuscript_db):
+        """Manuscript index lists scenes without chapter assignment."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_manuscript_index_context(session)
+            assert len(ctx["unassigned_scenes"]) >= 1
+            names = [s["name"] for s in ctx["unassigned_scenes"]]
+            assert "Lost Fragment" in names
+
+    def test_characters_index_context(self, manuscript_db):
+        """Characters index lists all characters alphabetically."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_characters_index_context(session)
+            assert ctx["character_count"] >= 2
+            names = [c["name"] for c in ctx["characters"]]
+            assert names == sorted(names)
+            elise = next(c for c in ctx["characters"] if c["name"] == "Elise")
+            assert elise["is_narrator"] is True
+            assert elise["scene_count"] >= 2
+
+    def test_manuscript_scenes_index_context(self, manuscript_db):
+        """Manuscript scenes index groups by chapter with unassigned section."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_manuscript_scenes_index_context(session)
+            assert ctx["scene_count"] >= 3
+            assert "Dawn" in ctx["chapter_groups"]
+            assert len(ctx["unassigned_scenes"]) >= 1
+            orphan_names = [s["name"] for s in ctx["unassigned_scenes"]]
+            assert "Lost Fragment" in orphan_names
