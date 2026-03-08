@@ -940,8 +940,10 @@ class EntryManager(BaseManager):
                     ref_type = ReferenceType(new_type)
                     if ref_type != source.type:
                         source.type = ref_type
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    safe_logger(self.logger).log_debug(
+                        f"Skipped invalid reference type: {e}"
+                    )
             self.session.flush()
         return source
 
@@ -1064,8 +1066,10 @@ class EntryManager(BaseManager):
                     parsed = date.fromisoformat(date_val)
                     nd = NarratedDate(date=parsed, entry_id=entry.id)
                     self.session.add(nd)
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    safe_logger(self.logger).log_debug(
+                        f"Skipped invalid narrated date: {e}"
+                    )
 
         self.session.flush()
 
@@ -1304,8 +1308,10 @@ class EntryManager(BaseManager):
             elif isinstance(ref_entry_val, str):
                 try:
                     ref_entry_date = date.fromisoformat(ref_entry_val)
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    safe_logger(self.logger).log_debug(
+                        f"Skipped invalid thread entry date: {e}"
+                    )
 
             thread = Thread(
                 name=thread_data.get("name", "Unnamed Thread"),

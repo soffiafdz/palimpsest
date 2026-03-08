@@ -326,15 +326,31 @@ class QueryAnalytics:
             return city.entries if city else []
 
     def get_entries_by_location(
-        self, session: Session, location_name: str
+        self,
+        session: Session,
+        location_name: str,
+        city_name: Optional[str] = None,
     ) -> List[Entry]:
-        """Get all entries at a specific location."""
+        """
+        Get all entries at a specific location.
+
+        Args:
+            session: SQLAlchemy session
+            location_name: Location name (partial match via ilike)
+            city_name: Optional city name to disambiguate same-named locations
+
+        Returns:
+            List of Entry instances
+        """
         with DatabaseOperation(self.logger, "get_entries_by_location"):
-            location = (
-                session.query(Location)
-                .filter(Location.name.ilike(f"%{location_name}%"))
-                .first()
+            query = session.query(Location).filter(
+                Location.name.ilike(f"%{location_name}%")
             )
+            if city_name:
+                query = query.join(City).filter(
+                    City.name.ilike(f"%{city_name}%")
+                )
+            location = query.first()
 
             return location.entries if location else []
 

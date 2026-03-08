@@ -43,7 +43,7 @@ from typing import Optional
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import TEX_DIR
-from dev.builders.metadata_pdfbuilder import MetadataPdfBuilder, BuildStats
+from dev.builders.metadata_pdfbuilder import MetadataPdfBuilder, MetadataPdfBuildStats
 
 
 # --- Programmatic API ---
@@ -57,7 +57,7 @@ def build_metadata_pdf(
     force_overwrite: bool = False,
     keep_temp_on_error: bool = False,
     logger: Optional[PalimpsestLogger] = None,
-) -> BuildStats:
+) -> MetadataPdfBuildStats:
     """
     Build metadata curation PDF for a specific year.
 
@@ -75,7 +75,7 @@ def build_metadata_pdf(
         logger: Optional logger instance
 
     Returns:
-        BuildStats with files_processed, pdfs_created, etc.
+        MetadataPdfBuildStats with files_processed, pdfs_created, etc.
 
     Raises:
         PdfBuildError: If build fails
@@ -100,6 +100,6 @@ def build_metadata_pdf(
     )
 
     # Execute build
-    stats: BuildStats = builder.build()
+    stats: MetadataPdfBuildStats = builder.build()
 
     return stats

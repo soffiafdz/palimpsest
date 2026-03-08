@@ -79,11 +79,11 @@ from contextlib import contextmanager
 from datetime import datetime
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Type, TypeVar, Protocol
+from typing import Any, Dict, Optional, Union, List, Type, TypeVar
 
 # --- Third party ---
 from sqlalchemy import create_engine, Engine
-from sqlalchemy.orm import Session, sessionmaker, Mapped
+from sqlalchemy.orm import Session, sessionmaker
 
 from alembic.config import Config
 from alembic import command
@@ -121,13 +121,7 @@ from .managers import (
     ChapterManager,
     CharacterManager,
 )
-
-
-class HasId(Protocol):
-    """Protocol for objects that have an id attribute."""
-
-    id: Mapped[int]
-
+from .managers.base_manager import HasId
 
 T = TypeVar("T", bound=HasId)
 

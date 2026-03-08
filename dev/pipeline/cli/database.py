@@ -21,7 +21,7 @@ from dev.core.paths import (
 )
 from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.database.manager import PalimpsestDB
-from dev.pipeline.metadata_importer import MetadataImporter
+from dev.pipeline.metadata_importer import EntryImporter
 
 
 @click.command("import-metadata")
@@ -63,22 +63,22 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
 
     click.echo(f"Found {len(yaml_files)} metadata YAML files to import")
 
-    # Create database session
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    db = PalimpsestDB(
+        db_path=DB_PATH,
+        alembic_dir=ALEMBIC_DIR,
+        log_dir=LOG_DIR,
+        backup_dir=BACKUP_DIR,
+        enable_auto_backup=False,
+    )
 
     try:
-        # Run import
-        importer = MetadataImporter(
-            session=session,
-            dry_run=dry_run,
-            logger=logger,
-        )
-        stats = importer.import_all(yaml_files, failed_only=False)
+        with db.session_scope() as session:
+            importer = EntryImporter(
+                session=session,
+                dry_run=dry_run,
+                logger=logger,
+            )
+            stats = importer.import_all(yaml_files, failed_only=False)
 
         # Print results
         click.echo("")
@@ -101,25 +101,16 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
             additional_context={"dry_run": dry_run},
         )
         return
-    finally:
-        session.close()
 
     # Auto-prune orphaned entities after successful import
     if not dry_run:
         from dev.database.cli.prune import _prune_entity_type
 
         click.echo("\nPruning orphaned entities...")
-        db = PalimpsestDB(
-            db_path=DB_PATH,
-            alembic_dir=ALEMBIC_DIR,
-            log_dir=LOG_DIR,
-            backup_dir=BACKUP_DIR,
-            enable_auto_backup=False,
-        )
         total_pruned = 0
         for etype in [
             "people", "locations", "cities", "tags", "themes", "arcs",
-            "events", "reference_sources",
+            "events", "reference_sources", "poems", "motifs",
         ]:
             _, deleted = _prune_entity_type(db, etype, False, False)
             total_pruned += deleted
@@ -133,7 +124,7 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
 @click.option(
     "--type",
     "entity_type",
-    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "events", "reference_sources", "all"]),
+    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "events", "reference_sources", "poems", "motifs", "all"]),
     default="all",
     help="Type of entity to prune",
 )
@@ -156,7 +147,7 @@ def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run
     if entity_type == "all":
         types_to_check = [
             "people", "locations", "cities", "tags", "themes", "arcs",
-            "events", "reference_sources",
+            "events", "reference_sources", "poems", "motifs",
         ]
     else:
         types_to_check = [entity_type]

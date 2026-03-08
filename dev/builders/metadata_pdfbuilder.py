@@ -632,7 +632,7 @@ def format_arc_marker(arc_name: str) -> str:
 # --- Build Statistics ---
 
 
-class BuildStats(BaseStats):
+class MetadataPdfBuildStats(BaseStats):
     """
     Track metadata PDF build statistics.
 
@@ -893,17 +893,17 @@ class MetadataPdfBuilder:
                 f"Pandoc conversion failed: {in_md} → {out_pdf}: {e}"
             ) from e
 
-    def build(self) -> BuildStats:
+    def build(self) -> MetadataPdfBuildStats:
         """
         Execute complete metadata PDF build process.
 
         Returns:
-            BuildStats with build results
+            MetadataPdfBuildStats with build results
 
         Raises:
             PdfBuildError: If build fails
         """
-        stats = BuildStats()
+        stats = MetadataPdfBuildStats()
 
         safe_logger(self.logger).log_operation(
             "metadata_pdf_build_start",

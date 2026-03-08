@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 @click.option(
     "--type",
     "entity_type",
-    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "events", "reference_sources", "all"]),
+    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "events", "reference_sources", "poems", "motifs", "all"]),
     default="all",
     help="Type of entity to prune",
 )
@@ -103,7 +103,7 @@ def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run
         if entity_type == "all":
             types_to_check = [
             "people", "locations", "cities", "tags", "themes", "arcs",
-            "events", "reference_sources",
+            "events", "reference_sources", "poems", "motifs",
         ]
         else:
             types_to_check = [entity_type]
@@ -156,6 +156,7 @@ def _prune_entity_type(
     """
     from dev.database.models import (
         Person, Location, City, Tag, Theme, Arc, Event, ReferenceSource,
+        Poem, Motif,
     )
 
     entity_map = {
@@ -167,6 +168,8 @@ def _prune_entity_type(
         "arcs": (Arc, ["entries", "chapters"]),
         "events": (Event, ["entries", "scenes"]),
         "reference_sources": (ReferenceSource, ["references"]),
+        "poems": (Poem, ["versions"]),
+        "motifs": (Motif, ["instances"]),
     }
 
     if entity_type not in entity_map:

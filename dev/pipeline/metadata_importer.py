@@ -4,7 +4,7 @@ metadata_importer.py
 --------------------
 Import metadata YAML files into the database.
 
-This module provides the MetadataImporter class which handles importing
+This module provides the EntryImporter class which handles importing
 metadata YAML files into the database, combining them with MD frontmatter
 data for a complete Entry import.
 
@@ -34,9 +34,9 @@ Validation:
     - Post-import: Integrity checks (counts, FK validity)
 
 Usage:
-    from dev.pipeline.metadata_importer import MetadataImporter
+    from dev.pipeline.metadata_importer import EntryImporter
 
-    importer = MetadataImporter(session)
+    importer = EntryImporter(session)
     stats = importer.import_all(yaml_files)
 """
 # --- Annotations ---
@@ -65,7 +65,7 @@ from dev.pipeline.models import FailedImport, ImportStats
 # Metadata Importer
 # =============================================================================
 
-class MetadataImporter:
+class EntryImporter:
     """
     Import metadata YAML files into the database.
 

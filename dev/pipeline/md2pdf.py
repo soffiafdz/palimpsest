@@ -27,7 +27,7 @@ from typing import Optional
 from dev.core.exceptions import PdfBuildError
 from dev.core.logging_manager import PalimpsestLogger
 from dev.core.paths import TEX_DIR
-from dev.builders.pdfbuilder import PdfBuilder, BuildStats
+from dev.builders.pdfbuilder import PdfBuilder, PdfBuildStats
 
 
 # --- Programmatic API ---
@@ -42,7 +42,7 @@ def build_pdf(
     force_overwrite: bool = False,
     keep_temp_on_error: bool = False,
     logger: Optional[PalimpsestLogger] = None,
-) -> BuildStats:
+) -> PdfBuildStats:
     """
     Build clean and notes PDFs for a specific year.
 
@@ -61,7 +61,7 @@ def build_pdf(
         logger: Optional logger instance
 
     Returns:
-        BuildStats with files_processed, pdfs_created, etc.
+        PdfBuildStats with files_processed, pdfs_created, etc.
 
     Raises:
         PdfBuildError: If build fails
@@ -89,7 +89,7 @@ def build_pdf(
     )
 
     # Execute build
-    stats: BuildStats = builder.build()
+    stats: PdfBuildStats = builder.build()
 
     return stats
 

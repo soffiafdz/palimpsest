@@ -1300,9 +1300,11 @@ class MetadataImporter:
         if not name:
             return
 
-        location = session.query(Location).filter(
-            Location.name == name
-        ).first()
+        query = session.query(Location).filter(Location.name == name)
+        city_name = data.get("city")
+        if city_name:
+            query = query.join(City).filter(City.name == city_name)
+        location = query.first()
         if not location:
             return
 
@@ -1357,22 +1359,25 @@ class MetadataImporter:
         """
         Import a chapter entity from YAML data, creating if it doesn't exist.
 
+        Uses ChapterManager for creation to ensure proper validation.
+
         Args:
             session: SQLAlchemy session
             data: Chapter data dict with title, type, status, number
         """
+        from dev.database.managers.chapter_manager import ChapterManager
+
         title = data.get("title")
         if not title:
             return
 
-        chapter = session.query(Chapter).filter(
-            Chapter.title == title
-        ).first()
+        mgr = ChapterManager(session, self.logger)
+        chapter = mgr.get(name=title)
         if not chapter:
-            chapter = Chapter(title=title)
-            session.add(chapter)
-            session.flush()
+            chapter = mgr.create({"title": title})
 
+        # Update fields directly (type/status/date are enums/special fields
+        # not covered by EntityManager scalar_fields config)
         if "type" in data:
             chapter.type = ChapterType(data["type"])
         if "status" in data:
@@ -1442,35 +1447,45 @@ class MetadataImporter:
         """
         Import a character entity from YAML data, creating if it doesn't exist.
 
+        Uses CharacterManager for creation and person linking to ensure
+        proper validation.
+
         Args:
             session: SQLAlchemy session
             data: Character data dict with name, role, is_narrator, description
         """
+        from dev.database.managers.character_manager import CharacterManager
+
         name = data.get("name")
         if not name:
             return
 
-        character = session.query(Character).filter(
-            Character.name == name
-        ).first()
+        mgr = CharacterManager(session, self.logger)
+        character = mgr.get(name=name)
         if not character:
-            character = Character(name=name)
-            session.add(character)
-            session.flush()
+            character = mgr.create({
+                "name": name,
+                "role": data.get("role"),
+                "is_narrator": data.get("is_narrator", False),
+                "description": data.get("description"),
+            })
+        else:
+            update_data: Dict[str, Any] = {}
+            if "role" in data:
+                update_data["role"] = data["role"]
+            if "is_narrator" in data:
+                update_data["is_narrator"] = data["is_narrator"]
+            if "description" in data:
+                update_data["description"] = data["description"]
+            if update_data:
+                mgr.update(character, update_data)
 
-        if "role" in data:
-            character.role = data["role"]
-        if "is_narrator" in data:
-            character.is_narrator = data["is_narrator"]
-        if "description" in data:
-            character.description = data["description"]
         if "based_on" in data and isinstance(data["based_on"], list):
             # Collect desired person_id -> contribution mappings
             desired_mappings: Dict[int, ContributionType] = {}
             for entry in data["based_on"]:
                 person_name = entry.get("person", "")
                 contribution_str = entry.get("contribution", "primary")
-                # Look up person by display_name (name + lastname or just name)
                 person = None
                 for p in session.query(Person).all():
                     if p.display_name == person_name:
@@ -1481,7 +1496,7 @@ class MetadataImporter:
                         contribution_str
                     )
 
-            # Update existing mappings and add new ones
+            # Sync mappings via manager
             existing = session.query(PersonCharacterMap).filter(
                 PersonCharacterMap.character_id == character.id
             ).all()
@@ -1489,18 +1504,19 @@ class MetadataImporter:
             for mapping in existing:
                 existing_person_ids.add(mapping.person_id)
                 if mapping.person_id in desired_mappings:
-                    mapping.contribution = desired_mappings[mapping.person_id]
+                    mgr.update_person_mapping(
+                        character, mapping.person_id,
+                        contribution=desired_mappings[mapping.person_id].value,
+                    )
                 else:
-                    session.delete(mapping)
+                    mgr.unlink_person(character, mapping.person_id)
 
             for person_id, contribution in desired_mappings.items():
                 if person_id not in existing_person_ids:
-                    session.add(PersonCharacterMap(
-                        person_id=person_id,
-                        character_id=character.id,
-                        contribution=contribution,
-                    ))
-            session.flush()
+                    mgr.link_person(
+                        character, person_id,
+                        contribution=contribution.value,
+                    )
 
     def _import_scene(
         self, session: Session, data: Dict[str, Any]
@@ -1508,36 +1524,68 @@ class MetadataImporter:
         """
         Import a manuscript scene entity from YAML data, creating if it doesn't exist.
 
+        Uses ChapterManager for scene creation to ensure proper validation.
+
         Args:
             session: SQLAlchemy session
             data: Scene data dict with name, origin, status, description, chapter
         """
+        from dev.database.managers.chapter_manager import ChapterManager
+
         name = data.get("name")
         if not name:
             return
 
+        ch_mgr = ChapterManager(session, self.logger)
+
         ms_scene = session.query(ManuscriptScene).filter(
             ManuscriptScene.name == name
         ).first()
-        if not ms_scene:
-            ms_scene = ManuscriptScene(name=name)
-            session.add(ms_scene)
-            session.flush()
 
-        if "origin" in data:
-            ms_scene.origin = SceneOrigin(data["origin"])
-        if "status" in data:
-            ms_scene.status = SceneStatus(data["status"])
-        if "description" in data:
-            ms_scene.description = data["description"]
-        if "chapter" in data:
-            if data["chapter"]:
-                chapter = session.query(Chapter).filter(
-                    Chapter.title == data["chapter"]
-                ).first()
-                ms_scene.chapter_id = chapter.id if chapter else None
+        # Resolve chapter for creation
+        chapter = None
+        if data.get("chapter"):
+            chapter = session.query(Chapter).filter(
+                Chapter.title == data["chapter"]
+            ).first()
+
+        if not ms_scene:
+            if chapter:
+                ms_scene = ch_mgr.create_manuscript_scene(chapter, {
+                    "name": name,
+                    "origin": data.get("origin"),
+                    "status": data.get("status"),
+                    "description": data.get("description"),
+                    "notes": data.get("notes"),
+                })
             else:
-                ms_scene.chapter_id = None
+                # No chapter — create directly (chapter_id is nullable)
+                origin = SceneOrigin(data["origin"]) if data.get("origin") else SceneOrigin.JOURNALED
+                status = SceneStatus(data["status"]) if data.get("status") else SceneStatus.FRAGMENT
+                ms_scene = ManuscriptScene(
+                    name=name,
+                    origin=origin,
+                    status=status,
+                    description=data.get("description"),
+                    notes=data.get("notes"),
+                )
+                session.add(ms_scene)
+                session.flush()
+        else:
+            update_data: Dict[str, Any] = {}
+            if "origin" in data:
+                update_data["origin"] = data["origin"]
+            if "status" in data:
+                update_data["status"] = data["status"]
+            if "description" in data:
+                update_data["description"] = data["description"]
+            if "notes" in data:
+                update_data["notes"] = data["notes"]
+            if update_data:
+                ch_mgr.update_manuscript_scene(ms_scene, update_data)
+            if "chapter" in data:
+                ms_scene.chapter_id = chapter.id if chapter else None
+
         if "characters" in data and isinstance(data["characters"], list):
             ms_scene.characters = []
             for char_name in data["characters"]:
@@ -1546,8 +1594,6 @@ class MetadataImporter:
                 ).first()
                 if char:
                     ms_scene.characters.append(char)
-        if "notes" in data:
-            ms_scene.notes = data["notes"]
 
         # Update sources (delete + recreate)
         if "sources" in data and isinstance(data["sources"], list):

@@ -243,21 +243,34 @@ class LocationManager(EntityManager):
     # LOCATION OPERATIONS (Child entity)
     # =========================================================================
 
-    def location_exists(self, location_name: str) -> bool:
+    def location_exists(
+        self, location_name: str, city_name: Optional[str] = None
+    ) -> bool:
         """
         Check if a location exists.
 
         Args:
             location_name: The location name to check
+            city_name: Optional city name to disambiguate same-named locations
 
         Returns:
             True if location exists, False otherwise
         """
         with DatabaseOperation(self.logger, "location_exists"):
+            if city_name:
+                return (
+                    self.session.query(Location)
+                    .join(City)
+                    .filter(Location.name == location_name, City.name == city_name)
+                    .first()
+                ) is not None
             return self._exists(Location, "name", location_name)
 
     def get_location(
-        self, location_name: Optional[str] = None, location_id: Optional[int] = None
+        self,
+        location_name: Optional[str] = None,
+        location_id: Optional[int] = None,
+        city_name: Optional[str] = None,
     ) -> Optional[Location]:
         """
         Retrieve a location by name or ID.
@@ -265,18 +278,26 @@ class LocationManager(EntityManager):
         Args:
             location_name: The location name
             location_id: The location ID
+            city_name: Optional city name to disambiguate same-named locations
 
         Returns:
             Location object if found, None otherwise
 
         Notes:
-            - If both provided, ID takes precedence
+            - If location_id is provided, it takes precedence
+            - When city_name is provided with location_name, filters by both
+              to handle the composite unique constraint (name, city_id)
         """
         with DatabaseOperation(self.logger, "get_location"):
             if location_id is not None:
                 return self._get_by_id(Location, location_id)
             if location_name is not None:
-                return self._get_by_field(Location, "name", location_name)
+                query = self.session.query(Location).filter(
+                    Location.name == location_name
+                )
+                if city_name:
+                    query = query.join(City).filter(City.name == city_name)
+                return query.first()
             return None
 
     def get_all_locations(self) -> List[Location]:
@@ -314,12 +335,7 @@ class LocationManager(EntityManager):
             if not location_name:
                 raise ValidationError(f"Invalid location name: {metadata.get('name')}")
 
-            # Check for existing
-            existing = self.get_location(location_name=location_name)
-            if existing:
-                raise DatabaseError(f"Location already exists: {location_name}")
-
-            # Resolve city
+            # Resolve city first (needed for duplicate check)
             city_spec = metadata.get("city")
             if isinstance(city_spec, City):
                 city = city_spec
@@ -331,6 +347,17 @@ class LocationManager(EntityManager):
                 city = self.get_or_create_city(city_spec)
             else:
                 raise ValidationError(f"Invalid city specification: {city_spec}")
+
+            # Check for existing using composite key (name, city_id)
+            existing = (
+                self.session.query(Location)
+                .filter(Location.name == location_name, Location.city_id == city.id)
+                .first()
+            )
+            if existing:
+                raise DatabaseError(
+                    f"Location already exists: {location_name} in {city.name}"
+                )
 
             # Create location
             location = Location(name=location_name, city=city)
@@ -445,13 +472,18 @@ class LocationManager(EntityManager):
             if not normalized_location:
                 raise ValidationError("Location name cannot be empty")
 
-            # Try to get existing location
-            existing = self.get_location(location_name=normalized_location)
-            if existing:
-                return existing
-
             # Get or create city first
             city = self.get_or_create_city(city_name)
+
+            # Try to get existing location under this specific city
+            existing = (
+                self.session.query(Location)
+                .filter(Location.name == normalized_location,
+                        Location.city_id == city.id)
+                .first()
+            )
+            if existing:
+                return existing
 
             # Create location
             location = Location(name=normalized_location, city=city)

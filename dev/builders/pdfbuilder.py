@@ -113,7 +113,7 @@ AUTHOR_BIRTH_YEAR = 1993
 
 
 # --- Classes ---
-class BuildStats(BaseStats):
+class PdfBuildStats(BaseStats):
     """
     Track PDF build statistics.
 
@@ -422,19 +422,19 @@ class PdfBuilder:
         )
         return True
 
-    def build(self) -> BuildStats:
+    def build(self) -> PdfBuildStats:
         """
         Execute complete PDF build process.
 
         Builds clean and/or notes PDFs based on available preambles.
 
         Returns:
-            BuildStats with build results
+            PdfBuildStats with build results
 
         Raises:
             PdfBuildError: If build fails
         """
-        stats = BuildStats()
+        stats = PdfBuildStats()
 
         safe_logger(self.logger).log_operation(
             "pdf_build_start",

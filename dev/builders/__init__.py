@@ -14,7 +14,7 @@ Current export options include PDF, text, and JSON/CSV via the pipeline.
 """
 
 from dev.builders.base import BaseBuilder, BuilderStats
-from dev.builders.pdfbuilder import BuildStats, PdfBuilder
+from dev.builders.pdfbuilder import PdfBuildStats, PdfBuilder
 from dev.builders.txtbuilder import ProcessingStats, TxtBuilder
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "BuilderStats",
     # PDF builder
     "PdfBuilder",
-    "BuildStats",
+    "PdfBuildStats",
     # Text builder
     "TxtBuilder",
     "ProcessingStats",
