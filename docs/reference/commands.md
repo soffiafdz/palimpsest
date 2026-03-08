@@ -205,7 +205,7 @@ plm prune-orphans [--type TYPE] [--list] [--dry-run]
 - Cleans up unused data
 
 **Options:**
-- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `all` (default: `all`)
+- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `poems`, `motifs`, `all` (default: `all`)
 - `--list` - Only list orphans, don't delete
 - `--dry-run` - Show what would be deleted without deleting
 
@@ -823,7 +823,7 @@ metadb prune-orphans [--type TYPE] [--list] [--dry-run]
 - Optionally removes them
 
 **Options:**
-- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `all` (default: `all`)
+- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `poems`, `motifs`, `all` (default: `all`)
 - `--list` - Only list orphans, don't delete
 - `--dry-run` - Show what would be deleted without deleting
 
