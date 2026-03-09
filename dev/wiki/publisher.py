@@ -10,6 +10,7 @@ frontmatter is added only to the Quartz copies.
 
 Key Features:
     - Copies wiki tree to Quartz content directory
+    - Converts WikiLink1 ``[display][/path]`` to Quartz ``[[/path|display]]``
     - Injects YAML frontmatter (title, tags, aliases, date, draft)
     - Entity type detection from file path for graph coloring
     - Change detection (only writes if content differs)
@@ -49,6 +50,21 @@ QUARTZ_CONTENT_DIR = ROOT / "quartz" / "content"
 
 H1_RE = re.compile(r'^# (.+)$', re.MULTILINE)
 
+# WikiLink1 format: [display text][/path/to/slug]
+# Converted to Quartz wikilink: [[/path/to/slug|display text]]
+WIKILINK1_RE = re.compile(r'\[([^\]\[]+)\]\[(/[^\]]*)\]')
+
+# Unresolved WikiLink1: [name][] (no target found during generation)
+WIKILINK1_EMPTY_RE = re.compile(r'\[([^\]\[]+)\]\[\]')
+
+# Editor-only source links: lines containing file:__PALIMPSEST__ paths
+# These are nvim-plugin navigation links (Read entry, Edit metadata,
+# Open draft) — may appear as bullet items or standalone links
+SOURCE_LINK_RE = re.compile(
+    r'^-?\s*\[[^\]]+\]\(file:__PALIMPSEST__[^)]*\)\s*\n?',
+    re.MULTILINE,
+)
+
 # Map wiki subdirectory to entity type tag for Quartz graph coloring
 PATH_TO_TAG: Dict[str, str] = {
     "journal/people": "person",
@@ -65,6 +81,7 @@ PATH_TO_TAG: Dict[str, str] = {
     "manuscript/chapters": "chapter",
     "manuscript/characters": "character",
     "manuscript/scenes": "manuscript-scene",
+    "manuscript/parts": "part",
     "indexes": "index",
 }
 
@@ -157,8 +174,9 @@ class WikiPublisher:
         # Ensure parent directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Read source content
+        # Read source content and convert links for Quartz
         content = source_path.read_text(encoding="utf-8")
+        content = self._convert_wikilinks(content)
 
         # Build frontmatter
         frontmatter = self._build_frontmatter(rel_path, content)
@@ -176,6 +194,36 @@ class WikiPublisher:
         output_path.write_text(published_content, encoding="utf-8")
         self.stats["files_copied"] += 1
         self.stats["files_changed"] += 1
+
+    @staticmethod
+    def _convert_wikilinks(content: str) -> str:
+        """
+        Convert vimwiki WikiLink1 format to Quartz-compatible wikilinks
+        and strip editor-only source links.
+
+        Vimwiki uses ``[display][/path]`` (WikiLink1) for concealment in
+        markdown mode. Quartz expects ``[[/path|display]]`` format for
+        native wikilink resolution, backlinks, and graph visualization.
+
+        Unresolved links (``[name][]``) are converted to ``[[name]]``
+        so Quartz can attempt resolution by page title.
+
+        Editor-only links (``file:__PALIMPSEST__`` paths for "Read entry"
+        and "Edit metadata" navigation) are stripped entirely.
+
+        Args:
+            content: Markdown content with WikiLink1-format links
+
+        Returns:
+            Content with links converted to Quartz ``[[...]]`` format
+        """
+        # Strip editor-only source links
+        content = SOURCE_LINK_RE.sub('', content)
+        # [display][/path] → [[/path|display]]
+        content = WIKILINK1_RE.sub(r'[[\2|\1]]', content)
+        # [name][] → [[name]]
+        content = WIKILINK1_EMPTY_RE.sub(r'[[\1]]', content)
+        return content
 
     def _build_frontmatter(
         self, rel_path: Path, content: str
@@ -202,10 +250,13 @@ class WikiPublisher:
 
         # Entity type tag from path
         path_str = str(rel_path.parent).replace("\\", "/")
-        for prefix, tag in PATH_TO_TAG.items():
-            if path_str.startswith(prefix):
-                frontmatter["tags"] = [tag]
-                break
+        if path_str == ".":
+            frontmatter["tags"] = ["index"]
+        else:
+            for prefix, tag in PATH_TO_TAG.items():
+                if path_str.startswith(prefix):
+                    frontmatter["tags"] = [tag]
+                    break
 
         # Draft status for manuscript chapters
         if path_str.startswith("manuscript/chapters"):

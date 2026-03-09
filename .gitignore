@@ -17,6 +17,9 @@ tmp/
 *.db-journal
 backups/
 
+# Quartz (ephemeral, installed via plm wiki setup)
+quartz/
+
 # Editor/IDE
 *.swp
 *.swo

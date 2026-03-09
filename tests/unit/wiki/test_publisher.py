@@ -166,6 +166,161 @@ class TestBuildFrontmatter:
         assert "title" not in fm
         assert fm["tags"] == ["person"]
 
+    def test_tag_for_manuscript_parts(
+        self, publisher: WikiPublisher
+    ) -> None:
+        """Files under manuscript/parts receive the 'part' tag."""
+        content = "# Part 1\n"
+        rel_path = Path("manuscript/parts/part-1.md")
+        fm = publisher._build_frontmatter(rel_path, content)
+        assert fm["tags"] == ["part"]
+
+    def test_root_index_gets_index_tag(
+        self, publisher: WikiPublisher
+    ) -> None:
+        """Root-level files (parent '.') receive the 'index' tag."""
+        content = "# Palimpsest\n"
+        rel_path = Path("index.md")
+        fm = publisher._build_frontmatter(rel_path, content)
+        assert fm["tags"] == ["index"]
+
+    def test_nested_location_inherits_tag(
+        self, publisher: WikiPublisher
+    ) -> None:
+        """Locations in city subdirs still receive the 'location' tag."""
+        content = "# A&W\n"
+        rel_path = Path("journal/locations/montreal/aandw.md")
+        fm = publisher._build_frontmatter(rel_path, content)
+        assert fm["tags"] == ["location"]
+
+    def test_nested_entry_inherits_tag(
+        self, publisher: WikiPublisher
+    ) -> None:
+        """Entries in year subdirs still receive the 'entry' tag."""
+        content = "# Thursday, January 20, 2022\n"
+        rel_path = Path("journal/entries/2022/2022-01-20.md")
+        fm = publisher._build_frontmatter(rel_path, content)
+        assert fm["tags"] == ["entry"]
+
+
+# ==================== TestConvertWikilinks ====================
+
+class TestConvertWikilinks:
+    """Tests for _convert_wikilinks WikiLink1 → Quartz conversion."""
+
+    def test_wikilink1_to_quartz(self) -> None:
+        """WikiLink1 [display][/path] becomes Quartz [[/path|display]]."""
+        content = "See [Clara Dupont][/journal/people/clara-dupont] today."
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == "See [[/journal/people/clara-dupont|Clara Dupont]] today."
+
+    def test_multiple_wikilinks(self) -> None:
+        """Multiple WikiLink1 links in one line are all converted."""
+        content = (
+            "[Dating][/journal/tags/dating] · "
+            "[Waiting][/journal/tags/waiting]"
+        )
+        result = WikiPublisher._convert_wikilinks(content)
+        assert "[[/journal/tags/dating|Dating]]" in result
+        assert "[[/journal/tags/waiting|Waiting]]" in result
+
+    def test_unresolved_wikilink(self) -> None:
+        """Unresolved [name][] becomes [[name]] for Quartz resolution."""
+        content = "See [The Rejected Invitation][] for details."
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == "See [[The Rejected Invitation]] for details."
+
+    def test_standard_wikilinks_preserved(self) -> None:
+        """Existing [[target|display]] wikilinks pass through unchanged."""
+        content = "Back to [[/journal/entries/2022/2022-01-20|2022-01-20]]."
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == content
+
+    def test_markdown_links_preserved(self) -> None:
+        """Standard markdown [text](url) links are not modified."""
+        content = "See [Entries](indexes/entry-index.md) for the list."
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == content
+
+    def test_mixed_link_formats(self) -> None:
+        """Mixed link formats are each handled correctly."""
+        content = (
+            "[Clara][/journal/people/clara] and "
+            "[Entries](indexes/entry-index.md) and "
+            "[[/journal/entries/2022/2022-01-20|2022-01-20]] and "
+            "[The Lost Scene][]"
+        )
+        result = WikiPublisher._convert_wikilinks(content)
+        assert "[[/journal/people/clara|Clara]]" in result
+        assert "[Entries](indexes/entry-index.md)" in result
+        assert "[[/journal/entries/2022/2022-01-20|2022-01-20]]" in result
+        assert "[[The Lost Scene]]" in result
+
+    def test_no_links_unchanged(self) -> None:
+        """Content with no links passes through unchanged."""
+        content = "Just plain text, nothing to convert.\n"
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == content
+
+    def test_unicode_in_display(self) -> None:
+        """Unicode characters in display text are preserved."""
+        content = "[Céline][/manuscript/characters/celine]"
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == "[[/manuscript/characters/celine|Céline]]"
+
+    def test_special_chars_in_display(self) -> None:
+        """Special characters like & and parentheses in display text."""
+        content = "[A&W][/journal/locations/montreal/aandw]"
+        result = WikiPublisher._convert_wikilinks(content)
+        assert result == "[[/journal/locations/montreal/aandw|A&W]]"
+
+    def test_parenthesized_display(self) -> None:
+        """Display text with parentheses (disambiguation) converts."""
+        content = "[Abby (Alda's friend)][/journal/people/abby_aldas-friend]"
+        result = WikiPublisher._convert_wikilinks(content)
+        assert (
+            result
+            == "[[/journal/people/abby_aldas-friend|Abby (Alda's friend)]]"
+        )
+
+    def test_strips_source_links(self) -> None:
+        """Editor-only file:__PALIMPSEST__ links are removed entirely."""
+        content = (
+            "# Clara Dupont\n\n"
+            "Some text.\n\n"
+            "- [Read entry](file:__PALIMPSEST__/data/journal/content/md/2022/2022-01-20.md)\n"
+            "- [Edit metadata](file:__PALIMPSEST__/data/metadata/journal/2022/2022-01-20.yaml)\n"
+        )
+        result = WikiPublisher._convert_wikilinks(content)
+        assert "__PALIMPSEST__" not in result
+        assert "Read entry" not in result
+        assert "Edit metadata" not in result
+        assert "# Clara Dupont" in result
+        assert "Some text." in result
+
+    def test_strips_source_links_preserves_other_content(self) -> None:
+        """Surrounding content is preserved when source links are stripped."""
+        content = (
+            "---\n\n"
+            "- [Edit metadata](file:__PALIMPSEST__/data/metadata/people/clara.yaml)\n"
+        )
+        result = WikiPublisher._convert_wikilinks(content)
+        assert "---" in result
+        assert "__PALIMPSEST__" not in result
+
+    def test_strips_standalone_source_link(self) -> None:
+        """Standalone source links (no bullet prefix) are also stripped."""
+        content = (
+            "02 scenes\n\n"
+            "[Open draft](file:__PALIMPSEST__/data/manuscript/drafts/ch.md)\n\n"
+            "---\n"
+        )
+        result = WikiPublisher._convert_wikilinks(content)
+        assert "__PALIMPSEST__" not in result
+        assert "Open draft" not in result
+        assert "02 scenes" in result
+        assert "---" in result
+
 
 # ==================== TestInjectFrontmatter ====================
 
