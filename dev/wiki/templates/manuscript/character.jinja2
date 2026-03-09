@@ -9,15 +9,11 @@
 {% endif %}
 
 {{ scene_count }} scene{{ "s" if scene_count != 1 else "" }} · {{ chapter_count }} chapter{{ "s" if chapter_count != 1 else "" }}
+{% for person in based_on %}
+← *{{ person.contribution }}* · {{ person.person_name | wikilink }}
+{% endfor %}
 
 ---
-{% if based_on %}
-
-## Based On
-{% for person in based_on %}
-- *{{ person.contribution }}* · {{ person.person_name | wikilink }}
-{% endfor %}
-{% endif %}
 {% if scenes %}
 
 ## Scenes

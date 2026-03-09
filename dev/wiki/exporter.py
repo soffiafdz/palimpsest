@@ -1635,10 +1635,16 @@ class WikiExporter:
                     parts.append(f"{loose} loose scene{'s' if loose != 1 else ''}")
             elif c.scene_count:
                 parts.append(f"{c.scene_count} scene{'s' if c.scene_count != 1 else ''}")
+            based_on_names = [
+                mapping.person.display_name
+                for mapping in c.person_mappings
+                if mapping.person
+            ]
             char_dict = {
                 "name": c.name,
                 "load": load,
                 "metrics": " · ".join(parts),
+                "based_on": ", ".join(based_on_names),
             }
 
             if c.is_narrator:
@@ -1663,7 +1669,6 @@ class WikiExporter:
         return {
             "narrators": narrators,
             "role_groups": role_groups,
-            "character_count": len(characters),
         }
 
     def _build_manuscript_scenes_index_context(

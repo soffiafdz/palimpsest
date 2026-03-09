@@ -547,7 +547,6 @@ class TestManuscriptIndexContexts:
         exporter = WikiExporter(manuscript_db)
         with manuscript_db.session_scope() as session:
             ctx = exporter._build_characters_index_context(session)
-            assert ctx["character_count"] >= 2
             assert "narrators" in ctx
             assert "role_groups" in ctx
 

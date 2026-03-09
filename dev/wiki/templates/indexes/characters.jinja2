@@ -7,20 +7,30 @@
   Context:
     narrators: list of narrator char dicts
     role_groups: list of (role_name, char_list) tuples
-    character_count: int
 #}
 # Characters
 
-{{ character_count | zpad }} characters
-
 ---
 {% for char in narrators %}
-- {{ char.name | wikilink }} · **Narrator**{{ " · " ~ char.role if char.role else "" }}
+- {{ char.name | wikilink }}
+  **Narrator**{{ " · " ~ char.role if char.role else "" }}
+{% if char.metrics %}
+  {{ char.metrics }}
+{% endif %}
+{% if char.based_on %}
+  ← {{ char.based_on }}
+{% endif %}
 {% endfor %}
 {% for role, chars in role_groups %}
 
 ## {{ role }}
 {% for char in chars %}
-- {{ char.name | wikilink }}{{ " · " ~ char.metrics if char.metrics else "" }}
+- {{ char.name | wikilink }}
+{% if char.metrics %}
+  {{ char.metrics }}
+{% endif %}
+{% if char.based_on %}
+  ← {{ char.based_on }}
+{% endif %}
 {% endfor %}
 {% endfor %}
