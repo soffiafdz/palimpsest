@@ -502,7 +502,7 @@ class TestIdempotency:
 
         # Import over the existing DB (without clearing)
         importer = JSONImporter(test_db, input_dir=tmp_dir)
-        stats = importer.import_all()
+        importer.import_all()
 
         # Should still have 1 of each
         assert db_session.query(Entry).count() == 1

@@ -16,11 +16,9 @@ import pytest
 # --- Local imports ---
 from dev.database.managers.character_manager import CharacterManager
 from dev.database.models import (
-    Character,
     Chapter,
     ManuscriptScene,
     Person,
-    PersonCharacterMap,
 )
 from dev.database.models.enums import ContributionType
 

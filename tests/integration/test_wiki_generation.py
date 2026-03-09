@@ -12,13 +12,10 @@ change detection, and orphan cleanup.
 from __future__ import annotations
 
 # --- Standard library imports ---
-from pathlib import Path
 
 # --- Third-party imports ---
-import pytest
 
 # --- Local imports ---
-from dev.database.models.entities import Person
 from dev.wiki.exporter import WikiExporter
 from dev.wiki.validator import WikiValidator
 

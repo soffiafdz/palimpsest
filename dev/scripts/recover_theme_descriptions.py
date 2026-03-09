@@ -394,7 +394,7 @@ def main() -> None:
     if args.dry_run:
         print("\n(DRY RUN — no files were modified)")
     else:
-        print(f"\nDone. Run 'plm metadata import' to rebuild the database.")
+        print("\nDone. Run 'plm metadata import' to rebuild the database.")
 
 
 if __name__ == "__main__":

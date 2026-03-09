@@ -1028,7 +1028,7 @@ class WikiContextBuilder:
             Dict with city overview, top locations, timeline
         """
         locations = sorted(
-            city.locations, key=lambda l: l.entry_count, reverse=True
+            city.locations, key=lambda loc: loc.entry_count, reverse=True
         )
 
         # Group locations by neighborhood

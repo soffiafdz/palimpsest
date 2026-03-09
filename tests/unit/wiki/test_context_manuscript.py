@@ -425,20 +425,17 @@ class TestBuildChapterContext:
     def test_scenes_with_sources(
         self, builder, chapter, ms_scene, ms_source_scene
     ):
-        """Scenes include grouped source details."""
+        """Scenes include pre-computed block with source details."""
         ctx = builder.build_chapter_context(chapter)
         assert len(ctx["scenes"]) == 1
         scene = ctx["scenes"][0]
         assert scene["name"] == "The Cafe Encounter"
-        assert scene["description"] == "Elise meets Lena for the first time."
-        assert scene["origin"] == "Journaled"
-        assert scene["status"] == "Draft"
-        assert len(scene["sources"]) == 1
-        group = scene["sources"][0]
-        assert group["entry_date"] == "2024-11-08"
-        assert len(group["references"]) == 1
-        assert group["references"][0]["type"] == "scene"
-        assert group["references"][0]["ref_name"] == "Morning at the Cafe"
+        block = scene["block"]
+        assert "Elise meets Lena for the first time." in block
+        assert "*Journaled*" in block
+        assert "Draft" in block
+        assert "2024-11-08" in block
+        assert "Morning at the Cafe" in block
 
     def test_references(self, builder, chapter, manuscript_reference):
         """References include source title, mode, content."""

@@ -1,5 +1,4 @@
 import json
-import pytest
 
 from dev.validators.diagnostic import Diagnostic, ValidationReport, format_diagnostics
 

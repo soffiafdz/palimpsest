@@ -11,7 +11,6 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
-from datetime import date
 
 # --- Third-party imports ---
 import pytest
@@ -20,7 +19,6 @@ import pytest
 from dev.database.managers.chapter_manager import ChapterManager
 from dev.database.models import (
     Arc,
-    Chapter,
     Character,
     ManuscriptReference,
     ManuscriptScene,

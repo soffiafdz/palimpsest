@@ -30,7 +30,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 # --- Third party imports ---
 import yaml

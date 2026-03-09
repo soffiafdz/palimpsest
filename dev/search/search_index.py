@@ -25,7 +25,6 @@ Usage:
 """
 # --- Standard library imports ---
 from typing import Optional, List, Dict, Any
-from pathlib import Path
 
 # --- Third party imports ---
 from sqlalchemy import text, Engine

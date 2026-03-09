@@ -146,7 +146,7 @@ class TestListMerge:
                 description: Wanting what cannot be named.
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "theme", "Loneliness", "Solitude", dry_run=False
         )
 
@@ -165,7 +165,7 @@ class TestListMerge:
               - The Therapy Journey
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "arc", "The Long Wanting", "The Longing", dry_run=False
         )
 
@@ -218,7 +218,7 @@ class TestLocationRename:
                   - Café
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "location", "Home", "Apartment - Jarry", dry_run=False
         )
 
@@ -265,7 +265,7 @@ class TestLocationRename:
                   - Bar
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "location", "Home", "Apartment - Jarry", dry_run=False
         )
 
@@ -292,7 +292,7 @@ class TestPersonRename:
                 lastname: Ell
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -313,7 +313,7 @@ class TestPersonRename:
                 lastname: Smith
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -336,7 +336,7 @@ class TestPersonRename:
                   - Johanna
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -355,7 +355,7 @@ class TestPersonRename:
                   - Kate
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -408,7 +408,7 @@ class TestMotifEventRename:
                 description: Opportunity
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "motif", "The Mirror", "The Reflection", dry_run=False
         )
 
@@ -427,7 +427,7 @@ class TestMotifEventRename:
                   - Scene One
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "event", "The Breakup", "The Separation", dry_run=False
         )
 
@@ -447,7 +447,7 @@ class TestMotifEventRename:
                 description: New desc
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "motif", "The Mirror", "The Reflection", dry_run=False
         )
 
@@ -514,7 +514,7 @@ class TestPerEntityFile:
             city: Montréal
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "location", "Home", "Apartment - Jarry", dry_run=False
         )
 
@@ -530,7 +530,7 @@ class TestPerEntityFile:
             slug: kate
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -658,7 +658,7 @@ class TestCurationFile:
               apartment-jarry: Villeray
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "location", "Home", "Apartment - Jarry",
             city="Montréal", dry_run=False,
         )
@@ -673,7 +673,7 @@ class TestCurationFile:
             johanna: friend
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -689,7 +689,7 @@ class TestCurationFile:
             katherine: null
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 
@@ -765,7 +765,7 @@ class TestCityCascade:
               country: null
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "city", "Montréal", "Montreal", dry_run=False
         )
 
@@ -783,7 +783,7 @@ class TestCityCascade:
             city: Montréal
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "city", "Montréal", "Montreal", dry_run=False
         )
 
@@ -800,7 +800,7 @@ class TestCityCascade:
             city: Montréal
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "city", "Montréal", "Mtl", dry_run=False
         )
 
@@ -818,7 +818,7 @@ class TestCityCascade:
               bar: Centro
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "city", "Montréal", "Mtl", dry_run=False
         )
 
@@ -849,7 +849,7 @@ class TestCityCascade:
               cafe: Plateau
         """)
 
-        report = renamer.rename(
+        renamer.rename(
             "city", "Montréal", "Mtl", dry_run=False
         )
 
@@ -908,7 +908,7 @@ class TestFormatPreservation:
 
         renamer.rename("tag", "Self Image", "Self-Image", dry_run=False)
 
-        content = entry_path.read_text(encoding="utf-8")
+        entry_path.read_text(encoding="utf-8")
         data = read_yaml(entry_path)
         assert "Self-Image" in data["tags"]
 
@@ -1235,7 +1235,7 @@ class TestMdFrontmatterPerson:
             people: [Kate, Katherine, Johanna]
         """)
 
-        report = renamer_with_md.rename(
+        renamer_with_md.rename(
             "person", "Kate", "Katherine", dry_run=False
         )
 

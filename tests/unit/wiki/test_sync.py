@@ -348,7 +348,7 @@ class TestSyncCycle:
             sync.validator, "validate_directory", return_value={}
         ), patch.object(sync, "_ingest") as mock_ingest, \
              patch.object(sync, "_regenerate") as mock_regen:
-            result = sync.sync_manuscript(ingest_only=True)
+            sync.sync_manuscript(ingest_only=True)
 
         mock_ingest.assert_called_once()
         mock_regen.assert_not_called()
@@ -362,7 +362,7 @@ class TestSyncCycle:
         with patch.object(sync, "_validate") as mock_validate, \
              patch.object(sync, "_ingest") as mock_ingest, \
              patch.object(sync, "_regenerate") as mock_regen:
-            result = sync.sync_manuscript(generate_only=True)
+            sync.sync_manuscript(generate_only=True)
 
         mock_validate.assert_not_called()
         mock_ingest.assert_not_called()

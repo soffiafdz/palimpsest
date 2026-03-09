@@ -37,7 +37,7 @@ Dependencies:
 from __future__ import annotations
 
 # --- Standard library imports ---
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Sequence
 
 # --- Third-party imports ---
 from markdown_it import MarkdownIt

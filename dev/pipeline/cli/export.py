@@ -28,8 +28,9 @@ from dev.pipeline.export_json import JSONExporter
 
 
 @click.command("export-json")
+@click.option("--no-commit", is_flag=True, help="Write JSON files without creating a git commit")
 @click.pass_context
-def export_json(ctx: click.Context) -> None:
+def export_json(ctx: click.Context, no_commit: bool) -> None:
     """
     Export database entities to JSON files for version control.
 
@@ -45,6 +46,9 @@ def export_json(ctx: click.Context) -> None:
     Examples:
         # Export all entities
         plm export-json
+
+        # Export without committing (used by auto-sync)
+        plm export-json --no-commit
     """
     try:
         logger = ctx.obj["logger"]
@@ -61,7 +65,7 @@ def export_json(ctx: click.Context) -> None:
 
         # Execute export
         click.echo("Exporting all database entities to JSON...")
-        exporter.export_all()
+        exporter.export_all(commit=not no_commit)
         click.echo("✅ Export complete - see data/exports/README.md for details")
 
     except Exception as e:

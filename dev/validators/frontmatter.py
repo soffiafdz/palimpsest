@@ -35,7 +35,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 # --- Local imports ---
 from dev.utils.md import split_frontmatter

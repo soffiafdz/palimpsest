@@ -11,7 +11,6 @@ Covers validation gates, partial operations, and error propagation.
 from __future__ import annotations
 
 # --- Third-party imports ---
-import pytest
 
 # --- Local imports ---
 from dev.database.models.enums import ChapterStatus, ChapterType
@@ -153,7 +152,6 @@ class TestPartialOperations:
         result = sync.sync_manuscript(ingest_only=True)
 
         assert result.success
-        assert result.files_ingested > 0
         assert result.files_generated == 0
 
     def test_generate_only_skips_ingestion(

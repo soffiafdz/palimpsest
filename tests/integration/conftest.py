@@ -19,7 +19,6 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 from datetime import date
-from pathlib import Path
 
 # --- Third-party imports ---
 import pytest

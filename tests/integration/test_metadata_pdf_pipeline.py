@@ -18,9 +18,8 @@ Test Coverage:
     - Output file creation
 """
 # --- Standard library imports ---
-from datetime import date
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # --- Third-party imports ---
 import pytest

@@ -38,6 +38,7 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .core import Entry
+    from .entities import Theme
 
 
 # The 26 controlled motifs

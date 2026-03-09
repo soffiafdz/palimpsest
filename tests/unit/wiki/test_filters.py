@@ -15,7 +15,6 @@ from datetime import date
 from typing import Dict, Optional
 
 # --- Third-party imports ---
-import pytest
 from jinja2 import Environment
 
 # --- Local imports ---

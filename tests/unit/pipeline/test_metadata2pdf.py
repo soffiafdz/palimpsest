@@ -18,7 +18,7 @@ Test Coverage:
 """
 # --- Standard library imports ---
 from datetime import date
-from typing import Any, Dict, List, cast
+from typing import List, cast
 
 # --- Local imports ---
 from dev.builders.metadata_pdfbuilder import (

@@ -21,7 +21,7 @@ local function import_yaml(filepath)
 	local root = get_project_root()
 	local section = filepath:find("/manuscript/") and "manuscript" or "journal"
 	local cmd = string.format(
-		"cd %s && plm metadata import %s && plm wiki generate --section %s && plm wiki generate --section indexes",
+		"cd %s && plm metadata import %s && plm wiki generate --section %s && plm wiki generate --section indexes && plm export-json --no-commit",
 		root, vim.fn.fnameescape(filepath), section
 	)
 	vim.fn.jobstart(cmd, {

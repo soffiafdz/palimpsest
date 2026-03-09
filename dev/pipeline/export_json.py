@@ -49,6 +49,7 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import json
+import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -186,12 +187,15 @@ class JSONExporter:
         self._character_names = {c.id: c.name for c in session.query(Character)}
         self._ms_scene_names = {s.id: s.name for s in session.query(ManuscriptScene)}
 
-    def export_all(self) -> None:
+    def export_all(self, commit: bool = True) -> None:
         """
-        Export all entities to JSON files with README and git commit.
+        Export all entities to JSON files with README and optional git commit.
 
         This is the main entry point for full database export.
         Provides progress feedback and handles errors gracefully.
+
+        Args:
+            commit: Whether to create a git commit after export (default True)
         """
         safe_logger(self.logger).log_info("🔄 Starting full database export to JSON")
 
@@ -222,9 +226,10 @@ class JSONExporter:
             safe_logger(self.logger).log_info("📝 Generating README...")
             self._write_readme()
 
-            # Step 6: Git commit
-            safe_logger(self.logger).log_info("🔐 Creating git commit...")
-            self._git_commit()
+            # Step 6: Git commit (optional)
+            if commit:
+                safe_logger(self.logger).log_info("🔐 Creating git commit...")
+                self._git_commit()
 
             safe_logger(self.logger).log_info(
                 f"✅ Export complete: {new_count} files exported, {len(self.changes)} changes"
@@ -1327,7 +1332,9 @@ class JSONExporter:
         Args:
             exports: All entity data keyed by natural keys
         """
-        # Create base directories
+        # Wipe and recreate — export is a complete snapshot of DB state
+        if self.journal_dir.exists():
+            shutil.rmtree(self.journal_dir)
         self.journal_dir.mkdir(parents=True, exist_ok=True)
 
         # Write each entity type with proper paths
