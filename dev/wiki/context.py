@@ -1813,13 +1813,19 @@ class WikiContextBuilder:
         When multiple sources reference the same entry, they are grouped
         under a single entry link. External sources stand alone.
 
+        Within each entry group, references are sorted: scenes first
+        (no target link), then threads (with target date arrow).
+        Thread references include a ``target_date`` field pointing to
+        the distant moment they connect to.
+
         Args:
             sources: List of ManuscriptSource model instances
 
         Returns:
             List of source group dicts. Entry-based groups have:
               - entry_date: str (ISO date, wikilink-ready)
-              - items: list of dicts with type and name
+              - references: list of dicts with type, ref_name,
+                and optional target_date (threads only)
             External groups have:
               - external_note: str
         """
@@ -1845,21 +1851,30 @@ class WikiContextBuilder:
             elif src.source_type == SourceType.THREAD and src.thread:
                 date_str = src.thread.entry.date.isoformat()
                 entry_groups.setdefault(date_str, [])
-                entry_groups[date_str].append({
+                ref: Dict[str, str] = {
                     "type": "thread",
                     "ref_name": src.thread.name,
-                })
+                }
+                if src.thread.referenced_entry_date:
+                    ref["target_date"] = (
+                        src.thread.referenced_entry_date.isoformat()
+                    )
+                entry_groups[date_str].append(ref)
 
             elif src.source_type == SourceType.EXTERNAL:
                 externals.append({
                     "external_note": src.external_note or "",
                 })
 
+        # Sort within each group: scenes first, threads last
+        def _ref_sort_key(ref: Dict[str, str]) -> int:
+            return 0 if ref["type"] == "scene" else 1
+
         result: List[Dict[str, Any]] = []
         for date_str, refs in entry_groups.items():
             result.append({
                 "entry_date": date_str,
-                "references": refs,
+                "references": sorted(refs, key=_ref_sort_key),
             })
         result.extend(externals)
 

@@ -31,7 +31,11 @@
 {% if group.entry_date %}
 - {{ group.entry_date | entry_date_short }}
 {% for ref in group.references %}
+{% if ref.target_date %}
+  {{ ref.ref_name }} · *{{ ref.type }}* → {{ ref.target_date | entry_date_short }}
+{% else %}
   {{ ref.ref_name }} · *{{ ref.type }}*
+{% endif %}
 {% endfor %}
 {% elif group.external_note %}
 - *external* · {{ group.external_note }}
