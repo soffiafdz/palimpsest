@@ -3,17 +3,88 @@ local has_wk, wk = pcall(require, "which-key")
 
 local M = {}
 
+-- Context-specific keymaps per entity type.
+-- key: suffix appended to the entity prefix (e.g., "s" → <prefix>es)
+local CONTEXT_KEYMAPS = {
+	scene = {
+		{ key = "s", cmd = "<cmd>PalimpsestAddSource<cr>", desc = "Add source", icon = "󰁅" },
+		{ key = "h", cmd = "<cmd>PalimpsestSetChapter<cr>", desc = "Set chapter", icon = "󰉋" },
+		{ key = "a", cmd = "<cmd>PalimpsestAddCharacter<cr>", desc = "Add character", icon = "󰙃" },
+		{ key = "o", cmd = "<cmd>PalimpsestOpenSources<cr>", desc = "Open sources", icon = "󰈔" },
+		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename scene", icon = "󰑕" },
+	},
+	chapter = {
+		{ key = "p", cmd = "<cmd>PalimpsestSetPart<cr>", desc = "Set part", icon = "󰉋" },
+		{ key = "S", cmd = "<cmd>PalimpsestAddScene<cr>", desc = "Add scene", icon = "󰕧" },
+		{ key = "o", cmd = "<cmd>PalimpsestOpenSources<cr>", desc = "Open draft", icon = "󰈔" },
+		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename chapter", icon = "󰑕" },
+	},
+	character = {
+		{ key = "b", cmd = "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on", icon = "󰌹" },
+		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename character", icon = "󰑕" },
+	},
+	entry = {
+		{ key = "l", cmd = "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
+	},
+	person = {
+		{ key = "c", cmd = "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation", icon = "󰒓" },
+		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename person", icon = "󰑕" },
+	},
+	location = {
+		{ key = "c", cmd = "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation", icon = "󰒓" },
+		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename location", icon = "󰑕" },
+	},
+	city = {
+		{ key = "c", cmd = "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation", icon = "󰒓" },
+	},
+}
+
+--- Register buffer-local context keymaps for the current wiki page.
+---
+--- @param bufnr number Buffer number
+--- @param prefix string Key prefix ("<leader>p" or "<leader>v")
+local function register_context_keymaps(bufnr, prefix)
+	if vim.b[bufnr].palimpsest_context_keymaps then
+		return
+	end
+
+	local ctx = require("palimpsest.context").detect()
+	if not ctx then
+		return
+	end
+
+	local keymaps = CONTEXT_KEYMAPS[ctx.type]
+	if not keymaps then
+		return
+	end
+
+	local entries = {}
+	for _, km in ipairs(keymaps) do
+		table.insert(entries, {
+			prefix .. "e" .. km.key,
+			km.cmd,
+			desc = km.desc,
+			icon = km.icon,
+			buffer = bufnr,
+		})
+	end
+
+	if #entries > 0 then
+		wk.add(entries)
+		vim.b[bufnr].palimpsest_context_keymaps = true
+	end
+end
+
 function M.setup()
 	if not has_wk then
 		vim.notify("which-key not found - palimpsest keymaps disabled", vim.log.levels.WARN)
 		return
 	end
 
+	local prefix
 	if #vim.g.vimwiki_list > 1 then
-		-- If there are another vimwiki(s) set up:
-		-- create a new group specifically for Palimpsest.
+		prefix = "<leader>p"
 		wk.add({
-			-- Do I need to specify icon here?
 			{ "<leader>v", group = "vimwiki" },
 			{
 				group = "palimpsest",
@@ -25,20 +96,10 @@ function M.setup()
 				{ "<leader>p<leader>w", "<cmd>1VimwikiMakeDiaryNote<cr>", desc = "Palimpsest Log (Today)", icon = "󰃮" },
 				{ "<leader>p<leader>t", "<cmd>1VimwikiTabMakeDiaryNote<cr>", desc = "Palimpsest Log (Today, new tab)", icon = "󰃮" },
 				{ "<leader>pr", "<Plug>VimwikiDiaryGenerateLinks", desc = "Rebuild log links", icon = "󰑓" },
-				-- Entity commands (YAML floating window)
+				-- Entity commands (universal)
 				{ "<leader>pe", group = "entity", icon = "󰕘" },
 				{ "<leader>pee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)", icon = "󰏫" },
-				{ "<leader>pec", "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation file", icon = "󰒓" },
 				{ "<leader>pen", "<cmd>PalimpsestNew<cr>", desc = "New entity...", icon = "" },
-				{ "<leader>pes", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene", icon = "󰁅" },
-				{ "<leader>peb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character", icon = "󰌹" },
-				{ "<leader>peh", "<cmd>PalimpsestSetChapter<cr>", desc = "Set chapter for scene", icon = "󰉋" },
-				{ "<leader>pep", "<cmd>PalimpsestSetPart<cr>", desc = "Set part for chapter", icon = "󰉋" },
-				{ "<leader>pea", "<cmd>PalimpsestAddCharacter<cr>", desc = "Add character to scene", icon = "󰙃" },
-				{ "<leader>peS", "<cmd>PalimpsestAddScene<cr>", desc = "Add scene to chapter", icon = "󰕧" },
-				{ "<leader>peo", "<cmd>PalimpsestOpenSources<cr>", desc = "Open source materials", icon = "󰈔" },
-				{ "<leader>pel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
-				{ "<leader>peR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene/character", icon = "󰑕" },
 				{ "<leader>pex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML", icon = "󰈔" },
 				-- Wiki operations
 				{ "<leader>pL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint", icon = "󱩾" },
@@ -80,7 +141,7 @@ function M.setup()
 			},
 		})
 	else
-		-- If not, Redefine names/group
+		prefix = "<leader>v"
 		wk.add({
 			{
 				group = "Palimpsest",
@@ -92,20 +153,10 @@ function M.setup()
 				{ "<leader>v<leader>w", "<Plug>VimwikiMakeDiaryNote", desc = "Palimpsest Log (Today)", icon = "󰃮" },
 				{ "<leader>v<leader>t", "<Plug>VimwikiTabMakeDiaryNote", desc = "Palimpsest Log (Today, new tab)", icon = "󰃮" },
 				{ "<leader>v<leader>i", "<Plug>VimwikiDiaryGenerateLinks", desc = "Rebuild log links", icon = "󰑓" },
-				-- Entity commands (YAML floating window)
+				-- Entity commands (universal)
 				{ "<leader>ve", group = "entity", icon = "󰕘" },
 				{ "<leader>vee", "<cmd>PalimpsestEdit<cr>", desc = "Edit metadata (float)", icon = "󰏫" },
-				{ "<leader>vec", "<cmd>PalimpsestEditCuration<cr>", desc = "Edit curation file", icon = "󰒓" },
 				{ "<leader>ven", "<cmd>PalimpsestNew<cr>", desc = "New entity...", icon = "" },
-				{ "<leader>ves", "<cmd>PalimpsestAddSource<cr>", desc = "Add source to scene", icon = "󰁅" },
-				{ "<leader>veb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character", icon = "󰌹" },
-				{ "<leader>veh", "<cmd>PalimpsestSetChapter<cr>", desc = "Set chapter for scene", icon = "󰉋" },
-				{ "<leader>vep", "<cmd>PalimpsestSetPart<cr>", desc = "Set part for chapter", icon = "󰉋" },
-				{ "<leader>vea", "<cmd>PalimpsestAddCharacter<cr>", desc = "Add character to scene", icon = "󰙃" },
-				{ "<leader>veS", "<cmd>PalimpsestAddScene<cr>", desc = "Add scene to chapter", icon = "󰕧" },
-				{ "<leader>veo", "<cmd>PalimpsestOpenSources<cr>", desc = "Open source materials", icon = "󰈔" },
-				{ "<leader>vel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
-				{ "<leader>veR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene/character", icon = "󰑕" },
 				{ "<leader>vex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML", icon = "󰈔" },
 				-- Wiki operations
 				{ "<leader>vL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint", icon = "󱩾" },
@@ -150,6 +201,19 @@ function M.setup()
 		pcall(vim.api.nvim_del_keymap, "n", "<leader>v<leader>y") -- Diary (yesterday)
 		pcall(vim.api.nvim_del_keymap, "n", "<leader>v<leader>m") -- Diary (tomorrow)
 	end
+
+	-- Context-aware entity keymaps via BufEnter autocmd
+	local group = vim.api.nvim_create_augroup("PalimpsestContextKeymaps", { clear = true })
+	vim.api.nvim_create_autocmd("BufEnter", {
+		group = group,
+		pattern = { "*.md", "*.yaml" },
+		callback = function(args)
+			local filepath = vim.api.nvim_buf_get_name(args.buf)
+			if filepath:find("data/wiki/", 1, true) or filepath:find("data/metadata/", 1, true) then
+				register_context_keymaps(args.buf, prefix)
+			end
+		end,
+	})
 end
 
 return M
