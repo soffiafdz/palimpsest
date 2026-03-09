@@ -14,6 +14,34 @@ from datetime import date
 from tempfile import TemporaryDirectory
 
 
+# ----- Safety Guard: Never Write to Real Wiki -----
+
+@pytest.fixture(autouse=True, scope="session")
+def _protect_real_wiki(tmp_path_factory):
+    """Redirect WIKI_DIR to a temp directory so tests never touch real data.
+
+    Patches the canonical paths module AND every module that imports WIKI_DIR
+    at module level, so the real data/wiki/ is never written to by tests.
+    """
+    import dev.core.paths as paths
+    import dev.wiki.exporter as exporter_mod
+    import dev.wiki.sync as sync_mod
+    import dev.wiki.publisher as publisher_mod
+
+    safe_wiki = tmp_path_factory.mktemp("wiki_guard")
+
+    # Patch canonical source
+    paths.WIKI_DIR = safe_wiki
+    paths.WIKI_JOURNAL_DIR = safe_wiki / "journal"
+    paths.WIKI_MANUSCRIPT_DIR = safe_wiki / "manuscript"
+    paths.WIKI_INDEXES_DIR = safe_wiki / "indexes"
+
+    # Patch every module that copied WIKI_DIR at import time
+    exporter_mod.WIKI_DIR = safe_wiki
+    sync_mod.WIKI_DIR = safe_wiki
+    publisher_mod.WIKI_DIR = safe_wiki
+
+
 # ----- Path Fixtures -----
 
 @pytest.fixture
