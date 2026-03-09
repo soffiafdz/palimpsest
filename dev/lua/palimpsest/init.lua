@@ -49,7 +49,7 @@ function M.setup()
 		-- Notify if deck edits are pending
 		local wiki_dir = config.paths.wiki
 		if wiki_dir and vim.fn.filereadable(wiki_dir .. "/.sync-pending") == 1 then
-			vim.notify("Deck edits pending — run :PalimpsestSync", vim.log.levels.WARN)
+			vim.notify("Deck edits pending — run :PalimpsestGenerate", vim.log.levels.WARN)
 		end
 	end
 

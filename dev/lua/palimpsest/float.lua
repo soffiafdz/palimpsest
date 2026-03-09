@@ -170,11 +170,11 @@ function M.on_save(bufnr, filepath)
 	})
 end
 
---- Handle window close: import the YAML file and refresh.
+--- Handle window close: import, regenerate section, and refresh cache.
 ---
---- Runs `plm metadata import <filepath>` to push changes to DB,
---- then refreshes the entity cache. Only called if the buffer
---- was actually saved during the float session.
+--- Detects the wiki section from the filepath and only regenerates
+--- that section plus indexes. Only called if the buffer was actually
+--- saved during the float session.
 ---
 --- @param bufnr number Buffer number
 --- @param filepath string Path to the YAML file
@@ -184,20 +184,21 @@ function M.on_close(bufnr, filepath)
 	end
 
 	local root = get_project_root()
+	local section = filepath:find("/manuscript/") and "manuscript" or "journal"
 	local cmd = string.format(
-		"cd %s && plm metadata import %s",
-		root, vim.fn.fnameescape(filepath)
+		"cd %s && plm metadata import %s && plm wiki generate --section %s && plm wiki generate --section indexes",
+		root, vim.fn.fnameescape(filepath), section
 	)
 
 	vim.fn.jobstart(cmd, {
 		on_exit = function(_, exit_code)
 			vim.schedule(function()
 				if exit_code == 0 then
-					vim.notify("Metadata imported", vim.log.levels.INFO)
+					vim.notify("Metadata imported · wiki regenerated", vim.log.levels.INFO)
 					local cache = require("palimpsest.cache")
 					cache.refresh_all()
 				else
-					vim.notify("Import failed", vim.log.levels.ERROR)
+					vim.notify("Import or generation failed", vim.log.levels.ERROR)
 				end
 			end)
 		end,

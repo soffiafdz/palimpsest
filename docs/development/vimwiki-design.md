@@ -405,7 +405,6 @@ The Neovim plugin (`palimpsest.nvim` or similar) provides:
 
 ### Commands
 
-- `:PalimpsestSync` — Sync manuscript wiki edits back to DB, regenerate
 - `:PalimpsestGenerate` — Regenerate wiki pages from DB
 - `:PalimpsestLint` — Run linter on current buffer
 - `:PalimpsestPublish` — Publish wiki to Quartz
@@ -425,7 +424,6 @@ The Neovim plugin (`palimpsest.nvim` or similar) provides:
 - `:PalimpsestSearch` — Search journal entries
 - `:PalimpsestQuickAccess` — Quick access to common pages
 - `:PalimpsestMetadataExport` — Export metadata for current entity
-- `:PalimpsestCacheRefresh` — Refresh entity name cache
 - `:PalimpsestValidateEntry` — Validate current journal entry
 - `:PalimpsestValidateFrontmatter` — Validate frontmatter
 - `:PalimpsestValidateMetadata` — Validate metadata YAML
@@ -595,10 +593,10 @@ dev/lua/palimpsest/
 └── utils.lua          # Shared utility functions
 ```
 
-**Autocomplete strategy:** Cache + async CLI. On sync or buffer enter,
-plugin calls `plm` to export entity lists as JSON. Cached in Lua tables.
-Autocomplete works against cached tables (instant). Cache refreshes on
-`:PalimpsestSync`.
+**Autocomplete strategy:** Cache + async CLI. On entity edit or buffer
+enter, plugin calls `plm` to export entity lists as JSON. Cached in Lua
+tables. Autocomplete works against cached tables (instant). Cache
+refreshes automatically after every metadata import.
 
 **Command registration:** Extend `commands.lua` setup function with new
 commands. Add keybindings to `keymaps.lua` under new groups:

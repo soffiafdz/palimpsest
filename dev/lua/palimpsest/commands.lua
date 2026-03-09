@@ -44,32 +44,6 @@ function M.manuscript_index()
 	open_wiki_file(root .. "/data/wiki/indexes/manuscript-index.md")
 end
 
--- Wiki sync: run plm wiki sync asynchronously
-function M.wiki_sync(opts)
-	opts = opts or {}
-	local root = get_project_root()
-	local cmd = "cd " .. root .. " && plm wiki sync"
-
-	if opts.ingest then
-		cmd = cmd .. " --ingest"
-	elseif opts.generate then
-		cmd = cmd .. " --generate"
-	end
-
-	vim.notify("Running wiki sync...", vim.log.levels.INFO)
-	vim.fn.jobstart(cmd, {
-		on_exit = function(_, exit_code)
-			vim.schedule(function()
-				if exit_code == 0 then
-					vim.notify("Wiki sync completed", vim.log.levels.INFO)
-				else
-					vim.notify("Wiki sync failed (exit " .. exit_code .. ")", vim.log.levels.ERROR)
-				end
-			end)
-		end,
-	})
-end
-
 -- Wiki lint: run plm wiki lint asynchronously
 function M.wiki_lint(opts)
 	opts = opts or {}
@@ -317,23 +291,6 @@ end
 function M.setup()
 	setup_navigation()
 
-	-- Wiki sync command
-	vim.api.nvim_create_user_command("PalimpsestSync", function(opts)
-		local args = {}
-		if opts.args == "ingest" then
-			args.ingest = true
-		elseif opts.args == "generate" then
-			args.generate = true
-		end
-		M.wiki_sync(args)
-	end, {
-		nargs = "?",
-		desc = "Sync wiki pages with database",
-		complete = function()
-			return { "ingest", "generate" }
-		end,
-	})
-
 	-- Wiki lint command
 	vim.api.nvim_create_user_command("PalimpsestLint", function()
 		M.wiki_lint()
@@ -438,6 +395,13 @@ function M.setup()
 		desc = "Open source materials for manuscript entity",
 	})
 
+	-- Add scene to chapter (from chapter context)
+	vim.api.nvim_create_user_command("PalimpsestAddScene", function()
+		require("palimpsest.entity").add_scene()
+	end, {
+		desc = "Add scene to current chapter",
+	})
+
 	-- Link journal entry to manuscript
 	vim.api.nvim_create_user_command("PalimpsestLinkToManuscript", function()
 		require("palimpsest.entity").link_to_manuscript()
@@ -465,14 +429,6 @@ function M.setup()
 				"neighborhoods", "relation_types",
 			}
 		end,
-	})
-
-	-- Cache refresh command
-	vim.api.nvim_create_user_command("PalimpsestCacheRefresh", function()
-		require("palimpsest.cache").refresh_all()
-		vim.notify("Entity cache refreshing...", vim.log.levels.INFO)
-	end, {
-		desc = "Refresh entity name cache",
 	})
 
 	-- Validate entry command (quickfix integration)

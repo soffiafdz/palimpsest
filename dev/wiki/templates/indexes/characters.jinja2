@@ -1,12 +1,12 @@
 {#
   Characters index page.
 
-  Narrators listed first, then all characters sorted by
-  scene count descending. Role shown inline, capitalized.
+  Narrators listed first. Then characters grouped by role,
+  roles sorted by total narrative load descending.
 
   Context:
     narrators: list of narrator char dicts
-    characters: list of non-narrator char dicts sorted by involvement
+    role_groups: list of (role_name, char_list) tuples
     character_count: int
 #}
 # Characters
@@ -17,8 +17,10 @@
 {% for char in narrators %}
 - {{ char.name | wikilink }} · **Narrator**{{ " · " ~ char.role if char.role else "" }}
 {% endfor %}
-{% for char in characters %}
-- {{ char.name | wikilink }}{{ " · " ~ char.role if char.role else "" }}
-  {{ char.scene_count }} scene{{ "s" if char.scene_count != 1 else "" }}{% if char.chapter_count %} · {{ char.chapter_count }} chapter{{ "s" if char.chapter_count != 1 else "" }}{% endif %}
+{% for role, chars in role_groups %}
 
+## {{ role }}
+{% for char in chars %}
+- {{ char.name | wikilink }}{{ " · " ~ char.metrics if char.metrics else "" }}
+{% endfor %}
 {% endfor %}

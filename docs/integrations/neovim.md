@@ -8,7 +8,7 @@ Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides ed
 - **Automatic Validation** - On-save validation with LSP-style diagnostics
 - **VimWiki Templates** - Automated log entry creation
 - **which-key Integration** - Discoverable keybindings with visual menus
-- **Wiki Operations** - Generate, lint, sync, and publish wiki pages
+- **Wiki Operations** - Generate, lint, and publish wiki pages
 - **Entity Editing** - YAML metadata editing in floating windows
 - **Entity Caching** - Autocomplete support via cached entity names
 - **Context Detection** - Commands adapt based on current wiki page type
@@ -116,19 +116,13 @@ Search content across wiki and journal files using ripgrep:
 
 ### Wiki Operation Commands
 
-Commands for wiki generation, linting, sync, and publishing:
+Commands for wiki generation, linting, and publishing:
 
 ```vim
-:PalimpsestSync [mode]         " Sync wiki pages with database
 :PalimpsestLint                " Lint wiki pages for errors
 :PalimpsestGenerate [section]  " Generate wiki pages from database
 :PalimpsestPublish             " Publish wiki to Quartz
 ```
-
-**Sync modes:**
-- (no argument) - Full sync: ingest + regenerate
-- `ingest` - Wiki → DB only
-- `generate` - DB → Wiki only
 
 **Generate sections:** `journal`, `manuscript`, `indexes`
 
@@ -162,11 +156,10 @@ Commands for validating frontmatter, links, and entry consistency:
 
 ### Metadata Commands
 
-Commands for YAML metadata export and entity caching:
+Commands for YAML metadata export:
 
 ```vim
 :PalimpsestMetadataExport [type]  " Export entity metadata to YAML files
-:PalimpsestCacheRefresh           " Refresh entity name cache
 ```
 
 **Entity types:** `people`, `locations`, `cities`, `arcs`, `chapters`, `characters`, `scenes`, `neighborhoods`, `relation_types`
@@ -225,13 +218,11 @@ If Palimpsest is your only vimwiki, keybindings use `<leader>v` prefix:
 | `<leader>veb` | Add based_on to character |
 | `<leader>vel` | Link to manuscript |
 | `<leader>vex` | Export metadata YAML |
-| `<leader>ver` | Refresh entity cache |
 
 #### Wiki Operations
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>vS` | Wiki sync |
 | `<leader>vL` | Wiki lint |
 | `<leader>vG` | Wiki generate |
 | `<leader>vP` | Wiki publish (Quartz) |
@@ -311,13 +302,11 @@ If you have multiple vimwikis configured, Palimpsest uses `<leader>p` prefix ins
 | `<leader>peb` | Add based_on to character |
 | `<leader>pel` | Link to manuscript |
 | `<leader>pex` | Export metadata YAML |
-| `<leader>per` | Refresh entity cache |
 
 #### Wiki Operations
 
 | Keymap | Action |
 |--------|--------|
-| `<leader>pS` | Wiki sync |
 | `<leader>pL` | Wiki lint |
 | `<leader>pG` | Wiki generate |
 | `<leader>pP` | Wiki publish (Quartz) |
@@ -509,7 +498,7 @@ These paths are used by:
 │  ┌────────────────────────────────────┐  │
 │  │  Async Job Execution               │  │
 │  │  - Python validators                │  │
-│  │  - plm wiki (generate/lint/sync)    │  │
+│  │  - plm wiki (generate/lint)          │  │
 │  │  - plm metadata (export/import)     │  │
 │  └────────────────────────────────────┘  │
 └──────────────────────────────────────────┘
@@ -544,7 +533,7 @@ The Neovim package acts as a frontend to the Python backend:
 - **Keybindings** - Managed via which-key.nvim for discoverability
 - **Validation** - Calls Python validators asynchronously
 - **Templates** - Diary entries (VimWiki integration)
-- **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, sync, publish
+- **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, publish
 - **Entity Editing** - Opens YAML metadata in floating windows via `plm metadata`
 - **Entity Caching** - Calls `plm metadata list-entities` for autocomplete data
 

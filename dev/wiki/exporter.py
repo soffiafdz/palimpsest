@@ -865,17 +865,26 @@ class WikiExporter:
         """
         Remove wiki files that no longer correspond to DB entities.
 
-        Walks the output directory and removes any .md files not in
-        the generated_files set.
+        Only walks directories that contain at least one generated file,
+        so a partial generation cannot delete files in unrelated sections.
         """
-        if not self.output_dir.exists():
+        if not self.generated_files:
             return
 
+        # Collect the set of directories that contain generated files
+        generated_dirs = {f.parent for f in self.generated_files}
+
         removed = 0
-        for md_file in self.output_dir.rglob("*.md"):
-            if md_file not in self.generated_files:
-                md_file.unlink()
-                removed += 1
+        for directory in generated_dirs:
+            if not directory.exists():
+                continue
+            for md_file in directory.iterdir():
+                if (
+                    md_file.suffix == ".md"
+                    and md_file not in self.generated_files
+                ):
+                    md_file.unlink()
+                    removed += 1
 
         if removed:
             safe_logger(self.logger).log_info(
@@ -1600,44 +1609,60 @@ class WikiExporter:
         """
         Build context for Characters index page.
 
-        Narrators listed first, then all other characters sorted
-        by scene count descending. Role shown inline, capitalized.
+        Narrators listed separately. Remaining characters grouped by
+        role, with roles sorted by total narrative load (sum of
+        scene_count + chapter_count across members) descending.
+        Characters within each role sorted by individual load.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with narrators, characters list, and total count
+            Dict with narrators, role_groups, and character_count
         """
         characters = session.query(Character).all()
 
         narrators: List[Dict[str, Any]] = []
-        cast: List[Dict[str, Any]] = []
+        groups: Dict[str, List[Dict[str, Any]]] = {}
+
         for c in characters:
             loose = sum(1 for s in c.scenes if not s.chapter_id)
-            role = c.role or ""
-
+            load = c.scene_count + c.chapter_count
+            parts: List[str] = []
+            if c.chapter_count:
+                parts.append(f"{c.chapter_count} chapter{'s' if c.chapter_count != 1 else ''}")
+                if loose:
+                    parts.append(f"{loose} loose scene{'s' if loose != 1 else ''}")
+            elif c.scene_count:
+                parts.append(f"{c.scene_count} scene{'s' if c.scene_count != 1 else ''}")
             char_dict = {
                 "name": c.name,
-                "role": role.capitalize() if role else "",
-                "chapter_count": c.chapter_count,
-                "loose_scene_count": loose,
-                "scene_count": c.scene_count,
+                "load": load,
+                "metrics": " · ".join(parts),
             }
 
             if c.is_narrator:
+                char_dict["role"] = (c.role or "").capitalize()
                 narrators.append(char_dict)
-            else:
-                cast.append(char_dict)
+                continue
 
-        cast.sort(
-            key=lambda x: (x["scene_count"], x["chapter_count"]),
+            role = (c.role or "other").capitalize()
+            groups.setdefault(role, []).append(char_dict)
+
+        # Sort characters within each role by load desc
+        for role in groups:
+            groups[role].sort(key=lambda x: x["load"], reverse=True)
+
+        # Sort roles by total load desc
+        role_groups = sorted(
+            groups.items(),
+            key=lambda pair: sum(c["load"] for c in pair[1]),
             reverse=True,
         )
 
         return {
             "narrators": narrators,
-            "characters": cast,
+            "role_groups": role_groups,
             "character_count": len(characters),
         }
 

@@ -255,7 +255,7 @@ end, {
 
 **Wiki and Entity Commands:**
 
-The `setup()` function also registers wiki operation commands (`PalimpsestSync`, `PalimpsestLint`, `PalimpsestGenerate`, `PalimpsestPublish`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), validation commands (`PalimpsestValidateEntry`), metadata commands (`PalimpsestMetadataExport`, `PalimpsestCacheRefresh`), and navigation commands (`PalimpsestStats`, `PalimpsestIndex`, `PalimpsestAnalysis`, `PalimpsestManuscriptIndex`). These delegate to the corresponding module functions via async `vim.fn.jobstart()` calls.
+The `setup()` function also registers wiki operation commands (`PalimpsestLint`, `PalimpsestGenerate`, `PalimpsestPublish`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), validation commands (`PalimpsestValidateEntry`), metadata commands (`PalimpsestMetadataExport`), and navigation commands (`PalimpsestStats`, `PalimpsestIndex`, `PalimpsestAnalysis`, `PalimpsestManuscriptIndex`). These delegate to the corresponding module functions via async `vim.fn.jobstart()` calls.
 
 ### keymaps.lua
 
@@ -286,9 +286,7 @@ if #vim.g.vimwiki_list > 1 then
         { "<leader>peb", "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on to character" },
         { "<leader>pel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript" },
         { "<leader>pex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML" },
-        { "<leader>per", "<cmd>PalimpsestCacheRefresh<cr>", desc = "Refresh entity cache" },
         -- Wiki operations
-        { "<leader>pS", "<cmd>PalimpsestSync<cr>", desc = "Wiki sync" },
         { "<leader>pL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint" },
         { "<leader>pG", "<cmd>PalimpsestGenerate<cr>", desc = "Wiki generate" },
         -- Browse/Search
@@ -306,8 +304,8 @@ end
 
 | Group | Prefix | Purpose |
 |-------|--------|---------|
-| Entity | `e` | YAML metadata editing (edit, new, add source, based_on, link, export, cache) |
-| Wiki ops | uppercase | Sync (`S`), Lint (`L`), Generate (`G`), Publish (`P`) |
+| Entity | `e` | YAML metadata editing (edit, new, add source, based_on, link, export) |
+| Wiki ops | uppercase | Lint (`L`), Generate (`G`), Publish (`P`) |
 | Browse | `F` | fzf-lua file browsing by entity type |
 | Search | `/` | ripgrep content search by scope |
 | Validators | `v` | Validation commands (wiki lint, frontmatter, structure, links, entry) |
@@ -434,11 +432,10 @@ The validator should output structured messages that Lua can parse:
 
 ### Wiki System
 
-The Python wiki system (`dev/wiki/`) handles generation, linting, sync, and publishing. The Lua plugin interacts with it via the `plm wiki` and `plm metadata` CLI commands:
+The Python wiki system (`dev/wiki/`) handles generation, linting, and publishing. The Lua plugin interacts with it via the `plm wiki` and `plm metadata` CLI commands:
 
 - `plm wiki generate` — Generate wiki pages from database
 - `plm wiki lint <path>` — Lint wiki files (returns JSON diagnostics)
-- `plm wiki sync` — Bidirectional manuscript sync
 - `plm metadata export/import` — YAML metadata file management
 - `plm metadata list-entities` — Entity name lists for autocomplete
 

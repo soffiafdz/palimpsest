@@ -11,25 +11,27 @@ local float = require("palimpsest.float")
 local cache = require("palimpsest.cache")
 local get_project_root = require("palimpsest.utils").get_project_root
 
---- Import a YAML file to the database and refresh the cache.
+--- Import a YAML file to the database, regenerate its section, and refresh cache.
 ---
---- Runs `plm metadata import <filepath>` asynchronously.
+--- Detects the wiki section (manuscript or journal) from the filepath
+--- and only regenerates that section plus indexes.
 ---
 --- @param filepath string Absolute path to the YAML file
 local function import_yaml(filepath)
 	local root = get_project_root()
+	local section = filepath:find("/manuscript/") and "manuscript" or "journal"
 	local cmd = string.format(
-		"cd %s && plm metadata import %s",
-		root, vim.fn.fnameescape(filepath)
+		"cd %s && plm metadata import %s && plm wiki generate --section %s && plm wiki generate --section indexes",
+		root, vim.fn.fnameescape(filepath), section
 	)
 	vim.fn.jobstart(cmd, {
 		on_exit = function(_, exit_code)
 			vim.schedule(function()
 				if exit_code == 0 then
-					vim.notify("Metadata imported", vim.log.levels.INFO)
+					vim.notify("Metadata imported · wiki regenerated", vim.log.levels.INFO)
 					cache.refresh_all()
 				else
-					vim.notify("Import failed", vim.log.levels.ERROR)
+					vim.notify("Import or generation failed", vim.log.levels.ERROR)
 				end
 			end)
 		end,
@@ -211,14 +213,15 @@ function M.new(entity_type)
 		return
 	end
 
-	-- Parts: single-file list — prompt for fields and append
+	-- Parts: single-file list — prompt for number (required), title (optional)
 	if entity_type == "parts" then
-		vim.ui.input({ prompt = "Part title: " }, function(title)
-			if not title or title == "" then
+		vim.ui.input({ prompt = "Part number: " }, function(num_str)
+			local number = tonumber(num_str)
+			if not number then
+				vim.notify("Part number is required", vim.log.levels.WARN)
 				return
 			end
-			vim.ui.input({ prompt = "Part number: " }, function(num_str)
-				local number = tonumber(num_str)
+			vim.ui.input({ prompt = "Part title (optional): " }, function(title)
 				local yaml_path = base .. "manuscript/parts.yaml"
 				vim.fn.mkdir(base .. "manuscript", "p")
 
@@ -229,8 +232,10 @@ function M.new(entity_type)
 				end
 
 				-- Append new entry
-				table.insert(lines, "- number: " .. (number or ""))
-				table.insert(lines, "  title: " .. title)
+				table.insert(lines, "- number: " .. number)
+				if title and title ~= "" then
+					table.insert(lines, "  title: " .. title)
+				end
 
 				vim.fn.writefile(lines, yaml_path)
 				float.open(yaml_path, { title = " parts.yaml " })
@@ -442,7 +447,7 @@ function M.add_source()
 			if source_type == "entry" then
 				local entries = cache.get("entries")
 				if #entries == 0 then
-					vim.notify("No entries cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+					vim.notify("No entries cached. Cache may still be loading", vim.log.levels.WARN)
 					return
 				end
 				vim.ui.select(entries, { prompt = "Entry date:" }, function(entry_date)
@@ -458,7 +463,7 @@ function M.add_source()
 			elseif source_type == "scene" then
 				local scenes = cache.get("journal_scenes")
 				if #scenes == 0 then
-					vim.notify("No journal scenes cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+					vim.notify("No journal scenes cached. Cache may still be loading", vim.log.levels.WARN)
 					return
 				end
 				vim.ui.select(scenes, { prompt = "Journal scene:" }, function(choice)
@@ -481,7 +486,7 @@ function M.add_source()
 			elseif source_type == "thread" then
 				local threads = cache.get("threads")
 				if #threads == 0 then
-					vim.notify("No threads cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+					vim.notify("No threads cached. Cache may still be loading", vim.log.levels.WARN)
 					return
 				end
 				vim.ui.select(threads, { prompt = "Thread:" }, function(choice)
@@ -528,7 +533,7 @@ function M.add_based_on()
 
 	local people = cache.get("people")
 	if #people == 0 then
-		vim.notify("No people cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		vim.notify("No people cached. Cache may still be loading", vim.log.levels.WARN)
 		return
 	end
 
@@ -608,7 +613,7 @@ function M.set_chapter()
 
 	local chapters = cache.get("chapters")
 	if #chapters == 0 then
-		vim.notify("No chapters cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		vim.notify("No chapters cached. Cache may still be loading", vim.log.levels.WARN)
 		return
 	end
 
@@ -668,7 +673,7 @@ function M.set_part()
 
 	local parts = cache.get("parts")
 	if #parts == 0 then
-		vim.notify("No parts cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		vim.notify("No parts cached. Cache may still be loading", vim.log.levels.WARN)
 		return
 	end
 
@@ -728,7 +733,7 @@ function M.add_character()
 
 	local characters = cache.get("characters")
 	if #characters == 0 then
-		vim.notify("No characters cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		vim.notify("No characters cached. Cache may still be loading", vim.log.levels.WARN)
 		return
 	end
 
@@ -804,7 +809,7 @@ function M.add_scene()
 
 	local scenes = cache.get("scenes")
 	if #scenes == 0 then
-		vim.notify("No scenes cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		vim.notify("No scenes cached. Cache may still be loading", vim.log.levels.WARN)
 		return
 	end
 
@@ -1009,6 +1014,7 @@ function M.rename()
 			vim.fn.writefile(lines, old_yaml)
 			vim.notify("Name updated (slug unchanged)", vim.log.levels.INFO)
 			vim.cmd("edit!")
+			import_yaml(old_yaml)
 			return
 		end
 
@@ -1102,6 +1108,7 @@ function M.rename()
 			string.format("Renamed: %s → %s", old_slug, new_slug),
 			vim.log.levels.INFO
 		)
+		import_yaml(new_yaml)
 	end)
 end
 

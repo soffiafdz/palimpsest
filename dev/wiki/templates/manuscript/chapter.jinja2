@@ -1,12 +1,26 @@
+{#
+  Chapter wiki page.
+
+  Adapts layout by chapter type:
+    - Prose: dashboard pointing to scenes, characters, draft file
+    - Vignette/Poem: the work itself as centerpiece, references below
+
+  Context:
+    title, slug, number, date, type, is_prose, status, part,
+    content, draft_path, scene_count, characters, poems,
+    scenes (with name, description, origin, status, characters, sources),
+    references (with source_title, mode, content)
+#}
 # {{ title }}
 
-**Type:** {{ type }} · **Status:** {{ status }}
+**{{ type }}** · {{ status }}
 {% if date %}
 **Date:** {{ date }}
 {% endif %}
 {% if part %}
 **Part:** {{ part | wikilink }}
 {% endif %}
+{% if is_prose %}
 {{ scene_count | zpad }} scene{{ "s" if scene_count != 1 else "" }}
 {% if draft_path %}
 
@@ -29,27 +43,16 @@
 {% for scene in scenes %}
 
 ### {{ loop.index }}. {{ scene.name | wikilink }}
-{% if scene.description %}
-{{ scene.description }}
+{{ scene.block }}
+{% endfor %}
 {% endif %}
+{% else %}
+{% if content %}
 
-*{{ scene.origin }}* · {{ scene.status }}
-{% if scene.characters %}
-{% for char in scene.characters %}{{ char.name | wikilink }}{{ ", " if not loop.last else "" }}{% endfor %}
+---
+
+{{ content }}
 {% endif %}
-{% if scene.sources %}
-{% for group in scene.sources %}
-{% if group.entry_date %}
-- {{ group.entry_date | entry_date_short }}
-{% for ref in group.references %}
-  {{ ref.ref_name }} · *{{ ref.type }}*
-{% endfor %}
-{% elif group.external_note %}
-- *external* · {{ group.external_note }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% endfor %}
 {% endif %}
 {% if references %}
 

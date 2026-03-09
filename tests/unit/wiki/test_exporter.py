@@ -544,39 +544,43 @@ class TestManuscriptIndexContexts:
             assert ctx["character_count"] >= 2
 
     def test_characters_index_narrators_separate(self, manuscript_db):
-        """Characters index separates narrators from the sorted list."""
+        """Characters index separates narrators from role groups."""
         exporter = WikiExporter(manuscript_db)
         with manuscript_db.session_scope() as session:
             ctx = exporter._build_characters_index_context(session)
             assert ctx["character_count"] >= 2
             assert "narrators" in ctx
-            assert "characters" in ctx
+            assert "role_groups" in ctx
 
-            # Elise is narrator — in narrators, not characters
+            # Elise is narrator — in narrators, not role groups
             assert len(ctx["narrators"]) >= 1
             assert ctx["narrators"][0]["name"] == "Elise"
-            char_names = [c["name"] for c in ctx["characters"]]
-            assert "Elise" not in char_names
+            all_names = [
+                c["name"]
+                for _, chars in ctx["role_groups"]
+                for c in chars
+            ]
+            assert "Elise" not in all_names
+            assert "Lena" in all_names
 
-            # Lena is not narrator — in characters
-            assert "Lena" in char_names
-
-    def test_characters_index_sorted_by_scene_count(self, manuscript_db):
-        """Characters list sorted by scene count descending."""
+    def test_characters_index_roles_sorted_by_load(self, manuscript_db):
+        """Role groups sorted by total narrative load descending."""
         exporter = WikiExporter(manuscript_db)
         with manuscript_db.session_scope() as session:
             ctx = exporter._build_characters_index_context(session)
-            counts = [c["scene_count"] for c in ctx["characters"]]
-            assert counts == sorted(counts, reverse=True)
+            totals = [
+                sum(c["load"] for c in chars)
+                for _, chars in ctx["role_groups"]
+            ]
+            assert totals == sorted(totals, reverse=True)
 
     def test_characters_index_role_capitalized(self, manuscript_db):
-        """Character roles are capitalized."""
+        """Role group names are capitalized."""
         exporter = WikiExporter(manuscript_db)
         with manuscript_db.session_scope() as session:
             ctx = exporter._build_characters_index_context(session)
-            for c in ctx["characters"]:
-                if c["role"]:
-                    assert c["role"][0].isupper()
+            for role, _ in ctx["role_groups"]:
+                assert role[0].isupper()
 
     def test_manuscript_scenes_index_context(self, manuscript_db):
         """Manuscript scenes index groups by chapter with unassigned section."""

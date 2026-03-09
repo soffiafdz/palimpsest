@@ -243,6 +243,25 @@ class PalimpsestLogger:
         else:
             self.main_logger.warning(f"WARNING - {message}")
 
+    # Standard logging interface aliases (used by wiki sync and other modules
+    # that expect the standard logging API)
+
+    def info(self, msg: str, *_args: Any, **_kwargs: Any) -> None:
+        """Standard logging interface: delegate to log_info."""
+        self.log_info(msg)
+
+    def warning(self, msg: str, *_args: Any, **_kwargs: Any) -> None:
+        """Standard logging interface: delegate to log_warning."""
+        self.log_warning(msg)
+
+    def error(self, msg: str, *_args: Any, **_kwargs: Any) -> None:
+        """Standard logging interface: delegate to log_warning with error prefix."""
+        self.log_warning(f"ERROR - {msg}")
+
+    def debug(self, msg: str, *_args: Any, **_kwargs: Any) -> None:
+        """Standard logging interface: delegate to log_debug."""
+        self.log_debug(msg)
+
     def log_cli_error(
         self,
         error: Exception,

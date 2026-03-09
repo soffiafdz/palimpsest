@@ -76,7 +76,7 @@ end
 --- @param context table|nil Context from detect()
 --- @return table List of available command name strings
 function M.available_commands(context)
-	local commands = { "PalimpsestSync", "PalimpsestGenerate" }
+	local commands = { "PalimpsestGenerate", "PalimpsestLint" }
 
 	if not context then
 		return commands

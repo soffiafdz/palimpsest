@@ -59,7 +59,7 @@ from dev.database.models import (
     Tag,
     Theme,
 )
-from dev.database.models.enums import RelationType
+from dev.database.models.enums import ChapterType, RelationType
 from dev.database.models.manuscript import (
     Chapter,
     Character,
@@ -1535,14 +1535,17 @@ class WikiContextBuilder:
             Dict with keys: title, number, date, type, status, part,
             scene_count, characters, poems, scenes, references
         """
+        is_prose = chapter.type == ChapterType.PROSE
         return {
             "title": chapter.title,
             "slug": slugify(chapter.title),
             "number": chapter.number,
             "date": chapter.date.isoformat() if chapter.date else None,
             "type": chapter.type_display,
+            "is_prose": is_prose,
             "status": chapter.status_display,
             "part": chapter.part.display_name if chapter.part else None,
+            "content": chapter.content,
             "draft_path": chapter.draft_path,
             "scene_count": chapter.scene_count,
             "characters": [
@@ -1553,22 +1556,9 @@ class WikiContextBuilder:
                 for c in chapter.characters
             ],
             "poems": [{"title": p.title} for p in chapter.poems],
-            "scenes": [
-                {
-                    "name": ms.name,
-                    "description": ms.description,
-                    "origin": ms.origin_display,
-                    "status": ms.status_display,
-                    "characters": [
-                        {"name": c.name, "role": c.role}
-                        for c in ms.characters
-                    ],
-                    "sources": self._build_manuscript_source_groups(
-                        ms.sources
-                    ),
-                }
-                for ms in chapter.scenes
-            ],
+            "scenes": self._build_chapter_scene_blocks(
+                chapter.scenes
+            ),
             "references": [
                 {
                     "source_title": ref.source.title,
@@ -1764,6 +1754,54 @@ class WikiContextBuilder:
             })
 
         return sorted(result, key=lambda x: x["name"])
+
+    def _build_chapter_scene_blocks(
+        self, scenes: List[ManuscriptScene]
+    ) -> List[Dict[str, str]]:
+        """
+        Build pre-rendered scene blocks for chapter pages.
+
+        Each scene becomes a dict with 'name' (for wikilink) and
+        'block' (pre-rendered text body). This avoids Jinja2
+        trim_blocks issues by computing all conditional text here.
+
+        Args:
+            scenes: List of ManuscriptScene model instances
+
+        Returns:
+            List of dicts with 'name' and 'block' keys
+        """
+        result = []
+        for ms in scenes:
+            lines = []
+            if ms.description:
+                lines.append(ms.description)
+            lines.append(
+                f"*{ms.origin_display}* · {ms.status_display}"
+            )
+            if ms.characters:
+                lines.append(
+                    ", ".join(c.name for c in ms.characters)
+                )
+            source_groups = self._build_manuscript_source_groups(
+                ms.sources
+            )
+            for group in source_groups:
+                if group.get("entry_date"):
+                    lines.append(f"- {group['entry_date']}")
+                    for ref in group.get("references", []):
+                        lines.append(
+                            f"  {ref['ref_name']} · *{ref['type']}*"
+                        )
+                elif group.get("external_note"):
+                    lines.append(
+                        f"- *external* · {group['external_note']}"
+                    )
+            result.append({
+                "name": ms.name,
+                "block": "\n".join(lines),
+            })
+        return result
 
     def _build_manuscript_source_groups(
         self, sources: List[Any]
