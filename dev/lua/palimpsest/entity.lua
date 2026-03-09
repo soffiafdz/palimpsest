@@ -38,6 +38,51 @@ local function import_yaml(filepath)
 	})
 end
 
+--- Import after a rename by reimporting the full entity type.
+---
+--- For manuscript entities (chapter, character, scene), uses --type import
+--- which triggers orphan cleanup for the old entity. For chapter/character
+--- renames that also update scene YAMLs, reimports scenes too.
+--- Falls back to false for journal entities (person, location) so the
+--- caller can use import_yaml instead.
+---
+--- @param entity_type string The context entity type (e.g. "character")
+--- @return boolean True if handled, false if caller should fall back
+local function import_after_rename(entity_type)
+	local root = get_project_root()
+	local MANUSCRIPT_IMPORTS = {
+		chapter   = { "chapters", "scenes" },
+		character = { "characters", "scenes" },
+		scene     = { "scenes" },
+	}
+	local types = MANUSCRIPT_IMPORTS[entity_type]
+	if not types then return false end
+
+	local parts = {}
+	for _, t in ipairs(types) do
+		table.insert(parts, "plm metadata import --type " .. t)
+	end
+	local import_chain = table.concat(parts, " && ")
+
+	local cmd = string.format(
+		"cd %s && %s && plm wiki generate --section manuscript && plm wiki generate --section indexes && plm export-json --no-commit",
+		root, import_chain
+	)
+	vim.fn.jobstart(cmd, {
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code == 0 then
+					vim.notify("Renamed · wiki regenerated", vim.log.levels.INFO)
+					cache.refresh_all()
+				else
+					vim.notify("Rename sync failed", vim.log.levels.ERROR)
+				end
+			end)
+		end,
+	})
+	return true
+end
+
 --- Strip accents from UTF-8 text, replacing with ASCII base characters.
 ---
 --- @param text string UTF-8 input
@@ -959,7 +1004,7 @@ end
 --- Renames the YAML file and updates the name/title field.
 --- Type-specific propagation:
 ---   chapter: renames draft file, updates draft_path, updates scene chapter refs
----   character: updates chapter characters lists
+---   character: updates scene characters lists
 ---   person/location/scene: file + field only
 function M.rename()
 	local ctx = context_mod.detect()
@@ -1108,7 +1153,9 @@ function M.rename()
 			string.format("Renamed: %s → %s", old_slug, new_slug),
 			vim.log.levels.INFO
 		)
-		import_yaml(new_yaml)
+		if not import_after_rename(ctx.type) then
+			import_yaml(new_yaml)
+		end
 	end)
 end
 

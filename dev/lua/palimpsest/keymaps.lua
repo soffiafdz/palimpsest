@@ -38,7 +38,7 @@ function M.setup()
 				{ "<leader>peS", "<cmd>PalimpsestAddScene<cr>", desc = "Add scene to chapter", icon = "󰕧" },
 				{ "<leader>peo", "<cmd>PalimpsestOpenSources<cr>", desc = "Open source materials", icon = "󰈔" },
 				{ "<leader>pel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
-				{ "<leader>peR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene", icon = "󰑕" },
+				{ "<leader>peR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene/character", icon = "󰑕" },
 				{ "<leader>pex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML", icon = "󰈔" },
 				-- Wiki operations
 				{ "<leader>pL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint", icon = "󱩾" },
@@ -105,7 +105,7 @@ function M.setup()
 				{ "<leader>veS", "<cmd>PalimpsestAddScene<cr>", desc = "Add scene to chapter", icon = "󰕧" },
 				{ "<leader>veo", "<cmd>PalimpsestOpenSources<cr>", desc = "Open source materials", icon = "󰈔" },
 				{ "<leader>vel", "<cmd>PalimpsestLinkToManuscript<cr>", desc = "Link to manuscript", icon = "󰿟" },
-				{ "<leader>veR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene", icon = "󰑕" },
+				{ "<leader>veR", "<cmd>PalimpsestRename<cr>", desc = "Rename chapter/scene/character", icon = "󰑕" },
 				{ "<leader>vex", "<cmd>PalimpsestMetadataExport<cr>", desc = "Export metadata YAML", icon = "󰈔" },
 				-- Wiki operations
 				{ "<leader>vL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint", icon = "󱩾" },
