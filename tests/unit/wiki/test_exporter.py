@@ -526,17 +526,57 @@ class TestManuscriptIndexContexts:
             names = [s["name"] for s in ctx["unassigned_scenes"]]
             assert "Lost Fragment" in names
 
-    def test_characters_index_context(self, manuscript_db):
-        """Characters index lists all characters alphabetically."""
+    def test_manuscript_index_top_characters(self, manuscript_db):
+        """Manuscript index includes top non-narrator characters."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_manuscript_index_context(session)
+            assert "top_characters" in ctx
+            assert len(ctx["top_characters"]) <= 5
+            # Elise is narrator — excluded from top_characters
+            names = [c["name"] for c in ctx["top_characters"]]
+            assert "Elise" not in names
+            # Lena should be present
+            assert "Lena" in names
+            assert "metrics" in ctx["top_characters"][0]
+            assert "max_name_len" in ctx
+            assert "character_count" in ctx
+            assert ctx["character_count"] >= 2
+
+    def test_characters_index_narrators_separate(self, manuscript_db):
+        """Characters index separates narrators from the sorted list."""
         exporter = WikiExporter(manuscript_db)
         with manuscript_db.session_scope() as session:
             ctx = exporter._build_characters_index_context(session)
             assert ctx["character_count"] >= 2
-            names = [c["name"] for c in ctx["characters"]]
-            assert names == sorted(names)
-            elise = next(c for c in ctx["characters"] if c["name"] == "Elise")
-            assert elise["is_narrator"] is True
-            assert elise["scene_count"] >= 2
+            assert "narrators" in ctx
+            assert "characters" in ctx
+
+            # Elise is narrator — in narrators, not characters
+            assert len(ctx["narrators"]) >= 1
+            assert ctx["narrators"][0]["name"] == "Elise"
+            char_names = [c["name"] for c in ctx["characters"]]
+            assert "Elise" not in char_names
+
+            # Lena is not narrator — in characters
+            assert "Lena" in char_names
+
+    def test_characters_index_sorted_by_scene_count(self, manuscript_db):
+        """Characters list sorted by scene count descending."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_characters_index_context(session)
+            counts = [c["scene_count"] for c in ctx["characters"]]
+            assert counts == sorted(counts, reverse=True)
+
+    def test_characters_index_role_capitalized(self, manuscript_db):
+        """Character roles are capitalized."""
+        exporter = WikiExporter(manuscript_db)
+        with manuscript_db.session_scope() as session:
+            ctx = exporter._build_characters_index_context(session)
+            for c in ctx["characters"]:
+                if c["role"]:
+                    assert c["role"][0].isupper()
 
     def test_manuscript_scenes_index_context(self, manuscript_db):
         """Manuscript scenes index groups by chapter with unassigned section."""

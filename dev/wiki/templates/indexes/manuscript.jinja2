@@ -1,9 +1,21 @@
-# Manuscript
+{#
+  Manuscript index page.
 
-- [Characters](indexes/characters-index.md)
-  {{ character_count | zpad }} characters
-- [Scenes](indexes/manuscript-scenes-index.md)
-  {{ scene_count | zpad }} scenes
+  Dashboard overview of the manuscript: progress counts,
+  parts with chapters, unassigned chapters/scenes, and
+  a cast mini-dashboard showing top characters.
+
+  Context:
+    parts: list of part context dicts
+    unassigned_chapters: list of chapter dicts
+    unassigned_scenes: list of scene dicts
+    top_characters: list of dicts (name, role, metrics)
+    max_name_len: int for name padding alignment
+    character_count: int total
+    chapter_status_counts: dict of status -> count
+    scene_status_counts: dict of status -> count
+#}
+# Manuscript
 {% if chapter_status_counts or scene_status_counts %}
 
 ### Progress
@@ -47,3 +59,12 @@
   *{{ scene.origin }}* · {{ scene.status }}
 {% endfor %}
 {% endif %}
+
+---
+
+### Cast
+{% for char in top_characters %}
+- {{ char.name.ljust(max_name_len) }} — *{{ char.role }}*{{ " · " ~ char.metrics if char.metrics else "" }}
+{% endfor %}
+
+[Full cast](characters-index.md) — {{ character_count }} characters

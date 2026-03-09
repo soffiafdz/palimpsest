@@ -1128,7 +1128,7 @@ class WikiExporter:
         for city in sorted(cities, key=lambda c: c.entry_count, reverse=True):
             locs = sorted(
                 city.locations,
-                key=lambda l: l.entry_count,
+                key=lambda loc: loc.entry_count,
                 reverse=True,
             )
 
@@ -1234,7 +1234,6 @@ class WikiExporter:
         Returns:
             Dict with arcs and their events
         """
-        arcs = session.query(Arc).all()
         events = session.query(Event).all()
 
         # Map events to arcs
@@ -1527,6 +1526,48 @@ class WikiExporter:
             if count:
                 scene_status_counts[status.display_name] = count
 
+        # Top characters for cast mini-dashboard (skip narrators)
+        characters = session.query(Character).all()
+        sorted_chars = sorted(
+            (c for c in characters if not c.is_narrator),
+            key=lambda c: (c.scene_count, c.chapter_count),
+            reverse=True,
+        )
+        top_n = 5
+        top_characters = []
+        for c in sorted_chars[:top_n]:
+            loose = sum(1 for s in c.scenes if not s.chapter_id)
+            # Pre-compute metrics string for clean template rendering
+            parts_list = []
+            if c.chapter_count:
+                ch_str = (
+                    f"{c.chapter_count} chapter"
+                    f"{'s' if c.chapter_count != 1 else ''}"
+                )
+                parts_list.append(ch_str)
+            if loose:
+                loose_str = (
+                    f"{loose} loose scene"
+                    f"{'s' if loose != 1 else ''}"
+                )
+                parts_list.append(loose_str)
+            elif c.scene_count and not c.chapter_count:
+                sc_str = (
+                    f"{c.scene_count} scene"
+                    f"{'s' if c.scene_count != 1 else ''}"
+                )
+                parts_list.append(sc_str)
+
+            top_characters.append({
+                "name": c.name,
+                "role": c.role or "",
+                "metrics": " · ".join(parts_list),
+            })
+
+        max_name_len = max(
+            (len(c["name"]) for c in top_characters), default=0
+        )
+
         return {
             "parts": [builder.build_part_context(p) for p in parts],
             "unassigned_chapters": [
@@ -1546,8 +1587,9 @@ class WikiExporter:
                 }
                 for s in unassigned_scenes
             ],
-            "character_count": session.query(Character).count(),
-            "scene_count": len(all_scenes),
+            "top_characters": top_characters,
+            "max_name_len": max_name_len,
+            "character_count": len(characters),
             "chapter_status_counts": chapter_status_counts,
             "scene_status_counts": scene_status_counts,
         }
@@ -1558,30 +1600,44 @@ class WikiExporter:
         """
         Build context for Characters index page.
 
-        Lists all characters alphabetically with role, scene count,
-        chapter count, and based-on person links.
+        Narrators listed first, then all other characters sorted
+        by scene count descending. Role shown inline, capitalized.
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with characters list and total count
+            Dict with narrators, characters list, and total count
         """
         characters = session.query(Character).all()
+
+        narrators: List[Dict[str, Any]] = []
+        cast: List[Dict[str, Any]] = []
+        for c in characters:
+            loose = sum(1 for s in c.scenes if not s.chapter_id)
+            role = c.role or ""
+
+            char_dict = {
+                "name": c.name,
+                "role": role.capitalize() if role else "",
+                "chapter_count": c.chapter_count,
+                "loose_scene_count": loose,
+                "scene_count": c.scene_count,
+            }
+
+            if c.is_narrator:
+                narrators.append(char_dict)
+            else:
+                cast.append(char_dict)
+
+        cast.sort(
+            key=lambda x: (x["scene_count"], x["chapter_count"]),
+            reverse=True,
+        )
+
         return {
-            "characters": sorted(
-                [
-                    {
-                        "name": c.name,
-                        "role": c.role,
-                        "is_narrator": c.is_narrator,
-                        "scene_count": c.scene_count,
-                        "chapter_count": c.chapter_count,
-                    }
-                    for c in characters
-                ],
-                key=lambda x: str(x["name"]),
-            ),
+            "narrators": narrators,
+            "characters": cast,
             "character_count": len(characters),
         }
 

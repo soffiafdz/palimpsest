@@ -11,6 +11,31 @@ local float = require("palimpsest.float")
 local cache = require("palimpsest.cache")
 local get_project_root = require("palimpsest.utils").get_project_root
 
+--- Import a YAML file to the database and refresh the cache.
+---
+--- Runs `plm metadata import <filepath>` asynchronously.
+---
+--- @param filepath string Absolute path to the YAML file
+local function import_yaml(filepath)
+	local root = get_project_root()
+	local cmd = string.format(
+		"cd %s && plm metadata import %s",
+		root, vim.fn.fnameescape(filepath)
+	)
+	vim.fn.jobstart(cmd, {
+		on_exit = function(_, exit_code)
+			vim.schedule(function()
+				if exit_code == 0 then
+					vim.notify("Metadata imported", vim.log.levels.INFO)
+					cache.refresh_all()
+				else
+					vim.notify("Import failed", vim.log.levels.ERROR)
+				end
+			end)
+		end,
+	})
+end
+
 --- Strip accents from UTF-8 text, replacing with ASCII base characters.
 ---
 --- @param text string UTF-8 input
@@ -46,6 +71,7 @@ local YAML_PATHS = {
 local YAML_FILES = {
 	city = "cities.yaml",
 	arc = "arcs.yaml",
+	part = "manuscript/parts.yaml",
 }
 
 -- Map context type to curation YAML file
@@ -175,11 +201,41 @@ function M.new(entity_type)
 	-- Prompt for type if not provided
 	if not entity_type then
 		local types = vim.tbl_keys(templates)
+		table.insert(types, "parts")
 		table.sort(types)
 		vim.ui.select(types, { prompt = "Entity type:" }, function(choice)
 			if choice then
 				M.new(choice)
 			end
+		end)
+		return
+	end
+
+	-- Parts: single-file list — prompt for fields and append
+	if entity_type == "parts" then
+		vim.ui.input({ prompt = "Part title: " }, function(title)
+			if not title or title == "" then
+				return
+			end
+			vim.ui.input({ prompt = "Part number: " }, function(num_str)
+				local number = tonumber(num_str)
+				local yaml_path = base .. "manuscript/parts.yaml"
+				vim.fn.mkdir(base .. "manuscript", "p")
+
+				-- Read existing or start fresh
+				local lines = {}
+				if vim.fn.filereadable(yaml_path) == 1 then
+					lines = vim.fn.readfile(yaml_path)
+				end
+
+				-- Append new entry
+				table.insert(lines, "- number: " .. (number or ""))
+				table.insert(lines, "  title: " .. title)
+
+				vim.fn.writefile(lines, yaml_path)
+				float.open(yaml_path, { title = " parts.yaml " })
+				cache.refresh("parts")
+			end)
 		end)
 		return
 	end
@@ -270,6 +326,40 @@ function M.new(entity_type)
 				end)
 			end, 100)
 		end
+
+		-- For chapters, prompt to select a part after the float opens
+		if entity_type == "chapters" then
+			vim.defer_fn(function()
+				local parts_list = cache.get("parts")
+				if #parts_list == 0 then
+					return
+				end
+				vim.ui.select(parts_list, { prompt = "Part (Esc to skip):" }, function(sel_part)
+					if not sel_part then
+						return
+					end
+					local lines = vim.fn.readfile(filepath)
+					local found_part = false
+					for i, line in ipairs(lines) do
+						if line:match("^part:") then
+							lines[i] = "part: " .. sel_part
+							found_part = true
+							break
+						end
+					end
+					if not found_part then
+						table.insert(lines, 2, "part: " .. sel_part)
+					end
+					vim.fn.writefile(lines, filepath)
+					local buf = vim.fn.bufnr(filepath)
+					if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+						vim.api.nvim_buf_call(buf, function()
+							vim.cmd("edit!")
+						end)
+					end
+				end)
+			end, 100)
+		end
 	end)
 end
 
@@ -320,6 +410,7 @@ local function write_source_to_yaml(yaml_path, source_lines, source_type, label)
 		string.format("Added source: %s — %s", source_type, label),
 		vim.log.levels.INFO
 	)
+	import_yaml(yaml_path)
 end
 
 --- Add a source entry to a manuscript scene YAML.
@@ -498,6 +589,7 @@ function M.add_based_on()
 					string.format("Added based_on: %s (%s)", person, contribution),
 					vim.log.levels.INFO
 				)
+				import_yaml(yaml_path)
 			end
 		)
 	end)
@@ -558,6 +650,68 @@ function M.set_chapter()
 				vim.cmd("edit!")
 			end)
 		end
+
+		import_yaml(yaml_path)
+	end)
+end
+
+--- Set or change the part for a manuscript chapter YAML.
+---
+--- Provides a picker for part selection from cached parts.
+--- Works from chapter wiki pages or chapter YAML files.
+function M.set_part()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "chapter" then
+		vim.notify("Must be on a chapter page", vim.log.levels.WARN)
+		return
+	end
+
+	local parts = cache.get("parts")
+	if #parts == 0 then
+		vim.notify("No parts cached. Try :PalimpsestCacheRefresh", vim.log.levels.WARN)
+		return
+	end
+
+	vim.ui.select(parts, { prompt = "Part:" }, function(part)
+		if not part then
+			return
+		end
+
+		local yaml_path = resolve_yaml_path(ctx)
+		if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+			vim.notify("Chapter YAML not found", vim.log.levels.ERROR)
+			return
+		end
+
+		local lines = vim.fn.readfile(yaml_path)
+		local found = false
+		for i, line in ipairs(lines) do
+			if line:match("^part:") then
+				lines[i] = "part: " .. part
+				found = true
+				break
+			end
+		end
+
+		if not found then
+			table.insert(lines, 2, "part: " .. part)
+		end
+
+		vim.fn.writefile(lines, yaml_path)
+		vim.notify(
+			string.format("Set part: %s", part),
+			vim.log.levels.INFO
+		)
+
+		-- Reload buffer if open
+		local buf = vim.fn.bufnr(yaml_path)
+		if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+			vim.api.nvim_buf_call(buf, function()
+				vim.cmd("edit!")
+			end)
+		end
+
+		import_yaml(yaml_path)
 	end)
 end
 
@@ -632,6 +786,8 @@ function M.add_character()
 				vim.cmd("edit!")
 			end)
 		end
+
+		import_yaml(yaml_path)
 	end)
 end
 
@@ -711,6 +867,7 @@ function M.add_scene()
 			string.format("Added scene: %s → %s", scene_name, chapter_title),
 			vim.log.levels.INFO
 		)
+		import_yaml(scene_yaml)
 	end)
 end
 
@@ -1042,6 +1199,7 @@ function M.link_to_manuscript()
 				string.format("Linked entry %s to %s: %s", entry_date, entity_type, name),
 				vim.log.levels.INFO
 			)
+			import_yaml(yaml_path)
 		end)
 	end)
 end

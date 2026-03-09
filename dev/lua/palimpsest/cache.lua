@@ -56,7 +56,7 @@ end
 --- Triggers parallel refreshes for all known entity types.
 function M.refresh_all()
 	local types = {
-		"people", "locations", "cities", "arcs",
+		"people", "locations", "cities", "arcs", "parts",
 		"chapters", "characters", "scenes",
 		"entries", "journal_scenes", "threads",
 		"poems", "reference_sources",

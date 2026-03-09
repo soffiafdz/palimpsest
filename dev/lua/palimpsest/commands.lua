@@ -392,7 +392,7 @@ function M.setup()
 		nargs = "?",
 		desc = "Create new entity metadata",
 		complete = function()
-			return { "people", "chapters", "characters", "scenes" }
+			return { "chapters", "characters", "parts", "people", "scenes" }
 		end,
 	})
 
@@ -415,6 +415,13 @@ function M.setup()
 		require("palimpsest.entity").set_chapter()
 	end, {
 		desc = "Set or change chapter for manuscript scene",
+	})
+
+	-- Set part for manuscript chapter
+	vim.api.nvim_create_user_command("PalimpsestSetPart", function()
+		require("palimpsest.entity").set_part()
+	end, {
+		desc = "Set or change part for manuscript chapter",
 	})
 
 	-- Add character to chapter
@@ -453,7 +460,7 @@ function M.setup()
 		desc = "Export entity metadata to YAML files",
 		complete = function()
 			return {
-				"people", "locations", "cities", "arcs",
+				"people", "locations", "cities", "arcs", "parts",
 				"chapters", "characters", "scenes",
 				"neighborhoods", "relation_types",
 			}

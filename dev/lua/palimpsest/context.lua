@@ -23,6 +23,7 @@ local PATH_PATTERNS = {
 	{ pattern = "manuscript/chapters/", type = "chapter", section = "manuscript" },
 	{ pattern = "manuscript/characters/", type = "character", section = "manuscript" },
 	{ pattern = "manuscript/scenes/", type = "scene", section = "manuscript" },
+	{ pattern = "manuscript/parts/", type = "part", section = "manuscript" },
 	-- Index pages
 	{ pattern = "indexes/", type = "index", section = "indexes" },
 }
@@ -91,6 +92,7 @@ function M.available_commands(context)
 		location = true,
 		city = true,
 		arc = true,
+		part = true,
 		chapter = true,
 		character = true,
 		scene = true,
@@ -137,6 +139,7 @@ function M.metadata_type(context)
 		location = "locations",
 		city = "cities",
 		arc = "arcs",
+		part = "parts",
 		chapter = "chapters",
 		character = "characters",
 		scene = "scenes",

@@ -271,6 +271,34 @@ class TestMetadataExporter:
         assert isinstance(data, list)
         assert data[0]["name"] == "The Long Wanting"
 
+    def test_export_parts(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Export creates single parts.yaml file."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_all(entity_type="parts")
+
+        parts_file = metadata_output / "manuscript" / "parts.yaml"
+        assert parts_file.is_file()
+        data = yaml.safe_load(parts_file.read_text())
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]["number"] == 1
+        assert data[0]["title"] == "The Archive"
+
+    def test_export_parts_empty(
+        self, test_db, metadata_output
+    ):
+        """Export creates parts.yaml with empty list when no parts exist."""
+        exporter = MetadataExporter(test_db, output_dir=metadata_output)
+        exporter.export_parts()
+
+        parts_file = metadata_output / "manuscript" / "parts.yaml"
+        assert parts_file.is_file()
+        data = yaml.safe_load(parts_file.read_text())
+        assert isinstance(data, list)
+        assert len(data) == 0
+
     def test_export_chapters(
         self, test_db, populated_metadata_db, metadata_output
     ):
@@ -364,6 +392,15 @@ class TestMetadataExporter:
         exporter = MetadataExporter(test_db)
         names = exporter.list_entities("chapters")
         assert "Espresso and Silence" in names
+
+    def test_list_entities_parts(
+        self, test_db, populated_metadata_db
+    ):
+        """list_entities returns part display names."""
+        exporter = MetadataExporter(test_db)
+        names = exporter.list_entities("parts")
+        assert len(names) == 1
+        assert "Part 1: The Archive" in names
 
     def test_list_entities_unknown_type(self, test_db):
         """Unknown entity type raises ValueError."""
@@ -527,6 +564,75 @@ class TestMetadataImporter:
             ).first()
             assert chapter.type == ChapterType.VIGNETTE
             assert chapter.status == ChapterStatus.REVISED
+
+    def test_import_part_creates_new(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import creates a new part when no match in DB."""
+        parts_dir = metadata_output / "manuscript"
+        parts_dir.mkdir(parents=True)
+        parts_file = parts_dir / "parts.yaml"
+        parts_file.write_text(yaml.dump([
+            {"number": 2, "title": "The Departure"},
+        ]))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(parts_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            part = session.query(Part).filter(
+                Part.title == "The Departure"
+            ).first()
+            assert part is not None
+            assert part.number == 2
+
+    def test_import_part_updates_existing(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import updates an existing part matched by title."""
+        parts_dir = metadata_output / "manuscript"
+        parts_dir.mkdir(parents=True)
+        parts_file = parts_dir / "parts.yaml"
+        parts_file.write_text(yaml.dump([
+            {"number": 10, "title": "The Archive"},
+        ]))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(parts_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            part = session.query(Part).filter(
+                Part.title == "The Archive"
+            ).first()
+            assert part is not None
+            assert part.number == 10
+
+    def test_import_part_matches_by_number(
+        self, test_db, populated_metadata_db, metadata_output
+    ):
+        """Import matches by number first, allowing title changes."""
+        parts_dir = metadata_output / "manuscript"
+        parts_dir.mkdir(parents=True)
+        parts_file = parts_dir / "parts.yaml"
+        # Part 1 exists ("The Archive"), update its title
+        parts_file.write_text(yaml.dump([
+            {"number": 1, "title": "The New Archive"},
+        ]))
+
+        importer = MetadataImporter(test_db, input_dir=metadata_output)
+        diagnostics = importer.import_file(parts_file)
+        assert len(diagnostics) == 0
+
+        with test_db.session_scope() as session:
+            part = session.query(Part).filter(
+                Part.number == 1
+            ).first()
+            assert part is not None
+            assert part.title == "The New Archive"
+            # Should update, not create duplicate
+            assert session.query(Part).count() == 1
 
     def test_import_chapter_creates_new(
         self, test_db, populated_metadata_db, metadata_output

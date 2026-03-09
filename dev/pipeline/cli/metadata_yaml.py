@@ -38,7 +38,7 @@ from dev.core.paths import DB_PATH
 
 
 ENTITY_TYPES = [
-    "people", "locations", "cities", "arcs",
+    "people", "locations", "cities", "arcs", "parts",
     "chapters", "characters", "scenes",
     "neighborhoods", "relation_types",
     "entries", "journal_scenes", "threads",
@@ -158,8 +158,6 @@ def import_cmd(
 @click.pass_context
 def validate(ctx: click.Context, path: str) -> None:
     """Validate a YAML metadata file against its schema."""
-    import json as json_mod
-
     from dev.wiki.metadata import MetadataValidator
 
     try:

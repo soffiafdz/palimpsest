@@ -1,11 +1,12 @@
 {#
   Characters index page.
 
-  Lists all manuscript characters alphabetically with role,
-  scene count, and chapter count.
+  Narrators listed first, then all characters sorted by
+  scene count descending. Role shown inline, capitalized.
 
   Context:
-    characters: list of dicts with name, role, is_narrator, scene_count, chapter_count
+    narrators: list of narrator char dicts
+    characters: list of non-narrator char dicts sorted by involvement
     character_count: int
 #}
 # Characters
@@ -13,12 +14,11 @@
 {{ character_count | zpad }} characters
 
 ---
-{% if characters %}
-{% for char in characters %}
-- {{ char.name | wikilink }}{{ " · **Narrator**" if char.is_narrator else "" }}
-  {{ char.scene_count | zpad }} scene{{ "s" if char.scene_count != 1 else "" }} · {{ char.chapter_count | zpad }} chapter{{ "s" if char.chapter_count != 1 else "" }}{{ " · *" ~ char.role ~ "*" if char.role else "" }}
+{% for char in narrators %}
+- {{ char.name | wikilink }} · **Narrator**{{ " · " ~ char.role if char.role else "" }}
 {% endfor %}
-{% else %}
+{% for char in characters %}
+- {{ char.name | wikilink }}{{ " · " ~ char.role if char.role else "" }}
+  {{ char.scene_count }} scene{{ "s" if char.scene_count != 1 else "" }}{% if char.chapter_count %} · {{ char.chapter_count }} chapter{{ "s" if char.chapter_count != 1 else "" }}{% endif %}
 
-*No characters yet.*
-{% endif %}
+{% endfor %}

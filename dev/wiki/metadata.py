@@ -282,6 +282,8 @@ class MetadataExporter:
                 self.export_cities(session)
             if not entity_type or entity_type == "arcs":
                 self.export_arcs(session)
+            if not entity_type or entity_type == "parts":
+                self.export_parts(session)
             if not entity_type or entity_type == "chapters":
                 self.export_chapters(session)
             if not entity_type or entity_type == "characters":
@@ -411,6 +413,33 @@ class MetadataExporter:
             path = self.output_dir / "arcs.yaml"
             self._write_yaml(path, data)
             self.stats["arcs"] = len(arcs)
+
+        if session:
+            _export(session)
+        else:
+            with self.db.session_scope() as sess:
+                _export(sess)
+
+    def export_parts(self, session: Optional[Session] = None) -> None:
+        """
+        Export parts to a single YAML file.
+
+        Args:
+            session: Optional SQLAlchemy session
+        """
+        def _export(sess: Session) -> None:
+            parts = sess.query(Part).order_by(Part.number).all()
+            data = [
+                {
+                    "number": part.number,
+                    "title": part.title,
+                }
+                for part in parts
+            ]
+            path = self.output_dir / "manuscript" / "parts.yaml"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            self._write_yaml(path, data)
+            self.stats["parts"] = len(parts)
 
         if session:
             _export(session)
@@ -681,6 +710,7 @@ class MetadataExporter:
             "locations": (Location, "name"),
             "cities": (City, "name"),
             "arcs": (Arc, "name"),
+            "parts": (Part, "display_name"),
             "chapters": (Chapter, "title"),
             "characters": (Character, "name"),
             "scenes": (ManuscriptScene, "name"),
@@ -953,7 +983,7 @@ class MetadataValidator:
             # Check type
             if (
                 value is not None
-                and field_spec.field_type != str
+                and field_spec.field_type is not str
                 and not isinstance(value, field_spec.field_type)
             ):
                 diagnostics.append(Diagnostic(
@@ -1208,6 +1238,7 @@ class MetadataImporter:
             "locations": self.input_dir / "locations",
             "cities": self.input_dir / "cities.yaml",
             "arcs": self.input_dir / "arcs.yaml",
+            "parts": self.input_dir / "manuscript" / "parts.yaml",
             "chapters": self.input_dir / "manuscript" / "chapters",
             "characters": self.input_dir / "manuscript" / "characters",
             "scenes": self.input_dir / "manuscript" / "scenes",
@@ -1233,11 +1264,81 @@ class MetadataImporter:
                     else:
                         imported += 1
 
+        # Clean up manuscript entities that no longer have YAML files
+        # (handles renames and deletions)
+        manuscript_cleanup = {
+            "chapters": (
+                self.input_dir / "manuscript" / "chapters",
+                Chapter, "title",
+            ),
+            "characters": (
+                self.input_dir / "manuscript" / "characters",
+                Character, "name",
+            ),
+            "scenes": (
+                self.input_dir / "manuscript" / "scenes",
+                ManuscriptScene, "name",
+            ),
+        }
+        pruned = 0
+        for etype, (dir_path, model, name_field) in manuscript_cleanup.items():
+            if entity_type and etype != entity_type:
+                continue
+            if not dir_path.is_dir():
+                continue
+            pruned += self._prune_manuscript_orphans(
+                dir_path, model, name_field
+            )
+        if pruned:
+            safe_logger(self.logger).log_info(
+                f"Pruned {pruned} manuscript entities without YAML files"
+            )
+
         self.stats = {"imported": imported, "errors": errors}
         safe_logger(self.logger).log_info(
             f"Metadata import complete: {self.stats}"
         )
         return self.stats
+
+    def _prune_manuscript_orphans(
+        self, yaml_dir: Path, model: type, name_field: str
+    ) -> int:
+        """
+        Remove DB entities of a manuscript type that have no corresponding
+        YAML file. Handles renames and deletions where the YAML was removed
+        but the old DB entity persists.
+
+        Args:
+            yaml_dir: Directory containing YAML files for this entity type
+            model: SQLAlchemy model class (Chapter, Character, ManuscriptScene)
+            name_field: Field name used to identify the entity (title or name)
+
+        Returns:
+            Number of entities pruned
+        """
+        yaml_names: set[str] = set()
+        for yaml_file in yaml_dir.rglob("*.yaml"):
+            data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
+            if data and isinstance(data, dict):
+                name = data.get(name_field)
+                if name:
+                    yaml_names.add(name)
+
+        pruned = 0
+        with self.db.session_scope() as session:
+            all_entities = session.query(model).all()
+            for entity in all_entities:
+                entity_name = getattr(entity, name_field)
+                if entity_name not in yaml_names:
+                    safe_logger(self.logger).log_info(
+                        f"Pruning {model.__name__} '{entity_name}' "
+                        f"(no YAML file)"
+                    )
+                    session.delete(entity)
+                    pruned += 1
+            if pruned:
+                session.commit()
+        return pruned
 
     def _import_entity(
         self, session: Session, data: Dict[str, Any], entity_type: str
@@ -1258,6 +1359,8 @@ class MetadataImporter:
             self._import_city(session, data)
         elif entity_type == "arcs":
             self._import_arc(session, data)
+        elif entity_type == "parts":
+            self._import_part(session, data)
         elif entity_type == "chapters":
             self._import_chapter(session, data)
         elif entity_type == "characters":
@@ -1352,6 +1455,41 @@ class MetadataImporter:
 
         if "description" in data:
             arc.description = data["description"]
+
+    def _import_part(
+        self, session: Session, data: Dict[str, Any]
+    ) -> None:
+        """
+        Import a part entity from YAML data, creating if it doesn't exist.
+
+        Matches by number first (stable structural identity), then
+        falls back to title. Creates via ChapterManager if no match.
+
+        Args:
+            session: SQLAlchemy session
+            data: Part data dict with number, title
+        """
+        from dev.database.managers.chapter_manager import ChapterManager
+
+        title = data.get("title")
+        number = data.get("number")
+
+        part = None
+        if number is not None:
+            part = session.query(Part).filter(
+                Part.number == number
+            ).first()
+        if not part and title:
+            part = session.query(Part).filter(Part.title == title).first()
+
+        if not part:
+            mgr = ChapterManager(session, self.logger)
+            mgr.create_part({"number": number, "title": title})
+        else:
+            if "number" in data:
+                part.number = data["number"]
+            if "title" in data:
+                part.title = data["title"]
 
     def _import_chapter(
         self, session: Session, data: Dict[str, Any]
