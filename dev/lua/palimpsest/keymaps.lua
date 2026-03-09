@@ -43,7 +43,6 @@ function M.setup()
 				-- Wiki operations
 				{ "<leader>pL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint", icon = "󱩾" },
 				{ "<leader>pG", "<cmd>PalimpsestGenerate<cr>", desc = "Wiki generate", icon = "󰯬" },
-				{ "<leader>pP", "<cmd>PalimpsestPublish<cr>", desc = "Wiki publish (Quartz)", icon = "󰐗" },
 				-- Validators
 				{ "<leader>pv", group = "validators", icon = "󰱽" },
 				{ "<leader>pvf", "<cmd>PalimpsestValidateFrontmatter<cr>", desc = "Validate frontmatter", icon = "󰈮" },
@@ -111,7 +110,6 @@ function M.setup()
 				-- Wiki operations
 				{ "<leader>vL", "<cmd>PalimpsestLint<cr>", desc = "Wiki lint", icon = "󱩾" },
 				{ "<leader>vG", "<cmd>PalimpsestGenerate<cr>", desc = "Wiki generate", icon = "󰯬" },
-				{ "<leader>vP", "<cmd>PalimpsestPublish<cr>", desc = "Wiki publish (Quartz)", icon = "󰐗" },
 				-- Validators
 				{ "<leader>vv", group = "validators", icon = "󰱽" },
 				{ "<leader>vvf", "<cmd>PalimpsestValidateFrontmatter<cr>", desc = "Validate frontmatter", icon = "󰈮" },

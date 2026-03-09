@@ -123,7 +123,7 @@ dev/pipeline/cli/
 ├── pdf.py               # PDF generation (build-pdf)
 ├── metadata_pdf.py      # Metadata YAML → PDF (build-metadata-pdf)
 ├── maintenance.py       # Backup, status, run-all, validation
-├── wiki.py              # Wiki generation, linting, sync, publishing
+├── wiki.py              # Wiki generation, linting, sync
 └── metadata_yaml.py     # YAML metadata export, import, validation, rename
 ```
 
@@ -217,7 +217,7 @@ metadata = MetadataEntry.from_yaml(Path("metadata/2024/2024-01-15.yaml"))
 
 ### 6. Wiki System (`dev/wiki/`)
 
-**Purpose**: Wiki generation, linting, sync, and publishing for journal and manuscript pages
+**Purpose**: Wiki generation, linting, and sync for journal and manuscript pages
 
 **Structure**:
 ```
@@ -227,7 +227,6 @@ dev/wiki/
 ├── exporter.py          # Database → wiki page generation orchestrator
 ├── validator.py         # Wiki page validation and linting
 ├── sync.py              # Manuscript sync cycle (validate → YAML import → regenerate)
-├── publisher.py         # Wiki → Quartz publishing with frontmatter injection
 ├── metadata.py          # YAML metadata export/import/validation
 ├── context.py           # Context builder for template rendering
 ├── configs.py           # Entity export configurations
@@ -243,10 +242,8 @@ dev/wiki/
 - Context builders query DB and compute aggregates
 - Templates are dumb renderers — no queries, no computation
 - Custom Jinja2 filters handle wiki link formatting and date display
-- Quartz frontmatter injected during publish, not during generation
-
 **Entry Points**:
-- `plm wiki` → `dev.pipeline.cli.wiki` (generate, lint, sync, publish)
+- `plm wiki` → `dev.pipeline.cli.wiki` (generate, lint, sync)
 - `plm metadata` → `dev.pipeline.cli.metadata_yaml` (export, import, validate, list-entities)
 
 ---

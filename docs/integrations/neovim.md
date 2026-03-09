@@ -8,7 +8,7 @@ Palimpsest includes a Neovim/Lua package (`dev/lua/palimpsest`) that provides ed
 - **Automatic Validation** - On-save validation with LSP-style diagnostics
 - **VimWiki Templates** - Automated log entry creation
 - **which-key Integration** - Discoverable keybindings with visual menus
-- **Wiki Operations** - Generate, lint, and publish wiki pages
+- **Wiki Operations** - Generate, lint, and sync wiki pages
 - **Entity Editing** - YAML metadata editing in floating windows
 - **Entity Caching** - Autocomplete support via cached entity names
 - **Context Detection** - Commands adapt based on current wiki page type
@@ -116,12 +116,11 @@ Search content across wiki and journal files using ripgrep:
 
 ### Wiki Operation Commands
 
-Commands for wiki generation, linting, and publishing:
+Commands for wiki generation and linting:
 
 ```vim
 :PalimpsestLint                " Lint wiki pages for errors
 :PalimpsestGenerate [section]  " Generate wiki pages from database
-:PalimpsestPublish             " Publish wiki to Quartz
 ```
 
 **Generate sections:** `journal`, `manuscript`, `indexes`
@@ -225,7 +224,6 @@ If Palimpsest is your only vimwiki, keybindings use `<leader>v` prefix:
 |--------|--------|
 | `<leader>vL` | Wiki lint |
 | `<leader>vG` | Wiki generate |
-| `<leader>vP` | Wiki publish (Quartz) |
 
 #### Validation
 
@@ -309,7 +307,6 @@ If you have multiple vimwikis configured, Palimpsest uses `<leader>p` prefix ins
 |--------|--------|
 | `<leader>pL` | Wiki lint |
 | `<leader>pG` | Wiki generate |
-| `<leader>pP` | Wiki publish (Quartz) |
 
 #### Validation
 
@@ -517,7 +514,6 @@ These paths are used by:
 │  │  ├── parser.py    (wiki → DB)      │  │
 │  │  ├── validator.py (linting)        │  │
 │  │  ├── sync.py      (bidirectional)  │  │
-│  │  ├── publisher.py (→ Quartz)       │  │
 │  │  └── metadata.py  (YAML files)     │  │
 │  └────────────────────────────────────┘  │
 │           │                               │
@@ -533,7 +529,7 @@ The Neovim package acts as a frontend to the Python backend:
 - **Keybindings** - Managed via which-key.nvim for discoverability
 - **Validation** - Calls Python validators asynchronously
 - **Templates** - Diary entries (VimWiki integration)
-- **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, publish
+- **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, sync
 - **Entity Editing** - Opens YAML metadata in floating windows via `plm metadata`
 - **Entity Caching** - Calls `plm metadata list-entities` for autocomplete data
 

@@ -106,30 +106,6 @@ function M.wiki_generate(opts)
 	})
 end
 
--- Wiki publish: run plm wiki publish asynchronously
-function M.wiki_publish(opts)
-	opts = opts or {}
-	local root = get_project_root()
-	local cmd = "cd " .. root .. " && plm wiki publish"
-
-	if opts.output_dir then
-		cmd = cmd .. " --output-dir " .. opts.output_dir
-	end
-
-	vim.notify("Publishing to Quartz...", vim.log.levels.INFO)
-	vim.fn.jobstart(cmd, {
-		on_exit = function(_, exit_code)
-			vim.schedule(function()
-				if exit_code == 0 then
-					vim.notify("Wiki publish completed", vim.log.levels.INFO)
-				else
-					vim.notify("Wiki publish failed", vim.log.levels.ERROR)
-				end
-			end)
-		end,
-	})
-end
-
 -- Metadata export: run plm metadata export asynchronously
 function M.metadata_export(entity_type)
 	local root = get_project_root()
@@ -318,13 +294,6 @@ function M.setup()
 		complete = function()
 			return { "journal", "manuscript", "indexes" }
 		end,
-	})
-
-	-- Wiki publish command
-	vim.api.nvim_create_user_command("PalimpsestPublish", function()
-		M.wiki_publish()
-	end, {
-		desc = "Publish wiki to Quartz",
 	})
 
 	-- Entity edit command (opens YAML in floating window)

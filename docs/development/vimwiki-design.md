@@ -1,18 +1,13 @@
 # Vimwiki Generation System
 
 Generate navigable wiki pages from the Palimpsest database for
-browsing journal metadata and editing manuscript structure within Neovim,
-with static site rendering via Quartz for browser access.
+browsing journal metadata and editing manuscript structure within Neovim.
 
 ## Purpose
 
 The wiki system provides a structured, hyperlinked view of the database
-as clean markdown pages. Pages are designed for dual consumption:
-
-- **Neovim**: Primary editing environment with `[[wikilinks]]`, linting,
-  and sync commands
-- **Quartz**: Static site generator for browser rendering with graph
-  visualization, backlinks, and full-text search
+as clean markdown pages rendered in Neovim with `[[wikilinks]]`, linting,
+and sync commands.
 
 Content types:
 - **Journal pages**: Read-only, regenerated from DB on demand
@@ -50,20 +45,12 @@ Content types:
         └────────────┬────────────────────┘
                      ▼
             ┌──────────────┐
-            │  plm wiki    │
-            │  publish     │
-            │  (copy +     │
-            │  frontmatter)│
-            └──────┬───────┘
-                   ▼
-            ┌──────────────┐
-            │    Quartz    │
-            │  (static     │
-            │   site gen)  │
+            │  data/wiki/  │
+            │  (markdown)  │
             └──────────────┘
 ```
 
-Three content paths:
+Content paths:
 
 - **Journal wiki** (generated): DB → Jinja2 → wiki pages (read-only)
 - **YAML metadata** (per-entity): DB → YAML files ↔ Palimpsest nvim
@@ -72,8 +59,6 @@ Three content paths:
   wiki pages (scenes, characters, arcs) with links to external draft files
 - **Manuscript drafts** (external files): Prose lives at
   `data/manuscript/drafts/{slug}.md`, linked from chapter wiki pages
-- **Browser**: wiki → `plm wiki publish` (copy + frontmatter injection)
-  → Quartz build → static site
 
 ### Round-Trip Cycle
 
@@ -179,10 +164,6 @@ Wiki pages are clean markdown with no user-facing YAML frontmatter.
 Structure is conveyed through consistent heading conventions and
 wiki-style links (`[[Entity Name]]`).
 
-The Jinja2 generator may inject YAML frontmatter for Quartz metadata
-(title, tags, aliases for link resolution), but this is invisible to
-the user's editing workflow — it is regenerated on every sync cycle.
-
 ### Manuscript Chapter Page Example
 
 ```markdown
@@ -218,42 +199,6 @@ Wiki pages use heading conventions (`## Scenes`, `## Characters`, etc.)
 and link patterns (`[[...]]`) for readability. Structural metadata is
 managed via YAML files, not parsed from the wiki markdown.
 
-## Static Site Generation (Quartz)
-
-[Quartz](https://quartz.jzhao.xyz/) is the static site generator for
-browser-based wiki access. It was chosen because:
-
-- **Native `[[wikilink]]` support**: Resolves wiki-style links to HTML
-  links without plugins or transformation
-- **Backlinks**: Automatically generates backlink sections on each page
-- **Graph visualization**: Interactive graph view of page connections
-- **Full-text search**: Built-in client-side search
-- **Clean markdown input**: Expects the same markdown format we generate
-- **Obsidian compatibility**: Handles the same link conventions
-
-### Quartz Integration
-
-The wiki directory (`data/wiki/`) serves as the Quartz content directory.
-The build step is a simple `npx quartz build` after wiki generation.
-
-```bash
-# Generate wiki, then build static site
-plm wiki generate
-cd data/wiki && npx quartz build
-
-# Or as a combined command
-plm wiki publish
-```
-
-### Design Constraints for Quartz Compatibility
-
-- `[[wikilinks]]` must resolve to actual file paths in the directory tree
-- Generator-injected YAML frontmatter provides Quartz metadata (title,
-  tags, aliases) without the user needing to maintain it
-- Directory structure must be flat enough for wikilink resolution
-  (Quartz resolves `[[Page Name]]` by searching all directories)
-- File names must be URL-safe slugs matching the page title
-
 ## Template Engine
 
 Jinja2 templates render SQLAlchemy ORM objects into clean markdown.
@@ -267,7 +212,6 @@ dev/wiki/
 ├── exporter.py          # Database → wiki generation orchestrator
 ├── validator.py         # Wiki page validation / linting
 ├── sync.py              # Manuscript sync (validate → YAML import → regenerate)
-├── publisher.py         # Wiki → Quartz publishing with frontmatter injection
 ├── metadata.py          # YAML metadata export/import/validation
 ├── context.py           # Context builder for template rendering
 ├── configs.py           # Entity export configurations
@@ -394,9 +338,6 @@ plm wiki lint <filepath>
 
 # Sync manuscript (ingest + regenerate)
 plm wiki sync
-
-# Build static site (Quartz)
-plm wiki publish
 ```
 
 ## Neovim Plugin Integration
@@ -407,7 +348,6 @@ The Neovim plugin (`palimpsest.nvim` or similar) provides:
 
 - `:PalimpsestGenerate` — Regenerate wiki pages from DB
 - `:PalimpsestLint` — Run linter on current buffer
-- `:PalimpsestPublish` — Publish wiki to Quartz
 - `:PalimpsestEdit` — Open entity metadata YAML in floating window
 - `:PalimpsestEditCuration` — Open curation YAML in floating window
 - `:PalimpsestNew` — Create a new entity from template
@@ -514,10 +454,8 @@ entity type. Key architectural decisions:
    Short-form content (vignettes, poems) uses the Chapter `content` DB
    field. Scene descriptions stored in DB via YAML metadata.
 
-7. **Quartz frontmatter as post-processing:** Templates always output
-   clean markdown (no YAML frontmatter). Quartz metadata (title, aliases,
-   tags) injected by a separate post-processing step during
-   `plm wiki publish`, not by templates. Keeps editing experience clean.
+7. **Clean markdown output:** Templates output clean markdown with no
+   YAML frontmatter. Keeps editing experience clean in Neovim.
 
 ### Metadata Ingestion — RESOLVED
 
@@ -652,65 +590,6 @@ commands. Add keybindings to `keymaps.lua` under new groups:
 5. **Output format:** `--format json|text`, auto-detect based on TTY.
    JSON for Neovim/programmatic consumers, colored text summary for
    terminal use.
-
-### Quartz Configuration — RESOLVED
-
-Quartz is the **secondary** rendering layer — a static site for browser
-reading, discovery, and graph visualization. Vimwiki is primary.
-
-**Publish pipeline:**
-
-```
-wiki/                              quartz/content/
-  journal/people/clara.md    →       journal/people/clara.md
-  (clean markdown)                   (YAML frontmatter + same markdown)
-```
-
-`plm wiki publish` copies wiki files into the Quartz `content/`
-directory, injecting YAML frontmatter during the copy. Source wiki
-files are never modified. The Quartz output directory is disposable
-and `.gitignore`d.
-
-**Decisions:**
-
-1. **Frontmatter injection:** `plm wiki publish` injects per-file:
-   - `title` — from `# Heading`
-   - `aliases` — entity aliases from DB (enables `[[Nymi]]` → Nymeria)
-   - `tags` — entity type label (for graph coloring / filtering)
-   - `date` — for entry pages (chronological sorting)
-   - `draft: true` — for WIP pages to exclude from rendering
-
-2. **Theme:** Quartz defaults with minimal overrides. Serif body font
-   for manuscript prose readability. Dark mode enabled (built-in).
-
-3. **Layout:**
-   - Left sidebar: folder tree (journal / manuscript / indexes)
-   - Right sidebar: table of contents + local graph
-   - Backlinks section at page bottom (auto-generated by Quartz)
-
-4. **Navigation:** Folder hierarchy matches wiki structure:
-   ```
-   Journal/
-     Entries/ People/ Locations/ Tags/ Themes/ Arcs/ Events/
-   Manuscript/
-     Parts/ Chapters/ Characters/ Scenes/
-   Indexes/
-   ```
-   Custom index pages replace Quartz auto-generated folder pages.
-
-5. **Graph — local:** Depth 2, shown on every page in right sidebar.
-   Primary discovery tool for following connections.
-
-6. **Graph — global:** Filtered to hub entities only (People, Arcs,
-   Chapters). Individual entries omitted to keep the visualization
-   usable at 1000+ pages.
-
-7. **Graph coloring:** Entity type injected as `tags` frontmatter →
-   Quartz colors graph nodes by tag. Distinct colors for People,
-   Locations, Arcs, Entries, Chapters.
-
-8. **Plugins enabled:** WikiLinks, Backlinks, Graph, TableOfContents,
-   Search (Flexsearch). FolderPage disabled (custom indexes instead).
 
 ## Open Design Questions
 

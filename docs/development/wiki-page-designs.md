@@ -494,8 +494,8 @@ matters. Shows month-by-month density as a table:
 ```
 
 This is the ONE place tables are justified — data is genuinely columnar.
-Spikes are visually obvious (bolded high counts). Renders cleanly in both
-Neovim (aligned columns) and Quartz (HTML table).
+Spikes are visually obvious (bolded high counts). Renders cleanly in
+Neovim with aligned columns.
 
 ### Patterns Section (Reusable)
 
@@ -2833,14 +2833,14 @@ How each page type gets its data:
 
 ### Index Pages Review
 
-**All 10 index pages confirmed as fully auto-generated navigation.** No editable content, pure DB views. Original designs work for both Neovim/vimwiki (primary) and Quartz static site (secondary).
+**All 10 index pages confirmed as fully auto-generated navigation.** No editable content, pure DB views.
 
 **Package functions on indexes:**
 - `:PalimpsestEdit` — Not applicable (nothing to edit)
 - `:PalimpsestNew {type}` — Contextual on Manuscript Index (create chapter/part)
 - Primary interaction: browsing via wikilinks
 
-**Markdown-based enhancements (vimwiki-first, Quartz-compatible):**
+**Markdown-based enhancements:**
 
 **People Index:**
 - Add co-occurrence table showing top person pairs (who appears together most)
@@ -2895,7 +2895,7 @@ How each page type gets its data:
 | [[Growing Up]] | [[The Therapy Journey]] | 12 |
 ```
 
-**Design principle:** All enhancements use standard markdown (tables, lists, links). No JavaScript, no interactive elements. Must render cleanly in Neovim and Quartz. Vimwiki is primary interface; static site is bonus.
+**Design principle:** All enhancements use standard markdown (tables, lists, links). No JavaScript, no interactive elements. Must render cleanly in Neovim.
 
 ---
 

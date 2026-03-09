@@ -124,9 +124,6 @@ LOG_DIR = ROOT / "logs"
 TMP_DIR = ROOT / "tmp"
 BACKUP_DIR = ROOT / "backups"
 
-# ---- Quartz ----
-QUARTZ_DIR = ROOT / "quartz"
-
 # ---- Wiki ----
 WIKI_DIR = DATA_DIR / "wiki"
 WIKI_JOURNAL_DIR = WIKI_DIR / "journal"

@@ -255,7 +255,7 @@ end, {
 
 **Wiki and Entity Commands:**
 
-The `setup()` function also registers wiki operation commands (`PalimpsestLint`, `PalimpsestGenerate`, `PalimpsestPublish`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), validation commands (`PalimpsestValidateEntry`), metadata commands (`PalimpsestMetadataExport`), and navigation commands (`PalimpsestStats`, `PalimpsestIndex`, `PalimpsestAnalysis`, `PalimpsestManuscriptIndex`). These delegate to the corresponding module functions via async `vim.fn.jobstart()` calls.
+The `setup()` function also registers wiki operation commands (`PalimpsestLint`, `PalimpsestGenerate`), entity editing commands (`PalimpsestEdit`, `PalimpsestNew`, `PalimpsestAddSource`, `PalimpsestAddBasedOn`, `PalimpsestLinkToManuscript`), validation commands (`PalimpsestValidateEntry`), metadata commands (`PalimpsestMetadataExport`), and navigation commands (`PalimpsestStats`, `PalimpsestIndex`, `PalimpsestAnalysis`, `PalimpsestManuscriptIndex`). These delegate to the corresponding module functions via async `vim.fn.jobstart()` calls.
 
 ### keymaps.lua
 
@@ -305,7 +305,7 @@ end
 | Group | Prefix | Purpose |
 |-------|--------|---------|
 | Entity | `e` | YAML metadata editing (edit, new, add source, based_on, link, export) |
-| Wiki ops | uppercase | Lint (`L`), Generate (`G`), Publish (`P`) |
+| Wiki ops | uppercase | Lint (`L`), Generate (`G`) |
 | Browse | `F` | fzf-lua file browsing by entity type |
 | Search | `/` | ripgrep content search by scope |
 | Validators | `v` | Validation commands (wiki lint, frontmatter, structure, links, entry) |
@@ -432,7 +432,7 @@ The validator should output structured messages that Lua can parse:
 
 ### Wiki System
 
-The Python wiki system (`dev/wiki/`) handles generation, linting, and publishing. The Lua plugin interacts with it via the `plm wiki` and `plm metadata` CLI commands:
+The Python wiki system (`dev/wiki/`) handles generation, linting, and sync. The Lua plugin interacts with it via the `plm wiki` and `plm metadata` CLI commands:
 
 - `plm wiki generate` — Generate wiki pages from database
 - `plm wiki lint <path>` — Lint wiki files (returns JSON diagnostics)

@@ -5,9 +5,9 @@ wiki
 Wiki generation system for Palimpsest.
 
 Generates navigable markdown wiki pages from the SQLAlchemy database,
-with bidirectional sync for manuscript pages and Quartz static site
-publishing. The wiki serves as both a Vimwiki navigation interface
-and a source-of-truth editing surface for manuscript content.
+with bidirectional sync for manuscript pages. The wiki serves as both
+a Vimwiki navigation interface and a source-of-truth editing surface
+for manuscript content.
 
 Key Components:
     - WikiRenderer: Jinja2 template engine with custom filters
@@ -15,7 +15,6 @@ Key Components:
     - WikiExporter: Orchestrates generation of all wiki pages
     - WikiValidator: Structured diagnostics for wiki linting
     - WikiSync: Validate → YAML import → regenerate cycle
-    - WikiPublisher: Copy wiki to Quartz with frontmatter injection
 
 Usage:
     from dev.wiki.renderer import WikiRenderer

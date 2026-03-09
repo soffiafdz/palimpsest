@@ -2,11 +2,11 @@
 """
 wiki.py
 -------
-CLI commands for wiki generation, linting, sync, and publishing.
+CLI commands for wiki generation, linting, and sync.
 
 Provides the ``plm wiki`` command group for generating wiki pages
-from the database, linting wiki files, syncing manuscript edits
-bidirectionally, and publishing to Quartz.
+from the database, linting wiki files, and syncing manuscript edits
+bidirectionally.
 
 Commands:
     plm wiki generate              - Generate all wiki pages
@@ -17,18 +17,12 @@ Commands:
     plm wiki sync                     - Full manuscript sync cycle
     plm wiki sync --ingest            - Wiki → DB only
     plm wiki sync --generate          - DB → Wiki only
-    plm wiki publish                  - Publish to Quartz
-    plm wiki setup                    - Install Quartz (one-time)
-    plm wiki serve                    - Publish and serve locally
 
 Usage:
     plm wiki generate
     plm wiki generate --section journal --type people
     plm wiki lint data/wiki/
     plm wiki sync
-    plm wiki setup
-    plm wiki publish
-    plm wiki serve
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -222,143 +216,3 @@ def sync(
     except Exception as e:
         handle_cli_error(ctx, e, "wiki_sync")
         raise
-
-
-@wiki.command()
-@click.option(
-    "--output-dir",
-    type=click.Path(),
-    default=None,
-    help="Quartz content directory (defaults to quartz/content)",
-)
-@click.pass_context
-def publish(
-    ctx: click.Context,
-    output_dir: Optional[str],
-) -> None:
-    """Publish wiki to Quartz with frontmatter injection."""
-    from dev.database.manager import PalimpsestDB
-    from dev.wiki.publisher import WikiPublisher
-
-    logger = ctx.obj.get("logger")
-
-    try:
-        db = PalimpsestDB(DB_PATH)
-        publisher = WikiPublisher(
-            db,
-            output_dir=Path(output_dir) if output_dir else None,
-            logger=logger,
-        )
-        publisher.publish_all()
-
-        click.echo("Publishing complete.")
-        for key, value in publisher.stats.items():
-            click.echo(f"  {key}: {value}")
-
-    except Exception as e:
-        handle_cli_error(ctx, e, "wiki_publish")
-        raise
-
-
-# Pinned Quartz version for reproducible installs
-QUARTZ_VERSION = "v4.4.0"
-QUARTZ_REPO = "https://github.com/jackyzha0/quartz.git"
-
-
-@wiki.command()
-@click.pass_context
-def setup(ctx: click.Context) -> None:
-    """Install Quartz static site generator (one-time setup)."""
-    import shutil
-    import subprocess
-
-    from dev.core.paths import QUARTZ_DIR
-
-    if QUARTZ_DIR.exists() and (QUARTZ_DIR / "node_modules").exists():
-        click.echo(f"Quartz already installed at {QUARTZ_DIR}")
-        click.echo("To reinstall, remove the directory first.")
-        return
-
-    # Check prerequisites
-    if not shutil.which("node"):
-        raise click.ClickException(
-            "Node.js is required. Install it via micromamba or your "
-            "system package manager."
-        )
-    if not shutil.which("git"):
-        raise click.ClickException("git is required.")
-
-    # Clone at pinned version
-    if not QUARTZ_DIR.exists():
-        click.echo(f"Cloning Quartz {QUARTZ_VERSION}...")
-        subprocess.run(
-            [
-                "git", "clone",
-                "--branch", QUARTZ_VERSION,
-                "--depth", "1",
-                QUARTZ_REPO,
-                str(QUARTZ_DIR),
-            ],
-            check=True,
-        )
-    else:
-        click.echo(f"Quartz directory exists, skipping clone.")
-
-    # Install npm dependencies
-    click.echo("Installing dependencies (npm i)...")
-    subprocess.run(
-        ["npm", "i"],
-        cwd=str(QUARTZ_DIR),
-        check=True,
-    )
-
-    click.echo(f"Quartz {QUARTZ_VERSION} installed at {QUARTZ_DIR}")
-    click.echo("Run 'plm wiki serve' to publish and preview.")
-
-
-@wiki.command()
-@click.option(
-    "--port",
-    type=int,
-    default=8080,
-    help="Port for local server (default: 8080)",
-)
-@click.pass_context
-def serve(ctx: click.Context, port: int) -> None:
-    """Publish wiki and serve Quartz locally."""
-    import subprocess
-
-    from dev.core.paths import QUARTZ_DIR
-    from dev.database.manager import PalimpsestDB
-    from dev.wiki.publisher import WikiPublisher
-
-    if not (QUARTZ_DIR / "node_modules").exists():
-        raise click.ClickException(
-            "Quartz not installed. Run 'plm wiki setup' first."
-        )
-
-    # Publish wiki content
-    logger = ctx.obj.get("logger")
-    try:
-        db = PalimpsestDB(DB_PATH)
-        publisher = WikiPublisher(db, logger=logger)
-        publisher.publish_all()
-
-        click.echo("Publishing complete.")
-        for key, value in publisher.stats.items():
-            click.echo(f"  {key}: {value}")
-
-    except Exception as e:
-        handle_cli_error(ctx, e, "wiki_serve_publish")
-        raise
-
-    # Start Quartz dev server
-    click.echo(f"\nStarting Quartz at http://localhost:{port}")
-    click.echo("Press Ctrl+C to stop.\n")
-    try:
-        subprocess.run(
-            ["npx", "quartz", "build", "--serve", "--port", str(port)],
-            cwd=str(QUARTZ_DIR),
-        )
-    except KeyboardInterrupt:
-        click.echo("\nServer stopped.")

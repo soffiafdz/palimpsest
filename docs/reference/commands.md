@@ -38,9 +38,6 @@ plm wiki generate
 
 # Lint and sync manuscript
 plm wiki lint data/wiki/ && plm wiki sync
-
-# Publish to Quartz
-plm wiki publish
 ```
 
 ### Metadata Management
@@ -467,23 +464,6 @@ plm wiki sync --ingest
 # Regenerate only (DB → wiki)
 plm wiki sync --generate
 ```
-
-#### `plm wiki publish`
-
-Publish wiki to Quartz with frontmatter injection.
-
-```bash
-plm wiki publish [--output-dir PATH]
-```
-
-**What it does:**
-- Copies wiki files to Quartz content directory
-- Injects YAML frontmatter (title, aliases, tags, date)
-- Source wiki files are never modified
-- Output directory is disposable and `.gitignore`d
-
-**Options:**
-- `--output-dir PATH` - Quartz content directory (defaults to `quartz/content`)
 
 ### Metadata Commands
 
@@ -1646,9 +1626,6 @@ plm metadata export --type people
 
 # After editing YAML, import back
 plm metadata import --type people
-
-# Publish to Quartz for browser viewing
-plm wiki publish
 ```
 
 ### Before Major Changes

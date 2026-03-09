@@ -26,7 +26,6 @@ def _protect_real_wiki(tmp_path_factory):
     import dev.core.paths as paths
     import dev.wiki.exporter as exporter_mod
     import dev.wiki.sync as sync_mod
-    import dev.wiki.publisher as publisher_mod
 
     safe_wiki = tmp_path_factory.mktemp("wiki_guard")
 
@@ -39,7 +38,6 @@ def _protect_real_wiki(tmp_path_factory):
     # Patch every module that copied WIKI_DIR at import time
     exporter_mod.WIKI_DIR = safe_wiki
     sync_mod.WIKI_DIR = safe_wiki
-    publisher_mod.WIKI_DIR = safe_wiki
 
 
 # ----- Path Fixtures -----
