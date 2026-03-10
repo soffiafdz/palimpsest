@@ -531,7 +531,7 @@ The Neovim package acts as a frontend to the Python backend:
 - **Templates** - Diary entries (VimWiki integration)
 - **Wiki Operations** - Calls `plm wiki` CLI for generate, lint, sync
 - **Entity Editing** - Opens YAML metadata in floating windows via `plm metadata`
-- **Entity Caching** - Calls `plm metadata list-entities` for autocomplete data
+- **Entity Caching** - Calls `plm metadata list` for autocomplete data
 
 ---
 

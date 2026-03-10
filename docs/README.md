@@ -9,7 +9,7 @@ Welcome to the Palimpsest documentation. This guide will help you understand and
 
 ### Reference Documentation
 Complete references for quick lookup:
-- [Command Reference](reference/commands.md) - All CLI commands (plm, metadb, validate, jsearch)
+- [Command Reference](reference/commands.md) - All CLI commands (plm, jsearch)
 - [Metadata Field Reference](reference/metadata-field-reference.md) - Comprehensive YAML field documentation
 - [Metadata Examples](reference/metadata-examples.md) - Example YAML frontmatter with all fields
 

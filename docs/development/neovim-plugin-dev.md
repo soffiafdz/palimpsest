@@ -344,7 +344,7 @@ Matches 15 subdirectory patterns covering journal entities (entry, person, locat
 
 ### cache.lua
 
-Entity name caching for autocomplete support. Calls `plm metadata list-entities` asynchronously and stores results in Lua tables.
+Entity name caching for autocomplete support. Calls `plm metadata list` asynchronously and stores results in Lua tables.
 
 **Key Functions:**
 
@@ -437,7 +437,7 @@ The Python wiki system (`dev/wiki/`) handles generation, linting, and sync. The 
 - `plm wiki generate` — Generate wiki pages from database
 - `plm wiki lint <path>` — Lint wiki files (returns JSON diagnostics)
 - `plm metadata export/import` — YAML metadata file management
-- `plm metadata list-entities` — Entity name lists for autocomplete
+- `plm metadata list` — Entity name lists for autocomplete
 
 ---
 

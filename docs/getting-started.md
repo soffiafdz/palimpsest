@@ -67,7 +67,7 @@ For narrative analysis, you can create separate metadata YAML files that contain
 - Themes and motifs
 - Threads connecting moments across time
 
-These are imported once to the database via `plm import-metadata`.
+These are imported once to the database via `plm entries import`.
 
 → Learn more: [Metadata Field Reference](reference/metadata-field-reference.md)
 
@@ -86,12 +86,12 @@ These are imported once to the database via `plm import-metadata`.
 pip install -e .
 
 # Initialize the database
-metadb init
+plm db init
 
 # Verify installation
 plm --help
-metadb --help
-validate --help
+plm db --help
+plm validate --help
 jsearch --help
 ```
 
@@ -159,10 +159,10 @@ themes: [new-beginnings, tools]
 
 ```bash
 # Import metadata to database
-plm import-metadata
+plm entries import
 
 # Check what was created
-metadb stats
+plm db stats
 ```
 
 You should see:
@@ -185,7 +185,7 @@ jsearch query "reflection" city:Montreal tag:first-entry
 
 ```bash
 # Export to JSON for version control
-plm export-json
+plm json export
 
 # Creates data/exports/*.json files
 ```
@@ -249,23 +249,23 @@ Even experienced users run into these:
 # Daily workflow
 plm inbox               # Process 750words exports
 plm convert             # Convert text to markdown
-plm import-metadata     # Import metadata to database
+plm entries import     # Import metadata to database
 
 # Search
 jsearch query "search term"
 jsearch query "therapy" person:alice tag:work in:2024
 
 # Database management
-metadb stats            # Show database statistics
-metadb backup           # Create backup
-metadb health           # Check database health
+plm db stats            # Show database statistics
+plm db backup           # Create backup
+plm db health           # Check database health
 
 # Validation
-validate db all         # Validate database
-validate consistency all # Check consistency
+plm validate db         # Validate database
+plm validate consistency # Check consistency
 
 # Full pipeline
-plm run-all --year 2024
+plm pipeline run --year 2024
 ```
 
 → Complete reference: [Command Reference](reference/commands.md)
@@ -275,9 +275,9 @@ plm run-all --year 2024
 You'll know Palimpsest is working when:
 
 1. **Inbox entries process cleanly** - `plm inbox` validates and moves files
-2. **Database stays healthy** - `metadb stats` shows expected counts
+2. **Database stays healthy** - `plm db stats` shows expected counts
 3. **Searches work** - `jsearch` finds your entries
-4. **Validation passes** - No errors from `validate db all`
+4. **Validation passes** - No errors from `plm validate db`
 
 ## Next Steps
 
@@ -290,6 +290,6 @@ You'll know Palimpsest is working when:
 
 - **Validation errors**: Check [Metadata Field Reference](reference/metadata-field-reference.md)
 - **Command issues**: Check [Command Reference](reference/commands.md)
-- **Database issues**: Run `metadb health --fix`
+- **Database issues**: Run `plm db health --fix`
 
 Welcome to Palimpsest! Happy journaling! 📔

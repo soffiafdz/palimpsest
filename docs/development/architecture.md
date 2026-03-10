@@ -33,23 +33,22 @@ dev/database/cli/
 ├── backup.py            # Backup and restore operations
 ├── query.py             # Data query commands
 ├── maintenance.py       # Stats, health, optimize, cleanup, validate, analyze
-├── prune.py             # Orphan entity detection and removal
-└── manuscript.py        # Manuscript browsing (chapters, characters, parts, stats)
+└── prune.py             # Orphan entity detection and removal
 ```
 
 **Key Pattern**: Shared context via Click's `@click.pass_context`
-- Database instance initialized once in `__init__.py`
+- Database instance initialized once in pipeline `__init__.py` via the `db` group
 - All subcommands access via `ctx.obj["db"]`
 - Lazy loading of managers to reduce startup time
 
-**Entry Point**: `metadb` → `dev.database.cli:cli`
+**Entry Point**: `plm db` → commands registered from `dev.database.cli` modules
 
 **Example Usage**:
 ```bash
-metadb init                    # Initialize database
-metadb migration upgrade       # Run migrations
-metadb backup                  # Create backup
-metadb query show 2024-01-15   # Query entry
+plm db init                    # Initialize database
+plm db upgrade                 # Run migrations
+plm db backup                  # Create backup
+plm db show 2024-01-15         # Query entry
 ```
 
 ---
@@ -117,12 +116,12 @@ dev/pipeline/cli/
 ├── __init__.py          # Main pipeline CLI group
 ├── sources.py           # Process 750words inbox exports
 ├── text.py              # TXT → Markdown conversion
-├── database.py          # import-metadata, prune-orphans
-├── export.py            # SQL → JSON export (export-json)
-├── import_json.py       # JSON → SQL import (upsert from exports)
-├── pdf.py               # PDF generation (build-pdf)
-├── metadata_pdf.py      # Metadata YAML → PDF (build-metadata-pdf)
-├── maintenance.py       # Backup, status, run-all, validation
+├── database.py          # entries import
+├── export.py            # SQL → JSON export (json export)
+├── import_json.py       # JSON → SQL import (json import)
+├── pdf.py               # PDF generation (build pdf)
+├── metadata_pdf.py      # Metadata YAML → PDF (build metadata)
+├── maintenance.py       # Status, pipeline run, validation
 ├── wiki.py              # Wiki generation, linting, sync
 └── metadata_yaml.py     # YAML metadata export, import, validation, rename
 ```
@@ -139,10 +138,10 @@ dev/pipeline/cli/
 ```bash
 plm inbox                      # Process 750words inbox
 plm convert                    # TXT → Markdown + skeleton metadata YAML
-plm import-metadata            # Metadata YAML → Database
-plm export-json                # Database → JSON export
-plm import-json                # JSON export → Database (upsert)
-plm build-pdf 2024             # Generate PDFs for a year
+plm entries import             # Entry frontmatter → Database
+plm json export                # Database → JSON export
+plm json import                # JSON export → Database (upsert)
+plm build pdf 2024             # Generate PDFs for a year
 ```
 
 ---
@@ -244,7 +243,7 @@ dev/wiki/
 - Custom Jinja2 filters handle wiki link formatting and date display
 **Entry Points**:
 - `plm wiki` → `dev.pipeline.cli.wiki` (generate, lint, sync)
-- `plm metadata` → `dev.pipeline.cli.metadata_yaml` (export, import, validate, list-entities)
+- `plm metadata` → `dev.pipeline.cli.metadata_yaml` (export, import, validate, list)
 
 ---
 
@@ -361,7 +360,7 @@ class WikiExporter:
 **Configuration** (`pyproject.toml`):
 ```toml
 [project.scripts]
-metadb = "dev.database.cli:cli"
+# metadb removed — all DB commands are under plm db
 plm = "dev.pipeline.cli:cli"
 jsearch = "dev.search.cli:cli"
 ```
@@ -377,7 +376,7 @@ jsearch = "dev.search.cli:cli"
 ## Dependency Graph
 
 ```
-Entry Points (metadb, plm, jsearch)
+Entry Points (plm, jsearch)
     ↓
 CLI Modules (dev/*/cli/)
     ↓

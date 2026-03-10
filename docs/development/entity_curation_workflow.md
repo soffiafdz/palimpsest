@@ -640,6 +640,6 @@ Once curation is validated, the bulk import script:
 ## Next Steps After Curation
 
 1. Validate curation files
-2. Run bulk import (`plm import-metadata`)
+2. Run bulk import (`plm entries import`)
 3. Verify database populated correctly (count checks)
-4. Export to JSON/CSV for analysis (`plm export-json`)
+4. Export to JSON for analysis (`plm json export`)

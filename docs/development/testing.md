@@ -57,8 +57,8 @@ Use this checklist to track your progress:
 - [x] Database initialization
 - [x] src2txt conversion
 - [x] txt2md conversion
-- [x] import-metadata database import
-- [x] export-json database export
+- [x] entries import database import
+- [x] json export database export
 
 ### Metadata & Entities
 
@@ -133,7 +133,7 @@ If setting up Palimpsest on a new machine, follow these steps:
 
 ```bash
 # Install the package in editable mode
-# This registers all CLI commands: plm, metadb, jsearch, validate, nlp
+# This registers all CLI commands: plm, plm db, jsearch, validate, nlp
 pip install -e .
 ```
 
@@ -144,7 +144,7 @@ pip install -e .
 ```bash
 # Test that all core commands are available
 plm --help
-metadb --help
+plm db --help
 jsearch --help
 validate --help
 nlp --help
@@ -194,15 +194,15 @@ export OPENAI_API_KEY='your-key-here'     # For OpenAI
 
 ```bash
 # Check if database exists
-metadb health
+plm db health
 
 # If issues, reset and initialize
-metadb backup --suffix "before-testing"
-metadb init
+plm db backup --suffix "before-testing"
+plm db init
 
 # Verify schema
 validate db schema
-metadb stats
+plm db stats
 ```
 
 **Expected:** Database healthy, all tables present, migration status current
@@ -296,10 +296,10 @@ cat data/journal/content/md/2025/2024-11-25.md
 
 ```bash
 # Import metadata to database
-plm import-metadata
+plm entries import
 
 # Verify
-metadb query show 2024-11-25
+plm db query show 2024-11-25
 ```
 
 **Expected:** Entry appears in database with correct metadata
@@ -308,7 +308,7 @@ metadb query show 2024-11-25
 
 ```bash
 # Export database to JSON
-plm export-json
+plm json export
 
 # Verify JSON output exists
 ls data/exports/
@@ -373,10 +373,10 @@ manuscript:
 
 ```bash
 # Sync updated entry
-plm import-metadata
+plm entries import
 
 # Verify all relationships
-metadb query show 2024-11-25
+plm db query show 2024-11-25
 ```
 
 **Expected:** All entities extracted:
@@ -446,7 +446,7 @@ vim data/wiki/events/thesis-writing.md
 plm wiki sync
 
 # Verify notes were imported
-metadb query "SELECT notes FROM events WHERE name='thesis-writing'"
+plm db query "SELECT notes FROM events WHERE name='thesis-writing'"
 ```
 
 **Expected:** Notes appear in database
@@ -559,10 +559,10 @@ poems:
 
 ```bash
 # Sync
-plm import-metadata
+plm entries import
 
 # Verify poem created
-metadb query show 2024-11-25
+plm db query show 2024-11-25
 
 # Export wiki to see poem page
 
@@ -607,7 +607,7 @@ vim data/wiki/manuscript/entries/2024/2024-11-25.md
 plm wiki sync
 
 # Verify
-metadb query show 2024-11-25 | grep -A5 "manuscript"
+plm db query show 2024-11-25 | grep -A5 "manuscript"
 ```
 
 **Expected:** Manuscript notes imported to database
@@ -661,7 +661,7 @@ nlp analyze 2024-11-25 --level 4 --manuscript
 
 ```bash
 # Build PDF for 2024
-plm build-pdf 2024
+plm build pdf 2024
 
 # Check output
 ls -la data/journal/content/pdf/
@@ -693,7 +693,7 @@ Open PDFs and check:
 
 ```bash
 # Run everything for 2024
-plm run-all --year 2024
+plm pipeline run --year 2024
 ```
 
 **Expected:** Executes in order:
@@ -719,10 +719,10 @@ Word count: 20
 EOF
 
 # Run pipeline
-plm inbox && plm convert && plm import-metadata
+plm inbox && plm convert && plm entries import
 
 # Verify only new entry processed
-metadb query show 2024-11-26
+plm db query show 2024-11-26
 ```
 
 **Expected:** Only new entry processed (hash-based change detection)
@@ -748,10 +748,10 @@ validate consistency all
 
 ```bash
 # Create backup
-metadb backup --suffix "test-complete"
+plm db backup --suffix "test-complete"
 
 # List backups
-metadb backups
+plm db backups
 ```
 
 **Expected:** Backup created with timestamp
@@ -760,13 +760,13 @@ metadb backups
 
 ```bash
 # Query years
-metadb query years
+plm db query years
 
 # Query months
-metadb query months 2024
+plm db query months 2024
 
 # Show specific entry
-metadb query show 2024-11-25
+plm db query show 2024-11-25
 ```
 
 **Expected:** Accurate query results
@@ -775,13 +775,13 @@ metadb query show 2024-11-25
 
 ```bash
 # Health check
-metadb health
+plm db health
 
 # Optimize database
-metadb optimize
+plm db optimize
 
 # Check stats
-metadb stats --verbose
+plm db stats --verbose
 ```
 
 **Expected:** Database healthy, optimizations complete
@@ -790,16 +790,16 @@ metadb stats --verbose
 
 ```bash
 # Backup current state
-metadb backup --suffix "before-restore-test"
+plm db backup --suffix "before-restore-test"
 
 # List available backups
-metadb backups
+plm db backups
 
 # Restore from earlier backup
-metadb restore data/backups/palimpsest_YYYYMMDD_HHMMSS_test-complete.db
+plm db restore data/backups/palimpsest_YYYYMMDD_HHMMSS_test-complete.db
 
 # Verify restoration
-metadb stats
+plm db stats
 ```
 
 **Expected:** Database restored to backup state
@@ -814,7 +814,7 @@ metadb stats
 
 ```bash
 # Export all tables
-metadb export csv data/exports/
+plm db export csv data/exports/
 
 # Check output
 ls -la data/exports/
@@ -827,7 +827,7 @@ head data/exports/entries.csv
 
 ```bash
 # Export complete database
-metadb export json data/exports/palimpsest-export.json
+plm db export json data/exports/palimpsest-export.json
 
 # Check file
 cat data/exports/palimpsest-export.json | jq '.entries | length'
@@ -895,10 +895,10 @@ done
 
 ```bash
 # Process all
-plm inbox && plm convert && plm import-metadata
+plm inbox && plm convert && plm entries import
 
 # Verify
-metadb query months 2024
+plm db query months 2024
 ```
 
 **Expected:** All entries processed
@@ -912,7 +912,7 @@ metadb query months 2024
 jsearch index rebuild
 
 # Generate statistics
-metadb stats --verbose
+plm db stats --verbose
 ```
 
 **Expected:** System handles bulk operations smoothly
@@ -939,7 +939,7 @@ Test invalid YAML
 EOF
 
 # Try to sync
-plm import-metadata
+plm entries import
 ```
 
 **Expected:** Clear error message, other entries still processed
@@ -957,11 +957,11 @@ nlp analyze 2024-11-25 --level 2
 
 ```bash
 # Try operations on fresh database
-metadb reset --yes
-metadb init
+plm db reset --yes
+plm db init
 
 # Query empty database
-metadb stats
+plm db stats
 jsearch query "anything"
 ```
 
@@ -988,7 +988,7 @@ jsearch query "anything"
 1. **Backup your real data** before any testing:
 
    ```bash
-   metadb backup --suffix "before-testing"
+   plm db backup --suffix "before-testing"
    ```
 
 2. **Consider using a separate testing environment:**
@@ -1015,7 +1015,7 @@ jsearch query "anything"
 - **Consider automating** frequently-run test scenarios
 - **Restore from backup** if needed:
   ```bash
-  metadb restore data/backups/palimpsest_YYYYMMDD_HHMMSS_before-testing.db
+  plm db restore data/backups/palimpsest_YYYYMMDD_HHMMSS_before-testing.db
   ```
 
 ---
@@ -1025,7 +1025,7 @@ jsearch query "anything"
 ### "Database not initialized"
 
 ```bash
-metadb init
+plm db init
 ```
 
 ### "Search index not found"
@@ -1039,7 +1039,7 @@ jsearch index create
 ```bash
 validate consistency metadata
 # If drift detected:
-plm import-metadata  # Re-sync from markdown
+plm entries import  # Re-sync from markdown
 ```
 
 ### "Text analysis not working"
@@ -1052,7 +1052,7 @@ nlp status  # Check what's available
 ### "Slow database queries"
 
 ```bash
-metadb optimize
+plm db optimize
 jsearch index rebuild
 ```
 
@@ -1082,7 +1082,7 @@ For help with specific commands:
 
 ```bash
 plm --help
-metadb --help
+plm db --help
 validate --help
 jsearch --help
 nlp --help

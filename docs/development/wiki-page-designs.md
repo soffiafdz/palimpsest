@@ -332,7 +332,7 @@ NOT handle merging or renaming. The correction path:
 3. Follows Entry page links (every Location page lists its entries)
 4. On Entry page, follows "Edit metadata" link to the YAML source
 5. Fixes the name in YAML files to use consistent spelling
-6. Re-imports metadata (`plm import-metadata`)
+6. Re-imports metadata (`plm entries import`)
 7. Regenerates wiki (`plm wiki generate`)
 
 Regeneration handles cleanup: locations that no longer exist in the DB
@@ -638,7 +638,7 @@ for five days.
 
 1,247 words · 6 min read
 [Read entry](../../../journal/content/md/2024/2024-11-08.md) ·
-[Edit metadata](../../../narrative_analysis/2024/2024-11-08.yaml)
+[Edit metadata](../../../metadata/journal/2024/2024-11-08.yaml)
 
 ---
 
