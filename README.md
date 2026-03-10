@@ -50,7 +50,7 @@ mkdir -p data/journal/{inbox,sources/txt,content/{md,pdf}}
 mkdir -p data/metadata
 
 # Initialize database
-metadb init
+plm db init
 ```
 
 ### Basic Usage
@@ -62,14 +62,14 @@ plm inbox
 # Convert to markdown
 plm convert
 
-# Import metadata to database
-plm import-metadata
+# Import entry frontmatter to database
+plm entries import
 
 # Build PDFs for a year
-plm build-pdf 2024
+plm build pdf 2024
 
 # Or run complete pipeline
-plm run-all 2024
+plm pipeline run --year 2024
 ```
 
 ---
@@ -85,11 +85,11 @@ inbox/ (raw exports) → src2txt → txt/     (formatted text)
                                    +
                           metadata YAML/   (narrative analysis - human-authored)
                                    ↓
-                            import-metadata (one-time import)
+                            entries import (one-time import)
                                    ↓
                                 database  (LOCAL ONLY - not in git)
                                    ↓
-                              export-json
+                              json export
                                    ↓
                               JSON export  (git-tracked for version control)
 
@@ -191,17 +191,17 @@ plm inbox
 # Convert text to markdown
 plm convert
 
-# Import metadata to database
-plm import-metadata
+# Import entry frontmatter to database
+plm entries import
 
 # Export database to JSON
-plm export-json
+plm json export
 
 # Build PDFs
-plm build-pdf YEAR
+plm build pdf YEAR
 
 # Complete pipeline
-plm run-all --year YEAR
+plm pipeline run --year YEAR
 
 # Status and validation
 plm status
@@ -213,33 +213,30 @@ plm validate entry
 
 ```bash
 # Initialize
-metadb init [--alembic-only] [--db-only]
-metadb reset [--keep-backups]
+plm db init [--alembic-only] [--db-only]
+plm db reset [--keep-backups]
 
 # Migrations
-metadb migration-create MESSAGE [--autogenerate]
-metadb migration-upgrade [--revision REV]
-metadb migration-status
-metadb migration-history
+plm db create MESSAGE [--autogenerate]
+plm db upgrade [--revision REV]
+plm db migration-status
+plm db history
 
 # Backups
-metadb backup [--type TYPE] [--suffix SUFFIX]
-metadb backups
-metadb restore BACKUP_PATH
+plm db backup [--type TYPE] [--suffix SUFFIX]
+plm db backup --full
+plm db backups
+plm db backups --full
+plm db restore BACKUP_PATH
 
 # Monitoring
-metadb stats [--verbose]
-metadb health [--fix]
-metadb validate
+plm db stats [--verbose]
+plm db health [--fix]
 
 # Maintenance
-metadb cleanup
-metadb optimize
-
-# Export
-metadb export-csv OUTPUT_DIR
-metadb export-json OUTPUT_FILE
-metadb analyze
+plm db prune [--type TYPE]
+plm db optimize
+plm db analyze
 ```
 
 ### Search Commands
@@ -401,12 +398,12 @@ All workflows are defined in `.github/workflows/`. Status badges are displayed a
 
 ```bash
 # Create migration
-metadb migration-create "add_new_field"
+plm db create "add_new_field"
 
 # Edit generated file in alembic/versions/
 
 # Apply migration
-metadb migration-upgrade
+plm db upgrade
 ```
 
 ### Code Style
