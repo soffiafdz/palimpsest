@@ -1983,11 +1983,11 @@ class WikiContextBuilder:
         Build hierarchical entry listing: year → month → optional week.
 
         Months with 8+ entries get week grouping. Months with fewer
-        entries are listed inline. Entries must be pre-sorted
-        (newest first).
+        entries are listed inline. Years sorted chronologically
+        (oldest first).
 
         Args:
-            entries: Pre-sorted list of Entry entities (newest first)
+            entries: List of Entry entities (sort order irrelevant)
 
         Returns:
             List of year dicts, each with month dicts
@@ -2004,7 +2004,7 @@ class WikiContextBuilder:
             year_months[d.year][d.month].append(d.isoformat())
 
         result = []
-        for year in sorted(year_months.keys(), reverse=True):
+        for year in sorted(year_months.keys()):
             months_data = year_months[year]
             year_total = sum(len(dates) for dates in months_data.values())
 

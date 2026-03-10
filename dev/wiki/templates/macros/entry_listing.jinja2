@@ -2,11 +2,12 @@
   Reusable entry listing macro.
 
   Renders entry listings grouped by month, with optional week
-  sub-grouping for months with 8+ entries. Caller provides
-  the page title (H1) — this macro renders months as H2.
+  sub-grouping for months with 8+ entries. For multi-year data,
+  years appear as H2 headings and months as bold labels. For
+  single-year data, months render as H2 (caller provides H1).
 
   Parameters:
-    entries: list of dicts (typically single-element for year pages):
+    entries: list of dicts (single-element for year pages):
       - year: int
       - count: int (entries in this year)
       - months: list of dicts:
@@ -18,10 +19,20 @@
           - dates: list of str (entry date strings, when no weeks)
 #}
 {% macro render_entries(entries) %}
+{% set multi_year = entries | length > 1 %}
 {% for year_group in entries %}
+{% if multi_year %}
+
+## {{ year_group.year }}
+{% endif %}
 {% for month in year_group.months %}
+{% if multi_year %}
+
+**{{ month.name }}** · {{ month.count | zpad }} entr{{ "y" if month.count == 1 else "ies" }}
+{% else %}
 
 ## {{ month.name }} · {{ month.count | zpad }} entr{{ "y" if month.count == 1 else "ies" }}
+{% endif %}
 {% if month.weeks is defined %}
 {% for week in month.weeks %}
 
