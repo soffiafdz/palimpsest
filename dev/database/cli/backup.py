@@ -5,21 +5,19 @@ Backup & Restore Commands
 Database backup and restore operations.
 
 Commands:
-    - backup: Create timestamped backup
-    - backups: List all backups
+    - backup: Create timestamped backup (--full for full data backup)
+    - backups: List all backups (--full for full data backups)
     - restore: Restore from backup
 
 Usage:
-    # Create a manual backup
-    metadb backup --type manual --suffix "pre-update"
-
-    # List all backups
-    metadb backups
-
-    # Restore from a specific backup file
-    metadb restore /path/to/backup.db
+    plm db backup --type manual --suffix "pre-update"
+    plm db backup --full
+    plm db backups
+    plm db backups --full
+    plm db restore /path/to/backup.db
 """
 import click
+from datetime import datetime
 from pathlib import Path
 
 from dev.core.logging_manager import handle_cli_error
@@ -35,53 +33,129 @@ from . import get_db
     help="Backup type",
 )
 @click.option("--suffix", default=None, help="Optional backup suffix")
+@click.option("--full", is_flag=True, help="Create full compressed backup of entire data directory")
 @click.pass_context
-def backup(ctx, type, suffix):
+def backup(ctx, type, suffix, full):
     """Create timestamped backup."""
-    try:
-        click.echo(f"💾 Creating {type} backup...")
-        db = get_db(ctx)
-        backup_path = db.create_backup(backup_type=type, suffix=suffix)
-        click.echo(f"✅ Backup created: {backup_path}")
+    if full:
+        from dev.core.paths import DB_PATH, BACKUP_DIR, DATA_DIR
+        from dev.core.backup_manager import BackupManager
+        from dev.core.logging_manager import PalimpsestLogger
 
-    except BackupError as e:
-        handle_cli_error(
-            ctx,
-            e,
-            "backup",
-            additional_context={"type": type},
-        )
+        click.echo("📦 Creating full data backup...")
+        click.echo("   (This may take a while for large archives)")
+
+        try:
+            logger = ctx.obj.get("logger")
+            backup_mgr = BackupManager(
+                db_path=DB_PATH,
+                backup_dir=ctx.obj.get("backup_dir", BACKUP_DIR),
+                data_dir=DATA_DIR,
+                logger=logger,
+            )
+
+            backup_path = backup_mgr.create_full_backup(suffix=suffix)
+            backup_size = backup_path.stat().st_size
+            backup_size_mb = backup_size / (1024 * 1024)
+
+            click.echo("\n✅ Full backup created:")
+            click.echo(f"  Location: {backup_path}")
+            click.echo(f"  Size: {backup_size_mb:.2f} MB ({backup_size:,} bytes)")
+
+        except BackupError as e:
+            handle_cli_error(ctx, e, "backup")
+    else:
+        try:
+            click.echo(f"💾 Creating {type} backup...")
+            db = get_db(ctx)
+            backup_path = db.create_backup(backup_type=type, suffix=suffix)
+            click.echo(f"✅ Backup created: {backup_path}")
+
+        except BackupError as e:
+            handle_cli_error(
+                ctx,
+                e,
+                "backup",
+                additional_context={"type": type},
+            )
 
 
 @click.command()
+@click.option("--full", is_flag=True, help="List full data backups instead of DB backups")
 @click.pass_context
-def backups(ctx):
+def backups(ctx, full):
     """List all available backups."""
-    try:
-        db = get_db(ctx)
-        backups_dict = db.list_backups()
+    if full:
+        from dev.core.paths import DB_PATH, BACKUP_DIR, DATA_DIR
+        from dev.core.backup_manager import BackupManager
 
-        click.echo("\n📦 Available Backups")
-        click.echo("=" * 70)
+        try:
+            logger = ctx.obj.get("logger")
+            backup_mgr = BackupManager(
+                db_path=DB_PATH,
+                backup_dir=ctx.obj.get("backup_dir", BACKUP_DIR),
+                data_dir=DATA_DIR,
+                logger=logger,
+            )
 
-        total = 0
-        for backup_type, backup_list in backups_dict.items():
-            if backup_list:
-                click.echo(f"\n{backup_type.upper()}:")
-                for backup in backup_list:
-                    click.echo(f"  • {backup['name']}")
-                    click.echo(f"    Created: {backup['created']}")
-                    click.echo(f"    Size: {backup['size']:,} bytes")
-                    click.echo(f"    Age: {backup['age_days']} days")
-                    total += 1
+            if (
+                not hasattr(backup_mgr, "full_backup_dir")
+                or not backup_mgr.full_backup_dir.exists()
+            ):
+                click.echo("📦 No full backups directory found")
+                return
 
-        if total == 0:
-            click.echo("\n  No backups found")
-        else:
-            click.echo(f"\nTotal backups: {total}")
+            backup_list = sorted(backup_mgr.full_backup_dir.glob("*.tar.gz"))
 
-    except DatabaseError as e:
-        handle_cli_error(ctx, e, "backups")
+            if not backup_list:
+                click.echo("📦 No full backups found")
+                return
+
+            click.echo("\n📦 Full Data Backups")
+            click.echo("=" * 70)
+
+            for b in backup_list:
+                stat = b.stat()
+                size_mb = stat.st_size / (1024 * 1024)
+                created = datetime.fromtimestamp(stat.st_mtime)
+                age_days = (datetime.now() - created).days
+
+                click.echo(f"\n  • {b.name}")
+                click.echo(f"    Created: {created.strftime('%Y-%m-%d %H:%M:%S')}")
+                click.echo(f"    Size: {size_mb:.2f} MB ({stat.st_size:,} bytes)")
+                click.echo(f"    Age: {age_days} days")
+
+            click.echo(f"\nTotal backups: {len(backup_list)}")
+            click.echo(f"Location: {backup_mgr.full_backup_dir}")
+
+        except Exception as e:
+            handle_cli_error(ctx, e, "backups")
+    else:
+        try:
+            db = get_db(ctx)
+            backups_dict = db.list_backups()
+
+            click.echo("\n📦 Available Backups")
+            click.echo("=" * 70)
+
+            total = 0
+            for backup_type, backup_list in backups_dict.items():
+                if backup_list:
+                    click.echo(f"\n{backup_type.upper()}:")
+                    for b in backup_list:
+                        click.echo(f"  • {b['name']}")
+                        click.echo(f"    Created: {b['created']}")
+                        click.echo(f"    Size: {b['size']:,} bytes")
+                        click.echo(f"    Age: {b['age_days']} days")
+                        total += 1
+
+            if total == 0:
+                click.echo("\n  No backups found")
+            else:
+                click.echo(f"\nTotal backups: {total}")
+
+        except DatabaseError as e:
+            handle_cli_error(ctx, e, "backups")
 
 
 @click.command()

@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from dev.database.manager import PalimpsestDB
 
 
-@click.command("prune-orphans")
+@click.command("prune")
 @click.option(
     "--type",
     "entity_type",

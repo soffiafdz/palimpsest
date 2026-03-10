@@ -12,20 +12,11 @@ Commands:
     - history: Show migration history
 
 Usage:
-    # Create a new migration script
-    metadb migration create "Added new person entity"
-
-    # Upgrade database to the latest revision
-    metadb migration upgrade
-
-    # Downgrade database to a specific revision
-    metadb migration downgrade <revision_id>
-
-    # Show current migration status
-    metadb migration status
-
-    # Show full migration history
-    metadb migration history
+    plm db create "Added new person entity"
+    plm db upgrade
+    plm db downgrade <revision_id>
+    plm db status
+    plm db history
 """
 import click
 
@@ -34,20 +25,13 @@ from dev.core.exceptions import DatabaseError
 from . import get_db
 
 
-@click.group()
-@click.pass_context
-def migration(ctx: click.Context) -> None:
-    """Database migration management (Alembic operations)."""
-    pass
-
-
-@migration.command("create")
+@click.command("create")
 @click.argument("message")
 @click.option(
     "--autogenerate", is_flag=True, help="Auto-generate migration from models"
 )
 @click.pass_context
-def migration_create(ctx, message, autogenerate):
+def create(ctx, message, autogenerate):
     """Create a new Alembic migration."""
     try:
         click.echo(f"📝 Creating migration: {message}")
@@ -60,18 +44,18 @@ def migration_create(ctx, message, autogenerate):
         click.echo(f"✅ Migration created: {revision}")
 
         if autogenerate:
-            click.echo("💡 Review the auto-generated migration file, then run: metadb migration upgrade")
+            click.echo("💡 Review the auto-generated migration file, then run: plm db upgrade")
         else:
-            click.echo("💡 Edit the migration file and then run: metadb migration upgrade")
+            click.echo("💡 Edit the migration file and then run: plm db upgrade")
 
     except DatabaseError as e:
-        handle_cli_error(ctx, e, "migration_create")
+        handle_cli_error(ctx, e, "create")
 
 
-@migration.command("upgrade")
+@click.command("upgrade")
 @click.option("--revision", default="head", help="Target revision (default: head)")
 @click.pass_context
-def migration_upgrade(ctx, revision):
+def upgrade(ctx, revision):
     """Upgrade database to specified revision."""
     try:
         click.echo(f"⬆️  Upgrading database to: {revision}")
@@ -83,15 +67,15 @@ def migration_upgrade(ctx, revision):
         handle_cli_error(
             ctx,
             e,
-            "migration_upgrade",
+            "upgrade",
             additional_context={"revision": revision},
         )
 
 
-@migration.command("downgrade")
+@click.command("downgrade")
 @click.argument("revision")
 @click.pass_context
-def migration_downgrade(ctx, revision):
+def downgrade(ctx, revision):
     """Downgrade database to specified revision."""
     try:
         click.echo(f"⬇️  Downgrading database to: {revision}")
@@ -103,12 +87,12 @@ def migration_downgrade(ctx, revision):
         handle_cli_error(
             ctx,
             e,
-            "migration_downgrade",
+            "downgrade",
             additional_context={"revision": revision},
         )
 
 
-@migration.command("status")
+@click.command("migration-status")
 @click.pass_context
 def migration_status(ctx):
     """Show current migration status."""
@@ -128,9 +112,9 @@ def migration_status(ctx):
         handle_cli_error(ctx, e, "migration_status")
 
 
-@migration.command("history")
+@click.command("history")
 @click.pass_context
-def migration_history(ctx):
+def history(ctx):
     """Show migration history."""
     try:
         db = get_db(ctx)
@@ -146,4 +130,4 @@ def migration_history(ctx):
             click.echo("  No migrations found")
 
     except DatabaseError as e:
-        handle_cli_error(ctx, e, "migration_history")
+        handle_cli_error(ctx, e, "history")

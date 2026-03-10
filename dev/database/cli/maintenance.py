@@ -5,31 +5,16 @@ Maintenance & Monitoring Commands
 Database maintenance, optimization, and monitoring commands.
 
 Commands:
-    - cleanup: Remove orphaned records
     - optimize: Optimize database (VACUUM + ANALYZE)
-    - validate: Validate database integrity
     - analyze: Generate detailed analytics report
     - stats: Display database statistics
     - health: Run comprehensive health check
 
 Usage:
-    # Clean up orphaned records
-    metadb maintenance cleanup
-
-    # Optimize database performance
-    metadb optimize
-
-    # Validate database integrity (orphans, FKs)
-    metadb maintenance validate
-
-    # Generate detailed analytics report
-    metadb maintenance analyze
-
-    # Display database statistics
-    metadb stats --verbose
-
-    # Run comprehensive health check
-    metadb health --fix
+    plm db optimize
+    plm db analyze
+    plm db stats --verbose
+    plm db health --fix
 """
 import json
 import click
@@ -37,39 +22,6 @@ import click
 from dev.core.logging_manager import handle_cli_error
 from dev.core.exceptions import DatabaseError, HealthCheckError
 from . import get_db
-
-
-@click.group()
-@click.pass_context
-def maintenance(ctx: click.Context) -> None:
-    """Database maintenance and optimization."""
-    pass
-
-
-@maintenance.command("cleanup")
-@click.confirmation_option(prompt="This will remove orphaned records. Continue?")
-@click.pass_context
-def cleanup(ctx):
-    """Clean up orphaned records."""
-    try:
-        db = get_db(ctx)
-        click.echo("🧹 Cleaning up orphaned records...")
-        results = db.cleanup_all_metadata()
-
-        click.echo("\n✅ Cleanup Complete:")
-        total_removed = 0
-        for table, count in results.items():
-            if count > 0:
-                click.echo(f"  • {table}: {count} removed")
-                total_removed += count
-
-        if total_removed == 0:
-            click.echo("  No orphaned records found")
-        else:
-            click.echo(f"\nTotal removed: {total_removed}")
-
-    except DatabaseError as e:
-        handle_cli_error(ctx, e, "cleanup")
 
 
 @click.command()
@@ -107,44 +59,7 @@ def optimize(ctx):
         handle_cli_error(ctx, e, "optimize")
 
 
-@maintenance.command("validate")
-@click.pass_context
-def validate(ctx):
-    """Validate database integrity."""
-    try:
-        db = get_db(ctx)
-        with db.session_scope() as session:
-            orphans = db.health_monitor.check_orphaned_records(session)
-            integrity = db.health_monitor.check_data_integrity(session)
-
-            click.echo("\n🔍 Database Validation")
-            click.echo("=" * 50)
-
-            total_orphans = sum(orphans.values())
-            if total_orphans > 0:
-                click.echo(f"\n⚠️  Found {total_orphans} orphaned records:")
-                for table, count in orphans.items():
-                    if count > 0:
-                        click.echo(f"  • {table}: {count}")
-            else:
-                click.echo("\n✅ No orphaned records found")
-
-            total_integrity_issues = sum(
-                v for v in integrity.values() if isinstance(v, int)
-            )
-            if total_integrity_issues > 0:
-                click.echo(f"\n⚠️  Found {total_integrity_issues} integrity issues:")
-                for check, count in integrity.items():
-                    if isinstance(count, int) and count > 0:
-                        click.echo(f"  • {check}: {count}")
-            else:
-                click.echo("✅ No integrity issues found")
-
-    except DatabaseError as e:
-        handle_cli_error(ctx, e, "validate")
-
-
-@maintenance.command("analyze")
+@click.command()
 @click.pass_context
 def analyze(ctx):
     """Generate detailed analytics report."""

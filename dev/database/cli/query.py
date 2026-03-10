@@ -11,17 +11,10 @@ Commands:
     - batches: Show hierarchical export batches
 
 Usage:
-    # Show entry for a specific date
-    metadb query show 2024-01-01 --full
-
-    # List years with entry counts
-    metadb query years
-
-    # List months in a specific year
-    metadb query months 2024
-
-    # Show export batches
-    metadb query batches --threshold 1000
+    plm db show 2024-01-01 --full
+    plm db years
+    plm db months 2024
+    plm db batches --threshold 1000
 """
 import sys
 import click
@@ -31,14 +24,7 @@ from dev.core.exceptions import DatabaseError
 from . import get_db
 
 
-@click.group()
-@click.pass_context
-def query(ctx: click.Context) -> None:
-    """Browse and query database content."""
-    pass
-
-
-@query.command("show")
+@click.command("show")
 @click.argument("entry_date")
 @click.option(
     "--full", is_flag=True, help="Show all details including references/poems"
@@ -108,7 +94,7 @@ def show(ctx, entry_date, full):
         )
 
 
-@query.command("years")
+@click.command("years")
 @click.pass_context
 def years(ctx):
     """List all years with entry counts."""
@@ -131,7 +117,7 @@ def years(ctx):
         handle_cli_error(ctx, e, "years")
 
 
-@query.command("months")
+@click.command("months")
 @click.argument("year", type=int)
 @click.pass_context
 def months(ctx, year):
@@ -186,7 +172,7 @@ def months(ctx, year):
         )
 
 
-@query.command("batches")
+@click.command("batches")
 @click.option("--threshold", type=int, default=500, help="Batch threshold")
 @click.pass_context
 def batches(ctx, threshold):
