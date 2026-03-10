@@ -12,7 +12,7 @@ local _cache = {}
 
 --- Refresh the cache for a specific entity type.
 ---
---- Calls `plm metadata list-entities --type {type} --format json`
+--- Calls `plm metadata list --type {type} --format json`
 --- and stores the result. Runs asynchronously via jobstart.
 ---
 --- @param entity_type string Entity type key (people, locations, etc.)
@@ -20,7 +20,7 @@ local _cache = {}
 function M.refresh(entity_type, callback)
 	local root = get_project_root()
 	local cmd = string.format(
-		"cd %s && plm metadata list-entities --type %s --format json",
+		"cd %s && plm metadata list --type %s --format json",
 		root, entity_type
 	)
 
