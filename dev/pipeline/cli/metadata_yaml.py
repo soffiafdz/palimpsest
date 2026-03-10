@@ -190,7 +190,7 @@ def validate(ctx: click.Context, path: str) -> None:
         raise
 
 
-@metadata.command(name="list-entities")
+@metadata.command(name="list")
 @click.option(
     "--type",
     "entity_type",
@@ -206,7 +206,7 @@ def validate(ctx: click.Context, path: str) -> None:
     help="Output format",
 )
 @click.pass_context
-def list_entities(
+def list_metadata(
     ctx: click.Context,
     entity_type: str,
     output_format: str,
