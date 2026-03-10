@@ -11,9 +11,8 @@ Complete reference for all Palimpsest CLI commands.
 pip install -e .
 ```
 
-This installs three CLI entry points:
-- `plm` - Pipeline management (includes validation via `plm validate`)
-- `metadb` - Database management
+This installs two CLI entry points:
+- `plm` - Pipeline and database management (includes validation via `plm validate`)
 - `jsearch` - Full-text search
 
 ---
@@ -24,7 +23,7 @@ This installs three CLI entry points:
 
 ```bash
 # Process new journal entries
-plm inbox && plm convert && plm import-metadata
+plm inbox && plm convert && plm entries import
 
 # Search your journal
 jsearch query "therapy" person:alice in:2024
@@ -52,13 +51,13 @@ plm metadata import data/metadata/people/clara.yaml
 
 ```bash
 # Create backup (do this regularly!)
-metadb backup
+plm db backup
 
 # Check database health
-metadb health
+plm db health
 
 # View statistics
-metadb stats --verbose
+plm db stats --verbose
 ```
 
 ### Validation
@@ -119,12 +118,12 @@ plm convert [-i PATH] [-o PATH] [-f] [--dry-run] [--yaml-dir PATH] [--no-yaml]
 - `--yaml-dir PATH` - Output directory for YAML metadata skeletons
 - `--no-yaml` - Disable YAML skeleton generation
 
-#### `plm import-metadata`
+#### `plm entries import`
 
 Import metadata YAML files into database.
 
 ```bash
-plm import-metadata [--dry-run] [-y YEAR] [--years RANGE]
+plm entries import [--dry-run] [-y YEAR] [--years RANGE]
 ```
 
 **What it does:**
@@ -140,12 +139,12 @@ plm import-metadata [--dry-run] [-y YEAR] [--years RANGE]
 
 **Note:** This imports human-authored narrative analysis. Only post-2020 entries are supported.
 
-#### `plm export-json`
+#### `plm json export`
 
 Export database entities to JSON files.
 
 ```bash
-plm export-json
+plm json export
 ```
 
 **What it does:**
@@ -156,18 +155,18 @@ plm export-json
 **Use cases:**
 - Version control of database state
 - Backup in human-readable format
-- Cross-machine database synchronization (pair with `plm import-json`)
+- Cross-machine database synchronization (pair with `plm json import`)
 
-#### `plm import-json`
+#### `plm json import`
 
 Import database entities from JSON export files.
 
 ```bash
-plm import-json [--input-dir PATH]
+plm json import [--input-dir PATH]
 ```
 
 **What it does:**
-- Reads JSON files produced by `plm export-json`
+- Reads JSON files produced by `plm json export`
 - Imports entities into database using upsert semantics (idempotent)
 - Safe to run multiple times on the same data
 
@@ -177,10 +176,10 @@ plm import-json [--input-dir PATH]
 **Examples:**
 ```bash
 # Import from default exports directory
-plm import-json
+plm json import
 
 # Import from a specific directory
-plm import-json --input-dir path/to/exports
+plm json import --input-dir path/to/exports
 ```
 
 **Use cases:**
@@ -188,32 +187,14 @@ plm import-json --input-dir path/to/exports
 - Restore database state without a binary backup
 - Share database content across machines
 
-#### `plm prune-orphans`
-
-Remove orphaned entities from database.
-
-```bash
-plm prune-orphans [--type TYPE] [--list] [--dry-run]
-```
-
-**What it does:**
-- Finds entities with no associations
-- Removes orphaned records
-- Cleans up unused data
-
-**Options:**
-- `--type TYPE` - Entity type to prune: `people`, `locations`, `cities`, `tags`, `themes`, `arcs`, `events`, `reference_sources`, `poems`, `motifs`, `all` (default: `all`)
-- `--list` - Only list orphans, don't delete
-- `--dry-run` - Show what would be deleted without deleting
-
 ### Build Commands
 
-#### `plm build-pdf`
+#### `plm build pdf`
 
 Build PDFs for a year's entries.
 
 ```bash
-plm build-pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
+plm build pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
 ```
 
 **Arguments:**
@@ -237,12 +218,12 @@ plm build-pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
 
 ### Batch Operations
 
-#### `plm run-all`
+#### `plm pipeline run`
 
 Run the complete pipeline end-to-end.
 
 ```bash
-plm run-all [--year YEAR] [--skip-inbox] [--skip-pdf] [--backup]
+plm pipeline run [--year YEAR] [--skip-inbox] [--skip-pdf] [--backup]
 ```
 
 **Options:**
@@ -254,17 +235,17 @@ plm run-all [--year YEAR] [--skip-inbox] [--skip-pdf] [--backup]
 **What it runs:**
 1. `plm inbox` (unless `--skip-inbox`)
 2. `plm convert`
-3. `plm build-pdf` (unless `--skip-pdf`)
-4. `plm backup-full` (only with `--backup`)
+3. `plm build pdf` (unless `--skip-pdf`)
+4. `plm db backup --full` (only with `--backup`)
 
 ### Backup Operations
 
-#### `plm backup-full`
+#### `plm db backup --full`
 
 Create complete system backup.
 
 ```bash
-plm backup-full [--suffix TEXT]
+plm db backup --full [--suffix TEXT]
 ```
 
 **What it backs up:**
@@ -278,12 +259,12 @@ plm backup-full [--suffix TEXT]
 **Output:**
 - Timestamped compressed archive in `data/backups/`
 
-#### `plm backup-list-full`
+#### `plm db backups --full`
 
 List all available full backups.
 
 ```bash
-plm backup-list-full
+plm db backups --full
 ```
 
 **Output:**
@@ -342,12 +323,12 @@ plm validate entry [DATE] [-f FILE] [-y YEAR] [--years RANGE] [--all] [-q]
 - `--all` - Validate all entries
 - `-q/--quickfix` - Output in quickfix format for Neovim integration
 
-#### `plm build-metadata-pdf`
+#### `plm build metadata`
 
 Build PDF from metadata YAML files for a year.
 
 ```bash
-plm build-metadata-pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
+plm build metadata YEAR [-i PATH] [-o PATH] [-f] [--debug]
 ```
 
 **Arguments:**
@@ -542,12 +523,12 @@ plm metadata validate <path>
 - `0` - Valid (no errors)
 - `1` - Validation errors found
 
-#### `plm metadata list-entities`
+#### `plm metadata list`
 
 List entity names for autocomplete support.
 
 ```bash
-plm metadata list-entities --type TYPE [--format FORMAT]
+plm metadata list --type TYPE [--format FORMAT]
 ```
 
 **What it does:**
@@ -567,16 +548,16 @@ plm metadata list-entities --type TYPE [--format FORMAT]
 **Examples:**
 ```bash
 # List all people names
-plm metadata list-entities --type people
+plm metadata list --type people
 
 # JSON output for programmatic consumption
-plm metadata list-entities --type chapters --format json
+plm metadata list --type chapters --format json
 
 # List journal scenes with entry dates
-plm metadata list-entities --type journal_scenes
+plm metadata list --type journal_scenes
 
 # List reference sources
-plm metadata list-entities --type reference_sources --format json
+plm metadata list --type reference_sources --format json
 ```
 
 #### `plm metadata rename`
@@ -616,12 +597,12 @@ Database administration and maintenance.
 
 ### Setup & Initialization
 
-#### `metadb init`
+#### `plm db init`
 
 Initialize database and Alembic migrations.
 
 ```bash
-metadb init [--alembic-only] [--db-only]
+plm db init [--alembic-only] [--db-only]
 ```
 
 **What it does:**
@@ -639,19 +620,19 @@ metadb init [--alembic-only] [--db-only]
 - After deleting database
 - Fresh installation
 
-#### `metadb reset`
+#### `plm db reset`
 
 Delete and reinitialize database.
 
 ```bash
-metadb reset [--yes] [--keep-backups]
+plm db reset [--yes] [--keep-backups]
 ```
 
 **What it does:**
 - Deletes `palimpsest.db`
 - Removes Alembic version table
 - Optionally deletes backups
-- Runs `metadb init` to recreate
+- Runs `plm db init` to recreate
 
 **Options:**
 - `--yes` - Skip confirmation prompt
@@ -661,12 +642,12 @@ metadb reset [--yes] [--keep-backups]
 
 ### Backup & Restore
 
-#### `metadb backup`
+#### `plm db backup`
 
 Create timestamped backup.
 
 ```bash
-metadb backup [--type TYPE] [--suffix TEXT]
+plm db backup [--type TYPE] [--suffix TEXT]
 ```
 
 **Backup types:**
@@ -688,12 +669,12 @@ data/backups/palimpsest_YYYYMMDD_HHMMSS_TYPE.db
 - Automate daily backups with cron
 - Keep multiple backup generations
 
-#### `metadb backups`
+#### `plm db backups`
 
 List all available backups.
 
 ```bash
-metadb backups
+plm db backups
 ```
 
 **Output shows:**
@@ -702,12 +683,12 @@ metadb backups
 - File size
 - Backup type
 
-#### `metadb restore`
+#### `plm db restore`
 
 Restore from a backup file.
 
 ```bash
-metadb restore BACKUP_PATH [--yes]
+plm db restore BACKUP_PATH [--yes]
 ```
 
 **What it does:**
@@ -721,12 +702,12 @@ metadb restore BACKUP_PATH [--yes]
 
 ### Health & Statistics
 
-#### `metadb stats`
+#### `plm db stats`
 
 Display database statistics.
 
 ```bash
-metadb stats [--verbose]
+plm db stats [--verbose]
 ```
 
 **Standard output:**
@@ -742,12 +723,12 @@ metadb stats [--verbose]
 - Tag usage statistics
 - Theme distribution
 
-#### `metadb health`
+#### `plm db health`
 
 Run comprehensive health check.
 
 ```bash
-metadb health [--fix]
+plm db health [--fix]
 ```
 
 **Checks performed:**
@@ -765,12 +746,12 @@ metadb health [--fix]
 - `0` - All checks passed
 - `1` - Issues found (see output)
 
-#### `metadb optimize`
+#### `plm db optimize`
 
 Optimize database performance.
 
 ```bash
-metadb optimize [--yes]
+plm db optimize [--yes]
 ```
 
 **What it does:**
@@ -789,12 +770,12 @@ metadb optimize [--yes]
 
 ⚠️ **Note:** Can take several minutes on large databases.
 
-#### `metadb prune-orphans`
+#### `plm db prune`
 
 Detect and remove orphaned entities.
 
 ```bash
-metadb prune-orphans [--type TYPE] [--list] [--dry-run]
+plm db prune [--type TYPE] [--list] [--dry-run]
 ```
 
 **What it does:**
@@ -809,12 +790,12 @@ metadb prune-orphans [--type TYPE] [--list] [--dry-run]
 
 ### Migration Management
 
-#### `metadb migration`
+#### `plm db migration`
 
 Manage database migrations.
 
 ```bash
-metadb migration COMMAND
+plm db migration COMMAND
 ```
 
 **Commands:**
@@ -824,7 +805,7 @@ metadb migration COMMAND
 Show current migration status.
 
 ```bash
-metadb migration status
+plm db migration status
 ```
 
 **Output:**
@@ -837,7 +818,7 @@ metadb migration status
 Upgrade database to specified revision.
 
 ```bash
-metadb migration upgrade [REVISION]
+plm db migration upgrade [REVISION]
 ```
 
 **Arguments:**
@@ -846,13 +827,13 @@ metadb migration upgrade [REVISION]
 **Examples:**
 ```bash
 # Upgrade to latest
-metadb migration upgrade
+plm db migration upgrade
 
 # Upgrade to specific revision
-metadb migration upgrade abc123
+plm db migration upgrade abc123
 
 # Upgrade one step
-metadb migration upgrade +1
+plm db migration upgrade +1
 ```
 
 ##### `downgrade`
@@ -860,16 +841,16 @@ metadb migration upgrade +1
 Downgrade database to specified revision.
 
 ```bash
-metadb migration downgrade REVISION
+plm db migration downgrade REVISION
 ```
 
 **Examples:**
 ```bash
 # Downgrade one step
-metadb migration downgrade -1
+plm db migration downgrade -1
 
 # Downgrade to specific revision
-metadb migration downgrade abc123
+plm db migration downgrade abc123
 ```
 
 ##### `history`
@@ -877,7 +858,7 @@ metadb migration downgrade abc123
 Show migration history.
 
 ```bash
-metadb migration history
+plm db migration history
 ```
 
 **Output:**
@@ -890,19 +871,19 @@ metadb migration history
 Create a new Alembic migration.
 
 ```bash
-metadb migration create "Description of changes"
+plm db migration create "Description of changes"
 ```
 
 **For developers:** Creates autogenerated migration based on model changes.
 
 ### Query Commands
 
-#### `metadb query`
+#### `plm db query`
 
 Browse and query database content.
 
 ```bash
-metadb query COMMAND
+plm db query COMMAND
 ```
 
 **Commands:**
@@ -912,7 +893,7 @@ metadb query COMMAND
 List all years with entry counts.
 
 ```bash
-metadb query years
+plm db query years
 ```
 
 **Output:**
@@ -928,12 +909,12 @@ Year    Entries
 List all months in a year with entry counts.
 
 ```bash
-metadb query months YEAR
+plm db query months YEAR
 ```
 
 **Example:**
 ```bash
-metadb query months 2024
+plm db query months 2024
 ```
 
 **Output:**
@@ -949,7 +930,7 @@ Month      Entries
 Display a single entry with all metadata.
 
 ```bash
-metadb query show YYYY-MM-DD
+plm db query show YYYY-MM-DD
 ```
 
 **Output includes:**
@@ -961,7 +942,7 @@ metadb query show YYYY-MM-DD
 
 **Example:**
 ```bash
-metadb query show 2024-11-26
+plm db query show 2024-11-26
 ```
 
 ##### `batches`
@@ -969,7 +950,7 @@ metadb query show 2024-11-26
 Show how entries would be batched for export.
 
 ```bash
-metadb query batches [--threshold N]
+plm db query batches [--threshold N]
 ```
 
 **Options:**
@@ -982,12 +963,12 @@ metadb query batches [--threshold N]
 
 ### Maintenance Commands
 
-#### `metadb maintenance`
+#### `plm db maintenance`
 
 Database maintenance and optimization.
 
 ```bash
-metadb maintenance COMMAND
+plm db maintenance COMMAND
 ```
 
 **Commands:**
@@ -997,7 +978,7 @@ metadb maintenance COMMAND
 Validate database integrity.
 
 ```bash
-metadb maintenance validate
+plm db maintenance validate
 ```
 
 **Checks:**
@@ -1011,7 +992,7 @@ metadb maintenance validate
 Clean up orphaned records.
 
 ```bash
-metadb maintenance cleanup
+plm db maintenance cleanup
 ```
 
 **What it removes:**
@@ -1026,7 +1007,7 @@ Prompts for confirmation before proceeding.
 Generate detailed analytics report.
 
 ```bash
-metadb maintenance analyze
+plm db maintenance analyze
 ```
 
 **Report includes:**
@@ -1034,70 +1015,6 @@ metadb maintenance analyze
 - Index usage statistics
 - Query performance metrics
 - Growth trends
-
-### Manuscript Commands
-
-#### `metadb manuscript`
-
-Browse and manage manuscript entities.
-
-```bash
-metadb manuscript COMMAND
-```
-
-**Commands:**
-
-##### `chapters`
-
-List all chapters.
-
-```bash
-metadb manuscript chapters [--status STATUS] [--type TYPE]
-```
-
-**Options:**
-- `--status STATUS` - Filter by status: `draft`, `revised`, `final`
-- `--type TYPE` - Filter by type: `prose`, `vignette`, `poem`
-
-##### `chapter`
-
-Show details for a specific chapter.
-
-```bash
-metadb manuscript chapter TITLE
-```
-
-##### `characters`
-
-List all characters.
-
-```bash
-metadb manuscript characters
-```
-
-##### `character`
-
-Show details for a specific character.
-
-```bash
-metadb manuscript character NAME
-```
-
-##### `parts`
-
-List all manuscript parts.
-
-```bash
-metadb manuscript parts
-```
-
-##### `stats`
-
-Show manuscript statistics.
-
-```bash
-metadb manuscript stats
-```
 
 ---
 
@@ -1575,13 +1492,13 @@ therapy session with alice discussing...
 
 ```bash
 # Morning: process new entries
-plm inbox && plm convert && plm import-metadata
+plm inbox && plm convert && plm entries import
 
 # Search your journal
 jsearch query "therapy" person:alice in:2024
 
 # Evening: backup
-metadb backup
+plm db backup
 ```
 
 ### Weekly Maintenance
@@ -1592,10 +1509,10 @@ plm validate db all
 plm validate consistency all
 
 # Optimize database
-metadb optimize
+plm db optimize
 
 # Review statistics
-metadb stats --verbose
+plm db stats --verbose
 ```
 
 ### Monthly Tasks
@@ -1605,10 +1522,10 @@ metadb stats --verbose
 jsearch index rebuild
 
 # Full system backup
-plm backup-full
+plm db backup --full
 
 # Check database health
-metadb health
+plm db health
 ```
 
 ### Wiki Workflow
@@ -1632,7 +1549,7 @@ plm metadata import --type people
 
 ```bash
 # Create backup
-metadb backup --suffix "before-major-change"
+plm db backup --suffix "before-major-change"
 
 # Validate current state
 plm validate consistency all
@@ -1643,7 +1560,7 @@ plm validate consistency all
 plm validate consistency all
 
 # If something breaks, restore:
-metadb restore data/backups/palimpsest_..._before-major-change.db
+plm db restore data/backups/palimpsest_..._before-major-change.db
 ```
 
 ---
@@ -1652,7 +1569,7 @@ metadb restore data/backups/palimpsest_..._before-major-change.db
 
 ### "Database not initialized"
 ```bash
-metadb init
+plm db init
 ```
 
 ### "Search index not found"
@@ -1664,12 +1581,12 @@ jsearch index create
 ```bash
 plm validate consistency metadata
 # If drift detected:
-plm import-metadata  # Re-import from metadata
+plm entries import  # Re-import from metadata
 ```
 
 ### "Slow database queries"
 ```bash
-metadb optimize
+plm db optimize
 jsearch index rebuild
 ```
 
@@ -1680,11 +1597,11 @@ jsearch index rebuild
 **View command help:**
 ```bash
 plm --help
-metadb --help
+plm db --help
 jsearch --help
 
 # Subcommand help
-metadb backup --help
+plm db backup --help
 plm validate db --help
 jsearch query --help
 ```
@@ -1692,9 +1609,9 @@ jsearch query --help
 **Check status:**
 ```bash
 plm status
-metadb health
+plm db health
 ```
 
 ---
 
-**Last Updated:** 2026-03-08
+**Last Updated:** 2026-03-10
