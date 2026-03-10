@@ -27,7 +27,7 @@ from dev.database.manager import PalimpsestDB
 from dev.pipeline.export_json import JSONExporter
 
 
-@click.command("export-json")
+@click.command("export")
 @click.option("--no-commit", is_flag=True, help="Write JSON files without creating a git commit")
 @click.pass_context
 def export_json(ctx: click.Context, no_commit: bool) -> None:

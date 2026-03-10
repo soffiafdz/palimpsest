@@ -31,7 +31,7 @@ from dev.core.logging_manager import handle_cli_error
 from dev.core.paths import ALEMBIC_DIR, BACKUP_DIR, DB_PATH, LOG_DIR
 
 
-@click.command("import-json")
+@click.command("import")
 @click.option(
     "--input-dir",
     type=click.Path(exists=True),
