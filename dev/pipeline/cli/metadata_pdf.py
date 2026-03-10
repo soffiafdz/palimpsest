@@ -20,7 +20,7 @@ from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.pipeline import metadata2pdf
 
 
-@click.command("build-metadata-pdf")
+@click.command("metadata")
 @click.argument("year")
 @click.option(
     "-i",

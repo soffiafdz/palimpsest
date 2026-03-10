@@ -19,7 +19,7 @@ from dev.core.logging_manager import PalimpsestLogger, handle_cli_error
 from dev.pipeline import md2pdf
 
 
-@click.command("build-pdf")
+@click.command("pdf")
 @click.argument("year")
 @click.option(
     "-i",
