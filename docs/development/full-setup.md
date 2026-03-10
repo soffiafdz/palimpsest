@@ -1,6 +1,6 @@
 # Full Setup Guide
 
-> Use `plm import-metadata` for database import and `plm export-json` for exports.
+> Use `plm entries import` for database import and `plm json export` for exports.
 
 Complete instructions for setting up Palimpsest from scratch on a new machine.
 
@@ -39,8 +39,7 @@ palimpsest/
 │   │   ├── inbox/          # New entries
 │   │   ├── sources/txt/    # Formatted text by year
 │   │   ├── content/md/     # Markdown entries by year
-│   │   ├── content/pdf/    # Compiled PDFs
-│   │   └── narrative_analysis/
+│   │   └── content/pdf/    # Compiled PDFs
 │   ├── metadata/           # SQLite database
 │   ├── wiki/               # Generated wiki
 │   └── vignettes/          # Special entries
@@ -63,7 +62,7 @@ conda activate palimpsest
 
 Verify installation:
 ```bash
-python -m dev.pipeline.cli --help
+plm --help
 ```
 
 ---
@@ -74,8 +73,8 @@ python -m dev.pipeline.cli --help
 
 If no database exists:
 ```bash
-# Create database with current schema
-alembic upgrade head
+# Create database with current schema and stamp Alembic
+plm db init
 ```
 
 ### Existing Database
@@ -83,20 +82,17 @@ alembic upgrade head
 If database exists but needs migrations:
 ```bash
 # Check current migration status
-alembic current
-
-# Check available migrations
-alembic heads
+plm db migration-status
 
 # Apply pending migrations
-alembic upgrade head
+plm db upgrade
 ```
 
 ### Verify Database
 
 ```bash
 # Check pipeline status (includes DB connection test)
-python -m dev.pipeline.cli status
+plm status
 
 # Should show directory paths and file counts
 ```
@@ -108,7 +104,7 @@ python -m dev.pipeline.cli status
 ### Option A: Run Everything
 
 ```bash
-python -m dev.pipeline.cli run-all 2024
+plm pipeline run --year 2024
 ```
 
 
@@ -116,16 +112,22 @@ python -m dev.pipeline.cli run-all 2024
 
 ```bash
 # 1. Process inbox (raw exports → formatted txt)
-python -m dev.pipeline.cli inbox
+plm inbox
 
 # 2. Convert to markdown (txt → md with YAML frontmatter)
-python -m dev.pipeline.cli convert
+plm convert
 
-# 3. Import metadata (YAML → SQLite)
-python -m dev.pipeline.cli import-metadata
+# 3. Import entry frontmatter to database (post-2020 only)
+plm entries import --years 2021-2025
 
 # 4. Build PDFs for a year
-python -m dev.pipeline.cli build-pdf 2024
+plm build pdf 2024
+
+# 5. Import per-entity YAML metadata
+plm metadata import
+
+# 6. Generate wiki pages
+plm wiki generate
 ```
 
 ---
@@ -135,7 +137,7 @@ python -m dev.pipeline.cli build-pdf 2024
 ### Check Pipeline Status
 
 ```bash
-python -m dev.pipeline.cli status
+plm status
 ```
 
 Expected output:
@@ -163,7 +165,7 @@ Database:
 ### Run Validation
 
 ```bash
-python -m dev.pipeline.cli validate
+plm validate pipeline
 ```
 
 ### Run Tests
@@ -184,26 +186,24 @@ After pulling new changes:
 git submodule update --recursive
 
 # Apply any new migrations
-alembic upgrade head
+plm db upgrade
 
 # Regenerate wiki if needed
+plm wiki generate
 ```
 
 ### Export Database
 
 ```bash
 # Export to JSON for version control
-python -m dev.pipeline.cli export-json
+plm json export
 ```
 
 ### Rebuild PDFs
 
 ```bash
 # Single year
-python -m dev.pipeline.cli build-pdf 2024
-
-# With notes version
-python -m dev.pipeline.cli build-pdf 2024 --notes
+plm build pdf 2024
 ```
 
 ### Process New Entries
@@ -211,13 +211,13 @@ python -m dev.pipeline.cli build-pdf 2024 --notes
 ```bash
 # 1. Place raw exports in inbox/
 # 2. Run inbox processing
-python -m dev.pipeline.cli inbox
+plm inbox
 
 # 3. Convert to markdown
-python -m dev.pipeline.cli convert
+plm convert
 
-# 4. Import metadata to database
-python -m dev.pipeline.cli import-metadata
+# 4. Import entry frontmatter to database
+plm entries import
 ```
 
 ---
@@ -229,7 +229,7 @@ python -m dev.pipeline.cli import-metadata
 If migrations fail with SQLite constraint errors:
 ```bash
 # Check current state
-alembic current
+plm db migration-status
 
 # For SQLite, some operations need batch mode
 # Check if migration uses batch_alter_table for constraint changes
@@ -244,12 +244,7 @@ git submodule update --init --recursive
 
 ### Import Errors
 
-Ensure PYTHONPATH includes project root:
-```bash
-PYTHONPATH=/path/to/palimpsest python -m dev.pipeline.cli status
-```
-
-Or install in development mode:
+Install in development mode:
 ```bash
 pip install -e .
 ```
@@ -275,7 +270,6 @@ sudo apt install texlive-latex-base texlive-latex-extra
 | `data/journal/sources/txt/YYYY/` | Formatted text files by year |
 | `data/journal/content/md/YYYY/` | Markdown entries with YAML |
 | `data/journal/content/pdf/` | Compiled PDFs |
-| `data/journal/narrative_analysis/` | Analysis files and manifests |
 | `data/metadata/palimpsest.db` | SQLite database |
 | `data/wiki/` | Generated vimwiki pages |
 
@@ -287,16 +281,16 @@ sudo apt install texlive-latex-base texlive-latex-extra
 # Pipeline
 plm inbox              # Process inbox
 plm convert            # txt → md
-plm import-metadata            # md → database
-plm build-pdf YEAR     # md → pdf
-plm run-all YEAR       # Full pipeline
+plm entries import     # md → database
+plm build pdf YEAR     # md → pdf
+plm pipeline run --year YEAR  # Full pipeline
 plm status             # Show status
 plm validate           # Run validation
 
 # Database
-alembic current        # Check migration status
-alembic upgrade head   # Apply migrations
-alembic downgrade -1   # Rollback one migration
+plm db migration-status  # Check migration status
+plm db upgrade           # Apply migrations
+plm db downgrade REV     # Rollback to revision
 
 # Testing
 pytest tests/ -q       # Run tests
