@@ -5,8 +5,7 @@ Database Commands
 Commands for database operations.
 
 Commands:
-    - import-metadata: Import metadata YAML into database
-    - prune-orphans: Remove orphaned entities from database
+    - import: Import journal entry frontmatter YAML into database
 """
 from __future__ import annotations
 
@@ -24,12 +23,12 @@ from dev.database.manager import PalimpsestDB
 from dev.pipeline.metadata_importer import EntryImporter
 
 
-@click.command("import-metadata")
+@click.command("import")
 @click.option("--dry-run", is_flag=True, help="Don't commit changes")
 @click.option("-y", "--year", type=str, help="Import only specific year (e.g., 2024)")
 @click.option("--years", type=str, help="Import year range (e.g., 2021-2025)")
 @click.pass_context
-def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) -> None:
+def import_entries(ctx: click.Context, dry_run: bool, year: str, years: str) -> None:
     """
     Import metadata YAML files into database.
 
@@ -120,54 +119,4 @@ def import_metadata(ctx: click.Context, dry_run: bool, year: str, years: str) ->
             click.echo("No orphans found.")
 
 
-@click.command("prune-orphans")
-@click.option(
-    "--type",
-    "entity_type",
-    type=click.Choice(["people", "locations", "cities", "tags", "themes", "arcs", "events", "reference_sources", "poems", "motifs", "all"]),
-    default="all",
-    help="Type of entity to prune",
-)
-@click.option("--list", "list_only", is_flag=True, help="Only list orphans, don't delete")
-@click.option("--dry-run", is_flag=True, help="Show what would be deleted")
-@click.pass_context
-def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run: bool) -> None:
-    """Remove orphaned entities from database."""
-    from dev.database.cli.prune import _prune_entity_type
-
-    db = PalimpsestDB(
-        db_path=DB_PATH,
-        alembic_dir=ALEMBIC_DIR,
-        log_dir=LOG_DIR,
-        backup_dir=BACKUP_DIR,
-        enable_auto_backup=False,
-    )
-
-    types_to_check = []
-    if entity_type == "all":
-        types_to_check = [
-            "people", "locations", "cities", "tags", "themes", "arcs",
-            "events", "reference_sources", "poems", "motifs",
-        ]
-    else:
-        types_to_check = [entity_type]
-
-    total_orphans = 0
-    total_deleted = 0
-
-    for etype in types_to_check:
-        orphans, deleted = _prune_entity_type(db, etype, list_only, dry_run)
-        total_orphans += orphans
-        total_deleted += deleted
-
-    click.echo("\n" + "=" * 60)
-    if list_only:
-        click.echo(f"Total orphaned entities: {total_orphans}")
-    elif dry_run:
-        click.echo(f"Would delete {total_orphans} orphaned entities")
-    else:
-        click.echo(f"✅ Deleted {total_deleted} orphaned entities")
-    click.echo("=" * 60)
-
-
-__all__ = ["import_metadata", "prune_orphans"]
+__all__ = ["import_entries"]
