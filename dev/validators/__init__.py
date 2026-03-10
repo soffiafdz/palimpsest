@@ -19,7 +19,7 @@ Architecture:
         2. Result dataclasses
         3. Error/exception classes
     - The cli.py module provides unified entry point with subcommands
-    - Simple validators stay in their respective CLIs (plm, metadb)
+    - Simple validators stay in their respective CLIs (plm)
 
 Usage:
     # Through CLI

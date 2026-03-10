@@ -52,9 +52,9 @@ Usage:
             print(f"Found {orphans['total']} orphaned records")
 
 CLI Integration:
-    metadb health                  # Basic health check
-    metadb health --fix            # Run health check and auto-fix issues
-    metadb validate                # Validate database integrity
+    plm db health                  # Basic health check
+    plm db health --fix            # Run health check and auto-fix issues
+    plm validate db                # Validate database integrity
 
 Health Report Structure:
     {
@@ -73,7 +73,7 @@ Health Report Structure:
 
 Notes:
     - Health checks are non-destructive by default
-    - Use --fix flag with metadb CLI for auto-repair
+    - Use --fix flag with plm db CLI for auto-repair
     - Orphan detection uses QueryOptimizer for efficiency
     - Health check results are logged automatically
     - Failed checks raise HealthCheckError

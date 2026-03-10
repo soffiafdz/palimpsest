@@ -10,19 +10,19 @@ Commands:
 
 Usage:
     # Perform a complete database and Alembic setup
-    metadb init
+    plm db init
 
     # Initialize Alembic only
-    metadb init --alembic-only
+    plm db init --alembic-only
 
     # Initialize database schema only
-    metadb init --db-only
+    plm db init --db-only
 
     # Reset the entire database (DANGEROUS!)
-    metadb reset
+    plm db reset
 
     # Reset, but keep existing backup files
-    metadb reset --keep-backups
+    plm db reset --keep-backups
 """
 import click
 

@@ -20,19 +20,19 @@ Commands:
 
 Usage:
     # List orphaned people
-    metadb prune-orphans --type people --list
+    plm db prune --type people --list
 
     # Remove orphaned people (dry run)
-    metadb prune-orphans --type people --dry-run
+    plm db prune --type people --dry-run
 
     # Actually remove orphaned people
-    metadb prune-orphans --type people
+    plm db prune --type people
 
     # Remove all types of orphans
-    metadb prune-orphans --type all
+    plm db prune --type all
 
     # Use via pipeline CLI
-    plm prune-orphans --type locations --dry-run
+    plm db prune --type locations --dry-run
 """
 # --- Annotations ---
 from __future__ import annotations
@@ -77,13 +77,13 @@ def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run
 
     Examples:
         # List orphaned people
-        metadb prune-orphans --type people --list
+        plm db prune --type people --list
 
         # Preview deletion of all orphans
-        metadb prune-orphans --dry-run
+        plm db prune --dry-run
 
         # Actually delete orphaned locations
-        metadb prune-orphans --type locations
+        plm db prune --type locations
 
     Args:
         ctx: Click context with database configuration

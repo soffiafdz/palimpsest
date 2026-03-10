@@ -139,7 +139,7 @@ class DatabaseValidator:
                 return [Diagnostic(
                     file="", line=0, col=0, end_line=0, end_col=0,
                     severity="error", code="MIGRATION_PENDING",
-                    message="Database has no migration history. Run: metadb migration upgrade",
+                    message="Database has no migration history. Run: plm db upgrade",
                 )]
 
             if current_rev != head_rev:
