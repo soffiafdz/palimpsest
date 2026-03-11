@@ -1579,7 +1579,7 @@ Local values override shared values via shallow dict merge per section.
 
 ```yaml
 sync:
-  min_year: 2021        # Skip entries before this year
+  years: "2021-2025"    # Year range for entries import
   no_wiki: false        # Skip wiki generation by default
   auto_commit: false    # Auto-commit data/ submodule after sync
 ```
@@ -1600,7 +1600,7 @@ sync:
 CLI flags always override config values:
 
 ```bash
-# Uses config min_year (e.g., 2021) since --years not passed
+# Uses config years (e.g., 2021-2025) since --years not passed
 plm sync
 
 # Overrides config — only imports 2025

@@ -114,7 +114,7 @@ class TestGetSyncConfig:
              patch("dev.core.config.LOCAL_CONFIG_PATH", local):
             result = get_sync_config()
         assert result == {
-            "min_year": None,
+            "years": None,
             "no_wiki": False,
             "auto_commit": False,
         }
@@ -123,33 +123,42 @@ class TestGetSyncConfig:
         """Reads values from sync section."""
         shared, local = config_files
         shared.write_text(
-            "sync:\n  min_year: 2022\n  no_wiki: true\n  auto_commit: true\n"
+            "sync:\n  years: '2021-2025'\n  no_wiki: true\n  auto_commit: true\n"
         )
         with patch("dev.core.config.CONFIG_PATH", shared), \
              patch("dev.core.config.LOCAL_CONFIG_PATH", local):
             result = get_sync_config()
-        assert result["min_year"] == 2022
+        assert result["years"] == "2021-2025"
         assert result["no_wiki"] is True
         assert result["auto_commit"] is True
 
     def test_partial_sync_config_fills_defaults(self, config_files):
         """Missing sync keys get default values."""
         shared, local = config_files
-        shared.write_text("sync:\n  min_year: 2023\n")
+        shared.write_text("sync:\n  years: '2023-2025'\n")
         with patch("dev.core.config.CONFIG_PATH", shared), \
              patch("dev.core.config.LOCAL_CONFIG_PATH", local):
             result = get_sync_config()
-        assert result["min_year"] == 2023
+        assert result["years"] == "2023-2025"
         assert result["no_wiki"] is False
         assert result["auto_commit"] is False
 
     def test_local_override_sync(self, config_files):
         """Local config overrides sync values."""
         shared, local = config_files
-        shared.write_text("sync:\n  min_year: 2021\n  no_wiki: false\n")
+        shared.write_text("sync:\n  years: '2021-2025'\n  no_wiki: false\n")
         local.write_text("sync:\n  no_wiki: true\n")
         with patch("dev.core.config.CONFIG_PATH", shared), \
              patch("dev.core.config.LOCAL_CONFIG_PATH", local):
             result = get_sync_config()
-        assert result["min_year"] == 2021
+        assert result["years"] == "2021-2025"
         assert result["no_wiki"] is True
+
+    def test_integer_years_coerced_to_string(self, config_files):
+        """Integer years value is coerced to string."""
+        shared, local = config_files
+        shared.write_text("sync:\n  years: 2024\n")
+        with patch("dev.core.config.CONFIG_PATH", shared), \
+             patch("dev.core.config.LOCAL_CONFIG_PATH", local):
+            result = get_sync_config()
+        assert result["years"] == "2024"

@@ -178,19 +178,17 @@ class TestSyncHelpers:
 class TestSyncConfigDefaults:
     """Verify project config provides defaults for sync flags."""
 
-    def test_config_min_year_provides_default_years(
-        self, runner, patched_sync
-    ):
-        """Config min_year builds year range when --years not passed."""
-        cfg = {"min_year": 2022, "no_wiki": False, "auto_commit": False}
+    def test_config_years_provides_default(self, runner, patched_sync):
+        """Config years provides default when --years not passed."""
+        cfg = {"years": "2022-2025", "no_wiki": False, "auto_commit": False}
         with patch("dev.core.config.get_sync_config", return_value=cfg):
             result = runner.invoke(cli, ["sync"])
         assert result.exit_code == 0, result.output
-        assert "years:" in result.output
+        assert "years: 2022-2025" in result.output
 
     def test_cli_years_overrides_config(self, runner, patched_sync):
-        """--years CLI flag overrides config min_year."""
-        cfg = {"min_year": 2021, "no_wiki": False, "auto_commit": False}
+        """--years CLI flag overrides config years."""
+        cfg = {"years": "2021-2025", "no_wiki": False, "auto_commit": False}
         with patch("dev.core.config.get_sync_config", return_value=cfg):
             result = runner.invoke(cli, ["sync", "--years", "2025"])
         assert result.exit_code == 0, result.output
@@ -198,7 +196,7 @@ class TestSyncConfigDefaults:
 
     def test_config_no_wiki_provides_default(self, runner, patched_sync):
         """Config no_wiki=True skips wiki when --no-wiki not passed."""
-        cfg = {"min_year": None, "no_wiki": True, "auto_commit": False}
+        cfg = {"years": None, "no_wiki": True, "auto_commit": False}
         patched_sync["_run_metadata_import"].return_value = 1
         with patch("dev.core.config.get_sync_config", return_value=cfg):
             result = runner.invoke(cli, ["sync"])
@@ -207,7 +205,7 @@ class TestSyncConfigDefaults:
 
     def test_config_auto_commit_provides_default(self, runner, patched_sync):
         """Config auto_commit=True triggers commit when --commit not passed."""
-        cfg = {"min_year": None, "no_wiki": False, "auto_commit": True}
+        cfg = {"years": None, "no_wiki": False, "auto_commit": True}
         patched_sync["_run_metadata_import"].return_value = 1
         patched_sync["_run_data_commit"].return_value = True
         with patch("dev.core.config.get_sync_config", return_value=cfg):

@@ -19,7 +19,7 @@ Usage:
     from dev.core.config import get_sync_config
 
     cfg = get_sync_config()
-    print(cfg["min_year"])    # e.g. 2021
+    print(cfg["years"])       # e.g. "2021-2025"
     print(cfg["no_wiki"])     # e.g. False
     print(cfg["auto_commit"]) # e.g. False
 
@@ -81,14 +81,17 @@ def get_sync_config() -> Dict[str, Any]:
 
     Returns:
         Dictionary with keys:
-            - min_year: Minimum year for entries import (int or None)
+            - years: Year range for entries import (str or None)
             - no_wiki: Whether to skip wiki generation (bool)
             - auto_commit: Whether to auto-commit data/ submodule (bool)
     """
     config = load_config()
     sync: Dict[str, Any] = config.get("sync", {})
+    years = sync.get("years", None)
+    if years is not None:
+        years = str(years)
     return {
-        "min_year": sync.get("min_year", None),
+        "years": years,
         "no_wiki": sync.get("no_wiki", False),
         "auto_commit": sync.get("auto_commit", False),
     }

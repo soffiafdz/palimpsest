@@ -47,7 +47,6 @@ Dependencies:
 from __future__ import annotations
 
 # --- Standard library imports ---
-import datetime
 import subprocess
 from typing import Any, Optional, Set
 
@@ -378,9 +377,8 @@ def sync(
     cfg = get_sync_config()
     no_wiki = no_wiki or cfg["no_wiki"]
     do_commit = do_commit or cfg["auto_commit"]
-    if years is None and cfg["min_year"]:
-        current_year = datetime.date.today().year
-        years = f"{cfg['min_year']}-{current_year}"
+    if years is None and cfg["years"]:
+        years = cfg["years"]
 
     years_filter = _parse_years(years)
 
