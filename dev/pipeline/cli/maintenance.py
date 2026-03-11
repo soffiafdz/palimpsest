@@ -177,11 +177,6 @@ def status(ctx: click.Context) -> None:
             latest_dt = datetime.fromtimestamp(latest)
             click.echo(f"  Last generated: {latest_dt.strftime('%Y-%m-%d %H:%M:%S')}")
 
-        sync_pending = wiki_dir / ".sync-pending"
-        if sync_pending.exists():
-            click.echo(f"  Sync pending: {sync_pending.read_text().strip() or 'yes'}")
-        else:
-            click.echo("  Sync pending: no")
     else:
         click.echo("  Not generated yet")
 

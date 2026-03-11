@@ -149,22 +149,6 @@ class WikiSync:
         self.validator = WikiValidator(db)
         self.logger = safe_logger(logger)
 
-    def _check_sync_pending(self) -> None:
-        """
-        Check for deck sync-pending marker and refuse generation.
-
-        When generate_only=True, edits haven't been ingested yet, so
-        generation would overwrite deck changes. This guard ensures
-        the user runs a full sync (or ingest) first.
-
-        Raises:
-            RuntimeError: If .sync-pending marker exists
-        """
-        from dev.wiki.exporter import WikiExporter
-
-        exporter = WikiExporter(self.db, output_dir=self.wiki_dir)
-        exporter._check_sync_pending()
-
     def sync_manuscript(
         self,
         ingest_only: bool = False,
@@ -193,7 +177,6 @@ class WikiSync:
             return result
 
         if generate_only:
-            self._check_sync_pending()
             self._regenerate(result)
             return result
 
@@ -285,14 +268,6 @@ class WikiSync:
                 result.errors.append(
                     f"Failed to import {entity_type}: {e}"
                 )
-
-        # Clear deck sync-pending marker after successful ingest
-        marker = self.wiki_dir / ".sync-pending"
-        if marker.exists():
-            marker.unlink()
-            self.logger.info(
-                "Cleared .sync-pending marker — deck edits ingested"
-            )
 
         self.logger.info(
             f"Ingested {result.files_ingested} files"
