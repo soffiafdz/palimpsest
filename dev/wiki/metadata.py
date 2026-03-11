@@ -47,7 +47,7 @@ from __future__ import annotations
 # --- Standard library imports ---
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 # --- Third-party imports ---
 import yaml
@@ -1219,17 +1219,27 @@ class MetadataImporter:
 
         return []
 
-    def import_all(self, entity_type: Optional[str] = None) -> Dict[str, int]:
+    def import_all(
+        self,
+        entity_type: Optional[str] = None,
+        changed_files: Optional[Set[Path]] = None,
+    ) -> Dict[str, int]:
         """
-        Import all YAML metadata files for a given entity type.
+        Import YAML metadata files, optionally filtered by type or changed files.
+
+        In incremental mode (``changed_files`` is a set), only files present
+        in that set are imported.  ``None`` means full import.
 
         Args:
-            entity_type: Optional type filter
+            entity_type: Optional type filter (e.g. "people")
+            changed_files: If provided, only import files in this set.
+                ``None`` imports all files (full mode).
 
         Returns:
             Dict of import statistics
         """
-        safe_logger(self.logger).log_info("Starting metadata import")
+        mode = "incremental" if changed_files is not None else "full"
+        safe_logger(self.logger).log_info(f"Starting {mode} metadata import")
         imported = 0
         errors = 0
 
@@ -1251,6 +1261,8 @@ class MetadataImporter:
                 continue
 
             if path.is_file():
+                if changed_files is not None and path not in changed_files:
+                    continue
                 diags = self.import_file(path)
                 if any(d.severity == "error" for d in diags):
                     errors += 1
@@ -1258,6 +1270,8 @@ class MetadataImporter:
                     imported += 1
             elif path.is_dir():
                 for yaml_file in sorted(path.rglob("*.yaml")):
+                    if changed_files is not None and yaml_file not in changed_files:
+                        continue
                     diags = self.import_file(yaml_file)
                     if any(d.severity == "error" for d in diags):
                         errors += 1

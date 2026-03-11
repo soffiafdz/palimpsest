@@ -48,6 +48,7 @@ from __future__ import annotations
 
 # --- Standard library imports ---
 import subprocess
+from pathlib import Path
 from typing import Any, Optional, Set
 
 # --- Third-party imports ---
@@ -105,7 +106,12 @@ def _collect_yaml_files(years_filter: Optional[Set[str]]) -> list:
     return yaml_files
 
 
-def _run_json_import(db: Any, logger: Any, verbose: bool) -> int:
+def _run_json_import(
+    db: Any,
+    logger: Any,
+    verbose: bool,
+    changed_files: Optional[Set[Path]] = None,
+) -> int:
     """
     Step 1: Import shared DB state from JSON export files.
 
@@ -113,6 +119,8 @@ def _run_json_import(db: Any, logger: Any, verbose: bool) -> int:
         db: Initialised ``PalimpsestDB`` instance.
         logger: Pipeline logger.
         verbose: Print per-entity counts.
+        changed_files: Set of changed file paths for incremental
+            import. ``None`` means full import.
 
     Returns:
         Total number of entities imported across all types.
@@ -120,7 +128,7 @@ def _run_json_import(db: Any, logger: Any, verbose: bool) -> int:
     from dev.pipeline.import_json import JSONImporter
 
     importer = JSONImporter(db, logger=logger)
-    stats = importer.import_all()
+    stats = importer.import_all(changed_files=changed_files)
 
     total = sum(stats.values())
     if verbose:
@@ -201,6 +209,7 @@ def _run_metadata_import(
     db: Any,
     logger: Any,
     verbose: bool,
+    changed_files: Optional[Set[Path]] = None,
 ) -> int:
     """
     Step 3: Import entity YAML metadata files.
@@ -209,6 +218,8 @@ def _run_metadata_import(
         db: Initialised ``PalimpsestDB`` instance.
         logger: Pipeline logger.
         verbose: Print per-type counts.
+        changed_files: Set of changed file paths for incremental
+            import. ``None`` means full import.
 
     Returns:
         Total number of entities imported.
@@ -216,7 +227,7 @@ def _run_metadata_import(
     from dev.wiki.metadata import MetadataImporter
 
     importer = MetadataImporter(db, logger=logger)
-    stats = importer.import_all()
+    stats = importer.import_all(changed_files=changed_files)
 
     total = sum(stats.values())
     if verbose:
@@ -335,6 +346,12 @@ def _run_data_commit() -> bool:
     help="Limit entries import scope (e.g. 2024 or 2021-2025).",
 )
 @click.option(
+    "--full",
+    is_flag=True,
+    default=False,
+    help="Force full reimport (ignore incremental state).",
+)
+@click.option(
     "-v", "--verbose",
     is_flag=True,
     default=False,
@@ -347,6 +364,7 @@ def sync(
     do_commit: bool,
     dry_run: bool,
     years: Optional[str],
+    full: bool,
     verbose: bool,
 ) -> None:
     """Run the full cross-machine synchronization workflow.
@@ -370,6 +388,14 @@ def sync(
     """
     from dev.core.config import get_sync_config
     from dev.database.manager import PalimpsestDB
+    from dev.pipeline.sync_state import (
+        get_data_head,
+        get_stored_sync_hash,
+        store_sync_hash,
+        get_changed_files,
+        filter_json_export_files,
+        filter_metadata_files,
+    )
 
     logger = ctx.obj.get("logger")
 
@@ -382,6 +408,32 @@ def sync(
 
     years_filter = _parse_years(years)
 
+    # Determine sync mode: incremental vs full
+    current_hash = get_data_head()
+    stored_hash = get_stored_sync_hash()
+
+    if full or stored_hash is None or current_hash is None:
+        json_changed: Optional[Set[Path]] = None
+        meta_changed: Optional[Set[Path]] = None
+        sync_mode = "full"
+        if full:
+            reason = "--full flag"
+        elif stored_hash is None:
+            reason = "first sync (no stored state)"
+        else:
+            reason = "data/ is not a git repo"
+    elif stored_hash == current_hash:
+        json_changed = set()
+        meta_changed = set()
+        sync_mode = "incremental (no changes in data/)"
+        reason = "HEAD unchanged"
+    else:
+        all_changed = get_changed_files(stored_hash, current_hash)
+        json_changed = filter_json_export_files(all_changed)
+        meta_changed = filter_metadata_files(all_changed)
+        sync_mode = "incremental"
+        reason = f"{len(all_changed)} files changed"
+
     db = PalimpsestDB(
         db_path=DB_PATH,
         alembic_dir=ALEMBIC_DIR,
@@ -390,6 +442,8 @@ def sync(
         enable_auto_backup=False,
     )
 
+    click.echo(f"Sync mode: {sync_mode} ({reason})")
+
     if dry_run:
         click.echo("[dry-run] Previewing sync steps (no DB writes).\n")
 
@@ -397,9 +451,16 @@ def sync(
         # -- Step 1: JSON import --
         click.echo("[1/6] JSON import...")
         if not dry_run:
-            json_total = _run_json_import(db, logger, verbose)
-            click.echo(f"  Imported {json_total} entities from JSON.")
+            if json_changed is not None and len(json_changed) == 0:
+                click.echo("  No JSON changes; skipped.")
+                json_total = 0
+            else:
+                json_total = _run_json_import(
+                    db, logger, verbose, changed_files=json_changed,
+                )
+                click.echo(f"  Imported {json_total} entities from JSON.")
         else:
+            json_total = 0
             click.echo("  Skipped (dry-run).")
 
         # -- Step 2: Entries import --
@@ -421,8 +482,13 @@ def sync(
         click.echo("[3/6] Metadata import...")
         meta_total = 0
         if not dry_run:
-            meta_total = _run_metadata_import(db, logger, verbose)
-            click.echo(f"  Imported {meta_total} metadata entities.")
+            if meta_changed is not None and len(meta_changed) == 0:
+                click.echo("  No metadata changes; skipped.")
+            else:
+                meta_total = _run_metadata_import(
+                    db, logger, verbose, changed_files=meta_changed,
+                )
+                click.echo(f"  Imported {meta_total} metadata entities.")
         else:
             click.echo("  Skipped (dry-run).")
 
@@ -458,6 +524,12 @@ def sync(
             click.echo("[6/6] Data submodule commit... skipped (dry-run).")
         else:
             click.echo("[6/6] Data submodule commit... skipped (use --commit).")
+
+        # -- Store sync state --
+        if not dry_run and current_hash:
+            new_hash = get_data_head()
+            if new_hash:
+                store_sync_hash(new_hash)
 
         click.echo("\n[OK] Sync complete.")
 

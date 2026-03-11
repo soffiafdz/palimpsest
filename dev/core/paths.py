@@ -85,6 +85,7 @@ TEX_DIR = ROOT / "templates" / "tex"
 ALEMBIC_DIR = DEV_DIR / "migrations"
 DB_DIR = DATA_DIR / "metadata"
 DB_PATH = DB_DIR / "palimpsest.db"
+SYNC_STATE_PATH = DB_DIR / ".sync_state"
 
 # ---- Journal ----
 JOURNAL_DIR = DATA_DIR / "journal"

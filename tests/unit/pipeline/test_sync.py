@@ -40,13 +40,15 @@ def runner():
 _sync_mod = sys.modules["dev.pipeline.cli.sync"]
 
 DB_MANAGER = "dev.database.manager"
+SYNC_STATE = "dev.pipeline.sync_state"
 
 
 @pytest.fixture
 def patched_sync(monkeypatch):
-    """Patch all sync helper functions and PalimpsestDB with defaults.
+    """Patch all sync helper functions, PalimpsestDB, and sync_state.
 
     Returns a dict of mock objects keyed by function name.
+    Sync state is patched to force full mode (no stored hash).
     """
     mocks = {}
     defaults = {
@@ -67,6 +69,21 @@ def patched_sync(monkeypatch):
     monkeypatch.setattr(f"{DB_MANAGER}.PalimpsestDB", db_mock)
     mocks["PalimpsestDB"] = db_mock
 
+    # Patch sync_state to force full mode by default (no stored hash)
+    monkeypatch.setattr(
+        f"{SYNC_STATE}.get_data_head", MagicMock(return_value="abc123")
+    )
+    monkeypatch.setattr(
+        f"{SYNC_STATE}.get_stored_sync_hash", MagicMock(return_value=None)
+    )
+    monkeypatch.setattr(
+        f"{SYNC_STATE}.store_sync_hash", MagicMock()
+    )
+    mocks["store_sync_hash"] = MagicMock()
+    monkeypatch.setattr(
+        f"{SYNC_STATE}.store_sync_hash", mocks["store_sync_hash"]
+    )
+
     return mocks
 
 
@@ -85,6 +102,7 @@ class TestSyncCommand:
         assert "--commit" in result.output
         assert "--dry-run" in result.output
         assert "--years" in result.output
+        assert "--full" in result.output
         assert "--verbose" in result.output
 
 
@@ -212,3 +230,76 @@ class TestSyncConfigDefaults:
             result = runner.invoke(cli, ["sync"])
         assert result.exit_code == 0, result.output
         patched_sync["_run_data_commit"].assert_called_once()
+
+
+class TestSyncIncremental:
+    """Verify incremental sync behavior."""
+
+    def test_full_flag_forces_full_mode(self, runner, patched_sync):
+        """--full flag triggers full import regardless of sync state."""
+        result = runner.invoke(cli, ["sync", "--full"])
+        assert result.exit_code == 0, result.output
+        assert "full" in result.output
+        assert "--full flag" in result.output
+
+    def test_first_run_uses_full_mode(self, runner, patched_sync):
+        """No stored hash triggers full import."""
+        result = runner.invoke(cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        assert "full" in result.output
+        assert "first sync" in result.output
+
+    def test_incremental_when_hash_available(self, runner, patched_sync, monkeypatch):
+        """Stored hash triggers incremental mode."""
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.get_stored_sync_hash",
+            MagicMock(return_value="old_hash"),
+        )
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.get_data_head",
+            MagicMock(return_value="new_hash"),
+        )
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.get_changed_files",
+            MagicMock(return_value=set()),
+        )
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.filter_json_export_files",
+            MagicMock(return_value=set()),
+        )
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.filter_metadata_files",
+            MagicMock(return_value=set()),
+        )
+        result = runner.invoke(cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        assert "incremental" in result.output
+
+    def test_incremental_no_changes_skips_imports(self, runner, patched_sync, monkeypatch):
+        """When HEAD unchanged, JSON import and metadata import are skipped."""
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.get_stored_sync_hash",
+            MagicMock(return_value="same_hash"),
+        )
+        monkeypatch.setattr(
+            f"{SYNC_STATE}.get_data_head",
+            MagicMock(return_value="same_hash"),
+        )
+        result = runner.invoke(cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        assert "No JSON changes; skipped" in result.output
+        assert "No metadata changes; skipped" in result.output
+        patched_sync["_run_json_import"].assert_not_called()
+        patched_sync["_run_metadata_import"].assert_not_called()
+
+    def test_sync_stores_hash_after_success(self, runner, patched_sync):
+        """Sync stores the data HEAD hash after successful completion."""
+        result = runner.invoke(cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        patched_sync["store_sync_hash"].assert_called_once()
+
+    def test_dry_run_does_not_store_hash(self, runner, patched_sync):
+        """--dry-run does not store sync hash."""
+        result = runner.invoke(cli, ["sync", "--dry-run"])
+        assert result.exit_code == 0, result.output
+        patched_sync["store_sync_hash"].assert_not_called()

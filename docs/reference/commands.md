@@ -126,7 +126,7 @@ plm convert [-i PATH] [-o PATH] [-f] [--dry-run] [--yaml-dir PATH] [--no-yaml]
 Synchronize database with files and regenerate outputs.
 
 ```bash
-plm sync [--no-wiki] [--commit] [--dry-run] [--years RANGE] [-v]
+plm sync [--no-wiki] [--commit] [--dry-run] [--years RANGE] [--full] [-v]
 ```
 
 **What it does:**
@@ -137,11 +137,14 @@ plm sync [--no-wiki] [--commit] [--dry-run] [--years RANGE] [-v]
 - Regenerates wiki pages (unless `--no-wiki`)
 - Optionally commits data/ submodule (with `--commit`)
 
+**Incremental mode:** After the first sync, subsequent syncs use git change detection to only process files that changed since the last successful sync. This makes routine syncs fast even on low-powered hardware.
+
 **Options:**
 - `--no-wiki` - Skip wiki page regeneration
 - `--commit` - Auto-commit changes in data/ submodule
 - `--dry-run` - Preview changes without modifying database
 - `--years RANGE` - Limit entries import scope (e.g., `2024` or `2021-2025`)
+- `--full` - Force full reimport, ignoring incremental state
 - `-v/--verbose` - Show detailed per-entity output
 
 **Config defaults:** All flags can be configured in `.palimpsest.yaml` (shared) or `.palimpsest.local.yaml` (per-host). CLI flags override config values. See [Project Configuration](#project-configuration).
@@ -159,12 +162,15 @@ plm sync --dry-run
 
 # Limit to specific years
 plm sync --years 2024-2025
+
+# Force full reimport (after DB reset, etc.)
+plm sync --full
 ```
 
 **Use cases:**
 - Cross-machine workflow (sync after `git pull`)
 - Daily workflow after processing new entries
-- Replacing the old `entries import → json export → wiki generate` chain
+- `--full` after DB reset or when incremental state is suspect
 
 #### `plm export`
 

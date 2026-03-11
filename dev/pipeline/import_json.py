@@ -60,7 +60,7 @@ from __future__ import annotations
 import json
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Set, Type, TypeVar
 
 # --- Third-party imports ---
 from sqlalchemy.orm import Session
@@ -166,13 +166,24 @@ class JSONImporter:
         self.logger = logger
         self.stats: Dict[str, int] = {}
 
-    def import_all(self) -> Dict[str, int]:
+    def import_all(
+        self,
+        changed_files: Optional[Set[Path]] = None,
+    ) -> Dict[str, int]:
         """
-        Import all entity types from JSON files in dependency order.
+        Import entity types from JSON files in dependency order.
 
-        Runs the entire import inside a single session_scope transaction.
-        Each entity type is imported in order, building lookup dicts that
-        subsequent types use to resolve foreign keys.
+        Runs the import inside a single session_scope transaction.
+        Each entity type is imported in order, building lookup dicts
+        that subsequent types use to resolve foreign keys.
+
+        In incremental mode (``changed_files`` is a set), only entity
+        types with changed files are imported.  Lookup dicts for
+        unchanged types are built from DB queries instead.
+
+        Args:
+            changed_files: Set of changed file paths for incremental
+                import.  ``None`` means full import (all files loaded).
 
         Returns:
             Dict mapping entity type names to count of imported entities
@@ -180,157 +191,178 @@ class JSONImporter:
         Raises:
             Exception: If any import step fails (transaction is rolled back)
         """
-        safe_logger(self.logger).log_info("Starting full JSON import")
+        incremental = changed_files is not None
+        mode = "incremental" if incremental else "full"
+        safe_logger(self.logger).log_info(f"Starting {mode} JSON import")
+
+        def _should_import(entity_type: str) -> bool:
+            """Check if this entity type needs importing."""
+            if changed_files is None:
+                return True
+            return self._has_changes(entity_type, changed_files)
+
+        def _load(entity_type: str) -> List[Dict[str, Any]]:
+            """Load JSON files, filtered in incremental mode."""
+            return self._load_json_files(entity_type, changed_files)
 
         with self.db.session_scope() as session:
             # --- Phase 1: Leaf entities (no FK dependencies) ---
-            city_lk = self._import_cities(
-                session, self._load_json_files("cities")
-            )
-            tag_lk = self._import_tags(
-                session, self._load_json_files("tags")
-            )
-            theme_lk = self._import_themes(
-                session, self._load_json_files("themes")
-            )
-            motif_lk = self._import_motifs(
-                session, self._load_json_files("motifs")
-            )
-            arc_lk = self._import_arcs(
-                session, self._load_json_files("arcs")
-            )
-            poem_lk = self._import_poems(
-                session, self._load_json_files("poems")
-            )
-            source_lk = self._import_reference_sources(
-                session, self._load_json_files("reference_sources")
-            )
-            part_lk = self._import_parts(
-                session, self._load_json_files("parts")
-            )
+            if _should_import("cities"):
+                self._import_cities(session, _load("cities"))
+            city_lk = self._db_lookup_cities(session)
+
+            if _should_import("tags"):
+                self._import_tags(session, _load("tags"))
+            tag_lk = self._db_lookup_tags(session)
+
+            if _should_import("themes"):
+                self._import_themes(session, _load("themes"))
+            theme_lk = self._db_lookup_themes(session)
+
+            if _should_import("motifs"):
+                self._import_motifs(session, _load("motifs"))
+            motif_lk = self._db_lookup_motifs(session)
+
+            if _should_import("arcs"):
+                self._import_arcs(session, _load("arcs"))
+            arc_lk = self._db_lookup_arcs(session)
+
+            if _should_import("poems"):
+                self._import_poems(session, _load("poems"))
+            poem_lk = self._db_lookup_poems(session)
+
+            if _should_import("reference_sources"):
+                self._import_reference_sources(session, _load("reference_sources"))
+            source_lk = self._db_lookup_sources(session)
+
+            if _should_import("parts"):
+                self._import_parts(session, _load("parts"))
+            part_lk = self._db_lookup_parts(session)
 
             # --- Phase 2: People (no FK deps) ---
-            people_lk = self._import_people(
-                session, self._load_json_files("people")
-            )
+            if _should_import("people"):
+                self._import_people(session, _load("people"))
+            people_lk = self._db_lookup_people(session)
 
             # --- Phase 3: Locations (FK to City) ---
-            location_lk = self._import_locations(
-                session, self._load_json_files("locations"), city_lk
-            )
+            if _should_import("locations"):
+                self._import_locations(
+                    session, _load("locations"), city_lk
+                )
+            location_lk = self._db_lookup_locations(session)
 
             # --- Phase 4: Entries (M2M to many entities) ---
-            entries_data = self._load_json_files("entries")
-            entry_lk = self._import_entries(
-                session,
-                entries_data,
-                people_lk,
-                location_lk,
-                city_lk,
-                arc_lk,
-                tag_lk,
-            )
+            entries_data = _load("entries")
+            if entries_data:
+                self._import_entries(
+                    session,
+                    entries_data,
+                    people_lk,
+                    location_lk,
+                    city_lk,
+                    arc_lk,
+                    tag_lk,
+                )
+            entry_lk = self._db_lookup_entries(session)
 
             # --- Phase 5: Scenes (FK to Entry) ---
-            scene_lk = self._import_scenes(
-                session,
-                self._load_json_files("scenes"),
-                entry_lk,
-                people_lk,
-                location_lk,
-            )
+            if _should_import("scenes"):
+                self._import_scenes(
+                    session, _load("scenes"),
+                    entry_lk, people_lk, location_lk,
+                )
+            scene_lk = self._db_lookup_scenes(session)
 
             # --- Phase 6: Threads (FK to Entry) ---
-            thread_lk = self._import_threads(
-                session,
-                self._load_json_files("threads"),
-                entry_lk,
-                people_lk,
-                location_lk,
-            )
+            if _should_import("threads"):
+                self._import_threads(
+                    session, _load("threads"),
+                    entry_lk, people_lk, location_lk,
+                )
+            thread_lk = self._db_lookup_threads(session)
 
             # --- Phase 7: Events (M2M to Scenes + Entries) ---
-            event_lk = self._import_events(
-                session, self._load_json_files("events"), scene_lk
-            )
+            if _should_import("events"):
+                self._import_events(
+                    session, _load("events"), scene_lk
+                )
+            event_lk = self._db_lookup_events(session)
 
-            # Link entries to events (deferred because events depend on scenes)
-            self._link_entry_events(session, entries_data, entry_lk, event_lk)
+            # Link entries to events (only for changed entries)
+            if entries_data:
+                self._link_entry_events(
+                    session, entries_data, entry_lk, event_lk
+                )
 
             # --- Phase 8: Instance entities (FK to parent + Entry) ---
-            self._import_theme_instances(
-                session,
-                self._load_json_files("theme_instances"),
-                theme_lk,
-                entry_lk,
-            )
-            self._import_motif_instances(
-                session,
-                self._load_json_files("motif_instances"),
-                motif_lk,
-                entry_lk,
-            )
+            if _should_import("theme_instances"):
+                self._import_theme_instances(
+                    session, _load("theme_instances"),
+                    theme_lk, entry_lk,
+                )
+            if _should_import("motif_instances"):
+                self._import_motif_instances(
+                    session, _load("motif_instances"),
+                    motif_lk, entry_lk,
+                )
 
             # --- Phase 9: PoemVersions (FK to Poem + Entry) ---
-            self._import_poem_versions(
-                session, self._load_json_files("poems"), poem_lk, entry_lk
-            )
+            if _should_import("poems"):
+                self._import_poem_versions(
+                    session, _load("poems"), poem_lk, entry_lk
+                )
 
             # --- Phase 10: References (FK to ReferenceSource + Entry) ---
-            self._import_references(
-                session,
-                self._load_json_files("references"),
-                source_lk,
-                entry_lk,
-            )
+            if _should_import("references"):
+                self._import_references(
+                    session, _load("references"),
+                    source_lk, entry_lk,
+                )
 
             # --- Phase 11: Chapters (FK to Part, M2M to Poems) ---
-            chapter_lk = self._import_chapters(
-                session, self._load_json_files("chapters"), part_lk, poem_lk
-            )
+            if _should_import("chapters"):
+                self._import_chapters(
+                    session, _load("chapters"), part_lk, poem_lk
+                )
+            chapter_lk = self._db_lookup_chapters(session)
 
             # --- Phase 12: Characters ---
-            character_lk = self._import_characters(
-                session, self._load_json_files("characters")
-            )
+            if _should_import("characters"):
+                self._import_characters(session, _load("characters"))
+            character_lk = self._db_lookup_characters(session)
 
             # --- Phase 13: PersonCharacterMaps ---
-            self._import_person_character_maps(
-                session,
-                self._load_json_files("person_character_maps"),
-                people_lk,
-                character_lk,
-            )
+            if _should_import("person_character_maps"):
+                self._import_person_character_maps(
+                    session, _load("person_character_maps"),
+                    people_lk, character_lk,
+                )
 
             # --- Phase 14: ManuscriptScenes (FK to Chapter, M2M Characters) ---
-            ms_scene_lk = self._import_manuscript_scenes(
-                session,
-                self._load_json_files("manuscript_scenes"),
-                chapter_lk,
-                character_lk,
-            )
+            if _should_import("manuscript_scenes"):
+                self._import_manuscript_scenes(
+                    session, _load("manuscript_scenes"),
+                    chapter_lk, character_lk,
+                )
+            ms_scene_lk = self._db_lookup_ms_scenes(session)
 
             # --- Phase 15: ManuscriptSources ---
-            self._import_manuscript_sources(
-                session,
-                self._load_json_files("manuscript_sources"),
-                ms_scene_lk,
-                scene_lk,
-                entry_lk,
-                thread_lk,
-            )
+            if _should_import("manuscript_sources"):
+                self._import_manuscript_sources(
+                    session, _load("manuscript_sources"),
+                    ms_scene_lk, scene_lk, entry_lk, thread_lk,
+                )
 
             # --- Phase 16: ManuscriptReferences ---
-            self._import_manuscript_references(
-                session,
-                self._load_json_files("manuscript_references"),
-                chapter_lk,
-                source_lk,
-            )
+            if _should_import("manuscript_references"):
+                self._import_manuscript_references(
+                    session, _load("manuscript_references"),
+                    chapter_lk, source_lk,
+                )
 
         total = sum(self.stats.values())
         safe_logger(self.logger).log_info(
-            f"Import complete: {total} entities imported"
+            f"Import complete ({mode}): {total} entities imported"
         )
         return self.stats
 
@@ -338,15 +370,22 @@ class JSONImporter:
     # JSON FILE LOADING
     # =========================================================================
 
-    def _load_json_files(self, entity_type: str) -> List[Dict[str, Any]]:
+    def _load_json_files(
+        self,
+        entity_type: str,
+        changed_files: Optional[Set[Path]] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        Load all JSON files for an entity type from the export directory.
+        Load JSON files for an entity type from the export directory.
 
         Recursively globs *.json from journal/{entity_type}/ and parses
-        each file into a dict.
+        each file into a dict.  When ``changed_files`` is provided, only
+        files present in that set are loaded (incremental mode).
 
         Args:
             entity_type: Subdirectory name (e.g. "entries", "people")
+            changed_files: If provided, only load files in this set.
+                ``None`` loads all files (full import mode).
 
         Returns:
             List of parsed JSON dicts, one per file
@@ -360,6 +399,8 @@ class JSONImporter:
 
         results: List[Dict[str, Any]] = []
         for json_file in sorted(entity_dir.rglob("*.json")):
+            if changed_files is not None and json_file not in changed_files:
+                continue
             try:
                 with open(json_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
@@ -369,6 +410,131 @@ class JSONImporter:
                     f"Skipping corrupted file {json_file}: {e}"
                 )
         return results
+
+    def _has_changes(
+        self,
+        entity_type: str,
+        changed_files: Set[Path],
+    ) -> bool:
+        """
+        Check if any changed files belong to an entity type subdirectory.
+
+        Args:
+            entity_type: Subdirectory name (e.g. "entries", "people")
+            changed_files: Set of changed file paths.
+
+        Returns:
+            ``True`` if at least one changed file is under the entity dir.
+        """
+        entity_dir = self.journal_dir / entity_type
+        return any(entity_dir in f.parents for f in changed_files)
+
+    # =========================================================================
+    # DB LOOKUP BUILDERS (for incremental mode)
+    # =========================================================================
+
+    @staticmethod
+    def _db_lookup_cities(session: Session) -> Dict[str, int]:
+        """Build city name-to-ID lookup from database."""
+        return {c.name: c.id for c in session.query(City).all()}
+
+    @staticmethod
+    def _db_lookup_tags(session: Session) -> Dict[str, int]:
+        """Build tag name-to-ID lookup from database."""
+        return {t.name: t.id for t in session.query(Tag).all()}
+
+    @staticmethod
+    def _db_lookup_themes(session: Session) -> Dict[str, int]:
+        """Build theme name-to-ID lookup from database."""
+        return {t.name: t.id for t in session.query(Theme).all()}
+
+    @staticmethod
+    def _db_lookup_motifs(session: Session) -> Dict[str, int]:
+        """Build motif name-to-ID lookup from database."""
+        return {m.name: m.id for m in session.query(Motif).all()}
+
+    @staticmethod
+    def _db_lookup_arcs(session: Session) -> Dict[str, int]:
+        """Build arc name-to-ID lookup from database."""
+        return {a.name: a.id for a in session.query(Arc).all()}
+
+    @staticmethod
+    def _db_lookup_poems(session: Session) -> Dict[str, int]:
+        """Build poem title-to-ID lookup from database."""
+        return {p.title: p.id for p in session.query(Poem).all()}
+
+    @staticmethod
+    def _db_lookup_sources(session: Session) -> Dict[str, int]:
+        """Build reference source title-to-ID lookup from database."""
+        return {s.title: s.id for s in session.query(ReferenceSource).all()}
+
+    @staticmethod
+    def _db_lookup_parts(session: Session) -> Dict[str, int]:
+        """Build part number-to-ID lookup from database."""
+        return {str(p.number): p.id for p in session.query(Part).all()}
+
+    @staticmethod
+    def _db_lookup_people(session: Session) -> Dict[str, int]:
+        """Build person slug-to-ID lookup from database."""
+        return {p.slug: p.id for p in session.query(Person).all()}
+
+    @staticmethod
+    def _db_lookup_locations(session: Session) -> Dict[str, int]:
+        """Build location 'name::city'-to-ID lookup from database."""
+        return {
+            f"{loc.name}::{loc.city.name}": loc.id
+            for loc in session.query(Location).all()
+            if loc.city
+        }
+
+    @staticmethod
+    def _db_lookup_entries(session: Session) -> Dict[str, int]:
+        """Build entry date-to-ID lookup from database."""
+        return {
+            e.date.isoformat(): e.id
+            for e in session.query(Entry).all()
+        }
+
+    @staticmethod
+    def _db_lookup_scenes(session: Session) -> Dict[str, int]:
+        """Build scene 'name::entry_date'-to-ID lookup from database."""
+        return {
+            f"{s.name}::{s.entry.date.isoformat()}": s.id
+            for s in session.query(Scene).all()
+            if s.entry
+        }
+
+    @staticmethod
+    def _db_lookup_threads(session: Session) -> Dict[str, int]:
+        """Build thread 'name::entry_date'-to-ID lookup from database."""
+        return {
+            f"{t.name}::{t.entry.date.isoformat()}": t.id
+            for t in session.query(Thread).all()
+            if t.entry
+        }
+
+    @staticmethod
+    def _db_lookup_events(session: Session) -> Dict[str, int]:
+        """Build event name-to-ID lookup from database."""
+        return {e.name: e.id for e in session.query(Event).all()}
+
+    @staticmethod
+    def _db_lookup_chapters(session: Session) -> Dict[str, int]:
+        """Build chapter title-to-ID lookup from database."""
+        return {c.title: c.id for c in session.query(Chapter).all()}
+
+    @staticmethod
+    def _db_lookup_characters(session: Session) -> Dict[str, int]:
+        """Build character name-to-ID lookup from database."""
+        return {c.name: c.id for c in session.query(Character).all()}
+
+    @staticmethod
+    def _db_lookup_ms_scenes(session: Session) -> Dict[str, int]:
+        """Build manuscript scene name-to-ID lookup from database."""
+        return {
+            ms.name: ms.id
+            for ms in session.query(ManuscriptScene).all()
+        }
 
     # =========================================================================
     # LEAF ENTITY IMPORTS
