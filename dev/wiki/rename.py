@@ -124,7 +124,7 @@ class RenameReport:
         if self.entry_changes:
             lines.append(f"Entry YAMLs ({len(self.entry_changes)} files):")
             for change in self.entry_changes:
-                icon = {"renamed": "✎", "merged": "⊕", "unchanged": "·"}.get(
+                icon = {"renamed": "~", "merged": "+", "unchanged": "·"}.get(
                     change.action, "?"
                 )
                 lines.append(f"  {icon} {change.file} — {change.detail}")
@@ -134,10 +134,10 @@ class RenameReport:
             lines.append("Per-entity files:")
             for change in self.file_changes:
                 icon = {
-                    "renamed": "✎",
-                    "deleted": "✕",
+                    "renamed": "~",
+                    "deleted": "x",
                     "moved": "→",
-                    "updated": "✎",
+                    "updated": "~",
                 }.get(change.action, "?")
                 lines.append(f"  {icon} {change.file} — {change.detail}")
             lines.append("")
@@ -145,7 +145,7 @@ class RenameReport:
         if self.curation_changes:
             lines.append("Curation files:")
             for change in self.curation_changes:
-                icon = {"key_renamed": "✎", "key_merged": "⊕"}.get(
+                icon = {"key_renamed": "~", "key_merged": "+"}.get(
                     change.action, "?"
                 )
                 lines.append(f"  {icon} {change.file} — {change.detail}")
@@ -154,7 +154,7 @@ class RenameReport:
         if self.md_changes:
             lines.append(f"MD frontmatter ({len(self.md_changes)} files):")
             for change in self.md_changes:
-                icon = {"renamed": "✎", "merged": "⊕"}.get(
+                icon = {"renamed": "~", "merged": "+"}.get(
                     change.action, "?"
                 )
                 lines.append(f"  {icon} {change.file} — {change.detail}")

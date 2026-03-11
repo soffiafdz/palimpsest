@@ -42,7 +42,7 @@ def backup(ctx, type, suffix, full):
         from dev.core.backup_manager import BackupManager
         from dev.core.logging_manager import PalimpsestLogger
 
-        click.echo("📦 Creating full data backup...")
+        click.echo("Creating full data backup...")
         click.echo("   (This may take a while for large archives)")
 
         try:
@@ -58,7 +58,7 @@ def backup(ctx, type, suffix, full):
             backup_size = backup_path.stat().st_size
             backup_size_mb = backup_size / (1024 * 1024)
 
-            click.echo("\n✅ Full backup created:")
+            click.echo("\n[OK]Full backup created:")
             click.echo(f"  Location: {backup_path}")
             click.echo(f"  Size: {backup_size_mb:.2f} MB ({backup_size:,} bytes)")
 
@@ -66,10 +66,10 @@ def backup(ctx, type, suffix, full):
             handle_cli_error(ctx, e, "backup")
     else:
         try:
-            click.echo(f"💾 Creating {type} backup...")
+            click.echo(f"Creating {type} backup...")
             db = get_db(ctx)
             backup_path = db.create_backup(backup_type=type, suffix=suffix)
-            click.echo(f"✅ Backup created: {backup_path}")
+            click.echo(f"[OK]Backup created: {backup_path}")
 
         except BackupError as e:
             handle_cli_error(
@@ -102,16 +102,16 @@ def backups(ctx, full):
                 not hasattr(backup_mgr, "full_backup_dir")
                 or not backup_mgr.full_backup_dir.exists()
             ):
-                click.echo("📦 No full backups directory found")
+                click.echo("No full backups directory found")
                 return
 
             backup_list = sorted(backup_mgr.full_backup_dir.glob("*.tar.gz"))
 
             if not backup_list:
-                click.echo("📦 No full backups found")
+                click.echo("No full backups found")
                 return
 
-            click.echo("\n📦 Full Data Backups")
+            click.echo("\nFull Data Backups")
             click.echo("=" * 70)
 
             for b in backup_list:
@@ -135,7 +135,7 @@ def backups(ctx, full):
             db = get_db(ctx)
             backups_dict = db.list_backups()
 
-            click.echo("\n📦 Available Backups")
+            click.echo("\nAvailable Backups")
             click.echo("=" * 70)
 
             total = 0
@@ -161,16 +161,16 @@ def backups(ctx, full):
 @click.command()
 @click.argument("backup_path", type=click.Path(exists=True))
 @click.confirmation_option(
-    prompt="⚠️  This will overwrite the current database! Continue?"
+    prompt="[WARN] This will overwrite the current database! Continue?"
 )
 @click.pass_context
 def restore(ctx, backup_path):
     """Restore from a backup file."""
     try:
-        click.echo(f"♻️  Restoring from: {backup_path}")
+        click.echo(f"Restoring from: {backup_path}")
         db = get_db(ctx)
         db.restore_backup(Path(backup_path))
-        click.echo("✅ Database restored successfully!")
+        click.echo("[OK]Database restored successfully!")
 
     except BackupError as e:
         handle_cli_error(

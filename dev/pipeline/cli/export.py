@@ -66,7 +66,7 @@ def export_json(ctx: click.Context, no_commit: bool) -> None:
         # Execute export
         click.echo("Exporting all database entities to JSON...")
         exporter.export_all(commit=not no_commit)
-        click.echo("✅ Export complete - see data/exports/README.md for details")
+        click.echo("[OK] Export complete - see data/exports/README.md for details")
 
     except Exception as e:
         handle_cli_error(ctx, e, "export_json")

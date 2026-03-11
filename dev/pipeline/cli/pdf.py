@@ -54,7 +54,7 @@ def build_pdf(
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
-    click.echo(f"📚 Building PDFs for {year}...")
+    click.echo(f"Building PDFs for {year}...")
 
     try:
         stats = md2pdf.build_pdf(
@@ -68,7 +68,7 @@ def build_pdf(
             logger=logger,
         )
 
-        click.echo("\n✅ PDF build complete:")
+        click.echo("\n[OK] PDF build complete:")
         click.echo(f"  Markdown entries: {stats.files_processed}")
         click.echo(f"  PDFs created: {stats.pdfs_created}")
         click.echo(f"  Duration: {stats.duration():.2f}s")

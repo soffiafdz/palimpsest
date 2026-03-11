@@ -148,9 +148,9 @@ def search_query(ctx: click.Context, query: tuple, limit: Optional[int], sort: O
         # Date and score
         date_str = entry.date.isoformat()
         if score > 0:
-            click.echo(f"📅 {date_str} (score: {score:.2f})")
+            click.echo(f"{date_str} (score: {score:.2f})")
         else:
-            click.echo(f"📅 {date_str}")
+            click.echo(f"{date_str}")
 
         # Snippet
         if snippet:
@@ -230,7 +230,7 @@ def index_create(ctx: click.Context) -> None:
     mgr = SearchIndexManager(db.engine, logger)
 
     if mgr.index_exists():
-        click.echo("⚠ Search index already exists. Use 'plm-search index rebuild' to recreate.")
+        click.echo("[WARN]Search index already exists. Use 'plm-search index rebuild' to recreate.")
         return
 
     mgr.create_index()
@@ -239,7 +239,7 @@ def index_create(ctx: click.Context) -> None:
     session.close()
     mgr.setup_triggers()
 
-    click.echo(f"✓ Created search index: {count} entries indexed")
+    click.echo(f"[OK]Created search index: {count} entries indexed")
 
 
 @index_group.command("rebuild")
@@ -279,7 +279,7 @@ def index_rebuild(ctx: click.Context) -> None:
     count = mgr.rebuild_index(session)
     session.close()
 
-    click.echo(f"✓ Rebuilt search index: {count} entries indexed")
+    click.echo(f"[OK]Rebuilt search index: {count} entries indexed")
 
 
 @index_group.command("status")
@@ -293,7 +293,7 @@ def index_status(ctx: click.Context) -> None:
     and verification after index operations.
 
     Output Information:
-    - Index existence (✓ exists or ⚠ missing)
+    - Index existence ([OK]exists or [WARN]missing)
     - Number of indexed entries
     - Suggestion to create if missing
 
@@ -311,7 +311,7 @@ def index_status(ctx: click.Context) -> None:
     mgr = SearchIndexManager(db.engine, logger)
 
     if mgr.index_exists():
-        click.echo("✓ Search index exists")
+        click.echo("[OK]Search index exists")
 
         # Count entries
         with db.engine.connect() as conn:
@@ -320,7 +320,7 @@ def index_status(ctx: click.Context) -> None:
 
         click.echo(f"  Indexed entries: {count}")
     else:
-        click.echo("⚠ Search index does not exist. Run: plm-search index create")
+        click.echo("[WARN]Search index does not exist. Run: plm-search index create")
 
 
 if __name__ == "__main__":

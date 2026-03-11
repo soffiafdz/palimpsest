@@ -93,14 +93,14 @@ function M.validate_frontmatter(bufnr)
 	run_validator(bufnr,
 		string.format("plm validate md frontmatter %s --format json",
 			vim.fn.shellescape(filepath)),
-		"Frontmatter validation passed ✓")
+		"Frontmatter validation passed")
 end
 
 -- Run frontmatter structure validation (people, locations, dates, references, poems)
 function M.validate_metadata(bufnr)
 	run_validator(bufnr,
 		"plm validate frontmatter all --format json",
-		"Metadata validation passed ✓")
+		"Metadata validation passed")
 end
 
 -- Validate markdown links

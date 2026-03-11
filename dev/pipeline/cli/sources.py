@@ -42,7 +42,7 @@ def inbox(ctx: click.Context, inbox: str, output: str) -> None:
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
-    click.echo("📥 Processing inbox...")
+    click.echo("Processing inbox...")
 
     try:
         stats = process_inbox(
@@ -52,14 +52,14 @@ def inbox(ctx: click.Context, inbox: str, output: str) -> None:
             logger=logger,
         )
 
-        click.echo("\n✅ Inbox processing complete:")
+        click.echo("\n[OK] Inbox processing complete:")
         click.echo(f"  Files found: {stats.files_found}")
         click.echo(f"  Files processed: {stats.files_processed}")
         if stats.files_skipped > 0:
             click.echo(f"  Files skipped: {stats.files_skipped}")
         click.echo(f"  Years updated: {stats.years_updated}")
         if stats.errors > 0:
-            click.echo(f"  ⚠️  Errors: {stats.errors}")
+            click.echo(f"  [WARN] Errors: {stats.errors}")
         click.echo(f"  Duration: {stats.duration():.2f}s")
 
     except Exception as e:

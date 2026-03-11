@@ -25,7 +25,7 @@ case "$(uname -s)" in
     ;;
 esac
 
-echo "📅 Setting up automated backups for Palimpsest"
+echo "Setting up automated backups for Palimpsest"
 echo "Platform detected: $PLATFORM"
 echo ""
 
@@ -57,38 +57,38 @@ DAY_OF_MONTH=$(date +%d)
 
     # Monthly backup on the 1st
     if [ "$DAY_OF_MONTH" = "01" ]; then
-        echo "🗓️  Monthly backup (full data)"
+        echo "Monthly backup (full data)"
         if make backup-full; then
-            echo "✅ Monthly full backup complete"
+            echo "[OK]Monthly full backup complete"
         else
-            echo "❌ Monthly full backup failed"
+            echo "[ERR]Monthly full backup failed"
             exit 1
         fi
     
     # Weekly backup on Sundays
     elif [ "$DAY_OF_WEEK" = "7" ]; then
-        echo "📅 Weekly backup (database + full data)"
+        echo "Weekly backup (database + full data)"
         if make backup; then
-            echo "✅ Database backup complete"
+            echo "[OK]Database backup complete"
         else
-            echo "❌ Database backup failed"
+            echo "[ERR]Database backup failed"
             exit 1
         fi
         
         if make backup-full; then
-            echo "✅ Full data backup complete"
+            echo "[OK]Full data backup complete"
         else
-            echo "❌ Full data backup failed"
+            echo "[ERR]Full data backup failed"
             exit 1
         fi
     
     # Daily database backup
     else
-        echo "📆 Daily backup (database only)"
+        echo "Daily backup (database only)"
         if make backup; then
-            echo "✅ Daily database backup complete"
+            echo "[OK]Daily database backup complete"
         else
-            echo "❌ Daily database backup failed"
+            echo "[ERR]Daily database backup failed"
             exit 1
         fi
     fi
@@ -123,7 +123,7 @@ echo ""
 # Platform-specific instructions
 case "$PLATFORM" in
 macos)
-  echo "✅ macOS Setup:"
+  echo "[OK]macOS Setup:"
   echo ""
   echo "1. Add to crontab:"
   echo "   crontab -e"
@@ -136,7 +136,7 @@ macos)
   ;;
 
 wsl)
-  echo "⚠️  WSL2 Setup Required:"
+  echo "[WARN] WSL2 Setup Required:"
   echo ""
   echo "1. WSL2 doesn't run cron by default. Add to /etc/wsl.conf:"
   echo ""
@@ -156,7 +156,7 @@ wsl)
   ;;
 
 runit)
-  echo "✅ Runit/Artix Setup:"
+  echo "[OK]Runit/Artix Setup:"
   echo ""
   echo "1. Make sure cronie is installed:"
   echo "   sudo pacman -S cronie"
@@ -172,7 +172,7 @@ runit)
   ;;
 
 *)
-  echo "✅ Linux Setup:"
+  echo "[OK]Linux Setup:"
   echo ""
   echo "1. Add to crontab:"
   echo "   crontab -e"
@@ -183,7 +183,7 @@ runit)
 esac
 
 echo ""
-echo "📋 Backup Schedule:"
+echo "Backup Schedule:"
 echo "  Daily (2 AM):   Database backup"
 echo "  Weekly (Sun):   Database + Full data backup"
 echo "  Monthly (1st):  Full data backup"

@@ -55,7 +55,7 @@ def build_metadata_pdf(
     """
     logger: PalimpsestLogger = ctx.obj["logger"]
 
-    click.echo(f"📋 Building metadata PDF for {year}...")
+    click.echo(f"Building metadata PDF for {year}...")
 
     try:
         stats = metadata2pdf.build_metadata_pdf(
@@ -68,7 +68,7 @@ def build_metadata_pdf(
             logger=logger,
         )
 
-        click.echo("\n✅ Metadata PDF build complete:")
+        click.echo("\n[OK] Metadata PDF build complete:")
         click.echo(f"  YAML files processed: {stats.files_processed}")
         click.echo(f"  PDFs created: {stats.pdfs_created}")
         click.echo(f"  Duration: {stats.duration():.2f}s")

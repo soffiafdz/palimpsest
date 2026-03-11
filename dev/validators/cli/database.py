@@ -70,7 +70,7 @@ def _print_diagnostics(ctx: click.Context, diagnostics: list, check_name: str) -
     if diagnostics:
         click.echo(format_diagnostics(diagnostics, fmt))
     elif fmt != "json":
-        click.echo(f"✅ {check_name}: passed")
+        click.echo(f"[OK]{check_name}: passed")
 
 
 @db.command()
@@ -172,7 +172,7 @@ def all(ctx: click.Context) -> None:
     if report.diagnostics:
         click.echo(format_diagnostics(report.diagnostics, fmt))
     elif fmt != "json":
-        click.echo("✅ DATABASE IS HEALTHY")
+        click.echo("[OK]DATABASE IS HEALTHY")
 
     if not report.is_valid:
         raise click.ClickException(

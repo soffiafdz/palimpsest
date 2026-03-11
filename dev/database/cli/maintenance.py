@@ -33,13 +33,13 @@ def optimize(ctx):
     """Optimize database performance (VACUUM + ANALYZE)."""
     try:
         db = get_db(ctx)
-        click.echo("🔧 Optimizing database...")
+        click.echo("Optimizing database...")
 
         with db.session_scope() as session:
             results = db.health_monitor.optimize_database(session)
 
         if results:
-            click.echo("\n✅ Optimization Complete:")
+            click.echo("\n[OK] Optimization Complete:")
             if "space_reclaimed_bytes" in results:
                 reclaimed = results["space_reclaimed_bytes"]
                 mb_reclaimed = reclaimed / 1024 / 1024
@@ -47,13 +47,13 @@ def optimize(ctx):
                     f"  Space reclaimed: {reclaimed:,} bytes ({mb_reclaimed:.2f} MB)"
                 )
             if "vacuum_completed" in results:
-                status = "✓" if results["vacuum_completed"] else "✗"
+                status = "[OK]" if results["vacuum_completed"] else "[FAIL]"
                 click.echo(f"  VACUUM: {status}")
             if "analyze_completed" in results:
-                status = "✓" if results["analyze_completed"] else "✗"
+                status = "[OK]" if results["analyze_completed"] else "[FAIL]"
                 click.echo(f"  ANALYZE: {status}")
         else:
-            click.echo("⚠️  No optimization performed")
+            click.echo("[WARN] No optimization performed")
 
     except (HealthCheckError, DatabaseError) as e:
         handle_cli_error(ctx, e, "optimize")
@@ -70,7 +70,7 @@ def analyze(ctx):
             stats = db.query_analytics.get_database_stats(session)
             manuscript = db.query_analytics.get_manuscript_analytics(session)
 
-        click.echo("\n📈 Analytics Report")
+        click.echo("\nAnalytics Report")
         click.echo("=" * 70)
 
         click.echo("\nDatabase Overview:")
@@ -93,7 +93,7 @@ def stats(ctx, verbose):
         with db.session_scope() as session:
             stats_data = db.query_analytics.get_database_stats(session)
 
-        click.echo("\n📊 Database Statistics")
+        click.echo("\nDatabase Statistics")
         click.echo("=" * 50)
 
         # Core tables
@@ -144,24 +144,24 @@ def health(ctx, fix):
         with db.session_scope() as session:
             health_data = db.health_monitor.health_check(session, db.db_path)
 
-        click.echo("\n🏥 Database Health Check")
+        click.echo("\nDatabase Health Check")
         click.echo("=" * 50)
         click.echo(f"Status: {health_data['status'].upper()}")
 
         if health_data["issues"]:
-            click.echo(f"\n⚠️  Issues Found ({len(health_data['issues'])}):")
+            click.echo(f"\n[WARN] Issues Found ({len(health_data['issues'])}):")
             for issue in health_data["issues"]:
                 click.echo(f"  • {issue}")
         else:
-            click.echo("\n✅ No issues found!")
+            click.echo("\n[OK] No issues found!")
 
         if health_data["recommendations"]:
-            click.echo(f"\n💡 Recommendations ({len(health_data['recommendations'])}):")
+            click.echo(f"\n[TIP] Recommendations ({len(health_data['recommendations'])}):")
             for rec in health_data["recommendations"]:
                 click.echo(f"  • {rec}")
 
         if fix and health_data["issues"]:
-            click.echo("\n🔧 Attempting fixes...")
+            click.echo("\nAttempting fixes...")
             with db.session_scope() as session:
                 results = db.health_monitor.cleanup_orphaned_records(
                     session, dry_run=False

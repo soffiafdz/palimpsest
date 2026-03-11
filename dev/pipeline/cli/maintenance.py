@@ -71,7 +71,7 @@ def run_pipeline(
     from .export import export_json
     from .wiki import wiki
 
-    click.echo("🚀 Starting complete pipeline...\n")
+    click.echo("Starting complete pipeline...\n")
 
     start_time = datetime.now()
 
@@ -135,7 +135,7 @@ def run_pipeline(
         duration = (datetime.now() - start_time).total_seconds()
 
         click.echo("=" * 60)
-        click.echo(f"\n✅ Pipeline complete! ({duration:.2f}s)")
+        click.echo(f"\n[OK] Pipeline complete! ({duration:.2f}s)")
 
     except Exception as e:
         handle_cli_error(ctx, e, "run_pipeline")
@@ -148,7 +148,7 @@ def status(ctx: click.Context) -> None:
     from dev.core.paths import DATA_DIR
 
     logger: PalimpsestLogger = ctx.obj["logger"]
-    click.echo("📊 Pipeline Status\n")
+    click.echo("Pipeline Status\n")
 
     # Check directories
     click.echo("Directories:")
@@ -158,7 +158,7 @@ def status(ctx: click.Context) -> None:
         ("Markdown", MD_DIR),
         ("PDF", PDF_DIR),
     ]:
-        exists = "✓" if path.exists() else "✗"
+        exists = "[OK]" if path.exists() else "[FAIL]"
         click.echo(f"  {exists} {name}: {path}")
 
     click.echo()
@@ -218,7 +218,7 @@ def validate() -> None:
 @validate.command("pipeline")
 def validate_pipeline() -> None:
     """Validate pipeline directory structure and dependencies."""
-    click.echo("🔍 Validating pipeline...\n")
+    click.echo("Validating pipeline...\n")
 
     issues = []
 
@@ -243,12 +243,12 @@ def validate_pipeline() -> None:
             issues.append(f"Missing preamble: {name} ({path})")
 
     if issues:
-        click.echo("⚠️  Issues found:")
+        click.echo("[WARN] Issues found:")
         for issue in issues:
             click.echo(f"  • {issue}")
         sys.exit(1)
     else:
-        click.echo("✅ Pipeline validation passed!")
+        click.echo("[OK] Pipeline validation passed!")
 
 
 @validate.command("entry")
@@ -307,9 +307,9 @@ def validate_entry(
                     click.echo(f"  {warning.message}")
 
             if result.is_valid:
-                click.secho("\n✓ Valid", fg="green")
+                click.secho("\n[OK] Valid", fg="green")
             else:
-                click.secho(f"\n✗ {result.error_count} error(s)", fg="red")
+                click.secho(f"\n[FAIL] {result.error_count} error(s)", fg="red")
 
         return 0 if result.is_valid else 1
 

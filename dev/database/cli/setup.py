@@ -41,27 +41,27 @@ def init(ctx, alembic_only, db_only):
         db = get_db(ctx)
 
         if alembic_only:
-            click.echo("📁 Initializing Alembic...")
+            click.echo("Initializing Alembic...")
             db.init_alembic()
-            click.echo("✅ Alembic initialized!")
+            click.echo("[OK]Alembic initialized!")
         elif db_only:
-            click.echo("🗄️  Initializing database schema...")
+            click.echo("Initializing database schema...")
             db.initialize_schema()
-            click.echo("✅ Database initialized!")
+            click.echo("[OK]Database initialized!")
         else:
-            click.echo("🚀 Initializing Palimpsest database...")
-            click.echo("📁 Initializing Alembic...")
+            click.echo("Initializing Palimpsest database...")
+            click.echo("Initializing Alembic...")
             db.init_alembic()
-            click.echo("🗄️  Initializing database schema...")
+            click.echo("Initializing database schema...")
             db.initialize_schema()
-            click.echo("✅ Complete setup finished!")
+            click.echo("[OK]Complete setup finished!")
 
     except DatabaseError as e:
         handle_cli_error(ctx, e, "init")
 
 
 @click.command()
-@click.confirmation_option(prompt="⚠️  This will DELETE the database! Are you sure?")
+@click.confirmation_option(prompt="[WARN] This will DELETE the database! Are you sure?")
 @click.option("--keep-backups", is_flag=True, help="Keep existing backups")
 @click.pass_context
 def reset(ctx, keep_backups):
@@ -69,7 +69,7 @@ def reset(ctx, keep_backups):
     try:
         db_path = ctx.obj["db_path"]
 
-        click.echo("🗑️  Resetting database...")
+        click.echo("Resetting database...")
 
         # Delete database file
         if db_path.exists():
@@ -77,15 +77,15 @@ def reset(ctx, keep_backups):
             click.echo(f"  Deleted: {db_path}")
 
         # Reinitialize
-        click.echo("🔄 Reinitializing...")
+        click.echo("Reinitializing...")
         db = get_db(ctx)
         db.init_alembic()
         db.initialize_schema()
 
-        click.echo("✅ Database reset complete!")
+        click.echo("[OK]Database reset complete!")
 
         if not keep_backups:
-            click.echo("💡 Tip: Use --keep-backups to preserve backup files")
+            click.echo("[TIP] Use --keep-backups to preserve backup files")
 
     except DatabaseError as e:
         handle_cli_error(ctx, e, "reset")

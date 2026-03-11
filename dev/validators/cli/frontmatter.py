@@ -70,7 +70,7 @@ def _print_filtered(ctx: click.Context, diagnostics: list, label: str) -> None:
         if error_count > 0:
             raise click.ClickException(f"Found {error_count} {label} error(s)")
     elif fmt != "json":
-        click.echo(f"✅ No {label} issues found")
+        click.echo(f"[OK]No {label} issues found")
 
 
 @frontmatter.command()
@@ -227,7 +227,7 @@ def all(ctx: click.Context) -> None:
     if report.diagnostics:
         click.echo(format_diagnostics(report.diagnostics, fmt))
     elif fmt != "json":
-        click.echo("✅ ALL FRONTMATTER VALID")
+        click.echo("[OK]ALL FRONTMATTER VALID")
 
     if not report.is_valid:
         raise click.ClickException(

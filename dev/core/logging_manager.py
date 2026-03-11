@@ -285,10 +285,10 @@ class PalimpsestLogger:
 
         Examples:
             >>> logger.log_cli_error(DatabaseError("Connection failed"))
-            '❌ DatabaseError: Connection failed'
+            '[ERR]DatabaseError: Connection failed'
 
             >>> logger.log_cli_error(error, {"operation": "init"}, show_traceback=True)
-            '❌ DatabaseError: Connection failed\\n\\nTraceback (most recent call last)...'
+            '[ERR]DatabaseError: Connection failed\\n\\nTraceback (most recent call last)...'
         """
         # Log full details to file (JSON format for machine parsing)
         self.log_error(error, context or {"source": "cli"})
@@ -299,9 +299,9 @@ class PalimpsestLogger:
 
         if show_traceback:
             tb = traceback.format_exc()
-            return f"❌ {error_type}: {error_msg}\n\n{tb}"
+            return f"[ERR]{error_type}: {error_msg}\n\n{tb}"
         else:
-            return f"❌ {error_type}: {error_msg}"
+            return f"[ERR]{error_type}: {error_msg}"
 
 
 def handle_cli_error(
@@ -383,7 +383,7 @@ class NullLogger:
     ) -> str:
         """No-op CLI error logger."""
         error_type = type(error).__name__
-        return f"❌ {error_type}: {error}"
+        return f"[ERR]{error_type}: {error}"
 
     # Standard logging interface (used by wiki sync and other modules
     # that call logger.info/warning/error directly)

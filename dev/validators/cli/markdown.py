@@ -79,7 +79,7 @@ def frontmatter(ctx: click.Context, file_path: Optional[str]) -> None:
             if error_count > 0:
                 raise click.ClickException(f"Found {error_count} frontmatter error(s)")
         elif fmt != "json":
-            click.echo("✅ No frontmatter issues found")
+            click.echo("[OK]No frontmatter issues found")
     else:
         report = validator.validate_all()
         fm_diagnostics = [d for d in report.diagnostics if d.code.startswith("FRONTMATTER")]
@@ -90,7 +90,7 @@ def frontmatter(ctx: click.Context, file_path: Optional[str]) -> None:
             if error_count > 0:
                 raise click.ClickException(f"Found {error_count} frontmatter error(s)")
         elif fmt != "json":
-            click.echo("✅ No frontmatter issues found")
+            click.echo("[OK]No frontmatter issues found")
 
 
 @md.command()
@@ -116,7 +116,7 @@ def links(ctx: click.Context) -> None:
         click.echo(format_diagnostics(diagnostics, fmt))
         raise click.ClickException(f"Found {len(diagnostics)} broken link(s)")
     elif fmt != "json":
-        click.echo("✅ All markdown links are valid")
+        click.echo("[OK]All markdown links are valid")
 
 
 @md.command()
@@ -145,7 +145,7 @@ def all(ctx: click.Context) -> None:
     if report.diagnostics:
         click.echo(format_diagnostics(report.diagnostics, fmt))
     elif fmt != "json":
-        click.echo("✅ ALL FILES VALID")
+        click.echo("[OK]ALL FILES VALID")
 
     if not report.is_valid:
         raise click.ClickException(

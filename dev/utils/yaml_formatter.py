@@ -518,7 +518,7 @@ class YAMLFormatter:
                 data = yaml.safe_load(f)
 
             if data is None:
-                print(f"⚠️  Skipping empty file: {file_path}")
+                print(f"[WARN] Skipping empty file: {file_path}")
                 return False
 
             # Apply formatting
@@ -530,11 +530,11 @@ class YAMLFormatter:
                 f.write(formatted_yaml)
                 f.write("\n")
 
-            print(f"✓ Formatted: {file_path}")
+            print(f"[OK] Formatted: {file_path}")
             return True
 
         except Exception as e:
-            print(f"✗ Error formatting {file_path}: {e}")
+            print(f"[FAIL] Error formatting {file_path}: {e}")
             import traceback
 
             traceback.print_exc()

@@ -123,7 +123,7 @@ def prune_orphans(ctx: click.Context, entity_type: str, list_only: bool, dry_run
         elif dry_run:
             click.echo(f"Would delete {total_orphans} orphaned entities")
         else:
-            click.echo(f"✅ Deleted {total_deleted} orphaned entities")
+            click.echo(f"[OK] Deleted {total_deleted} orphaned entities")
         click.echo("=" * 60)
 
     except Exception as e:

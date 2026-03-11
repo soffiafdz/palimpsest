@@ -7,7 +7,7 @@ INTERNAL: Optimized query strategies to eliminate N+1 query problems.
 Utilities for efficient relationship loading in SQLAlchemy,
 preventing performance issues when accessing related objects in loops.
 
-⚠️ This module is for INTERNAL use by ExportManager, QueryAnalytics,
+WARNING: This module is for INTERNAL use by ExportManager, QueryAnalytics,
 and HealthMonitor. External code should use those high-level interfaces instead.
 
 Key Concepts:

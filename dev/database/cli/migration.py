@@ -34,19 +34,19 @@ from . import get_db
 def create(ctx, message, autogenerate):
     """Create a new Alembic migration."""
     try:
-        click.echo(f"📝 Creating migration: {message}")
+        click.echo(f"Creating migration: {message}")
         db = get_db(ctx)
 
         if autogenerate:
-            click.echo("🔍 Auto-generating migration from model changes...")
+            click.echo("Auto-generating migration from model changes...")
 
         revision = db.create_migration(message)
-        click.echo(f"✅ Migration created: {revision}")
+        click.echo(f"[OK]Migration created: {revision}")
 
         if autogenerate:
-            click.echo("💡 Review the auto-generated migration file, then run: plm db upgrade")
+            click.echo("[TIP]Review the auto-generated migration file, then run: plm db upgrade")
         else:
-            click.echo("💡 Edit the migration file and then run: plm db upgrade")
+            click.echo("[TIP]Edit the migration file and then run: plm db upgrade")
 
     except DatabaseError as e:
         handle_cli_error(ctx, e, "create")
@@ -58,10 +58,10 @@ def create(ctx, message, autogenerate):
 def upgrade(ctx, revision):
     """Upgrade database to specified revision."""
     try:
-        click.echo(f"⬆️  Upgrading database to: {revision}")
+        click.echo(f"Upgrading database to: {revision}")
         db = get_db(ctx)
         db.upgrade_database(revision)
-        click.echo("✅ Database upgraded successfully!")
+        click.echo("[OK]Database upgraded successfully!")
 
     except DatabaseError as e:
         handle_cli_error(
@@ -78,10 +78,10 @@ def upgrade(ctx, revision):
 def downgrade(ctx, revision):
     """Downgrade database to specified revision."""
     try:
-        click.echo(f"⬇️  Downgrading database to: {revision}")
+        click.echo(f"Downgrading database to: {revision}")
         db = get_db(ctx)
         db.downgrade_database(revision)
-        click.echo("✅ Database downgraded successfully!")
+        click.echo("[OK]Database downgraded successfully!")
 
     except DatabaseError as e:
         handle_cli_error(
@@ -100,13 +100,13 @@ def migration_status(ctx):
         db = get_db(ctx)
         status = db.get_migration_history()
 
-        click.echo("\n📊 Migration Status")
+        click.echo("\nMigration Status")
         click.echo("=" * 50)
         click.echo(f"Current Revision: {status.get('current_revision', 'None')}")
         click.echo(f"Status: {status.get('status', 'Unknown')}")
 
         if "error" in status:
-            click.echo(f"⚠️  Error: {status['error']}")
+            click.echo(f"[WARN] Error: {status['error']}")
 
     except DatabaseError as e:
         handle_cli_error(ctx, e, "migration_status")
@@ -120,7 +120,7 @@ def history(ctx):
         db = get_db(ctx)
         status = db.get_migration_history()
 
-        click.echo("\n📜 Migration History")
+        click.echo("\nMigration History")
         click.echo("=" * 50)
 
         if "history" in status and status["history"]:

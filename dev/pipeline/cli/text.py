@@ -70,7 +70,7 @@ def convert(
     resolved_yaml_dir = None if no_yaml else Path(yaml_dir)
 
     if dry_run:
-        click.echo("📝 Converting text to Markdown (DRY RUN - no files will be modified)...")
+        click.echo("Converting text to Markdown (DRY RUN - no files will be modified)...")
         click.echo()
         input_path = Path(input)
 
@@ -89,10 +89,10 @@ def convert(
         else:
             click.echo("YAML skeletons: disabled")
         click.echo(f"Force overwrite: {force}")
-        click.echo("\n💡 Run without --dry-run to execute conversion")
+        click.echo("\n[TIP] Run without --dry-run to execute conversion")
         return
 
-    click.echo("📝 Converting text to Markdown...")
+    click.echo("Converting text to Markdown...")
 
     try:
         stats = None
@@ -116,7 +116,7 @@ def convert(
             )
 
         if stats:
-            click.echo("\n✅ Conversion complete:")
+            click.echo("\n[OK] Conversion complete:")
             click.echo(f"  Files processed: {stats.files_processed}")
             click.echo(f"  Entries created: {stats.entries_created}")
             if stats.skeletons_created or stats.skeletons_skipped:

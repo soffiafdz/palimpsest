@@ -197,42 +197,42 @@ class JSONExporter:
         Args:
             commit: Whether to create a git commit after export (default True)
         """
-        safe_logger(self.logger).log_info("🔄 Starting full database export to JSON")
+        safe_logger(self.logger).log_info("Starting full database export to JSON")
 
         try:
             # Step 1: Load previous exports for diff
-            safe_logger(self.logger).log_info("📂 Loading existing exports for comparison...")
+            safe_logger(self.logger).log_info("Loading existing exports for comparison...")
             old_exports = self._load_existing_exports()
             old_count = sum(len(entities) for entities in old_exports.values())
             safe_logger(self.logger).log_info(f"   Found {old_count} existing entities")
 
             # Step 2: Export all entity types
-            safe_logger(self.logger).log_info("📊 Exporting all entities from database...")
+            safe_logger(self.logger).log_info("Exporting all entities from database...")
             new_exports = self._export_all_entities()
             new_count = sum(self.stats.values())
             safe_logger(self.logger).log_info(f"   Exported {new_count} entities")
 
             # Step 3: Generate change descriptions
-            safe_logger(self.logger).log_info("🔍 Detecting changes...")
+            safe_logger(self.logger).log_info("Detecting changes...")
             self._generate_changes(old_exports, new_exports)
             safe_logger(self.logger).log_info(f"   Detected {len(self.changes)} changes")
 
             # Step 4: Write all JSON files
-            safe_logger(self.logger).log_info("💾 Writing JSON files...")
+            safe_logger(self.logger).log_info("Writing JSON files...")
             self._write_exports(new_exports)
             safe_logger(self.logger).log_info(f"   Wrote {new_count} files")
 
             # Step 5: Generate and write README
-            safe_logger(self.logger).log_info("📝 Generating README...")
+            safe_logger(self.logger).log_info("Generating README...")
             self._write_readme()
 
             # Step 6: Git commit (optional)
             if commit:
-                safe_logger(self.logger).log_info("🔐 Creating git commit...")
+                safe_logger(self.logger).log_info("Creating git commit...")
                 self._git_commit()
 
             safe_logger(self.logger).log_info(
-                f"✅ Export complete: {new_count} files exported, {len(self.changes)} changes"
+                f"[OK] Export complete: {new_count} files exported, {len(self.changes)} changes"
             )
 
         except Exception as e:
@@ -1630,7 +1630,7 @@ class JSONExporter:
                 capture_output=True,
             )
 
-            safe_logger(self.logger).log_info(f"✅ Git commit created: {commit_message}")
+            safe_logger(self.logger).log_info(f"[OK] Git commit created: {commit_message}")
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr.decode() if e.stderr else str(e)

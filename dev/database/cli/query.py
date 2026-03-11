@@ -39,49 +39,49 @@ def show(ctx, entry_date, full):
             if full:
                 summary = db.query_analytics.get_entry_summary(session, entry_date)
                 if "error" in summary:
-                    click.echo(f"❌ {summary['error']}", err=True)
+                    click.echo(f"[ERR] {summary['error']}", err=True)
                     sys.exit(1)
 
                 # Display full summary
-                click.echo(f"\n📅 {summary['date']}")
+                click.echo(f"\n{summary['date']}")
                 click.echo(
-                    f"📊 {summary['word_count']} words, "
+                    f"{summary['word_count']} words, "
                     f"{summary['reading_time']:.1f} min read"
                 )
 
                 if (n_people := summary["people_count"]) > 1:
-                    click.echo(f"\n👥 People ({n_people}):\n")
+                    click.echo(f"\nPeople ({n_people}):\n")
                     for person in summary["people"]:
                         click.echo(f"  • {person}\n")
                 elif n_people == 1:
-                    click.echo(f"\n👥 Person: {summary['people']}\n")
+                    click.echo(f"\nPerson: {summary['people']}\n")
 
                 if (n_locations := summary["locations_count"]) > 1:
-                    click.echo(f"\n📍 Locations ({n_locations}):\n")
+                    click.echo(f"\nLocations ({n_locations}):\n")
                     for loc in summary["locations"]:
                         click.echo(f"  • {loc}\n")
                 elif n_locations == 1:
-                    click.echo(f"\n📍 Location: {summary['locations']}\n")
+                    click.echo(f"\nLocation: {summary['locations']}\n")
 
                 if (n_events := summary["events_count"]) > 1:
-                    click.echo(f"\n🎯 Events ({n_events}):")
+                    click.echo(f"\nEvents ({n_events}):")
                     for event in summary["events"]:
                         click.echo(f"  • {event}\n")
                 elif n_events == 1:
-                    click.echo(f"\n🎯 Event: {summary['events']}\n")
+                    click.echo(f"\nEvent: {summary['events']}\n")
 
                 if summary["tags"]:
-                    click.echo(f"\n🏷️  Tags: {summary['tags']}")
+                    click.echo(f"\nTags: {summary['tags']}")
             else:
                 entry = db.entries.get_for_display(entry_date)
                 if not entry:
-                    click.echo(f"❌ No entry found for {entry_date}", err=True)
+                    click.echo(f"[ERR] No entry found for {entry_date}", err=True)
                     sys.exit(1)
 
                 # Display basic info
-                click.echo(f"\n📅 {entry.date.isoformat()}")
+                click.echo(f"\n{entry.date.isoformat()}")
                 click.echo(
-                    f"📊 {entry.word_count} words, "
+                    f"{entry.word_count} words, "
                     f"{entry.reading_time:.1f} min read"
                 )
 
@@ -104,7 +104,7 @@ def years(ctx):
         with db.session_scope() as session:
             timeline = db.query_analytics.get_timeline_overview(session)
 
-            click.echo("\n📅 Available Years:\n")
+            click.echo("\nAvailable Years:\n")
 
             for year_data in timeline["years"]:
                 year = year_data["year"]
@@ -129,7 +129,7 @@ def months(ctx, year):
             year_analytics = db.query_analytics.get_year_analytics(session, year)
 
             if year_analytics["total_entries"] == 0:
-                click.echo(f"⚠️  No entries found for {year}")
+                click.echo(f"[WARN] No entries found for {year}")
                 return
 
             month_names = [
@@ -147,7 +147,7 @@ def months(ctx, year):
                 "Dec",
             ]
 
-            click.echo(f"\n📅 Entries in {year}:\n")
+            click.echo(f"\nEntries in {year}:\n")
 
             monthly = year_analytics["monthly_breakdown"]
             total = 0
@@ -183,7 +183,7 @@ def batches(ctx, threshold):
         with db.session_scope() as session:
             batches = db.export_manager.get_export_batches(session, threshold)
 
-            click.echo(f"\n📦 Hierarchical Batches (threshold={threshold}):\n")
+            click.echo(f"\nHierarchical Batches (threshold={threshold}):\n")
 
             yearly_batches = [b for b in batches if b.is_yearly]
             monthly_batches = [b for b in batches if b.is_monthly]
