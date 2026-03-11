@@ -8,15 +8,18 @@ Unified command-line interface for the complete journal processing pipeline.
 Orchestrates the full workflow:
 1. inbox → Process raw exports (src → txt)
 2. convert → Convert formatted text to Markdown (txt → md)
-3. entries import → Import journal entry frontmatter into database
+3. sync → Synchronize DB with files and regenerate outputs
 4. build pdf → Generate yearly PDFs (md → pdf)
 
+Top-Level Commands:
+    - inbox: Process raw exports
+    - convert: Convert formatted text to Markdown
+    - sync: Synchronize DB with files (JSON import → entries → metadata → export → wiki)
+    - export: Export DB entities to JSON
+    - status: Show pipeline status
+
 Command Groups:
-    - Source Processing: inbox
-    - Text Conversion: convert
-    - Entries: entries import
     - Build: build pdf, build metadata
-    - JSON: json export, json import
     - DB: db init, db backup, db upgrade, ...
     - Pipeline: pipeline run
     - Wiki: wiki generate, wiki lint, wiki sync
@@ -24,13 +27,16 @@ Command Groups:
     - Validate: validate pipeline, validate entry, validate db, ...
 
 Usage:
+    # Synchronize after git pull (replaces entries import + json export + wiki generate)
+    plm sync
+
     # Run complete pipeline
     plm pipeline run
 
     # Individual steps (in order)
     plm inbox                  # Process raw exports
     plm convert                # Convert to Markdown
-    plm entries import         # Import entry frontmatter to database
+    plm sync                   # Synchronize everything
     plm build pdf 2025         # Generate PDFs
 
     # Database management
@@ -74,22 +80,8 @@ def cli(ctx: click.Context, log_dir: str, verbose: bool) -> None:
 
 @click.group()
 @click.pass_context
-def entries(ctx: click.Context) -> None:
-    """Journal entry operations."""
-    pass
-
-
-@click.group()
-@click.pass_context
 def build(ctx: click.Context) -> None:
     """Build output files."""
-    pass
-
-
-@click.group()
-@click.pass_context
-def json(ctx: click.Context) -> None:
-    """JSON import/export for database synchronization."""
     pass
 
 
@@ -134,14 +126,13 @@ def db(ctx: click.Context, db_path: str, alembic_dir: str, backup_dir: str) -> N
 # These imports must come after CLI group definition
 from .sources import inbox  # noqa: E402
 from .text import convert  # noqa: E402
-from .database import import_entries  # noqa: E402
 from .export import export_json  # noqa: E402
 from .pdf import build_pdf  # noqa: E402
 from .metadata_pdf import build_metadata_pdf  # noqa: E402
 from .maintenance import run_pipeline, status, validate  # noqa: E402
 from .wiki import wiki  # noqa: E402
 from .metadata_yaml import metadata  # noqa: E402
-from .import_json import import_json  # noqa: E402
+from .sync import sync  # noqa: E402
 
 # Import database CLI commands
 from dev.database.cli.setup import init, reset  # noqa: E402
@@ -159,11 +150,11 @@ from dev.database.cli.prune import prune_orphans  # noqa: E402
 cli.add_command(inbox)
 cli.add_command(convert)
 cli.add_command(status)
+cli.add_command(sync)
+cli.add_command(export_json, "export")
 
 # Register command groups
-cli.add_command(entries)
 cli.add_command(build)
-cli.add_command(json)
 cli.add_command(pipeline)
 cli.add_command(db)
 cli.add_command(validate)
@@ -171,11 +162,8 @@ cli.add_command(wiki)
 cli.add_command(metadata)
 
 # Register subcommands under groups
-entries.add_command(import_entries)
 build.add_command(build_pdf)
 build.add_command(build_metadata_pdf)
-json.add_command(export_json)
-json.add_command(import_json)
 pipeline.add_command(run_pipeline)
 
 # Register all DB subcommands (flattened from metadb)
