@@ -41,10 +41,8 @@ from dev.validators.cli.consistency import consistency as validate_consistency
 @click.command("run")
 @click.option("--year", help="Specific year to process (optional)")
 @click.option("--skip-inbox", is_flag=True, help="Skip inbox processing")
-@click.option("--skip-import", is_flag=True, help="Skip entry import")
+@click.option("--skip-sync", is_flag=True, help="Skip sync (import/export/wiki)")
 @click.option("--skip-pdf", is_flag=True, help="Skip PDF generation")
-@click.option("--skip-export", is_flag=True, help="Skip JSON export")
-@click.option("--skip-wiki", is_flag=True, help="Skip wiki generation")
 @click.option("--backup", is_flag=True, help="Create DB backup after completion")
 @click.confirmation_option(prompt="Run complete pipeline?")
 @click.pass_context
@@ -52,24 +50,20 @@ def run_pipeline(
     ctx: click.Context,
     year: Optional[str],
     skip_inbox: bool,
-    skip_import: bool,
+    skip_sync: bool,
     skip_pdf: bool,
-    skip_export: bool,
-    skip_wiki: bool,
     backup: bool,
 ) -> None:
     """
     Run the complete processing pipeline end-to-end.
 
     Orchestrates the entire journal processing pipeline in the correct order:
-    inbox → convert → entries import → build pdf → json export → wiki generate → backup
+    inbox → convert → sync → build pdf → backup
     """
     from .sources import inbox
     from .text import convert
-    from .database import import_entries
+    from .sync import sync
     from .pdf import build_pdf
-    from .export import export_json
-    from .wiki import wiki
 
     click.echo("Starting complete pipeline...\n")
 
@@ -87,11 +81,12 @@ def run_pipeline(
         ctx.invoke(convert, force=False)
         click.echo()
 
-        # Step 3: Import entry metadata
-        if not skip_import:
+        # Step 3: Sync (JSON import → entries → metadata → JSON export → wiki)
+        if not skip_sync:
             click.echo("=" * 60)
-            years_arg = f"{year}-{year}" if year else "2021-2025"
-            ctx.invoke(import_entries, dry_run=False, year=None, years=years_arg)
+            years_arg = f"{year}-{year}" if year else None
+            ctx.invoke(sync, no_wiki=False, commit=False, dry_run=False,
+                       years=years_arg, verbose=False)
             click.echo()
 
         # Step 4: Build PDFs (if year specified)
@@ -100,25 +95,7 @@ def run_pipeline(
             ctx.invoke(build_pdf, year=year, input=str(MD_DIR), output=str(PDF_DIR), force=False, debug=False)
             click.echo()
 
-        # Step 5: Export JSON
-        if not skip_export:
-            click.echo("=" * 60)
-            ctx.invoke(export_json, no_commit=True)
-            click.echo()
-
-        # Step 6: Generate wiki
-        if not skip_wiki:
-            click.echo("=" * 60)
-            from dev.wiki.exporter import WikiExporter
-            from dev.core.paths import DB_PATH as _DB_PATH
-            from dev.database.manager import PalimpsestDB as _PalimpsestDB
-            _db = _PalimpsestDB(_DB_PATH)
-            wiki_exporter = WikiExporter(_db, logger=ctx.obj.get("logger"))
-            wiki_exporter.generate_all()
-            click.echo("Wiki pages generated.")
-            click.echo()
-
-        # Step 7: DB backup (if requested)
+        # Step 5: DB backup (if requested)
         if backup:
             click.echo("=" * 60)
             db = PalimpsestDB(
