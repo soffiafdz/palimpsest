@@ -10,8 +10,6 @@ Key Features:
     - get_db(): Create PalimpsestDB from Click context
     - Command modules: setup, migration, backup, query, maintenance, prune
 """
-from pathlib import Path
-
 from dev.database import PalimpsestDB
 
 

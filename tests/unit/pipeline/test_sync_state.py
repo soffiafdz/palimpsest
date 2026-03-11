@@ -14,11 +14,7 @@ Usage:
 from __future__ import annotations
 
 # --- Standard library imports ---
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-# --- Third-party imports ---
-import pytest
 
 # --- Local imports ---
 from dev.pipeline.sync_state import (

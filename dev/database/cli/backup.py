@@ -40,7 +40,6 @@ def backup(ctx, type, suffix, full):
     if full:
         from dev.core.paths import DB_PATH, BACKUP_DIR, DATA_DIR
         from dev.core.backup_manager import BackupManager
-        from dev.core.logging_manager import PalimpsestLogger
 
         click.echo("Creating full data backup...")
         click.echo("   (This may take a while for large archives)")
