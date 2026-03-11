@@ -23,7 +23,10 @@ This installs two CLI entry points:
 
 ```bash
 # Process new journal entries
-plm inbox && plm convert && plm entries import
+plm inbox && plm convert && plm sync
+
+# Sync after git pull on another machine
+plm sync
 
 # Search your journal
 jsearch query "therapy" person:alice in:2024
@@ -118,33 +121,55 @@ plm convert [-i PATH] [-o PATH] [-f] [--dry-run] [--yaml-dir PATH] [--no-yaml]
 - `--yaml-dir PATH` - Output directory for YAML metadata skeletons
 - `--no-yaml` - Disable YAML skeleton generation
 
-#### `plm entries import`
+#### `plm sync`
 
-Import metadata YAML files into database.
+Synchronize database with files and regenerate outputs.
 
 ```bash
-plm entries import [--dry-run] [-y YEAR] [--years RANGE]
+plm sync [--no-wiki] [--commit] [--dry-run] [--years RANGE] [-v]
 ```
 
 **What it does:**
-- Parses journal markdown and analysis YAML files
-- Updates database with entry metadata
-- Extracts people, locations, events, themes, etc.
-- Handles tombstone tracking for deletions
+- Imports shared DB state from JSON exports (cross-machine changes)
+- Processes journal entries where content hash changed (local edits)
+- Imports entity YAML metadata (people, locations, chapters, etc.)
+- Re-exports DB to JSON if any changes were detected
+- Regenerates wiki pages (unless `--no-wiki`)
+- Optionally commits data/ submodule (with `--commit`)
 
 **Options:**
-- `--dry-run` - Don't commit changes to database
-- `-y/--year YEAR` - Import only a specific year (e.g., `2024`)
-- `--years RANGE` - Import a year range (e.g., `2021-2025`)
+- `--no-wiki` - Skip wiki page regeneration
+- `--commit` - Auto-commit changes in data/ submodule
+- `--dry-run` - Preview changes without modifying database
+- `--years RANGE` - Limit entries import scope (e.g., `2024` or `2021-2025`)
+- `-v/--verbose` - Show detailed per-entity output
 
-**Note:** This imports human-authored narrative analysis. Only post-2020 entries are supported.
+**Examples:**
+```bash
+# Standard sync after git pull
+plm sync
 
-#### `plm json export`
+# Sync without wiki, auto-commit data submodule
+plm sync --no-wiki --commit
+
+# Preview what would change
+plm sync --dry-run
+
+# Limit to specific years
+plm sync --years 2024-2025
+```
+
+**Use cases:**
+- Cross-machine workflow (sync after `git pull`)
+- Daily workflow after processing new entries
+- Replacing the old `entries import → json export → wiki generate` chain
+
+#### `plm export`
 
 Export database entities to JSON files.
 
 ```bash
-plm json export
+plm export [--no-commit]
 ```
 
 **What it does:**
@@ -152,40 +177,12 @@ plm json export
 - Creates structured export for version control
 - Outputs to `data/exports/journal/`
 
-**Use cases:**
-- Version control of database state
-- Backup in human-readable format
-- Cross-machine database synchronization (pair with `plm json import`)
-
-#### `plm json import`
-
-Import database entities from JSON export files.
-
-```bash
-plm json import [--input-dir PATH]
-```
-
-**What it does:**
-- Reads JSON files produced by `plm json export`
-- Imports entities into database using upsert semantics (idempotent)
-- Safe to run multiple times on the same data
-
 **Options:**
-- `--input-dir PATH` - Input directory (defaults to `data/exports`)
-
-**Examples:**
-```bash
-# Import from default exports directory
-plm json import
-
-# Import from a specific directory
-plm json import --input-dir path/to/exports
-```
+- `--no-commit` - Write JSON files without creating a git commit
 
 **Use cases:**
-- Rebuild database from version-controlled JSON exports
-- Restore database state without a binary backup
-- Share database content across machines
+- Manual JSON export outside of sync workflow
+- Editor integration (Neovim plugin uses this after entity edits)
 
 ### Build Commands
 
@@ -223,20 +220,22 @@ plm build pdf YEAR [-i PATH] [-o PATH] [-f] [--debug]
 Run the complete pipeline end-to-end.
 
 ```bash
-plm pipeline run [--year YEAR] [--skip-inbox] [--skip-pdf] [--backup]
+plm pipeline run [--year YEAR] [--skip-inbox] [--skip-sync] [--skip-pdf] [--backup]
 ```
 
 **Options:**
 - `--year YEAR` - Specific year to process (optional)
 - `--skip-inbox` - Skip inbox processing
+- `--skip-sync` - Skip sync (import/export/wiki)
 - `--skip-pdf` - Skip PDF generation
-- `--backup` - Create full data backup after completion
+- `--backup` - Create DB backup after completion
 
 **What it runs:**
 1. `plm inbox` (unless `--skip-inbox`)
 2. `plm convert`
-3. `plm build pdf` (unless `--skip-pdf`)
-4. `plm db backup --full` (only with `--backup`)
+3. `plm sync` (unless `--skip-sync`)
+4. `plm build pdf` (unless `--skip-pdf`, requires `--year`)
+5. `plm db backup` (only with `--backup`)
 
 ### Backup Operations
 
@@ -1492,7 +1491,7 @@ therapy session with alice discussing...
 
 ```bash
 # Morning: process new entries
-plm inbox && plm convert && plm entries import
+plm inbox && plm convert && plm sync
 
 # Search your journal
 jsearch query "therapy" person:alice in:2024
@@ -1581,7 +1580,7 @@ jsearch index create
 ```bash
 plm validate consistency metadata
 # If drift detected:
-plm entries import  # Re-import from metadata
+plm sync  # Re-sync everything
 ```
 
 ### "Slow database queries"

@@ -1,6 +1,6 @@
 # Full Setup Guide
 
-> Use `plm entries import` for database import and `plm json export` for exports.
+> Use `plm sync` to synchronize database, JSON exports, and wiki after setup or git pull.
 
 Complete instructions for setting up Palimpsest from scratch on a new machine.
 
@@ -117,17 +117,11 @@ plm inbox
 # 2. Convert to markdown (txt → md with YAML frontmatter)
 plm convert
 
-# 3. Import entry frontmatter to database (post-2020 only)
-plm entries import --years 2021-2025
+# 3. Sync: import entries + metadata, export JSON, generate wiki
+plm sync
 
 # 4. Build PDFs for a year
 plm build pdf 2024
-
-# 5. Import per-entity YAML metadata
-plm metadata import
-
-# 6. Generate wiki pages
-plm wiki generate
 ```
 
 ---
@@ -188,15 +182,15 @@ git submodule update --recursive
 # Apply any new migrations
 plm db upgrade
 
-# Regenerate wiki if needed
-plm wiki generate
+# Sync everything (imports, exports, wiki)
+plm sync
 ```
 
 ### Export Database
 
 ```bash
 # Export to JSON for version control
-plm json export
+plm export
 ```
 
 ### Rebuild PDFs
@@ -216,8 +210,8 @@ plm inbox
 # 3. Convert to markdown
 plm convert
 
-# 4. Import entry frontmatter to database
-plm entries import
+# 4. Sync database and regenerate outputs
+plm sync
 ```
 
 ---
@@ -281,7 +275,8 @@ sudo apt install texlive-latex-base texlive-latex-extra
 # Pipeline
 plm inbox              # Process inbox
 plm convert            # txt → md
-plm entries import     # md → database
+plm sync               # Synchronize DB ↔ files ↔ wiki
+plm export             # Export DB → JSON (manual)
 plm build pdf YEAR     # md → pdf
 plm pipeline run --year YEAR  # Full pipeline
 plm status             # Show status

@@ -62,8 +62,8 @@ plm inbox
 # Convert to markdown
 plm convert
 
-# Import entry frontmatter to database
-plm entries import
+# Synchronize DB with files and regenerate outputs
+plm sync
 
 # Build PDFs for a year
 plm build pdf 2024
@@ -191,11 +191,11 @@ plm inbox
 # Convert text to markdown
 plm convert
 
-# Import entry frontmatter to database
-plm entries import
+# Synchronize DB with files and regenerate outputs
+plm sync
 
-# Export database to JSON
-plm json export
+# Export database to JSON (manual / editor integration)
+plm export
 
 # Build PDFs
 plm build pdf YEAR
