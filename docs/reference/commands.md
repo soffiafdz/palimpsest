@@ -144,6 +144,8 @@ plm sync [--no-wiki] [--commit] [--dry-run] [--years RANGE] [-v]
 - `--years RANGE` - Limit entries import scope (e.g., `2024` or `2021-2025`)
 - `-v/--verbose` - Show detailed per-entity output
 
+**Config defaults:** All flags can be configured in `.palimpsest.yaml` (shared) or `.palimpsest.local.yaml` (per-host). CLI flags override config values. See [Project Configuration](#project-configuration).
+
 **Examples:**
 ```bash
 # Standard sync after git pull
@@ -1560,6 +1562,52 @@ plm validate consistency all
 
 # If something breaks, restore:
 plm db restore data/backups/palimpsest_..._before-major-change.db
+```
+
+---
+
+## Project Configuration
+
+Palimpsest uses a two-layer YAML config at the project root:
+
+- **`.palimpsest.yaml`** — Shared defaults (committed to git)
+- **`.palimpsest.local.yaml`** — Per-host overrides (gitignored)
+
+Local values override shared values via shallow dict merge per section.
+
+### Config Schema
+
+```yaml
+sync:
+  min_year: 2021        # Skip entries before this year
+  no_wiki: false        # Skip wiki generation by default
+  auto_commit: false    # Auto-commit data/ submodule after sync
+```
+
+### Per-Host Overrides
+
+Create `.palimpsest.local.yaml` for machine-specific defaults:
+
+```yaml
+# Writer deck: skip wiki for performance
+sync:
+  no_wiki: true
+  auto_commit: true
+```
+
+### Precedence
+
+CLI flags always override config values:
+
+```bash
+# Uses config min_year (e.g., 2021) since --years not passed
+plm sync
+
+# Overrides config — only imports 2025
+plm sync --years 2025
+
+# --no-wiki wins even if config says no_wiki: false
+plm sync --no-wiki
 ```
 
 ---

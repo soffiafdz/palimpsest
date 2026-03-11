@@ -535,98 +535,18 @@ The Neovim package acts as a frontend to the Python backend:
 
 ---
 
-## Deck Mode (Writer Deck)
+## Per-Host Configuration
 
-Deck mode is a lightweight plugin profile for the writer deck (Raspberry Pi Zero 2W), which runs a minimal neovim setup without Python. It enables manuscript editing via vimwiki with safety guards that prevent data loss from wiki/DB drift.
+All machines use the same full plugin setup. Per-host sync defaults (e.g., skipping wiki generation on low-powered machines) are configured via `.palimpsest.local.yaml` at the project root:
 
-### Setup
-
-Set `vim.g.palimpsest_deck_mode = true` before calling `setup()`:
-
-```lua
-config = function()
-    vim.g.palimpsest_deck_mode = true
-    require("palimpsest").setup()
-end,
+```yaml
+# .palimpsest.local.yaml (gitignored)
+sync:
+  no_wiki: true       # Skip wiki generation on this host
+  auto_commit: true    # Auto-commit data/ submodule after sync
 ```
 
-### Sync-Pending Marker
-
-When a manuscript wiki file is saved on the deck, a `.sync-pending` marker (`data/wiki/.sync-pending`) is created tracking which files were edited. This marker:
-
-- **Blocks** `plm wiki generate` and `plm wiki sync --generate` on the main machine
-- **Is cleared** by `plm wiki sync` (full or ingest-only) after ingesting changes
-- **Triggers a notification** on main machine nvim startup: "Deck edits pending"
-
-The marker is a JSON file tracked in git:
-
-```json
-{
-  "machine": "writer-deck",
-  "timestamp": "2026-02-13T14:22:00",
-  "files": ["manuscript/chapters/the-gray-fence.md"]
-}
-```
-
-### Sync Workflow
-
-```
-Main Machine                          Writer Deck
-────────────                          ───────────
-plm wiki generate
-git commit + push
-                                      git pull (wiki pages available)
-                                      edit manuscript in vimwiki
-                                      BufWritePost creates .sync-pending
-                                      git commit + push
-git pull (sees .sync-pending)
-plm wiki sync (ingest → clear → generate)
-git commit + push
-                                      git pull (clean state)
-```
-
-### Feature Matrix
-
-| Feature | Main Machine | Writer Deck |
-|---------|-------------|-------------|
-| Vimwiki navigation | Yes | Yes |
-| Read/edit wiki pages | Yes | Yes |
-| Log entry templates | Yes | Yes |
-| which-key menus | Yes | Yes |
-| fzf-lua entity browse | Yes | No (use snacks.nvim) |
-| Wiki on-save lint | Yes | No |
-| Float YAML editing | Yes | No |
-| Wiki sync/generate | Yes | No |
-| Entity cache | Yes | No |
-| Validation commands | Yes | No |
-| Sync-pending marker | Reads + clears | Writes |
-| Quick navigation | Yes | Yes |
-
-### Available Deck Commands
-
-Navigation (open pre-generated wiki files):
-- `:PalimpsestIndex` - Wiki homepage
-- `:PalimpsestManuscriptIndex` - Manuscript homepage
-- `:PalimpsestQuickAccess` - Quick access wiki pages
-
-Browse/Search (requires fzf-lua):
-- `:PalimpsestBrowse [type]` - Browse wiki entities
-- `:PalimpsestSearch [scope]` - Search wiki content
-
-### Troubleshooting Deck Mode
-
-**Wiki pages not found:**
-- Ensure wiki pages are generated and committed on the main machine
-- Run `git pull` in the data submodule on the deck
-
-**Sync-pending not created:**
-- Verify `vim.g.palimpsest_deck_mode = true` is set
-- Check autocmd group: `:autocmd palimpsest_deck_sync`
-- Only manuscript files (`wiki/manuscript/**/*.md`) trigger the marker
-
-**Main machine blocked by stale marker:**
-- Run `plm wiki sync` to ingest and clear the marker
-- Or manually delete `data/wiki/.sync-pending` if edits were already handled
+These defaults apply when running `plm sync` without explicit flags. CLI flags always override config values. See the [Command Reference](command-reference.md) for details on `plm sync` and the config file.
 
 ---
 
