@@ -16,7 +16,7 @@ local function find_project_root(start_path)
 
 	-- Walk up the directory tree
 	while path and path ~= "/" and path ~= "" do
-		local marker_path = path .. "/.palimpsest"
+		local marker_path = path .. "/.palimpsest.yaml"
 		if vim.fn.filereadable(marker_path) == 1 then
 			return path
 		end

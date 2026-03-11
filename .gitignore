@@ -22,6 +22,9 @@ backups/
 *.swo
 *~
 
+# Per-host config overrides
+.palimpsest.local.yaml
+
 # OS
 .DS_Store
 Thumbs.db

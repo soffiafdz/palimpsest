@@ -1,0 +1,4 @@
+# Palimpsest project configuration
+# Local overrides: .palimpsest.local.yaml (gitignored)
+sync:
+  min_year: 2021
