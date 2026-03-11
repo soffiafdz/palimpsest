@@ -47,6 +47,7 @@ Dependencies:
 from __future__ import annotations
 
 # --- Standard library imports ---
+import datetime
 import subprocess
 from typing import Any, Optional, Set
 
@@ -355,6 +356,10 @@ def sync(
     JSON export, wiki generation, and an optional data/ submodule
     commit in the correct dependency order.
 
+    Defaults for --no-wiki, --commit, and --years can be set in
+    .palimpsest.yaml (shared) or .palimpsest.local.yaml (per-host).
+    CLI flags always override config values.
+
     \b
     Steps run in order:
       1. JSON import   -- load shared state from data/exports/journal/
@@ -364,9 +369,19 @@ def sync(
       5. Wiki generate -- update wiki pages (skip with --no-wiki)
       6. Git commit    -- commit data/ submodule (only with --commit)
     """
+    from dev.core.config import get_sync_config
     from dev.database.manager import PalimpsestDB
 
     logger = ctx.obj.get("logger")
+
+    # Apply config defaults — CLI flags override config values
+    cfg = get_sync_config()
+    no_wiki = no_wiki or cfg["no_wiki"]
+    do_commit = do_commit or cfg["auto_commit"]
+    if years is None and cfg["min_year"]:
+        current_year = datetime.date.today().year
+        years = f"{cfg['min_year']}-{current_year}"
+
     years_filter = _parse_years(years)
 
     db = PalimpsestDB(
