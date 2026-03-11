@@ -334,7 +334,7 @@ class WikiContextBuilder:
                     for s in event.scenes
                     if s.id in entry_scene_ids
                 ],
-                key=lambda s: s["dates"][0] if s["dates"] else date.max,
+                key=lambda s: s["dates"][0] if s["dates"] else "~",
             )
             claimed_scene_ids.update(
                 s.id for s in event.scenes if s.id in entry_scene_ids
@@ -354,7 +354,7 @@ class WikiContextBuilder:
                 for s in scenes
                 if s.id not in claimed_scene_ids
             ],
-            key=lambda s: s["dates"][0] if s["dates"] else date.max,
+            key=lambda s: s["dates"][0] if s["dates"] else "~",
         )
 
         # Build ordered result: named arcs (alphabetical), then standalone
