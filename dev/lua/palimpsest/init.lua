@@ -9,8 +9,6 @@ function M.setup()
 		return
 	end
 
-	local deck_mode = vim.g.palimpsest_deck_mode or false
-
 	-- Always load (pure Lua, no Python dependency)
 	require("palimpsest.vimwiki").setup()
 	require("palimpsest.keymaps").setup()
@@ -33,25 +31,13 @@ function M.setup()
 		endfunction
 	]])
 
-	if deck_mode then
-		-- Deck: minimal autocmds + sync-pending marker writer
-		require("palimpsest.autocmds").setup_deck()
-		require("palimpsest.commands").setup_deck()
-	else
-		-- Full: all modules including Python-dependent
-		require("palimpsest.commands").setup()
-		require("palimpsest.validators").setup()
-		require("palimpsest.autocmds").setup()
+	-- Full setup: all modules including Python-dependent
+	require("palimpsest.commands").setup()
+	require("palimpsest.validators").setup()
+	require("palimpsest.autocmds").setup()
 
-		-- Initialize entity cache (async refresh on startup)
-		require("palimpsest.cache").refresh_all()
-
-		-- Notify if deck edits are pending
-		local wiki_dir = config.paths.wiki
-		if wiki_dir and vim.fn.filereadable(wiki_dir .. "/.sync-pending") == 1 then
-			vim.notify("Deck edits pending — run :PalimpsestGenerate", vim.log.levels.WARN)
-		end
-	end
+	-- Initialize entity cache (async refresh on startup)
+	require("palimpsest.cache").refresh_all()
 
 	-- Check if a picker backend is available (fzf-lua or snacks.nvim)
 	local has_fzf = pcall(require, "fzf-lua")

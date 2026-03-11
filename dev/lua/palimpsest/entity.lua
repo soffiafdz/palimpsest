@@ -18,10 +18,6 @@ local get_project_root = require("palimpsest.utils").get_project_root
 ---
 --- @param filepath string Absolute path to the YAML file
 local function import_yaml(filepath)
-	if vim.g.palimpsest_deck_mode then
-		vim.notify("YAML saved — sync on main machine", vim.log.levels.INFO)
-		return
-	end
 	local root = get_project_root()
 	local section = filepath:find("/manuscript/") and "manuscript" or "journal"
 	local cmd = string.format(
@@ -53,10 +49,6 @@ end
 --- @param entity_type string The context entity type (e.g. "character")
 --- @return boolean True if handled, false if caller should fall back
 local function import_after_rename(entity_type)
-	if vim.g.palimpsest_deck_mode then
-		vim.notify("Renamed — sync on main machine", vim.log.levels.INFO)
-		return true
-	end
 	local root = get_project_root()
 	local MANUSCRIPT_IMPORTS = {
 		chapter   = { "chapters", "scenes" },
