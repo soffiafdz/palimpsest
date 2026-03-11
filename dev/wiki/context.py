@@ -136,20 +136,26 @@ class WikiContextBuilder:
             "narrative": self._build_entry_narrative(
                 entry.scenes, entry.events, entry.arcs
             ),
-            "threads": [self._build_thread_display(t) for t in entry.threads],
-            "themes": [
-                {"name": ti.theme.name, "description": ti.description}
-                for ti in entry.theme_instances
-                if ti.theme
-            ],
-            "tags": [t.name for t in entry.tags],
+            "threads": sorted(
+                [self._build_thread_display(t) for t in entry.threads],
+                key=lambda t: t["name"] or "",
+            ),
+            "themes": sorted(
+                [
+                    {"name": ti.theme.name, "description": ti.description}
+                    for ti in entry.theme_instances
+                    if ti.theme
+                ],
+                key=lambda t: t["name"],
+            ),
+            "tags": sorted(t.name for t in entry.tags),
             "references": self._build_entry_references(entry.references),
             "poems": self._build_entry_poems(entry.poems),
-            "motifs": [
+            "motifs": sorted(
                 mi.motif.name
                 for mi in entry.motif_instances
                 if mi.motif
-            ],
+            ),
             "manuscript_scenes": self._build_entry_manuscript_backlinks(
                 entry
             ),
@@ -319,14 +325,17 @@ class WikiContextBuilder:
             list
         )
         for event in events:
-            event_scenes = [
-                {
-                    "name": s.name,
-                    "dates": [sd.date for sd in s.dates],
-                }
-                for s in event.scenes
-                if s.id in entry_scene_ids
-            ]
+            event_scenes = sorted(
+                [
+                    {
+                        "name": s.name,
+                        "dates": sorted(sd.date for sd in s.dates),
+                    }
+                    for s in event.scenes
+                    if s.id in entry_scene_ids
+                ],
+                key=lambda s: s["dates"][0] if s["dates"] else date.max,
+            )
             claimed_scene_ids.update(
                 s.id for s in event.scenes if s.id in entry_scene_ids
             )
@@ -336,28 +345,37 @@ class WikiContextBuilder:
             })
 
         # Collect unclaimed scenes (not linked to any event)
-        unclaimed = [
-            {
-                "name": s.name,
-                "dates": [sd.date for sd in s.dates],
-            }
-            for s in scenes
-            if s.id not in claimed_scene_ids
-        ]
+        unclaimed = sorted(
+            [
+                {
+                    "name": s.name,
+                    "dates": sorted(sd.date for sd in s.dates),
+                }
+                for s in scenes
+                if s.id not in claimed_scene_ids
+            ],
+            key=lambda s: s["dates"][0] if s["dates"] else date.max,
+        )
 
-        # Build ordered result: named arcs first, then standalone
+        # Build ordered result: named arcs (alphabetical), then standalone
         result = []
-        for arc in arcs:
+        for arc in sorted(arcs, key=lambda a: a.name):
             if arc.name in arc_events:
                 result.append({
                     "name": arc.name,
-                    "events": arc_events.pop(arc.name),
+                    "events": sorted(
+                        arc_events.pop(arc.name),
+                        key=lambda e: e["name"] or "",
+                    ),
                 })
         # Standalone events (no arc)
         if None in arc_events:
             result.append({
                 "name": None,
-                "events": arc_events[None],
+                "events": sorted(
+                    arc_events[None],
+                    key=lambda e: e["name"] or "",
+                ),
             })
         # Unclaimed scenes as pseudo-events
         if unclaimed:
@@ -391,7 +409,7 @@ class WikiContextBuilder:
             loc_groups[loc.city.name].append(loc.name)
 
         locations = [
-            {"city": city, "names": names}
+            {"city": city, "names": sorted(names)}
             for city, names in sorted(loc_groups.items())
         ]
 
@@ -405,7 +423,7 @@ class WikiContextBuilder:
                 else None
             ),
             "content": thread.content,
-            "people": [p.display_name for p in thread.people],
+            "people": sorted(p.display_name for p in thread.people),
             "locations": locations,
         }
 
@@ -429,7 +447,7 @@ class WikiContextBuilder:
                 "author": ref.source.author,
                 "mode": ref.mode.value if ref.mode else "thematic",
             })
-        return result
+        return sorted(result, key=lambda r: r["source_title"])
 
     def _build_entry_poems(
         self, poem_versions: List[Any]
@@ -458,7 +476,7 @@ class WikiContextBuilder:
                 "title": pv.poem.title,
                 "version": version_num,
             })
-        return result
+        return sorted(result, key=lambda p: p["title"])
 
     # ==============================================================
     #  PERSON
