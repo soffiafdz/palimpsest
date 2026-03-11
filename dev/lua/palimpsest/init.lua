@@ -36,8 +36,8 @@ function M.setup()
 	require("palimpsest.validators").setup()
 	require("palimpsest.autocmds").setup()
 
-	-- Initialize entity cache (async refresh on startup)
-	require("palimpsest.cache").refresh_all()
+	-- Entity cache uses lazy refresh (populated on first autocomplete use)
+	-- Eager refresh_all() on startup is too heavy for low-power machines.
 
 	-- Check if a picker backend is available (fzf-lua or snacks.nvim)
 	local has_fzf = pcall(require, "fzf-lua")
