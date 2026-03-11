@@ -324,26 +324,26 @@ class JSONExporter:
                 "summary": entry.summary,
                 "rating": float(entry.rating) if entry.rating else None,
                 "rating_justification": entry.rating_justification,
-                # Owned relationships (natural keys)
-                "people": [p.slug for p in entry.people],
-                "locations": [self._location_keys[loc.id] for loc in entry.locations],
-                "cities": [c.name for c in entry.cities],
-                "arcs": [a.name for a in entry.arcs],
-                "tags": [t.name for t in entry.tags],
-                "theme_instances": [
+                # Owned relationships (natural keys, sorted for determinism)
+                "people": sorted([p.slug for p in entry.people]),
+                "locations": sorted([self._location_keys[loc.id] for loc in entry.locations]),
+                "cities": sorted([c.name for c in entry.cities]),
+                "arcs": sorted([a.name for a in entry.arcs]),
+                "tags": sorted([t.name for t in entry.tags]),
+                "theme_instances": sorted([
                     self._theme_names[ti.theme_id] for ti in entry.theme_instances
-                ],
-                "scenes": [s.name for s in entry.scenes],
-                "events": [e.name for e in entry.events],
-                "threads": [th.name for th in entry.threads],
-                "poems": [self._poem_titles[pv.poem_id] for pv in entry.poems],
-                "references": [
+                ]),
+                "scenes": sorted([s.name for s in entry.scenes]),
+                "events": sorted([e.name for e in entry.events]),
+                "threads": sorted([th.name for th in entry.threads]),
+                "poems": sorted([self._poem_titles[pv.poem_id] for pv in entry.poems]),
+                "references": sorted([
                     f"{self._source_titles[r.source_id]}::{r.mode.value}"
                     for r in entry.references
-                ],
-                "motif_instances": [
+                ]),
+                "motif_instances": sorted([
                     self._motif_names[mi.motif_id] for mi in entry.motif_instances
-                ],
+                ]),
             }
 
             # Progress feedback every 100 entities
@@ -457,7 +457,7 @@ class JSONExporter:
 
         for i, scene in enumerate(scenes, 1):
             # Get scene dates (already strings in flexible format)
-            dates = [sd.date for sd in scene.dates]
+            dates = sorted([sd.date for sd in scene.dates])
 
             key = self._scene_keys[scene.id]
             result[key] = {
@@ -465,8 +465,8 @@ class JSONExporter:
                 "description": scene.description,
                 "entry_date": self._entry_dates[scene.entry_id],
                 "dates": dates,
-                "people": [p.slug for p in scene.people],
-                "locations": [self._location_keys[loc.id] for loc in scene.locations],
+                "people": sorted([p.slug for p in scene.people]),
+                "locations": sorted([self._location_keys[loc.id] for loc in scene.locations]),
             }
 
             # Progress feedback every 100 entities
@@ -495,7 +495,7 @@ class JSONExporter:
         for i, event in enumerate(events, 1):
             result[event.name] = {
                 "name": event.name,
-                "scenes": [self._scene_keys[s.id] for s in event.scenes],
+                "scenes": sorted([self._scene_keys[s.id] for s in event.scenes]),
             }
 
             # Progress feedback every 100 entities
@@ -534,8 +534,8 @@ class JSONExporter:
                 ),
                 "content": thread.content,
                 "entry_date": self._entry_dates[thread.entry_id],
-                "people": [p.slug for p in thread.people],
-                "locations": [self._location_keys[loc.id] for loc in thread.locations],
+                "people": sorted([p.slug for p in thread.people]),
+                "locations": sorted([self._location_keys[loc.id] for loc in thread.locations]),
             }
 
             # Progress feedback every 100 entities
@@ -853,8 +853,8 @@ class JSONExporter:
                 "status": chapter.status.value if chapter.status else None,
                 "content": chapter.content,
                 "draft_path": chapter.draft_path,
-                "poems": [self._poem_titles[p.id] for p in chapter.poems],
-                "characters": [c.name for c in chapter.characters],
+                "poems": sorted([self._poem_titles[p.id] for p in chapter.poems]),
+                "characters": sorted([c.name for c in chapter.characters]),
             }
 
         self.stats["chapters"] = len(result)
@@ -938,7 +938,7 @@ class JSONExporter:
                 "chapter": self._chapter_titles.get(scene.chapter_id) if scene.chapter_id else None,
                 "origin": scene.origin.value if scene.origin else None,
                 "status": scene.status.value if scene.status else None,
-                "characters": [c.name for c in scene.characters],
+                "characters": sorted([c.name for c in scene.characters]),
                 "notes": scene.notes,
             }
 
@@ -1381,7 +1381,7 @@ class JSONExporter:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
                 with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump(entry_data, f, indent=2, ensure_ascii=False)
+                    json.dump(entry_data, f, indent=2, ensure_ascii=False, sort_keys=True)
 
                 # Progress feedback every 100 files
                 if i % 100 == 0 or i == total:
@@ -1413,7 +1413,7 @@ class JSONExporter:
                 filepath = people_dir / filename
 
                 with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump(person_data, f, indent=2, ensure_ascii=False)
+                    json.dump(person_data, f, indent=2, ensure_ascii=False, sort_keys=True)
 
                 # Progress feedback every 100 files
                 if i % 100 == 0 or i == total:
@@ -1442,7 +1442,7 @@ class JSONExporter:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
                 with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump(loc_data, f, indent=2, ensure_ascii=False)
+                    json.dump(loc_data, f, indent=2, ensure_ascii=False, sort_keys=True)
 
                 # Progress feedback every 100 files
                 if i % 100 == 0 or i == total:
@@ -1470,7 +1470,7 @@ class JSONExporter:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
                 with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump(scene_data, f, indent=2, ensure_ascii=False)
+                    json.dump(scene_data, f, indent=2, ensure_ascii=False, sort_keys=True)
 
                 # Progress feedback every 100 files
                 if i % 100 == 0 or i == total:
@@ -1501,7 +1501,7 @@ class JSONExporter:
                 filepath = entity_dir / filename
 
                 with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump(entity_data, f, indent=2, ensure_ascii=False)
+                    json.dump(entity_data, f, indent=2, ensure_ascii=False, sort_keys=True)
 
             except (KeyError, OSError) as e:
                 safe_logger(self.logger).log_warning(
