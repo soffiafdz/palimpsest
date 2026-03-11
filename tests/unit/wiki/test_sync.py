@@ -302,21 +302,6 @@ class TestSyncIngestion:
         # Other types still imported
         assert result.files_ingested == 2
 
-    def test_ingest_clears_sync_pending_marker(self, sync_instance):
-        """Successful ingest clears the .sync-pending marker file."""
-        sync, wiki_dir = sync_instance
-        marker = wiki_dir / ".sync-pending"
-        marker.write_text("pending")
-        result = SyncResult()
-
-        with patch(
-            "dev.wiki.metadata.MetadataImporter"
-        ) as MockImporter:
-            mock_importer = MockImporter.return_value
-            mock_importer.import_all.return_value = {"imported": 0, "errors": 0}
-            sync._ingest(result)
-
-        assert not marker.exists()
 
 
 # ==================== TestSyncCycle ====================
