@@ -39,7 +39,7 @@ class TestTopLevelCommands:
     """Verify top-level commands are registered."""
 
     @pytest.mark.parametrize("command", [
-        "inbox", "convert", "status",
+        "inbox", "convert", "status", "sync", "export",
     ])
     def test_top_level_commands_exist(self, runner, command):
         """Top-level commands should be accessible."""
@@ -47,22 +47,13 @@ class TestTopLevelCommands:
         assert result.exit_code == 0, f"{command}: {result.output}"
 
     @pytest.mark.parametrize("group", [
-        "entries", "build", "json", "pipeline", "db",
+        "build", "pipeline", "db",
         "validate", "wiki", "metadata",
     ])
     def test_command_groups_exist(self, runner, group):
         """Command groups should be accessible."""
         result = runner.invoke(cli, [group, "--help"])
         assert result.exit_code == 0, f"{group}: {result.output}"
-
-
-class TestEntriesGroup:
-    """Verify entries subcommands."""
-
-    def test_entries_import(self, runner):
-        """plm entries import should exist."""
-        result = runner.invoke(cli, ["entries", "import", "--help"])
-        assert result.exit_code == 0
 
 
 class TestBuildGroup:
@@ -72,16 +63,6 @@ class TestBuildGroup:
     def test_build_subcommands(self, runner, command):
         """plm build pdf/metadata should exist."""
         result = runner.invoke(cli, ["build", command, "--help"])
-        assert result.exit_code == 0
-
-
-class TestJsonGroup:
-    """Verify json subcommands."""
-
-    @pytest.mark.parametrize("command", ["export", "import"])
-    def test_json_subcommands(self, runner, command):
-        """plm json export/import should exist."""
-        result = runner.invoke(cli, ["json", command, "--help"])
         assert result.exit_code == 0
 
 
@@ -143,4 +124,14 @@ class TestRemovedCommands:
     def test_list_entities_renamed(self, runner):
         """plm metadata list-entities should not exist (renamed to list)."""
         result = runner.invoke(cli, ["metadata", "list-entities"])
+        assert result.exit_code != 0
+
+    def test_entries_group_removed(self, runner):
+        """plm entries should not exist (subsumed by sync)."""
+        result = runner.invoke(cli, ["entries", "import"])
+        assert result.exit_code != 0
+
+    def test_json_group_removed(self, runner):
+        """plm json should not exist (subsumed by sync + top-level export)."""
+        result = runner.invoke(cli, ["json", "export"])
         assert result.exit_code != 0
