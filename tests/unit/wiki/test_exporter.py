@@ -317,13 +317,6 @@ class TestWikiExporterIndexes:
             ctx = exporter._build_tags_index_context(session)
             assert "tags" in ctx
 
-    def test_themes_index_context(self, test_db, populated_db):
-        """Themes index includes frequency-sorted list."""
-        exporter = WikiExporter(test_db)
-        with test_db.session_scope() as session:
-            ctx = exporter._build_themes_index_context(session)
-            assert "themes" in ctx
-
     def test_motifs_index_context(self, test_db, populated_db):
         """Motifs index includes frequency-sorted list with descriptions."""
         exporter = WikiExporter(test_db)
@@ -343,13 +336,17 @@ class TestWikiExporterIndexes:
             assert m["name"] == "The Loop"
             assert m["instance_count"] >= 1
 
-    def test_events_index_standalone(self, test_db, populated_db):
-        """Events index uses 'Standalone' instead of 'Unlinked'."""
+    def test_events_index_temporal_grouping(self, test_db, populated_db):
+        """Events index groups by year/month from earliest entry date."""
         exporter = WikiExporter(test_db)
         with test_db.session_scope() as session:
             ctx = exporter._build_events_index_context(session)
-            names = [g["name"] for g in ctx["arc_groups"]]
-            assert "Unlinked" not in names
+            assert "year_groups" in ctx
+            assert "event_count" in ctx
+            assert ctx["event_count"] >= 1
+            # Fixture entry date is 2024-11-08
+            years = [yg["year"] for yg in ctx["year_groups"]]
+            assert 2024 in years
 
 
 class TestWikiExporterSubpages:

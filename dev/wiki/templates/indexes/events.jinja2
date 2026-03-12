@@ -1,31 +1,44 @@
 {#
   Event index page.
 
-  Events nested under arc headings with scene and entry counts.
-  Standalone events grouped in a separate section at the end.
+  Events grouped by year and month based on earliest entry date.
+  Undated events listed separately at the end.
 
   Context:
     event_count: int
-    arc_groups: list of dicts:
-      - name: str (arc name, or "Standalone")
-      - events: list of dicts:
-          - name: str
-          - scene_count: int
-          - entry_count: int
+    year_groups: list of dicts:
+      - year: int
+      - months: list of dicts:
+          - month: str (full month name)
+          - events: list of dicts:
+              - name: str
+              - scene_count: int
+              - entry_count: int
+    undated: list of dicts:
+      - name: str
+      - scene_count: int
+      - entry_count: int
 #}
 # Events
 
 {{ event_count | zpad }} events
 
 ---
-{% for group in arc_groups %}
+{% for yg in year_groups %}
 
-{% if group.name == "Standalone" %}
-## Standalone
-{% else %}
-## {{ group.name | wikilink }}
-{% endif %}
-{% for event in group.events %}
+## {{ yg.year }}
+{% for mg in yg.months %}
+
+### {{ mg.month }}
+{% for event in mg.events %}
 - {{ event.entry_count | zpad }}e · {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
 {% endfor %}
 {% endfor %}
+{% endfor %}
+{% if undated %}
+
+## Undated
+{% for event in undated %}
+- {{ event.entry_count | zpad }}e · {{ event.scene_count | zpad }}s · {{ event.name | wikilink }}
+{% endfor %}
+{% endif %}

@@ -937,12 +937,13 @@ class WikiExporter:
                 f"/journal/tags/{slugify(tag.name)}",
             )
 
-        # Themes: name → /journal/themes/{slug}
+        # Themes: name → /journal/themes/{slug} (multi-entry only)
         for theme in session.query(Theme).all():
-            _register(
-                theme.name,
-                f"/journal/themes/{slugify(theme.name)}",
-            )
+            if theme.usage_count > 1:
+                _register(
+                    theme.name,
+                    f"/journal/themes/{slugify(theme.name)}",
+                )
 
         # Motifs: name → /journal/motifs/{slug}
         for motif in session.query(Motif).all():
@@ -1032,7 +1033,6 @@ class WikiExporter:
             "event_count": session.query(Event).count(),
             "arc_count": session.query(Arc).count(),
             "tag_count": session.query(Tag).count(),
-            "theme_count": session.query(Theme).count(),
             "poem_count": session.query(Poem).count(),
             "reference_count": session.query(ReferenceSource).count(),
             "motif_count": session.query(Motif).count(),
@@ -1196,55 +1196,58 @@ class WikiExporter:
         self, session: Session
     ) -> Dict[str, Any]:
         """
-        Build context for Event index page (nested under arcs).
+        Build context for Event index page (temporal year/month grouping).
 
         Args:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with arcs and their events
+            Dict with year_groups and undated events
         """
+        import calendar
+
         events = session.query(Event).all()
 
-        # Map events to arcs
-        builder = WikiContextBuilder(session)
-        arc_events: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-        unlinked: List[Dict[str, Any]] = []
+        dated: Dict[int, Dict[int, List[Dict[str, Any]]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        undated: List[Dict[str, Any]] = []
 
         for event in events:
-            arc_name = builder._find_event_arc(event)
-            min_date = min(
-                (e.date.isoformat() for e in event.entries), default="9999"
-            )
+            entry_dates = [e.date for e in event.entries]
             event_dict = {
                 "name": event.name,
                 "scene_count": event.scene_count,
                 "entry_count": event.entry_count,
-                "_min_date": min_date,
             }
-            if arc_name:
-                arc_events[arc_name].append(event_dict)
+            if entry_dates:
+                min_date = min(entry_dates)
+                dated[min_date.year][min_date.month].append(
+                    (min_date, event_dict)
+                )
             else:
-                unlinked.append(event_dict)
+                undated.append(event_dict)
 
-        def _strip_sort_key(
-            evts: List[Dict[str, Any]],
-        ) -> List[Dict[str, Any]]:
-            """Sort events by min_date, then strip the helper key."""
-            sorted_evts = sorted(evts, key=lambda e: e["_min_date"])
-            for evt in sorted_evts:
-                del evt["_min_date"]
-            return sorted_evts
+        year_groups = []
+        for year in sorted(dated.keys(), reverse=True):
+            months = []
+            for month in sorted(dated[year].keys(), reverse=True):
+                month_events = sorted(
+                    dated[year][month], key=lambda x: x[0]
+                )
+                months.append({
+                    "month": calendar.month_name[month],
+                    "events": [e[1] for e in month_events],
+                })
+            year_groups.append({"year": year, "months": months})
 
-        result = [
-            {"name": name, "events": _strip_sort_key(evts)}
-            for name, evts in sorted(arc_events.items())
-        ]
-        if unlinked:
-            result.append({"name": "Standalone", "events": _strip_sort_key(unlinked)})
+        undated.sort(key=lambda e: e["name"].lower())
 
-        total_events = sum(len(g["events"]) for g in result)
-        return {"arc_groups": result, "event_count": total_events}
+        return {
+            "event_count": len(events),
+            "year_groups": year_groups,
+            "undated": undated,
+        }
 
     def _build_arcs_index_context(
         self, session: Session
@@ -1291,7 +1294,7 @@ class WikiExporter:
             session: Active SQLAlchemy session
 
         Returns:
-            Dict with frequency-sorted tags (2+ uses)
+            Dict with alphabetically sorted tags
         """
         tags = session.query(Tag).all()
 
@@ -1299,33 +1302,11 @@ class WikiExporter:
             "tags": [
                 {"name": t.name, "count": t.usage_count}
                 for t in sorted(
-                    tags, key=lambda t: t.usage_count, reverse=True
+                    tags, key=lambda t: t.name.lower()
                 )
             ],
         }
 
-    def _build_themes_index_context(
-        self, session: Session
-    ) -> Dict[str, Any]:
-        """
-        Build context for Themes index page.
-
-        Args:
-            session: Active SQLAlchemy session
-
-        Returns:
-            Dict with frequency-sorted themes (2+ uses)
-        """
-        themes = session.query(Theme).all()
-
-        return {
-            "themes": [
-                {"name": t.name, "count": t.usage_count}
-                for t in sorted(
-                    themes, key=lambda t: t.usage_count, reverse=True
-                )
-            ],
-        }
 
     def _build_motifs_index_context(
         self, session: Session

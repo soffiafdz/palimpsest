@@ -233,6 +233,18 @@ class TestVisibilityFilters:
         # 'memory' in entries 3, 4, 5 — should have page
         assert (wiki_output / "journal" / "themes" / "memory.md").is_file()
 
+    def test_single_entry_theme_no_page(
+        self, test_db, populated_wiki_db, wiki_output
+    ):
+        """Single-entry themes should NOT get a wiki page."""
+        exporter = WikiExporter(test_db, output_dir=wiki_output)
+        exporter.generate_all(section="journal", entity_type="themes")
+
+        # 'ephemeral' only in entry4 — should not have page
+        assert not (
+            wiki_output / "journal" / "themes" / "ephemeral.md"
+        ).exists()
+
 
 class TestChangeDetection:
     """Tests for idempotent generation and change detection."""

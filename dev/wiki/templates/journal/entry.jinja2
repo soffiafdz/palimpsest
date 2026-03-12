@@ -16,7 +16,14 @@
 
 **Themes:**
 {% for t in themes %}
+{% if t.is_multi %}
 - {{ t.name | wikilink }}
+{% else %}
+- {{ t.name }}
+{% endif %}
+{% if t.description %}
+> {{ t.description }}
+{% endif %}
 {% endfor %}
 {% endif %}
 {% if tags %}
@@ -30,7 +37,10 @@
 
 **Motifs:**
 {% for m in motifs %}
-- {{ m | wikilink }}
+- {{ m.name | wikilink }}
+{% if m.description %}
+> {{ m.description }}
+{% endif %}
 {% endfor %}
 {% endif %}
 

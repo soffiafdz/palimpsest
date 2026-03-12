@@ -191,10 +191,11 @@ class WikiValidator:
                 targets.add(tag.name.lower())
                 targets.add(f"/journal/tags/{slugify(tag.name)}")
 
-            # Themes: by name + absolute path
+            # Themes: by name + absolute path (multi-entry only)
             for theme in session.query(Theme).all():
-                targets.add(theme.name.lower())
-                targets.add(f"/journal/themes/{slugify(theme.name)}")
+                if theme.usage_count > 1:
+                    targets.add(theme.name.lower())
+                    targets.add(f"/journal/themes/{slugify(theme.name)}")
 
             # Poems: by title + absolute path
             for poem in session.query(Poem).all():

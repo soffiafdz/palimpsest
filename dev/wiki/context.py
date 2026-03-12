@@ -142,7 +142,11 @@ class WikiContextBuilder:
             ),
             "themes": sorted(
                 [
-                    {"name": ti.theme.name, "description": ti.description}
+                    {
+                        "name": ti.theme.name,
+                        "description": ti.description,
+                        "is_multi": ti.theme.usage_count > 1,
+                    }
                     for ti in entry.theme_instances
                     if ti.theme
                 ],
@@ -152,9 +156,12 @@ class WikiContextBuilder:
             "references": self._build_entry_references(entry.references),
             "poems": self._build_entry_poems(entry.poems),
             "motifs": sorted(
-                mi.motif.name
-                for mi in entry.motif_instances
-                if mi.motif
+                [
+                    {"name": mi.motif.name, "description": mi.description}
+                    for mi in entry.motif_instances
+                    if mi.motif
+                ],
+                key=lambda m: m["name"],
             ),
             "manuscript_scenes": self._build_entry_manuscript_backlinks(
                 entry

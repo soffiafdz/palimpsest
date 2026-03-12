@@ -216,6 +216,7 @@ JOURNAL_CONFIGS: List[EntityConfig] = [
         output_subdir="journal/themes",
         filename_fn=_named_entity_filename,
         context_method="build_theme_context",
+        should_generate_fn=lambda t: t.usage_count > 1,
     ),
     EntityConfig(
         name="poems",
@@ -322,12 +323,6 @@ INDEX_CONFIGS: List[IndexConfig] = [
         template="indexes/tags.jinja2",
         output_path="indexes/tags-index.md",
         context_method="_build_tags_index_context",
-    ),
-    IndexConfig(
-        name="themes",
-        template="indexes/themes.jinja2",
-        output_path="indexes/themes-index.md",
-        context_method="_build_themes_index_context",
     ),
     IndexConfig(
         name="motifs",

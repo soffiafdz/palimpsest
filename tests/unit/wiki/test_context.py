@@ -422,10 +422,11 @@ class TestBuildEntryContext:
         assert ctx["narrative"] == []
 
     def test_motifs(self, builder, entry_nov8, motif_loop, motif_instance):
-        """Entry context includes motif names."""
+        """Entry context includes motif dicts with name and description."""
         ctx = builder.build_entry_context(entry_nov8)
         assert "motifs" in ctx
-        assert "The Loop" in ctx["motifs"]
+        names = [m["name"] for m in ctx["motifs"]]
+        assert "The Loop" in names
 
     def test_motifs_empty(self, builder, entry_nov8):
         """Entry without motifs has empty motifs list."""

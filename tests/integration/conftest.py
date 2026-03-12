@@ -203,11 +203,12 @@ def populated_wiki_db(db_session):
     entry4.tags.extend([tag_winter, tag_therapy])
     entry5.tags.extend([tag_writing, tag_winter])
 
-    # ---- Themes (need 2+ entries for page generation) ----
+    # ---- Themes (multi-entry themes get pages; single-entry ones don't) ----
     theme_identity = Theme(name="identity")
     theme_memory = Theme(name="memory")
     theme_distance = Theme(name="distance")
-    themes = [theme_identity, theme_memory, theme_distance]
+    theme_ephemeral = Theme(name="ephemeral")
+    themes = [theme_identity, theme_memory, theme_distance, theme_ephemeral]
     db_session.add_all(themes)
     db_session.flush()
 
@@ -223,6 +224,7 @@ def populated_wiki_db(db_session):
         ThemeInstance(theme_id=theme_memory.id, entry_id=entry4.id, description="Therapy session revisiting the past."),
         ThemeInstance(theme_id=theme_identity.id, entry_id=entry5.id, description="A chance meeting redefines boundaries."),
         ThemeInstance(theme_id=theme_memory.id, entry_id=entry5.id, description="The library as archive of selves."),
+        ThemeInstance(theme_id=theme_ephemeral.id, entry_id=entry4.id, description="A fleeting impression of snow."),
     ]
     db_session.add_all(theme_instances)
 
