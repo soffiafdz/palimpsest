@@ -18,6 +18,8 @@ local CONTEXT_KEYMAPS = {
 		{ key = "S", cmd = "<cmd>PalimpsestAddScene<cr>", desc = "Add scene", icon = "󰕧" },
 		{ key = "o", cmd = "<cmd>PalimpsestOpenSources<cr>", desc = "Open draft", icon = "󰈔" },
 		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename chapter", icon = "󰑕" },
+		{ key = "#", cmd = "<cmd>PalimpsestRenumber<cr>", desc = "Renumber chapter", icon = "󰎠" },
+		{ key = "M", cmd = "<cmd>PalimpsestMovePart<cr>", desc = "Move to part", icon = "󰁔" },
 	},
 	character = {
 		{ key = "b", cmd = "<cmd>PalimpsestAddBasedOn<cr>", desc = "Add based_on", icon = "󰌹" },

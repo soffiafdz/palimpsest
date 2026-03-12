@@ -169,6 +169,7 @@ class MetadataSchema:
                   enum_values=ChapterStatus.choices()),
         FieldSpec("part", str),
         FieldSpec("draft_path", str),
+        FieldSpec("notes", str),
         FieldSpec("poems", list),
         FieldSpec("references", list),
     ]
@@ -475,6 +476,7 @@ class MetadataExporter:
                         if chapter.part else None
                     ),
                     "draft_path": chapter.draft_path,
+                    "notes": chapter.notes,
                     "poems": [p.title for p in chapter.poems] if chapter.poems else None,
                     "references": [
                         {"source": ref.source.title, "mode": ref.mode.value, "content": ref.content}
@@ -1562,6 +1564,8 @@ class MetadataImporter:
                 chapter.part_id = None
         if "draft_path" in data:
             chapter.draft_path = data["draft_path"]
+        if "notes" in data:
+            chapter.notes = data["notes"]
 
         # Update poems M2M
         if "poems" in data and isinstance(data["poems"], list):

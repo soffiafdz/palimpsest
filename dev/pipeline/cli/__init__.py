@@ -133,6 +133,7 @@ from .maintenance import run_pipeline, status, validate  # noqa: E402
 from .wiki import wiki  # noqa: E402
 from .metadata_yaml import metadata  # noqa: E402
 from .sync import sync  # noqa: E402
+from .manuscript import manuscript  # noqa: E402
 
 # Import database CLI commands
 from dev.database.cli.setup import init, reset  # noqa: E402
@@ -160,6 +161,7 @@ cli.add_command(db)
 cli.add_command(validate)
 cli.add_command(wiki)
 cli.add_command(metadata)
+cli.add_command(manuscript)
 
 # Register subcommands under groups
 build.add_command(build_pdf)

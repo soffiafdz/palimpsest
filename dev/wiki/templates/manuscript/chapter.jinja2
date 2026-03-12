@@ -7,7 +7,7 @@
 
   Context:
     title, slug, number, date, type, is_prose, status, part,
-    content, draft_path, scene_count, characters, poems,
+    content, draft_path, notes, scene_count, characters, poems,
     scenes (with name, description, origin, status, characters, sources),
     references (with source_title, mode, content)
 #}
@@ -53,6 +53,14 @@
 
 {{ content }}
 {% endif %}
+{% endif %}
+{% if notes %}
+
+---
+
+## Notes
+
+{{ notes }}
 {% endif %}
 {% if references %}
 

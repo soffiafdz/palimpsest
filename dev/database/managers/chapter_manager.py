@@ -86,6 +86,7 @@ CHAPTER_CONFIG = EntityManagerConfig(
         ("number", lambda x: x, True),
         ("content", lambda x: x, True),
         ("draft_path", lambda x: x, True),
+        ("notes", lambda x: x, True),
     ],
     relationships=[
         ("poems", "poems", None),
@@ -156,6 +157,7 @@ class ChapterManager(EntityManager):
             status=chapter_status,
             content=metadata.get("content"),
             draft_path=metadata.get("draft_path"),
+            notes=metadata.get("notes"),
         )
 
     # =========================================================================

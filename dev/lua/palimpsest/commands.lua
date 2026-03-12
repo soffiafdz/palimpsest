@@ -380,6 +380,20 @@ function M.setup()
 		desc = "Rename manuscript chapter or scene",
 	})
 
+	-- Renumber chapter within its part
+	vim.api.nvim_create_user_command("PalimpsestRenumber", function()
+		require("palimpsest.entity").renumber()
+	end, {
+		desc = "Renumber chapter within its part",
+	})
+
+	-- Move chapter to a different part
+	vim.api.nvim_create_user_command("PalimpsestMovePart", function()
+		require("palimpsest.entity").move_to_part()
+	end, {
+		desc = "Move chapter to a different part",
+	})
+
 	-- Metadata export command
 	vim.api.nvim_create_user_command("PalimpsestMetadataExport", function(opts)
 		M.metadata_export(opts.args)

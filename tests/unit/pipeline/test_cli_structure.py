@@ -48,7 +48,7 @@ class TestTopLevelCommands:
 
     @pytest.mark.parametrize("group", [
         "build", "pipeline", "db",
-        "validate", "wiki", "metadata",
+        "validate", "wiki", "metadata", "manuscript",
     ])
     def test_command_groups_exist(self, runner, group):
         """Command groups should be accessible."""
@@ -100,6 +100,18 @@ class TestMetadataGroup:
         """All metadata subcommands should be accessible."""
         result = runner.invoke(cli, ["metadata", command, "--help"])
         assert result.exit_code == 0, f"metadata {command}: {result.output}"
+
+
+class TestManuscriptGroup:
+    """Verify manuscript subcommands."""
+
+    @pytest.mark.parametrize("command", [
+        "renumber", "move", "remove-number",
+    ])
+    def test_manuscript_subcommands(self, runner, command):
+        """All manuscript subcommands should be accessible."""
+        result = runner.invoke(cli, ["manuscript", command, "--help"])
+        assert result.exit_code == 0, f"manuscript {command}: {result.output}"
 
 
 class TestRemovedCommands:

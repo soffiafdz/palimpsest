@@ -124,6 +124,7 @@ class Chapter(Base):
         status: Chapter status (draft, revised, final)
         content: Content for short pieces (poems, vignettes)
         draft_path: Path to draft file for longer prose
+        notes: Author's internal annotations (optional)
 
     Relationships:
         part: Many-to-one with Part (optional)
@@ -158,6 +159,7 @@ class Chapter(Base):
     )
     content: Mapped[Optional[str]] = mapped_column(Text)
     draft_path: Mapped[Optional[str]] = mapped_column(String(500))
+    notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # --- Relationships ---
     part: Mapped[Optional["Part"]] = relationship("Part", back_populates="chapters")

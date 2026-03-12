@@ -240,7 +240,7 @@ function M.new(entity_type)
 	-- Generate template based on type
 	local templates = {
 		people = "name: \nlastname: \nrelation_type: friend\n",
-		chapters = "title: \nnumber: \ndate:   # YYYY-MM-DD (when the chapter is set)\ntype: prose  # prose | vignette | poem\nstatus: draft  # draft | revised | final\ndraft_path: \n",
+		chapters = "title: \nnumber: \ndate:   # YYYY-MM-DD (when the chapter is set)\ntype: prose  # prose | vignette | poem\nstatus: draft  # draft | revised | final\ndraft_path: \nnotes: \n",
 		characters = "name: \nrole: \nis_narrator: false\ndescription: \n",
 		scenes = "name: \nchapter: \norigin: journaled  # journaled | inferred | invented | composite\nstatus: fragment  # fragment | draft | included | cut\ndescription: \ncharacters:\nnotes:\n",
 	}
@@ -1254,6 +1254,207 @@ function M.link_to_manuscript()
 				vim.log.levels.INFO
 			)
 			import_yaml(yaml_path)
+		end)
+	end)
+end
+
+--- Renumber current chapter within its part.
+---
+--- Prompts for a new number and calls the CLI to shift siblings.
+--- Only available on chapter wiki pages.
+function M.renumber()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "chapter" then
+		vim.notify("Renumber only works on chapter pages", vim.log.levels.WARN)
+		return
+	end
+
+	local root = get_project_root()
+	local yaml_path = resolve_yaml_path(ctx)
+	if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+		vim.notify("Chapter YAML not found", vim.log.levels.WARN)
+		return
+	end
+
+	-- Read current number and title
+	local lines = vim.fn.readfile(yaml_path)
+	local title = ""
+	local current_number = ""
+	for _, line in ipairs(lines) do
+		local t = line:match("^title:%s*(.+)$")
+		if t then title = t end
+		local n = line:match("^number:%s*(%d+)%s*$")
+		if n then current_number = n end
+	end
+
+	vim.ui.input({
+		prompt = "New number: ",
+		default = current_number,
+	}, function(input)
+		if not input or input == "" then
+			return
+		end
+
+		local num = tonumber(input)
+		if not num or num < 1 then
+			vim.notify("Invalid number", vim.log.levels.ERROR)
+			return
+		end
+
+		local cmd = string.format(
+			'cd %s && plm manuscript renumber "%s" %d --apply',
+			root, title:gsub('"', '\\"'), num
+		)
+		vim.fn.jobstart(cmd, {
+			stdout_buffered = true,
+			on_stdout = function(_, data)
+				if data then
+					vim.schedule(function()
+						for _, line in ipairs(data) do
+							if line ~= "" then
+								vim.notify(line, vim.log.levels.INFO)
+							end
+						end
+					end)
+				end
+			end,
+			on_exit = function(_, exit_code)
+				if exit_code == 0 then
+					-- Reimport and regenerate
+					local sync_cmd = string.format(
+						"cd %s && plm metadata import --type chapters && plm wiki generate --section manuscript && plm wiki generate --section indexes && plm export --no-commit",
+						root
+					)
+					vim.fn.jobstart(sync_cmd, {
+						on_exit = function(_, sync_exit)
+							vim.schedule(function()
+								if sync_exit == 0 then
+									vim.notify("Renumbered · wiki regenerated", vim.log.levels.INFO)
+									vim.cmd("edit!")
+									cache.refresh_all()
+								else
+									vim.notify("Renumber sync failed", vim.log.levels.ERROR)
+								end
+							end)
+						end,
+					})
+				else
+					vim.schedule(function()
+						vim.notify("Renumber failed", vim.log.levels.ERROR)
+					end)
+				end
+			end,
+		})
+	end)
+end
+
+--- Move current chapter to a different part.
+---
+--- Shows a part picker and optionally prompts for position.
+--- Only available on chapter wiki pages.
+function M.move_to_part()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "chapter" then
+		vim.notify("Move only works on chapter pages", vim.log.levels.WARN)
+		return
+	end
+
+	local root = get_project_root()
+	local yaml_path = resolve_yaml_path(ctx)
+	if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+		vim.notify("Chapter YAML not found", vim.log.levels.WARN)
+		return
+	end
+
+	-- Read title and current part
+	local lines = vim.fn.readfile(yaml_path)
+	local title = ""
+	local current_part = ""
+	for _, line in ipairs(lines) do
+		local t = line:match("^title:%s*(.+)$")
+		if t then title = t end
+		local p = line:match("^part:%s*(.+)$")
+		if p then current_part = p end
+	end
+
+	local parts_list = cache.get("parts")
+	if #parts_list == 0 then
+		vim.notify("No parts cached", vim.log.levels.WARN)
+		return
+	end
+
+	-- Filter out current part
+	local choices = {}
+	for _, p in ipairs(parts_list) do
+		if p ~= current_part then
+			table.insert(choices, p)
+		end
+	end
+
+	vim.ui.select(choices, { prompt = "Move to part:" }, function(part)
+		if not part then
+			return
+		end
+
+		vim.ui.input({
+			prompt = "Position (empty = end): ",
+		}, function(pos_input)
+			local at_flag = ""
+			if pos_input and pos_input ~= "" then
+				local pos = tonumber(pos_input)
+				if not pos or pos < 1 then
+					vim.notify("Invalid position", vim.log.levels.ERROR)
+					return
+				end
+				at_flag = string.format(" --at %d", pos)
+			end
+
+			local cmd = string.format(
+				'cd %s && plm manuscript move "%s" "%s"%s --apply',
+				root,
+				title:gsub('"', '\\"'),
+				part:gsub('"', '\\"'),
+				at_flag
+			)
+			vim.fn.jobstart(cmd, {
+				stdout_buffered = true,
+				on_stdout = function(_, data)
+					if data then
+						vim.schedule(function()
+							for _, line in ipairs(data) do
+								if line ~= "" then
+									vim.notify(line, vim.log.levels.INFO)
+								end
+							end
+						end)
+					end
+				end,
+				on_exit = function(_, exit_code)
+					if exit_code == 0 then
+						local sync_cmd = string.format(
+							"cd %s && plm metadata import --type chapters && plm wiki generate --section manuscript && plm wiki generate --section indexes && plm export --no-commit",
+							root
+						)
+						vim.fn.jobstart(sync_cmd, {
+							on_exit = function(_, sync_exit)
+								vim.schedule(function()
+									if sync_exit == 0 then
+										vim.notify("Moved · wiki regenerated", vim.log.levels.INFO)
+										vim.cmd("edit!")
+										cache.refresh_all()
+									else
+										vim.notify("Move sync failed", vim.log.levels.ERROR)
+									end
+								end)
+							end,
+						})
+					else
+						vim.schedule(function()
+							vim.notify("Move failed", vim.log.levels.ERROR)
+						end)
+					end
+				end,
+			})
 		end)
 	end)
 end

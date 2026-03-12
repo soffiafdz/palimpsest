@@ -1572,6 +1572,7 @@ class WikiContextBuilder:
             "part": chapter.part.display_name if chapter.part else None,
             "content": chapter.content,
             "draft_path": chapter.draft_path,
+            "notes": chapter.notes,
             "scene_count": chapter.scene_count,
             "characters": [
                 {
