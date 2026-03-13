@@ -821,10 +821,6 @@ class MetadataExporter:
         Returns:
             True if file was written (new or changed), False if unchanged
         """
-        # Remove None values for cleaner YAML
-        if isinstance(data, dict):
-            data = {k: v for k, v in data.items() if v is not None}
-
         content = yaml.dump(
             data, default_flow_style=False, allow_unicode=True, sort_keys=False
         )
