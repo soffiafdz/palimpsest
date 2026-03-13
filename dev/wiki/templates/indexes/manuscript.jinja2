@@ -43,13 +43,13 @@ Ch. {{ part.number_min }}–{{ part.number_max }}
 {% endif %}
 {% if unassigned_scenes %}
 
-## [Unassigned Scenes](indexes/manuscript-scenes-index.md)
+## [Unassigned Scenes](manuscript-scenes-index.md)
 {{ unassigned_scenes | length }} scene{{ "s" if unassigned_scenes | length != 1 else "" }}
 {% endif %}
 
 ---
 
-## [Cast](indexes/characters-index.md)
+## [Cast](characters-index.md)
 {{ character_count }} characters
 {% for char in top_characters %}
 - {{ char.name.ljust(max_name_len) }} — *{{ char.role }}*{{ " · " ~ char.metrics if char.metrics else "" }}
