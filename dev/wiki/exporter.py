@@ -1629,9 +1629,16 @@ class WikiExporter:
             Dict with chapter_groups, unassigned_scenes, scene_count
         """
         all_scenes = session.query(ManuscriptScene).all()
-        chapters = session.query(Chapter).all()
+        chapters = sorted(
+            session.query(Chapter).all(),
+            key=lambda ch: (
+                ch.part.number if ch.part else 999,
+                ch.number if ch.number is not None else 999,
+                ch.title,
+            ),
+        )
 
-        # Group scenes by chapter
+        # Group scenes by chapter (ordered by part/number)
         chapter_groups: Dict[str, List[Dict[str, Any]]] = {}
         for ch in chapters:
             ch_scenes = sorted(
