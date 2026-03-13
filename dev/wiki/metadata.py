@@ -58,6 +58,7 @@ from dev.core.logging_manager import PalimpsestLogger, safe_logger
 from dev.core.paths import (
     MANUSCRIPT_YAML_DIR,
     METADATA_DIR,
+    ROOT,
 )
 from dev.database.manager import PalimpsestDB
 from dev.database.models import (
@@ -463,6 +464,13 @@ class MetadataExporter:
             chapters = sess.query(Chapter).all()
             count = 0
             for chapter in chapters:
+                # Prose chapters always get a draft path
+                draft_path = chapter.draft_path
+                if not draft_path and chapter.type == ChapterType.PROSE:
+                    draft_path = (
+                        f"data/manuscript/drafts/"
+                        f"{slugify(chapter.title)}.md"
+                    )
                 data = {
                     "title": chapter.title,
                     "number": chapter.number,
@@ -476,7 +484,7 @@ class MetadataExporter:
                         chapter.part.display_name
                         if chapter.part else None
                     ),
-                    "draft_path": chapter.draft_path,
+                    "draft_path": draft_path,
                     "notes": chapter.notes,
                     "poems": [p.title for p in chapter.poems] if chapter.poems else None,
                     "references": [
@@ -1563,6 +1571,15 @@ class MetadataImporter:
                 chapter.part_id = None
         if "draft_path" in data:
             chapter.draft_path = data["draft_path"]
+            # Create draft file stub if it doesn't exist
+            if data["draft_path"]:
+                draft_abs = ROOT / data["draft_path"]
+                if not draft_abs.exists():
+                    draft_abs.parent.mkdir(parents=True, exist_ok=True)
+                    draft_abs.write_text(
+                        f"# {chapter.title}\n",
+                        encoding="utf-8",
+                    )
         if "notes" in data:
             chapter.notes = data["notes"]
 
