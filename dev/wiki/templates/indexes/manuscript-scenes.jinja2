@@ -28,7 +28,7 @@
 
 ## {{ chapter_title | wikilink }}
 {% for scene in scenes %}
-- {{ scene.name | wikilink }}
+{% if scene.order %}{{ scene.order }}.{% else %}-{% endif %} {{ scene.name | wikilink }}
   *{{ scene.origin }}* · {{ scene.status }}
 {% endfor %}
 {% endfor %}

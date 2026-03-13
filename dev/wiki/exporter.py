@@ -1634,11 +1634,15 @@ class WikiExporter:
         # Group scenes by chapter
         chapter_groups: Dict[str, List[Dict[str, Any]]] = {}
         for ch in chapters:
-            ch_scenes = [s for s in all_scenes if s.chapter_id == ch.id]
+            ch_scenes = sorted(
+                [s for s in all_scenes if s.chapter_id == ch.id],
+                key=lambda s: (s.order is None, s.order or 0, s.name),
+            )
             if ch_scenes:
                 chapter_groups[ch.title] = [
                     {
                         "name": s.name,
+                        "order": s.order,
                         "origin": s.origin_display,
                         "status": s.status_display,
                     }

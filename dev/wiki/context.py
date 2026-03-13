@@ -1847,6 +1847,7 @@ class WikiContextBuilder:
                     )
             result.append({
                 "name": ms.name,
+                "order": ms.order,
                 "block": "\n".join(lines),
             })
         return result

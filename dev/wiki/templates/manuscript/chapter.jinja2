@@ -42,7 +42,7 @@
 ## Scenes
 {%- for scene in scenes %}
 
-### {{ loop.index }}. {{ scene.name | wikilink }}
+### {% if scene.order %}{{ scene.order }}.{% else %}-{% endif %} {{ scene.name | wikilink }}
 {{ scene.block }}
 {% endfor %}
 {% endif %}
