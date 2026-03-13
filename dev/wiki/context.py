@@ -1710,6 +1710,25 @@ class WikiContextBuilder:
             len(ch.scenes) for ch in part.chapters
         )
 
+        sorted_chapters = sorted(
+            part.chapters,
+            key=lambda ch: (ch.number is None, ch.number),
+        )
+
+        # Numbered range
+        numbered = [ch.number for ch in part.chapters if ch.number is not None]
+        number_min = min(numbered) if numbered else None
+        number_max = max(numbered) if numbered else None
+
+        # Type counts (non-prose only)
+        from dev.database.models.enums import ChapterType
+        type_counts = Counter(ch.type for ch in part.chapters)
+        non_prose = {
+            t.display_name.lower(): c
+            for t, c in type_counts.items()
+            if t != ChapterType.PROSE
+        }
+
         return {
             "display_name": part.display_name,
             "number": part.number,
@@ -1717,6 +1736,9 @@ class WikiContextBuilder:
             "slug": slug,
             "chapter_count": part.chapter_count,
             "scene_count": scene_count,
+            "number_min": number_min,
+            "number_max": number_max,
+            "non_prose_types": non_prose,
             "chapters": [
                 {
                     "title": ch.title,
@@ -1725,7 +1747,7 @@ class WikiContextBuilder:
                     "status": ch.status_display,
                     "scene_count": ch.scene_count,
                 }
-                for ch in part.chapters
+                for ch in sorted_chapters
             ],
         }
 

@@ -1524,6 +1524,7 @@ class MetadataImporter:
         title = data.get("title")
         if not title:
             return
+        title = str(title)
 
         mgr = ChapterManager(session, self.logger)
         chapter = mgr.get(name=title)

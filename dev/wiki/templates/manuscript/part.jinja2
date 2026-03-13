@@ -7,7 +7,7 @@
 
 ## Chapters
 {% for ch in chapters %}
-- {{ ch.title | wikilink }}
+- {% if ch.number %}**{{ ch.number }}.** {% endif %}{{ ch.title | wikilink }}
   {{ ch.type }} · {{ ch.status }} · {{ ch.scene_count | zpad }} scene{{ "s" if ch.scene_count != 1 else "" }}
 {% endfor %}
 {% endif %}

@@ -1,12 +1,11 @@
 {#
   Manuscript index page.
 
-  Dashboard overview of the manuscript: progress counts,
-  parts with chapters, unassigned chapters/scenes, and
-  a cast mini-dashboard showing top characters.
+  Spine overview: parts as summary cards with chapter range
+  and type breakdown. Full chapter lists live on part pages.
 
   Context:
-    parts: list of part context dicts
+    parts: list of part context dicts (with number_min/max, non_prose_types)
     unassigned_chapters: list of chapter dicts
     unassigned_scenes: list of scene dicts
     top_characters: list of dicts (name, role, metrics)
@@ -16,19 +15,8 @@
     scene_status_counts: dict of status -> count
 #}
 # Manuscript
-{% if chapter_status_counts or scene_status_counts %}
 
-### Progress
-{% if chapter_status_counts %}
-
-**Chapters:** {% for status, count in chapter_status_counts.items() %}{{ count }} {{ status | lower }}{{ ", " if not loop.last else "" }}{% endfor %}
-
-{% endif %}
-{% if scene_status_counts %}
-**Scenes:** {% for status, count in scene_status_counts.items() %}{{ count }} {{ status | lower }}{{ ", " if not loop.last else "" }}{% endfor %}
-
-{% endif %}
-{% endif %}
+{% set total_chapters = parts | sum(attribute='chapter_count') + unassigned_chapters | length %}{% set total_scenes = parts | sum(attribute='scene_count') + unassigned_scenes | length %}{{ total_chapters }} chapters · {{ total_scenes }} scenes · {{ character_count }} characters
 
 ---
 {% if parts %}
@@ -37,15 +25,19 @@
 ## {{ part.display_name | wikilink }}
 
 {{ part.chapter_count }} chapter{{ "s" if part.chapter_count != 1 else "" }} · {{ part.scene_count }} scene{{ "s" if part.scene_count != 1 else "" }}
-{% for ch in part.chapters %}
-- {{ ch.title | wikilink }}
-  {{ ch.type }} · {{ ch.status }}
-{% endfor %}
+{% if part.number_min is not none %}
+Ch. {{ part.number_min }}–{{ part.number_max }}
+{% endif %}
+{% if part.non_prose_types %}
+{% for type_name, count in part.non_prose_types.items() %}{{ count }} {{ type_name }}{{ "s" if count != 1 else "" }}{{ ", " if not loop.last else "" }}{% endfor %}
+
+{% endif %}
 {% endfor %}
 {% endif %}
 {% if unassigned_chapters %}
 
 ## Unassigned Chapters
+
 {% for ch in unassigned_chapters %}
 - {{ ch.title | wikilink }}
   {{ ch.type }} · {{ ch.status }}
@@ -53,18 +45,16 @@
 {% endif %}
 {% if unassigned_scenes %}
 
-## Unassigned Scenes
-{% for scene in unassigned_scenes %}
-- {{ scene.name | wikilink }}
-  *{{ scene.origin }}* · {{ scene.status }}
-{% endfor %}
+## [Unassigned Scenes](indexes/manuscript-scenes-index.md)
+
+{{ unassigned_scenes | length }} scene{{ "s" if unassigned_scenes | length != 1 else "" }}
 {% endif %}
 
 ---
 
-### Cast
+## [Cast](indexes/characters-index.md)
+
+{{ character_count }} characters
 {% for char in top_characters %}
 - {{ char.name.ljust(max_name_len) }} — *{{ char.role }}*{{ " · " ~ char.metrics if char.metrics else "" }}
 {% endfor %}
-
-[Full cast](characters-index.md) — {{ character_count }} characters
