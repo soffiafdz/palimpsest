@@ -82,6 +82,24 @@ function M.get(entity_type)
 	return _cache[entity_type]
 end
 
+--- Get cached data if available, otherwise fetch and callback.
+---
+--- Unlike get(), this never returns an empty list on a cold cache.
+--- If the cache is warm, calls callback immediately. If cold,
+--- triggers a refresh and calls callback when data arrives.
+---
+--- @param entity_type string Entity type key
+--- @param callback function Called with (names: table)
+function M.ensure(entity_type, callback)
+	if _cache[entity_type] then
+		callback(_cache[entity_type])
+	else
+		M.refresh(entity_type, function(names)
+			callback(names)
+		end)
+	end
+end
+
 --- Create a completion source function for a given entity type.
 ---
 --- Returns a function suitable for use with nvim completion APIs

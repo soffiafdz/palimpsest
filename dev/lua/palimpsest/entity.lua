@@ -349,30 +349,31 @@ function M.new(entity_type)
 		-- For scenes, prompt to select a chapter after the float opens
 		if entity_type == "scenes" then
 			vim.defer_fn(function()
-				local chapters = cache.get("chapters")
-				if #chapters == 0 then
-					return
-				end
-				vim.ui.select(chapters, { prompt = "Chapter (Esc to skip):" }, function(chapter)
-					if not chapter then
+				cache.ensure("chapters", function(chapters)
+					if #chapters == 0 then
 						return
 					end
-					-- Replace the empty chapter field in the file
-					local lines = vim.fn.readfile(filepath)
-					for i, line in ipairs(lines) do
-						if line:match("^chapter: *$") then
-							lines[i] = "chapter: " .. chapter
-							vim.fn.writefile(lines, filepath)
-							-- Reload the buffer if it's still open
-							local buf = vim.fn.bufnr(filepath)
-							if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
-								vim.api.nvim_buf_call(buf, function()
-									vim.cmd("edit!")
-								end)
-							end
-							break
+					vim.ui.select(chapters, { prompt = "Chapter (Esc to skip):" }, function(chapter)
+						if not chapter then
+							return
 						end
-					end
+						-- Replace the empty chapter field in the file
+						local lines = vim.fn.readfile(filepath)
+						for i, line in ipairs(lines) do
+							if line:match("^chapter: *$") then
+								lines[i] = "chapter: " .. chapter
+								vim.fn.writefile(lines, filepath)
+								-- Reload the buffer if it's still open
+								local buf = vim.fn.bufnr(filepath)
+								if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+									vim.api.nvim_buf_call(buf, function()
+										vim.cmd("edit!")
+									end)
+								end
+								break
+							end
+						end
+					end)
 				end)
 			end, 100)
 		end
@@ -380,33 +381,34 @@ function M.new(entity_type)
 		-- For chapters, prompt to select a part after the float opens
 		if entity_type == "chapters" then
 			vim.defer_fn(function()
-				local parts_list = cache.get("parts")
-				if #parts_list == 0 then
-					return
-				end
-				vim.ui.select(parts_list, { prompt = "Part (Esc to skip):" }, function(sel_part)
-					if not sel_part then
+				cache.ensure("parts", function(parts_list)
+					if #parts_list == 0 then
 						return
 					end
-					local lines = vim.fn.readfile(filepath)
-					local found_part = false
-					for i, line in ipairs(lines) do
-						if line:match("^part:") then
-							lines[i] = "part: " .. sel_part
-							found_part = true
-							break
+					vim.ui.select(parts_list, { prompt = "Part (Esc to skip):" }, function(sel_part)
+						if not sel_part then
+							return
 						end
-					end
-					if not found_part then
-						table.insert(lines, 2, "part: " .. sel_part)
-					end
-					vim.fn.writefile(lines, filepath)
-					local buf = vim.fn.bufnr(filepath)
-					if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
-						vim.api.nvim_buf_call(buf, function()
-							vim.cmd("edit!")
-						end)
-					end
+						local lines = vim.fn.readfile(filepath)
+						local found_part = false
+						for i, line in ipairs(lines) do
+							if line:match("^part:") then
+								lines[i] = "part: " .. sel_part
+								found_part = true
+								break
+							end
+						end
+						if not found_part then
+							table.insert(lines, 2, "part: " .. sel_part)
+						end
+						vim.fn.writefile(lines, filepath)
+						local buf = vim.fn.bufnr(filepath)
+						if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+							vim.api.nvim_buf_call(buf, function()
+								vim.cmd("edit!")
+							end)
+						end
+					end)
 				end)
 			end, 100)
 		end
@@ -490,65 +492,68 @@ function M.add_source()
 			end
 
 			if source_type == "entry" then
-				local entries = cache.get("entries")
-				if #entries == 0 then
-					vim.notify("No entries cached. Cache may still be loading", vim.log.levels.WARN)
-					return
-				end
-				vim.ui.select(entries, { prompt = "Entry date:" }, function(entry_date)
-					if not entry_date then
+				cache.ensure("entries", function(entries)
+					if #entries == 0 then
+						vim.notify("No entries found in database", vim.log.levels.WARN)
 						return
 					end
-					write_source_to_yaml(yaml_path, {
-						"  - source_type: entry",
-						"    entry_date: " .. entry_date,
-					}, "entry", entry_date)
+					vim.ui.select(entries, { prompt = "Entry date:" }, function(entry_date)
+						if not entry_date then
+							return
+						end
+						write_source_to_yaml(yaml_path, {
+							"  - source_type: entry",
+							"    entry_date: " .. entry_date,
+						}, "entry", entry_date)
+					end)
 				end)
 
 			elseif source_type == "scene" then
-				local scenes = cache.get("journal_scenes")
-				if #scenes == 0 then
-					vim.notify("No journal scenes cached. Cache may still be loading", vim.log.levels.WARN)
-					return
-				end
-				vim.ui.select(scenes, { prompt = "Journal scene:" }, function(choice)
-					if not choice then
+				cache.ensure("journal_scenes", function(scenes)
+					if #scenes == 0 then
+						vim.notify("No journal scenes found in database", vim.log.levels.WARN)
 						return
 					end
-					-- Parse "Name::YYYY-MM-DD"
-					local name, entry_date = choice:match("^(.+)::(%d%d%d%d%-%d%d%-%d%d)$")
-					if not name or not entry_date then
-						vim.notify("Invalid scene format: " .. choice, vim.log.levels.ERROR)
-						return
-					end
-					write_source_to_yaml(yaml_path, {
-						"  - source_type: scene",
-						"    entry_date: " .. entry_date,
-						"    scene_name: " .. name,
-					}, "scene", choice)
+					vim.ui.select(scenes, { prompt = "Journal scene:" }, function(choice)
+						if not choice then
+							return
+						end
+						-- Parse "Name::YYYY-MM-DD"
+						local name, entry_date = choice:match("^(.+)::(%d%d%d%d%-%d%d%-%d%d)$")
+						if not name or not entry_date then
+							vim.notify("Invalid scene format: " .. choice, vim.log.levels.ERROR)
+							return
+						end
+						write_source_to_yaml(yaml_path, {
+							"  - source_type: scene",
+							"    entry_date: " .. entry_date,
+							"    scene_name: " .. name,
+						}, "scene", choice)
+					end)
 				end)
 
 			elseif source_type == "thread" then
-				local threads = cache.get("threads")
-				if #threads == 0 then
-					vim.notify("No threads cached. Cache may still be loading", vim.log.levels.WARN)
-					return
-				end
-				vim.ui.select(threads, { prompt = "Thread:" }, function(choice)
-					if not choice then
+				cache.ensure("threads", function(threads)
+					if #threads == 0 then
+						vim.notify("No threads found in database", vim.log.levels.WARN)
 						return
 					end
-					-- Parse "Name::YYYY-MM-DD"
-					local name, entry_date = choice:match("^(.+)::(%d%d%d%d%-%d%d%-%d%d)$")
-					if not name or not entry_date then
-						vim.notify("Invalid thread format: " .. choice, vim.log.levels.ERROR)
-						return
-					end
-					write_source_to_yaml(yaml_path, {
-						"  - source_type: thread",
-						"    entry_date: " .. entry_date,
-						"    thread_name: " .. name,
-					}, "thread", choice)
+					vim.ui.select(threads, { prompt = "Thread:" }, function(choice)
+						if not choice then
+							return
+						end
+						-- Parse "Name::YYYY-MM-DD"
+						local name, entry_date = choice:match("^(.+)::(%d%d%d%d%-%d%d%-%d%d)$")
+						if not name or not entry_date then
+							vim.notify("Invalid thread format: " .. choice, vim.log.levels.ERROR)
+							return
+						end
+						write_source_to_yaml(yaml_path, {
+							"  - source_type: thread",
+							"    entry_date: " .. entry_date,
+							"    thread_name: " .. name,
+						}, "thread", choice)
+					end)
 				end)
 
 			elseif source_type == "external" then
@@ -576,72 +581,72 @@ function M.add_based_on()
 		return
 	end
 
-	local people = cache.get("people")
-	if #people == 0 then
-		vim.notify("No people cached. Cache may still be loading", vim.log.levels.WARN)
-		return
-	end
-
-	vim.ui.select(people, { prompt = "Person:" }, function(person)
-		if not person then
+	cache.ensure("people", function(people)
+		if #people == 0 then
+			vim.notify("No people found in database", vim.log.levels.WARN)
 			return
 		end
 
-		vim.ui.select(
-			{ "primary", "composite", "inspiration" },
-			{ prompt = "Contribution:" },
-			function(contribution)
-				if not contribution then
-					return
-				end
-
-				local yaml_path = resolve_yaml_path(ctx)
-				if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
-					vim.notify("Character YAML not found", vim.log.levels.ERROR)
-					return
-				end
-
-				-- Read existing YAML, append based_on entry
-				local lines = vim.fn.readfile(yaml_path)
-				local new_entry = string.format("  - person: %s\n    contribution: %s", person, contribution)
-
-				-- Find existing based_on section or add one
-				local found_based_on = false
-				for i, line in ipairs(lines) do
-					if line:match("^based_on:") then
-						found_based_on = true
-						if line:match("^based_on: *$") or line:match("^based_on: *null") then
-							-- Replace null/empty with list
-							lines[i] = "based_on:"
-							table.insert(lines, i + 1, "  - person: " .. person)
-							table.insert(lines, i + 2, "    contribution: " .. contribution)
-						else
-							-- Append after last based_on entry
-							local insert_at = i + 1
-							while insert_at <= #lines and lines[insert_at]:match("^%s") do
-								insert_at = insert_at + 1
-							end
-							table.insert(lines, insert_at, "  - person: " .. person)
-							table.insert(lines, insert_at + 1, "    contribution: " .. contribution)
-						end
-						break
-					end
-				end
-
-				if not found_based_on then
-					table.insert(lines, "based_on:")
-					table.insert(lines, "  - person: " .. person)
-					table.insert(lines, "    contribution: " .. contribution)
-				end
-
-				vim.fn.writefile(lines, yaml_path)
-				vim.notify(
-					string.format("Added based_on: %s (%s)", person, contribution),
-					vim.log.levels.INFO
-				)
-				import_yaml(yaml_path)
+		vim.ui.select(people, { prompt = "Person:" }, function(person)
+			if not person then
+				return
 			end
-		)
+
+			vim.ui.select(
+				{ "primary", "composite", "inspiration" },
+				{ prompt = "Contribution:" },
+				function(contribution)
+					if not contribution then
+						return
+					end
+
+					local yaml_path = resolve_yaml_path(ctx)
+					if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+						vim.notify("Character YAML not found", vim.log.levels.ERROR)
+						return
+					end
+
+					-- Read existing YAML, append based_on entry
+					local lines = vim.fn.readfile(yaml_path)
+
+					-- Find existing based_on section or add one
+					local found_based_on = false
+					for i, line in ipairs(lines) do
+						if line:match("^based_on:") then
+							found_based_on = true
+							if line:match("^based_on: *$") or line:match("^based_on: *null") then
+								-- Replace null/empty with list
+								lines[i] = "based_on:"
+								table.insert(lines, i + 1, "  - person: " .. person)
+								table.insert(lines, i + 2, "    contribution: " .. contribution)
+							else
+								-- Append after last based_on entry
+								local insert_at = i + 1
+								while insert_at <= #lines and lines[insert_at]:match("^%s") do
+									insert_at = insert_at + 1
+								end
+								table.insert(lines, insert_at, "  - person: " .. person)
+								table.insert(lines, insert_at + 1, "    contribution: " .. contribution)
+							end
+							break
+						end
+					end
+
+					if not found_based_on then
+						table.insert(lines, "based_on:")
+						table.insert(lines, "  - person: " .. person)
+						table.insert(lines, "    contribution: " .. contribution)
+					end
+
+					vim.fn.writefile(lines, yaml_path)
+					vim.notify(
+						string.format("Added based_on: %s (%s)", person, contribution),
+						vim.log.levels.INFO
+					)
+					import_yaml(yaml_path)
+				end
+			)
+		end)
 	end)
 end
 
@@ -656,52 +661,53 @@ function M.set_chapter()
 		return
 	end
 
-	local chapters = cache.get("chapters")
-	if #chapters == 0 then
-		vim.notify("No chapters cached. Cache may still be loading", vim.log.levels.WARN)
-		return
-	end
-
-	vim.ui.select(chapters, { prompt = "Chapter:" }, function(chapter)
-		if not chapter then
+	cache.ensure("chapters", function(chapters)
+		if #chapters == 0 then
+			vim.notify("No chapters found in database", vim.log.levels.WARN)
 			return
 		end
 
-		local yaml_path = resolve_yaml_path(ctx)
-		if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
-			vim.notify("Scene YAML not found", vim.log.levels.ERROR)
-			return
-		end
-
-		local lines = vim.fn.readfile(yaml_path)
-		local found = false
-		for i, line in ipairs(lines) do
-			if line:match("^chapter:") then
-				lines[i] = "chapter: " .. chapter
-				found = true
-				break
+		vim.ui.select(chapters, { prompt = "Chapter:" }, function(chapter)
+			if not chapter then
+				return
 			end
-		end
 
-		if not found then
-			table.insert(lines, 2, "chapter: " .. chapter)
-		end
+			local yaml_path = resolve_yaml_path(ctx)
+			if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+				vim.notify("Scene YAML not found", vim.log.levels.ERROR)
+				return
+			end
 
-		vim.fn.writefile(lines, yaml_path)
-		vim.notify(
-			string.format("Set chapter: %s", chapter),
-			vim.log.levels.INFO
-		)
+			local lines = vim.fn.readfile(yaml_path)
+			local found = false
+			for i, line in ipairs(lines) do
+				if line:match("^chapter:") then
+					lines[i] = "chapter: " .. chapter
+					found = true
+					break
+				end
+			end
 
-		-- Reload buffer if open
-		local buf = vim.fn.bufnr(yaml_path)
-		if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
-			vim.api.nvim_buf_call(buf, function()
-				vim.cmd("edit!")
-			end)
-		end
+			if not found then
+				table.insert(lines, 2, "chapter: " .. chapter)
+			end
 
-		import_yaml(yaml_path)
+			vim.fn.writefile(lines, yaml_path)
+			vim.notify(
+				string.format("Set chapter: %s", chapter),
+				vim.log.levels.INFO
+			)
+
+			-- Reload buffer if open
+			local buf = vim.fn.bufnr(yaml_path)
+			if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+				vim.api.nvim_buf_call(buf, function()
+					vim.cmd("edit!")
+				end)
+			end
+
+			import_yaml(yaml_path)
+		end)
 	end)
 end
 
@@ -716,52 +722,53 @@ function M.set_part()
 		return
 	end
 
-	local parts = cache.get("parts")
-	if #parts == 0 then
-		vim.notify("No parts cached. Cache may still be loading", vim.log.levels.WARN)
-		return
-	end
-
-	vim.ui.select(parts, { prompt = "Part:" }, function(part)
-		if not part then
+	cache.ensure("parts", function(parts)
+		if #parts == 0 then
+			vim.notify("No parts found in database", vim.log.levels.WARN)
 			return
 		end
 
-		local yaml_path = resolve_yaml_path(ctx)
-		if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
-			vim.notify("Chapter YAML not found", vim.log.levels.ERROR)
-			return
-		end
-
-		local lines = vim.fn.readfile(yaml_path)
-		local found = false
-		for i, line in ipairs(lines) do
-			if line:match("^part:") then
-				lines[i] = "part: " .. part
-				found = true
-				break
+		vim.ui.select(parts, { prompt = "Part:" }, function(part)
+			if not part then
+				return
 			end
-		end
 
-		if not found then
-			table.insert(lines, 2, "part: " .. part)
-		end
+			local yaml_path = resolve_yaml_path(ctx)
+			if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+				vim.notify("Chapter YAML not found", vim.log.levels.ERROR)
+				return
+			end
 
-		vim.fn.writefile(lines, yaml_path)
-		vim.notify(
-			string.format("Set part: %s", part),
-			vim.log.levels.INFO
-		)
+			local lines = vim.fn.readfile(yaml_path)
+			local found = false
+			for i, line in ipairs(lines) do
+				if line:match("^part:") then
+					lines[i] = "part: " .. part
+					found = true
+					break
+				end
+			end
 
-		-- Reload buffer if open
-		local buf = vim.fn.bufnr(yaml_path)
-		if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
-			vim.api.nvim_buf_call(buf, function()
-				vim.cmd("edit!")
-			end)
-		end
+			if not found then
+				table.insert(lines, 2, "part: " .. part)
+			end
 
-		import_yaml(yaml_path)
+			vim.fn.writefile(lines, yaml_path)
+			vim.notify(
+				string.format("Set part: %s", part),
+				vim.log.levels.INFO
+			)
+
+			-- Reload buffer if open
+			local buf = vim.fn.bufnr(yaml_path)
+			if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+				vim.api.nvim_buf_call(buf, function()
+					vim.cmd("edit!")
+				end)
+			end
+
+			import_yaml(yaml_path)
+		end)
 	end)
 end
 
@@ -776,68 +783,69 @@ function M.add_character()
 		return
 	end
 
-	local characters = cache.get("characters")
-	if #characters == 0 then
-		vim.notify("No characters cached. Cache may still be loading", vim.log.levels.WARN)
-		return
-	end
-
-	vim.ui.select(characters, { prompt = "Character:" }, function(character)
-		if not character then
+	cache.ensure("characters", function(characters)
+		if #characters == 0 then
+			vim.notify("No characters found in database", vim.log.levels.WARN)
 			return
 		end
 
-		local yaml_path = resolve_yaml_path(ctx)
-		if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
-			vim.notify("Scene YAML not found", vim.log.levels.ERROR)
-			return
-		end
-
-		local lines = vim.fn.readfile(yaml_path)
-		local found_characters = false
-		for i, line in ipairs(lines) do
-			if line:match("^characters:") then
-				found_characters = true
-				if line:match("^characters: *$") or line:match("^characters: *null") then
-					lines[i] = "characters:"
-					table.insert(lines, i + 1, "  - " .. character)
-				else
-					-- Append after last characters entry
-					local insert_at = i + 1
-					while insert_at <= #lines and lines[insert_at]:match("^%s+%-") do
-						-- Check for duplicate
-						if lines[insert_at]:match("^%s+%-%s+" .. vim.pesc(character) .. "$") then
-							vim.notify("Character already in scene", vim.log.levels.WARN)
-							return
-						end
-						insert_at = insert_at + 1
-					end
-					table.insert(lines, insert_at, "  - " .. character)
-				end
-				break
+		vim.ui.select(characters, { prompt = "Character:" }, function(character)
+			if not character then
+				return
 			end
-		end
 
-		if not found_characters then
-			table.insert(lines, "characters:")
-			table.insert(lines, "  - " .. character)
-		end
+			local yaml_path = resolve_yaml_path(ctx)
+			if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+				vim.notify("Scene YAML not found", vim.log.levels.ERROR)
+				return
+			end
 
-		vim.fn.writefile(lines, yaml_path)
-		vim.notify(
-			string.format("Added character: %s", character),
-			vim.log.levels.INFO
-		)
+			local lines = vim.fn.readfile(yaml_path)
+			local found_characters = false
+			for i, line in ipairs(lines) do
+				if line:match("^characters:") then
+					found_characters = true
+					if line:match("^characters: *$") or line:match("^characters: *null") then
+						lines[i] = "characters:"
+						table.insert(lines, i + 1, "  - " .. character)
+					else
+						-- Append after last characters entry
+						local insert_at = i + 1
+						while insert_at <= #lines and lines[insert_at]:match("^%s+%-") do
+							-- Check for duplicate
+							if lines[insert_at]:match("^%s+%-%s+" .. vim.pesc(character) .. "$") then
+								vim.notify("Character already in scene", vim.log.levels.WARN)
+								return
+							end
+							insert_at = insert_at + 1
+						end
+						table.insert(lines, insert_at, "  - " .. character)
+					end
+					break
+				end
+			end
 
-		-- Reload buffer if open
-		local buf = vim.fn.bufnr(yaml_path)
-		if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
-			vim.api.nvim_buf_call(buf, function()
-				vim.cmd("edit!")
-			end)
-		end
+			if not found_characters then
+				table.insert(lines, "characters:")
+				table.insert(lines, "  - " .. character)
+			end
 
-		import_yaml(yaml_path)
+			vim.fn.writefile(lines, yaml_path)
+			vim.notify(
+				string.format("Added character: %s", character),
+				vim.log.levels.INFO
+			)
+
+			-- Reload buffer if open
+			local buf = vim.fn.bufnr(yaml_path)
+			if buf ~= -1 and vim.api.nvim_buf_is_valid(buf) then
+				vim.api.nvim_buf_call(buf, function()
+					vim.cmd("edit!")
+				end)
+			end
+
+			import_yaml(yaml_path)
+		end)
 	end)
 end
 
@@ -852,72 +860,128 @@ function M.add_scene()
 		return
 	end
 
-	local scenes = cache.get("scenes")
-	if #scenes == 0 then
-		vim.notify("No scenes cached. Cache may still be loading", vim.log.levels.WARN)
-		return
-	end
-
-	vim.ui.select(scenes, { prompt = "Scene to add:" }, function(scene_name)
-		if not scene_name then
+	cache.ensure("scenes", function(scenes)
+		if #scenes == 0 then
+			vim.notify("No scenes found in database", vim.log.levels.WARN)
 			return
 		end
 
-		-- Resolve scene YAML path
+		-- Sort: unassigned first, then by name
 		local root = get_project_root()
-		local scene_slug = strip_accents(scene_name):lower()
-			:gsub("%s+", "-"):gsub("[^%w%-]", "")
-			:gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
-		local scene_yaml = root .. "/data/metadata/manuscript/scenes/" .. scene_slug .. ".yaml"
-
-		if vim.fn.filereadable(scene_yaml) == 0 then
-			vim.notify("Scene YAML not found: " .. scene_yaml, vim.log.levels.ERROR)
-			return
-		end
-
-		-- Get chapter title from current page YAML
-		local chapter_yaml = resolve_yaml_path(ctx)
-		if not chapter_yaml or vim.fn.filereadable(chapter_yaml) == 0 then
-			vim.notify("Chapter YAML not found", vim.log.levels.ERROR)
-			return
-		end
-
-		local ch_lines = vim.fn.readfile(chapter_yaml)
-		local chapter_title = nil
-		for _, line in ipairs(ch_lines) do
-			local val = line:match("^title:%s*(.+)$")
-			if val then
-				chapter_title = val
-				break
+		local display = {}
+		local scene_chapters = {}
+		for _, name in ipairs(scenes) do
+			local slug = strip_accents(name):lower()
+				:gsub("%s+", "-"):gsub("[^%w%-]", "")
+				:gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+			local yaml = root .. "/data/metadata/manuscript/scenes/" .. slug .. ".yaml"
+			local current_ch = nil
+			if vim.fn.filereadable(yaml) == 1 then
+				for _, line in ipairs(vim.fn.readfile(yaml)) do
+					local ch = line:match("^chapter:%s+(.+)$")
+					if ch then
+						current_ch = ch
+						break
+					end
+				end
+			end
+			scene_chapters[name] = current_ch
+			if current_ch then
+				table.insert(display, name .. "  [" .. current_ch .. "]")
+			else
+				table.insert(display, name)
 			end
 		end
 
-		if not chapter_title then
-			vim.notify("Could not read chapter title", vim.log.levels.ERROR)
-			return
-		end
-
-		-- Update scene YAML's chapter field
-		local lines = vim.fn.readfile(scene_yaml)
-		local found = false
-		for i, line in ipairs(lines) do
-			if line:match("^chapter:") then
-				lines[i] = "chapter: " .. chapter_title
-				found = true
-				break
+		-- Sort: unassigned first
+		table.sort(display, function(a, b)
+			local a_assigned = a:find("%[") ~= nil
+			local b_assigned = b:find("%[") ~= nil
+			if a_assigned ~= b_assigned then
+				return not a_assigned
 			end
-		end
+			return a < b
+		end)
 
-		if not found then
-			table.insert(lines, 2, "chapter: " .. chapter_title)
-		end
+		vim.ui.select(display, { prompt = "Scene to add:" }, function(choice)
+			if not choice then
+				return
+			end
 
-		vim.fn.writefile(lines, scene_yaml)
-		vim.notify(
-			string.format("Added scene: %s → %s", scene_name, chapter_title),
-			vim.log.levels.INFO
-		)
-		import_yaml(scene_yaml)
+			-- Extract scene name from display string
+			local scene_name = choice:match("^(.-)  %[") or choice
+
+			local function do_assign()
+				-- Resolve scene YAML path
+				local scene_slug = strip_accents(scene_name):lower()
+					:gsub("%s+", "-"):gsub("[^%w%-]", "")
+					:gsub("%-+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+				local scene_yaml = root .. "/data/metadata/manuscript/scenes/" .. scene_slug .. ".yaml"
+
+				if vim.fn.filereadable(scene_yaml) == 0 then
+					vim.notify("Scene YAML not found: " .. scene_yaml, vim.log.levels.ERROR)
+					return
+				end
+
+				-- Get chapter title from current page YAML
+				local chapter_yaml = resolve_yaml_path(ctx)
+				if not chapter_yaml or vim.fn.filereadable(chapter_yaml) == 0 then
+					vim.notify("Chapter YAML not found", vim.log.levels.ERROR)
+					return
+				end
+
+				local ch_lines = vim.fn.readfile(chapter_yaml)
+				local chapter_title = nil
+				for _, line in ipairs(ch_lines) do
+					local val = line:match("^title:%s*(.+)$")
+					if val then
+						chapter_title = val
+						break
+					end
+				end
+
+				if not chapter_title then
+					vim.notify("Could not read chapter title", vim.log.levels.ERROR)
+					return
+				end
+
+				-- Update scene YAML's chapter field
+				local lines = vim.fn.readfile(scene_yaml)
+				local found = false
+				for i, line in ipairs(lines) do
+					if line:match("^chapter:") then
+						lines[i] = "chapter: " .. chapter_title
+						found = true
+						break
+					end
+				end
+
+				if not found then
+					table.insert(lines, 2, "chapter: " .. chapter_title)
+				end
+
+				vim.fn.writefile(lines, scene_yaml)
+				vim.notify(
+					string.format("Added scene: %s → %s", scene_name, chapter_title),
+					vim.log.levels.INFO
+				)
+				import_yaml(scene_yaml)
+			end
+
+			-- If scene is already assigned, confirm the move
+			local old_ch = scene_chapters[scene_name]
+			if old_ch then
+				vim.ui.select({ "Yes", "No" }, {
+					prompt = string.format("Move from '%s'?", old_ch),
+				}, function(confirm)
+					if confirm == "Yes" then
+						do_assign()
+					end
+				end)
+			else
+				do_assign()
+			end
+		end)
 	end)
 end
 
@@ -1184,14 +1248,13 @@ function M.link_to_manuscript()
 		end
 
 		local entity_type = choice:find("chapter") and "chapters" or "scenes"
-		local names = cache.get(entity_type)
+		cache.ensure(entity_type, function(names)
+			if #names == 0 then
+				vim.notify("No " .. entity_type .. " found in database", vim.log.levels.WARN)
+				return
+			end
 
-		if #names == 0 then
-			vim.notify("No " .. entity_type .. " cached", vim.log.levels.WARN)
-			return
-		end
-
-		vim.ui.select(names, { prompt = "Select " .. entity_type .. ":" }, function(name)
+			vim.ui.select(names, { prompt = "Select " .. entity_type .. ":" }, function(name)
 			if not name then
 				return
 			end
@@ -1254,6 +1317,7 @@ function M.link_to_manuscript()
 				vim.log.levels.INFO
 			)
 			import_yaml(yaml_path)
+		end)
 		end)
 	end)
 end
@@ -1377,21 +1441,21 @@ function M.move_to_part()
 		if p then current_part = p end
 	end
 
-	local parts_list = cache.get("parts")
-	if #parts_list == 0 then
-		vim.notify("No parts cached", vim.log.levels.WARN)
-		return
-	end
-
-	-- Filter out current part
-	local choices = {}
-	for _, p in ipairs(parts_list) do
-		if p ~= current_part then
-			table.insert(choices, p)
+	cache.ensure("parts", function(parts_list)
+		if #parts_list == 0 then
+			vim.notify("No parts found in database", vim.log.levels.WARN)
+			return
 		end
-	end
 
-	vim.ui.select(choices, { prompt = "Move to part:" }, function(part)
+		-- Filter out current part
+		local choices = {}
+		for _, p in ipairs(parts_list) do
+			if p ~= current_part then
+				table.insert(choices, p)
+			end
+		end
+
+		vim.ui.select(choices, { prompt = "Move to part:" }, function(part)
 		if not part then
 			return
 		end
@@ -1456,6 +1520,7 @@ function M.move_to_part()
 				end,
 			})
 		end)
+	end)
 	end)
 end
 
