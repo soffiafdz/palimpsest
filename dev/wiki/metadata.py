@@ -816,11 +816,33 @@ class MetadataExporter:
         path.write_text(content, encoding="utf-8")
         return True
 
+    @staticmethod
+    def _block_scalar_dumper() -> type:
+        """
+        Create a YAML dumper that uses literal block style for multiline strings.
+
+        Returns:
+            Custom yaml.Dumper subclass
+        """
+        class Dumper(yaml.Dumper):
+            pass
+
+        def _str_representer(dumper: yaml.Dumper, data: str) -> Any:
+            if "\n" in data:
+                return dumper.represent_scalar(
+                    "tag:yaml.org,2002:str", data, style="|"
+                )
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+        Dumper.add_representer(str, _str_representer)
+        return Dumper
+
     def _write_yaml(self, path: Path, data: Any) -> bool:
         """
         Write YAML file with change detection.
 
         Only writes if content differs from existing file.
+        Uses literal block style (|) for multiline strings.
 
         Args:
             path: Output file path
@@ -830,7 +852,9 @@ class MetadataExporter:
             True if file was written (new or changed), False if unchanged
         """
         content = yaml.dump(
-            data, default_flow_style=False, allow_unicode=True, sort_keys=False
+            data, Dumper=self._block_scalar_dumper(),
+            default_flow_style=False, allow_unicode=True, sort_keys=False,
+            width=4096
         )
 
         if path.exists():
