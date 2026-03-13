@@ -7,7 +7,6 @@
 {% if timeline %}
 
 ## Timeline
-
 {{ timeline | timeline_table }}
 
 ---
@@ -15,7 +14,6 @@
 {% if has_entries_subpage %}
 
 ## Recent Instances
-
 [All instances ({{ instance_count | zpad }})]({{ slug }}-entries)
 {% for instance in recent_instances %}
 {% if instance.entry_date %}
@@ -47,7 +45,6 @@
 ---
 
 ## Entries
-
 {{ render_entries(entries) }}
 {% endif %}
 {% endif %}
@@ -56,7 +53,7 @@
 ---
 
 ## Patterns
-{% if patterns.tags %}
+{%- if patterns.tags %}
 
 **Tags:**
 {% for tag in patterns.tags %}

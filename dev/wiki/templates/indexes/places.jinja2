@@ -30,7 +30,6 @@
 
 ## {{ city.name | wikilink }}
 {{ city.entry_count | zpad }} entr{{ "y" if city.entry_count == 1 else "ies" }}{% if city.country %} · {{ city.country }}{% endif %}
-
 {% if city.any_neighborhoods %}
 {% for hood in city.neighborhoods %}
 

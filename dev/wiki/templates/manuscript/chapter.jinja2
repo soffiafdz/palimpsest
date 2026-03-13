@@ -40,7 +40,7 @@
 ---
 
 ## Scenes
-{% for scene in scenes %}
+{%- for scene in scenes %}
 
 ### {{ loop.index }}. {{ scene.name | wikilink }}
 {{ scene.block }}
@@ -59,7 +59,6 @@
 ---
 
 ## Notes
-
 {{ notes }}
 {% endif %}
 {% if references %}

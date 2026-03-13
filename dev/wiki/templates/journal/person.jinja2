@@ -25,7 +25,7 @@
 {% if top_companions %}
 
 ## Top Companions
-{% for group in top_companions %}
+{%- for group in top_companions %}
 
 {% if group.relation %}
 **{{ group.relation }}:**
@@ -38,10 +38,10 @@
 {% if top_places %}
 
 ## Top Places
-{% for city in top_places %}
+{%- for city in top_places %}
 
 ### {{ city.name | wikilink }}
-{% if city.neighborhoods %}
+{%- if city.neighborhoods %}
 {% for nb in city.neighborhoods %}
 
 **{{ nb.name }}**
@@ -64,10 +64,10 @@
 ---
 
 ## Places
-{% for city in places[:5] %}
+{%- for city in places[:5] %}
 
 ### {{ city.name | wikilink }}
-{% if city.neighborhoods %}
+{%- if city.neighborhoods %}
 {% for nb in city.neighborhoods %}
 
 **{{ nb.name }}**
@@ -95,7 +95,6 @@
 {% if entries %}
 
 ## Entries
-
 {{ render_entries(entries) }}
 {% endif %}
 {% if places %}
@@ -103,7 +102,7 @@
 ---
 
 ## Places
-{% for city in places %}
+{%- for city in places %}
 
 ### {{ city.name | wikilink }}
 {% for loc in city.locations %}

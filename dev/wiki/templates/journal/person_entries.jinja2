@@ -6,11 +6,10 @@
 ---
 
 ## Events
-{% for year_group in chronological_events %}
+{%- for year_group in chronological_events %}
 
 ### {{ year_group.year }}
 {% if year_group.entry_count is defined %}
-
 [{{ year_group.entry_count }} entr{{ "y" if year_group.entry_count == 1 else "ies" }}]({{ slug }}-entries-{{ year_group.year }})
 {% endif %}
 {% for month in year_group.months %}

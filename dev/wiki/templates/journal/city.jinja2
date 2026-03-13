@@ -10,7 +10,6 @@
 {% if timeline %}
 
 ## Timeline
-
 {{ timeline | timeline_table }}
 
 ---
@@ -18,7 +17,7 @@
 {% if any_neighborhoods %}
 
 ## Locations
-{% for hood in neighborhoods %}
+{%- for hood in neighborhoods %}
 
 ### {{ hood.name }}
 {% for loc in hood.locations %}

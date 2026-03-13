@@ -14,7 +14,6 @@ First appeared:
 {% if latest.entry_date %}
 {{ latest.entry_date | entry_date_short }}
 {% endif %}
-
 > {{ latest.content | replace("\n", "\n> ") }}
 {% if latest.line_count or latest.word_count %}
 
@@ -25,13 +24,12 @@ First appeared:
 ---
 
 ## Version History
-{% for version in versions[1:] %}
+{%- for version in versions[1:] %}
 
 ### Version {{ version.number }}
 {% if version.entry_date %}
 {{ version.entry_date | entry_date_short }}
 {% endif %}
-
 > {{ version.content | replace("\n", "\n> ") }}
 {% if version.line_count or version.word_count %}
 

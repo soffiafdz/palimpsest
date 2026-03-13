@@ -13,7 +13,6 @@
 {% if timeline %}
 
 ## Timeline
-
 {{ timeline | timeline_table }}
 {% endif %}
 
@@ -23,7 +22,7 @@
 ---
 
 ## Events Here
-{% for year_group in chronological_events %}
+{%- for year_group in chronological_events %}
 
 **{{ year_group.year }}**
 {% for month in year_group.months %}
@@ -55,7 +54,6 @@
 {% if entries %}
 
 ## Entries
-
 {{ render_entries(entries) }}
 {% endif %}
 {% if chronological_events %}
@@ -63,7 +61,7 @@
 ---
 
 ## Events Here
-{% for year_group in chronological_events %}
+{%- for year_group in chronological_events %}
 
 **{{ year_group.year }}**
 {% for month in year_group.months %}
@@ -95,7 +93,6 @@
 {% if entries %}
 
 ## Entries
-
 {{ render_entries(entries) }}
 {% endif %}
 {% endif %}

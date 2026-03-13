@@ -16,7 +16,6 @@
 {% if has_refs_subpage %}
 
 ## Recent References
-
 [All references ({{ reference_count | zpad }})]({{ slug }}-refs)
 {% for ref in recent_references %}
 
@@ -37,7 +36,7 @@
 {% elif references %}
 
 ## References
-{% for ref in references %}
+{%- for ref in references %}
 
 ### {{ ref.entry_date | entry_date_display }}
 {% if ref.content %}

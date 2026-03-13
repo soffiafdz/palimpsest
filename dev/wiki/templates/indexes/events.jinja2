@@ -27,7 +27,7 @@
 {% for yg in year_groups %}
 
 ## {{ yg.year }}
-{% for mg in yg.months %}
+{%- for mg in yg.months %}
 
 ### {{ mg.month }}
 {% for event in mg.events %}

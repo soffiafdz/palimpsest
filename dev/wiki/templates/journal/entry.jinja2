@@ -48,23 +48,23 @@
 {% if people_groups %}
 
 ## People
-{% for group in people_groups %}
+{%- for group in people_groups %}
 {% if group.relation %}
 
 **{{ group.relation }}**
-{% endif %}
+{% endif -%}
 {% for name in group.names %}
 - {{ name | wikilink }}
 {% endfor %}
-{% endfor %}
+{%- endfor %}
 {% endif %}
 {% if places %}
 
 ## Places
-{% for city in places %}
+{%- for city in places %}
 
 ### {{ city.name | wikilink }}
-{% if city.neighborhoods %}
+{%- if city.neighborhoods %}
 {% for nb in city.neighborhoods %}
 
 **{{ nb.name }}**
@@ -84,12 +84,12 @@
 ---
 
 ## Narrative
-{% for arc_group in narrative %}
+{%- for arc_group in narrative %}
 {% if arc_group.name %}
 
 ### {{ arc_group.name | wikilink }}
 {% endif %}
-{% for event in arc_group.events %}
+{%- for event in arc_group.events %}
 {% if event.name %}
 
 **{{ event.name | wikilink }}**
@@ -106,7 +106,7 @@
 ---
 
 ## Threads
-{% for thread in threads %}
+{%- for thread in threads %}
 
 {{ render_thread(thread) }}
 {%- endfor %}
@@ -116,7 +116,7 @@
 ---
 
 ## References
-{% for ref in references %}
+{%- for ref in references %}
 
 {% if ref.content %}
 > *"{{ ref.content }}"*

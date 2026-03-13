@@ -23,7 +23,6 @@
 {% for part in parts %}
 
 ## {{ part.display_name | wikilink }}
-
 {{ part.chapter_count }} chapter{{ "s" if part.chapter_count != 1 else "" }} · {{ part.scene_count }} scene{{ "s" if part.scene_count != 1 else "" }}
 {% if part.number_min is not none %}
 Ch. {{ part.number_min }}–{{ part.number_max }}
@@ -37,7 +36,6 @@ Ch. {{ part.number_min }}–{{ part.number_max }}
 {% if unassigned_chapters %}
 
 ## Unassigned Chapters
-
 {% for ch in unassigned_chapters %}
 - {{ ch.title | wikilink }}
   {{ ch.type }} · {{ ch.status }}
@@ -46,14 +44,12 @@ Ch. {{ part.number_min }}–{{ part.number_max }}
 {% if unassigned_scenes %}
 
 ## [Unassigned Scenes](indexes/manuscript-scenes-index.md)
-
 {{ unassigned_scenes | length }} scene{{ "s" if unassigned_scenes | length != 1 else "" }}
 {% endif %}
 
 ---
 
 ## [Cast](indexes/characters-index.md)
-
 {{ character_count }} characters
 {% for char in top_characters %}
 - {{ char.name.ljust(max_name_len) }} — *{{ char.role }}*{{ " · " ~ char.metrics if char.metrics else "" }}

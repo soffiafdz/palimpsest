@@ -8,7 +8,6 @@
 {% if timeline %}
 
 ## Timeline
-
 {{ timeline | timeline_table }}
 
 ---
@@ -20,7 +19,7 @@
 ---
 
 ## Patterns
-{% if patterns.tags %}
+{%- if patterns.tags %}
 
 **Tags:**
 {% for tag in patterns.tags %}
@@ -52,7 +51,6 @@
 {% if entries %}
 
 ## Entries
-
 {{ render_entries(entries) }}
 {% endif %}
 {% endif %}
