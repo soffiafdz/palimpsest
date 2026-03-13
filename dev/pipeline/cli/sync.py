@@ -144,6 +144,7 @@ def _run_entries_import(
     years_filter: Optional[Set[str]],
     dry_run: bool,
     verbose: bool,
+    changed_files: Optional[Set[Path]] = None,
 ) -> int:
     """
     Step 2: Import journal entries from MD+YAML where hashes changed.
@@ -154,13 +155,18 @@ def _run_entries_import(
         years_filter: Limit to these year directories, or all if ``None``.
         dry_run: Preview without committing.
         verbose: Print detailed summary.
+        changed_files: Set of changed YAML paths for incremental
+            import. ``None`` means full import (all files).
 
     Returns:
         Number of entries processed (excluding skipped).
     """
     from dev.pipeline.metadata_importer import EntryImporter
 
-    yaml_files = _collect_yaml_files(years_filter)
+    if changed_files is not None:
+        yaml_files = sorted(changed_files)
+    else:
+        yaml_files = _collect_yaml_files(years_filter)
     if not yaml_files:
         click.echo("  No YAML files found for entries import.")
         return 0
@@ -394,6 +400,7 @@ def sync(
         store_sync_hash,
         get_changed_files,
         filter_json_export_files,
+        filter_entry_files,
         filter_metadata_files,
     )
 
@@ -414,6 +421,7 @@ def sync(
 
     if full or stored_hash is None or current_hash is None:
         json_changed: Optional[Set[Path]] = None
+        entry_changed: Optional[Set[Path]] = None
         meta_changed: Optional[Set[Path]] = None
         sync_mode = "full"
         if full:
@@ -424,12 +432,14 @@ def sync(
             reason = "data/ is not a git repo"
     elif stored_hash == current_hash:
         json_changed = set()
+        entry_changed = set()
         meta_changed = set()
         sync_mode = "incremental (no changes in data/)"
         reason = "HEAD unchanged"
     else:
         all_changed = get_changed_files(stored_hash, current_hash)
         json_changed = filter_json_export_files(all_changed)
+        entry_changed = filter_entry_files(all_changed)
         meta_changed = filter_metadata_files(all_changed)
         sync_mode = "incremental"
         reason = f"{len(all_changed)} files changed"
@@ -466,10 +476,15 @@ def sync(
         # -- Step 2: Entries import --
         scope_label = f" (years: {years})" if years else ""
         click.echo(f"[2/6] Entries import{scope_label}...")
-        entries_changed = _run_entries_import(
-            db, logger, years_filter, dry_run, verbose,
-        )
-        click.echo(f"  Processed {entries_changed} entries.")
+        if not dry_run and entry_changed is not None and len(entry_changed) == 0:
+            click.echo("  No entry changes; skipped.")
+            entries_changed = 0
+        else:
+            entries_changed = _run_entries_import(
+                db, logger, years_filter, dry_run, verbose,
+                changed_files=entry_changed,
+            )
+            click.echo(f"  Processed {entries_changed} entries.")
 
         # -- Step 2b: Auto-prune orphans --
         if not dry_run and entries_changed > 0:

@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Optional, Set
 
 # --- Local imports ---
-from dev.core.paths import DATA_DIR, SYNC_STATE_PATH
+from dev.core.paths import DATA_DIR, JOURNAL_YAML_DIR, MD_DIR, SYNC_STATE_PATH
 
 
 def get_data_head() -> Optional[str]:
@@ -160,3 +160,36 @@ def filter_metadata_files(changed: Set[Path]) -> Set[Path]:
         and journal_metadata_dir not in f.parents
         and f.parent != journal_metadata_dir
     }
+
+
+def filter_entry_files(changed: Set[Path]) -> Set[Path]:
+    """
+    Filter changed files to journal entry YAML and MD files.
+
+    Selects files under ``data/metadata/journal/`` (.yaml) and
+    ``data/journal/content/md/`` (.md). Returns the YAML paths
+    only, since EntryImporter iterates YAMLs and derives MD paths.
+
+    Args:
+        changed: Full set of changed file paths.
+
+    Returns:
+        Subset containing only entry YAML files whose YAML or
+        corresponding MD changed.
+    """
+    changed_yamls = {
+        f for f in changed
+        if f.suffix == ".yaml"
+        and (JOURNAL_YAML_DIR in f.parents or f.parent == JOURNAL_YAML_DIR)
+    }
+
+    # For changed MD files, find the corresponding YAML
+    for f in changed:
+        if f.suffix == ".md" and (MD_DIR in f.parents or f.parent == MD_DIR):
+            # MD: data/journal/content/md/YYYY/YYYY-MM-DD.md
+            # YAML: data/metadata/journal/YYYY/YYYY-MM-DD.yaml
+            yaml_path = JOURNAL_YAML_DIR / f.parent.name / f.with_suffix(".yaml").name
+            if yaml_path.exists():
+                changed_yamls.add(yaml_path)
+
+    return changed_yamls
