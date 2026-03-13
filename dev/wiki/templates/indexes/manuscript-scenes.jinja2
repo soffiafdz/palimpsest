@@ -1,8 +1,8 @@
 {#
   Manuscript Scenes index page.
 
-  Groups scenes by chapter with an Unassigned section for
-  scenes not yet assigned to any chapter.
+  Flat list of all scenes ordered by chapter, with unassigned
+  scenes prioritized at the top.
 
   Context:
     chapter_groups: dict mapping chapter title to list of scene dicts
@@ -14,6 +14,16 @@
 {{ scene_count | zpad }} scenes
 
 ---
+{% if unassigned_scenes %}
+
+## Unassigned
+{% for scene in unassigned_scenes %}
+- {{ scene.name | wikilink }}
+  *{{ scene.origin }}* · {{ scene.status }}
+{% endfor %}
+
+---
+{% endif %}
 {% for chapter_title, scenes in chapter_groups.items() %}
 
 ## {{ chapter_title | wikilink }}
@@ -22,11 +32,3 @@
   *{{ scene.origin }}* · {{ scene.status }}
 {% endfor %}
 {% endfor %}
-{% if unassigned_scenes %}
-
-## Unassigned
-{% for scene in unassigned_scenes %}
-- {{ scene.name | wikilink }}
-  *{{ scene.origin }}* · {{ scene.status }}
-{% endfor %}
-{% endif %}
