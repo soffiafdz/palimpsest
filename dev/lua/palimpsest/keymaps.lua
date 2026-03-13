@@ -11,6 +11,7 @@ local CONTEXT_KEYMAPS = {
 		{ key = "h", cmd = "<cmd>PalimpsestSetChapter<cr>", desc = "Set chapter", icon = "󰉋" },
 		{ key = "a", cmd = "<cmd>PalimpsestAddCharacter<cr>", desc = "Add character", icon = "󰙃" },
 		{ key = "o", cmd = "<cmd>PalimpsestOpenSources<cr>", desc = "Open sources", icon = "󰈔" },
+		{ key = "#", cmd = "<cmd>PalimpsestReorderScene<cr>", desc = "Reorder scene", icon = "󰎠" },
 		{ key = "R", cmd = "<cmd>PalimpsestRename<cr>", desc = "Rename scene", icon = "󰑕" },
 	},
 	chapter = {

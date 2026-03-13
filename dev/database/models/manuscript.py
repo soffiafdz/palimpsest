@@ -167,7 +167,8 @@ class Chapter(Base):
         "Poem", secondary=chapter_poems, backref="chapters"
     )
     scenes: Mapped[List["ManuscriptScene"]] = relationship(
-        "ManuscriptScene", back_populates="chapter"
+        "ManuscriptScene", back_populates="chapter",
+        order_by="ManuscriptScene.order",
     )
     references: Mapped[List["ManuscriptReference"]] = relationship(
         "ManuscriptReference", back_populates="chapter", cascade="all, delete-orphan"
@@ -377,6 +378,7 @@ class ManuscriptScene(Base):
         origin: How the scene was created (journaled, inferred, invented, composite)
         status: Inclusion status (fragment, draft, included, cut)
         notes: Additional notes (optional)
+        order: Position within chapter (1-based, nullable)
 
     Relationships:
         chapter: Many-to-one with Chapter (nullable)
@@ -407,6 +409,7 @@ class ManuscriptScene(Base):
         index=True,
     )
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    order: Mapped[Optional[int]] = mapped_column(Integer)
 
     # --- Relationships ---
     chapter: Mapped[Optional["Chapter"]] = relationship(

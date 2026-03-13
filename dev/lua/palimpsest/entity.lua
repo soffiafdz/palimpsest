@@ -1524,4 +1524,92 @@ function M.move_to_part()
 	end)
 end
 
+--- Reorder current scene within its chapter.
+---
+--- Prompts for a new order number and calls the CLI to shift siblings.
+--- Only available on scene wiki pages.
+function M.reorder_scene()
+	local ctx = context_mod.detect()
+	if not ctx or ctx.type ~= "scene" then
+		vim.notify("Reorder only works on scene pages", vim.log.levels.WARN)
+		return
+	end
+
+	local root = get_project_root()
+	local yaml_path = resolve_yaml_path(ctx)
+	if not yaml_path or vim.fn.filereadable(yaml_path) == 0 then
+		vim.notify("Scene YAML not found", vim.log.levels.WARN)
+		return
+	end
+
+	local lines = vim.fn.readfile(yaml_path)
+	local name = ""
+	local current_order = ""
+	for _, line in ipairs(lines) do
+		local n = line:match("^name:%s*(.+)$")
+		if n then name = n end
+		local o = line:match("^order:%s*(%d+)%s*$")
+		if o then current_order = o end
+	end
+
+	vim.ui.input({
+		prompt = "New order: ",
+		default = current_order,
+	}, function(input)
+		if not input or input == "" then
+			return
+		end
+
+		local num = tonumber(input)
+		if not num or num < 1 then
+			vim.notify("Invalid order", vim.log.levels.ERROR)
+			return
+		end
+
+		local cmd = string.format(
+			'cd %s && plm manuscript reorder-scene "%s" %d --apply',
+			root, name:gsub('"', '\\"'), num
+		)
+		vim.fn.jobstart(cmd, {
+			stdout_buffered = true,
+			on_stdout = function(_, data)
+				if data then
+					vim.schedule(function()
+						for _, line in ipairs(data) do
+							if line ~= "" then
+								vim.notify(line, vim.log.levels.INFO)
+							end
+						end
+					end)
+				end
+			end,
+			on_exit = function(_, exit_code)
+				if exit_code == 0 then
+					local sync_cmd = string.format(
+						"cd %s && plm metadata import --type scenes && plm wiki generate --section manuscript && plm wiki generate --section indexes && plm export --no-commit",
+						root
+					)
+					vim.fn.jobstart(sync_cmd, {
+						on_exit = function(_, sync_exit)
+							vim.schedule(function()
+								if sync_exit == 0 then
+									vim.notify("Reordered · wiki regenerated", vim.log.levels.INFO)
+									vim.cmd("edit!")
+									cache.refresh_all()
+								else
+									vim.notify("Reorder sync failed", vim.log.levels.ERROR)
+								end
+							end)
+						end,
+					})
+				else
+					vim.schedule(function()
+						vim.notify("Reorder failed", vim.log.levels.ERROR)
+					end)
+				end
+			end,
+		})
+	end)
+end
+
 return M

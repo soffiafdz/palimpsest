@@ -107,6 +107,7 @@ class TestManuscriptGroup:
 
     @pytest.mark.parametrize("command", [
         "renumber", "move", "remove-number",
+        "reorder-scene", "remove-scene-order",
     ])
     def test_manuscript_subcommands(self, runner, command):
         """All manuscript subcommands should be accessible."""

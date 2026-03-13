@@ -264,6 +264,7 @@ class ChapterManager(EntityManager):
                 origin=origin,
                 status=status,
                 notes=metadata.get("notes"),
+                order=metadata.get("order"),
             )
             self.session.add(scene)
             self.session.flush()
@@ -308,6 +309,9 @@ class ChapterManager(EntityManager):
 
             if "notes" in metadata:
                 scene.notes = metadata["notes"]
+
+            if "order" in metadata:
+                scene.order = metadata["order"]
 
             self.session.flush()
             return scene

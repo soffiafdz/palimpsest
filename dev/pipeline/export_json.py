@@ -936,6 +936,7 @@ class JSONExporter:
                 "name": scene.name,
                 "description": scene.description,
                 "chapter": self._chapter_titles.get(scene.chapter_id) if scene.chapter_id else None,
+                "order": scene.order,
                 "origin": scene.origin.value if scene.origin else None,
                 "status": scene.status.value if scene.status else None,
                 "characters": sorted([c.name for c in scene.characters]),

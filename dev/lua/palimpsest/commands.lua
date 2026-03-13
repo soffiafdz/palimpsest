@@ -394,6 +394,13 @@ function M.setup()
 		desc = "Move chapter to a different part",
 	})
 
+	-- Reorder scene within its chapter
+	vim.api.nvim_create_user_command("PalimpsestReorderScene", function()
+		require("palimpsest.entity").reorder_scene()
+	end, {
+		desc = "Reorder scene within its chapter",
+	})
+
 	-- Metadata export command
 	vim.api.nvim_create_user_command("PalimpsestMetadataExport", function(opts)
 		M.metadata_export(opts.args)

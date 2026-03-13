@@ -174,3 +174,84 @@ def remove_number(
     except Exception as e:
         handle_cli_error(ctx, e, "manuscript_remove_number")
         raise
+
+
+@manuscript.command("reorder-scene")
+@click.argument("scene_name")
+@click.argument("new_order", type=int)
+@click.option(
+    "--apply",
+    "execute",
+    is_flag=True,
+    help="Execute the reorder (default: dry-run)",
+)
+@click.pass_context
+def reorder_scene(
+    ctx: click.Context,
+    scene_name: str,
+    new_order: int,
+    execute: bool,
+) -> None:
+    """Move a scene to a new order within its chapter.
+
+    Shifts neighboring scenes to fill gaps and make room.
+    Dry-run by default — use --apply to write changes.
+    """
+    from dev.wiki.scene_ops import SceneReorder
+
+    try:
+        reorder = SceneReorder(METADATA_DIR)
+        report = reorder.reorder(
+            scene_name, new_order, dry_run=not execute
+        )
+        click.echo(report.summary())
+
+        if not report.ok:
+            raise SystemExit(1)
+        if not execute and report.changes:
+            click.echo("Run with --apply to execute.")
+
+    except (FileNotFoundError, SystemExit):
+        raise
+    except Exception as e:
+        handle_cli_error(ctx, e, "manuscript_reorder_scene")
+        raise
+
+
+@manuscript.command("remove-scene-order")
+@click.argument("scene_name")
+@click.option(
+    "--apply",
+    "execute",
+    is_flag=True,
+    help="Execute the removal (default: dry-run)",
+)
+@click.pass_context
+def remove_scene_order(
+    ctx: click.Context,
+    scene_name: str,
+    execute: bool,
+) -> None:
+    """Remove a scene's order and close the gap in its chapter.
+
+    Dry-run by default — use --apply to write changes.
+    """
+    from dev.wiki.scene_ops import SceneReorder
+
+    try:
+        reorder = SceneReorder(METADATA_DIR)
+        report = reorder.remove_order(
+            scene_name, dry_run=not execute
+        )
+        click.echo(report.summary())
+
+        if not report.ok:
+            raise SystemExit(1)
+        if not execute and report.changes:
+            click.echo("Run with --apply to execute.")
+
+    except (FileNotFoundError, SystemExit):
+        raise
+    except Exception as e:
+        handle_cli_error(ctx, e, "manuscript_remove_scene_order")
+        raise

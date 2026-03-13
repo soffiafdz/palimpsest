@@ -1642,6 +1642,7 @@ class JSONImporter:
                 ms_scene.origin = origin
                 ms_scene.status = status
                 ms_scene.notes = item.get("notes")
+                ms_scene.order = item.get("order")
             else:
                 ms_scene = ManuscriptScene(
                     name=name,
@@ -1650,6 +1651,7 @@ class JSONImporter:
                     origin=origin,
                     status=status,
                     notes=item.get("notes"),
+                    order=item.get("order"),
                 )
                 session.add(ms_scene)
             session.flush()

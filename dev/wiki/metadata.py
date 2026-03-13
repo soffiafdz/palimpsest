@@ -185,6 +185,7 @@ class MetadataSchema:
     SCENE_FIELDS: List[FieldSpec] = [
         FieldSpec("name", str, required=True),
         FieldSpec("chapter", str),
+        FieldSpec("order", int),
         FieldSpec("origin", str, required=True,
                   enum_values=SceneOrigin.choices()),
         FieldSpec("status", str, required=True,
@@ -555,6 +556,7 @@ class MetadataExporter:
                         ms_scene.chapter.title
                         if ms_scene.chapter else None
                     ),
+                    "order": ms_scene.order,
                     "origin": ms_scene.origin.value,
                     "status": ms_scene.status.value,
                     "description": ms_scene.description,
@@ -1710,6 +1712,7 @@ class MetadataImporter:
             if chapter:
                 ms_scene = ch_mgr.create_manuscript_scene(chapter, {
                     "name": name,
+                    "order": data.get("order"),
                     "origin": data.get("origin"),
                     "status": data.get("status"),
                     "description": data.get("description"),
@@ -1721,6 +1724,7 @@ class MetadataImporter:
                 status = SceneStatus(data["status"]) if data.get("status") else SceneStatus.FRAGMENT
                 ms_scene = ManuscriptScene(
                     name=name,
+                    order=data.get("order"),
                     origin=origin,
                     status=status,
                     description=data.get("description"),
@@ -1738,6 +1742,8 @@ class MetadataImporter:
                 update_data["description"] = data["description"]
             if "notes" in data:
                 update_data["notes"] = data["notes"]
+            if "order" in data:
+                update_data["order"] = data["order"]
             if update_data:
                 ch_mgr.update_manuscript_scene(ms_scene, update_data)
             if "chapter" in data:
